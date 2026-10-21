@@ -4,7 +4,7 @@
   maar hij bemoeit zich alleen met de paden hieronder. Al de rest van de site gaat ongemoeid naar het netwerk.
   Wordt enkel geregistreerd wie /app/ opent.
 */
-const VERSION = 'oc-app-v1';
+const VERSION = 'oc-app-v2';
 
 const SHELL = [
   '/app/', '/app/manifest.webmanifest', '/app/icon.svg',
@@ -12,7 +12,7 @@ const SHELL = [
 ];
 const TOOLS = [
   '/project-radar/', '/kanban/', '/stakeholders/', '/risico/', '/mixer/', '/paradox/',
-  '/fortuna/', '/check-in/', '/project-realisme/',
+  '/fortuna/', '/check-in/', '/project-realisme/', '/vinkje/',
   '/qr/', '/focus/', '/zakmes/looplicht/', '/zakmes/memomities/',
   '/hier/', '/adem/', '/hart/'
 ];
@@ -83,7 +83,7 @@ self.addEventListener('message', e => {
 // Eerst het netwerk, zodat je altijd de nieuwste versie krijgt. Is dat traag of weg: de bewaarde versie.
 async function networkFirst(e, key) {
   const cache = await caches.open(VERSION);
-  const net = fetch(e.request).then(async res => {
+  const net = fetch(e.request, { cache: 'no-cache' }).then(async res => {
     if (res.ok && res.type === 'basic') await cache.put(key, await clean(res.clone()));
     return res;
   });
