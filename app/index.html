@@ -72,17 +72,59 @@ a { color:inherit; }
 }
 .section-note { font-size:0.8125rem; color:var(--slate-400); }
 
-.list {
-  background:var(--wit); border:1px solid var(--slate-200); border-radius:14px; overflow:hidden;
+/* Groepen: afgelijnde blokken die je kan inklappen */
+.group {
+  background:var(--wit); border:1px solid var(--slate-200); border-radius:16px;
+  margin-bottom:1rem; overflow:hidden;
+  box-shadow:0 1px 2px rgba(15,23,42,0.04);
+  transition:border-color 0.2s;
 }
+.group-head {
+  display:grid; grid-template-columns:40px 1fr auto auto; gap:0.75rem; align-items:center;
+  width:100%; text-align:left; padding:0.875rem 1rem 0.875rem 0.875rem; position:relative;
+}
+.group-head::before {
+  content:''; position:absolute; left:0; top:0.875rem; bottom:0.875rem; width:3px;
+  border-radius:0 3px 3px 0; background:var(--accent);
+}
+.group-head:hover { background:var(--slate-50); }
+.group-logo { width:40px; height:40px; display:flex; }
+.group-logo svg { width:40px; height:40px; }
+.group-title { font-size:1.0625rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.02em; line-height:1.25; }
+.group-note { font-size:0.8125rem; color:var(--slate-500); line-height:1.35; }
+.group-meta { display:flex; align-items:center; gap:0.375rem; }
+.count {
+  font-size:0.75rem; font-weight:600; color:var(--slate-500); background:var(--slate-100);
+  padding:0.125rem 0.5rem; border-radius:999px; font-variant-numeric:tabular-nums;
+}
+.count-live { display:none; color:var(--accent-dark); background:var(--accent-light); }
+.group.has-live.collapsed .count-live { display:inline-block; }
+.toggle { width:20px; height:20px; color:var(--slate-400); transition:transform 0.22s ease; }
+.group.collapsed .toggle { transform:rotate(-90deg); }
+.group-body {
+  display:grid; grid-template-rows:1fr; transition:grid-template-rows 0.22s ease;
+}
+.group.collapsed .group-body { grid-template-rows:0fr; }
+.group-body > .list { min-height:0; overflow:hidden; }
+.list { border-top:1px solid var(--slate-200); }
+.group.collapsed .list { border-top-color:transparent; }
+.group.collapsed { border-color:var(--slate-200); }
+.group:not(.collapsed) { border-color:#cfe9dd; }
+.list-tools { display:flex; justify-content:flex-end; gap:0.25rem; padding:0 0.25rem 0.75rem; }
+.list-tools button {
+  font-size:0.8125rem; color:var(--slate-500); padding:0.25rem 0.5rem; border-radius:6px;
+}
+.list-tools button:hover { color:var(--accent-dark); background:var(--accent-light); }
 .row {
   display:grid; grid-template-columns:44px 1fr auto; gap:0.875rem; align-items:center;
   width:100%; text-align:left; padding:0.75rem 0.875rem; min-height:64px;
   border-top:1px solid var(--slate-100); transition:background 0.15s;
 }
 .row:first-child { border-top:0; }
+.row { padding-left:1rem; }
 .row:hover { background:var(--slate-50); }
 .row:active { background:var(--slate-100); }
+@media (prefers-reduced-motion: reduce) { .group-body, .toggle { transition:none; } }
 .icon {
   width:44px; height:44px; border-radius:11px; background:var(--slate-100);
   display:flex; align-items:center; justify-content:center; overflow:hidden; position:relative;
@@ -120,9 +162,6 @@ a { color:inherit; }
 .status.ok .dot { background:var(--accent); }
 .footer .sep { margin:0 0.5rem; color:var(--slate-300); }
 
-@media (min-width:700px) {
-  .lists-2 { display:grid; grid-template-columns:1fr 1fr; gap:0 1.25rem; }
-}
 
 /* ---------- Toolweergave ---------- */
 .viewer {
@@ -192,6 +231,7 @@ a { color:inherit; }
       <div class="recent" id="recent"></div>
     </section>
 
+    <div class="list-tools" id="list-tools"><button id="all-open">Alles open</button><button id="all-closed">Alles dicht</button></div>
     <div id="groups"></div>
   </main>
 
@@ -387,9 +427,9 @@ const TOOLS = [
  }
 ];
 const GROUPS = [
-  { id:'projecten', label:'Projecten', note:'Je projecten scherp houden' },
-  { id:'zakmes',    label:'Zakmes',    note:'Kleine hulpjes voor onderweg' },
-  { id:'reset',     label:'Reset',     note:'Pauze, en herstarten' }
+  { id:'projecten', label:'Projecten', note:'Je projecten scherp houden', logo:"<svg viewBox=\"0 0 80 80\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"> <circle cx=\"40\" cy=\"40\" r=\"36\" fill=\"#f8fafc\" stroke=\"#e2e8f0\" stroke-width=\"2\"/> <rect x=\"16\" y=\"18\" width=\"12\" height=\"44\" rx=\"2\" fill=\"#cbd5e1\"/> <rect x=\"34\" y=\"18\" width=\"12\" height=\"44\" rx=\"2\" fill=\"#cbd5e1\"/> <rect x=\"52\" y=\"18\" width=\"12\" height=\"44\" rx=\"2\" fill=\"#cbd5e1\"/> <rect x=\"18\" y=\"22\" width=\"8\" height=\"8\" rx=\"1\" fill=\"#10b981\"/> </svg>" },
+  { id:'zakmes',    label:'Zakmes',    note:'Kleine hulpjes voor onderweg', logo:"<svg viewBox=\"0 0 80 80\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"> <circle cx=\"40\" cy=\"40\" r=\"36\" fill=\"#f8fafc\" stroke=\"#e2e8f0\" stroke-width=\"2\"/> <rect x=\"26\" y=\"34\" width=\"28\" height=\"12\" rx=\"3\" fill=\"#cbd5e1\"/> <circle cx=\"30\" cy=\"40\" r=\"1.5\" fill=\"#94a3b8\"/> <path d=\"M54 37 L62 29 L63.5 30.5 L55.5 38.5 Z\" fill=\"#10b981\"/> <path d=\"M40 34 Q43 30 40 27 Q37 24 40 21\" stroke=\"#10b981\" stroke-width=\"2\" stroke-linecap=\"round\" fill=\"none\"/> <rect x=\"16\" y=\"38.5\" width=\"10\" height=\"3\" rx=\"0.75\" fill=\"#10b981\"/> <path d=\"M54 43 L60 49 L58.5 50.5 L57 49 L55.5 50.5 L54 49 L52.5 50.5 L52.5 44.5 Z\" fill=\"#cbd5e1\"/> </svg>" },
+  { id:'reset',     label:'Reset',     note:'Pauze, en herstarten', logo:"<svg viewBox=\"0 0 80 80\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"> <path d=\"M20 32C16 38 16 44 19 50C22 58 30 64 40 64C50 64 58 58 61 50C64 42 62 36 58 30\" stroke=\"#cbd5e1\" stroke-width=\"5\" stroke-linecap=\"round\"/> <line x1=\"40\" y1=\"16\" x2=\"40\" y2=\"36\" stroke=\"#10b981\" stroke-width=\"5\" stroke-linecap=\"round\"/> </svg>" }
 ];
 const HUBS = ['/', '/projectmanagement/', '/zakmes/', '/reset/', '/app/'];
 const MAX_LIVE = 4;
@@ -413,20 +453,55 @@ function toolForPath(path) {
 }
 
 /* ---------- Startscherm opbouwen ---------- */
+const toggleIcon = '<svg class="toggle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
 function renderGroups() {
-  $('groups').innerHTML = GROUPS.map(g => `
-    <section class="section">
-      <div class="section-head"><h2 class="section-label">${g.label}</h2><span class="section-note">${g.note}</span></div>
+  const closed = store.get('collapsed', []);
+  $('groups').innerHTML = GROUPS.map(g => {
+    const tools = TOOLS.filter(t => t.g === g.id);
+    const isClosed = closed.includes(g.id);
+    return `
+    <section class="group${isClosed ? ' collapsed' : ''}" data-group="${g.id}">
+      <button class="group-head" aria-expanded="${!isClosed}" aria-controls="body-${g.id}">
+        <span class="group-logo">${g.logo}</span>
+        <span><span class="group-title" role="heading" aria-level="2">${g.label}</span><br><span class="group-note">${g.note}</span></span>
+        <span class="group-meta"><span class="count count-live"></span><span class="count">${tools.length}</span></span>
+        ${toggleIcon}
+      </button>
+      <div class="group-body" id="body-${g.id}">
       <div class="list">
-        ${TOOLS.filter(t => t.g === g.id).map(t => `
+        ${tools.map(t => `
           <button class="row" data-id="${t.id}" title="${t.desc.replace(/"/g, '&quot;')}">
             <span class="icon">${t.icon}</span>
             <span><span class="row-title">${t.title}</span><br><span class="row-sub">${t.sub}</span></span>
             <span><span class="live">open</span>${chevron}</span>
           </button>`).join('')}
       </div>
-    </section>`).join('');
+      </div>
+    </section>`; }).join('');
+  syncListTools();
 }
+function setCollapsed(id, closed) {
+  const el = document.querySelector(`.group[data-group="${id}"]`); if (!el) return;
+  el.classList.toggle('collapsed', closed);
+  el.querySelector('.group-head').setAttribute('aria-expanded', String(!closed));
+  el.querySelectorAll('.row').forEach(r => r.tabIndex = closed ? -1 : 0);
+}
+function saveCollapsed() {
+  store.set('collapsed', [...document.querySelectorAll('.group.collapsed')].map(g => g.dataset.group));
+  syncListTools();
+}
+function syncListTools() {
+  const n = document.querySelectorAll('.group.collapsed').length;
+  $('all-open').hidden = n === 0;
+  $('all-closed').hidden = n === GROUPS.length;
+}
+document.addEventListener('click', e => {
+  const h = e.target.closest('.group-head');
+  if (!h) return;
+  const g = h.closest('.group');
+  setCollapsed(g.dataset.group, !g.classList.contains('collapsed'));
+  saveCollapsed();
+});
 function renderRecent() {
   const ids = store.get('recent', []).filter(id => byId[id]);
   $('recent-section').hidden = ids.length === 0;
@@ -435,6 +510,11 @@ function renderRecent() {
 }
 function markLive() {
   document.querySelectorAll('.row').forEach(r => r.classList.toggle('is-live', frames.has(r.dataset.id)));
+  document.querySelectorAll('.group').forEach(g => {
+    const n = g.querySelectorAll('.row.is-live').length;
+    g.classList.toggle('has-live', n > 0);
+    g.querySelector('.count-live').textContent = n + ' open';
+  });
 }
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-id]');
@@ -515,6 +595,8 @@ function wire(f, id) {
   }, true);
 }
 
+$('all-open').addEventListener('click', () => { GROUPS.forEach(g => setCollapsed(g.id, false)); saveCollapsed(); });
+$('all-closed').addEventListener('click', () => { GROUPS.forEach(g => setCollapsed(g.id, true)); saveCollapsed(); });
 $('back').addEventListener('click', () => showHome());
 $('close').addEventListener('click', () => { const id = current; showHome(); dropFrame(id); markLive(); });
 $('ext').addEventListener('click', () => {
@@ -569,6 +651,7 @@ if ('serviceWorker' in navigator) {
 
 /* ---------- Start ---------- */
 renderGroups(); renderRecent();
+GROUPS.forEach(g => setCollapsed(g.id, store.get('collapsed', []).includes(g.id)));
 const start = location.hash.slice(1) || new URLSearchParams(location.search).get('tool');
 if (byId[start]) { history.replaceState(null, '', location.pathname); openTool(start); }
 </script>
