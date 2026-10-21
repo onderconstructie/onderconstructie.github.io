@@ -454,11 +454,28 @@ function toolForPath(path) {
 }
 
 /* ---------- Startscherm opbouwen ---------- */
+/* Gebruik: vaak én recent telt. Elke keer openen is 1 punt; punten halveren elke 14 dagen. */
+const HALF_LIFE = 14 * 864e5;
+function usageScore(id, now = Date.now()) {
+  const u = store.get('usage', {})[id];
+  return u ? u.s * Math.pow(0.5, (now - u.t) / HALF_LIFE) : 0;
+}
+function logUse(id) {
+  const all = store.get('usage', {}), now = Date.now();
+  all[id] = { s: usageScore(id, now) + 1, t: now };
+  store.set('usage', all);
+}
+// Nooit gebruikte tools houden hun vaste volgorde, onderaan.
+function byUsage(tools) {
+  const now = Date.now();
+  return tools.map((t, i) => ({ t, i, sc: usageScore(t.id, now) }))
+    .sort((a, b) => (b.sc - a.sc) || (a.i - b.i)).map(x => x.t);
+}
 const toggleIcon = '<svg class="toggle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
 function renderGroups() {
   const closed = store.get('collapsed', []);
   $('groups').innerHTML = GROUPS.map(g => {
-    const tools = TOOLS.filter(t => t.g === g.id);
+    const tools = byUsage(TOOLS.filter(t => t.g === g.id));
     const isClosed = closed.includes(g.id);
     return `
     <section class="group${isClosed ? ' collapsed' : ''}" data-group="${g.id}">
@@ -552,7 +569,7 @@ function openTool(id, fromHistory) {
   $('viewer').classList.add('open');
   $('viewer').setAttribute('aria-hidden', 'false');
   document.title = t.title + ' · Onder Constructie';
-  if (!fromHistory) history.pushState({ tool:id }, '', '#' + id);
+  if (!fromHistory) { history.pushState({ tool:id }, '', '#' + id); logUse(id); }
   const recent = [id, ...store.get('recent', []).filter(x => x !== id)].slice(0, 5);
   store.set('recent', recent);
 }
