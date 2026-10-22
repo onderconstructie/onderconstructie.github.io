@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Retro – Onder Constructie</title>
+<meta name="description" content="Een retrospectieve voor wie de vergadering leidt. Verzamel wat goed ging en beter kan, stem, maak acties en volg ze de volgende keer op.">
+<meta name="oc:groep" content="projecten">
+<meta name="oc:labels" content="vergaderen, opvolgen">
+<meta name="oc:kort" content="Terugblikken en afspraken maken">
+<meta name="oc:volgorde" content="85">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox='0 0 40 40' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='20' cy='20' r='16' fill='%23ecfdf5' stroke='%2310b981' stroke-width='1.5'/%3E%3Cpath d='M12.6 17.2A8 8 0 1 1 13.4 24.8' stroke='%2310b981' stroke-width='2.2' stroke-linecap='round'/%3E%3Cpath d='M11.4 12.6v4.9h4.9' stroke='%2310b981' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='20.5' cy='20.5' r='2.2' fill='%2310b981'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --slate-900:#0f172a; --slate-800:#1e293b; --slate-700:#334155; --slate-600:#475569;
+  --slate-500:#64748b; --slate-400:#94a3b8; --slate-300:#cbd5e1; --slate-200:#e2e8f0;
+  --slate-100:#f1f5f9; --slate-50:#f8fafc; --wit:#ffffff;
+  --accent:#10b981; --accent-dark:#059669; --accent-light:#d1fae5; --accent-50:#ecfdf5;
+  --rood:#ef4444;
+  --bottom: env(safe-area-inset-bottom, 0px);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body {
+  font-family:'DM Sans', system-ui, sans-serif; background:var(--slate-50); color:var(--slate-700);
+  line-height:1.5; min-height:100vh; -webkit-font-smoothing:antialiased;
+  display:flex; flex-direction:column;
+}
+button, input, select { font:inherit; color:inherit; }
+button { background:none; border:0; cursor:pointer; }
+[hidden] { display:none !important; }
+
+/* Kop */
+.header { background:var(--wit); border-bottom:1px solid var(--slate-200); padding:1.5rem 1.25rem 1.75rem; position:relative; text-align:center; }
+.back-link {
+  position:absolute; top:1.25rem; left:1.25rem; display:inline-flex; align-items:center; gap:0.5rem;
+  font-size:0.875rem; color:var(--slate-400); text-decoration:none; transition:color 0.2s;
+}
+.back-link:hover { color:var(--accent); }
+.back-link svg { width:16px; height:16px; }
+.logo svg { width:56px; height:56px; }
+.title { font-size:1.625rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.03em; line-height:1.2; margin-top:0.5rem; }
+.subtitle { font-size:0.9375rem; color:var(--slate-500); }
+
+.main { flex:1; width:100%; max-width:1180px; margin:0 auto; padding:1.25rem 1rem 3rem; }
+
+/* Retro-keuze */
+.lists { display:flex; gap:0.5rem; overflow-x:auto; scrollbar-width:none; margin:0 -1rem 1rem; padding:0.125rem 1rem; }
+.lists::-webkit-scrollbar { display:none; }
+.tab {
+  flex-shrink:0; padding:0.4375rem 0.875rem; border-radius:999px; font-size:0.875rem; font-weight:600;
+  border:1px solid var(--slate-200); background:var(--wit); color:var(--slate-600); white-space:nowrap;
+  display:flex; align-items:center; gap:0.375rem;
+}
+.tab .n { font-size:0.75rem; font-weight:500; color:var(--slate-400); font-variant-numeric:tabular-nums; }
+.tab.active { background:var(--slate-800); border-color:var(--slate-800); color:var(--wit); }
+.tab.active .n { color:var(--slate-300); }
+.tab.add { color:var(--accent-dark); border-style:dashed; }
+
+/* Kaart */
+.card { background:var(--wit); border:1px solid var(--slate-200); border-radius:16px; box-shadow:0 1px 2px rgba(15,23,42,0.04); }
+.icon-btn { width:38px; height:38px; display:flex; align-items:center; justify-content:center; border-radius:10px; color:var(--slate-500); flex-shrink:0; }
+.icon-btn:hover { background:var(--slate-100); color:var(--slate-700); }
+.icon-btn svg { width:20px; height:20px; }
+.btn { padding:0.5rem 0.875rem; border-radius:10px; font-weight:600; font-size:0.875rem; white-space:nowrap; display:inline-flex; align-items:center; gap:0.375rem; }
+.btn svg { width:16px; height:16px; }
+.btn-primary { background:var(--accent); color:var(--wit); }
+.btn-primary:hover { background:var(--accent-dark); }
+.btn-soft { background:var(--slate-100); color:var(--slate-600); }
+.btn-soft:hover { background:var(--slate-200); }
+.btn-ghost { color:var(--slate-500); }
+.btn-ghost:hover { background:var(--slate-100); }
+
+/* Bovenbalk: naam, timer, presenteren */
+.topbar { display:flex; flex-wrap:wrap; align-items:center; gap:0.75rem 1rem; padding:0.875rem 0.75rem 0.875rem 1.125rem; margin-bottom:1rem; }
+.name-wrap { flex:1 1 220px; min-width:0; }
+.retro-name {
+  width:100%; font-size:1.25rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.02em;
+  border:0; background:none; outline:none; padding:0.125rem 0; border-bottom:1.5px solid transparent;
+}
+.retro-name:focus, .retro-name:focus-visible { border-bottom-color:var(--accent); outline:none; }
+.retro-meta { font-size:0.8125rem; color:var(--slate-400); }
+.timer { display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; }
+.presets { display:flex; gap:0.25rem; background:var(--slate-100); border-radius:10px; padding:3px; }
+.presets button { padding:0.3125rem 0.625rem; border-radius:8px; font-size:0.8125rem; font-weight:600; color:var(--slate-500); }
+.presets button.on { background:var(--wit); color:var(--slate-800); box-shadow:0 1px 2px rgba(15,23,42,0.08); }
+.clock {
+  font-size:1.5rem; font-weight:700; font-variant-numeric:tabular-nums; color:var(--slate-800); letter-spacing:-0.02em;
+  min-width:4.2ch; text-align:center;
+}
+.clock.running { color:var(--accent-dark); }
+.clock.over { color:var(--rood); animation:pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity:0.45; } }
+.top-actions { display:flex; align-items:center; gap:0.25rem; }
+
+/* Acties van vorige keer */
+.carried { padding:1rem 1.125rem 0.5rem; margin-bottom:1rem; border-color:#a7f3d0; background:linear-gradient(0deg, var(--wit), var(--accent-50)); }
+.section-label { font-size:0.6875rem; font-weight:600; text-transform:uppercase; letter-spacing:0.12em; color:var(--slate-400); }
+.carried .section-label { color:var(--accent-dark); }
+.carried-intro { font-size:0.875rem; color:var(--slate-500); margin:0.25rem 0 0.5rem; }
+
+/* Bord */
+.board-bar { display:flex; align-items:center; justify-content:space-between; gap:0.5rem; margin-bottom:0.625rem; }
+.col-tabs { display:none; gap:0.25rem; background:var(--slate-100); border-radius:12px; padding:3px; flex:1; }
+.col-tabs button { flex:1; padding:0.5rem 0.25rem; border-radius:9px; font-size:0.875rem; font-weight:600; color:var(--slate-500); display:flex; align-items:center; justify-content:center; gap:0.375rem; }
+.col-tabs button .n { font-size:0.75rem; font-weight:600; min-width:1.4em; padding:0 0.3em; border-radius:99px; background:var(--slate-200); color:var(--slate-600); font-variant-numeric:tabular-nums; }
+.col-tabs button.on { background:var(--wit); color:var(--slate-800); box-shadow:0 1px 2px rgba(15,23,42,0.08); }
+.col-tabs button.on .n { background:var(--accent-light); color:var(--accent-dark); }
+.sort-btn[aria-pressed="true"] { background:var(--accent-light); color:var(--accent-dark); }
+
+.board { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:1rem; align-items:start; }
+.col { display:flex; flex-direction:column; min-width:0; }
+.col-head { display:flex; align-items:baseline; gap:0.5rem; padding:1rem 1.125rem 0.25rem; }
+.col-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; align-self:center; }
+.col-title { font-size:1.0625rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.01em; }
+.col-count { font-size:0.8125rem; color:var(--slate-400); font-variant-numeric:tabular-nums; }
+.col-hint { font-size:0.8125rem; color:var(--slate-400); padding:0 1.125rem 0.625rem; }
+.add-row { display:flex; gap:0.5rem; padding:0 0.75rem 0.75rem; }
+.add-input {
+  flex:1; min-width:0; padding:0.6875rem 0.875rem; border:1.5px solid var(--slate-200); border-radius:10px;
+  background:var(--slate-50); outline:none; font-size:1rem; transition:border-color 0.15s, background 0.15s;
+}
+.add-input:focus { border-color:var(--accent); background:var(--wit); }
+.add-input::placeholder { color:var(--slate-400); }
+.add-btn { width:46px; border-radius:10px; background:var(--accent); color:var(--wit); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.add-btn:hover { background:var(--accent-dark); }
+.add-btn svg { width:22px; height:22px; }
+
+.notes { list-style:none; display:flex; flex-direction:column; gap:0.5rem; padding:0 0.75rem 0.875rem; }
+.note {
+  border:1px solid var(--slate-200); border-left:4px solid var(--c, var(--accent)); border-radius:10px; background:var(--wit);
+  padding:0.625rem 0.5rem 0.5rem 0.75rem; display:flex; flex-direction:column; gap:0.375rem;
+}
+.note.is-action { background:var(--accent-50); }
+.note-text { font-size:1rem; color:var(--slate-800); word-break:break-word; outline:none; cursor:text; line-height:1.45; }
+.note-text:focus-visible { outline:none; }
+.note-foot { display:flex; align-items:center; gap:0.25rem; }
+.votes { display:flex; align-items:center; gap:0.125rem; margin-right:auto; }
+.vote-btn { width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; color:var(--slate-400); }
+.vote-btn:hover { background:var(--slate-100); color:var(--slate-700); }
+.vote-btn svg { width:16px; height:16px; }
+.dots { display:flex; align-items:center; gap:3px; min-width:1.75rem; justify-content:center; padding:0 0.25rem; }
+.dot { width:8px; height:8px; border-radius:50%; background:var(--accent); }
+.dots .num { font-size:0.875rem; font-weight:700; color:var(--accent-dark); font-variant-numeric:tabular-nums; }
+.dots .zero { font-size:0.8125rem; color:var(--slate-300); }
+.mini { height:30px; padding:0 0.5rem; border-radius:8px; font-size:0.8125rem; font-weight:600; color:var(--slate-500); display:flex; align-items:center; gap:0.25rem; }
+.mini:hover { background:var(--slate-100); color:var(--slate-700); }
+.mini svg { width:15px; height:15px; }
+.mini.on { color:var(--accent-dark); }
+.del { width:30px; height:30px; display:flex; align-items:center; justify-content:center; color:var(--slate-300); border-radius:8px; }
+.del:hover { color:var(--rood); background:#fef2f2; }
+.del svg { width:16px; height:16px; }
+.col-empty { padding:0.25rem 1.125rem 1rem; font-size:0.875rem; color:var(--slate-400); }
+
+/* Acties */
+.actions-card { margin-top:1rem; }
+.actions-head { display:flex; align-items:baseline; gap:0.5rem; padding:1rem 1.125rem 0.25rem; }
+.actions-head h2 { font-size:1.0625rem; font-weight:700; color:var(--slate-800); }
+.actions-head .col-count { margin-right:auto; }
+.action-list { list-style:none; }
+.action {
+  display:grid; grid-template-columns:44px minmax(0, 1fr) auto; align-items:center; gap:0 0.25rem;
+  border-top:1px solid var(--slate-100); padding:0.375rem 0.5rem 0.375rem 0;
+}
+.check { width:44px; height:44px; display:flex; align-items:center; justify-content:center; }
+.box {
+  width:22px; height:22px; border-radius:7px; border:2px solid var(--slate-300); display:flex; align-items:center; justify-content:center;
+  transition:background 0.15s, border-color 0.15s, transform 0.15s;
+}
+.box svg { width:14px; height:14px; color:var(--wit); opacity:0; transform:scale(0.5); transition:opacity 0.15s, transform 0.2s cubic-bezier(.3,1.6,.6,1); }
+.check:hover .box { border-color:var(--accent); }
+.action.done .box { background:var(--accent); border-color:var(--accent); }
+.action.done .box svg { opacity:1; transform:none; }
+.action-body { min-width:0; display:flex; flex-direction:column; gap:0.25rem; padding:0.375rem 0; }
+.action-text { font-size:1rem; color:var(--slate-800); word-break:break-word; outline:none; cursor:text; }
+.action.done .action-text { color:var(--slate-400); text-decoration:line-through; text-decoration-color:var(--slate-300); }
+.action-fields { display:flex; flex-wrap:wrap; gap:0.375rem; }
+.field {
+  display:flex; align-items:center; gap:0.25rem; border:1px solid var(--slate-200); border-radius:8px; padding:0 0.5rem;
+  font-size:0.8125rem; color:var(--slate-500); background:var(--slate-50); height:30px;
+}
+.field svg { width:14px; height:14px; color:var(--slate-400); flex-shrink:0; }
+.field input { border:0; background:none; outline:none; font-size:0.875rem; color:var(--slate-700); min-width:0; }
+.field input[type=text] { width:8.5rem; }
+.field input[type=date] { width:8.75rem; }
+.field:focus-within { border-color:var(--accent); background:var(--wit); }
+.action .from { font-size:0.75rem; color:var(--slate-400); }
+.actions-empty { padding:0.25rem 1.125rem 1rem; font-size:0.875rem; color:var(--slate-400); }
+.carried .action { border-top-color:#d1fae5; }
+.carried-tools { display:flex; justify-content:flex-end; gap:0.25rem; padding:0.25rem 0 0.5rem; }
+
+.empty-board { text-align:center; color:var(--slate-500); font-size:0.9375rem; padding:0.25rem 1rem 1rem; }
+
+/* Menu */
+.menu-wrap { position:relative; }
+.menu {
+  position:absolute; right:0; top:42px; z-index:20; min-width:240px; background:var(--wit); border:1px solid var(--slate-200);
+  border-radius:12px; box-shadow:0 12px 32px rgba(15,23,42,0.14); padding:0.375rem; display:none;
+}
+.menu.open { display:block; }
+.menu button { width:100%; display:flex; align-items:center; gap:0.625rem; padding:0.5625rem 0.625rem; border-radius:8px; font-size:0.9375rem; text-align:left; color:var(--slate-700); }
+.menu button:hover { background:var(--slate-100); }
+.menu button svg { width:18px; height:18px; color:var(--slate-400); flex-shrink:0; }
+.menu .sep { height:1px; background:var(--slate-100); margin:0.25rem 0.375rem; }
+.menu .danger { color:var(--rood); }
+.menu .danger svg { color:var(--rood); }
+
+/* Dialoog nieuwe retro */
+.dlg-back {
+  position:fixed; inset:0; z-index:60; display:flex; align-items:center; justify-content:center; padding:1rem;
+  background:rgba(15,23,42,0.45); backdrop-filter:blur(3px);
+}
+.dlg { width:100%; max-width:440px; background:var(--wit); border-radius:16px; padding:1.375rem; box-shadow:0 20px 50px rgba(15,23,42,0.25); }
+.dlg h2 { font-size:1.125rem; font-weight:700; color:var(--slate-800); margin-bottom:1rem; }
+.dlg label.lbl { display:block; font-size:0.875rem; font-weight:600; color:var(--slate-700); margin:0.875rem 0 0.375rem; }
+.dlg .text-in { width:100%; padding:0.6875rem 0.875rem; border:1.5px solid var(--slate-200); border-radius:10px; background:var(--slate-50); outline:none; font-size:1rem; }
+.dlg .text-in:focus { border-color:var(--accent); background:var(--wit); }
+.formats { display:flex; flex-direction:column; gap:0.375rem; }
+.fmt {
+  display:flex; align-items:center; gap:0.75rem; padding:0.625rem 0.75rem; border:1.5px solid var(--slate-200); border-radius:10px; cursor:pointer;
+}
+.fmt:has(input:checked) { border-color:var(--accent); background:var(--accent-50); }
+.fmt input { accent-color:var(--accent); width:18px; height:18px; }
+.fmt strong { font-size:0.9375rem; color:var(--slate-800); font-weight:600; }
+.fmt span { font-size:0.8125rem; color:var(--slate-500); }
+.carry-opt { display:flex; align-items:flex-start; gap:0.625rem; margin-top:1rem; font-size:0.9375rem; color:var(--slate-700); cursor:pointer; }
+.carry-opt input { accent-color:var(--accent); width:18px; height:18px; margin-top:0.15rem; flex-shrink:0; }
+.dlg-actions { display:flex; justify-content:flex-end; gap:0.5rem; margin-top:1.25rem; }
+.dlg-actions .btn { padding:0.625rem 1rem; font-size:0.9375rem; }
+
+/* Melding */
+.toast {
+  position:fixed; left:50%; bottom:calc(var(--bottom) + 1.25rem); transform:translate(-50%, calc(100% + 3rem)); visibility:hidden; z-index:70;
+  background:var(--slate-800); color:var(--wit); border-radius:12px; padding:0.625rem 0.625rem 0.625rem 1rem;
+  display:flex; align-items:center; gap:0.875rem; font-size:0.9375rem; box-shadow:0 10px 30px rgba(15,23,42,0.25);
+  transition:transform 0.25s ease, visibility 0s 0.25s; max-width:calc(100% - 2rem);
+}
+.toast.show { transform:translate(-50%, 0); visibility:visible; transition:transform 0.25s ease; }
+.toast button { color:#6ee7b7; font-weight:600; padding:0.25rem 0.5rem; border-radius:6px; }
+.toast button:hover { background:rgba(255,255,255,0.08); }
+
+.footer { text-align:center; padding:2rem 2rem calc(var(--bottom) + 2rem); border-top:1px solid var(--slate-200); background:var(--wit); }
+.quote { font-size:0.8125rem; color:var(--accent); }
+
+/* Presenteermodus: alleen de inhoud, groot */
+.exit-present {
+  position:fixed; top:0.75rem; right:0.75rem; z-index:40; display:none;
+  background:var(--wit); border:1px solid var(--slate-200); box-shadow:0 4px 14px rgba(15,23,42,0.1);
+}
+body.present .header, body.present .footer, body.present .lists, body.present .add-row, body.present .col-hint,
+body.present .del, body.present .mini, body.present .vote-btn, body.present .presets, body.present .top-actions,
+body.present .carried-tools, body.present .action-fields input:placeholder-shown, body.present .board-bar .sort-btn,
+body.present #action-add { display:none !important; }
+body.present .exit-present { display:inline-flex; }
+body.present .main { max-width:none; padding:1.25rem 2rem 2rem; }
+body.present .retro-name { font-size:1.75rem; pointer-events:none; }
+body.present .clock { font-size:2.25rem; }
+body.present .note-text { font-size:1.25rem; }
+body.present .col-title { font-size:1.375rem; }
+body.present .action-text { font-size:1.125rem; }
+body.present .dot { width:10px; height:10px; }
+body.present .field.empty { display:none; }
+body.present .action-fields input { pointer-events:none; }
+body.present .note-text, body.present .action-text { pointer-events:none; }
+
+@media (max-width:820px) {
+  .board { grid-template-columns:1fr; }
+  .col-tabs { display:flex; }
+  .col:not(.on) { display:none; }
+  .col-head { display:none; }
+  .col-hint { padding-top:0.875rem; }
+}
+@media (max-width:640px) {
+  .back-link { position:static; margin-bottom:0.75rem; justify-content:center; display:flex; }
+  .topbar { padding:0.75rem 0.5rem 0.75rem 0.875rem; gap:0.625rem; }
+  .name-wrap { flex:1 1 0; order:1; }
+  .top-actions { order:2; }
+  .timer { order:3; width:100%; flex-wrap:nowrap; gap:0.375rem; }
+  .timer .clock { margin-left:auto; }
+  #present-btn { padding:0.5rem; }
+  #present-btn .lbl-txt { display:none; }
+  .presets button { padding:0.3125rem 0.5rem; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition:none !important; animation:none !important; } }
+:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <a href="https://onderconstructie.github.io/projectmanagement/" class="back-link">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Projectmanagement
+  </a>
+  <div class="logo">
+    <svg viewBox="0 0 80 80" fill="none" aria-hidden="true">
+      <circle cx="40" cy="40" r="36" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2"/>
+      <path d="M24.5 34.5A16.5 16.5 0 1 1 26.2 50.5" stroke="#10b981" stroke-width="4" stroke-linecap="round"/>
+      <path d="M22 24.5v10.5h10.5" stroke="#10b981" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="41" cy="41" r="4.5" fill="#10b981"/>
+      <path d="M41 41V31" stroke="#cbd5e1" stroke-width="3" stroke-linecap="round"/>
+    </svg>
+  </div>
+  <h1 class="title">Retro</h1>
+  <p class="subtitle">Terugblikken, kiezen wat telt, en het de volgende keer echt opvolgen.</p>
+</header>
+
+<main class="main">
+  <nav class="lists" id="lists" aria-label="Retro's"></nav>
+
+  <section class="card topbar" id="topbar">
+    <div class="name-wrap">
+      <input class="retro-name" id="retro-name" aria-label="Naam van de retro" maxlength="60" spellcheck="false">
+      <div class="retro-meta" id="retro-meta"></div>
+    </div>
+    <div class="timer" role="group" aria-label="Timer">
+      <div class="presets" id="presets">
+        <button data-min="3">3</button><button data-min="5">5</button><button data-min="10">10</button><button data-min="custom" aria-label="Eigen duur">…</button>
+      </div>
+      <span class="clock" id="clock" aria-live="off">5:00</span>
+      <button class="btn btn-primary" id="timer-go">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l10.5-6.5z"/></svg><span>Start</span>
+      </button>
+      <button class="icon-btn" id="timer-reset" aria-label="Timer terugzetten" title="Terugzetten">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+      </button>
+    </div>
+    <div class="top-actions">
+      <button class="btn btn-soft" id="present-btn" title="Presenteermodus (voor projectie)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M12 16v4M8 20h8"/></svg><span class="lbl-txt">Presenteer</span>
+      </button>
+      <div class="menu-wrap">
+        <button class="icon-btn" id="menu-btn" aria-label="Meer acties" aria-haspopup="true" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
+        </button>
+        <div class="menu" id="menu" role="menu">
+          <button data-act="copy" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Kopieer als tekst</button>
+          <button data-act="download" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Download als .md</button>
+          <div class="sep"></div>
+          <button data-act="clear-votes" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>Stemmen op nul zetten</button>
+          <div class="sep"></div>
+          <button data-act="delete" class="danger" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>Retro verwijderen</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card carried" id="carried" hidden>
+    <h2 class="section-label">Acties van vorige keer</h2>
+    <p class="carried-intro" id="carried-intro">Is wat we afspraken ook gebeurd? Vink af wat klaar is.</p>
+    <ul class="action-list" id="carried-list"></ul>
+    <div class="carried-tools"><button class="btn btn-ghost" id="carried-hide">Verberg wat klaar is</button></div>
+  </section>
+
+  <p class="empty-board" id="empty-board" hidden>Eén persoon vult in en deelt het scherm of projecteert: geen accounts, alles blijft op dit toestel.</p>
+
+  <div class="board-bar">
+    <div class="col-tabs" id="col-tabs" role="tablist"></div>
+    <button class="btn btn-ghost sort-btn" id="sort-btn" aria-pressed="false" title="Sorteer kaartjes op aantal stemmen">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16M3 16l4 4 4-4M14 6h7M14 12h5M14 18h3"/></svg>Op stemmen
+    </button>
+  </div>
+
+  <div class="board" id="board"></div>
+
+  <section class="card actions-card" id="actions">
+    <div class="actions-head"><h2>Acties</h2><span class="col-count" id="actions-count"></span></div>
+    <ul class="action-list" id="action-list"></ul>
+    <p class="actions-empty" id="actions-empty">Maak van een kaartje een actie met <strong>Actie</strong>, of typ er hieronder een.</p>
+    <form class="add-row" id="action-add" autocomplete="off">
+      <input class="add-input" id="action-input" placeholder="Nieuwe actie" aria-label="Nieuwe actie" enterkeyhint="done">
+      <button class="add-btn" type="submit" aria-label="Actie toevoegen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+    </form>
+  </section>
+</main>
+
+<button class="btn exit-present" id="exit-present">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>Stop presenteren
+</button>
+
+<footer class="footer">
+  <p class="quote">Wie niet terugkijkt, herhaalt.</p>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-text"></span><button id="toast-btn" hidden>Ongedaan</button></div>
+
+<script>
+/* ---------- Formaten ---------- */
+const FORMATS = {
+  ssd: { name:'Start / Stop / Doorgaan', cols:[
+    { t:'Start', h:'Waar beginnen we mee?', c:'#10b981' },
+    { t:'Stop', h:'Wat laten we vallen?', c:'#ef4444' },
+    { t:'Doorgaan', h:'Wat werkt en houden we?', c:'#3b82f6' } ] },
+  gba: { name:'Goed / Beter / Acties', cols:[
+    { t:'Goed', h:'Wat ging goed?', c:'#10b981' },
+    { t:'Beter', h:'Wat kan beter?', c:'#f59e0b' },
+    { t:'Acties', h:'Wat gaan we doen?', c:'#3b82f6' } ] },
+  bvb: { name:'Blij / Verdrietig / Boos', cols:[
+    { t:'Blij', h:'Waar werd je blij van?', c:'#10b981' },
+    { t:'Verdrietig', h:'Wat viel tegen?', c:'#3b82f6' },
+    { t:'Boos', h:'Wat stoorde je?', c:'#ef4444' } ] }
+};
+
+/* ---------- Opslag ---------- */
+const KEY = 'retro.v1';
+const uid = () => Math.random().toString(36).slice(2, 10);
+const today = () => new Date().toISOString().slice(0, 10);
+const fmtDate = iso => { if (!iso) return ''; const [y, m, d] = iso.split('-'); return `${+d}/${+m}/${y}`; };
+function newRetro(opts = {}) {
+  return { id:uid(), name:opts.name || `Retro ${fmtDate(today())}`, date:today(), format:opts.format || 'ssd',
+           cards:[], actions:[], carried:opts.carried || [] };
+}
+function load() {
+  try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && Array.isArray(d.retros) && d.retros.length) return d; } catch {}
+  const r = newRetro();
+  return { retros:[r], current:r.id, sortVotes:false, col:0, minutes:5 };
+}
+let state = load();
+function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
+const cur = () => state.retros.find(r => r.id === state.current) || state.retros[0];
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+
+/* ---------- Iconen ---------- */
+const I = {
+  plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  minus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14"/></svg>',
+  del:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+  flag:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg>',
+  user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
+  cal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>'
+};
+
+/* ---------- Plakken: elke regel wordt een kaartje ---------- */
+function parseLines(text) {
+  return text.split(/\r?\n/).map(l => l.trim()
+    .replace(/^([-*+•·▪◦–]|\d+[.)])\s+/, '')
+    .replace(/^\[( |x|X)\]\s*/, '').trim()).filter(Boolean).map(t => t.slice(0, 400));
+}
+
+/* ---------- Tekenen ---------- */
+function dotsHTML(v) {
+  if (!v) return '<span class="zero">0</span>';
+  if (v <= 5) return '<span class="dot"></span>'.repeat(v);
+  return '<span class="dot"></span><span class="num">' + v + '</span>';
+}
+function noteHTML(n, col) {
+  const isAction = cur().actions.some(a => a.fromCard === n.id);
+  return `<li class="note${isAction ? ' is-action' : ''}" data-id="${n.id}" style="--c:${col.c}">
+    <div class="note-text" contenteditable="plaintext-only" spellcheck="false" role="textbox" aria-label="Kaartje">${esc(n.text)}</div>
+    <div class="note-foot">
+      <div class="votes" aria-label="${n.votes} stemmen">
+        <button class="vote-btn" data-vote="-1" aria-label="Stem minder">${I.minus}</button>
+        <span class="dots">${dotsHTML(n.votes)}</span>
+        <button class="vote-btn" data-vote="1" aria-label="Stem meer">${I.plus}</button>
+      </div>
+      <button class="mini make-action${isAction ? ' on' : ''}" title="${isAction ? 'Staat bij de acties' : 'Maak hier een actie van'}">${I.flag}Actie</button>
+      <button class="del" aria-label="Verwijder kaartje">${I.del}</button>
+    </div>
+  </li>`;
+}
+function actionHTML(a, carried) {
+  return `<li class="action${a.done ? ' done' : ''}" data-id="${a.id}" data-carried="${carried ? 1 : 0}">
+    <button class="check" aria-label="${a.done ? 'Niet meer afgevinkt' : 'Afvinken'}"><span class="box">${I.check}</span></button>
+    <div class="action-body">
+      <div class="action-text" contenteditable="plaintext-only" spellcheck="false" role="textbox" aria-label="Actie">${esc(a.text)}</div>
+      <div class="action-fields">
+        <label class="field${a.who ? '' : ' empty'}" title="Wie">${I.user}<input type="text" data-f="who" value="${esc(a.who || '')}" placeholder="wie" aria-label="Wie"></label>
+        <label class="field${a.when ? '' : ' empty'}" title="Tegen wanneer">${I.cal}<input type="date" data-f="when" value="${esc(a.when || '')}" aria-label="Tegen wanneer"></label>
+        ${a.origin ? `<span class="from">uit ${esc(a.origin)}</span>` : ''}
+      </div>
+    </div>
+    <button class="del" aria-label="Verwijder actie">${I.del}</button>
+  </li>`;
+}
+
+function renderTabs() {
+  $('lists').innerHTML = state.retros.map(r => {
+    const n = r.cards.length;
+    return `<button class="tab${r.id === state.current ? ' active' : ''}" data-retro="${r.id}">${esc(r.name || 'Naamloos')}<span class="n">${n || ''}</span></button>`;
+  }).join('') + `<button class="tab add" id="new-retro">+ Retro</button>`;
+}
+
+function render() {
+  const r = cur(), F = FORMATS[r.format] || FORMATS.ssd;
+  if (document.activeElement !== $('retro-name')) $('retro-name').value = r.name;
+  $('retro-meta').textContent = `${F.name} · ${fmtDate(r.date)}`;
+
+  // kolomtabs (gsm)
+  state.col = Math.min(state.col || 0, 2);
+  $('col-tabs').innerHTML = F.cols.map((c, i) =>
+    `<button role="tab" aria-selected="${i === state.col}" class="${i === state.col ? 'on' : ''}" data-col="${i}">${esc(c.t)}<span class="n">${r.cards.filter(x => x.col === i).length}</span></button>`).join('');
+
+  $('board').innerHTML = F.cols.map((c, i) => {
+    let cards = r.cards.filter(x => x.col === i);
+    if (state.sortVotes) cards = cards.slice().sort((a, b) => b.votes - a.votes);
+    return `<section class="card col${i === state.col ? ' on' : ''}" data-col="${i}">
+      <div class="col-head"><span class="col-dot" style="background:${c.c}"></span><h2 class="col-title">${esc(c.t)}</h2><span class="col-count">${cards.length}</span></div>
+      <p class="col-hint">${esc(c.h)}</p>
+      <form class="add-row" data-col="${i}" autocomplete="off">
+        <input class="add-input" placeholder="Typ en druk Enter, of plak een lijst" aria-label="Nieuw kaartje bij ${esc(c.t)}" enterkeyhint="done">
+        <button class="add-btn" type="submit" aria-label="Toevoegen">${I.plus}</button>
+      </form>
+      <ul class="notes">${cards.map(n => noteHTML(n, c)).join('')}</ul>
+      ${cards.length ? '' : '<p class="col-empty">Nog niets.</p>'}
+    </section>`;
+  }).join('');
+
+  $('sort-btn').setAttribute('aria-pressed', String(!!state.sortVotes));
+  $('empty-board').hidden = r.cards.length > 0;
+
+  // acties
+  $('action-list').innerHTML = r.actions.map(a => actionHTML(a, false)).join('');
+  const open = r.actions.filter(a => !a.done).length;
+  $('actions-count').textContent = r.actions.length ? `${open} open · ${r.actions.length - open} klaar` : '';
+  $('actions-empty').hidden = r.actions.length > 0;
+
+  // acties van vorige keer
+  const shown = r.carried.filter(a => !(r.hideDone && a.done));
+  $('carried').hidden = r.carried.length === 0;
+  $('carried-list').innerHTML = shown.map(a => actionHTML(a, true)).join('');
+  const cOpen = r.carried.filter(a => !a.done).length;
+  $('carried-intro').textContent = cOpen
+    ? `Is wat we afspraken ook gebeurd? ${cOpen} van ${r.carried.length} nog open.`
+    : `Alles van vorige keer is afgevinkt.`;
+  $('carried-hide').textContent = r.hideDone ? 'Toon alles' : 'Verberg wat klaar is';
+
+  renderTabs();
+}
+
+/* ---------- Melding met ongedaan maken ---------- */
+let undoFn = null, toastTimer = null;
+function toast(msg, undo) {
+  undoFn = undo || null;
+  $('toast-text').textContent = msg;
+  $('toast-btn').hidden = !undo;
+  $('toast').classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { $('toast').classList.remove('show'); undoFn = null; }, undo ? 6000 : 2500);
+}
+$('toast-btn').addEventListener('click', () => {
+  if (undoFn) { undoFn(); undoFn = null; save(); render(); }
+  $('toast').classList.remove('show');
+});
+function snapshot() { const copy = JSON.parse(JSON.stringify(state)); return () => { state = copy; }; }
+
+/* ---------- Kaartjes ---------- */
+function addCards(col, text) {
+  const lines = parseLines(text);
+  if (!lines.length) return 0;
+  cur().cards.push(...lines.map(t => ({ id:uid(), col, text:t, votes:0 })));
+  save(); render();
+  return lines.length;
+}
+function focusInput(col) {
+  const inp = document.querySelector(`.add-row[data-col="${col}"] .add-input`);
+  if (inp) inp.focus();
+}
+document.addEventListener('submit', e => {
+  const f = e.target.closest('.add-row[data-col]');
+  if (!f) return;
+  e.preventDefault();
+  const col = +f.dataset.col, inp = f.querySelector('input');
+  if (addCards(col, inp.value)) inp.value = '';
+  focusInput(col);
+});
+document.addEventListener('paste', e => {
+  const t = e.target;
+  if (!t.classList) return;
+  const text = (e.clipboardData || window.clipboardData).getData('text');
+  if (!/\n/.test(text.trim())) return;
+  if (t.classList.contains('add-input') && t.closest('.add-row[data-col]')) {
+    e.preventDefault();
+    const col = +t.closest('.add-row').dataset.col;
+    const before = cur().cards.length;
+    const n = addCards(col, text);
+    if (n) toast(`${n} kaartjes toegevoegd`, () => { cur().cards.splice(before, n); });
+    focusInput(col);
+  } else if (t.id === 'action-input') {
+    e.preventDefault();
+    const lines = parseLines(text);
+    cur().actions.push(...lines.map(x => ({ id:uid(), text:x, who:'', when:'', done:false })));
+    save(); render(); toast(`${lines.length} acties toegevoegd`);
+  }
+});
+
+function findCard(el) {
+  const li = el.closest('.note'); if (!li) return {};
+  const r = cur(); const idx = r.cards.findIndex(c => c.id === li.dataset.id);
+  return { r, idx, card:r.cards[idx] };
+}
+function findAction(el) {
+  const li = el.closest('.action'); if (!li) return {};
+  const r = cur(); const list = li.dataset.carried === '1' ? r.carried : r.actions;
+  const idx = list.findIndex(a => a.id === li.dataset.id);
+  return { r, list, idx, a:list[idx] };
+}
+
+document.addEventListener('click', e => {
+  const t = e.target;
+  // stemmen
+  const vb = t.closest('.vote-btn');
+  if (vb) {
+    const { card } = findCard(vb); if (!card) return;
+    card.votes = Math.max(0, card.votes + (+vb.dataset.vote));
+    save();
+    if (state.sortVotes) render();
+    else { const li = vb.closest('.note'); li.querySelector('.dots').innerHTML = dotsHTML(card.votes); li.querySelector('.votes').setAttribute('aria-label', card.votes + ' stemmen'); }
+    return;
+  }
+  // kaartje naar actie
+  const ma = t.closest('.make-action');
+  if (ma) {
+    const { r, card } = findCard(ma); if (!card) return;
+    const existing = r.actions.find(a => a.fromCard === card.id);
+    if (existing) { toast('Staat al bij de acties'); return; }
+    r.actions.push({ id:uid(), text:card.text, who:'', when:'', done:false, fromCard:card.id });
+    save(); render();
+    toast('Toegevoegd aan Acties');
+    return;
+  }
+  // verwijderen
+  const del = t.closest('.del');
+  if (del) {
+    const restore = snapshot();
+    if (del.closest('.note')) {
+      const { r, idx, card } = findCard(del); if (!card) return;
+      r.cards.splice(idx, 1);
+      toastShort(`'${card.text}' verwijderd`, restore);
+    } else {
+      const { list, idx, a } = findAction(del); if (!a) return;
+      list.splice(idx, 1);
+      toastShort(`Actie '${a.text}' verwijderd`, restore);
+    }
+    save(); render();
+    return;
+  }
+  // actie afvinken
+  const chk = t.closest('.check');
+  if (chk) {
+    const { a } = findAction(chk); if (!a) return;
+    a.done = !a.done;
+    if (navigator.vibrate) try { navigator.vibrate(8); } catch {}
+    save(); render();
+    return;
+  }
+  // kolomtab (gsm)
+  const ct = t.closest('#col-tabs [data-col]');
+  if (ct) { state.col = +ct.dataset.col; save(); render(); focusInputSoft(); return; }
+  // retro kiezen
+  const rt = t.closest('[data-retro]');
+  if (rt) { state.current = rt.dataset.retro; save(); render(); return; }
+  if (t.closest('#new-retro')) { openNewDialog(); return; }
+});
+function focusInputSoft() { if (matchMedia('(pointer:fine)').matches) focusInput(state.col); }
+function toastShort(msg, undo) { toast(msg.length > 44 ? msg.slice(0, 42) + '…' : msg, undo); }
+
+// tekst aanpassen in kaartjes en acties
+document.addEventListener('keydown', e => {
+  const t = e.target;
+  if (!t.classList || !(t.classList.contains('note-text') || t.classList.contains('action-text'))) return;
+  if (e.key === 'Enter') { e.preventDefault(); t.blur(); }
+  if (e.key === 'Escape') {
+    const o = t.classList.contains('note-text') ? findCard(t).card : findAction(t).a;
+    if (o) t.textContent = o.text;
+    t.blur();
+  }
+});
+document.addEventListener('focusout', e => {
+  const t = e.target;
+  if (!t.classList) return;
+  if (t.classList.contains('note-text')) {
+    const { r, idx, card } = findCard(t); if (!card) return;
+    const v = t.textContent.replace(/\s+/g, ' ').trim();
+    if (v === card.text) return;
+    if (!v) { const restore = snapshot(); r.cards.splice(idx, 1); save(); render(); toast('Kaartje verwijderd', restore); return; }
+    card.text = v.slice(0, 400);
+    save();
+  } else if (t.classList.contains('action-text')) {
+    const { list, idx, a } = findAction(t); if (!a) return;
+    const v = t.textContent.replace(/\s+/g, ' ').trim();
+    if (v === a.text) return;
+    if (!v) { const restore = snapshot(); list.splice(idx, 1); save(); render(); toast('Actie verwijderd', restore); return; }
+    a.text = v.slice(0, 400); save();
+  }
+});
+// wie / tegen wanneer
+document.addEventListener('change', e => {
+  const inp = e.target.closest('.action [data-f]'); if (!inp) return;
+  const { a } = findAction(inp); if (!a) return;
+  a[inp.dataset.f] = inp.value.trim(); save();
+});
+document.addEventListener('input', e => {
+  const inp = e.target.closest('.action input[data-f="who"]'); if (!inp) return;
+  const { a } = findAction(inp); if (a) { a.who = inp.value.trim(); save(); }
+});
+
+/* ---------- Acties toevoegen ---------- */
+$('action-add').addEventListener('submit', e => {
+  e.preventDefault();
+  const lines = parseLines($('action-input').value);
+  if (!lines.length) return;
+  cur().actions.push(...lines.map(x => ({ id:uid(), text:x, who:'', when:'', done:false })));
+  $('action-input').value = '';
+  save(); render(); $('action-input').focus();
+});
+$('carried-hide').addEventListener('click', () => { const r = cur(); r.hideDone = !r.hideDone; save(); render(); });
+
+/* ---------- Sorteren ---------- */
+$('sort-btn').addEventListener('click', () => { state.sortVotes = !state.sortVotes; save(); render(); });
+
+/* ---------- Naam ---------- */
+$('retro-name').addEventListener('input', () => { cur().name = $('retro-name').value.slice(0, 60); save(); renderTabs(); });
+$('retro-name').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('retro-name').blur(); } });
+$('retro-name').addEventListener('blur', () => { if (!cur().name.trim()) { cur().name = `Retro ${fmtDate(cur().date)}`; save(); render(); } });
+
+/* ---------- Nieuwe retro ---------- */
+function openActionsOf(r) { return [...r.carried, ...r.actions].filter(a => !a.done); }
+function openNewDialog() {
+  const prev = cur();
+  const carry = openActionsOf(prev);
+  const back = document.createElement('div');
+  back.className = 'dlg-back';
+  back.innerHTML = `<div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dlg-t">
+    <h2 id="dlg-t">Nieuwe retro</h2>
+    <label class="lbl" for="dlg-name">Naam</label>
+    <input class="text-in" id="dlg-name" maxlength="60" value="${esc(`Retro ${fmtDate(today())}`)}">
+    <span class="lbl">Formaat</span>
+    <div class="formats">
+      ${Object.entries(FORMATS).map(([k, f]) => `<label class="fmt"><input type="radio" name="fmt" value="${k}" ${k === (prev.format || 'ssd') ? 'checked' : ''}><div><strong>${esc(f.name)}</strong><br><span>${esc(f.cols.map(c => c.h).join(' · '))}</span></div></label>`).join('')}
+    </div>
+    ${carry.length ? `<label class="carry-opt"><input type="checkbox" id="dlg-carry" checked><span>Neem de <strong>${carry.length} open ${carry.length === 1 ? 'actie' : 'acties'}</strong> van '${esc(prev.name)}' mee, om op te volgen</span></label>` : ''}
+    <div class="dlg-actions"><button class="btn btn-soft" data-x>Annuleer</button><button class="btn btn-primary" data-ok>Maak retro</button></div>
+  </div>`;
+  document.body.appendChild(back);
+  const name = back.querySelector('#dlg-name'); name.focus(); name.select();
+  const close = () => { document.removeEventListener('keydown', onKey, true); back.remove(); };
+  const ok = () => {
+    const format = back.querySelector('input[name=fmt]:checked').value;
+    const doCarry = back.querySelector('#dlg-carry')?.checked;
+    const r = newRetro({
+      name:name.value.trim() || undefined, format,
+      carried: doCarry ? carry.map(a => ({ id:uid(), text:a.text, who:a.who || '', when:a.when || '', done:false, origin:prev.name })) : []
+    });
+    state.retros.push(r); state.current = r.id; state.col = 0;
+    close(); save(); render();
+    requestAnimationFrame(() => { const a = document.querySelector('.tab.active'); a && a.scrollIntoView({ inline:'nearest', block:'nearest' }); });
+    toast(doCarry ? `Nieuwe retro, met ${carry.length} ${carry.length === 1 ? 'actie' : 'acties'} van vorige keer` : 'Nieuwe retro');
+  };
+  function onKey(e) {
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(); }
+    if (e.key === 'Enter' && e.target.tagName !== 'BUTTON') { e.preventDefault(); ok(); }
+  }
+  document.addEventListener('keydown', onKey, true);
+  back.querySelector('[data-ok]').addEventListener('click', ok);
+  back.querySelector('[data-x]').addEventListener('click', close);
+  back.addEventListener('click', e => { if (e.target === back) close(); });
+}
+
+/* ---------- Menu ---------- */
+function closeMenu() { $('menu').classList.remove('open'); $('menu-btn').setAttribute('aria-expanded', 'false'); }
+$('menu-btn').addEventListener('click', e => {
+  e.stopPropagation();
+  const open = !$('menu').classList.contains('open');
+  $('menu').classList.toggle('open', open); $('menu-btn').setAttribute('aria-expanded', String(open));
+});
+document.addEventListener('click', e => { if (!e.target.closest('.menu-wrap')) closeMenu(); });
+
+function markdown(r) {
+  const F = FORMATS[r.format] || FORMATS.ssd;
+  const act = a => `- [${a.done ? 'x' : ' '}] ${a.text}${a.who ? ` (${a.who})` : ''}${a.when ? `, tegen ${fmtDate(a.when)}` : ''}`;
+  let md = `# ${r.name}\n\n${F.name} · ${fmtDate(r.date)}\n`;
+  if (r.carried.length) md += `\n## Acties van vorige keer\n\n${r.carried.map(act).join('\n')}\n`;
+  F.cols.forEach((c, i) => {
+    const cards = r.cards.filter(x => x.col === i).slice().sort((a, b) => b.votes - a.votes);
+    md += `\n## ${c.t}\n\n${cards.length ? cards.map(x => `- ${x.text}${x.votes ? ` (${x.votes} ${x.votes === 1 ? 'stem' : 'stemmen'})` : ''}`).join('\n') : '_niets_'}\n`;
+  });
+  md += `\n## Acties\n\n${r.actions.length ? r.actions.map(act).join('\n') : '_geen_'}\n`;
+  return md;
+}
+async function copy(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch {}
+  try {
+    const t = document.createElement('textarea'); t.value = text; t.style.position = 'fixed'; t.style.opacity = '0';
+    document.body.appendChild(t); t.select(); const ok = document.execCommand('copy'); t.remove(); return ok;
+  } catch { return false; }
+}
+$('menu').addEventListener('click', async e => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  closeMenu();
+  const r = cur(), act = b.dataset.act;
+  if (act === 'copy') { await copy(markdown(r)) ? toast('Gekopieerd als tekst') : toast('Kopiëren lukt hier niet'); }
+  if (act === 'download') {
+    const blob = new Blob([markdown(r)], { type:'text/markdown;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = (r.name || 'retro').replace(/[^\w\-. ]+/g, '').trim().replace(/\s+/g, '-').toLowerCase() + '.md';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    toast('Gedownload');
+  }
+  if (act === 'clear-votes') {
+    if (!r.cards.some(c => c.votes)) { toast('Er zijn nog geen stemmen'); return; }
+    const restore = snapshot(); r.cards.forEach(c => c.votes = 0); save(); render(); toast('Stemmen op nul', restore);
+  }
+  if (act === 'delete') {
+    const restore = snapshot();
+    state.retros = state.retros.filter(x => x.id !== r.id);
+    if (!state.retros.length) state.retros.push(newRetro());
+    state.current = state.retros[state.retros.length - 1].id;
+    save(); render();
+    toastShort(`'${r.name}' verwijderd`, restore);
+  }
+});
+
+/* ---------- Timer ---------- */
+let timer = { total:(state.minutes || 5) * 60, left:(state.minutes || 5) * 60, running:false, end:0, tick:null, lock:null, rang:false };
+function showClock() {
+  const s = Math.max(0, Math.round(timer.left));
+  $('clock').textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  $('clock').classList.toggle('running', timer.running);
+  $('clock').classList.toggle('over', timer.left <= 0 && timer.rang);
+  const go = $('timer-go');
+  go.querySelector('span').textContent = timer.running ? 'Pauze' : (timer.left < timer.total && timer.left > 0 ? 'Verder' : 'Start');
+  go.querySelector('svg').innerHTML = timer.running ? '<path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/>' : '<path d="M8 5.5v13l10.5-6.5z"/>';
+  document.querySelectorAll('#presets [data-min]').forEach(b => b.classList.toggle('on', b.dataset.min !== 'custom' && +b.dataset.min * 60 === timer.total));
+  if (timer.running) document.title = `${$('clock').textContent} · Retro`;
+}
+async function wake(on) {
+  try {
+    if (on && 'wakeLock' in navigator && !timer.lock) { timer.lock = await navigator.wakeLock.request('screen'); }
+    if (!on && timer.lock) { await timer.lock.release(); timer.lock = null; }
+  } catch { timer.lock = null; }
+}
+function chime() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [[660, 0], [880, 0.28], [660, 0.56]].forEach(([f, at]) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine'; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, ctx.currentTime + at);
+      g.gain.exponentialRampToValueAtTime(0.18, ctx.currentTime + at + 0.03);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + at + 0.6);
+      o.connect(g).connect(ctx.destination); o.start(ctx.currentTime + at); o.stop(ctx.currentTime + at + 0.65);
+    });
+    setTimeout(() => ctx.close(), 1600);
+  } catch {}
+  try { navigator.vibrate && navigator.vibrate([200, 100, 200]); } catch {}
+}
+function step() {
+  timer.left = (timer.end - Date.now()) / 1000;
+  if (timer.left <= 0) {
+    timer.left = 0; timer.running = false; clearInterval(timer.tick); timer.rang = true;
+    wake(false); chime(); document.title = 'Retro – Onder Constructie';
+    toast('De tijd is om');
+  }
+  showClock();
+}
+function startTimer() {
+  if (timer.left <= 0) timer.left = timer.total;
+  timer.rang = false; timer.running = true; timer.end = Date.now() + timer.left * 1000;
+  clearInterval(timer.tick); timer.tick = setInterval(step, 250);
+  wake(true); showClock();
+}
+function pauseTimer() {
+  timer.running = false; clearInterval(timer.tick); timer.left = Math.max(0, (timer.end - Date.now()) / 1000);
+  wake(false); document.title = 'Retro – Onder Constructie'; showClock();
+}
+function resetTimer(total) {
+  clearInterval(timer.tick); timer.running = false; timer.rang = false;
+  if (total) timer.total = total;
+  timer.left = timer.total; wake(false); document.title = 'Retro – Onder Constructie'; showClock();
+}
+$('timer-go').addEventListener('click', () => timer.running ? pauseTimer() : startTimer());
+$('timer-reset').addEventListener('click', () => resetTimer());
+$('presets').addEventListener('click', e => {
+  const b = e.target.closest('[data-min]'); if (!b) return;
+  let min = b.dataset.min;
+  if (min === 'custom') {
+    const box = document.createElement('div');
+    box.className = 'dlg-back';
+    box.innerHTML = `<div class="dlg" role="dialog" aria-modal="true"><h2>Eigen duur</h2>
+      <label class="lbl" for="dlg-min">Aantal minuten</label><input class="text-in" id="dlg-min" type="number" min="1" max="120" value="${Math.round(timer.total / 60)}" inputmode="numeric">
+      <div class="dlg-actions"><button class="btn btn-soft" data-x>Annuleer</button><button class="btn btn-primary" data-ok>Zet timer</button></div></div>`;
+    document.body.appendChild(box);
+    const inp = box.querySelector('input'); inp.focus(); inp.select();
+    const close = () => box.remove();
+    const ok = () => { const m = Math.min(120, Math.max(1, Math.round(+inp.value || 0))); if (m) { state.minutes = m; save(); resetTimer(m * 60); } close(); };
+    box.querySelector('[data-ok]').onclick = ok; box.querySelector('[data-x]').onclick = close;
+    box.addEventListener('click', ev => { if (ev.target === box) close(); });
+    inp.addEventListener('keydown', ev => { if (ev.key === 'Enter') ok(); if (ev.key === 'Escape') close(); });
+    return;
+  }
+  state.minutes = +min; save(); resetTimer(+min * 60);
+});
+document.addEventListener('visibilitychange', () => { if (!document.hidden && timer.running) wake(true); });
+
+/* ---------- Presenteren ---------- */
+function present(on) {
+  document.body.classList.toggle('present', on);
+  render();
+  if (on) { try { document.documentElement.requestFullscreen && document.documentElement.requestFullscreen().catch(() => {}); } catch {} }
+  else if (document.fullscreenElement) { try { document.exitFullscreen(); } catch {} }
+  window.scrollTo(0, 0);
+}
+$('present-btn').addEventListener('click', () => present(true));
+$('exit-present').addEventListener('click', () => present(false));
+document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && document.body.classList.contains('present')) present(false); });
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if (document.querySelector('.dlg-back')) return;
+  if ($('menu').classList.contains('open')) { closeMenu(); return; }
+  if (document.body.classList.contains('present')) present(false);
+});
+
+/* ---------- Andere tabbladen gelijk houden ---------- */
+window.addEventListener('storage', e => { if (e.key === KEY) { state = load(); render(); } });
+
+render();
+showClock();
+</script>
+</body>
+</html>
