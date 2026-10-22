@@ -309,11 +309,14 @@ input[type=range]:focus-visible::-webkit-slider-thumb { box-shadow:0 0 0 4px var
 <div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-text"></span><button id="toast-btn" hidden>Ongedaan</button></div>
 
 <script>
-/* ---------- Download als afbeelding of PDF (gedeeld door de Onder Constructie-tools) ----------
+/* ---------- Download als afbeelding of PDF (gedeeld door de Onder Constructie-tools, v2) ----------
    Gebruik:
-     ocExport.png(bouwFn, 'bestandsnaam')            // bouwFn() geeft een DOM-knoop terug om af te beelden
+     ocExport.png(bouwFn, 'bestandsnaam', { landscape:true })
      ocExport.pdf(bouwFn, 'bestandsnaam', { landscape:true })
-   De knoop wordt buiten beeld op een witte pagina gezet met kop (titel, ondertitel, datum) en voet.
+   bouwFn() geeft { node, title, subtitle } terug: een DOM-knoop met inline styles, zonder knoppen of invoervelden.
+   Die komt buiten beeld op een witte pagina met kop (titel, ondertitel, datum) en voet.
+   Zet data-oc-keep op blokken die in een PDF niet over twee pagina's gesplitst mogen worden
+   (een beslissing, een kaartje, een rij); ze schuiven dan door naar de volgende pagina.
    html2canvas en jsPDF worden pas geladen bij de eerste download, van dezelfde adressen als de
    andere tools, zodat de app ze offline kan bewaren. */
 const ocExport = (() => {
@@ -321,6 +324,7 @@ const ocExport = (() => {
     h2c: 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
     pdf: 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
   };
+  const A4 = { w: 210, h: 297 }, MARGIN = 10;   // mm
   const loaded = {};
   function load(url) {
     if (!loaded[url]) loaded[url] = new Promise((ok, fail) => {
@@ -334,7 +338,7 @@ const ocExport = (() => {
   function page(content, { title, subtitle, width }) {
     const wrap = document.createElement('div');
     wrap.style.cssText = `position:fixed;left:-20000px;top:0;width:${width}px;background:#fff;padding:36px 40px 28px;
-      font-family:'DM Sans',system-ui,-apple-system,sans-serif;color:#1e293b;-webkit-font-smoothing:antialiased;`;
+      font-family:'DM Sans',system-ui,-apple-system,sans-serif;color:#1e293b;-webkit-font-smoothing:antialiased;box-sizing:border-box;`;
     const head = document.createElement('div');
     head.style.cssText = 'display:flex;align-items:flex-end;justify-content:space-between;gap:24px;border-bottom:2px solid #10b981;padding-bottom:12px;margin-bottom:20px;';
     head.innerHTML = `<div><div style="font-size:22px;font-weight:700;letter-spacing:-0.02em;color:#1e293b"></div>
@@ -349,12 +353,27 @@ const ocExport = (() => {
     document.body.appendChild(wrap);
     return wrap;
   }
+  // Schuift blokken met data-oc-keep die over een paginagrens zouden vallen naar de volgende pagina.
+  function keepTogether(wrap, pageH) {
+    const top0 = () => wrap.getBoundingClientRect().top;
+    for (const el of wrap.querySelectorAll('[data-oc-keep]')) {
+      const r = el.getBoundingClientRect(), t = r.top - top0(), b = t + r.height;
+      if (r.height > pageH * 0.85) continue;            // te groot om heel te houden
+      const boundary = Math.ceil(t / pageH) * pageH;     // eerstvolgende grens na de bovenkant
+      if (t % pageH !== 0 && b > boundary && t < boundary) {
+        const gap = document.createElement('div');
+        gap.style.cssText = `height:${boundary - t + 6}px;`;
+        el.parentNode.insertBefore(gap, el);
+      }
+    }
+  }
   async function canvasOf(build, opts) {
     await load(LIBS.h2c);
     const built = build();
     const node = page(built.node, { title: built.title, subtitle: built.subtitle, width: opts.width });
     try {
       if (document.fonts && document.fonts.ready) await document.fonts.ready;
+      if (opts.pageH) keepTogether(node, opts.pageH);
       return await window.html2canvas(node, { scale: 2, backgroundColor: '#ffffff', logging: false, useCORS: true });
     } finally { node.remove(); }
   }
@@ -364,23 +383,25 @@ const ocExport = (() => {
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 4000);
   }
+  const widthFor = opts => opts.width || (opts.landscape ? 1120 : 800);
   async function png(build, name, opts = {}) {
-    const c = await canvasOf(build, { width: opts.width || (opts.landscape ? 1120 : 800) });
+    const c = await canvasOf(build, { width: widthFor(opts) });
     await new Promise(ok => c.toBlob(b => { save(b, name + '.png'); ok(); }, 'image/png'));
   }
   async function pdf(build, name, opts = {}) {
-    const landscape = !!opts.landscape;
-    const [c] = await Promise.all([canvasOf(build, { width: opts.width || (landscape ? 1120 : 800) }), load(LIBS.pdf)]);
+    const landscape = !!opts.landscape, width = widthFor(opts);
+    const pw = landscape ? A4.h : A4.w, ph = landscape ? A4.w : A4.h, w = pw - 2 * MARGIN;
+    const pageCss = (ph - 2 * MARGIN) / w * width;       // paginahoogte in CSS-pixels van de exportknoop
+    const [c] = await Promise.all([canvasOf(build, { width, pageH: pageCss }), load(LIBS.pdf)]);
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: landscape ? 'landscape' : 'portrait', unit: 'mm', format: 'a4' });
-    const pw = doc.internal.pageSize.getWidth(), ph = doc.internal.pageSize.getHeight(), m = 10;
-    const w = pw - 2 * m, scale = w / c.width, pageH = (ph - 2 * m) / scale;   // pagina-hoogte in canvaspixels
-    for (let y = 0, i = 0; y < c.height; y += pageH, i++) {
+    const scale = w / c.width, pageH = (ph - 2 * MARGIN) / scale;   // paginahoogte in canvaspixels
+    for (let y = 0, i = 0; y < c.height - 2; y += pageH, i++) {
       const h = Math.min(pageH, c.height - y);
       const part = document.createElement('canvas'); part.width = c.width; part.height = h;
       part.getContext('2d').drawImage(c, 0, y, c.width, h, 0, 0, c.width, h);
       if (i) doc.addPage();
-      doc.addImage(part.toDataURL('image/jpeg', 0.92), 'JPEG', m, m, w, h * scale);
+      doc.addImage(part.toDataURL('image/jpeg', 0.92), 'JPEG', MARGIN, MARGIN, w, h * scale);
     }
     save(doc.output('blob'), name + '.pdf');
   }
