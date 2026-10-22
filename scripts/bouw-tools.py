@@ -31,6 +31,7 @@ PADEN = [
     '/project-radar/', '/kanban/', '/stakeholders/', '/risico/', '/mixer/', '/paradox/',
     '/fortuna/', '/check-in/', '/project-realisme/', '/vinkje/',
     '/beslissingen/', '/raci/', '/prioriteit/', '/retro/', '/vergaderkost/',
+    '/gap/', '/weerstand/',
     '/qr/', '/focus/', '/zakmes/looplicht/', '/zakmes/memomities/',
     '/hier/', '/adem/', '/hart/',
 ]
