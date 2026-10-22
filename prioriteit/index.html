@@ -265,12 +265,12 @@ input[type=range]:focus-visible::-webkit-slider-thumb { box-shadow:0 0 0 4px var
         <input class="input" id="name" placeholder="Bijv. Agenda vooraf delen" aria-label="Naam van het item" maxlength="120" enterkeyhint="done">
         <div class="slider">
           <div class="slider-top"><span class="slider-name">Impact</span><span class="slider-val" id="impact-val">3</span></div>
-          <input type="range" id="impact" min="1" max="5" step="1" value="3" aria-label="Impact">
+          <input type="range" id="impact" min="1" max="4" step="1" value="3" aria-label="Impact">
           <div class="slider-hint"><span>weinig effect</span><span>groot effect</span></div>
         </div>
         <div class="slider">
           <div class="slider-top"><span class="slider-name">Inspanning</span><span class="slider-val" id="effort-val">3</span></div>
-          <input type="range" id="effort" min="1" max="5" step="1" value="3" aria-label="Inspanning">
+          <input type="range" id="effort" min="1" max="4" step="1" value="3" aria-label="Inspanning">
           <div class="slider-hint"><span>snel gedaan</span><span>veel werk</span></div>
         </div>
         <button class="btn-primary" type="submit" id="submit">
@@ -309,8 +309,9 @@ input[type=range]:focus-visible::-webkit-slider-thumb { box-shadow:0 0 0 4px var
 
 <script>
 /* ---------- Kwadranten ----------
-   Impact 3 of hoger telt als hoog, inspanning 3 of hoger als veel werk.
-   De lijnen in de matrix liggen daarom tussen 2 en 3. */
+   Schaal 1 tot 4: een even schaal, zodat de lijn precies in het midden ligt en de vier
+   kwadranten even groot zijn. 1–2 is laag, 3–4 is hoog; er is geen neutraal midden. */
+const N = 4;
 const Q = [
   { id:'quick',   name:'Quick wins',      sub:'nu doen',        color:'#10b981', bg:'#ecfdf5', test:i => i.impact >= 3 && i.effort <= 2 },
   { id:'groot',   name:'Grote klussen',   sub:'plannen',        color:'#3b82f6', bg:'#eff6ff', test:i => i.impact >= 3 && i.effort >= 3 },
@@ -326,12 +327,20 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 function load() {
   try {
     const d = JSON.parse(localStorage.getItem(KEY));
-    if (d && Array.isArray(d.lists) && d.lists.length) return d;
+    if (d && Array.isArray(d.lists) && d.lists.length) {
+      // oude lijsten op 1–5 omzetten naar 1–4; elk item blijft in zijn kwadrant (5 wordt 4)
+      if (d.scale !== N) {
+        d.lists.forEach(l => (l.items || []).forEach(it => { it.impact = Math.min(it.impact, N); it.effort = Math.min(it.effort, N); }));
+        d.scale = N;
+      }
+      return d;
+    }
   } catch {}
   const first = { id:uid(), name:'Mijn project', items:[] };
-  return { lists:[first], current:first.id };
+  return { lists:[first], current:first.id, scale:N };
 }
 let state = load();
+try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {}   // bewaart meteen een eventuele omzetting naar 1–4
 function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
 const cur = () => state.lists.find(l => l.id === state.current) || state.lists[0];
 const $ = id => document.getElementById(id);
@@ -341,10 +350,10 @@ let editing = null;   // id van het item in de schuiven
 /* ---------- Matrix tekenen ---------- */
 const SVGNS = 'http://www.w3.org/2000/svg';
 const M = { L:44, T:12, W:344, H:344 };   // plotvlak binnen viewBox 400x400
-const xOf = e => M.L + (e - 0.5) / 5 * M.W;       // inspanning: links weinig, rechts veel
-const yOf = i => M.T + (5.5 - i) / 5 * M.H;       // impact: boven veel
-const splitX = M.L + 2 / 5 * M.W;                  // tussen inspanning 2 en 3
-const splitY = M.T + 3 / 5 * M.H;                  // tussen impact 2 en 3
+const xOf = e => M.L + (e - 0.5) / N * M.W;       // inspanning: links weinig, rechts veel
+const yOf = i => M.T + (N + 0.5 - i) / N * M.H;   // impact: boven veel
+const splitX = M.L + M.W / 2;                      // precies in het midden: tussen 2 en 3
+const splitY = M.T + M.H / 2;
 
 function shortLabel(s, n = 16) { return s.length > n ? s.slice(0, n - 1).trimEnd() + '…' : s; }
 
@@ -359,8 +368,8 @@ function matrixStatic() {
     s += `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${q.bg}"/>`;
   });
   // fijne rasterlijnen per waarde
-  for (let v = 1; v < 5; v++) {
-    const gx = L + v / 5 * W, gy = T + v / 5 * H;
+  for (let v = 1; v < N; v++) {
+    const gx = L + v / N * W, gy = T + v / N * H;
     s += `<line x1="${gx}" y1="${T}" x2="${gx}" y2="${B}" stroke="#e2e8f0" stroke-width="0.6" stroke-dasharray="2 3"/>`;
     s += `<line x1="${L}" y1="${gy}" x2="${R}" y2="${gy}" stroke="#e2e8f0" stroke-width="0.6" stroke-dasharray="2 3"/>`;
   }
@@ -374,7 +383,7 @@ function matrixStatic() {
   s += `<text x="${L + 8}" y="${B - 9}" ${f} font-size="10.5" font-weight="700" letter-spacing="0.8" fill="#64748b">OPVULLERS</text>`;
   s += `<text x="${R - 8}" y="${B - 9}" ${f} font-size="10.5" font-weight="700" letter-spacing="0.8" fill="#d97706" text-anchor="end">TIJDVERSPILLERS</text>`;
   // assen
-  for (let v = 1; v <= 5; v++) {
+  for (let v = 1; v <= N; v++) {
     s += `<text x="${xOf(v)}" y="${B + 16}" ${f} font-size="10" fill="#94a3b8" text-anchor="middle">${v}</text>`;
     s += `<text x="${L - 9}" y="${yOf(v) + 3.5}" ${f} font-size="10" fill="#94a3b8" text-anchor="end">${v}</text>`;
   }
@@ -420,8 +429,8 @@ function renderMatrix() {
     if (p.n >= 3 && p.k === 0) { lx = xOf(it.effort); ly = yOf(it.impact) - (p.n > 6 ? 24 : 20); }
     // niet buiten de matrix laten lopen
     // bovenste rij: label onder het punt, zodat het niet over de kwadrantnaam valt
-    if (it.impact === 5 && p.n <= 2 && (p.n === 1 || p.k === 0)) ly = p.y + 20;
-    if (it.impact === 5 && p.n === 2 && p.k === 1) ly = p.y + 20 + 13;
+    if (it.impact === N && p.n <= 2 && (p.n === 1 || p.k === 0)) ly = p.y + 20;
+    if (it.impact === N && p.n === 2 && p.k === 1) ly = p.y + 20 + 13;
     pts += `<g class="pt${sel ? ' sel' : ''}" data-id="${it.id}" tabindex="0" role="button" aria-label="${esc(it.name)}: impact ${it.impact}, inspanning ${it.effort}" opacity="${op}">
       <circle cx="${p.x}" cy="${p.y}" r="18" fill="transparent"/>
       ${sel ? `<circle cx="${p.x}" cy="${p.y}" r="11" fill="none" stroke="${q.color}" stroke-width="2" opacity="0.35"/>` : ''}
@@ -485,7 +494,7 @@ function syncForm() {
 }
 function paintSliders() {
   ['impact', 'effort'].forEach(k => {
-    const el = $(k); el.style.setProperty('--p', ((el.value - 1) / 4 * 100) + '%');
+    const el = $(k); el.style.setProperty('--p', ((el.value - 1) / (N - 1) * 100) + '%');
     $(k + '-val').textContent = el.value;
   });
 }
@@ -612,8 +621,8 @@ svg.addEventListener('pointermove', e => {
   if (!drag.moved && Math.hypot(p.x - drag.start.x, p.y - drag.start.y) < 4) return;
   drag.moved = true;
   const it = cur().items.find(i => i.id === drag.id); if (!it) return;
-  const effort = clamp(Math.round((p.x - M.L) / M.W * 5 + 0.5), 1, 5);
-  const impact = clamp(Math.round(5.5 - (p.y - M.T) / M.H * 5), 1, 5);
+  const effort = clamp(Math.round((p.x - M.L) / M.W * N + 0.5), 1, N);
+  const impact = clamp(Math.round(N + 0.5 - (p.y - M.T) / M.H * N), 1, N);
   if (effort !== it.effort || impact !== it.impact) {
     it.effort = effort; it.impact = impact;
     if (navigator.vibrate) try { navigator.vibrate(5); } catch {}
@@ -641,7 +650,7 @@ svg.addEventListener('keydown', e => {
   const moves = { ArrowLeft:['effort', -1], ArrowRight:['effort', 1], ArrowUp:['impact', 1], ArrowDown:['impact', -1] };
   if (moves[e.key]) {
     e.preventDefault();
-    const [k, d] = moves[e.key]; it[k] = clamp(it[k] + d, 1, 5); editing = it.id;
+    const [k, d] = moves[e.key]; it[k] = clamp(it[k] + d, 1, N); editing = it.id;
     save(); render();
     const again = svg.querySelector(`.pt[data-id="${it.id}"]`); again && again.focus();
   } else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startEdit(it.id); }
@@ -664,9 +673,9 @@ $('list-name').addEventListener('blur', () => { if (!cur().name.trim()) { cur().
 
 function loadExample() {
   const ex = [
-    ['Agenda vooraf rondsturen', 4, 1], ['Onboarding-checklist', 4, 2], ['Nieuwe projectwebsite', 5, 5],
-    ['Dashboard automatiseren', 4, 4], ['Mailhandtekening updaten', 1, 1], ['Mappenstructuur opruimen', 2, 2],
-    ['Alle oude dossiers digitaliseren', 2, 5], ['Eigen huisstijl voor slides', 1, 4],
+    ['Agenda vooraf rondsturen', 4, 1], ['Onboarding-checklist', 3, 2], ['Nieuwe projectwebsite', 4, 4],
+    ['Dashboard automatiseren', 3, 3], ['Mailhandtekening updaten', 1, 1], ['Mappenstructuur opruimen', 2, 2],
+    ['Alle oude dossiers digitaliseren', 2, 4], ['Eigen huisstijl voor slides', 1, 3],
   ];
   cur().items.push(...ex.map(([name, impact, effort]) => ({ id:uid(), name, impact, effort, done:false })));
   save(); render();
