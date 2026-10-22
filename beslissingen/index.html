@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Beslissingslog – Onder Constructie</title>
+<meta name="description" content="Leg vast wat er beslist is, door wie, wanneer en waarom. Zo voer je dezelfde discussie geen drie keer.">
+    <meta name="oc:groep" content="projecten">
+    <meta name="oc:labels" content="opvolgen">
+    <meta name="oc:kort" content="Wat is beslist, door wie en waarom">
+    <meta name="oc:volgorde" content="105">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 40%22 fill=%22none%22%3E%3Ccircle cx=%2220%22 cy=%2220%22 r=%2216%22 fill=%22%23ecfdf5%22 stroke=%22%2310b981%22 stroke-width=%221.5%22/%3E%3Crect x=%2212.5%22 y=%2210.5%22 width=%2213%22 height=%2217%22 rx=%222%22 stroke=%22%2310b981%22 stroke-width=%221.5%22 fill=%22%23fff%22/%3E%3Cpath d=%22M15.5 15h7M15.5 18.5h7M15.5 22h4%22 stroke=%22%2310b981%22 stroke-width=%221.4%22 stroke-linecap=%22round%22 opacity=%220.6%22/%3E%3Ccircle cx=%2225.5%22 cy=%2226%22 r=%224.5%22 fill=%22%2310b981%22/%3E%3Cpath d=%22M23.6 26.1l1.3 1.3 2.4-2.6%22 stroke=%22%23fff%22 stroke-width=%221.4%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --slate-900:#0f172a; --slate-800:#1e293b; --slate-700:#334155; --slate-600:#475569;
+  --slate-500:#64748b; --slate-400:#94a3b8; --slate-300:#cbd5e1; --slate-200:#e2e8f0;
+  --slate-100:#f1f5f9; --slate-50:#f8fafc; --wit:#ffffff;
+  --accent:#10b981; --accent-dark:#059669; --accent-light:#d1fae5; --accent-50:#ecfdf5;
+  --rood:#ef4444; --oranje:#d97706; --oranje-50:#fffbeb;
+  --bottom: env(safe-area-inset-bottom, 0px);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body {
+  font-family:'DM Sans', system-ui, sans-serif; background:var(--slate-50); color:var(--slate-700);
+  line-height:1.5; min-height:100vh; -webkit-font-smoothing:antialiased;
+  display:flex; flex-direction:column;
+}
+button, input, textarea, select { font:inherit; color:inherit; }
+button { background:none; border:0; cursor:pointer; }
+[hidden] { display:none !important; }
+
+/* Kop */
+.header { background:var(--wit); border-bottom:1px solid var(--slate-200); padding:1.5rem 1.25rem 1.75rem; position:relative; text-align:center; }
+.back-link {
+  position:absolute; top:1.25rem; left:1.25rem; display:inline-flex; align-items:center; gap:0.5rem;
+  font-size:0.875rem; color:var(--slate-400); text-decoration:none; transition:color 0.2s;
+}
+.back-link:hover { color:var(--accent); }
+.back-link svg { width:16px; height:16px; }
+.logo svg { width:56px; height:56px; }
+.title { font-size:1.625rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.03em; line-height:1.2; margin-top:0.5rem; }
+.subtitle { font-size:0.9375rem; color:var(--slate-500); }
+
+.main { flex:1; width:100%; max-width:720px; margin:0 auto; padding:1.25rem 1rem 3rem; }
+
+/* Logs */
+.lists { display:flex; gap:0.5rem; overflow-x:auto; scrollbar-width:none; margin:0 -1rem 1rem; padding:0.125rem 1rem; }
+.lists::-webkit-scrollbar { display:none; }
+.tab {
+  flex-shrink:0; padding:0.4375rem 0.875rem; border-radius:999px; font-size:0.875rem; font-weight:600;
+  border:1px solid var(--slate-200); background:var(--wit); color:var(--slate-600); white-space:nowrap;
+  display:flex; align-items:center; gap:0.375rem;
+}
+.tab .n { font-size:0.75rem; font-weight:500; color:var(--slate-400); font-variant-numeric:tabular-nums; }
+.tab.active { background:var(--slate-800); border-color:var(--slate-800); color:var(--wit); }
+.tab.active .n { color:var(--slate-300); }
+.tab.add { color:var(--accent-dark); border-style:dashed; }
+
+/* Kaart */
+.card { background:var(--wit); border:1px solid var(--slate-200); border-radius:16px; box-shadow:0 1px 2px rgba(15,23,42,0.04); }
+.card-head { display:flex; align-items:center; gap:0.5rem; padding:1rem 0.75rem 0.25rem 1.125rem; }
+.list-name {
+  flex:1; min-width:0; font-size:1.25rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.02em;
+  border:0; background:none; outline:none; padding:0.125rem 0; border-bottom:1.5px solid transparent;
+}
+.list-name:focus, .list-name:focus-visible { border-bottom-color:var(--accent); outline:none; }
+.count-line { padding:0 1.125rem 0.875rem; font-size:0.8125rem; color:var(--slate-500); font-variant-numeric:tabular-nums; }
+.icon-btn { width:38px; height:38px; display:flex; align-items:center; justify-content:center; border-radius:10px; color:var(--slate-500); flex-shrink:0; }
+.icon-btn:hover { background:var(--slate-100); color:var(--slate-700); }
+.icon-btn svg { width:20px; height:20px; }
+
+/* Invoer */
+.add { padding:0 0.75rem 0.875rem; }
+.add-row { display:flex; gap:0.5rem; }
+.field, .add-input {
+  width:100%; min-width:0; padding:0.6875rem 0.875rem; border:1.5px solid var(--slate-200); border-radius:10px;
+  background:var(--slate-50); outline:none; font-size:1rem; transition:border-color 0.15s, background 0.15s;
+}
+.add-input { flex:1; }
+.field:focus, .add-input:focus { border-color:var(--accent); background:var(--wit); }
+.field::placeholder, .add-input::placeholder { color:var(--slate-400); }
+textarea.field { resize:vertical; min-height:4.25rem; line-height:1.45; }
+.add-btn { width:46px; border-radius:10px; background:var(--accent); color:var(--wit); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.add-btn:hover { background:var(--accent-dark); }
+.add-btn svg { width:22px; height:22px; }
+.more-toggle {
+  margin-top:0.5rem; display:inline-flex; align-items:center; gap:0.375rem; font-size:0.875rem; font-weight:500;
+  color:var(--accent-dark); padding:0.25rem 0.375rem; margin-left:-0.375rem; border-radius:6px;
+}
+.more-toggle svg { width:16px; height:16px; transition:transform 0.2s; }
+.more-toggle[aria-expanded="true"] svg { transform:rotate(180deg); }
+.grid { display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-top:0.625rem; }
+.grid .full { grid-column:1 / -1; }
+.lbl { display:block; font-size:0.75rem; font-weight:600; color:var(--slate-500); margin-bottom:0.3125rem; letter-spacing:0.01em; }
+.replacing {
+  display:flex; align-items:center; gap:0.5rem; margin-bottom:0.625rem; padding:0.5rem 0.75rem; border-radius:10px;
+  background:var(--oranje-50); color:#92400e; font-size:0.8125rem;
+}
+.replacing span { flex:1; min-width:0; }
+.replacing button { color:#92400e; font-weight:600; padding:0.125rem 0.375rem; border-radius:6px; }
+
+/* Zoeken */
+.search { position:relative; padding:0 0.75rem 0.875rem; }
+.search svg { position:absolute; left:1.625rem; top:0.75rem; width:18px; height:18px; color:var(--slate-400); pointer-events:none; }
+.search .field { padding-left:2.5rem; }
+
+/* Beslissingen */
+.decs { list-style:none; border-top:1px solid var(--slate-100); }
+.dec { border-bottom:1px solid var(--slate-100); }
+.dec:last-child { border-bottom:0; }
+.dec-head { width:100%; text-align:left; display:grid; grid-template-columns:1fr auto; gap:0.5rem; padding:0.875rem 1.125rem; align-items:start; }
+.dec-head:hover { background:var(--slate-50); }
+.dec-what { font-weight:600; color:var(--slate-800); font-size:1rem; line-height:1.4; word-break:break-word; }
+.dec-meta { font-size:0.8125rem; color:var(--slate-500); margin-top:0.125rem; }
+.dec-why { font-size:0.9375rem; color:var(--slate-600); margin-top:0.375rem; word-break:break-word;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.dec-link { font-size:0.8125rem; color:var(--slate-500); margin-top:0.375rem; }
+.dec-link b { font-weight:600; color:var(--slate-600); }
+.chev { width:18px; height:18px; color:var(--slate-300); margin-top:0.125rem; transition:transform 0.2s; }
+.dec.open .chev { transform:rotate(180deg); }
+.pill { display:inline-block; font-size:0.6875rem; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; padding:0 0.4375rem; border-radius:999px; margin-right:0.4375rem; vertical-align:1px; line-height:1.6; }
+.pill.herzien { color:#92400e; background:#fef3c7; }
+.pill.ingetrokken { color:var(--slate-600); background:var(--slate-200); }
+.dec.herzien .dec-what, .dec.ingetrokken .dec-what { color:var(--slate-500); }
+.dec.ingetrokken .dec-what { text-decoration:line-through; text-decoration-color:var(--slate-300); }
+.dec.flash { animation:flash 1.2s ease; }
+@keyframes flash { 0% { background:var(--accent-50); } 100% { background:transparent; } }
+
+.dec-edit { padding:0 1.125rem 1.125rem; }
+.dec-edit .grid { margin-top:0; }
+.status { display:flex; gap:0.375rem; flex-wrap:wrap; }
+.status button {
+  padding:0.4375rem 0.75rem; border-radius:999px; border:1px solid var(--slate-200); font-size:0.875rem; font-weight:500; color:var(--slate-600); background:var(--wit);
+}
+.status button[aria-pressed="true"] { background:var(--slate-800); border-color:var(--slate-800); color:var(--wit); }
+.edit-actions { display:flex; align-items:center; gap:0.5rem; margin-top:0.875rem; flex-wrap:wrap; }
+.btn { padding:0.5rem 0.875rem; border-radius:8px; font-weight:600; font-size:0.875rem; white-space:nowrap; }
+.btn-primary { background:var(--accent); color:var(--wit); }
+.btn-primary:hover { background:var(--accent-dark); }
+.btn-ghost { color:var(--slate-500); }
+.btn-ghost:hover { background:var(--slate-100); }
+.btn-danger { color:var(--rood); margin-right:auto; padding-left:0.25rem; }
+.btn-danger:hover { background:#fef2f2; }
+.btn-soft { color:#92400e; background:#fef3c7; }
+
+.empty { padding:2rem 1.25rem 2.25rem; text-align:center; color:var(--slate-400); font-size:0.9375rem; }
+.empty strong { display:block; color:var(--slate-600); font-weight:600; margin-bottom:0.25rem; }
+
+/* Menu */
+.menu-wrap { position:relative; }
+.menu {
+  position:absolute; right:0; top:42px; z-index:20; min-width:230px; background:var(--wit); border:1px solid var(--slate-200);
+  border-radius:12px; box-shadow:0 12px 32px rgba(15,23,42,0.14); padding:0.375rem; display:none;
+}
+.menu.open { display:block; }
+.menu button { width:100%; display:flex; align-items:center; gap:0.625rem; padding:0.5625rem 0.625rem; border-radius:8px; font-size:0.9375rem; text-align:left; color:var(--slate-700); }
+.menu button:hover { background:var(--slate-100); }
+.menu button svg { width:18px; height:18px; color:var(--slate-400); flex-shrink:0; }
+.menu .sep { height:1px; background:var(--slate-100); margin:0.25rem 0.375rem; }
+.menu .danger { color:var(--rood); }
+.menu .danger svg { color:var(--rood); }
+
+/* Melding */
+.toast {
+  position:fixed; left:50%; bottom:calc(var(--bottom) + 1.25rem); transform:translate(-50%, calc(100% + 3rem)); visibility:hidden; z-index:50;
+  background:var(--slate-800); color:var(--wit); border-radius:12px; padding:0.625rem 0.625rem 0.625rem 1rem;
+  display:flex; align-items:center; gap:0.875rem; font-size:0.9375rem; box-shadow:0 10px 30px rgba(15,23,42,0.25);
+  transition:transform 0.25s ease, visibility 0s 0.25s; max-width:calc(100% - 2rem);
+}
+.toast.show { transform:translate(-50%, 0); visibility:visible; transition:transform 0.25s ease; }
+.toast button { color:#6ee7b7; font-weight:600; padding:0.25rem 0.5rem; border-radius:6px; }
+.toast button:hover { background:rgba(255,255,255,0.08); }
+
+.footer { text-align:center; padding:2rem 2rem calc(var(--bottom) + 2rem); border-top:1px solid var(--slate-200); background:var(--wit); }
+.quote { font-size:0.8125rem; color:var(--accent); }
+
+@media (max-width:640px) {
+  .back-link { position:static; margin-bottom:0.75rem; justify-content:center; display:flex; }
+}
+@media (max-width:480px) {
+  .grid { grid-template-columns:1fr; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition:none !important; animation:none !important; } }
+:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.list-name:focus-visible, .field:focus-visible, .add-input:focus-visible { outline:none; }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <a href="https://onderconstructie.github.io/projectmanagement/" class="back-link">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Projectmanagement
+  </a>
+  <div class="logo">
+    <svg viewBox="0 0 80 80" fill="none" aria-hidden="true">
+      <circle cx="40" cy="40" r="36" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2"/>
+      <rect x="24" y="19" width="27" height="35" rx="4" fill="#fff" stroke="#cbd5e1" stroke-width="2.5"/>
+      <rect x="30" y="28" width="15" height="3.5" rx="1.75" fill="#cbd5e1"/>
+      <rect x="30" y="35" width="15" height="3.5" rx="1.75" fill="#cbd5e1"/>
+      <rect x="30" y="42" width="9" height="3.5" rx="1.75" fill="#cbd5e1"/>
+      <circle cx="52" cy="54" r="10" fill="#10b981"/>
+      <path d="M47.5 54.2l3 3 5.5-6" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+  <h1 class="title">Beslissingslog</h1>
+  <p class="subtitle">Wat is beslist, door wie en waarom.</p>
+</header>
+
+<main class="main">
+  <nav class="lists" id="lists" aria-label="Logs"></nav>
+
+  <section class="card" id="card">
+    <div class="card-head">
+      <input class="list-name" id="list-name" aria-label="Naam van de log" maxlength="60" spellcheck="false">
+      <div class="menu-wrap">
+        <button class="icon-btn" id="menu-btn" aria-label="Meer acties" aria-haspopup="true" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
+        </button>
+        <div class="menu" id="menu" role="menu">
+          <button data-act="copy" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Kopieer als tekst</button>
+          <button data-act="csv" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Download CSV (Excel)</button>
+          <div class="sep"></div>
+          <button data-act="delete" class="danger" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>Log verwijderen</button>
+        </div>
+      </div>
+    </div>
+    <p class="count-line" id="count-line"></p>
+
+    <form class="add" id="add-form" autocomplete="off">
+      <div class="replacing" id="replacing" hidden>
+        <span>Vervangt: <b id="replacing-what"></b></span>
+        <button type="button" id="replacing-x" aria-label="Niet koppelen">Annuleer</button>
+      </div>
+      <div class="add-row">
+        <input class="add-input" id="add-what" placeholder="Wat is er beslist?" aria-label="Wat is er beslist?" maxlength="300" enterkeyhint="done">
+        <button class="add-btn" type="submit" aria-label="Bewaar beslissing">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+      </div>
+      <button type="button" class="more-toggle" id="more-toggle" aria-expanded="false" aria-controls="more">
+        Waarom, wie en wanneer
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="grid" id="more" hidden>
+        <label class="full"><span class="lbl">Waarom</span><textarea class="field" id="add-why" placeholder="De reden, zodat je het later nog snapt" maxlength="2000"></textarea></label>
+        <label><span class="lbl">Beslist door</span><input class="field" id="add-who" placeholder="Bv. stuurgroep" maxlength="120" list="who-list"></label>
+        <label><span class="lbl">Datum</span><input class="field" id="add-date" type="date"></label>
+        <label class="full"><span class="lbl">Alternatieven die afvielen</span><textarea class="field" id="add-alt" placeholder="Wat lag nog op tafel, en waarom niet" maxlength="2000"></textarea></label>
+      </div>
+      <datalist id="who-list"></datalist>
+    </form>
+
+    <div class="search" id="search-wrap" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input class="field" id="search" type="search" placeholder="Zoek in beslissingen" aria-label="Zoek in beslissingen">
+    </div>
+
+    <ul class="decs" id="decs"></ul>
+    <div class="empty" id="empty" hidden></div>
+  </section>
+</main>
+
+<footer class="footer">
+  <p class="quote">Wie niet kiest, laat anderen kiezen.</p>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-text"></span><button id="toast-btn" hidden>Ongedaan</button></div>
+
+<script>
+/* ---------- Opslag ---------- */
+const KEY = 'beslissingen.v1';
+const uid = () => Math.random().toString(36).slice(2, 10);
+const today = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
+function load() {
+  try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && Array.isArray(d.logs) && d.logs.length) return d; } catch {}
+  const first = { id:uid(), name:'Mijn project', items:[] };
+  return { logs:[first], current:first.id, lastWho:'' };
+}
+let state = load();
+function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
+const cur = () => state.logs.find(l => l.id === state.current) || state.logs[0];
+const $ = id => document.getElementById(id);
+const esc = s => String(s || '').replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const STATUS = { genomen:'Genomen', herzien:'Herzien', ingetrokken:'Ingetrokken' };
+function fmtDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso + 'T12:00:00');
+  return isNaN(d) ? iso : d.toLocaleDateString('nl-BE', { day:'numeric', month:'short', year:'numeric' });
+}
+function sorted(items) {
+  return [...items].sort((a, b) => (b.date || '').localeCompare(a.date || '') || b.created - a.created);
+}
+
+/* ---------- Toevoegen ---------- */
+let openId = null, replacesId = null;
+$('add-date').value = today();
+$('more-toggle').addEventListener('click', () => {
+  const open = $('more').hidden;
+  $('more').hidden = !open;
+  $('more-toggle').setAttribute('aria-expanded', String(open));
+  if (open && !$('add-who').value) $('add-who').value = state.lastWho || '';
+});
+$('add-form').addEventListener('submit', e => {
+  e.preventDefault();
+  const what = $('add-what').value.trim();
+  if (!what) { $('add-what').focus(); return; }
+  // Detailvelden tellen alleen mee als je ze ziet: niets wordt stil ingevuld.
+  const more = !$('more').hidden;
+  const it = {
+    id:uid(), what,
+    why:more ? $('add-why').value.trim() : '',
+    who:more ? $('add-who').value.trim() : '',
+    date:(more && $('add-date').value) || today(),
+    alt:more ? $('add-alt').value.trim() : '',
+    status:'genomen', note:'', created:Date.now()
+  };
+  const l = cur();
+  if (replacesId) {
+    const old = l.items.find(x => x.id === replacesId);
+    if (old) { it.replaces = old.id; old.replacedBy = it.id; if (old.status === 'genomen') old.status = 'herzien'; }
+  }
+  l.items.push(it);
+  if (it.who) state.lastWho = it.who;
+  save();
+  ['add-what', 'add-why', 'add-alt'].forEach(id => $(id).value = '');
+  $('add-date').value = today();
+  setReplacing(null);
+  openId = null;
+  render();
+  const li = document.querySelector(`.dec[data-id="${it.id}"]`);
+  if (li) { li.classList.add('flash'); }
+  $('add-what').focus();
+});
+function setReplacing(id) {
+  replacesId = id;
+  const old = id && cur().items.find(x => x.id === id);
+  $('replacing').hidden = !old;
+  if (old) $('replacing-what').textContent = old.what;
+}
+$('replacing-x').addEventListener('click', () => setReplacing(null));
+
+/* ---------- Tekenen ---------- */
+const CHEV = '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
+function decHTML(it, l) {
+  const meta = [fmtDate(it.date), it.who].filter(Boolean).join(' · ');
+  const pill = it.status !== 'genomen' ? `<span class="pill ${it.status}">${STATUS[it.status]}</span>` : '';
+  const metaLine = (pill || meta) ? `<span class="dec-meta" style="display:block">${pill}${esc(meta)}</span>` : '';
+  const by = it.replacedBy && l.items.find(x => x.id === it.replacedBy);
+  const rep = it.replaces && l.items.find(x => x.id === it.replaces);
+  const links = (by ? `<p class="dec-link">Vervangen door: <b>${esc(by.what)}</b></p>` : '') +
+                (rep ? `<p class="dec-link">Vervangt: <b>${esc(rep.what)}</b></p>` : '');
+  const open = it.id === openId;
+  const head = `<button class="dec-head" aria-expanded="${open}">
+      <span>
+        <span class="dec-what" style="display:block">${esc(it.what)}</span>
+        ${metaLine}
+        ${!open && it.why ? `<span class="dec-why">${esc(it.why)}</span>` : ''}
+        ${!open && it.note ? `<span class="dec-why">${esc(it.note)}</span>` : ''}
+        ${!open ? links : ''}
+      </span>${CHEV}
+    </button>`;
+  if (!open) return `<li class="dec ${it.status}" data-id="${it.id}">${head}</li>`;
+  return `<li class="dec open ${it.status}" data-id="${it.id}">${head}
+    <div class="dec-edit">
+      <div class="grid">
+        <label class="full"><span class="lbl">Beslissing</span><input class="field" data-f="what" value="${esc(it.what)}" maxlength="300"></label>
+        <label class="full"><span class="lbl">Waarom</span><textarea class="field" data-f="why" maxlength="2000">${esc(it.why)}</textarea></label>
+        <label><span class="lbl">Beslist door</span><input class="field" data-f="who" value="${esc(it.who)}" maxlength="120" list="who-list"></label>
+        <label><span class="lbl">Datum</span><input class="field" data-f="date" type="date" value="${esc(it.date)}"></label>
+        <label class="full"><span class="lbl">Alternatieven die afvielen</span><textarea class="field" data-f="alt" maxlength="2000">${esc(it.alt)}</textarea></label>
+        <div class="full"><span class="lbl">Status</span>
+          <div class="status" role="group" aria-label="Status">
+            ${Object.entries(STATUS).map(([k, v]) => `<button type="button" data-status="${k}" aria-pressed="${it.status === k}">${v}</button>`).join('')}
+          </div>
+        </div>
+        <label class="full" ${it.status === 'genomen' ? 'hidden' : ''}><span class="lbl">${it.status === 'herzien' ? 'Wat is er veranderd, en waarom?' : 'Waarom ingetrokken?'}</span><textarea class="field" data-f="note" maxlength="2000">${esc(it.note)}</textarea></label>
+        ${links ? `<div class="full">${links}</div>` : ''}
+      </div>
+      <div class="edit-actions">
+        <button type="button" class="btn btn-danger" data-act="del">Verwijder</button>
+        ${it.status === 'herzien' && !by ? `<button type="button" class="btn btn-soft" data-act="replace">Nieuwe beslissing koppelen</button>` : ''}
+        <button type="button" class="btn btn-primary" data-act="close">Klaar</button>
+      </div>
+    </div>
+  </li>`;
+}
+
+function renderTabs() {
+  $('lists').innerHTML = state.logs.map(l =>
+    `<button class="tab${l.id === state.current ? ' active' : ''}" data-log="${l.id}">${esc(l.name || 'Naamloos')}<span class="n">${l.items.length || ''}</span></button>`
+  ).join('') + `<button class="tab add" id="new-log" aria-label="Nieuwe log">+ Log</button>`;
+}
+
+function matches(it, q) {
+  if (!q) return true;
+  return [it.what, it.why, it.who, it.alt, it.note, it.date, fmtDate(it.date), STATUS[it.status]].join(' ').toLowerCase().includes(q);
+}
+
+function render() {
+  const l = cur();
+  if (document.activeElement !== $('list-name')) $('list-name').value = l.name;
+  const total = l.items.length;
+  const q = $('search').value.trim().toLowerCase();
+  $('search-wrap').hidden = total <= 5 && !q;
+  const list = sorted(l.items).filter(it => matches(it, q));
+  $('decs').innerHTML = list.map(it => decHTML(it, l)).join('');
+  $('decs').hidden = list.length === 0;
+
+  const active = l.items.filter(i => i.status === 'genomen').length;
+  $('count-line').textContent = total
+    ? `${total} ${total === 1 ? 'beslissing' : 'beslissingen'}${active !== total ? `, ${active} van kracht` : ''}`
+    : '';
+  $('count-line').hidden = !total;
+
+  $('empty').hidden = list.length !== 0;
+  $('empty').innerHTML = total
+    ? `<strong>Niets gevonden</strong>Geen beslissing bevat “${esc(q)}”.`
+    : '<strong>Nog geen beslissingen</strong>Wie vastlegt wat beslist is en waarom, hoeft de discussie niet opnieuw te voeren.';
+
+  document.querySelectorAll('.dec-edit textarea').forEach(grow);
+  const whos = [...new Set(state.logs.flatMap(x => x.items.map(i => i.who)).filter(Boolean))];
+  $('who-list').innerHTML = whos.map(w => `<option value="${esc(w)}">`).join('');
+  renderTabs();
+}
+
+/* ---------- Bewerken ---------- */
+function grow(t) { t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight + 3, 400) + 'px'; }
+document.addEventListener('input', e => { if (e.target.matches && e.target.matches('textarea.field')) grow(e.target); });
+function findIt(el) {
+  const li = el.closest('.dec'); if (!li) return {};
+  const l = cur(); const idx = l.items.findIndex(i => i.id === li.dataset.id);
+  return { li, l, idx, it:l.items[idx] };
+}
+$('decs').addEventListener('click', e => {
+  const head = e.target.closest('.dec-head');
+  if (head) {
+    const { it } = findIt(head); if (!it) return;
+    openId = openId === it.id ? null : it.id;
+    render();
+    const li = document.querySelector(`.dec[data-id="${it.id}"]`);
+    if (openId && li) li.scrollIntoView({ block:'nearest', behavior:'smooth' });
+    return;
+  }
+  const st = e.target.closest('[data-status]');
+  if (st) {
+    const { it } = findIt(st); if (!it) return;
+    it.status = st.dataset.status; save(); render();
+    const note = document.querySelector(`.dec[data-id="${it.id}"] [data-f="note"]`);
+    if (note && it.status !== 'genomen') note.focus();
+    return;
+  }
+  const act = e.target.closest('[data-act]');
+  if (!act) return;
+  const { l, idx, it } = findIt(act); if (!it) return;
+  if (act.dataset.act === 'close') { openId = null; render(); }
+  if (act.dataset.act === 'replace') {
+    openId = null; render(); setReplacing(it.id);
+    $('add-what').focus(); $('add-form').scrollIntoView({ block:'center', behavior:'smooth' });
+  }
+  if (act.dataset.act === 'del') {
+    const restore = snapshot();
+    l.items.splice(idx, 1);
+    l.items.forEach(x => { if (x.replacedBy === it.id) delete x.replacedBy; if (x.replaces === it.id) delete x.replaces; });
+    openId = null; save(); render();
+    toast('Beslissing verwijderd', restore);
+  }
+});
+$('decs').addEventListener('input', e => {
+  const f = e.target.dataset && e.target.dataset.f; if (!f) return;
+  const { it } = findIt(e.target); if (!it) return;
+  it[f] = e.target.value;
+  if (f === 'who' && it.who.trim()) state.lastWho = it.who.trim();
+  save(); renderTabs();
+});
+$('decs').addEventListener('focusout', e => {
+  const f = e.target.dataset && e.target.dataset.f; if (!f) return;
+  const { it } = findIt(e.target); if (!it) return;
+  if (f === 'what' && !it.what.trim()) { it.what = e.target.defaultValue || 'Zonder titel'; e.target.value = it.what; }
+  if (typeof it[f] === 'string') it[f] = it[f].trim();
+  save();
+});
+$('decs').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.matches('input.field')) { e.preventDefault(); openId = null; render(); }
+  if (e.key === 'Escape' && openId) { openId = null; render(); }
+});
+$('search').addEventListener('input', render);
+
+/* ---------- Ongedaan maken ---------- */
+let undoFn = null, toastTimer = null;
+function toast(msg, undo) {
+  undoFn = undo || null;
+  $('toast-text').textContent = msg;
+  $('toast-btn').hidden = !undo;
+  $('toast').classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { $('toast').classList.remove('show'); undoFn = null; }, undo ? 6000 : 2500);
+}
+$('toast-btn').addEventListener('click', () => {
+  if (undoFn) { undoFn(); undoFn = null; save(); render(); }
+  $('toast').classList.remove('show');
+});
+function snapshot() { const copy = JSON.parse(JSON.stringify(state)); return () => { state = copy; }; }
+
+/* ---------- Logs ---------- */
+$('lists').addEventListener('click', e => {
+  if (e.target.closest('#new-log')) { newLog(); return; }
+  const t = e.target.closest('[data-log]'); if (!t) return;
+  state.current = t.dataset.log; openId = null; setReplacing(null); $('search').value = ''; save(); render();
+});
+function newLog() {
+  const l = { id:uid(), name:'Nieuwe log', items:[] };
+  state.logs.push(l); state.current = l.id; openId = null; setReplacing(null); $('search').value = '';
+  save(); render();
+  $('list-name').focus(); $('list-name').select();
+  requestAnimationFrame(() => { const a = document.querySelector('.tab.active'); a && a.scrollIntoView({ inline:'nearest', block:'nearest' }); });
+}
+$('list-name').addEventListener('input', () => { cur().name = $('list-name').value.slice(0, 60); save(); renderTabs(); });
+$('list-name').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('add-what').focus(); } });
+$('list-name').addEventListener('blur', () => { if (!cur().name.trim()) { cur().name = 'Naamloos'; save(); render(); } });
+
+/* ---------- Menu ---------- */
+function closeMenu() { $('menu').classList.remove('open'); $('menu-btn').setAttribute('aria-expanded', 'false'); }
+$('menu-btn').addEventListener('click', e => {
+  e.stopPropagation();
+  const open = !$('menu').classList.contains('open');
+  $('menu').classList.toggle('open', open); $('menu-btn').setAttribute('aria-expanded', String(open));
+});
+document.addEventListener('click', e => { if (!e.target.closest('.menu-wrap')) closeMenu(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
+
+$('menu').addEventListener('click', async e => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  closeMenu();
+  const l = cur(), act = b.dataset.act;
+  if ((act === 'copy' || act === 'csv') && !l.items.length) { toast('De log is nog leeg'); return; }
+  if (act === 'copy') (await copy(markdown(l))) ? toast('Gekopieerd als tekst') : toast('Kopiëren lukt hier niet');
+  if (act === 'csv') { downloadCSV(l); toast('CSV gedownload'); }
+  if (act === 'delete') {
+    const restore = snapshot();
+    state.logs = state.logs.filter(x => x.id !== l.id);
+    if (!state.logs.length) state.logs.push({ id:uid(), name:'Mijn project', items:[] });
+    state.current = state.logs[0].id; openId = null; setReplacing(null); save(); render();
+    toast(`Log '${l.name}' verwijderd`, restore);
+  }
+});
+
+function markdown(l) {
+  const out = [`# Beslissingen: ${l.name}`, ''];
+  for (const it of sorted(l.items)) {
+    const tag = it.status !== 'genomen' ? ` (${STATUS[it.status].toLowerCase()})` : '';
+    out.push(`## ${it.what}${tag}`);
+    const meta = [fmtDate(it.date), it.who && `beslist door ${it.who}`].filter(Boolean).join(', ');
+    if (meta) out.push(`*${meta}*`, '');
+    if (it.why) out.push(`**Waarom:** ${it.why}`, '');
+    if (it.alt) out.push(`**Afgevallen:** ${it.alt}`, '');
+    if (it.note) out.push(`**${it.status === 'ingetrokken' ? 'Ingetrokken' : 'Herzien'}:** ${it.note}`, '');
+    const by = it.replacedBy && l.items.find(x => x.id === it.replacedBy);
+    if (by) out.push(`**Vervangen door:** ${by.what}`, '');
+    if (out[out.length - 1] !== '') out.push('');
+  }
+  return out.join('\n').trim() + '\n';
+}
+function downloadCSV(l) {
+  const cell = v => `"${String(v || '').replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`;
+  const rows = [['Datum', 'Beslissing', 'Waarom', 'Beslist door', 'Alternatieven', 'Status', 'Notitie']]
+    .concat(sorted(l.items).map(it => [it.date, it.what, it.why, it.who, it.alt, STATUS[it.status], it.note]));
+  const csv = '﻿' + rows.map(r => r.map(cell).join(';')).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type:'text/csv;charset=utf-8' }));
+  a.download = `beslissingen-${(l.name || 'log').toLowerCase().replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || 'log'}.csv`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+async function copy(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch {}
+  try {
+    const t = document.createElement('textarea'); t.value = text; t.style.position = 'fixed'; t.style.opacity = '0';
+    document.body.appendChild(t); t.select(); const ok = document.execCommand('copy'); t.remove(); return ok;
+  } catch { return false; }
+}
+
+/* ---------- Andere tabbladen gelijk houden ---------- */
+window.addEventListener('storage', e => { if (e.key === KEY) { state = load(); render(); } });
+
+render();
+</script>
+</body>
+</html>
