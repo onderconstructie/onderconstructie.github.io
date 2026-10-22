@@ -136,6 +136,30 @@ a { color:inherit; }
   display:inline-block; vertical-align:2px; margin-left:0.375rem; padding:0 0.4375rem; border-radius:999px;
   font-size:0.6875rem; font-weight:500; line-height:1.55; color:var(--slate-500); background:var(--slate-100);
 }
+.filter { margin-bottom:1.25rem; }
+.filter-head { display:flex; align-items:baseline; gap:0.625rem; margin-bottom:0.5rem; padding:0 0.25rem; }
+.filter-hint { font-size:0.8125rem; color:var(--slate-400); }
+.filter-chips { display:flex; gap:0.375rem; overflow-x:auto; scrollbar-width:none; margin:0 -1.25rem; padding:0.125rem 1.25rem 0.25rem; }
+.filter-chips::-webkit-scrollbar { display:none; }
+.filter-chips { -webkit-mask-image:linear-gradient(to right, #000 calc(100% - 2.5rem), transparent); mask-image:linear-gradient(to right, #000 calc(100% - 2.5rem), transparent); }
+.fchip {
+  flex-shrink:0; display:flex; align-items:center; gap:0.375rem; padding:0.375rem 0.75rem; border-radius:999px;
+  border:1px solid var(--slate-200); background:var(--wit); font-size:0.875rem; font-weight:500; color:var(--slate-600);
+  transition:background 0.15s, border-color 0.15s, color 0.15s;
+}
+.fchip .n { font-size:0.75rem; color:var(--slate-400); font-variant-numeric:tabular-nums; }
+.fchip:hover { border-color:var(--slate-300); }
+.fchip[aria-pressed="true"] { background:var(--slate-800); border-color:var(--slate-800); color:var(--wit); }
+.fchip[aria-pressed="true"] .n { color:var(--slate-300); }
+.results-card { border-color:#cfe9dd; }
+.results-head { display:flex; align-items:center; gap:0.75rem; padding:0.875rem 1rem; border-bottom:1px solid var(--slate-200); }
+.results-title { flex:1; font-size:1rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.02em; }
+.results-title .grp { font-weight:500; color:var(--slate-400); font-size:0.8125rem; }
+.results-clear { font-size:0.8125rem; color:var(--accent-dark); padding:0.25rem 0.5rem; border-radius:6px; }
+.results-clear:hover { background:var(--accent-light); }
+.tag.on { background:var(--accent-light); color:var(--accent-dark); }
+.row-group { display:block; font-size:0.75rem; color:var(--slate-400); }
+body.filtering #groups, body.filtering #list-tools { display:none; }
 .load-msg { text-align:center; color:var(--slate-500); font-size:0.9375rem; padding:2.5rem 1rem; }
 .chev { width:18px; height:18px; color:var(--slate-300); }
 .live {
@@ -236,6 +260,24 @@ a { color:inherit; }
       <div class="recent" id="recent"></div>
     </section>
 
+    <section class="filter" id="filter" hidden>
+      <div class="filter-head">
+        <h2 class="section-label">Waarvoor?</h2>
+        <span class="filter-hint" id="filter-hint">Tik een label om de tools te zien</span>
+      </div>
+      <div class="filter-chips" id="filter-chips" role="toolbar" aria-label="Filter op label"></div>
+    </section>
+
+    <section class="results" id="results" hidden aria-live="polite">
+      <div class="group results-card">
+        <div class="results-head">
+          <span class="results-title" id="results-title"></span>
+          <button class="results-clear" id="results-clear">Toon alles</button>
+        </div>
+        <div class="list" id="results-list"></div>
+      </div>
+    </section>
+
     <div class="list-tools" id="list-tools"><button id="all-open">Alles open</button><button id="all-closed">Alles dicht</button></div>
     <div id="groups"></div>
   </main>
@@ -332,12 +374,7 @@ function renderGroups() {
       </button>
       <div class="group-body" id="body-${g.id}">
       <div class="list">
-        ${tools.map(t => `
-          <button class="row" data-id="${esc(t.id)}" title="${esc(t.desc)}">
-            <span class="icon">${t.icon}</span>
-            <span><span class="row-title">${esc(t.title)}</span>${(t.labels || []).map(l => `<span class="tag">${esc(l)}</span>`).join('')}<br><span class="row-sub">${esc(t.sub)}</span></span>
-            <span><span class="live">open</span>${chevron}</span>
-          </button>`).join('')}
+        ${tools.map(t => rowHTML(t)).join('')}
       </div>
       </div>
     </section>`; }).join('');
@@ -365,6 +402,50 @@ document.addEventListener('click', e => {
   setCollapsed(g.dataset.group, !g.classList.contains('collapsed'));
   saveCollapsed();
 });
+function rowHTML(t, opts = {}) {
+  const tags = (t.labels || []).map(l => `<span class="tag${l === opts.on ? ' on' : ''}">${esc(l)}</span>`).join('');
+  const grp = opts.showGroup ? `<span class="row-group">${esc((GROUPS.find(g => g.id === t.g) || {}).label || '')}</span>` : '';
+  return `
+          <button class="row" data-id="${esc(t.id)}" title="${esc(t.desc)}">
+            <span class="icon">${t.icon}</span>
+            <span><span class="row-title">${esc(t.title)}</span>${tags}<br><span class="row-sub">${esc(t.sub)}</span>${grp}</span>
+            <span><span class="live">open</span>${chevron}</span>
+          </button>`;
+}
+
+/* ---------- Filter op label ---------- */
+// Labels die bij projectwerk horen, in de volgorde van een project; daarna de rest alfabetisch.
+const LABEL_ORDER = ['inschatten', 'plannen', 'uitvoeren', 'opvolgen', 'mensen', 'vergaderen', 'inzicht'];
+let activeLabel = null;
+function renderFilter() {
+  const counts = {};
+  TOOLS.forEach(t => (t.labels || []).forEach(l => counts[l] = (counts[l] || 0) + 1));
+  const labels = Object.keys(counts).sort((a, b) => {
+    const ia = LABEL_ORDER.indexOf(a), ib = LABEL_ORDER.indexOf(b);
+    if (ia !== -1 || ib !== -1) return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+    return a.localeCompare(b, 'nl');
+  });
+  $('filter').hidden = labels.length < 2;
+  $('filter-chips').innerHTML = labels.map(l =>
+    `<button class="fchip" data-label="${esc(l)}" aria-pressed="${l === activeLabel}">${esc(l)}<span class="n">${counts[l]}</span></button>`).join('');
+}
+function setFilter(label) {
+  activeLabel = label && label !== activeLabel ? label : null;
+  document.body.classList.toggle('filtering', !!activeLabel);
+  $('results').hidden = !activeLabel;
+  $('filter-hint').textContent = activeLabel ? 'Tik opnieuw om alles te tonen' : 'Tik een label om de tools te zien';
+  if (activeLabel) {
+    const list = byUsage(TOOLS.filter(t => (t.labels || []).includes(activeLabel)));
+    $('results-title').innerHTML = `${esc(activeLabel)} <span class="grp">${list.length} ${list.length === 1 ? 'tool' : 'tools'}</span>`;
+    $('results-list').innerHTML = list.map(t => rowHTML(t, { on: activeLabel, showGroup: true })).join('');
+    markLive();
+  }
+  renderFilter();
+}
+document.addEventListener('click', e => {
+  const c = e.target.closest('.fchip');
+  if (c) setFilter(c.dataset.label);
+});
 function renderRecent() {
   const ids = store.get('recent', []).filter(id => byId[id]);
   $('recent-section').hidden = ids.length === 0;
@@ -373,7 +454,7 @@ function renderRecent() {
 }
 function markLive() {
   document.querySelectorAll('.row').forEach(r => r.classList.toggle('is-live', frames.has(r.dataset.id)));
-  document.querySelectorAll('.group').forEach(g => {
+  document.querySelectorAll('.group[data-group]').forEach(g => {
     const n = g.querySelectorAll('.row.is-live').length;
     g.classList.toggle('has-live', n > 0);
     g.querySelector('.count-live').textContent = n + ' open';
@@ -535,7 +616,8 @@ async function loadTools() {
 }
 function start() {
   byId = Object.fromEntries(TOOLS.map(t => [t.id, t]));
-  renderGroups(); renderRecent();
+  renderGroups(); renderRecent(); renderFilter();
+  $('results-clear').addEventListener('click', () => setFilter(null));
   GROUPS.forEach(g => setCollapsed(g.id, store.get('collapsed', []).includes(g.id)));
   const first = location.hash.slice(1) || new URLSearchParams(location.search).get('tool');
   if (byId[first]) { history.replaceState(null, '', location.pathname); openTool(first); }
