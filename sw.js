@@ -4,18 +4,22 @@
   maar hij bemoeit zich alleen met de paden hieronder. Al de rest van de site gaat ongemoeid naar het netwerk.
   Wordt enkel geregistreerd wie /app/ opent.
 */
-const VERSION = 'oc-app-v3';
+const VERSION = 'oc-app-v4';
 
 const SHELL = [
-  '/app/', '/app/manifest.webmanifest', '/app/icon.svg',
+  '/app/', '/tools.json', '/app/manifest.webmanifest', '/app/icon.svg',
   '/app/icon-180.png', '/app/icon-192.png', '/app/icon-512.png', '/app/icon-maskable.png'
 ];
-const TOOLS = [
-  '/project-radar/', '/kanban/', '/stakeholders/', '/risico/', '/mixer/', '/paradox/',
-  '/fortuna/', '/check-in/', '/project-realisme/', '/vinkje/',
-  '/qr/', '/focus/', '/zakmes/looplicht/', '/zakmes/memomities/',
-  '/hier/', '/adem/', '/hart/'
-];
+// Welke tools offline bewaard worden, staat in /tools.json (gebouwd uit de metatags in de tools).
+let TOOLS = [];
+async function toolPaths(cache) {
+  if (TOOLS.length) return TOOLS;
+  try {
+    const res = await (cache || await caches.open(VERSION)).match('/tools.json');
+    if (res) TOOLS = (await res.json()).map(t => t.path);
+  } catch {}
+  return TOOLS;
+}
 const LIBS = [
   'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap',
   'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap',
@@ -34,8 +38,8 @@ function norm(path) {
   if (!path.endsWith('/') && !/\.[a-z0-9]+$/i.test(path)) path += '/';
   return path;
 }
-function isOurs(path) {
-  return path.startsWith('/app/') || TOOLS.some(t => path.startsWith(t));
+function isOurs(path, paths) {
+  return path.startsWith('/app/') || path === '/tools.json' || paths.some(t => path.startsWith(t));
 }
 // Een doorverwezen antwoord mag niet als antwoord op een navigatie dienen: maak er een schoon antwoord van.
 async function clean(res) {
@@ -47,9 +51,11 @@ self.addEventListener('install', e => {
   e.waitUntil((async () => {
     const cache = await caches.open(VERSION);
     await cache.addAll(SHELL.map(u => new Request(u, { cache: 'reload' })));
+    TOOLS = [];
+    const paths = await toolPaths(cache);
     // Tools en bibliotheken: zo veel mogelijk, één mislukking houdt de rest niet tegen.
     await Promise.allSettled([
-      ...TOOLS.map(async u => {
+      ...paths.map(async u => {
         const res = await fetch(new Request(u, { cache: 'reload' }));
         if (res.ok) await cache.put(u, await clean(res));
       }),
@@ -61,6 +67,8 @@ self.addEventListener('install', e => {
     await self.skipWaiting();
   })());
 });
+
+toolPaths();   // de lijst meteen inlezen als de service worker opstart
 
 self.addEventListener('activate', e => {
   e.waitUntil((async () => {
@@ -74,9 +82,10 @@ self.addEventListener('message', e => {
   if (!e.data || e.data.type !== 'status') return;
   e.waitUntil((async () => {
     const cache = await caches.open(VERSION);
+    const paths = await toolPaths(cache);
     let cached = 0;
-    for (const t of TOOLS) if (await cache.match(t)) cached++;
-    e.source.postMessage({ type: 'status', cached, total: TOOLS.length });
+    for (const t of paths) if (await cache.match(t)) cached++;
+    e.source.postMessage({ type: 'status', cached, total: paths.length });
   })());
 });
 
@@ -84,7 +93,10 @@ self.addEventListener('message', e => {
 async function networkFirst(e, key) {
   const cache = await caches.open(VERSION);
   const net = fetch(e.request, { cache: 'no-cache' }).then(async res => {
-    if (res.ok && res.type === 'basic') await cache.put(key, await clean(res.clone()));
+    if (res.ok && res.type === 'basic') {
+      await cache.put(key, await clean(res.clone()));
+      if (key === '/tools.json') TOOLS = [];   // nieuwe lijst: opnieuw inlezen
+    }
     return res;
   });
   e.waitUntil(net.catch(() => {}));
@@ -114,9 +126,15 @@ self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   const url = new URL(e.request.url);
   if (url.origin === location.origin) {
-    const path = norm(url.pathname);
-    if (!isOurs(path)) return;   // de rest van de site: niet aankomen
-    e.respondWith(networkFirst(e, path));
+    const path = url.pathname === '/tools.json' ? '/tools.json' : norm(url.pathname);
+    if (path.startsWith('/app/') || path === '/tools.json') { e.respondWith(networkFirst(e, path)); return; }
+    if (TOOLS.length) {
+      if (!isOurs(path, TOOLS)) return;   // de rest van de site: niet aankomen
+      e.respondWith(networkFirst(e, path));
+      return;
+    }
+    // Net opgestart en de lijst nog niet ingelezen: eerst inlezen, dan beslissen.
+    e.respondWith(toolPaths().then(paths => isOurs(path, paths) ? networkFirst(e, path) : fetch(e.request)));
   } else if (CDN_HOSTS.includes(url.hostname)) {
     e.respondWith(cacheFirst(e));
   }

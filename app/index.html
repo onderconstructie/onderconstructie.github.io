@@ -132,6 +132,11 @@ a { color:inherit; }
 .icon svg { width:34px; height:34px; }
 .row-title { font-size:1rem; font-weight:600; color:var(--slate-800); letter-spacing:-0.01em; line-height:1.3; }
 .row-sub { font-size:0.8125rem; color:var(--slate-500); line-height:1.35; }
+.tag {
+  display:inline-block; vertical-align:2px; margin-left:0.375rem; padding:0 0.4375rem; border-radius:999px;
+  font-size:0.6875rem; font-weight:500; line-height:1.55; color:var(--slate-500); background:var(--slate-100);
+}
+.load-msg { text-align:center; color:var(--slate-500); font-size:0.9375rem; padding:2.5rem 1rem; }
 .chev { width:18px; height:18px; color:var(--slate-300); }
 .live {
   font-size:0.6875rem; font-weight:600; color:var(--accent-dark); background:var(--accent-light);
@@ -264,169 +269,10 @@ a { color:inherit; }
 </div>
 
 <script>
-const TOOLS = [
- {
-  "id": "project-radar",
-  "g": "projecten",
-  "path": "/project-radar/",
-  "title": "Project Radar",
-  "sub": "Projectstatus in één oogopslag",
-  "desc": "Visualiseer projectstatus met een radar. Scoor categorieën, zie de totaalstatus.",
-  "keep": true,
-  "icon": "<svg viewBox=\"0 0 40 40\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"> <circle cx=\"20\" cy=\"20\" r=\"16\" fill=\"#ecfdf5\" stroke=\"#10b981\" stroke-width=\"1.5\"/> <circle cx=\"20\" cy=\"20\" r=\"10\" fill=\"none\" stroke=\"#10b981\" stroke-width=\"1\" opacity=\"0.5\"/> <circle cx=\"20\" cy=\"20\" r=\"5\" fill=\"none\" stroke=\"#10b981\" stroke-width=\"1\" opacity=\"0.3\"/> <path d=\"M20 6 L20 20 L32 12\" fill=\"#10b981\" opacity=\"0.6\"/> <circle cx=\"20\" cy=\"20\" r=\"2.5\" fill=\"#10b981\"/> <line x1=\"20\" y1=\"20\" x2=\"20\" y2=\"4\" stroke=\"#64748b\" stroke-width=\"0.5\" opacity=\"0.3\"/> <line x1=\"20\" y1=\"20\" x2=\"35\" y2=\"20\" stroke=\"#64748b\" stroke-width=\"0.5\" opacity=\"0.3\"/> <line x1=\"20\" y1=\"20\" x2=\"20\" y2=\"36\" stroke=\"#64748b\" stroke-width=\"0.5\" opacity=\"0.3\"/> <line x1=\"20\" y1=\"20\" x2=\"5\" y2=\"20\" stroke=\"#64748b\" stroke-width=\"0.5\" opacity=\"0.3\"/> </svg>"
- },
- {
-  "id": "kanban",
-  "g": "projecten",
-  "path": "/kanban/",
-  "title": "SprintFlow",
-  "sub": "Kanbanbord voor sprints en taken",
-  "desc": "Visueel kanban-bord voor agile projecten. Beheer sprints, taken en teamcapaciteit.",
-  "keep": true,
-  "icon": "<svg viewBox=\"0 0 40 40\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"> <rect x=\"5\" y=\"5\" width=\"30\" height=\"30\" rx=\"5\" fill=\"#ecfdf5\" stroke=\"#10b981\" stroke-width=\"1.5\"/> <rect x=\"9\" y=\"11\" width=\"6\" height=\"18\" rx=\"1.5\" fill=\"#10b981\" opacity=\"0.3\"/> <rect x=\"17\" y=\"11\" width=\"6\" height=\"13\" rx=\"1.5\" fill=\"#10b981\" opacity=\"0.5\"/> <rect x=\"25\" y=\"11\" width=\"6\" height=\"8\" rx=\"1.5\" fill=\"#10b981\" opacity=\"0.8\"/> </svg>"
- },
- {
-  "id": "stakeholders",
-  "g": "projecten",
-  "path": "/stakeholders/",
-  "title": "Stakeholder Radar",
-  "sub": "Wie heeft macht, wie heeft interesse",
-  "desc": "Breng stakeholders in kaart met de macht-interesse matrix. Visualiseer wie prioriteit krijgt.",
-  "keep": true,
-  "icon": "<svg viewBox=\"0 0 40 40\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"> <rect x=\"6\" y=\"6\" width=\"28\" height=\"28\" fill=\"none\" stroke=\"#cbd5e1\" stroke-width=\"1.5\" rx=\"2\"/> <line x1=\"20\" y1=\"6\" x2=\"20\" y2=\"34\" stroke=\"#cbd5e1\" stroke-width=\"1.5\"/> <line x1=\"6\" y1=\"20\" x2=\"34\" y2=\"20\" stroke=\"#cbd5e1\" stroke-width=\"1.5\"/> <circle cx=\"28\" cy=\"12\" r=\"3\" fill=\"#10b981\"/> <circle cx=\"12\" cy=\"12\" r=\"2.5\" fill=\"#cbd5e1\"/> <circle cx=\"28\" cy=\"28\" r=\"2.5\" fill=\"#cbd5e1\"/> <circle cx=\"12\" cy=\"28\" r=\"2\" fill=\"#cbd5e1\"/> </svg>"
- },
- {
-  "id": "risico",
-  "g": "projecten",
-  "path": "/risico/",
-  "title": "Risicomatrix",
-  "sub": "Risico's op kans en impact",
-  "desc": "Breng projectrisico's in kaart met de kans-impact matrix. Prioriteer en beheers risico's visueel.",
-  "keep": true,
-  "icon": "<svg viewBox=\"0 0 40 40\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"> <path d=\"M20 4 L36 32 L4 32 Z\" fill=\"#ecfdf5\" stroke=\"#10b981\" stroke-width=\"2\" stroke-linejoin=\"round\"/> <line x1=\"20\" y1=\"14\" x2=\"20\" y2=\"22\" stroke=\"#10b981\" stroke-width=\"3\" stroke-linecap=\"round\"/> <circle cx=\"20\" cy=\"27\" r=\"2\" fill=\"#10b981\"/> </svg>"
- },
- {
-  "id": "mixer",
-  "g": "projecten",
-  "path": "/mixer/",
-  "title": "De Sociale Mixer",
-  "sub": "Verdeel een groep in teams",
-  "desc": "Verdeel een groep willekeurig in kleinere teams. Kies het aantal groepen en mix.",
-  "keep": true,
-  "icon": "<svg viewBox=\"0 0 40 40\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"> <circle cx=\"20\" cy=\"20\" r=\"16\" fill=\"#ecfdf5\" stroke=\"#10b981\" stroke-width=\"1.5\"/> <circle cx=\"12\" cy=\"13\" r=\"3.5\" fill=\"#10b981\"/> <circle cx=\"28\" cy=\"13\" r=\"3.5\" fill=\"#10b981\"/> <circle cx=\"12\" cy=\"27\" r=\"3.5\" fill=\"#10b981\" opacity=\"0.6\"/> <circle cx=\"28\" cy=\"27\" r=\"3.5\" fill=\"#10b981\" opacity=\"0.6\"/> <line x1=\"20\" y1=\"5\" x2=\"20\" y2=\"35\" stroke=\"#10b981\" stroke-width=\"1.5\" stroke-dasharray=\"3 3\"/> </svg>"
- },
- {
-  "id": "paradox",
-  "g": "projecten",
-  "path": "/paradox/",
-  "title": "Afstemmingsparadox",
-  "sub": "Waarom meer mensen trager gaat",
-  "desc": "Visualiseer hoe communicatielijnen exponentieel groeien. Ontdek waarom meer mensen niet altijd sneller is.",
-  "keep": true,
-  "icon": "<svg viewBox=\"0 0 40 40\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"> <circle cx=\"20\" cy=\"20\" r=\"16\" fill=\"#ecfdf5\" stroke=\"#10b981\" stroke-width=\"1.5\"/> <circle cx=\"20\" cy=\"8\" r=\"2.5\" fill=\"#10b981\"/> <circle cx=\"30\" cy=\"14\" r=\"2.5\" fill=\"#10b981\"/> <circle cx=\"30\" cy=\"26\" r=\"2.5\" fill=\"#10b981\"/> <circle cx=\"20\" cy=\"32\" r=\"2.5\" fill=\"#10b981\"/> <circle cx=\"10\" cy=\"26\" r=\"2.5\" fill=\"#10b981\"/> <circle cx=\"10\" cy=\"14\" r=\"2.5\" fill=\"#10b981\"/> <g stroke=\"#10b981\" stroke-width=\"0.75\" opacity=\"0.3\"> <line x1=\"20\" y1=\"8\" x2=\"30\" y2=\"14\"/> <line x1=\"20\" y1=\"8\" x2=\"10\" y2=\"14\"/> <line x1=\"30\" y1=\"14\" x2=\"30\" y2=\"26\"/> <line x1=\"10\" y1=\"14\" x2=\"10\" y2=\"26\"/> <line x1=\"30\" y1=\"26\" x2=\"20\" y2=\"32\"/> <line x1=\"10\" y1=\"26\" x2=\"20\" y2=\"32\"/> <line x1=\"20\" y1=\"8\" x2=\"20\" y2=\"32\"/> <line x1=\"10\" y1=\"14\" x2=\"30\" y2=\"26\"/> <line x1=\"30\" y1=\"14\" x2=\"10\" y2=\"26\"/> </g> </svg>"
- },
- {
-  "id": "fortuna",
-  "g": "projecten",
-  "path": "/fortuna/",
-  "title": "Nomen Fortuna",
-  "sub": "Trek willekeurig een naam",
-  "desc": "Trek willekeurig namen uit een groep. Ideaal voor beurten, teamindelingen of loting.",
-  "keep": true,
-  "icon": "<svg viewBox=\"0 0 40 40\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"> <circle cx=\"20\" cy=\"20\" r=\"14\" fill=\"none\" stroke=\"#cbd5e1\" stroke-width=\"2\"/> <line x1=\"20\" y1=\"6\" x2=\"20\" y2=\"34\" stroke=\"#cbd5e1\" stroke-width=\"1\"/> <line x1=\"6\" y1=\"20\" x2=\"34\" y2=\"20\" stroke=\"#cbd5e1\" stroke-width=\"1\"/> <line x1=\"10\" y1=\"10\" x2=\"30\" y2=\"30\" stroke=\"#cbd5e1\" stroke-width=\"1\"/> <line x1=\"30\" y1=\"10\" x2=\"10\" y2=\"30\" stroke=\"#cbd5e1\" stroke-width=\"1\"/> <circle cx=\"20\" cy=\"20\" r=\"3\" fill=\"#cbd5e1\"/> <path d=\"M18 4 L20 8 L22 4 Z\" fill=\"#10b981\"/> </svg>"
- },
- {
-  "id": "check-in",
-  "g": "projecten",
-  "path": "/check-in/",
-  "title": "De Mono-Minuut",
-  "sub": "Eén minuut ongestoord spreken",
-  "desc": "Eén minuut ongestoord spreken. Voor check-ins zonder interruptie.",
-  "keep": true,
-  "icon": "<svg viewBox=\"0 0 40 40\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"> <circle cx=\"20\" cy=\"20\" r=\"16\" fill=\"#ecfdf5\" stroke=\"#10b981\" stroke-width=\"1.5\"/> <circle cx=\"20\" cy=\"20\" r=\"10\" fill=\"none\" stroke=\"#10b981\" stroke-width=\"1.5\" opacity=\"0.5\"/> <circle cx=\"20\" cy=\"20\" r=\"4\" fill=\"none\" stroke=\"#10b981\" stroke-width=\"1.5\" opacity=\"0.3\"/> <circle cx=\"20\" cy=\"20\" r=\"2\" fill=\"#10b981\"/> </svg>"
- },
- {
-  "id": "project-realisme",
-  "g": "projecten",
-  "path": "/project-realisme/",
-  "title": "Project Realisme Monitor",
-  "sub": "Hoe lang duurt het écht?",
-  "desc": "Bereken realistische doorlooptijd met Monte Carlo simulatie. Ontkoppel inspanning van kalendertijd.",
-  "keep": true,
-  "icon": "<svg viewBox=\"0 0 40 40\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"> <circle cx=\"20\" cy=\"20\" r=\"16\" fill=\"#ecfdf5\" stroke=\"#10b981\" stroke-width=\"1.5\"/> <path d=\"M20 10v10l6 3.5\" stroke=\"#10b981\" stroke-width=\"2\" stroke-linecap=\"round\"/> <circle cx=\"20\" cy=\"20\" r=\"2.5\" fill=\"#10b981\"/> <circle cx=\"20\" cy=\"6\" r=\"1.5\" fill=\"#10b981\" opacity=\"0.5\"/> <circle cx=\"34\" cy=\"20\" r=\"1.5\" fill=\"#10b981\" opacity=\"0.5\"/> <circle cx=\"6\" cy=\"20\" r=\"1.5\" fill=\"#10b981\" opacity=\"0.5\"/> </svg>"
- },
- {"id": "vinkje", "g": "projecten", "path": "/vinkje/", "title": "Vinkje", "sub": "Checklist: plak, vink af, zet terug", "desc": "Een slanke checklist. Plak een lijst, vink af, zet alles terug voor de volgende keer en deel met een link.", "keep": true, "icon": "<svg viewBox=\"0 0 40 40\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"> <circle cx=\"20\" cy=\"20\" r=\"16\" fill=\"#ecfdf5\" stroke=\"#10b981\" stroke-width=\"1.5\"/> <rect x=\"11\" y=\"12\" width=\"6\" height=\"6\" rx=\"1.8\" fill=\"#10b981\"/> <path d=\"M12.6 15.1l1.1 1.1 2-2.2\" stroke=\"#fff\" stroke-width=\"1.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/> <rect x=\"19.5\" y=\"14\" width=\"10\" height=\"2\" rx=\"1\" fill=\"#10b981\" opacity=\"0.5\"/> <rect x=\"11\" y=\"21.5\" width=\"6\" height=\"6\" rx=\"1.8\" stroke=\"#10b981\" stroke-width=\"1.4\"/> <rect x=\"19.5\" y=\"23.5\" width=\"8\" height=\"2\" rx=\"1\" fill=\"#10b981\" opacity=\"0.5\"/> </svg>"},
- {
-  "id": "qr",
-  "g": "zakmes",
-  "path": "/qr/",
-  "title": "QR Generator",
-  "sub": "Van URL naar QR-code",
-  "desc": "Plak een URL, krijg direct een QR-code. Simpel en snel.",
-  "keep": true,
-  "icon": "<svg viewBox=\"0 0 40 40\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"> <circle cx=\"20\" cy=\"20\" r=\"16\" fill=\"#f0fdf4\" stroke=\"#10b981\" stroke-width=\"2\"/> <g fill=\"#10b981\"> <rect x=\"12\" y=\"12\" width=\"7\" height=\"7\" rx=\"1.4\"/> <rect x=\"21\" y=\"12\" width=\"7\" height=\"7\" rx=\"1.4\"/> <rect x=\"12\" y=\"21\" width=\"7\" height=\"7\" rx=\"1.4\"/> <rect x=\"21\" y=\"21\" width=\"2.4\" height=\"2.4\" rx=\".4\"/> <rect x=\"24.4\" y=\"21\" width=\"2.4\" height=\"2.4\" rx=\".4\"/> <rect x=\"21\" y=\"24.4\" width=\"2.4\" height=\"2.4\" rx=\".4\"/> <rect x=\"26.8\" y=\"24.4\" width=\"2.4\" height=\"2.4\" rx=\".4\"/> <rect x=\"23.4\" y=\"26.8\" width=\"2.4\" height=\"2.4\" rx=\".4\"/> </g> </svg>"
- },
- {
-  "id": "focus",
-  "g": "zakmes",
-  "path": "/focus/",
-  "title": "Focus",
-  "sub": "Werk in blokken, met pauzes",
-  "desc": "Werk in blokken, neem pauzes. Een strakke timer om geconcentreerd te werken.",
-  "keep": true,
-  "icon": "<svg viewBox=\"0 0 40 40\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"> <circle cx=\"20\" cy=\"20\" r=\"16\" fill=\"#f8fafc\" stroke=\"#e2e8f0\" stroke-width=\"2\"/> <circle cx=\"20\" cy=\"20\" r=\"10\" stroke=\"#cbd5e1\" stroke-width=\"2\" fill=\"none\"/> <line x1=\"20\" y1=\"20\" x2=\"20\" y2=\"13\" stroke=\"#10b981\" stroke-width=\"2\" stroke-linecap=\"round\"/> <circle cx=\"20\" cy=\"20\" r=\"1.5\" fill=\"#10b981\"/> </svg>"
- },
- {
-  "id": "looplicht",
-  "g": "zakmes",
-  "path": "/zakmes/looplicht/",
-  "title": "Looplicht",
-  "sub": "Gezien worden in het donker",
-  "desc": "Je telefoon als fel lichtvlak. Om gezien te worden als je in het donker loopt.",
-  "keep": false,
-  "icon": "<svg viewBox=\"0 0 40 40\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"> <circle cx=\"20\" cy=\"20\" r=\"16\" fill=\"#f8fafc\" stroke=\"#e2e8f0\" stroke-width=\"2\"/> <rect x=\"15\" y=\"11\" width=\"10\" height=\"18\" rx=\"2\" fill=\"#10b981\"/> <g stroke=\"#10b981\" stroke-width=\"1.6\" stroke-linecap=\"round\"> <line x1=\"11.5\" y1=\"16\" x2=\"9\" y2=\"15\"/> <line x1=\"11.5\" y1=\"20\" x2=\"8.5\" y2=\"20\"/> <line x1=\"11.5\" y1=\"24\" x2=\"9\" y2=\"25\"/> <line x1=\"28.5\" y1=\"16\" x2=\"31\" y2=\"15\"/> <line x1=\"28.5\" y1=\"20\" x2=\"31.5\" y2=\"20\"/> <line x1=\"28.5\" y1=\"24\" x2=\"31\" y2=\"25\"/> </g> </svg>"
- },
- {
-  "id": "memomities",
-  "g": "zakmes",
-  "path": "/zakmes/memomities/",
-  "title": "MemoMities",
-  "sub": "Snel iets naar je eigen inbox",
-  "desc": "Spreek iets in, trek een foto of neem geluid op. Eén tik en het zit in je eigen inbox.",
-  "keep": false,
-  "icon": "<svg viewBox=\"0 0 40 40\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"> <circle cx=\"20\" cy=\"20\" r=\"16\" fill=\"#f8fafc\" stroke=\"#e2e8f0\" stroke-width=\"2\"/> <rect x=\"11\" y=\"14\" width=\"18\" height=\"12\" rx=\"2.5\" fill=\"#10b981\"/> <path d=\"M12.5 15.5 L20 21 L27.5 15.5\" stroke=\"#f8fafc\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" fill=\"none\"/> <circle cx=\"28.5\" cy=\"13.5\" r=\"3.6\" fill=\"#f8fafc\"/> <circle cx=\"28.5\" cy=\"13.5\" r=\"2.3\" fill=\"#34d399\"/> </svg>"
- },
- {
-  "id": "hier",
-  "g": "reset",
-  "path": "/hier/",
-  "title": "Hier & Nu",
-  "sub": "Aarden via je zintuigen",
-  "desc": "Een snelle en effectieve manier om te aarden bij stress of angst. Gebruik je zintuigen om direct uit je hoofd te komen.",
-  "keep": true,
-  "icon": "<svg viewBox=\"0 0 40 40\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"> <circle cx=\"20\" cy=\"20\" r=\"18\" fill=\"#d1fae5\" stroke=\"#10b981\" stroke-width=\"2\"/> <rect x=\"14\" y=\"12\" width=\"4\" height=\"16\" rx=\"2\" fill=\"#10b981\"/> <rect x=\"22\" y=\"12\" width=\"4\" height=\"16\" rx=\"2\" fill=\"#10b981\"/> </svg>"
- },
- {
-  "id": "adem",
-  "g": "reset",
-  "path": "/adem/",
-  "title": "Adem",
-  "sub": "Begeleide ademhaling",
-  "desc": "Breng je zenuwstelsel tot rust met begeleide ademhalingsoefeningen. Eenvoudig, visueel en direct kalmerend.",
-  "keep": true,
-  "icon": "<svg viewBox=\"0 0 40 40\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"> <circle cx=\"20\" cy=\"20\" r=\"18\" fill=\"#d1fae5\" stroke=\"#047857\" stroke-width=\"2\"/> <circle cx=\"20\" cy=\"20\" r=\"8\" stroke=\"#10b981\" stroke-width=\"8\" fill=\"none\"/> <circle cx=\"20\" cy=\"20\" r=\"4\" fill=\"#047857\"/> </svg>"
- },
- {
-  "id": "hart",
-  "g": "reset",
-  "path": "/hart/",
-  "title": "Hartmeditatie",
-  "sub": "Metta: vriendelijke wensen",
-  "desc": "Oefen mildheid en compassie met vriendelijke wensen. Geïnspireerd door de boeddhistische Metta meditatie.",
-  "keep": true,
-  "icon": "<svg viewBox=\"0 0 40 40\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"> <circle cx=\"20\" cy=\"20\" r=\"18\" fill=\"#d1fae5\" stroke=\"#10b981\" stroke-width=\"2\"/> <path d=\"M20 28.5C20 28.5 11 23 11 16C11 13.5 12.5 11.5 15 11.5C17 11.5 18.5 12.5 20 14.5C21.5 12.5 23 11.5 25 11.5C27.5 11.5 29 13.5 29 16C29 23 20 28.5 20 28.5Z\" fill=\"#10b981\" stroke=\"#047857\" stroke-width=\"1.5\" stroke-linejoin=\"round\"/> </svg>"
- }
-];
+/* De lijst van tools komt uit /tools.json. Die wordt gebouwd uit de metatags in de tools zelf (scripts/bouw-tools.py). */
+let TOOLS = [];
+let byId = {};
+const esc = v => String(v).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
 const GROUPS = [
   { id:'projecten', label:'Projecten', note:'Je projecten scherp houden', logo:"<svg viewBox=\"0 0 80 80\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"> <circle cx=\"40\" cy=\"40\" r=\"36\" fill=\"#f8fafc\" stroke=\"#e2e8f0\" stroke-width=\"2\"/> <rect x=\"16\" y=\"18\" width=\"12\" height=\"44\" rx=\"2\" fill=\"#cbd5e1\"/> <rect x=\"34\" y=\"18\" width=\"12\" height=\"44\" rx=\"2\" fill=\"#cbd5e1\"/> <rect x=\"52\" y=\"18\" width=\"12\" height=\"44\" rx=\"2\" fill=\"#cbd5e1\"/> <rect x=\"18\" y=\"22\" width=\"8\" height=\"8\" rx=\"1\" fill=\"#10b981\"/> </svg>" },
   { id:'zakmes',    label:'Zakmes',    note:'Kleine hulpjes voor onderweg', logo:"<svg viewBox=\"0 0 80 80\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"> <circle cx=\"40\" cy=\"40\" r=\"36\" fill=\"#f8fafc\" stroke=\"#e2e8f0\" stroke-width=\"2\"/> <rect x=\"26\" y=\"34\" width=\"28\" height=\"12\" rx=\"3\" fill=\"#cbd5e1\"/> <circle cx=\"30\" cy=\"40\" r=\"1.5\" fill=\"#94a3b8\"/> <path d=\"M54 37 L62 29 L63.5 30.5 L55.5 38.5 Z\" fill=\"#10b981\"/> <path d=\"M40 34 Q43 30 40 27 Q37 24 40 21\" stroke=\"#10b981\" stroke-width=\"2\" stroke-linecap=\"round\" fill=\"none\"/> <rect x=\"16\" y=\"38.5\" width=\"10\" height=\"3\" rx=\"0.75\" fill=\"#10b981\"/> <path d=\"M54 43 L60 49 L58.5 50.5 L57 49 L55.5 50.5 L54 49 L52.5 50.5 L52.5 44.5 Z\" fill=\"#cbd5e1\"/> </svg>" },
@@ -439,7 +285,6 @@ const store = {
   get(k, d) { try { const v = localStorage.getItem(KEY + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
   set(k, v) { try { localStorage.setItem(KEY + k, JSON.stringify(v)); } catch {} }
 };
-const byId = Object.fromEntries(TOOLS.map(t => [t.id, t]));
 const $ = id => document.getElementById(id);
 const chevron = '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
 
@@ -468,7 +313,7 @@ function logUse(id) {
 // Nooit gebruikte tools houden hun vaste volgorde, onderaan.
 function byUsage(tools) {
   const now = Date.now();
-  return tools.map((t, i) => ({ t, i, sc: usageScore(t.id, now) }))
+  return tools.map((t, i) => ({ t, i: t.order ?? i, sc: usageScore(t.id, now) }))
     .sort((a, b) => (b.sc - a.sc) || (a.i - b.i)).map(x => x.t);
 }
 const toggleIcon = '<svg class="toggle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
@@ -488,9 +333,9 @@ function renderGroups() {
       <div class="group-body" id="body-${g.id}">
       <div class="list">
         ${tools.map(t => `
-          <button class="row" data-id="${t.id}" title="${t.desc.replace(/"/g, '&quot;')}">
+          <button class="row" data-id="${esc(t.id)}" title="${esc(t.desc)}">
             <span class="icon">${t.icon}</span>
-            <span><span class="row-title">${t.title}</span><br><span class="row-sub">${t.sub}</span></span>
+            <span><span class="row-title">${esc(t.title)}</span>${(t.labels || []).map(l => `<span class="tag">${esc(l)}</span>`).join('')}<br><span class="row-sub">${esc(t.sub)}</span></span>
             <span><span class="live">open</span>${chevron}</span>
           </button>`).join('')}
       </div>
@@ -524,7 +369,7 @@ function renderRecent() {
   const ids = store.get('recent', []).filter(id => byId[id]);
   $('recent-section').hidden = ids.length === 0;
   $('recent').innerHTML = ids.map(id => `
-    <button class="chip" data-id="${id}"><span class="icon">${byId[id].icon}</span>${byId[id].title}</button>`).join('');
+    <button class="chip" data-id="${esc(id)}"><span class="icon">${byId[id].icon}</span>${esc(byId[id].title)}</button>`).join('');
 }
 function markLive() {
   document.querySelectorAll('.row').forEach(r => r.classList.toggle('is-live', frames.has(r.dataset.id)));
@@ -680,10 +525,27 @@ if ('serviceWorker' in navigator) {
 }
 
 /* ---------- Start ---------- */
-renderGroups(); renderRecent();
-GROUPS.forEach(g => setCollapsed(g.id, store.get('collapsed', []).includes(g.id)));
-const start = location.hash.slice(1) || new URLSearchParams(location.search).get('tool');
-if (byId[start]) { history.replaceState(null, '', location.pathname); openTool(start); }
+async function loadTools() {
+  // Eerst het netwerk (nieuwste lijst); zonder verbinding geeft de service worker de bewaarde lijst.
+  const res = await fetch('/tools.json', { cache: 'no-cache' });
+  if (!res.ok) throw new Error(res.status);
+  const list = await res.json();
+  if (!Array.isArray(list) || !list.length) throw new Error('leeg');
+  return list;
+}
+function start() {
+  byId = Object.fromEntries(TOOLS.map(t => [t.id, t]));
+  renderGroups(); renderRecent();
+  GROUPS.forEach(g => setCollapsed(g.id, store.get('collapsed', []).includes(g.id)));
+  const first = location.hash.slice(1) || new URLSearchParams(location.search).get('tool');
+  if (byId[first]) { history.replaceState(null, '', location.pathname); openTool(first); }
+}
+loadTools().then(list => { TOOLS = list; store.set('tools-cache', list); start(); })
+  .catch(() => {
+    const cached = store.get('tools-cache', null);
+    if (cached) { TOOLS = cached; start(); return; }
+    $('groups').innerHTML = '<p class="load-msg">De lijst met tools kon niet geladen worden. Controleer je verbinding en probeer opnieuw.</p>';
+  });
 </script>
 </body>
 </html>
