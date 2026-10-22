@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Gap-analyse – Onder Constructie</title>
+<meta name="description" content="Beschrijf waar je nu staat en waar je naartoe wil, onderbouw de huidige situatie met bewijs, zoek de oorzaak en bepaal wat nodig is.">
+    <meta name="oc:groep" content="projecten">
+    <meta name="oc:labels" content="inzicht">
+    <meta name="oc:pdca" content="plan, check">
+    <meta name="oc:kort" content="Van huidige naar gewenste situatie, onderbouwd">
+    <meta name="oc:volgorde" content="32">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40' fill='none'%3E%3Ccircle cx='20' cy='20' r='16' fill='%23ecfdf5' stroke='%2310b981' stroke-width='1.5'/%3E%3Cpath d='M8.5 29.5V25H16v4.5' fill='%23a7f3d0'/%3E%3Cpath d='M24 29.5V19h7.5v10.5' fill='%2310b981'/%3E%3Cpath d='M12.5 23C14.5 15.5 20 13 26.5 15.5' stroke='%2310b981' stroke-width='1.8' stroke-linecap='round'/%3E%3Cpath d='M23.6 13.2l3 2.3-2.4 2.9' stroke='%2310b981' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --slate-900:#0f172a; --slate-800:#1e293b; --slate-700:#334155; --slate-600:#475569;
+  --slate-500:#64748b; --slate-400:#94a3b8; --slate-300:#cbd5e1; --slate-200:#e2e8f0;
+  --slate-100:#f1f5f9; --slate-50:#f8fafc; --wit:#ffffff;
+  --accent:#10b981; --accent-dark:#059669; --accent-light:#d1fae5; --accent-50:#ecfdf5;
+  --rood:#ef4444; --oranje:#d97706; --oranje-50:#fffbeb; --oranje-200:#fde68a;
+  --t-onderzoek:#3b82f6; --t-data:#10b981; --t-ervaring:#f59e0b; --t-stakeholders:#8b5cf6;
+  --bottom: env(safe-area-inset-bottom, 0px);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body {
+  font-family:'DM Sans', system-ui, sans-serif; background:var(--slate-50); color:var(--slate-700);
+  line-height:1.5; min-height:100vh; -webkit-font-smoothing:antialiased;
+  display:flex; flex-direction:column;
+}
+button, input, textarea, select { font:inherit; color:inherit; }
+button { background:none; border:0; cursor:pointer; }
+[hidden] { display:none !important; }
+
+/* Kop */
+.header { background:var(--wit); border-bottom:1px solid var(--slate-200); padding:1.5rem 1.25rem 1.75rem; position:relative; text-align:center; }
+.back-link {
+  position:absolute; top:1.25rem; left:1.25rem; display:inline-flex; align-items:center; gap:0.5rem;
+  font-size:0.875rem; color:var(--slate-400); text-decoration:none; transition:color 0.2s;
+}
+.back-link:hover { color:var(--accent); }
+.back-link svg { width:16px; height:16px; }
+.logo svg { width:56px; height:56px; }
+.title { font-size:1.625rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.03em; line-height:1.2; margin-top:0.5rem; }
+.subtitle { font-size:0.9375rem; color:var(--slate-500); }
+
+.main { flex:1; width:100%; max-width:1180px; margin:0 auto; padding:1.25rem clamp(1rem, 2.5vw, 2rem) 3rem; }
+
+/* Analyses (tabs) */
+.lists { display:flex; gap:0.5rem; overflow-x:auto; scrollbar-width:none; margin:0 -1rem 1rem; padding:0.125rem 1rem; }
+.lists::-webkit-scrollbar { display:none; }
+.tab {
+  flex-shrink:0; padding:0.4375rem 0.875rem; border-radius:999px; font-size:0.875rem; font-weight:600;
+  border:1px solid var(--slate-200); background:var(--wit); color:var(--slate-600); white-space:nowrap;
+  display:flex; align-items:center; gap:0.375rem;
+}
+.tab .n { font-size:0.75rem; font-weight:500; color:var(--slate-400); font-variant-numeric:tabular-nums; }
+.tab.active { background:var(--slate-800); border-color:var(--slate-800); color:var(--wit); }
+.tab.active .n { color:var(--slate-300); }
+.tab.add { color:var(--accent-dark); border-style:dashed; }
+
+.layout { display:grid; grid-template-columns:minmax(0, 1fr); gap:1rem; align-items:start; }
+@media (min-width:1000px) {
+  .layout { grid-template-columns:minmax(0, 1fr) 340px; gap:1.5rem; }
+  .layout > .aside { grid-column:2; grid-row:1 / span 2; position:sticky; top:1rem; }
+  .layout > .content { grid-column:1; grid-row:1; }
+}
+
+.card { background:var(--wit); border:1px solid var(--slate-200); border-radius:16px; box-shadow:0 1px 2px rgba(15,23,42,0.04); }
+.card-head { display:flex; align-items:center; gap:0.5rem; padding:1rem 0.75rem 0.25rem 1.125rem; }
+.list-name {
+  flex:1; min-width:0; font-size:1.25rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.02em;
+  border:0; background:none; outline:none; padding:0.125rem 0; border-bottom:1.5px solid transparent;
+}
+.list-name:focus, .list-name:focus-visible { border-bottom-color:var(--accent); outline:none; }
+.icon-btn { width:38px; height:38px; display:flex; align-items:center; justify-content:center; border-radius:10px; color:var(--slate-500); flex-shrink:0; }
+.icon-btn:hover { background:var(--slate-100); color:var(--slate-700); }
+.icon-btn svg { width:20px; height:20px; }
+.question-wrap { padding:0.25rem 1.125rem 1rem; }
+.q-label { display:block; font-size:0.6875rem; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:var(--slate-400); margin-bottom:0.25rem; }
+.question {
+  width:100%; border:0; border-bottom:1.5px solid var(--slate-200); background:none; outline:none; resize:none;
+  font-size:1rem; color:var(--slate-700); padding:0.25rem 0; line-height:1.45; overflow:hidden;
+}
+.question:focus { border-bottom-color:var(--accent); }
+.question::placeholder { color:var(--slate-400); }
+
+/* Hoe werkt dit */
+.how { margin-top:0.75rem; }
+.how summary {
+  list-style:none; cursor:pointer; display:inline-flex; align-items:center; gap:0.375rem;
+  font-size:0.875rem; font-weight:600; color:var(--accent-dark); padding:0.25rem 0.125rem;
+}
+.how summary::-webkit-details-marker { display:none; }
+.how summary svg { width:16px; height:16px; transition:transform 0.2s; }
+.how[open] summary svg { transform:rotate(90deg); }
+.how-body { margin-top:0.375rem; padding:0.875rem 1rem; background:var(--wit); border:1px solid var(--slate-200); border-radius:12px; font-size:0.875rem; color:var(--slate-600); }
+.how-body ol { padding-left:1.125rem; display:grid; gap:0.25rem; }
+.how-body .src { margin-top:0.5rem; font-size:0.75rem; color:var(--slate-400); }
+.how-types { display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%, 210px), 1fr)); gap:0.375rem 0.75rem; margin:0.5rem 0 0.25rem; }
+.how-types div { display:flex; gap:0.5rem; align-items:baseline; font-size:0.8125rem; }
+.how-types b { font-weight:600; color:var(--slate-700); }
+
+/* Signalen-samenvatting */
+.sigbar { display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; margin:0.875rem 0 0.75rem; }
+.sig-summary {
+  display:inline-flex; align-items:center; gap:0.375rem; padding:0.375rem 0.75rem; border-radius:999px;
+  font-size:0.8125rem; font-weight:600; color:var(--oranje); background:var(--oranje-50); border:1px solid var(--oranje-200);
+}
+.sig-summary.ok { color:var(--accent-dark); background:var(--accent-50); border-color:#a7f3d0; cursor:default; }
+.sig-summary svg { width:15px; height:15px; }
+.sig-analysis { font-size:0.8125rem; color:var(--slate-500); display:flex; gap:0.375rem; align-items:center; }
+.sig-analysis .dot { width:6px; height:6px; border-radius:50%; background:var(--oranje); flex-shrink:0; }
+.sig-analysis.soft .dot { background:var(--slate-300); }
+.sig-list { display:grid; gap:0.25rem; margin-bottom:0.75rem; }
+
+/* Kloven */
+.gaps { display:grid; gap:0.75rem; }
+.gap { overflow:hidden; transition:box-shadow 0.2s, border-color 0.2s; }
+.gap.flash { border-color:var(--oranje); box-shadow:0 0 0 3px rgba(217,119,6,0.15); }
+.gap-head { display:grid; grid-template-columns:24px minmax(0, 1fr) auto; gap:0.5rem; align-items:start; width:100%; text-align:left; padding:0.875rem 0.875rem 0.875rem 0.75rem; }
+.gap-head:hover { background:var(--slate-50); }
+.gap-head .chev { width:20px; height:20px; color:var(--slate-400); margin-top:2px; transition:transform 0.2s; }
+.gap.open .gap-head .chev { transform:rotate(90deg); }
+.gap-title { font-size:1rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.01em; line-height:1.3; word-break:break-word; }
+.gap-title.empty { color:var(--slate-400); font-weight:600; }
+.gap-sum { display:flex; flex-wrap:wrap; align-items:center; gap:0.25rem 0.625rem; margin-top:0.25rem; font-size:0.8125rem; color:var(--slate-500); }
+.gap-sum .num { font-variant-numeric:tabular-nums; color:var(--slate-700); font-weight:600; }
+.ev-dots { display:inline-flex; gap:3px; align-items:center; }
+.ev-dots i { width:8px; height:8px; border-radius:2px; background:var(--slate-200); display:block; }
+.gap-right { display:flex; flex-direction:column; align-items:flex-end; gap:0.25rem; }
+.qpill { font-size:0.6875rem; font-weight:600; padding:0.125rem 0.5rem; border-radius:999px; white-space:nowrap; }
+.q-eerst { color:var(--accent-dark); background:var(--accent-light); }
+.q-plannen { color:#1d4ed8; background:#dbeafe; }
+.q-snel { color:var(--slate-600); background:var(--slate-100); }
+.q-liggen { color:#b45309; background:#fef3c7; }
+.sigcount { font-size:0.6875rem; font-weight:600; color:var(--oranje); background:var(--oranje-50); border:1px solid var(--oranje-200); padding:0 0.4375rem; border-radius:999px; white-space:nowrap; }
+.label-aanname { font-size:0.6875rem; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; color:var(--oranje); background:var(--oranje-50); border:1px dashed #f59e0b; padding:0 0.4375rem; border-radius:6px; }
+
+.gap-body { padding:0 1rem 1rem; border-top:1px solid var(--slate-100); }
+.chips { display:flex; flex-wrap:wrap; gap:0.375rem; padding-top:0.875rem; }
+.chip-sig {
+  display:inline-flex; align-items:center; gap:0.375rem; font-size:0.8125rem; color:#92400e; background:var(--oranje-50);
+  border:1px solid var(--oranje-200); border-radius:8px; padding:0.25rem 0.5rem; line-height:1.35;
+}
+.chip-sig::before { content:''; width:6px; height:6px; border-radius:50%; background:#f59e0b; flex-shrink:0; }
+
+.sec { margin-top:1rem; }
+.sec-label { display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:0.125rem 0.5rem; font-size:0.6875rem; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:var(--slate-400); margin-bottom:0.375rem; }
+.sec-label .hint { text-transform:none; letter-spacing:0; font-weight:400; font-size:0.75rem; color:var(--slate-400); }
+.two { display:grid; grid-template-columns:minmax(0, 1fr); gap:1rem; }
+@media (min-width:640px) { .two { grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); } }
+.state-box { border:1px solid var(--slate-200); border-radius:12px; padding:0.75rem; background:var(--slate-50); }
+.state-box.tobe { background:var(--accent-50); border-color:#cfe9dd; }
+.state-title { font-size:0.875rem; font-weight:700; color:var(--slate-800); margin-bottom:0.375rem; display:flex; align-items:center; gap:0.5rem; }
+.field {
+  width:100%; min-width:0; border:1.5px solid var(--slate-200); border-radius:9px; background:var(--wit); outline:none;
+  padding:0.5rem 0.625rem; font-size:0.9375rem; color:var(--slate-800); transition:border-color 0.15s;
+}
+.field:focus { border-color:var(--accent); }
+.field::placeholder { color:var(--slate-400); }
+textarea.field { resize:none; overflow:hidden; line-height:1.45; min-height:3.6em; }
+textarea.field.grow { min-height:0; display:block; }
+.mini { display:block; font-size:0.75rem; color:var(--slate-500); margin:0.5rem 0 0.1875rem; }
+.row3 { display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); gap:0.375rem; }
+.row3 .ind { grid-column:1 / -1; }
+.row2 { display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); gap:0.375rem; }
+.field.sm { font-size:0.875rem; padding:0.4375rem 0.5rem; }
+
+/* Kloof */
+.gapbox { margin-top:0.75rem; border:1px dashed var(--slate-300); border-radius:12px; padding:0.75rem; display:grid; gap:0.5rem; }
+.gapbox .big { font-size:1rem; font-weight:700; color:var(--slate-800); font-variant-numeric:tabular-nums; }
+.gapbox .big .dir { font-weight:500; color:var(--slate-500); font-size:0.8125rem; margin-left:0.375rem; }
+.gapbox .qual { font-size:0.875rem; color:var(--slate-500); }
+.bar { position:relative; height:28px; margin:0 6px; }
+.bar .track { position:absolute; left:0; right:0; top:12px; height:4px; border-radius:2px; background:var(--slate-200); }
+.bar .span { position:absolute; top:12px; height:4px; border-radius:2px; background:var(--accent); }
+.bar .pt { position:absolute; top:7px; width:14px; height:14px; margin-left:-7px; border-radius:50%; border:2px solid var(--wit); box-shadow:0 0 0 1px var(--slate-300); }
+.bar .pt.cur { background:var(--slate-500); }
+.bar .pt.tgt { background:var(--accent); box-shadow:0 0 0 1px var(--accent); }
+.bar-labels { display:flex; justify-content:space-between; font-size:0.75rem; color:var(--slate-500); font-variant-numeric:tabular-nums; }
+.bar-labels b { color:var(--slate-700); font-weight:600; }
+
+/* Bewijs */
+.evs { display:grid; gap:0.5rem; }
+.ev { display:grid; grid-template-columns:minmax(0, 1fr) auto; gap:0.375rem; padding:0.5rem; border:1px solid var(--slate-200); border-left:4px solid var(--slate-300); border-radius:10px; background:var(--wit); }
+.ev-top { display:grid; grid-template-columns:minmax(0, 1.3fr) minmax(0, 1fr); gap:0.375rem; }
+.ev .note { grid-column:1 / -1; }
+.ev .x { grid-row:1; grid-column:2; }
+.ev-help { font-size:0.75rem; color:var(--slate-500); grid-column:1 / -1; margin-top:-0.125rem; }
+select.field { appearance:none; -webkit-appearance:none; padding-right:1.75rem; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 0.5rem center; background-size:14px; }
+.x { width:32px; height:32px; display:flex; align-items:center; justify-content:center; border-radius:8px; color:var(--slate-400); flex-shrink:0; }
+.x:hover { color:var(--rood); background:#fef2f2; }
+.x svg { width:16px; height:16px; }
+.add-link { display:inline-flex; align-items:center; gap:0.375rem; font-size:0.875rem; font-weight:600; color:var(--accent-dark); padding:0.375rem 0.5rem; border-radius:8px; margin-top:0.375rem; }
+.add-link:hover { background:var(--accent-50); }
+.add-link svg { width:16px; height:16px; }
+.add-link[disabled] { color:var(--slate-400); cursor:default; background:none; }
+.no-ev { display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; font-size:0.8125rem; color:var(--slate-500); }
+
+/* Waarom */
+.whys { display:grid; gap:0.375rem; }
+.why { display:grid; grid-template-columns:auto minmax(0, 1fr) auto; gap:0.5rem; align-items:center; }
+.why-n { font-size:0.75rem; font-weight:600; color:var(--slate-400); width:4.5rem; text-align:right; }
+.why.root .why-n { color:var(--accent-dark); }
+.why.root .field { border-color:#a7f3d0; background:var(--accent-50); }
+.why:nth-child(2) { margin-left:0.5rem; } .why:nth-child(3) { margin-left:1rem; } .why:nth-child(4) { margin-left:1.5rem; } .why:nth-child(5) { margin-left:2rem; }
+@media (max-width:420px) { .why { margin-left:0 !important; } .why-n { width:auto; } }
+
+/* Acties */
+.acts { display:grid; gap:0.5rem; }
+.act { display:grid; grid-template-columns:auto minmax(0, 1fr) auto; gap:0.5rem; align-items:start; }
+.act .box { width:22px; height:22px; border-radius:7px; border:2px solid var(--slate-300); margin-top:0.4375rem; display:flex; align-items:center; justify-content:center; }
+.act .box svg { width:13px; height:13px; color:var(--wit); opacity:0; }
+.act.done .box { background:var(--accent); border-color:var(--accent); }
+.act.done .box svg { opacity:1; }
+.act.done .a-text { color:var(--slate-400); text-decoration:line-through; }
+.act-fields { display:grid; gap:0.375rem; }
+.act-meta { display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); gap:0.375rem; }
+.field.missing { border-color:var(--oranje-200); background:var(--oranje-50); }
+
+/* Prioriteit */
+.prio { display:grid; grid-template-columns:minmax(0, 1fr); gap:0.75rem; }
+@media (min-width:520px) { .prio { grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); } }
+.seg-label { display:flex; justify-content:space-between; font-size:0.8125rem; color:var(--slate-600); margin-bottom:0.25rem; }
+.seg-label b { color:var(--slate-800); }
+.seg { display:grid; grid-template-columns:repeat(4, 1fr); gap:3px; background:var(--slate-100); border-radius:10px; padding:3px; }
+.seg button { padding:0.375rem 0; border-radius:8px; font-size:0.875rem; font-weight:600; color:var(--slate-500); }
+.seg button.on { background:var(--wit); color:var(--slate-800); box-shadow:0 1px 2px rgba(15,23,42,0.1); }
+.seg-ends { display:flex; justify-content:space-between; font-size:0.6875rem; color:var(--slate-400); margin-top:0.1875rem; }
+.prio-note { font-size:0.75rem; color:var(--slate-400); margin-top:0.375rem; }
+.gap-foot { display:flex; justify-content:space-between; align-items:center; margin-top:1rem; padding-top:0.75rem; border-top:1px solid var(--slate-100); }
+.del-gap { font-size:0.8125rem; color:var(--slate-400); padding:0.25rem 0.5rem; border-radius:6px; }
+.del-gap:hover { color:var(--rood); background:#fef2f2; }
+.fold-gap { font-size:0.8125rem; color:var(--slate-500); padding:0.25rem 0.5rem; border-radius:6px; }
+.fold-gap:hover { background:var(--slate-100); }
+
+/* Nieuwe kloof */
+.add-gap { display:flex; gap:0.5rem; margin-top:0.75rem; }
+.add-gap input { flex:1; min-width:0; padding:0.6875rem 0.875rem; border:1.5px dashed var(--slate-300); border-radius:12px; background:var(--wit); outline:none; font-size:1rem; }
+.add-gap input:focus { border-style:solid; border-color:var(--accent); }
+.add-btn { width:46px; border-radius:12px; background:var(--accent); color:var(--wit); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.add-btn:hover { background:var(--accent-dark); }
+.add-btn svg { width:22px; height:22px; }
+
+/* Leeg */
+.empty { padding:2rem 1.25rem; text-align:center; color:var(--slate-500); font-size:0.9375rem; }
+.empty strong { display:block; color:var(--slate-700); font-weight:600; margin-bottom:0.25rem; }
+.btn { display:inline-flex; align-items:center; gap:0.5rem; padding:0.5625rem 1rem; border-radius:10px; font-weight:600; font-size:0.9375rem; }
+.btn-primary { background:var(--accent); color:var(--wit); }
+.btn-primary:hover { background:var(--accent-dark); }
+.empty .btn { margin-top:1rem; }
+
+/* Overzicht */
+.aside .card { padding:1rem 1.125rem; }
+.ov-title { font-size:0.6875rem; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:var(--slate-400); margin-bottom:0.625rem; display:flex; justify-content:space-between; align-items:center; }
+.ov-stats { display:grid; grid-template-columns:repeat(3, 1fr); gap:0.5rem; }
+.ov-stat { background:var(--slate-50); border-radius:10px; padding:0.5rem 0.625rem; }
+.ov-stat b { display:block; font-size:1.25rem; font-weight:700; color:var(--slate-800); font-variant-numeric:tabular-nums; line-height:1.2; }
+.ov-stat span { font-size:0.75rem; color:var(--slate-500); }
+.ov-stat.warn b { color:var(--oranje); }
+.ov-sec { margin-top:1rem; }
+.ov-sub { font-size:0.8125rem; font-weight:600; color:var(--slate-700); margin-bottom:0.375rem; }
+.cov { display:grid; gap:0.375rem; }
+.cov-row { display:grid; grid-template-columns:7.5rem minmax(0, 1fr) 2.25rem; gap:0.5rem; align-items:center; font-size:0.8125rem; }
+.cov-row .lbl { display:flex; align-items:center; gap:0.375rem; color:var(--slate-600); white-space:nowrap; }
+.cov-row .sw { width:8px; height:8px; border-radius:2px; flex-shrink:0; }
+.cov-bar { height:6px; background:var(--slate-100); border-radius:3px; overflow:hidden; }
+.cov-bar span { display:block; height:100%; border-radius:3px; }
+.cov-row .v { text-align:right; color:var(--slate-500); font-variant-numeric:tabular-nums; }
+.rank { list-style:none; display:grid; gap:0.125rem; }
+.rank button { width:100%; display:grid; grid-template-columns:1.25rem minmax(0, 1fr) auto; gap:0.5rem; align-items:center; text-align:left; padding:0.375rem 0.375rem; border-radius:8px; font-size:0.875rem; }
+.rank button:hover { background:var(--slate-50); }
+.rank .r { font-size:0.75rem; color:var(--slate-400); font-variant-numeric:tabular-nums; text-align:right; }
+.rank .t { color:var(--slate-800); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ov-empty { font-size:0.8125rem; color:var(--slate-400); }
+@media (max-width:999px) {
+  .aside .card { padding:0.875rem 1rem; }
+  .ov-more { margin-top:0.25rem; }
+  .ov-more summary { list-style:none; cursor:pointer; font-size:0.8125rem; font-weight:600; color:var(--accent-dark); padding:0.375rem 0 0; }
+  .ov-more summary::-webkit-details-marker { display:none; }
+}
+@media (min-width:1000px) { .ov-more > summary { display:none; } }
+
+/* Menu */
+.menu-wrap { position:relative; }
+.menu {
+  position:absolute; right:0; top:42px; z-index:20; min-width:230px; background:var(--wit); border:1px solid var(--slate-200);
+  border-radius:12px; box-shadow:0 12px 32px rgba(15,23,42,0.14); padding:0.375rem; display:none;
+}
+.menu.open { display:block; }
+.menu button { width:100%; display:flex; align-items:center; gap:0.625rem; padding:0.5625rem 0.625rem; border-radius:8px; font-size:0.9375rem; text-align:left; color:var(--slate-700); white-space:nowrap; }
+.menu button:hover { background:var(--slate-100); }
+.menu button svg { width:18px; height:18px; color:var(--slate-400); flex-shrink:0; }
+.menu .sep { height:1px; background:var(--slate-100); margin:0.25rem 0.375rem; }
+.menu .danger { color:var(--rood); }
+.menu .danger svg { color:var(--rood); }
+
+/* Melding */
+.toast {
+  position:fixed; left:50%; bottom:calc(var(--bottom) + 1.25rem); transform:translate(-50%, calc(100% + 3rem)); visibility:hidden; z-index:50;
+  background:var(--slate-800); color:var(--wit); border-radius:12px; padding:0.625rem 0.625rem 0.625rem 1rem;
+  display:flex; align-items:center; gap:0.875rem; font-size:0.9375rem; box-shadow:0 10px 30px rgba(15,23,42,0.25);
+  transition:transform 0.25s ease, visibility 0s 0.25s; max-width:calc(100% - 2rem);
+}
+.toast.show { transform:translate(-50%, 0); visibility:visible; transition:transform 0.25s ease; }
+.toast button { color:#6ee7b7; font-weight:600; padding:0.25rem 0.5rem; border-radius:6px; }
+.toast button:hover { background:rgba(255,255,255,0.08); }
+
+.footer { text-align:center; padding:2rem 2rem calc(var(--bottom) + 2rem); border-top:1px solid var(--slate-200); background:var(--wit); }
+.quote { font-size:0.8125rem; color:var(--accent); }
+
+@media (max-width:640px) {
+  .back-link { position:static; margin-bottom:0.75rem; justify-content:center; display:flex; }
+}
+@media (max-width:380px) {
+  .ev-top, .act-meta { grid-template-columns:minmax(0, 1fr); }
+  .cov-row { grid-template-columns:6.5rem minmax(0, 1fr) 2rem; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
+:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.field:focus-visible, .list-name:focus-visible, .question:focus-visible { outline:none; }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <a href="https://onderconstructie.github.io/projectmanagement/" class="back-link">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Projectmanagement
+  </a>
+  <div class="logo">
+    <svg viewBox="0 0 80 80" fill="none" aria-hidden="true">
+      <circle cx="40" cy="40" r="36" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2"/>
+      <path d="M14 60V50h17v10" fill="#a7f3d0"/>
+      <path d="M48 60V36h17v24" fill="#10b981"/>
+      <path d="M14 60h52" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round"/>
+      <path d="M23 45C27 29 39 24 53 29" stroke="#10b981" stroke-width="3.2" stroke-linecap="round"/>
+      <path d="M47.5 24.5l6 4.7-4.8 5.9" stroke="#10b981" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+  <h1 class="title">Gap-analyse</h1>
+  <p class="subtitle">Waar sta je, waar wil je naartoe, en wat is nodig?</p>
+</header>
+
+<main class="main">
+  <nav class="lists" id="lists" aria-label="Analyses"></nav>
+
+  <div class="layout">
+    <aside class="aside" id="aside" aria-label="Overzicht"></aside>
+
+    <div class="content">
+      <section class="card">
+        <div class="card-head">
+          <input class="list-name" id="name" aria-label="Naam van de analyse" maxlength="70" spellcheck="false">
+          <div class="menu-wrap">
+            <button class="icon-btn" id="menu-btn" aria-label="Meer acties" aria-haspopup="true" aria-expanded="false">
+              <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
+            </button>
+            <div class="menu" id="menu" role="menu">
+              <button data-act="pdf" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 15h6M9 18h4"/></svg>Download als PDF</button>
+              <button data-act="png" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>Download als afbeelding</button>
+              <div class="sep"></div>
+              <button data-act="copy" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Kopieer als tekst</button>
+              <button data-act="csv" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h8"/></svg>Download CSV</button>
+              <div class="sep"></div>
+              <button data-act="delete" class="danger" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>Analyse verwijderen</button>
+            </div>
+          </div>
+        </div>
+        <div class="question-wrap">
+          <label class="q-label" for="question">Welk probleem of doel?</label>
+          <textarea class="question" id="question" rows="1" maxlength="300" placeholder="Bv. Hoe maken we de subsidieaanvraag sneller en klantvriendelijker?"></textarea>
+        </div>
+      </section>
+
+      <details class="how" id="how">
+        <summary><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>Hoe werkt dit?</summary>
+        <div class="how-body">
+          <ol>
+            <li>Beschrijf per thema waar je nu staat en waar je naartoe wil, liefst meetbaar.</li>
+            <li>Onderbouw de huidige situatie met bewijs. Zonder bewijs is het een aanname.</li>
+            <li>Vraag door naar de oorzaak voor je acties kiest.</li>
+            <li>Bepaal wat nodig is, wie het doet en tegen wanneer, en rangschik op impact en haalbaarheid.</li>
+          </ol>
+          <div class="how-types" id="how-types"></div>
+          <p class="src">Gebaseerd op evidence-based management (Barends, Rousseau &amp; Briner, 2014, CEBMa).</p>
+        </div>
+      </details>
+
+      <div class="sigbar" id="sigbar"></div>
+      <div class="sig-list" id="sig-analysis"></div>
+
+      <div class="gaps" id="gaps"></div>
+      <div class="card empty" id="empty" hidden>
+        <strong>Nog geen kloven</strong>
+        Een kloof is één thema: waar je nu staat tegenover waar je wil staan.
+        <br><button class="btn btn-primary" id="example">Begin met een voorbeeld</button>
+      </div>
+
+      <form class="add-gap" id="add-gap" autocomplete="off">
+        <input id="new-gap" placeholder="Nieuwe kloof, bv. Doorlooptijd aanvragen" aria-label="Thema van een nieuwe kloof" maxlength="80">
+        <button class="add-btn" type="submit" aria-label="Kloof toevoegen">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+      </form>
+    </div>
+  </div>
+</main>
+
+<footer class="footer">
+  <p class="quote">Wie niet weet waar hij staat, weet niet welke kant op.</p>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-text"></span><button id="toast-btn" hidden>Ongedaan</button></div>
+
+<script>
+/* ---------- Download als afbeelding of PDF (gedeeld door de Onder Constructie-tools, v2) ----------
+   Gebruik:
+     ocExport.png(bouwFn, 'bestandsnaam', { landscape:true })
+     ocExport.pdf(bouwFn, 'bestandsnaam', { landscape:true })
+   bouwFn() geeft { node, title, subtitle } terug: een DOM-knoop met inline styles, zonder knoppen of invoervelden.
+   Die komt buiten beeld op een witte pagina met kop (titel, ondertitel, datum) en voet.
+   Zet data-oc-keep op blokken die in een PDF niet over twee pagina's gesplitst mogen worden
+   (een beslissing, een kaartje, een rij); ze schuiven dan door naar de volgende pagina.
+   html2canvas en jsPDF worden pas geladen bij de eerste download, van dezelfde adressen als de
+   andere tools, zodat de app ze offline kan bewaren. */
+const ocExport = (() => {
+  const LIBS = {
+    h2c: 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
+    pdf: 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
+  };
+  const A4 = { w: 210, h: 297 }, MARGIN = 10;   // mm
+  const loaded = {};
+  function load(url) {
+    if (!loaded[url]) loaded[url] = new Promise((ok, fail) => {
+      const s = document.createElement('script');
+      s.src = url; s.onload = ok; s.onerror = () => { delete loaded[url]; fail(new Error('laden mislukt')); };
+      document.head.appendChild(s);
+    });
+    return loaded[url];
+  }
+  const today = () => new Date().toLocaleDateString('nl-BE', { day: 'numeric', month: 'long', year: 'numeric' });
+  function page(content, { title, subtitle, width }) {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = `position:fixed;left:-20000px;top:0;width:${width}px;background:#fff;padding:36px 40px 28px;
+      font-family:'DM Sans',system-ui,-apple-system,sans-serif;color:#1e293b;-webkit-font-smoothing:antialiased;box-sizing:border-box;`;
+    const head = document.createElement('div');
+    head.style.cssText = 'display:flex;align-items:flex-end;justify-content:space-between;gap:24px;border-bottom:2px solid #10b981;padding-bottom:12px;margin-bottom:20px;';
+    head.innerHTML = `<div><div style="font-size:22px;font-weight:700;letter-spacing:-0.02em;color:#1e293b"></div>
+      <div style="font-size:14px;color:#64748b;margin-top:2px"></div></div>
+      <div style="font-size:12px;color:#94a3b8;white-space:nowrap">${today()}</div>`;
+    head.children[0].children[0].textContent = title || '';
+    head.children[0].children[1].textContent = subtitle || '';
+    const foot = document.createElement('div');
+    foot.style.cssText = 'margin-top:22px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;display:flex;justify-content:space-between;';
+    foot.innerHTML = '<span>Onder Constructie</span><span>onderconstructie.github.io</span>';
+    wrap.append(head, content, foot);
+    document.body.appendChild(wrap);
+    return wrap;
+  }
+  // Schuift blokken met data-oc-keep die over een paginagrens zouden vallen naar de volgende pagina.
+  function keepTogether(wrap, pageH) {
+    const top0 = () => wrap.getBoundingClientRect().top;
+    for (const el of wrap.querySelectorAll('[data-oc-keep]')) {
+      const r = el.getBoundingClientRect(), t = r.top - top0(), b = t + r.height;
+      if (r.height > pageH * 0.85) continue;            // te groot om heel te houden
+      const boundary = Math.ceil(t / pageH) * pageH;     // eerstvolgende grens na de bovenkant
+      if (t % pageH !== 0 && b > boundary && t < boundary) {
+        const gap = document.createElement('div');
+        gap.style.cssText = `height:${boundary - t + 6}px;`;
+        el.parentNode.insertBefore(gap, el);
+      }
+    }
+  }
+  async function canvasOf(build, opts) {
+    await load(LIBS.h2c);
+    const built = build();
+    const node = page(built.node, { title: built.title, subtitle: built.subtitle, width: opts.width });
+    try {
+      if (document.fonts && document.fonts.ready) await document.fonts.ready;
+      if (opts.pageH) keepTogether(node, opts.pageH);
+      return await window.html2canvas(node, { scale: 2, backgroundColor: '#ffffff', logging: false, useCORS: true });
+    } finally { node.remove(); }
+  }
+  function save(blob, name) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }
+  const widthFor = opts => opts.width || (opts.landscape ? 1120 : 800);
+  async function png(build, name, opts = {}) {
+    const c = await canvasOf(build, { width: widthFor(opts) });
+    await new Promise(ok => c.toBlob(b => { save(b, name + '.png'); ok(); }, 'image/png'));
+  }
+  async function pdf(build, name, opts = {}) {
+    const landscape = !!opts.landscape, width = widthFor(opts);
+    const pw = landscape ? A4.h : A4.w, ph = landscape ? A4.w : A4.h, w = pw - 2 * MARGIN;
+    const pageCss = (ph - 2 * MARGIN) / w * width;       // paginahoogte in CSS-pixels van de exportknoop
+    const [c] = await Promise.all([canvasOf(build, { width, pageH: pageCss }), load(LIBS.pdf)]);
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: landscape ? 'landscape' : 'portrait', unit: 'mm', format: 'a4' });
+    const scale = w / c.width, pageH = (ph - 2 * MARGIN) / scale;   // paginahoogte in canvaspixels
+    for (let y = 0, i = 0; y < c.height - 2; y += pageH, i++) {
+      const h = Math.min(pageH, c.height - y);
+      const part = document.createElement('canvas'); part.width = c.width; part.height = h;
+      part.getContext('2d').drawImage(c, 0, y, c.width, h, 0, 0, c.width, h);
+      if (i) doc.addPage();
+      doc.addImage(part.toDataURL('image/jpeg', 0.92), 'JPEG', MARGIN, MARGIN, w, h * scale);
+    }
+    save(doc.output('blob'), name + '.pdf');
+  }
+  return { png, pdf };
+})();
+
+/* ---------- Vaste begrippen ---------- */
+// De vier bronnen van bewijs (evidence-based management, Barends, Rousseau & Briner 2014, CEBMa).
+const TYPES = [
+  { id:'onderzoek',    name:'Onderzoek',        color:'#3b82f6', help:'Wetenschappelijk onderzoek: studies, evaluaties, literatuur.' },
+  { id:'data',         name:'Organisatiedata',  color:'#10b981', help:'Cijfers en feiten uit je eigen organisatie: dashboards, registraties, audits.' },
+  { id:'ervaring',     name:'Praktijkervaring', color:'#f59e0b', help:'Wat professionals uit ervaring weten: experts, collega\'s, eigen oordeel.' },
+  { id:'stakeholders', name:'Stakeholders',     color:'#8b5cf6', help:'Wie de gevolgen draagt: burgers, klanten, medewerkers, partners.' },
+];
+const STRENGTHS = [ { id:'sterk', name:'Sterk' }, { id:'redelijk', name:'Redelijk' }, { id:'zwak', name:'Zwak' } ];
+const typeOf = id => TYPES.find(t => t.id === id) || TYPES[1];
+// Prioriteit op een even schaal 1–4: er is geen neutraal midden, je moet kiezen.
+const QUADS = {
+  eerst:   { name:'Eerst aanpakken', cls:'q-eerst',   order:0 },
+  plannen: { name:'Plannen',         cls:'q-plannen', order:1 },
+  snel:    { name:'Snel meenemen',   cls:'q-snel',    order:2 },
+  liggen:  { name:'Laten liggen',    cls:'q-liggen',  order:3 },
+};
+const quadOf = g => g.impact >= 3 ? (g.feas >= 3 ? 'eerst' : 'plannen') : (g.feas >= 3 ? 'snel' : 'liggen');
+const MAX_WHY = 5;
+
+/* ---------- Opslag ---------- */
+const KEY = 'gap.v1';
+const uid = () => Math.random().toString(36).slice(2, 10);
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const newGap = theme => ({ id:uid(), theme:theme || '', asis:{ text:'', indicator:'', value:'', unit:'' },
+  tobe:{ text:'', value:'', by:'' }, evidence:[], whys:[''], actions:[], impact:3, feas:3, open:true });
+function load() {
+  try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && Array.isArray(d.analyses) && d.analyses.length) return d; } catch {}
+  const first = { id:uid(), name:'Mijn analyse', question:'', gaps:[] };
+  return { analyses:[first], current:first.id };
+}
+let state = load();
+// Elke bewaring telt op; "Ongedaan" werkt alleen zolang er sindsdien niets anders veranderde.
+let version = 0;
+function save() { version++; try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
+const cur = () => state.analyses.find(a => a.id === state.current) || state.analyses[0];
+const gapById = id => cur().gaps.find(g => g.id === id);
+
+/* ---------- Getallen ---------- */
+function num(v) {
+  if (v == null) return NaN;
+  const s = String(v).trim().replace(/\s/g, '').replace(',', '.');
+  return s === '' || !/^-?\d*\.?\d+$/.test(s) ? NaN : parseFloat(s);
+}
+const nf = (n, d = 1) => n.toLocaleString('nl-BE', { maximumFractionDigits:d });
+const fmtDate = s => { if (!s) return ''; const d = new Date(s + 'T00:00:00'); return isNaN(d) ? s : d.toLocaleDateString('nl-BE', { day:'numeric', month:'short', year:'numeric' }); };
+function gapCalc(g) {
+  const a = num(g.asis.value), b = num(g.tobe.value);
+  if (isNaN(a) || isNaN(b)) return null;
+  const diff = b - a, pct = a !== 0 ? diff / Math.abs(a) * 100 : null;
+  return { a, b, diff, pct, dir: diff < 0 ? 'omlaag' : diff > 0 ? 'omhoog' : 'gelijk' };
+}
+function gapText(g) {
+  const c = gapCalc(g), u = g.asis.unit ? ' ' + g.asis.unit : '';
+  if (!c) return null;
+  const sign = c.diff > 0 ? '+' : c.diff < 0 ? '−' : '';
+  const pct = c.pct == null ? '' : ` (${sign}${nf(Math.abs(c.pct), 0)}%)`;
+  return { line:`${nf(c.a)} → ${nf(c.b)}${u}`, delta:`${sign}${nf(Math.abs(c.diff))}${u}${pct}`,
+           dir: c.dir === 'omlaag' ? 'lager is beter' : c.dir === 'omhoog' ? 'hoger is beter' : 'al bereikt', c };
+}
+
+/* ---------- Signalen ---------- */
+function gapSignals(g) {
+  const s = [];
+  const ev = g.evidence;
+  if (!ev.length) s.push({ id:'aanname', text:'Aanname: toets eerst of dit klopt' });
+  else {
+    const kinds = new Set(ev.map(e => e.type));
+    if (ev.every(e => e.strength === 'zwak')) s.push({ id:'zwak', text:'Alleen zwak bewijs: zoek sterker bewijs' });
+    else if (kinds.size === 1) s.push({ id:'eenbron', text:'Eén bron: vul aan met een tweede soort bewijs' });
+  }
+  const measurable = !isNaN(num(g.tobe.value)) && (g.asis.indicator.trim() || g.asis.unit.trim());
+  const concrete = /\d/.test(g.tobe.text) && g.tobe.text.trim().length >= 12;
+  if (!measurable && !concrete) s.push({ id:'meetbaar', text:'Hoe weet je dat je er bent?' });
+  if (!g.whys.some(w => w.trim())) s.push({ id:'oorzaak', text:'Zonder oorzaak riskeer je symptoombestrijding' });
+  const acts = g.actions.filter(a => a.text.trim());
+  if (!acts.length || acts.some(a => !a.who.trim())) s.push({ id:'acties', text:'Wie doet wat?' });
+  return s;
+}
+function analysisSignals(a) {
+  if (!a.gaps.length) return [];
+  const all = a.gaps.flatMap(g => g.evidence.map(e => e.type));
+  const s = [];
+  if (!all.includes('stakeholders')) s.push({ id:'stake', text:'Wie de gevolgen draagt, is nog niet gehoord', soft:false });
+  if (!all.includes('onderzoek')) s.push({ id:'onderzoek', text:'Is er onderzoek over dit probleem?', soft:true });
+  return s;
+}
+const ranked = a => a.gaps.slice().sort((x, y) => (y.impact * y.feas - x.impact * x.feas) || (y.impact - x.impact) || (a.gaps.indexOf(x) - a.gaps.indexOf(y)));
+
+/* ---------- Tekenen ---------- */
+const ICON = {
+  chev:'<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>',
+  x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+  warn:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L1.8 18.5A2 2 0 0 0 3.5 21.5h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>',
+  ok:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+};
+
+function renderTabs() {
+  $('lists').innerHTML = state.analyses.map(a => {
+    const n = a.gaps.length;
+    return `<button class="tab${a.id === state.current ? ' active' : ''}" data-list="${a.id}">${esc(a.name || 'Naamloos')}<span class="n">${n || ''}</span></button>`;
+  }).join('') + '<button class="tab add" id="new-analysis" aria-label="Nieuwe analyse">+ Analyse</button>';
+}
+
+function evDots(g) {
+  return '<span class="ev-dots" title="Bewijs per soort bron">' + TYPES.map(t => {
+    const has = g.evidence.some(e => e.type === t.id);
+    return `<i style="${has ? `background:${t.color}` : ''}" title="${esc(t.name)}${has ? '' : ': geen'}"></i>`;
+  }).join('') + '</span>';
+}
+
+function headInner(g) {
+  const gt = gapText(g), sig = gapSignals(g), q = QUADS[quadOf(g)];
+  const aanname = !g.evidence.length ? '<span class="label-aanname">aanname</span>' : '';
+  return `${ICON.chev}
+    <span>
+      <span class="gap-title${g.theme.trim() ? '' : ' empty'}">${esc(g.theme.trim() || 'Thema zonder naam')}</span>
+      <span class="gap-sum">${gt ? `<span class="num">${esc(gt.line)}</span><span>${esc(gt.delta)}</span>` : '<span>kwalitatief</span>'}${evDots(g)}${aanname}</span>
+    </span>
+    <span class="gap-right"><span class="qpill ${q.cls}">${q.name}</span>${sig.length ? `<span class="sigcount">${sig.length} ${sig.length === 1 ? 'signaal' : 'signalen'}</span>` : ''}</span>`;
+}
+
+function chipsHTML(g) {
+  const s = gapSignals(g);
+  return s.length ? s.map(x => `<span class="chip-sig">${esc(x.text)}</span>`).join('') : '';
+}
+
+function gapBoxHTML(g) {
+  const gt = gapText(g);
+  if (!gt) return `<div class="qual">Kwalitatieve kloof. Geef een huidige waarde en een doelwaarde om het verschil te meten.</div>`;
+  const { a, b } = gt.c, max = Math.max(Math.abs(a), Math.abs(b)) * 1.15 || 1;
+  const pa = Math.max(0, Math.min(100, a / max * 100)), pb = Math.max(0, Math.min(100, b / max * 100));
+  const u = g.asis.unit ? ' ' + esc(g.asis.unit) : '';
+  return `<div class="big">${esc(gt.delta)}<span class="dir">${esc(gt.dir)}</span></div>
+    <div class="bar" aria-hidden="true"><span class="track"></span>
+      <span class="span" style="left:${Math.min(pa, pb)}%;width:${Math.abs(pb - pa)}%"></span>
+      <span class="pt cur" style="left:${pa}%"></span><span class="pt tgt" style="left:${pb}%"></span></div>
+    <div class="bar-labels">${(() => {
+      const nu = `<span>nu <b>${nf(a)}${u}</b></span>`, doel = `<span>doel <b>${nf(b)}${u}</b>${g.tobe.by ? ' · ' + esc(fmtDate(g.tobe.by)) : ''}</span>`;
+      return a <= b ? nu + doel : doel + nu; })()}</div>`;
+}
+
+function evHTML(g, e) {
+  const t = typeOf(e.type);
+  return `<div class="ev" data-ev="${e.id}" style="border-left-color:${t.color}">
+    <div class="ev-top">
+      <select class="field sm" data-ef="type" aria-label="Soort bron">${TYPES.map(x => `<option value="${x.id}"${x.id === e.type ? ' selected' : ''}>${x.name}</option>`).join('')}</select>
+      <select class="field sm" data-ef="strength" aria-label="Sterkte van het bewijs">${STRENGTHS.map(x => `<option value="${x.id}"${x.id === e.strength ? ' selected' : ''}>${x.name}</option>`).join('')}</select>
+    </div>
+    <button class="x" data-del-ev="${e.id}" aria-label="Bron verwijderen">${ICON.x}</button>
+    <input class="field sm note" data-ef="note" value="${esc(e.note)}" placeholder="Welke bron? Bv. Dashboard Q3 2026, n=1.240" maxlength="160">
+    <div class="ev-help">${esc(t.help)}</div>
+  </div>`;
+}
+
+function whyHTML(g, w, i) {
+  const filled = g.whys.filter(x => x.trim()).length;
+  const isRoot = i === g.whys.length - 1 && g.whys.length > 1 && w.trim();
+  const label = i === 0 ? 'Waarom?' : isRoot ? 'Grondoorzaak?' : `Waarom ${i + 1}?`;
+  return `<div class="why${isRoot ? ' root' : ''}">
+    <span class="why-n">${label}</span>
+    <textarea class="field sm grow" rows="1" data-why="${i}" placeholder="${i === 0 ? 'Waarom bestaat deze kloof?' : 'En waarom is dat zo?'}" maxlength="200">${esc(w)}</textarea>
+    ${i > 0 ? `<button class="x" data-del-why="${i}" aria-label="Verwijder deze waarom">${ICON.x}</button>` : '<span></span>'}
+  </div>`;
+}
+
+function actHTML(a) {
+  const missing = a.text.trim() && !a.who.trim();
+  return `<div class="act${a.done ? ' done' : ''}" data-act-id="${a.id}">
+    <button class="box" data-af="done" aria-label="${a.done ? 'Niet meer afgevinkt' : 'Afvinken'}">${ICON.check}</button>
+    <div class="act-fields">
+      <textarea class="field sm a-text grow" rows="1" data-af="text" placeholder="Wat is nodig?" maxlength="200">${esc(a.text)}</textarea>
+      <div class="act-meta">
+        <input class="field sm${missing ? ' missing' : ''}" data-af="who" value="${esc(a.who)}" placeholder="Wie?" maxlength="60">
+        <input class="field sm" type="date" data-af="by" value="${esc(a.by)}" aria-label="Tegen wanneer">
+      </div>
+    </div>
+    <button class="x" data-del-act="${a.id}" aria-label="Actie verwijderen">${ICON.x}</button>
+  </div>`;
+}
+
+function segHTML(key, val, lo, hi, title) {
+  return `<div><div class="seg-label"><span>${title}</span><b>${val}</b></div>
+    <div class="seg" role="radiogroup" aria-label="${title}">${[1, 2, 3, 4].map(v => `<button role="radio" aria-checked="${v === val}" class="${v === val ? 'on' : ''}" data-prio="${key}" data-v="${v}">${v}</button>`).join('')}</div>
+    <div class="seg-ends"><span>${lo}</span><span>${hi}</span></div></div>`;
+}
+
+function gapHTML(g) {
+  return `<article class="card gap${g.open ? ' open' : ''}" data-gap="${g.id}" id="gap-${g.id}">
+    <button class="gap-head" data-toggle aria-expanded="${!!g.open}">${headInner(g)}</button>
+    ${g.open ? `<div class="gap-body">
+      <div class="chips" data-chips>${chipsHTML(g)}</div>
+      <div class="sec"><span class="sec-label">Thema</span>
+        <input class="field" data-f="theme" value="${esc(g.theme)}" placeholder="Bv. Doorlooptijd aanvragen" maxlength="80"></div>
+      <div class="sec two">
+        <div class="state-box">
+          <div class="state-title">Huidige situatie <span data-aanname>${g.evidence.length ? '' : '<span class="label-aanname">aanname</span>'}</span></div>
+          <textarea class="field" data-f="asis.text" rows="2" placeholder="Waar staan we nu? Zo feitelijk mogelijk." maxlength="600">${esc(g.asis.text)}</textarea>
+          <span class="mini">Meetbaar maken (optioneel)</span>
+          <div class="row3">
+            <input class="field sm ind" data-f="asis.indicator" value="${esc(g.asis.indicator)}" placeholder="Indicator" maxlength="80">
+            <input class="field sm" data-f="asis.value" value="${esc(g.asis.value)}" placeholder="Nu" inputmode="decimal" maxlength="20">
+            <input class="field sm" data-f="asis.unit" value="${esc(g.asis.unit)}" placeholder="Eenheid" maxlength="30">
+          </div>
+        </div>
+        <div class="state-box tobe">
+          <div class="state-title">Gewenste situatie</div>
+          <textarea class="field" data-f="tobe.text" rows="2" placeholder="Waar willen we staan? Wat is dan anders?" maxlength="600">${esc(g.tobe.text)}</textarea>
+          <span class="mini">Doel (optioneel)</span>
+          <div class="row2">
+            <input class="field sm" data-f="tobe.value" value="${esc(g.tobe.value)}" placeholder="Doelwaarde" inputmode="decimal" maxlength="20">
+            <input class="field sm" type="date" data-f="tobe.by" value="${esc(g.tobe.by)}" aria-label="Tegen wanneer">
+          </div>
+        </div>
+      </div>
+      <div class="gapbox" data-gapbox>${gapBoxHTML(g)}</div>
+
+      <div class="sec"><span class="sec-label">Bewijs voor de huidige situatie <span class="hint">waarop baseer je dit?</span></span>
+        ${g.evidence.length ? `<div class="evs">${g.evidence.map(e => evHTML(g, e)).join('')}</div>`
+          : `<div class="no-ev"><span class="label-aanname">aanname</span>Nog geen bron. Zonder bewijs is de huidige situatie een aanname.</div>`}
+        <button class="add-link" data-add-ev ${g.evidence.length >= 4 ? 'disabled' : ''}>${ICON.plus}Bron toevoegen</button>
+      </div>
+
+      <div class="sec"><span class="sec-label">Waarom bestaat deze kloof? <span class="hint">vraag door tot de oorzaak</span></span>
+        <div class="whys">${g.whys.map((w, i) => whyHTML(g, w, i)).join('')}</div>
+        <button class="add-link" data-add-why ${g.whys.length >= MAX_WHY ? 'disabled' : ''}>${ICON.plus}Vraag nog eens waarom</button>
+      </div>
+
+      <div class="sec"><span class="sec-label">Wat is nodig? <span class="hint">wie doet wat, tegen wanneer</span></span>
+        ${g.actions.length ? `<div class="acts">${g.actions.map(actHTML).join('')}</div>` : ''}
+        <button class="add-link" data-add-act>${ICON.plus}Actie toevoegen</button>
+      </div>
+
+      <div class="sec"><span class="sec-label">Prioriteit <span class="hint" data-quad>${QUADS[quadOf(g)].name}</span></span>
+        <div class="prio">
+          ${segHTML('impact', g.impact, 'klein', 'groot', 'Impact als de kloof dicht is')}
+          ${segHTML('feas', g.feas, 'moeilijk', 'makkelijk', 'Haalbaarheid')}
+        </div>
+        <p class="prio-note">Schaal 1 tot 4: er is geen neutraal midden, dus je moet kiezen.</p>
+      </div>
+
+      <div class="gap-foot">
+        <button class="fold-gap" data-toggle>Inklappen</button>
+        <button class="del-gap" data-del-gap>Kloof verwijderen</button>
+      </div>
+    </div>` : ''}
+  </article>`;
+}
+
+function autosize(el) { if (!el) return; el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
+
+function renderGaps() {
+  const a = cur();
+  $('gaps').innerHTML = a.gaps.map(gapHTML).join('');
+  $('empty').hidden = a.gaps.length > 0;
+  document.querySelectorAll('#gaps textarea').forEach(autosize);
+}
+function renderGap(id) {
+  const g = gapById(id), el = document.querySelector(`[data-gap="${id}"]`);
+  if (!g || !el) { renderGaps(); return; }
+  el.outerHTML = gapHTML(g);
+  document.querySelectorAll(`[data-gap="${id}"] textarea`).forEach(autosize);
+}
+// Alleen de afgeleide delen bijwerken, zodat de cursor in het invoerveld blijft staan.
+function refreshGap(id) {
+  const g = gapById(id), el = document.querySelector(`[data-gap="${id}"]`);
+  if (!g || !el) return;
+  el.querySelector('.gap-head').innerHTML = headInner(g);
+  const c = el.querySelector('[data-chips]'); if (c) c.innerHTML = chipsHTML(g);
+  const b = el.querySelector('[data-gapbox]'); if (b) b.innerHTML = gapBoxHTML(g);
+  const q = el.querySelector('[data-quad]'); if (q) q.textContent = QUADS[quadOf(g)].name;
+  const an = el.querySelector('[data-aanname]'); if (an) an.innerHTML = g.evidence.length ? '' : '<span class="label-aanname">aanname</span>';
+  el.querySelectorAll('[data-act-id]').forEach(row => {
+    const a = g.actions.find(x => x.id === row.dataset.actId); if (!a) return;
+    row.querySelector('[data-af="who"]').classList.toggle('missing', !!(a.text.trim() && !a.who.trim()));
+  });
+}
+
+function renderHead() {
+  const a = cur();
+  if (document.activeElement !== $('name')) $('name').value = a.name;
+  if (document.activeElement !== $('question')) { $('question').value = a.question; autosize($('question')); }
+}
+
+let sigCursor = 0;
+function renderSignals() {
+  const a = cur();
+  const n = a.gaps.reduce((s, g) => s + gapSignals(g).length, 0);
+  if (!a.gaps.length) { $('sigbar').innerHTML = ''; $('sig-analysis').innerHTML = ''; return; }
+  $('sigbar').innerHTML = n
+    ? `<button class="sig-summary" id="sig-jump" title="Spring naar de volgende kloof met een signaal">${ICON.warn}${n} ${n === 1 ? 'signaal' : 'signalen'}</button>`
+    : `<span class="sig-summary ok">${ICON.ok}Geen signalen per kloof</span>`;
+  $('sig-analysis').innerHTML = analysisSignals(a).map(s => `<div class="sig-analysis${s.soft ? ' soft' : ''}"><span class="dot"></span>${esc(s.text)}</div>`).join('');
+}
+
+function renderAside() {
+  const a = cur(), n = a.gaps.length;
+  const sig = a.gaps.reduce((s, g) => s + gapSignals(g).length, 0);
+  const assumptions = a.gaps.filter(g => !g.evidence.length).length;
+  const cov = TYPES.map(t => ({ t, k: a.gaps.filter(g => g.evidence.some(e => e.type === t.id)).length }));
+  const rank = ranked(a);
+  $('aside').innerHTML = `<div class="card">
+    <div class="ov-title">Overzicht</div>
+    <div class="ov-stats">
+      <div class="ov-stat"><b>${n}</b><span>${n === 1 ? 'kloof' : 'kloven'}</span></div>
+      <div class="ov-stat${sig ? ' warn' : ''}"><b>${sig}</b><span>signalen</span></div>
+      <div class="ov-stat${assumptions ? ' warn' : ''}"><b>${assumptions}</b><span>${assumptions === 1 ? 'aanname' : 'aannames'}</span></div>
+    </div>
+    <details class="ov-more" ${window.matchMedia('(min-width:1000px)').matches || asideOpen ? 'open' : ''} id="ov-more">
+      <summary>${asideOpen ? 'Minder tonen' : 'Bewijs en rangschikking tonen'}</summary>
+      <div class="ov-sec"><div class="ov-sub">Bewijsdekking</div>
+        ${n ? `<div class="cov">${cov.map(({ t, k }) => `<div class="cov-row" title="${esc(t.help)}">
+          <span class="lbl"><span class="sw" style="background:${t.color}"></span>${t.name}</span>
+          <span class="cov-bar"><span style="width:${n ? k / n * 100 : 0}%;background:${t.color}"></span></span>
+          <span class="v">${k}/${n}</span></div>`).join('')}</div>` : '<p class="ov-empty">Nog geen kloven.</p>'}
+      </div>
+      <div class="ov-sec"><div class="ov-sub">Rangschikking</div>
+        ${n ? `<ol class="rank">${rank.map((g, i) => `<li><button data-goto="${g.id}"><span class="r">${i + 1}</span><span class="t">${esc(g.theme || 'Thema zonder naam')}</span><span class="qpill ${QUADS[quadOf(g)].cls}">${QUADS[quadOf(g)].name}</span></button></li>`).join('')}</ol>`
+          : '<p class="ov-empty">Impact maal haalbaarheid bepaalt de volgorde.</p>'}
+      </div>
+    </details>
+  </div>`;
+}
+let asideOpen = false;
+
+function render() {
+  renderTabs(); renderHead(); renderSignals(); renderGaps(); renderAside();
+}
+function refreshDerived() { renderTabs(); renderSignals(); renderAside(); }
+
+$('how-types').innerHTML = TYPES.map(t => `<div><span style="width:8px;height:8px;border-radius:2px;background:${t.color};flex-shrink:0;display:inline-block;transform:translateY(-1px)"></span><span><b>${t.name}</b>: ${esc(t.help.split(':')[1] ? t.help.split(':')[1].trim() : t.help)}</span></div>`).join('');
+
+/* ---------- Melding met Ongedaan ---------- */
+let undoFn = null, undoVersion = -1, toastTimer = null;
+function toast(msg, undo) {
+  undoFn = undo || null; undoVersion = version;
+  $('toast-text').textContent = msg;
+  $('toast-btn').hidden = !undo;
+  $('toast').classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { $('toast').classList.remove('show'); undoFn = null; }, undo ? 6000 : 2600);
+}
+$('toast-btn').addEventListener('click', () => {
+  if (undoFn && version === undoVersion) { undoFn(); undoFn = null; save(); render(); }
+  else if (undoFn) { undoFn = null; toast('Ongedaan maken kan niet meer: er is intussen iets veranderd'); return; }
+  $('toast').classList.remove('show');
+});
+function snapshot() { const copy = JSON.parse(JSON.stringify(state)); return () => { state = copy; }; }
+
+/* ---------- Invoer ---------- */
+function setPath(obj, path, val) { const p = path.split('.'); let o = obj; while (p.length > 1) o = o[p.shift()]; o[p[0]] = val; }
+document.addEventListener('input', e => {
+  const t = e.target;
+  if (t.id === 'name') { cur().name = t.value; save(); renderTabs(); return; }
+  if (t.id === 'question') { cur().question = t.value; autosize(t); save(); return; }
+  if (t.id === 'new-gap') return;
+  const card = t.closest('[data-gap]'); if (!card) return;
+  const g = gapById(card.dataset.gap); if (!g) return;
+  if (t.dataset.f) setPath(g, t.dataset.f, t.value);
+  else if (t.dataset.why != null) g.whys[+t.dataset.why] = t.value;
+  else if (t.dataset.ef) { const ev = g.evidence.find(x => x.id === t.closest('[data-ev]').dataset.ev); if (ev) ev[t.dataset.ef] = t.value; }
+  else if (t.dataset.af) { const a = g.actions.find(x => x.id === t.closest('[data-act-id]').dataset.actId); if (a) a[t.dataset.af] = t.value; }
+  else return;
+  if (t.tagName === 'TEXTAREA') autosize(t);
+  save();
+  if (t.dataset.ef === 'type') { renderGap(g.id); }   // kleur en uitleg van de bron veranderen
+  else if (t.dataset.why != null) { refreshGap(g.id); updateWhyLabels(card, g); }
+  else refreshGap(g.id);
+  refreshDerived();
+});
+function updateWhyLabels(card, g) {
+  card.querySelectorAll('.why').forEach((row, i) => {
+    const w = g.whys[i] || '', isRoot = i === g.whys.length - 1 && g.whys.length > 1 && w.trim();
+    row.classList.toggle('root', !!isRoot);
+    row.querySelector('.why-n').textContent = i === 0 ? 'Waarom?' : isRoot ? 'Grondoorzaak?' : `Waarom ${i + 1}?`;
+  });
+}
+document.addEventListener('keydown', e => {
+  const t = e.target;
+  if (e.key === 'Enter' && t.dataset && t.dataset.why != null) {
+    e.preventDefault();
+    const card = t.closest('[data-gap]'), g = gapById(card.dataset.gap);
+    if (+t.dataset.why === g.whys.length - 1 && t.value.trim() && g.whys.length < MAX_WHY) addWhy(g);
+    else { const next = card.querySelector(`[data-why="${+t.dataset.why + 1}"]`); if (next) next.focus(); else t.blur(); }
+  }
+  if (e.key === 'Enter' && t.dataset && t.dataset.af === 'text') {
+    e.preventDefault(); const who = t.closest('[data-act-id]').querySelector('[data-af="who"]'); who.focus();
+  }
+  if (e.key === 'Escape') closeMenu();
+});
+
+function addWhy(g) {
+  if (g.whys.length >= MAX_WHY) return;
+  g.whys.push(''); save(); renderGap(g.id); refreshDerived();
+  const el = document.querySelector(`[data-gap="${g.id}"] [data-why="${g.whys.length - 1}"]`); if (el) el.focus();
+}
+
+document.addEventListener('click', e => {
+  const t = e.target;
+  const tab = t.closest('[data-list]');
+  if (tab) { state.current = tab.dataset.list; save(); render(); return; }
+  if (t.closest('#new-analysis')) { newAnalysis(); return; }
+  if (t.closest('#sig-jump')) { jumpToSignal(); return; }
+  const go = t.closest('[data-goto]');
+  if (go) { openAndScroll(go.dataset.goto); return; }
+  const card = t.closest('[data-gap]'); if (!card) return;
+  const g = gapById(card.dataset.gap); if (!g) return;
+
+  if (t.closest('[data-toggle]')) {
+    g.open = !g.open; save(); renderGap(g.id);
+    if (!g.open) { const el = document.querySelector(`[data-gap="${g.id}"]`); if (el.getBoundingClientRect().top < 0) el.scrollIntoView({ block:'start' }); }
+    return;
+  }
+  if (t.closest('[data-add-ev]')) {
+    if (g.evidence.length >= 4) return;
+    const used = new Set(g.evidence.map(x => x.type));
+    const type = ['data', 'ervaring', 'stakeholders', 'onderzoek'].find(x => !used.has(x)) || 'data';
+    const ev = { id:uid(), type, note:'', strength:'redelijk' };
+    g.evidence.push(ev); save(); renderGap(g.id); refreshDerived();
+    const el = document.querySelector(`[data-ev="${ev.id}"] [data-ef="note"]`); if (el) el.focus();
+    return;
+  }
+  const dEv = t.closest('[data-del-ev]');
+  if (dEv) {
+    const restore = snapshot();
+    g.evidence = g.evidence.filter(x => x.id !== dEv.dataset.delEv); save(); renderGap(g.id); refreshDerived();
+    toast('Bron verwijderd', restore); return;
+  }
+  if (t.closest('[data-add-why]')) { addWhy(g); return; }
+  const dWhy = t.closest('[data-del-why]');
+  if (dWhy) { g.whys.splice(+dWhy.dataset.delWhy, 1); if (!g.whys.length) g.whys.push(''); save(); renderGap(g.id); refreshDerived(); return; }
+  if (t.closest('[data-add-act]')) {
+    const a = { id:uid(), text:'', who:'', by:'', done:false };
+    g.actions.push(a); save(); renderGap(g.id); refreshDerived();
+    const el = document.querySelector(`[data-act-id="${a.id}"] [data-af="text"]`); if (el) el.focus();
+    return;
+  }
+  const box = t.closest('[data-af="done"]');
+  if (box) { const a = g.actions.find(x => x.id === box.closest('[data-act-id]').dataset.actId); a.done = !a.done; save(); renderGap(g.id); refreshDerived(); return; }
+  const dAct = t.closest('[data-del-act]');
+  if (dAct) {
+    const restore = snapshot();
+    g.actions = g.actions.filter(x => x.id !== dAct.dataset.delAct); save(); renderGap(g.id); refreshDerived();
+    toast('Actie verwijderd', restore); return;
+  }
+  const pr = t.closest('[data-prio]');
+  if (pr) { g[pr.dataset.prio] = +pr.dataset.v; save(); renderGap(g.id); refreshDerived(); return; }
+  if (t.closest('[data-del-gap]')) {
+    const restore = snapshot(), name = g.theme || 'Kloof';
+    cur().gaps = cur().gaps.filter(x => x.id !== g.id); save(); render();
+    toast(`'${name.length > 30 ? name.slice(0, 30) + '…' : name}' verwijderd`, restore); return;
+  }
+});
+
+function openAndScroll(id) {
+  const g = gapById(id); if (!g) return;
+  if (!g.open) { g.open = true; save(); renderGap(id); }
+  const el = document.querySelector(`[data-gap="${id}"]`);
+  el.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block:'start' });
+  el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1400);
+}
+function jumpToSignal() {
+  const withSig = cur().gaps.filter(g => gapSignals(g).length);
+  if (!withSig.length) return;
+  const g = withSig[sigCursor % withSig.length]; sigCursor++;
+  openAndScroll(g.id);
+}
+
+$('add-gap').addEventListener('submit', e => {
+  e.preventDefault();
+  const v = $('new-gap').value.trim(); if (!v) { $('new-gap').focus(); return; }
+  cur().gaps.forEach(g => g.open = false);
+  const g = newGap(v); cur().gaps.push(g); $('new-gap').value = ''; save(); render();
+  const el = document.querySelector(`[data-gap="${g.id}"] [data-f="asis.text"]`);
+  if (el) { el.closest('[data-gap]').scrollIntoView({ block:'start' }); el.focus({ preventScroll:true }); }
+});
+
+/* ---------- Analyses ---------- */
+function newAnalysis() {
+  const a = { id:uid(), name:'Nieuwe analyse', question:'', gaps:[] };
+  state.analyses.push(a); state.current = a.id; save(); render();
+  $('name').focus(); $('name').select();
+}
+$('name').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('question').focus(); } });
+$('question').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('question').blur(); } });
+$('name').addEventListener('blur', () => { if (!cur().name.trim()) { cur().name = 'Naamloos'; save(); renderTabs(); renderHead(); } });
+
+/* ---------- Voorbeeld ---------- */
+$('example').addEventListener('click', () => {
+  const a = cur();
+  if (!a.question) a.question = 'Hoe maken we de digitale subsidieaanvraag tegen eind 2027 sneller en klantvriendelijker?';
+  if (a.name === 'Mijn analyse' || a.name === 'Nieuwe analyse') a.name = 'Digitale aanvraag subsidie';
+  const g1 = Object.assign(newGap('Doorlooptijd aanvragen'), {
+    asis:{ text:'Een aanvraag duurt gemiddeld 21 werkdagen van indiening tot beslissing. Veel dossiers wachten op ontbrekende stukken.', indicator:'Gemiddelde doorlooptijd', value:'21', unit:'werkdagen' },
+    tobe:{ text:'Een volledige aanvraag krijgt binnen 10 werkdagen een beslissing.', value:'10', by:'2027-12-31' },
+    evidence:[
+      { id:uid(), type:'data', strength:'sterk', note:'Dossieropvolging 2025, n=1.240 dossiers' },
+      { id:uid(), type:'ervaring', strength:'redelijk', note:'Dossierbehandelaars: ongeveer 1 op 3 dossiers is onvolledig bij indiening' } ],
+    whys:['Veel dossiers zijn onvolledig bij indiening', 'Het formulier vraagt niet alle nodige stukken op', 'Het formulier volgt nog de oude papieren versie'],
+    actions:[
+      { id:uid(), text:'Formulier herwerken met verplichte bijlagen', who:'Team digitaal', by:'2027-03-31', done:false },
+      { id:uid(), text:'Automatische controle op volledigheid bij indiening', who:'', by:'2027-06-30', done:false } ],
+    impact:4, feas:3, open:true });
+  const g2 = Object.assign(newGap('Klanttevredenheid'), {
+    asis:{ text:'Aanvragers geven de aanvraagprocedure gemiddeld 6,1 op 10.', indicator:'Gemiddelde score klantbevraging', value:'6,1', unit:'op 10' },
+    tobe:{ text:'Aanvragers geven gemiddeld minstens 7,5 op 10.', value:'7,5', by:'2027-12-31' },
+    evidence:[ { id:uid(), type:'stakeholders', strength:'redelijk', note:'Klantbevraging voorjaar 2026, n=312' } ],
+    whys:['Aanvragers weten niet waar hun dossier staat'],
+    actions:[ { id:uid(), text:'Statusopvolging tonen in het e-loket', who:'Team digitaal', by:'2027-06-30', done:false } ],
+    impact:3, feas:2, open:false });
+  const g3 = Object.assign(newGap('Gebruiksgemak voor medewerkers'), {
+    asis:{ text:'Medewerkers vinden het nieuwe behandelsysteem moeilijk.', indicator:'', value:'', unit:'' },
+    tobe:{ text:'Medewerkers werken vlot met het systeem.', value:'', by:'' },
+    evidence:[], whys:[''], actions:[], impact:2, feas:3, open:false });
+  a.gaps.push(g1, g2, g3); save(); render();
+  toast('Voorbeeld geladen. Kijk naar de signalen.');
+});
+
+/* ---------- Menu ---------- */
+function closeMenu() { $('menu').classList.remove('open'); $('menu-btn').setAttribute('aria-expanded', 'false'); }
+$('menu-btn').addEventListener('click', e => {
+  e.stopPropagation();
+  const open = !$('menu').classList.contains('open');
+  $('menu').classList.toggle('open', open); $('menu-btn').setAttribute('aria-expanded', String(open));
+});
+document.addEventListener('click', e => { if (!e.target.closest('.menu-wrap')) closeMenu(); });
+document.addEventListener('toggle', e => {
+  if (e.target.id === 'ov-more') { asideOpen = e.target.open; const s = e.target.querySelector('summary'); if (s) s.textContent = asideOpen ? 'Minder tonen' : 'Bewijs en rangschikking tonen'; }
+}, true);
+
+const slug = s => (s || 'analyse').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'analyse';
+const today = () => new Date().toISOString().slice(0, 10);
+function download(blob, name) {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+async function copy(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch {}
+  try { const t = document.createElement('textarea'); t.value = text; t.style.position = 'fixed'; t.style.opacity = '0'; document.body.appendChild(t); t.select(); const ok = document.execCommand('copy'); t.remove(); return ok; } catch { return false; }
+}
+
+function evLine(e) { const t = typeOf(e.type); return `${t.name} (${e.strength})${e.note ? ': ' + e.note : ''}`; }
+function asMarkdown() {
+  const a = cur();
+  let md = `# ${a.name}\n\n`;
+  if (a.question) md += `> ${a.question}\n\n`;
+  const as = analysisSignals(a); if (as.length) md += as.map(s => `- ⚠ ${s.text}`).join('\n') + '\n\n';
+  ranked(a).forEach((g, i) => {
+    const gt = gapText(g);
+    md += `## ${i + 1}. ${g.theme || 'Thema zonder naam'} (${QUADS[quadOf(g)].name})\n\n`;
+    md += `**Huidige situatie**${g.evidence.length ? '' : ' _(aanname)_'}: ${g.asis.text || '—'}`;
+    if (g.asis.indicator || g.asis.value) md += ` (${[g.asis.indicator, [g.asis.value, g.asis.unit].filter(Boolean).join(' ')].filter(Boolean).join(': ')})`;
+    md += `\n\n**Gewenste situatie**: ${g.tobe.text || '—'}`;
+    if (g.tobe.value) md += ` (doel ${g.tobe.value}${g.asis.unit ? ' ' + g.asis.unit : ''}${g.tobe.by ? ', tegen ' + fmtDate(g.tobe.by) : ''})`;
+    md += `\n\n**Kloof**: ${gt ? `${gt.line}, ${gt.delta} (${gt.dir})` : 'kwalitatief'}\n\n`;
+    md += `**Bewijs**:\n${g.evidence.length ? g.evidence.map(e => `- ${evLine(e)}`).join('\n') : '- Geen: dit is een aanname'}\n\n`;
+    const whys = g.whys.filter(w => w.trim());
+    md += `**Waarom**:\n${whys.length ? whys.map((w, k) => `${k + 1}. ${w}`).join('\n') : '- Nog niet onderzocht'}\n\n`;
+    md += `**Wat is nodig**:\n${g.actions.length ? g.actions.map(x => `- [${x.done ? 'x' : ' '}] ${x.text || '—'}${x.who ? ` (${x.who}` : ' (wie?'}${x.by ? `, tegen ${fmtDate(x.by)})` : ')'}`).join('\n') : '- Nog geen acties'}\n\n`;
+    md += `**Prioriteit**: impact ${g.impact}/4, haalbaarheid ${g.feas}/4\n`;
+    const s = gapSignals(g); if (s.length) md += `\n**Signalen**: ${s.map(x => x.text).join('; ')}\n`;
+    md += '\n';
+  });
+  md += '_Gebaseerd op evidence-based management (Barends, Rousseau & Briner, 2014, CEBMa)._\n';
+  return md;
+}
+function asCSV() {
+  const cell = v => { const s = String(v == null ? '' : v); return /[;"\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  const head = ['Rang','Thema','Huidige situatie','Indicator','Huidige waarde','Eenheid','Gewenste situatie','Doelwaarde','Tegen','Kloof','Bewijs','Aantal bronnen','Aanname','Grondoorzaak','Waarom-keten','Acties','Impact','Haalbaarheid','Prioriteit','Signalen'];
+  const rows = ranked(cur()).map((g, i) => {
+    const gt = gapText(g), whys = g.whys.filter(w => w.trim());
+    return [i + 1, g.theme, g.asis.text, g.asis.indicator, g.asis.value, g.asis.unit, g.tobe.text, g.tobe.value, g.tobe.by,
+      gt ? gt.delta : 'kwalitatief', g.evidence.map(evLine).join(' | '), g.evidence.length, g.evidence.length ? 'nee' : 'ja',
+      whys[whys.length - 1] || '', whys.join(' > '), g.actions.map(a => `${a.done ? '[x] ' : ''}${a.text}${a.who ? ' (' + a.who + ')' : ''}${a.by ? ' tegen ' + a.by : ''}`).join(' | '),
+      g.impact, g.feas, QUADS[quadOf(g)].name, gapSignals(g).map(s => s.text).join(' | ')];
+  });
+  return '﻿' + [head, ...rows].map(r => r.map(cell).join(';')).join('\r\n');
+}
+
+/* Exportweergave: een rustig document, per kloof een blok dat niet over een paginagrens loopt. */
+function buildExport() {
+  const a = cur(), e = esc;
+  const node = document.createElement('div');
+  const S = {
+    h:'font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#94a3b8;margin:0 0 4px',
+    p:'font-size:13px;line-height:1.5;color:#334155;margin:0',
+    pill:(bg, fg) => `display:inline-block;font-size:11px;font-weight:600;padding:1px 8px;border-radius:999px;background:${bg};color:${fg}`,
+  };
+  const qc = { eerst:['#d1fae5','#059669'], plannen:['#dbeafe','#1d4ed8'], snel:['#f1f5f9','#475569'], liggen:['#fef3c7','#b45309'] };
+  const n = a.gaps.length, sig = a.gaps.reduce((s, g) => s + gapSignals(g).length, 0), assum = a.gaps.filter(g => !g.evidence.length).length;
+  let html = '';
+  if (a.question) html += `<div data-oc-keep style="font-size:16px;line-height:1.45;color:#1e293b;border-left:3px solid #10b981;padding:2px 0 2px 12px;margin-bottom:18px">${e(a.question)}</div>`;
+  // overzicht
+  html += `<div data-oc-keep style="display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:14px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:22px">
+    <div><div style="${S.h}">Overzicht</div>
+      <div style="font-size:13px;color:#334155;line-height:1.7">${n} ${n === 1 ? 'kloof' : 'kloven'} · <b style="color:${sig ? '#d97706' : '#059669'}">${sig} signalen</b> · ${assum} ${assum === 1 ? 'aanname' : 'aannames'}</div>
+      <div style="${S.h};margin-top:10px">Bewijsdekking</div>
+      ${TYPES.map(t => { const k = a.gaps.filter(g => g.evidence.some(x => x.type === t.id)).length;
+        return `<div style="display:grid;grid-template-columns:110px 1fr 34px;gap:8px;align-items:center;font-size:12px;color:#475569;margin:3px 0">
+          <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${t.color};margin-right:6px"></span>${t.name}</span>
+          <span style="height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden"><span style="display:block;height:6px;width:${n ? k / n * 100 : 0}%;background:${t.color}"></span></span>
+          <span style="text-align:right">${k}/${n}</span></div>`; }).join('')}
+      ${analysisSignals(a).map(s => `<div style="font-size:12px;color:${s.soft ? '#64748b' : '#b45309'};margin-top:6px">⚠ ${e(s.text)}</div>`).join('')}
+    </div>
+    <div><div style="${S.h}">Rangschikking</div>
+      ${ranked(a).map((g, i) => `<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;font-size:13px;color:#1e293b;padding:4px 0;border-bottom:1px solid #eef2f6">
+        <span><span style="color:#94a3b8;margin-right:6px">${i + 1}</span>${e(g.theme || 'Thema zonder naam')}</span><span style="${S.pill(...qc[quadOf(g)])};white-space:nowrap">${QUADS[quadOf(g)].name}</span></div>`).join('')}
+    </div></div>`;
+  ranked(a).forEach((g, i) => {
+    const gt = gapText(g), s = gapSignals(g), whys = g.whys.filter(w => w.trim());
+    html += `<div data-oc-keep style="padding:16px 0 18px;border-top:1px solid #e2e8f0">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:10px">
+        <div style="font-size:17px;font-weight:700;color:#1e293b">${i + 1}. ${e(g.theme || 'Thema zonder naam')}</div>
+        <div style="white-space:nowrap"><span style="${S.pill(...qc[quadOf(g)])}">${QUADS[quadOf(g)].name}</span> <span style="font-size:12px;color:#64748b;margin-left:6px">impact ${g.impact}/4 · haalbaarheid ${g.feas}/4</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px">
+          <div style="${S.h}">Huidige situatie ${g.evidence.length ? '' : '<span style="color:#d97706;border:1px dashed #f59e0b;border-radius:4px;padding:0 5px;margin-left:4px">aanname</span>'}</div>
+          <p style="${S.p}">${e(g.asis.text || '—')}</p>
+          ${g.asis.indicator || g.asis.value ? `<p style="${S.p};color:#64748b;font-size:12px;margin-top:4px">${e(g.asis.indicator)}${g.asis.value ? `: <b style="color:#1e293b">${e(g.asis.value)} ${e(g.asis.unit)}</b>` : ''}</p>` : ''}
+        </div>
+        <div style="background:#ecfdf5;border:1px solid #cfe9dd;border-radius:8px;padding:10px 12px">
+          <div style="${S.h}">Gewenste situatie</div>
+          <p style="${S.p}">${e(g.tobe.text || '—')}</p>
+          ${g.tobe.value ? `<p style="${S.p};color:#64748b;font-size:12px;margin-top:4px">Doel: <b style="color:#1e293b">${e(g.tobe.value)} ${e(g.asis.unit)}</b>${g.tobe.by ? ` · tegen ${e(fmtDate(g.tobe.by))}` : ''}</p>` : ''}
+        </div>
+      </div>
+      <p style="${S.p};margin-top:10px"><b>Kloof:</b> ${gt ? `${e(gt.line)} · ${e(gt.delta)} <span style="color:#64748b">(${e(gt.dir)})</span>` : '<span style="color:#64748b">kwalitatief</span>'}</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:12px">
+        <div><div style="${S.h}">Bewijs</div>
+          ${g.evidence.length ? g.evidence.map(x => { const t = typeOf(x.type); return `<div style="font-size:12px;line-height:1.45;color:#334155;margin-bottom:5px;padding-left:8px;border-left:3px solid ${t.color}"><b>${t.name}</b> <span style="color:#64748b">(${x.strength})</span>${x.note ? `<br>${e(x.note)}` : ''}</div>`; }).join('')
+            : '<div style="font-size:12px;color:#b45309">Geen bron: dit is een aanname</div>'}
+        </div>
+        <div><div style="${S.h}">Waarom</div>
+          ${whys.length ? whys.map((w, k) => `<div style="font-size:12px;line-height:1.45;color:${k === whys.length - 1 && whys.length > 1 ? '#059669' : '#334155'};margin-bottom:4px;padding-left:${k * 8}px">${k + 1}. ${e(w)}</div>`).join('') : '<div style="font-size:12px;color:#94a3b8">Nog niet onderzocht</div>'}
+        </div>
+        <div><div style="${S.h}">Wat is nodig</div>
+          ${g.actions.length ? g.actions.map(x => `<div style="display:flex;gap:6px;font-size:12px;line-height:1.45;color:#334155;margin-bottom:5px">
+            <span style="flex:none;width:12px;height:12px;margin-top:2px;border-radius:3px;${x.done ? 'background:#10b981' : 'border:1.5px solid #94a3b8'}"></span>
+            <span style="${x.done ? 'color:#94a3b8;text-decoration:line-through' : ''}">${e(x.text || '—')}<br><span style="color:${x.who ? '#64748b' : '#b45309'}">${x.who ? e(x.who) : 'wie?'}${x.by ? ' · ' + e(fmtDate(x.by)) : ''}</span></span></div>`).join('')
+            : '<div style="font-size:12px;color:#94a3b8">Nog geen acties</div>'}
+        </div>
+      </div>
+      ${s.length ? `<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px">${s.map(x => `<span style="font-size:11px;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:2px 7px">${e(x.text)}</span>`).join('')}</div>` : ''}
+    </div>`;
+  });
+  html += `<div data-oc-keep style="font-size:11px;color:#94a3b8;margin-top:8px">Gebaseerd op evidence-based management (Barends, Rousseau &amp; Briner, 2014, CEBMa): onderzoek, organisatiedata, praktijkervaring en stakeholders.</div>`;
+  node.innerHTML = html;
+  return { node, title:'Gap-analyse', subtitle:`${a.name} · ${n} ${n === 1 ? 'kloof' : 'kloven'}` };
+}
+
+$('menu').addEventListener('click', async e => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  closeMenu();
+  const a = cur(), act = b.dataset.act;
+  if (['pdf', 'png', 'copy', 'csv'].includes(act) && !a.gaps.length) { toast('De analyse is nog leeg'); return; }
+  const base = `gap-analyse-${slug(a.name)}-${today()}`;
+  if (act === 'pdf' || act === 'png') {
+    toast('Bezig…');
+    try {
+      await (act === 'pdf' ? ocExport.pdf(buildExport, base) : ocExport.png(buildExport, base));
+      toast(act === 'pdf' ? 'PDF gedownload' : 'Afbeelding gedownload');
+    } catch { toast('Downloaden lukt nu niet: geen verbinding?'); }
+  }
+  if (act === 'copy') (await copy(asMarkdown())) ? toast('Gekopieerd als tekst') : toast('Kopiëren lukt hier niet');
+  if (act === 'csv') { download(new Blob([asCSV()], { type:'text/csv;charset=utf-8' }), base + '.csv'); toast('CSV gedownload'); }
+  if (act === 'delete') {
+    const restore = snapshot();
+    state.analyses = state.analyses.filter(x => x.id !== a.id);
+    if (!state.analyses.length) state.analyses.push({ id:uid(), name:'Mijn analyse', question:'', gaps:[] });
+    state.current = state.analyses[0].id; save(); render();
+    toast(`Analyse '${a.name}' verwijderd`, restore);
+  }
+});
+
+window.addEventListener('storage', e => { if (e.key === KEY) { state = load(); render(); } });
+window.addEventListener('resize', () => autosize($('question')));
+render();
+</script>
+</body>
+</html>
