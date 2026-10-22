@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Prioriteren – Onder Constructie</title>
+<meta name="description" content="Zet je werk op impact tegenover inspanning. Zie meteen je quick wins, je grote klussen en wat je beter laat liggen.">
+<meta name="oc:groep" content="projecten">
+<meta name="oc:labels" content="plannen">
+<meta name="oc:kort" content="Quick wins tegenover grote klussen">
+<meta name="oc:volgorde" content="45">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox='0 0 40 40' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='20' cy='20' r='16' fill='%23ecfdf5' stroke='%2310b981' stroke-width='1.5'/%3E%3Crect x='11' y='11' width='8.2' height='8.2' rx='2' fill='%2310b981'/%3E%3Crect x='20.8' y='11' width='8.2' height='8.2' rx='2' fill='%23a7f3d0'/%3E%3Crect x='11' y='20.8' width='8.2' height='8.2' rx='2' fill='%23a7f3d0'/%3E%3Crect x='20.8' y='20.8' width='8.2' height='8.2' rx='2' stroke='%2310b981' stroke-width='1.2'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --slate-900:#0f172a; --slate-800:#1e293b; --slate-700:#334155; --slate-600:#475569;
+  --slate-500:#64748b; --slate-400:#94a3b8; --slate-300:#cbd5e1; --slate-200:#e2e8f0;
+  --slate-100:#f1f5f9; --slate-50:#f8fafc; --wit:#ffffff;
+  --accent:#10b981; --accent-dark:#059669; --accent-light:#d1fae5; --accent-50:#ecfdf5;
+  --rood:#ef4444;
+  --q-quick:#10b981; --q-groot:#3b82f6; --q-vul:#94a3b8; --q-verspil:#f59e0b;
+  --bottom: env(safe-area-inset-bottom, 0px);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body {
+  font-family:'DM Sans', system-ui, sans-serif; background:var(--slate-50); color:var(--slate-700);
+  line-height:1.5; min-height:100vh; -webkit-font-smoothing:antialiased;
+  display:flex; flex-direction:column;
+}
+button, input { font:inherit; color:inherit; }
+button { background:none; border:0; cursor:pointer; }
+[hidden] { display:none !important; }
+
+/* Kop */
+.header { background:var(--wit); border-bottom:1px solid var(--slate-200); padding:1.5rem 1.25rem 1.75rem; position:relative; text-align:center; }
+.back-link {
+  position:absolute; top:1.25rem; left:1.25rem; display:inline-flex; align-items:center; gap:0.5rem;
+  font-size:0.875rem; color:var(--slate-400); text-decoration:none; transition:color 0.2s;
+}
+.back-link:hover { color:var(--accent); }
+.back-link svg { width:16px; height:16px; }
+.logo svg { width:56px; height:56px; }
+.title { font-size:1.625rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.03em; line-height:1.2; margin-top:0.5rem; }
+.subtitle { font-size:0.9375rem; color:var(--slate-500); }
+
+.main { flex:1; width:100%; margin:0 auto; padding:1.25rem clamp(1rem, 2.5vw, 2.5rem) 3rem; }
+
+/* Lijsten */
+.lists { display:flex; gap:0.5rem; overflow-x:auto; scrollbar-width:none; margin:0 0 1rem; padding:0.125rem 0; }
+.lists::-webkit-scrollbar { display:none; }
+.tab {
+  flex-shrink:0; padding:0.4375rem 0.875rem; border-radius:999px; font-size:0.875rem; font-weight:600;
+  border:1px solid var(--slate-200); background:var(--wit); color:var(--slate-600); white-space:nowrap;
+  display:flex; align-items:center; gap:0.375rem;
+}
+.tab .n { font-size:0.75rem; font-weight:500; color:var(--slate-400); font-variant-numeric:tabular-nums; }
+.tab.active { background:var(--slate-800); border-color:var(--slate-800); color:var(--wit); }
+.tab.active .n { color:var(--slate-300); }
+.tab.add { color:var(--accent-dark); border-style:dashed; }
+
+.bar { display:flex; align-items:center; gap:0.5rem; margin-bottom:1rem; }
+.list-name {
+  flex:1; min-width:0; font-size:1.25rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.02em;
+  border:0; background:none; outline:none; padding:0.125rem 0; border-bottom:1.5px solid transparent;
+}
+.list-name:focus, .list-name:focus-visible { border-bottom-color:var(--accent); outline:none; }
+
+/* Raster: formulier | matrix | lijst */
+.grid {
+  display:grid; gap:1.25rem; align-items:start;
+  grid-template-columns: clamp(260px, 22vw, 330px) minmax(0, 1fr) clamp(280px, 25vw, 380px);
+  grid-template-areas: "form matrix list";
+}
+.card { background:var(--wit); border:1px solid var(--slate-200); border-radius:16px; box-shadow:0 1px 2px rgba(15,23,42,0.04); }
+.form-card { grid-area:form; padding:1.25rem; }
+.matrix-card { grid-area:matrix; padding:1rem; }
+.list-card { grid-area:list; overflow:hidden; }
+.label {
+  font-size:0.6875rem; font-weight:600; text-transform:uppercase; letter-spacing:0.12em; color:var(--slate-400);
+  margin-bottom:0.75rem; display:flex; align-items:center; justify-content:space-between; gap:0.5rem;
+}
+.label button { text-transform:none; letter-spacing:0; font-size:0.8125rem; font-weight:600; color:var(--accent-dark); padding:0.125rem 0.375rem; border-radius:6px; }
+.label button:hover { background:var(--accent-50); }
+
+.input {
+  width:100%; padding:0.6875rem 0.875rem; border:1.5px solid var(--slate-200); border-radius:10px;
+  background:var(--slate-50); outline:none; font-size:1rem; transition:border-color 0.15s, background 0.15s;
+}
+.input:focus { border-color:var(--accent); background:var(--wit); }
+.input::placeholder { color:var(--slate-400); }
+
+.slider { margin-top:1rem; background:var(--slate-50); border-radius:12px; padding:0.75rem 0.875rem 0.625rem; }
+.slider-top { display:flex; align-items:baseline; justify-content:space-between; }
+.slider-name { font-size:0.9375rem; font-weight:600; color:var(--slate-700); }
+.slider-val { font-size:1.25rem; font-weight:700; color:var(--accent-dark); font-variant-numeric:tabular-nums; }
+.slider-hint { display:flex; justify-content:space-between; font-size:0.75rem; color:var(--slate-400); margin-top:0.125rem; }
+input[type=range] {
+  -webkit-appearance:none; appearance:none; width:100%; height:28px; margin-top:0.375rem; background:transparent; cursor:pointer;
+  --p:50%;
+}
+input[type=range]::-webkit-slider-runnable-track { height:6px; border-radius:99px; background:linear-gradient(to right, var(--accent) var(--p), var(--slate-200) var(--p)); }
+input[type=range]::-moz-range-track { height:6px; border-radius:99px; background:var(--slate-200); }
+input[type=range]::-moz-range-progress { height:6px; border-radius:99px; background:var(--accent); }
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance:none; width:22px; height:22px; margin-top:-8px; border-radius:50%; background:var(--accent);
+  border:3px solid var(--wit); box-shadow:0 1px 4px rgba(15,23,42,0.25); transition:transform 0.12s;
+}
+input[type=range]::-moz-range-thumb { width:16px; height:16px; border-radius:50%; background:var(--accent); border:3px solid var(--wit); box-shadow:0 1px 4px rgba(15,23,42,0.25); }
+input[type=range]:active::-webkit-slider-thumb { transform:scale(1.12); }
+input[type=range]:focus-visible { outline:none; }
+input[type=range]:focus-visible::-webkit-slider-thumb { box-shadow:0 0 0 4px var(--accent-light); }
+
+.btn-primary {
+  width:100%; margin-top:1rem; padding:0.75rem 1rem; border-radius:10px; background:var(--accent); color:var(--wit);
+  font-weight:600; display:flex; align-items:center; justify-content:center; gap:0.5rem; transition:background 0.15s;
+}
+.btn-primary:hover { background:var(--accent-dark); }
+.btn-primary svg { width:18px; height:18px; }
+.btn-secondary { width:100%; margin-top:0.5rem; padding:0.625rem 1rem; border-radius:10px; color:var(--slate-500); font-weight:500; }
+.btn-secondary:hover { background:var(--slate-100); }
+.hint { font-size:0.75rem; color:var(--slate-400); margin-top:0.625rem; line-height:1.45; }
+.form-card.editing { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-50); }
+
+.legend { display:grid; grid-template-columns:1fr 1fr; gap:0.375rem; margin-top:1.125rem; }
+.legend span { display:flex; align-items:center; gap:0.4375rem; font-size:0.8125rem; color:var(--slate-600); padding:0.375rem 0.5rem; border-radius:8px; background:var(--slate-50); }
+.legend i { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+
+/* Matrix */
+.matrix-wrap { width:100%; max-width:max(300px, calc(100vh - 230px)); margin:0 auto; }
+#matrix { width:100%; height:auto; display:block; touch-action:none; user-select:none; -webkit-user-select:none; }
+#matrix .pt { cursor:grab; }
+#matrix .pt.dragging { cursor:grabbing; }
+#matrix .pt:focus { outline:none; }
+#matrix .pt:focus-visible circle.dot { stroke:var(--slate-800); stroke-width:3; }
+.matrix-empty { text-align:center; color:var(--slate-400); font-size:0.875rem; margin-top:0.5rem; }
+
+/* Lijst */
+.list-head { padding:1rem 1.125rem 0.25rem; }
+.q-head {
+  display:flex; align-items:center; gap:0.5rem; padding:0.625rem 1.125rem; font-size:0.8125rem; font-weight:700;
+  color:var(--slate-700); background:var(--slate-50); border-top:1px solid var(--slate-100); border-bottom:1px solid var(--slate-100);
+}
+.q-head i { width:9px; height:9px; border-radius:50%; }
+.q-head .q-sub { font-weight:500; color:var(--slate-400); }
+.q-head .q-n { margin-left:auto; font-weight:500; color:var(--slate-400); font-variant-numeric:tabular-nums; }
+.items { list-style:none; }
+.item {
+  display:grid; grid-template-columns:40px 1fr auto auto; align-items:center; min-height:50px;
+  border-bottom:1px solid var(--slate-100); cursor:pointer; transition:background 0.12s;
+}
+.item:last-child { border-bottom:0; }
+.item:hover { background:var(--slate-50); }
+.item.selected { background:var(--accent-50); }
+.check { width:40px; height:50px; display:flex; align-items:center; justify-content:center; }
+.box { width:20px; height:20px; border-radius:6px; border:2px solid var(--slate-300); display:flex; align-items:center; justify-content:center; transition:background 0.15s, border-color 0.15s; }
+.box svg { width:13px; height:13px; color:var(--wit); opacity:0; }
+.check:hover .box { border-color:var(--accent); }
+.item.done .box { background:var(--accent); border-color:var(--accent); }
+.item.done .box svg { opacity:1; }
+.item-name { font-size:0.9375rem; color:var(--slate-800); padding:0.625rem 0.25rem 0.625rem 0; word-break:break-word; min-width:0; }
+.item.done .item-name { color:var(--slate-400); text-decoration:line-through; text-decoration-color:var(--slate-300); }
+.scores { font-size:0.75rem; color:var(--slate-500); white-space:nowrap; font-variant-numeric:tabular-nums; padding-right:0.25rem; }
+.scores b { font-weight:600; color:var(--slate-700); }
+.del { width:36px; height:44px; display:flex; align-items:center; justify-content:center; color:var(--slate-300); border-radius:8px; }
+.del:hover { color:var(--rood); }
+.del svg { width:17px; height:17px; }
+@media (hover:hover) { .item .del { opacity:0; } .item:hover .del, .item:focus-within .del { opacity:1; } }
+
+.empty { padding:2rem 1.25rem; text-align:center; color:var(--slate-400); font-size:0.9375rem; }
+.empty strong { display:block; color:var(--slate-600); font-weight:600; margin-bottom:0.25rem; }
+.empty button { margin-top:1rem; padding:0.5625rem 1rem; border-radius:10px; border:1.5px solid var(--accent); color:var(--accent-dark); font-weight:600; }
+.empty button:hover { background:var(--accent-50); }
+
+/* Menu */
+.icon-btn { width:38px; height:38px; display:flex; align-items:center; justify-content:center; border-radius:10px; color:var(--slate-500); flex-shrink:0; }
+.icon-btn:hover { background:var(--slate-100); color:var(--slate-700); }
+.icon-btn svg { width:20px; height:20px; }
+.menu-wrap { position:relative; }
+.menu {
+  position:absolute; right:0; top:42px; z-index:20; min-width:240px; background:var(--wit); border:1px solid var(--slate-200);
+  border-radius:12px; box-shadow:0 12px 32px rgba(15,23,42,0.14); padding:0.375rem; display:none;
+}
+.menu.open { display:block; }
+.menu button { width:100%; display:flex; align-items:center; gap:0.625rem; padding:0.5625rem 0.625rem; border-radius:8px; font-size:0.9375rem; text-align:left; color:var(--slate-700); }
+.menu button:hover { background:var(--slate-100); }
+.menu button svg { width:18px; height:18px; color:var(--slate-400); flex-shrink:0; }
+.menu .sep { height:1px; background:var(--slate-100); margin:0.25rem 0.375rem; }
+.menu .danger, .menu .danger svg { color:var(--rood); }
+
+/* Melding */
+.toast {
+  position:fixed; left:50%; bottom:calc(var(--bottom) + 1.25rem); transform:translate(-50%, calc(100% + 3rem)); visibility:hidden; z-index:50;
+  background:var(--slate-800); color:var(--wit); border-radius:12px; padding:0.625rem 0.625rem 0.625rem 1rem;
+  display:flex; align-items:center; gap:0.875rem; font-size:0.9375rem; box-shadow:0 10px 30px rgba(15,23,42,0.25);
+  transition:transform 0.25s ease, visibility 0s 0.25s; max-width:calc(100% - 2rem);
+}
+.toast.show { transform:translate(-50%, 0); visibility:visible; transition:transform 0.25s ease; }
+.toast button { color:#6ee7b7; font-weight:600; padding:0.25rem 0.5rem; border-radius:6px; }
+.toast button:hover { background:rgba(255,255,255,0.08); }
+
+.footer { text-align:center; padding:2rem 2rem calc(var(--bottom) + 2rem); border-top:1px solid var(--slate-200); background:var(--wit); }
+.quote { font-size:0.8125rem; color:var(--accent); }
+
+@media (max-width:1100px) {
+  .grid { grid-template-columns:1fr 1fr; grid-template-areas:"form list" "matrix matrix"; }
+}
+@media (max-width:760px) {
+  .grid { grid-template-columns:1fr; grid-template-areas:"form" "matrix" "list"; }
+  .back-link { position:static; margin-bottom:0.75rem; justify-content:center; display:flex; }
+  .matrix-card { padding:0.5rem; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
+:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <a href="https://onderconstructie.github.io/projectmanagement/" class="back-link">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Projectmanagement
+  </a>
+  <div class="logo">
+    <svg viewBox="0 0 80 80" fill="none" aria-hidden="true">
+      <circle cx="40" cy="40" r="36" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2"/>
+      <rect x="21" y="21" width="18" height="18" rx="4" fill="#10b981"/>
+      <rect x="41" y="21" width="18" height="18" rx="4" fill="#a7f3d0"/>
+      <rect x="21" y="41" width="18" height="18" rx="4" fill="#e2e8f0"/>
+      <rect x="42" y="42" width="16" height="16" rx="3.5" stroke="#cbd5e1" stroke-width="2"/>
+      <path d="M26 30.5l3 3 5.5-6" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+  <h1 class="title">Prioriteren</h1>
+  <p class="subtitle">Wat levert veel op voor weinig moeite?</p>
+</header>
+
+<main class="main">
+  <nav class="lists" id="lists" aria-label="Lijsten"></nav>
+
+  <div class="bar">
+    <input class="list-name" id="list-name" aria-label="Naam van de lijst" maxlength="60" spellcheck="false">
+    <div class="menu-wrap">
+      <button class="icon-btn" id="menu-btn" aria-label="Meer acties" aria-haspopup="true" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
+      </button>
+      <div class="menu" id="menu" role="menu">
+        <button data-act="copy" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Kopieer als tekst</button>
+        <button data-act="csv" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h8"/></svg>Download CSV</button>
+        <button data-act="png" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>Download matrix als PNG</button>
+        <div class="sep"></div>
+        <button data-act="undone" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>Alles terug open</button>
+        <button data-act="delete" class="danger" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>Lijst verwijderen</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <section class="card form-card" id="form-card" aria-label="Item toevoegen">
+      <div class="label"><span id="form-title">Item toevoegen</span></div>
+      <form id="form" autocomplete="off">
+        <input class="input" id="name" placeholder="Bijv. Agenda vooraf delen" aria-label="Naam van het item" maxlength="120" enterkeyhint="done">
+        <div class="slider">
+          <div class="slider-top"><span class="slider-name">Impact</span><span class="slider-val" id="impact-val">3</span></div>
+          <input type="range" id="impact" min="1" max="5" step="1" value="3" aria-label="Impact">
+          <div class="slider-hint"><span>weinig effect</span><span>groot effect</span></div>
+        </div>
+        <div class="slider">
+          <div class="slider-top"><span class="slider-name">Inspanning</span><span class="slider-val" id="effort-val">3</span></div>
+          <input type="range" id="effort" min="1" max="5" step="1" value="3" aria-label="Inspanning">
+          <div class="slider-hint"><span>snel gedaan</span><span>veel werk</span></div>
+        </div>
+        <button class="btn-primary" type="submit" id="submit">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          <span id="submit-text">Toevoegen</span>
+        </button>
+        <button class="btn-secondary" type="button" id="cancel-edit" hidden>Nieuw item</button>
+      </form>
+      <p class="hint" id="hint">Plak een lijst in het naamveld: elke regel wordt een item. Versleep daarna de punten in de matrix.</p>
+      <div class="legend" aria-hidden="true">
+        <span><i style="background:var(--q-quick)"></i>Quick wins</span>
+        <span><i style="background:var(--q-groot)"></i>Grote klussen</span>
+        <span><i style="background:var(--q-vul)"></i>Opvullers</span>
+        <span><i style="background:var(--q-verspil)"></i>Tijdverspillers</span>
+      </div>
+    </section>
+
+    <section class="card matrix-card" aria-label="Matrix">
+      <div class="matrix-wrap">
+        <svg id="matrix" viewBox="0 0 400 400" role="img" aria-label="Matrix van impact tegenover inspanning"></svg>
+      </div>
+    </section>
+
+    <section class="card list-card" aria-label="Lijst per kwadrant">
+      <div class="list-head label"><span>Overzicht</span><span id="count"></span></div>
+      <div id="list"></div>
+    </section>
+  </div>
+</main>
+
+<footer class="footer">
+  <p class="quote">Niet alles wat dringend is, is belangrijk.</p>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-text"></span><button id="toast-btn" hidden>Ongedaan</button></div>
+
+<script>
+/* ---------- Kwadranten ----------
+   Impact 3 of hoger telt als hoog, inspanning 3 of hoger als veel werk.
+   De lijnen in de matrix liggen daarom tussen 2 en 3. */
+const Q = [
+  { id:'quick',   name:'Quick wins',      sub:'nu doen',        color:'#10b981', bg:'#ecfdf5', test:i => i.impact >= 3 && i.effort <= 2 },
+  { id:'groot',   name:'Grote klussen',   sub:'plannen',        color:'#3b82f6', bg:'#eff6ff', test:i => i.impact >= 3 && i.effort >= 3 },
+  { id:'vul',     name:'Opvullers',       sub:'als er tijd is', color:'#94a3b8', bg:'#f8fafc', test:i => i.impact <= 2 && i.effort <= 2 },
+  { id:'verspil', name:'Tijdverspillers', sub:'laten liggen',   color:'#f59e0b', bg:'#fffbeb', test:i => i.impact <= 2 && i.effort >= 3 },
+];
+const quadOf = it => Q.find(q => q.test(it));
+
+/* ---------- Opslag ---------- */
+const KEY = 'prioriteit.v1';
+const uid = () => Math.random().toString(36).slice(2, 10);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem(KEY));
+    if (d && Array.isArray(d.lists) && d.lists.length) return d;
+  } catch {}
+  const first = { id:uid(), name:'Mijn project', items:[] };
+  return { lists:[first], current:first.id };
+}
+let state = load();
+function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
+const cur = () => state.lists.find(l => l.id === state.current) || state.lists[0];
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+let editing = null;   // id van het item in de schuiven
+
+/* ---------- Matrix tekenen ---------- */
+const SVGNS = 'http://www.w3.org/2000/svg';
+const M = { L:44, T:12, W:344, H:344 };   // plotvlak binnen viewBox 400x400
+const xOf = e => M.L + (e - 0.5) / 5 * M.W;       // inspanning: links weinig, rechts veel
+const yOf = i => M.T + (5.5 - i) / 5 * M.H;       // impact: boven veel
+const splitX = M.L + 2 / 5 * M.W;                  // tussen inspanning 2 en 3
+const splitY = M.T + 3 / 5 * M.H;                  // tussen impact 2 en 3
+
+function shortLabel(s, n = 16) { return s.length > n ? s.slice(0, n - 1).trimEnd() + '…' : s; }
+
+function matrixStatic() {
+  const L = M.L, T = M.T, W = M.W, H = M.H, R = L + W, B = T + H;
+  const zones = [
+    [L, T, splitX - L, splitY - T, Q[0]], [splitX, T, R - splitX, splitY - T, Q[1]],
+    [L, splitY, splitX - L, B - splitY, Q[2]], [splitX, splitY, R - splitX, B - splitY, Q[3]],
+  ];
+  let s = `<rect x="0" y="0" width="400" height="400" fill="#ffffff"/>`;
+  zones.forEach(([x, y, w, h, q]) => {
+    s += `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${q.bg}"/>`;
+  });
+  // fijne rasterlijnen per waarde
+  for (let v = 1; v < 5; v++) {
+    const gx = L + v / 5 * W, gy = T + v / 5 * H;
+    s += `<line x1="${gx}" y1="${T}" x2="${gx}" y2="${B}" stroke="#e2e8f0" stroke-width="0.6" stroke-dasharray="2 3"/>`;
+    s += `<line x1="${L}" y1="${gy}" x2="${R}" y2="${gy}" stroke="#e2e8f0" stroke-width="0.6" stroke-dasharray="2 3"/>`;
+  }
+  s += `<line x1="${splitX}" y1="${T}" x2="${splitX}" y2="${B}" stroke="#cbd5e1" stroke-width="1.2"/>`;
+  s += `<line x1="${L}" y1="${splitY}" x2="${R}" y2="${splitY}" stroke="#cbd5e1" stroke-width="1.2"/>`;
+  s += `<rect x="${L}" y="${T}" width="${W}" height="${H}" fill="none" stroke="#cbd5e1" stroke-width="1.5" rx="2"/>`;
+  // kwadrantnamen
+  const f = `font-family="'DM Sans', system-ui, sans-serif"`;
+  s += `<text x="${L + 8}" y="${T + 17}" ${f} font-size="10.5" font-weight="700" letter-spacing="0.8" fill="${Q[0].color}">QUICK WINS</text>`;
+  s += `<text x="${R - 8}" y="${T + 17}" ${f} font-size="10.5" font-weight="700" letter-spacing="0.8" fill="${Q[1].color}" text-anchor="end">GROTE KLUSSEN</text>`;
+  s += `<text x="${L + 8}" y="${B - 9}" ${f} font-size="10.5" font-weight="700" letter-spacing="0.8" fill="#64748b">OPVULLERS</text>`;
+  s += `<text x="${R - 8}" y="${B - 9}" ${f} font-size="10.5" font-weight="700" letter-spacing="0.8" fill="#d97706" text-anchor="end">TIJDVERSPILLERS</text>`;
+  // assen
+  for (let v = 1; v <= 5; v++) {
+    s += `<text x="${xOf(v)}" y="${B + 16}" ${f} font-size="10" fill="#94a3b8" text-anchor="middle">${v}</text>`;
+    s += `<text x="${L - 9}" y="${yOf(v) + 3.5}" ${f} font-size="10" fill="#94a3b8" text-anchor="end">${v}</text>`;
+  }
+  s += `<text x="${L + W / 2}" y="${B + 31}" ${f} font-size="11" font-weight="600" fill="#64748b" text-anchor="middle">Inspanning →</text>`;
+  s += `<text transform="translate(${L - 27} ${T + H / 2}) rotate(-90)" ${f} font-size="11" font-weight="600" fill="#64748b" text-anchor="middle">Impact →</text>`;
+  return s;
+}
+
+// Punten op dezelfde plek in een klein kringetje rond die plek zetten.
+function positions(items) {
+  const groups = {};
+  items.forEach(it => { (groups[it.impact + ':' + it.effort] ||= []).push(it); });
+  const pos = {};
+  Object.values(groups).forEach(g => {
+    g.forEach((it, k) => {
+      let dx = 0, dy = 0;
+      if (g.length > 1) {
+        const r = g.length > 6 ? 17 : 13, a = (k / g.length) * Math.PI * 2 - Math.PI / 2;
+        dx = Math.cos(a) * r; dy = Math.sin(a) * r;
+      }
+      pos[it.id] = { x:xOf(it.effort) + dx, y:yOf(it.impact) + dy, single:g.length === 1, k, n:g.length };
+    });
+  });
+  return pos;
+}
+
+function renderMatrix() {
+  const l = cur(), svg = $('matrix');
+  const pos = positions(l.items);
+  const f = `font-family="'DM Sans', system-ui, sans-serif"`;
+  let pts = '';
+  // gedane items onderaan tekenen, actieve erboven
+  const order = [...l.items].sort((a, b) => (b.done - a.done));
+  order.forEach(it => {
+    const p = pos[it.id], q = quadOf(it);
+    const sel = it.id === editing;
+    const op = it.done ? 0.4 : 1;
+    // Label boven het punt, kort genoeg voor één kolom zodat buren elkaar niet raken.
+    // Twee punten op dezelfde plek: eentje boven, eentje onder. Drie of meer: alleen een teller.
+    let lx = p.x, ly = p.y - 12, anchor = 'middle', label = esc(shortLabel(it.name, 10));
+    if (p.n === 2) ly = p.k === 0 ? p.y - 12 : p.y + 20;
+    if (p.n >= 3) label = p.k === 0 ? `${p.n} items` : '';
+    if (p.n >= 3 && p.k === 0) { lx = xOf(it.effort); ly = yOf(it.impact) - (p.n > 6 ? 24 : 20); }
+    // niet buiten de matrix laten lopen
+    // bovenste rij: label onder het punt, zodat het niet over de kwadrantnaam valt
+    if (it.impact === 5 && p.n <= 2 && (p.n === 1 || p.k === 0)) ly = p.y + 20;
+    if (it.impact === 5 && p.n === 2 && p.k === 1) ly = p.y + 20 + 13;
+    pts += `<g class="pt${sel ? ' sel' : ''}" data-id="${it.id}" tabindex="0" role="button" aria-label="${esc(it.name)}: impact ${it.impact}, inspanning ${it.effort}" opacity="${op}">
+      <circle cx="${p.x}" cy="${p.y}" r="18" fill="transparent"/>
+      ${sel ? `<circle cx="${p.x}" cy="${p.y}" r="11" fill="none" stroke="${q.color}" stroke-width="2" opacity="0.35"/>` : ''}
+      <circle class="dot" cx="${p.x}" cy="${p.y}" r="${sel ? 7.5 : 6.5}" fill="${q.color}" stroke="#ffffff" stroke-width="2"/>
+      <title>${esc(it.name)} (impact ${it.impact}, inspanning ${it.effort})</title>
+      ${label ? `<text x="${lx}" y="${ly}" ${f} font-size="10.5" font-weight="600" fill="#1e293b" text-anchor="${anchor}"
+        stroke="#ffffff" stroke-width="3" stroke-linejoin="round" paint-order="stroke">${label}</text>` : ''}
+    </g>`;
+  });
+  svg.innerHTML = matrixStatic() + `<g id="points">${pts}</g>`;
+}
+
+/* ---------- Lijst ---------- */
+const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+const ICON_DEL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+
+function sorted(items) {
+  return [...items].sort((a, b) => (a.done - b.done) || ((b.impact - b.effort) - (a.impact - a.effort)) || (b.impact - a.impact));
+}
+function renderList() {
+  const l = cur();
+  const open = l.items.filter(i => !i.done).length;
+  $('count').textContent = l.items.length ? `${open} open · ${l.items.length - open} gedaan` : '';
+  if (!l.items.length) {
+    $('list').innerHTML = `<div class="empty"><strong>Nog niets om te ordenen</strong>Voeg items toe, of bekijk eerst hoe het werkt.<br><button id="example">Begin met een voorbeeld</button></div>`;
+    return;
+  }
+  $('list').innerHTML = Q.map(q => {
+    const items = sorted(l.items.filter(i => quadOf(i) === q));
+    if (!items.length) return '';
+    return `<div class="q-head"><i style="background:${q.color}"></i>${q.name}<span class="q-sub">· ${q.sub}</span><span class="q-n">${items.length}</span></div>
+      <ul class="items">${items.map(it => `
+        <li class="item${it.done ? ' done' : ''}${it.id === editing ? ' selected' : ''}" data-id="${it.id}" tabindex="0">
+          <button class="check" aria-label="${it.done ? 'Niet meer gedaan' : 'Markeer als gedaan'}"><span class="box">${ICON_CHECK}</span></button>
+          <span class="item-name">${esc(it.name)}</span>
+          <span class="scores" title="Impact · inspanning">imp <b>${it.impact}</b> · insp <b>${it.effort}</b></span>
+          <button class="del" aria-label="Verwijder">${ICON_DEL}</button>
+        </li>`).join('')}</ul>`;
+  }).join('');
+}
+
+function renderTabs() {
+  $('lists').innerHTML = state.lists.map(l =>
+    `<button class="tab${l.id === state.current ? ' active' : ''}" data-list="${l.id}">${esc(l.name || 'Naamloos')}<span class="n">${l.items.filter(i => !i.done).length || ''}</span></button>`
+  ).join('') + `<button class="tab add" id="new-list">+ Lijst</button>`;
+}
+
+function syncForm() {
+  const it = editing && cur().items.find(i => i.id === editing);
+  if (!it) editing = null;
+  $('form-card').classList.toggle('editing', !!it);
+  $('form-title').textContent = it ? 'Item aanpassen' : 'Item toevoegen';
+  $('submit-text').textContent = it ? 'Klaar' : 'Toevoegen';
+  $('cancel-edit').hidden = !it;
+  $('hint').hidden = !!it;
+  if (it) {
+    if (document.activeElement !== $('name')) $('name').value = it.name;
+    $('impact').value = it.impact; $('effort').value = it.effort;
+  }
+  paintSliders();
+}
+function paintSliders() {
+  ['impact', 'effort'].forEach(k => {
+    const el = $(k); el.style.setProperty('--p', ((el.value - 1) / 4 * 100) + '%');
+    $(k + '-val').textContent = el.value;
+  });
+}
+
+function render() {
+  if (document.activeElement !== $('list-name')) $('list-name').value = cur().name;
+  renderTabs(); renderMatrix(); renderList(); syncForm();
+}
+
+/* ---------- Melding met ongedaan maken ---------- */
+let undoFn = null, toastTimer = null;
+function toast(msg, undo) {
+  undoFn = undo || null;
+  $('toast-text').textContent = msg;
+  $('toast-btn').hidden = !undo;
+  $('toast').classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { $('toast').classList.remove('show'); undoFn = null; }, undo ? 6000 : 2500);
+}
+$('toast-btn').addEventListener('click', () => {
+  if (undoFn) { undoFn(); undoFn = null; save(); render(); }
+  $('toast').classList.remove('show');
+});
+const snapshot = () => { const c = JSON.parse(JSON.stringify(state)); return () => { state = c; }; };
+
+/* ---------- Toevoegen en aanpassen ---------- */
+function parseLines(text) {
+  return text.split(/\r?\n/).map(t => t.trim()
+    .replace(/^([-*+•·▪◦–]|\d+[.)]|\[( |x|X)\])\s+/, '').trim())
+    .filter(Boolean).map(t => t.slice(0, 120));
+}
+$('form').addEventListener('submit', e => {
+  e.preventDefault();
+  const name = $('name').value.trim();
+  const impact = +$('impact').value, effort = +$('effort').value;
+  if (editing) {
+    const it = cur().items.find(i => i.id === editing);
+    if (it) { if (name) it.name = name.slice(0, 120); it.impact = impact; it.effort = effort; }
+    editing = null; $('name').value = '';
+    $('impact').value = 3; $('effort').value = 3;
+    save(); render(); return;
+  }
+  if (!name) { $('name').focus(); return; }
+  const it = { id:uid(), name:name.slice(0, 120), impact, effort, done:false };
+  cur().items.push(it);
+  $('name').value = ''; $('impact').value = 3; $('effort').value = 3;
+  save(); render();
+  const q = quadOf(it);
+  toast(`Toegevoegd bij ${q.name.toLowerCase()}`);
+  $('name').focus();
+});
+$('name').addEventListener('paste', e => {
+  const text = (e.clipboardData || window.clipboardData).getData('text');
+  if (!/\n/.test(text.trim()) || editing) return;
+  e.preventDefault();
+  const names = parseLines(text);
+  if (!names.length) return;
+  const l = cur();
+  names.forEach(n => l.items.push({ id:uid(), name:n, impact:3, effort:3, done:false }));
+  save(); render();
+  toast(`${names.length} items toegevoegd op 3 · 3. Versleep ze in de matrix.`, () => { l.items.splice(l.items.length - names.length, names.length); });
+});
+['impact', 'effort'].forEach(k => $(k).addEventListener('input', () => {
+  paintSliders();
+  if (editing) {
+    const it = cur().items.find(i => i.id === editing);
+    if (it) { it[k] = +$(k).value; save(); renderMatrix(); renderList(); }
+  }
+}));
+$('name').addEventListener('input', () => {
+  if (!editing) return;
+  const it = cur().items.find(i => i.id === editing);
+  const v = $('name').value.trim();
+  if (it && v) { it.name = v.slice(0, 120); save(); renderMatrix(); renderList(); }
+});
+$('cancel-edit').addEventListener('click', () => {
+  editing = null; $('name').value = ''; $('impact').value = 3; $('effort').value = 3; render(); $('name').focus();
+});
+function startEdit(id) {
+  editing = id; $('name').value = '';
+  render();
+  if (matchMedia('(max-width:760px)').matches) $('form-card').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+/* ---------- Lijst: afvinken, verwijderen, kiezen ---------- */
+$('list').addEventListener('click', e => {
+  if (e.target.closest('#example')) { loadExample(); return; }
+  const li = e.target.closest('.item'); if (!li) return;
+  const l = cur(), idx = l.items.findIndex(i => i.id === li.dataset.id), it = l.items[idx];
+  if (!it) return;
+  if (e.target.closest('.check')) { it.done = !it.done; save(); render(); return; }
+  if (e.target.closest('.del')) {
+    const restore = snapshot();
+    l.items.splice(idx, 1); if (editing === it.id) editing = null;
+    save(); render();
+    toast(`'${shortLabel(it.name)}' verwijderd`, restore);
+    return;
+  }
+  startEdit(it.id);
+});
+$('list').addEventListener('keydown', e => {
+  const li = e.target.closest('.item');
+  if (li && e.target === li && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); startEdit(li.dataset.id); }
+});
+
+/* ---------- Punten verslepen in de matrix ---------- */
+const svg = $('matrix');
+let drag = null;
+function svgPoint(evt) {
+  const p = svg.createSVGPoint(); p.x = evt.clientX; p.y = evt.clientY;
+  return p.matrixTransform(svg.getScreenCTM().inverse());
+}
+svg.addEventListener('pointerdown', e => {
+  const g = e.target.closest('.pt'); if (!g) return;
+  e.preventDefault();
+  const it = cur().items.find(i => i.id === g.dataset.id); if (!it) return;
+  drag = { id:it.id, pid:e.pointerId, moved:false, start:svgPoint(e), from:{ impact:it.impact, effort:it.effort } };
+  svg.setPointerCapture(e.pointerId);
+  g.classList.add('dragging');
+});
+svg.addEventListener('pointermove', e => {
+  if (!drag || e.pointerId !== drag.pid) return;
+  const p = svgPoint(e);
+  if (!drag.moved && Math.hypot(p.x - drag.start.x, p.y - drag.start.y) < 4) return;
+  drag.moved = true;
+  const it = cur().items.find(i => i.id === drag.id); if (!it) return;
+  const effort = clamp(Math.round((p.x - M.L) / M.W * 5 + 0.5), 1, 5);
+  const impact = clamp(Math.round(5.5 - (p.y - M.T) / M.H * 5), 1, 5);
+  if (effort !== it.effort || impact !== it.impact) {
+    it.effort = effort; it.impact = impact;
+    if (navigator.vibrate) try { navigator.vibrate(5); } catch {}
+    editing = it.id;
+    renderMatrix(); renderList(); syncForm();
+  }
+});
+function endDrag(e) {
+  if (!drag || (e && e.pointerId !== drag.pid)) return;
+  const d = drag; drag = null;
+  const it = cur().items.find(i => i.id === d.id);
+  if (!d.moved) { startEdit(d.id); return; }
+  save(); render();
+  if (it && (it.impact !== d.from.impact || it.effort !== d.from.effort)) {
+    const q = quadOf(it), was = quadOf({ ...it, ...d.from });
+    if (q !== was) toast(`Verplaatst naar ${q.name.toLowerCase()}`);
+  }
+}
+svg.addEventListener('pointerup', endDrag);
+svg.addEventListener('pointercancel', endDrag);
+// Met het toetsenbord: pijltjes verplaatsen het gekozen punt
+svg.addEventListener('keydown', e => {
+  const g = e.target.closest('.pt'); if (!g) return;
+  const it = cur().items.find(i => i.id === g.dataset.id); if (!it) return;
+  const moves = { ArrowLeft:['effort', -1], ArrowRight:['effort', 1], ArrowUp:['impact', 1], ArrowDown:['impact', -1] };
+  if (moves[e.key]) {
+    e.preventDefault();
+    const [k, d] = moves[e.key]; it[k] = clamp(it[k] + d, 1, 5); editing = it.id;
+    save(); render();
+    const again = svg.querySelector(`.pt[data-id="${it.id}"]`); again && again.focus();
+  } else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startEdit(it.id); }
+});
+
+/* ---------- Lijsten ---------- */
+$('lists').addEventListener('click', e => {
+  if (e.target.closest('#new-list')) {
+    const l = { id:uid(), name:'Nieuw project', items:[] };
+    state.lists.push(l); state.current = l.id; editing = null; save(); render();
+    $('list-name').focus(); $('list-name').select();
+    return;
+  }
+  const t = e.target.closest('[data-list]'); if (!t) return;
+  state.current = t.dataset.list; editing = null; save(); render();
+});
+$('list-name').addEventListener('input', () => { cur().name = $('list-name').value.slice(0, 60); save(); renderTabs(); });
+$('list-name').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('name').focus(); } });
+$('list-name').addEventListener('blur', () => { if (!cur().name.trim()) { cur().name = 'Naamloos'; save(); render(); } });
+
+function loadExample() {
+  const ex = [
+    ['Agenda vooraf rondsturen', 4, 1], ['Onboarding-checklist', 4, 2], ['Nieuwe projectwebsite', 5, 5],
+    ['Dashboard automatiseren', 4, 4], ['Mailhandtekening updaten', 1, 1], ['Mappenstructuur opruimen', 2, 2],
+    ['Alle oude dossiers digitaliseren', 2, 5], ['Eigen huisstijl voor slides', 1, 4],
+  ];
+  cur().items.push(...ex.map(([name, impact, effort]) => ({ id:uid(), name, impact, effort, done:false })));
+  save(); render();
+  toast('Voorbeeld geladen. Versleep een punt om het te proberen.');
+}
+
+/* ---------- Menu ---------- */
+function closeMenu() { $('menu').classList.remove('open'); $('menu-btn').setAttribute('aria-expanded', 'false'); }
+$('menu-btn').addEventListener('click', e => {
+  e.stopPropagation();
+  const open = !$('menu').classList.contains('open');
+  $('menu').classList.toggle('open', open); $('menu-btn').setAttribute('aria-expanded', String(open));
+});
+document.addEventListener('click', e => { if (!e.target.closest('.menu-wrap')) closeMenu(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeMenu(); if (editing) $('cancel-edit').click(); } });
+
+function filename(ext) {
+  const base = (cur().name || 'prioriteiten').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  return `${base || 'prioriteiten'}.${ext}`;
+}
+function download(blob, name) {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+async function copy(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch {}
+  try {
+    const t = document.createElement('textarea'); t.value = text; t.style.position = 'fixed'; t.style.opacity = '0';
+    document.body.appendChild(t); t.select(); const ok = document.execCommand('copy'); t.remove(); return ok;
+  } catch { return false; }
+}
+function asText() {
+  const l = cur();
+  return `${l.name}\n` + Q.map(q => {
+    const items = sorted(l.items.filter(i => quadOf(i) === q));
+    if (!items.length) return '';
+    return `\n${q.name} (${q.sub})\n` + items.map(i => `- [${i.done ? 'x' : ' '}] ${i.name} (impact ${i.impact}, inspanning ${i.effort})`).join('\n');
+  }).join('\n').replace(/\n{3,}/g, '\n\n') + '\n';
+}
+function asCSV() {
+  const cell = v => /[;"\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v);
+  const rows = [['Kwadrant', 'Item', 'Impact', 'Inspanning', 'Gedaan']];
+  Q.forEach(q => sorted(cur().items.filter(i => quadOf(i) === q)).forEach(i => rows.push([q.name, i.name, i.impact, i.effort, i.done ? 'ja' : 'nee'])));
+  return '﻿' + rows.map(r => r.map(cell).join(';')).join('\r\n') + '\r\n';
+}
+function asPNG() {
+  return new Promise((resolve, reject) => {
+    const clone = svg.cloneNode(true);
+    clone.setAttribute('xmlns', SVGNS); clone.setAttribute('width', 1200); clone.setAttribute('height', 1200);
+    const data = new XMLSerializer().serializeToString(clone);
+    const img = new Image();
+    img.onload = () => {
+      const pad = 60, title = 70, size = 1200;
+      const c = document.createElement('canvas'); c.width = size + pad * 2; c.height = size + pad * 2 + title;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, c.width, c.height);
+      ctx.fillStyle = '#1e293b'; ctx.font = "700 40px 'DM Sans', system-ui, sans-serif";
+      ctx.fillText(cur().name || 'Prioriteren', pad, pad + 30);
+      ctx.drawImage(img, pad, pad + title, size, size);
+      c.toBlob(b => b ? resolve(b) : reject(new Error('png')), 'image/png');
+    };
+    img.onerror = reject;
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(data);
+  });
+}
+
+$('menu').addEventListener('click', async e => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  closeMenu();
+  const l = cur(), act = b.dataset.act;
+  if ((act === 'copy' || act === 'csv' || act === 'png') && !l.items.length) { toast('De lijst is nog leeg'); return; }
+  if (act === 'copy') { (await copy(asText())) ? toast('Gekopieerd, per kwadrant') : toast('Kopiëren lukt hier niet'); }
+  if (act === 'csv') { download(new Blob([asCSV()], { type:'text/csv;charset=utf-8' }), filename('csv')); toast('CSV gedownload'); }
+  if (act === 'png') {
+    const prev = editing; editing = null; renderMatrix();
+    try { download(await asPNG(), filename('png')); toast('Matrix gedownload'); }
+    catch { toast('De afbeelding lukt hier niet'); }
+    editing = prev; renderMatrix();
+  }
+  if (act === 'undone') {
+    const n = l.items.filter(i => i.done).length;
+    if (!n) { toast('Er is niets afgevinkt'); return; }
+    const restore = snapshot(); l.items.forEach(i => i.done = false); save(); render();
+    toast(`${n} items terug open`, restore);
+  }
+  if (act === 'delete') {
+    const restore = snapshot();
+    state.lists = state.lists.filter(x => x.id !== l.id);
+    if (!state.lists.length) state.lists.push({ id:uid(), name:'Mijn project', items:[] });
+    state.current = state.lists[0].id; editing = null; save(); render();
+    toast(`Lijst '${l.name}' verwijderd`, restore);
+  }
+});
+
+/* ---------- Andere tabbladen gelijk houden ---------- */
+window.addEventListener('storage', e => { if (e.key === KEY) { state = load(); render(); } });
+
+render();
+</script>
+</body>
+</html>
