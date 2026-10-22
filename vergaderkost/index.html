@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vergaderkost – Onder Constructie</title>
+<meta name="description" content="Zie live hoeveel mensentijd een vergadering kost. Deelnemers maal minuten, met een vergelijking in werkdagen. Geld alleen als je dat zelf wil.">
+<meta name="oc:groep" content="projecten">
+<meta name="oc:labels" content="vergaderen, inzicht">
+<meta name="oc:kort" content="Wat deze vergadering kost aan mensentijd">
+<meta name="oc:volgorde" content="75">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox='0 0 40 40' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='20' cy='20' r='16' fill='%23ecfdf5' stroke='%2310b981' stroke-width='1.5'/%3E%3Cpath d='M13.5 10.5h13M13.5 29.5h13' stroke='%2310b981' stroke-width='1.8' stroke-linecap='round'/%3E%3Cpath d='M15 10.5c0 5.2 5 6.2 5 9.5s-5 4.3-5 9.5M25 10.5c0 5.2-5 6.2-5 9.5s5 4.3 5 9.5' stroke='%2310b981' stroke-width='1.5' stroke-linecap='round'/%3E%3Cpath d='M17 14.5h6l-3 4z' fill='%2310b981' opacity='0.45'/%3E%3Cpath d='M16.2 28.5c.6-2.6 2.2-3.6 3.8-3.6s3.2 1 3.8 3.6z' fill='%2310b981'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --slate-900:#0f172a; --slate-800:#1e293b; --slate-700:#334155; --slate-600:#475569;
+  --slate-500:#64748b; --slate-400:#94a3b8; --slate-300:#cbd5e1; --slate-200:#e2e8f0;
+  --slate-100:#f1f5f9; --slate-50:#f8fafc; --wit:#ffffff;
+  --accent:#10b981; --accent-dark:#059669; --accent-light:#d1fae5; --accent-50:#ecfdf5;
+  --amber:#d97706; --amber-light:#fef3c7; --amber-50:#fffbeb;
+  --rood:#ef4444;
+  --mono:'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --bottom: env(safe-area-inset-bottom, 0px);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body {
+  font-family:'DM Sans', system-ui, sans-serif; background:var(--slate-50); color:var(--slate-700);
+  line-height:1.5; min-height:100vh; -webkit-font-smoothing:antialiased;
+  display:flex; flex-direction:column;
+}
+button, input { font:inherit; color:inherit; }
+button { background:none; border:0; cursor:pointer; }
+[hidden] { display:none !important; }
+
+/* Kop */
+.header { background:var(--wit); border-bottom:1px solid var(--slate-200); padding:1.5rem 1.25rem 1.75rem; position:relative; text-align:center; }
+.back-link {
+  position:absolute; top:1.25rem; left:1.25rem; display:inline-flex; align-items:center; gap:0.5rem;
+  font-size:0.875rem; color:var(--slate-400); text-decoration:none; transition:color 0.2s;
+}
+.back-link:hover { color:var(--accent); }
+.back-link svg { width:16px; height:16px; }
+.logo svg { width:56px; height:56px; }
+.title { font-size:1.625rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.03em; line-height:1.2; margin-top:0.5rem; }
+.subtitle { font-size:0.9375rem; color:var(--slate-500); }
+
+.main { flex:1; width:100%; max-width:640px; margin:0 auto; padding:1.25rem 1rem 3rem; display:flex; flex-direction:column; gap:1rem; }
+
+/* Kaart */
+.card { background:var(--wit); border:1px solid var(--slate-200); border-radius:16px; box-shadow:0 1px 2px rgba(15,23,42,0.04); }
+.card-pad { padding:1.125rem 1.125rem 1.25rem; }
+.label {
+  font-size:0.6875rem; font-weight:600; text-transform:uppercase; letter-spacing:0.12em; color:var(--slate-400);
+  margin-bottom:0.625rem; display:block;
+}
+
+/* Deelnemers */
+.people { display:flex; align-items:center; justify-content:space-between; gap:1rem; }
+.stepper { display:flex; align-items:center; gap:0.5rem; }
+.step {
+  width:52px; height:52px; border-radius:14px; background:var(--slate-100); color:var(--slate-700);
+  display:flex; align-items:center; justify-content:center; transition:background 0.15s, transform 0.1s;
+}
+.step:hover { background:var(--slate-200); }
+.step:active { transform:scale(0.94); }
+.step:disabled { opacity:0.35; cursor:default; transform:none; }
+.step svg { width:22px; height:22px; }
+.count { min-width:3.25rem; text-align:center; font-family:var(--mono); font-size:2rem; font-weight:600; color:var(--slate-800); font-variant-numeric:tabular-nums; }
+.people-text { font-size:0.9375rem; color:var(--slate-600); line-height:1.35; }
+.people-text strong { display:block; font-size:1rem; color:var(--slate-800); }
+.people-text span { font-size:0.8125rem; color:var(--slate-400); }
+
+/* Duur */
+.chips { display:flex; flex-wrap:wrap; gap:0.5rem; }
+.chip {
+  padding:0.4375rem 0.875rem; border-radius:999px; font-size:0.875rem; font-weight:600;
+  border:1px solid var(--slate-200); background:var(--wit); color:var(--slate-600); font-variant-numeric:tabular-nums;
+}
+.chip:hover { border-color:var(--slate-300); }
+.chip.active { background:var(--slate-800); border-color:var(--slate-800); color:var(--wit); }
+.own { display:inline-flex; align-items:center; gap:0.375rem; font-size:0.875rem; color:var(--slate-500); }
+.num {
+  width:4.25rem; padding:0.4375rem 0.5rem; border:1.5px solid var(--slate-200); border-radius:10px; background:var(--slate-50);
+  text-align:center; font-size:0.9375rem; font-variant-numeric:tabular-nums; outline:none; -moz-appearance:textfield;
+}
+.num::-webkit-outer-spin-button, .num::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+.num:focus { border-color:var(--accent); background:var(--wit); }
+.divider { height:1px; background:var(--slate-100); margin:1.125rem 0; }
+
+/* Extra opties */
+.more { border-top:1px solid var(--slate-100); }
+.more summary {
+  list-style:none; cursor:pointer; padding:0.875rem 1.125rem; font-size:0.875rem; font-weight:600; color:var(--slate-500);
+  display:flex; align-items:center; gap:0.5rem;
+}
+.more summary::-webkit-details-marker { display:none; }
+.more summary svg { width:16px; height:16px; transition:transform 0.2s; }
+.more[open] summary svg { transform:rotate(90deg); }
+.more summary:hover { color:var(--slate-700); }
+.more-body { padding:0 1.125rem 1.125rem; display:flex; flex-direction:column; gap:0.875rem; }
+.opt { display:flex; align-items:center; justify-content:space-between; gap:1rem; font-size:0.9375rem; color:var(--slate-700); }
+.opt small { display:block; font-size:0.8125rem; color:var(--slate-400); }
+.switch { position:relative; width:44px; height:26px; flex-shrink:0; }
+.switch input { position:absolute; opacity:0; width:100%; height:100%; margin:0; cursor:pointer; }
+.switch span { position:absolute; inset:0; border-radius:99px; background:var(--slate-300); transition:background 0.15s; pointer-events:none; }
+.switch span::after { content:''; position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%; background:var(--wit); box-shadow:0 1px 2px rgba(15,23,42,0.2); transition:transform 0.15s; }
+.switch input:checked + span { background:var(--accent); }
+.switch input:checked + span::after { transform:translateX(18px); }
+.switch input:focus-visible + span { outline:2px solid var(--accent); outline-offset:2px; }
+
+/* Teller */
+.meter { text-align:center; padding:1.5rem 1.125rem 1.25rem; transition:background 0.4s, border-color 0.4s; }
+.meter.over { background:var(--amber-50); border-color:#fde68a; }
+.clock { font-family:var(--mono); font-size:clamp(2.75rem, 13vw, 4rem); font-weight:600; letter-spacing:-0.02em; color:var(--slate-800); line-height:1.05; font-variant-numeric:tabular-nums; }
+.meter.paused .clock { color:var(--slate-400); }
+.planned { margin-top:0.375rem; font-size:0.875rem; color:var(--slate-500); font-variant-numeric:tabular-nums; }
+.over-badge {
+  display:inline-flex; align-items:center; gap:0.375rem; margin-top:0.5rem; padding:0.1875rem 0.625rem; border-radius:999px;
+  font-size:0.8125rem; font-weight:600; color:var(--amber); background:var(--amber-light); font-variant-numeric:tabular-nums;
+}
+.over-badge::before { content:''; width:7px; height:7px; border-radius:50%; background:var(--amber); animation:pulse 2s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity:0.35; } }
+.bar { height:6px; background:var(--slate-100); border-radius:99px; overflow:hidden; margin:1rem auto 0; max-width:360px; }
+.bar span { display:block; height:100%; width:0; background:var(--accent); border-radius:99px; transition:width 0.6s linear, background 0.4s; }
+.meter.over .bar span { background:var(--amber); }
+
+.cost { margin-top:1.375rem; padding-top:1.25rem; border-top:1px solid var(--slate-100); }
+.meter.over .cost { border-top-color:#fde68a; }
+.cost-num { font-size:clamp(1.75rem, 8vw, 2.375rem); font-weight:700; color:var(--accent-dark); letter-spacing:-0.03em; line-height:1.1; font-variant-numeric:tabular-nums; }
+.cost-num small { font-size:0.5em; font-weight:600; color:var(--slate-500); letter-spacing:0; margin-left:0.25rem; }
+.compare { margin-top:0.25rem; font-size:1rem; color:var(--slate-600); }
+.euro { margin-top:0.375rem; font-size:0.875rem; color:var(--slate-500); font-variant-numeric:tabular-nums; }
+.prep-note { margin-top:0.25rem; font-size:0.8125rem; color:var(--slate-400); }
+
+.controls { display:flex; gap:0.625rem; justify-content:center; flex-wrap:wrap; margin-top:1.5rem; }
+.btn {
+  display:inline-flex; align-items:center; justify-content:center; gap:0.5rem; padding:0.75rem 1.25rem; border-radius:12px;
+  font-weight:600; font-size:0.9375rem; white-space:nowrap; transition:background 0.15s, transform 0.1s;
+}
+.btn:active { transform:scale(0.97); }
+.btn svg { width:18px; height:18px; }
+.btn-primary { background:var(--accent); color:var(--wit); min-width:9rem; }
+.btn-primary:hover { background:var(--accent-dark); }
+.btn-soft { background:var(--slate-100); color:var(--slate-700); }
+.btn-soft:hover { background:var(--slate-200); }
+.btn-ghost { color:var(--slate-500); padding-left:0.875rem; padding-right:0.875rem; }
+.btn-ghost:hover { background:var(--slate-100); color:var(--slate-700); }
+
+/* Samenvatting */
+.summary h2 { font-size:1.125rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.02em; margin-bottom:0.75rem; }
+.stats { display:grid; grid-template-columns:1fr 1fr; gap:0.625rem; }
+.stat { background:var(--slate-50); border-radius:12px; padding:0.75rem 0.875rem; }
+.stat b { display:block; font-size:1.25rem; font-weight:700; color:var(--slate-800); font-variant-numeric:tabular-nums; letter-spacing:-0.02em; }
+.stat span { font-size:0.8125rem; color:var(--slate-500); }
+.stat.wide { grid-column:1 / -1; background:var(--accent-50); }
+.stat.wide b { color:var(--accent-dark); }
+.summary .controls { justify-content:flex-start; margin-top:1rem; }
+
+/* Historiek */
+.hist-head { display:flex; align-items:baseline; justify-content:space-between; gap:1rem; padding:1rem 1.125rem 0.5rem; }
+.hist-head .label { margin:0; }
+.hist-total { font-size:0.8125rem; color:var(--slate-500); font-variant-numeric:tabular-nums; }
+.hist-total strong { color:var(--slate-700); }
+.hist { list-style:none; }
+.hist li { display:grid; grid-template-columns:1fr auto; gap:0.75rem; align-items:center; padding:0.6875rem 1.125rem; border-top:1px solid var(--slate-100); font-size:0.9375rem; }
+.hist .when { color:var(--slate-700); }
+.hist .when small { display:block; font-size:0.8125rem; color:var(--slate-400); font-variant-numeric:tabular-nums; }
+.hist .val { font-weight:600; color:var(--slate-800); font-variant-numeric:tabular-nums; text-align:right; }
+.hist .val small { display:block; font-weight:400; font-size:0.75rem; color:var(--slate-400); }
+.hist-clear { font-size:0.8125rem; color:var(--slate-400); padding:0.75rem 1.125rem 1rem; border-top:1px solid var(--slate-100); width:100%; text-align:left; }
+.hist-clear:hover { color:var(--rood); }
+
+/* Presenteermodus */
+.present {
+  position:fixed; inset:0; z-index:40; background:var(--slate-900); color:var(--wit); display:flex; flex-direction:column;
+  align-items:center; justify-content:center; text-align:center; padding:2rem; gap:0.5rem; transition:background 0.6s;
+}
+.present.over { box-shadow:inset 0 0 0 6px rgba(245,158,11,0.55); }
+.p-clock { font-family:var(--mono); font-size:clamp(4rem, 17vw, 12rem); font-weight:600; letter-spacing:-0.03em; line-height:1; font-variant-numeric:tabular-nums; }
+.p-sub { font-size:clamp(1rem, 2.4vw, 1.5rem); color:var(--slate-400); font-variant-numeric:tabular-nums; }
+.present.over .p-sub { color:#fbbf24; }
+.p-cost { margin-top:clamp(1.5rem, 5vh, 3.5rem); font-size:clamp(2.5rem, 9vw, 6.5rem); font-weight:700; color:#34d399; letter-spacing:-0.03em; line-height:1.05; font-variant-numeric:tabular-nums; }
+.p-cost small { font-size:0.42em; color:var(--slate-400); font-weight:600; letter-spacing:0; margin-left:0.25rem; }
+.p-compare { font-size:clamp(1.125rem, 2.8vw, 2rem); color:var(--slate-300); }
+.p-people { margin-top:0.5rem; font-size:clamp(0.9375rem, 2vw, 1.25rem); color:var(--slate-500); }
+.p-close {
+  position:absolute; top:calc(env(safe-area-inset-top, 0px) + 1rem); right:1rem; width:44px; height:44px; border-radius:12px;
+  color:var(--slate-400); display:flex; align-items:center; justify-content:center;
+}
+.p-close:hover { background:rgba(255,255,255,0.08); color:var(--wit); }
+.p-close svg { width:22px; height:22px; }
+.p-paused { font-size:0.875rem; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; color:var(--slate-500); }
+
+/* Melding */
+.toast {
+  position:fixed; left:50%; bottom:calc(var(--bottom) + 1.25rem); transform:translate(-50%, calc(100% + 3rem)); visibility:hidden; z-index:50;
+  background:var(--slate-800); color:var(--wit); border-radius:12px; padding:0.625rem 0.625rem 0.625rem 1rem;
+  display:flex; align-items:center; gap:0.875rem; font-size:0.9375rem; box-shadow:0 10px 30px rgba(15,23,42,0.25);
+  transition:transform 0.25s ease, visibility 0s 0.25s; max-width:calc(100% - 2rem);
+}
+.toast.show { transform:translate(-50%, 0); visibility:visible; transition:transform 0.25s ease; }
+.toast button { color:#6ee7b7; font-weight:600; padding:0.25rem 0.5rem; border-radius:6px; }
+.toast button:hover { background:rgba(255,255,255,0.08); }
+
+.footer { text-align:center; padding:2rem 2rem calc(var(--bottom) + 2rem); border-top:1px solid var(--slate-200); background:var(--wit); }
+.quote { font-size:0.8125rem; color:var(--accent); }
+
+@media (max-width:640px) {
+  .back-link { position:static; margin-bottom:0.75rem; justify-content:center; display:flex; }
+}
+@media (max-width:380px) {
+  .step { width:46px; height:46px; }
+  .people { flex-direction:column; align-items:stretch; }
+  .stepper { justify-content:center; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition:none !important; animation:none !important; } }
+:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <a href="https://onderconstructie.github.io/projectmanagement/" class="back-link">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Projectmanagement
+  </a>
+  <div class="logo">
+    <svg viewBox="0 0 80 80" fill="none" aria-hidden="true">
+      <circle cx="40" cy="40" r="36" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2"/>
+      <path d="M27 20h26M27 60h26" stroke="#10b981" stroke-width="3.5" stroke-linecap="round"/>
+      <path d="M30 20c0 11 10 13 10 20s-10 9-10 20M50 20c0 11-10 13-10 20s10 9 10 20" stroke="#cbd5e1" stroke-width="3" stroke-linecap="round"/>
+      <path d="M34 28h12l-6 8z" fill="#10b981" opacity="0.45"/>
+      <path d="M32.5 58c1.2-5.5 4.4-7.5 7.5-7.5s6.3 2 7.5 7.5z" fill="#10b981"/>
+    </svg>
+  </div>
+  <h1 class="title">Vergaderkost</h1>
+  <p class="subtitle">Wat deze vergadering kost aan mensentijd.</p>
+</header>
+
+<main class="main">
+
+  <!-- Instellen -->
+  <section class="card" aria-label="Instellingen">
+    <div class="card-pad">
+      <span class="label" id="people-label">Deelnemers</span>
+      <div class="people">
+        <p class="people-text" id="people-text"><strong>Rond de tafel</strong><span>Komt er iemand bij of gaat er iemand weg? Pas het aan.</span></p>
+        <div class="stepper" role="group" aria-labelledby="people-label">
+          <button class="step" id="minus" aria-label="Eén deelnemer minder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
+          <output class="count" id="count" aria-live="polite">4</output>
+          <button class="step" id="plus" aria-label="Eén deelnemer meer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <span class="label" id="dur-label">Gepland</span>
+      <div class="chips" role="group" aria-labelledby="dur-label" id="chips">
+        <button class="chip" data-min="15">15 min</button>
+        <button class="chip" data-min="30">30 min</button>
+        <button class="chip" data-min="45">45 min</button>
+        <button class="chip" data-min="60">1 u</button>
+        <button class="chip" data-min="90">1,5 u</button>
+        <label class="own">of <input class="num" id="own-min" type="number" inputmode="numeric" min="1" max="600" placeholder="…" aria-label="Eigen duur in minuten"> min</label>
+      </div>
+    </div>
+
+    <details class="more" id="more">
+      <summary><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>Voorbereiding en euro's</summary>
+      <div class="more-body">
+        <div class="opt">
+          <div>Voorbereiding per persoon<small>Lezen, reizen, je klaarmaken. Telt mee bij de deelnemers van de start.</small></div>
+          <label class="own"><input class="num" id="prep" type="number" inputmode="numeric" min="0" max="480" value="0" aria-label="Voorbereiding per persoon in minuten"> min</label>
+        </div>
+        <div class="opt">
+          <div>Ook in euro's tonen<small>Standaard uit. Jij kiest het uurtarief.</small></div>
+          <label class="switch"><input type="checkbox" id="euro-on" aria-label="Ook in euro's tonen"><span></span></label>
+        </div>
+        <div class="opt" id="rate-row" hidden>
+          <div>Uurtarief per persoon<small>Een gemiddelde, jouw schatting.</small></div>
+          <label class="own">€ <input class="num" id="rate" type="number" inputmode="decimal" min="0" step="1" placeholder="…" aria-label="Uurtarief in euro"></label>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <!-- Teller -->
+  <section class="card meter" id="meter" aria-label="Teller">
+    <div class="clock" id="clock" role="timer" aria-live="off">0:00</div>
+    <div class="planned" id="planned">van 30 min gepland</div>
+    <div class="over-badge" id="over" hidden></div>
+    <div class="bar" aria-hidden="true"><span id="bar"></span></div>
+
+    <div class="cost">
+      <div class="cost-num" id="cost">0 min<small>mensentijd</small></div>
+      <div class="compare" id="compare">Druk op start als de vergadering begint.</div>
+      <div class="euro" id="euro" hidden></div>
+      <div class="prep-note" id="prep-note" hidden></div>
+    </div>
+
+    <div class="controls">
+      <button class="btn btn-primary" id="start"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.9l10.2-6.5a1 1 0 0 0 0-1.7L9.5 4.6A1 1 0 0 0 8 5.5z"/></svg><span>Start</span></button>
+      <button class="btn btn-soft" id="stop" hidden><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>Stop</button>
+      <button class="btn btn-ghost" id="present-btn" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>Presenteer</button>
+    </div>
+  </section>
+
+  <!-- Samenvatting -->
+  <section class="card card-pad summary" id="summary" hidden aria-live="polite">
+    <h2>Deze vergadering</h2>
+    <div class="stats" id="stats"></div>
+    <div class="controls">
+      <button class="btn btn-soft" id="copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Kopieer</button>
+      <button class="btn btn-primary" id="again">Nieuwe vergadering</button>
+    </div>
+  </section>
+
+  <!-- Historiek -->
+  <section class="card" id="history" hidden>
+    <div class="hist-head"><span class="label">Laatste vergaderingen</span><span class="hist-total" id="hist-total"></span></div>
+    <ul class="hist" id="hist"></ul>
+    <button class="hist-clear" id="hist-clear">Historiek wissen</button>
+  </section>
+</main>
+
+<footer class="footer">
+  <p class="quote">Tijd is het enige wat je niet terugkrijgt.</p>
+</footer>
+
+<div class="present" id="present" hidden role="dialog" aria-label="Presenteermodus">
+  <button class="p-close" id="p-close" aria-label="Sluit presenteermodus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  <div class="p-paused" id="p-paused" hidden>Gepauzeerd</div>
+  <div class="p-clock" id="p-clock">0:00</div>
+  <div class="p-sub" id="p-sub"></div>
+  <div class="p-cost" id="p-cost"></div>
+  <div class="p-compare" id="p-compare"></div>
+  <div class="p-people" id="p-people"></div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-text"></span><button id="toast-btn" hidden>Ongedaan</button></div>
+
+<script>
+/* ---------- Rekenen ----------
+   Een vergadering bestaat uit periodes met een vast aantal deelnemers. Wie tijdens de vergadering
+   het aantal wijzigt, sluit de lopende periode af en begint een nieuwe. Alles wordt berekend uit
+   tijdstempels, dus de teller klopt ook als het tabblad op de achtergrond staat of herladen wordt. */
+const WERKDAG_U = 7.6;   // 7u36, Vlaamse overheid
+const WERKWEEK_U = 38;
+const KEY = 'vergaderkost.v1';
+const $ = id => document.getElementById(id);
+
+function freshState(prev) {
+  return {
+    phase: 'setup',               // setup | running | paused | done
+    people: prev ? prev.people : 4,
+    planned: prev ? prev.planned : 30,
+    prep: prev ? prev.prep : 0,
+    euroOn: prev ? prev.euroOn : false,
+    rate: prev ? prev.rate : null,
+    segments: [],                 // { s: start ms, e: eind ms of null, n: deelnemers }
+    startPeople: null,
+    history: prev ? prev.history : []
+  };
+}
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem(KEY));
+    if (d && Array.isArray(d.segments)) return Object.assign(freshState(), d);
+  } catch {}
+  return freshState();
+}
+let st = load();
+function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch {} }
+
+function totals(now = Date.now()) {
+  let ms = 0, personMs = 0;
+  for (const g of st.segments) {
+    const d = Math.max(0, (g.e ?? now) - g.s);
+    ms += d; personMs += d * g.n;
+  }
+  const prepMs = st.startPeople ? st.prep * 60000 * st.startPeople : 0;
+  return { ms, personMs, prepMs, allMs: personMs + prepMs };
+}
+
+/* ---------- Opmaak ---------- */
+const nf1 = new Intl.NumberFormat('nl-BE', { maximumFractionDigits: 1, minimumFractionDigits: 1 });
+const nfEur = new Intl.NumberFormat('nl-BE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
+function clock(ms) {
+  const t = Math.round(ms / 1000), h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), s = t % 60;
+  return h ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}` : `${m}:${String(s).padStart(2, '0')}`;
+}
+// "4 u 12 min", onder het uur met seconden zodat je het ziet oplopen
+function personTime(ms, withSeconds = true) {
+  const t = Math.round(ms / 1000), h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), s = t % 60;
+  if (h) return `${h} u ${m} min`;
+  if (m) return withSeconds && m < 10 ? `${m} min ${s} s` : `${m} min`;
+  return withSeconds ? `${s} s` : '0 min';
+}
+function compareText(ms) {
+  const h = ms / 3600000;
+  if (h <= 0) return '';
+  if (h < 0.75) {
+    const min = Math.round(ms / 60000);
+    return min < 1 ? 'nog geen minuut van één persoon' : `≈ ${min} min werk van één persoon`;
+  }
+  if (h < WERKDAG_U * 0.9) {
+    const r = h / WERKDAG_U;
+    const parts = [[0.125, 'een achtste werkdag'], [0.25, 'een kwart werkdag'], [1 / 3, 'een derde werkdag'],
+                   [0.5, 'een halve werkdag'], [2 / 3, 'twee derde werkdag'], [0.75, 'drie kwart werkdag']];
+    let best = parts[0];
+    for (const p of parts) if (Math.abs(p[0] - r) < Math.abs(best[0] - r)) best = p;
+    return `≈ ${best[1]}`;
+  }
+  if (h < WERKWEEK_U * 0.9) {
+    const d = h / WERKDAG_U;
+    return Math.abs(d - 1) < 0.1 ? '≈ een volle werkdag' : `≈ ${nf1.format(d)} werkdagen`;
+  }
+  const w = h / WERKWEEK_U;
+  return Math.abs(w - 1) < 0.1 ? '≈ een volle werkweek' : `≈ ${nf1.format(w)} werkweken`;
+}
+function euroText(ms) {
+  if (!st.euroOn || !(st.rate > 0)) return '';
+  return nfEur.format(ms / 3600000 * st.rate);
+}
+function overMin(ms) { return Math.max(1, Math.floor(Math.round(ms / 1000) / 60)); }
+function plannedText(min) {
+  if (min % 60 === 0) return `${min / 60} u`;
+  if (min > 60) return `${Math.floor(min / 60)} u ${min % 60} min`;
+  return `${min} min`;
+}
+
+/* ---------- Tekenen ---------- */
+let lastWhole = -1;
+function render() {
+  const now = Date.now(), T = totals(now);
+  const running = st.phase === 'running', paused = st.phase === 'paused', done = st.phase === 'done';
+  const live = running || paused;
+
+  $('count').textContent = st.people;
+  $('minus').disabled = st.people <= 1;
+  $('plus').disabled = st.people >= 500;
+  $('people-text').innerHTML = live
+    ? `<strong>Nu aanwezig</strong><span>Komt er iemand bij of gaat er iemand weg? Pas het meteen aan, de teller rekent per periode.</span>`
+    : `<strong>Rond de tafel</strong><span>Komt er iemand bij of gaat er iemand weg? Pas het aan.</span>`;
+
+  document.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', +c.dataset.min === st.planned));
+  const isPreset = [15, 30, 45, 60, 90].includes(st.planned);
+  if (document.activeElement !== $('own-min')) $('own-min').value = isPreset ? '' : st.planned;
+  if (document.activeElement !== $('prep')) $('prep').value = st.prep || 0;
+  $('euro-on').checked = st.euroOn;
+  $('rate-row').hidden = !st.euroOn;
+  if (document.activeElement !== $('rate')) $('rate').value = st.rate ?? '';
+
+  const plannedMs = st.planned * 60000;
+  const over = T.ms > plannedMs && (live || done);
+  $('meter').classList.toggle('over', over);
+  $('meter').classList.toggle('paused', paused);
+  $('clock').textContent = clock(T.ms);
+  $('planned').textContent = paused ? `gepauzeerd · ${plannedText(st.planned)} gepland` : `van ${plannedText(st.planned)} gepland`;
+  $('over').hidden = !over;
+  if (over) $('over').textContent = `+${overMin(T.ms - plannedMs)} min over tijd`;
+  $('bar').style.width = Math.min(100, plannedMs ? T.ms / plannedMs * 100 : 0) + '%';
+
+  const started = st.segments.length > 0;
+  $('cost').innerHTML = `${started ? personTime(T.personMs) : '0 min'}<small>mensentijd</small>`;
+  $('compare').textContent = started ? (compareText(T.allMs) || 'nog geen minuut van één persoon') : 'Druk op start als de vergadering begint.';
+  const eur = started ? euroText(T.allMs) : '';
+  $('euro').hidden = !eur;
+  $('euro').textContent = eur ? `${eur} aan loonkost, met jouw uurtarief` : '';
+  $('prep-note').hidden = !(T.prepMs > 0);
+  $('prep-note').textContent = T.prepMs > 0 ? `plus ${personTime(T.prepMs, false)} voorbereiding, samen ${personTime(T.allMs, false)}` : '';
+
+  $('start').querySelector('span').textContent = running ? 'Pauze' : paused ? 'Hervat' : 'Start';
+  $('start').querySelector('svg').innerHTML = running
+    ? '<rect x="6.5" y="5" width="4" height="14" rx="1.2"/><rect x="13.5" y="5" width="4" height="14" rx="1.2"/>'
+    : '<path d="M8 5.5v13a1 1 0 0 0 1.5.9l10.2-6.5a1 1 0 0 0 0-1.7L9.5 4.6A1 1 0 0 0 8 5.5z"/>';
+  $('start').hidden = done;
+  $('stop').hidden = !live;
+  $('present-btn').hidden = !live;
+
+  // Presenteermodus
+  if (!$('present').hidden) {
+    $('present').classList.toggle('over', over);
+    $('p-paused').hidden = !paused;
+    $('p-clock').textContent = clock(T.ms);
+    $('p-sub').textContent = over ? `+${overMin(T.ms - plannedMs)} min over tijd · ${plannedText(st.planned)} gepland` : `van ${plannedText(st.planned)} gepland`;
+    $('p-cost').innerHTML = `${personTime(T.allMs)}<small>mensentijd</small>`;
+    $('p-compare').textContent = (compareText(T.allMs) || '') + (eur ? ` · ${eur}` : '');
+    $('p-people').textContent = st.people === 1 ? '1 persoon aanwezig' : `${st.people} mensen aanwezig`;
+  }
+
+  // Titel van het tabblad: zo zie je het ook vanuit een ander tabblad
+  const whole = Math.floor(T.ms / 1000);
+  if (whole !== lastWhole) {
+    lastWhole = whole;
+    document.title = live ? `${clock(T.ms)} · ${personTime(T.allMs, false)} – Vergaderkost` : 'Vergaderkost – Onder Constructie';
+  }
+}
+
+function renderSummary() {
+  const show = st.phase === 'done';
+  $('summary').hidden = !show;
+  if (show) {
+    const T = totals();
+    const avg = T.ms ? T.personMs / T.ms : 0;
+    const eur = euroText(T.allMs);
+    const over = T.ms - st.planned * 60000;
+    $('stats').innerHTML = `
+      <div class="stat"><b>${clock(T.ms)}</b><span>${over > 60000 ? `${Math.round(over / 60000)} min langer dan gepland` : over < -60000 ? `${Math.round(-over / 60000)} min korter dan gepland` : 'zoals gepland'}</span></div>
+      <div class="stat"><b>${nf1.format(avg).replace(',0', '')}</b><span>deelnemers gemiddeld</span></div>
+      <div class="stat wide"><b>${personTime(T.allMs, false)} mensentijd</b><span>${compareText(T.allMs)}${T.prepMs ? `, waarvan ${personTime(T.prepMs, false)} voorbereiding` : ''}${eur ? ` · ${eur}` : ''}</span></div>`;
+  }
+  renderHistory();
+}
+
+function renderHistory() {
+  const h = st.history || [];
+  $('history').hidden = h.length === 0;
+  if (!h.length) return;
+  const sum = h.reduce((a, x) => a + x.allMs, 0);
+  $('hist-total').innerHTML = `samen <strong>${personTime(sum, false)}</strong>`;
+  const df = new Intl.DateTimeFormat('nl-BE', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  $('hist').innerHTML = h.map(x => `
+    <li><span class="when">${df.format(new Date(x.at))}<small>${clock(x.ms)} · ${nf1.format(x.avg).replace(',0', '')} deelnemers</small></span>
+    <span class="val">${personTime(x.allMs, false)}<small>${compareText(x.allMs).replace('≈ ', '')}${x.eur ? ' · ' + x.eur : ''}</small></span></li>`).join('');
+}
+
+/* ---------- Bediening ---------- */
+function setPeople(n) {
+  n = Math.max(1, Math.min(500, n));
+  if (n === st.people) return;
+  if (st.phase === 'running') {
+    // lopende periode afsluiten en een nieuwe beginnen met het nieuwe aantal
+    const now = Date.now(), cur = st.segments[st.segments.length - 1];
+    if (cur && cur.e == null) { cur.e = now; st.segments.push({ s: now, e: null, n }); }
+  }
+  st.people = n;
+  save(); render();
+}
+$('minus').addEventListener('click', () => setPeople(st.people - 1));
+$('plus').addEventListener('click', () => setPeople(st.people + 1));
+
+$('chips').addEventListener('click', e => {
+  const c = e.target.closest('.chip'); if (!c) return;
+  st.planned = +c.dataset.min; save(); render();
+});
+$('own-min').addEventListener('input', () => {
+  const v = parseInt($('own-min').value, 10);
+  if (v >= 1 && v <= 600) { st.planned = v; save(); render(); }
+});
+$('prep').addEventListener('input', () => {
+  const v = parseInt($('prep').value, 10);
+  st.prep = v >= 0 && v <= 480 ? v : 0; save(); render();
+});
+$('euro-on').addEventListener('change', () => {
+  st.euroOn = $('euro-on').checked; save(); render(); renderSummary();
+  if (st.euroOn && !(st.rate > 0)) setTimeout(() => $('rate').focus(), 50);
+});
+$('rate').addEventListener('input', () => {
+  const v = parseFloat($('rate').value.replace(',', '.'));
+  st.rate = v > 0 ? v : null; save(); render(); renderSummary();
+});
+
+$('start').addEventListener('click', () => {
+  const now = Date.now();
+  if (st.phase === 'setup') { st.phase = 'running'; st.startPeople = st.people; st.segments = [{ s: now, e: null, n: st.people }]; }
+  else if (st.phase === 'running') { const cur = st.segments[st.segments.length - 1]; if (cur) cur.e = now; st.phase = 'paused'; }
+  else if (st.phase === 'paused') { st.segments.push({ s: now, e: null, n: st.people }); st.phase = 'running'; }
+  save(); render(); syncWakeLock();
+});
+
+$('stop').addEventListener('click', () => {
+  const now = Date.now(), cur = st.segments[st.segments.length - 1];
+  if (cur && cur.e == null) cur.e = now;
+  st.phase = 'done';
+  const T = totals(now);
+  if (T.ms >= 5000) {
+    st.history = [{ at: st.segments[0].s, ms: T.ms, avg: T.ms ? T.personMs / T.ms : st.people, allMs: T.allMs, eur: euroText(T.allMs) }, ...(st.history || [])].slice(0, 10);
+  }
+  save(); closePresent(); render(); renderSummary(); syncWakeLock();
+  $('summary').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest' });
+});
+
+$('again').addEventListener('click', () => {
+  st = freshState(st); save(); render(); renderSummary();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+$('copy').addEventListener('click', async () => {
+  const T = totals(), avg = T.ms ? T.personMs / T.ms : 0, eur = euroText(T.allMs);
+  const lines = [
+    `Vergadering van ${clock(T.ms)} (${plannedText(st.planned)} gepland)`,
+    `Gemiddeld ${nf1.format(avg).replace(',0', '')} deelnemers`,
+    `Mensentijd: ${personTime(T.allMs, false)} (${compareText(T.allMs).replace('≈ ', 'ongeveer ')})` + (T.prepMs ? `, waarvan ${personTime(T.prepMs, false)} voorbereiding` : '')
+  ];
+  if (eur) lines.push(`Loonkost: ${eur}`);
+  (await copy(lines.join('\n'))) ? toast('Samenvatting gekopieerd') : toast('Kopiëren lukt hier niet');
+});
+
+$('hist-clear').addEventListener('click', () => {
+  const before = st.history;
+  st.history = []; save(); renderHistory();
+  toast('Historiek gewist', () => { st.history = before; save(); renderHistory(); });
+});
+
+async function copy(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch {}
+  try {
+    const t = document.createElement('textarea'); t.value = text; t.style.position = 'fixed'; t.style.opacity = '0';
+    document.body.appendChild(t); t.select(); const ok = document.execCommand('copy'); t.remove(); return ok;
+  } catch { return false; }
+}
+
+/* ---------- Presenteermodus ---------- */
+function openPresent() {
+  $('present').hidden = false; render();
+  try { if (document.documentElement.requestFullscreen && window.self === window.top) document.documentElement.requestFullscreen().catch(() => {}); } catch {}
+  $('p-close').focus();
+}
+function closePresent() {
+  if ($('present').hidden) return;
+  $('present').hidden = true;
+  try { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); } catch {}
+}
+$('present-btn').addEventListener('click', openPresent);
+$('p-close').addEventListener('click', () => { closePresent(); $('present-btn').focus(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closePresent();
+  if (e.key === ' ' && !$('present').hidden) { e.preventDefault(); $('start').click(); }
+});
+document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && !$('present').hidden) closePresent(); });
+
+/* ---------- Scherm wakker houden ---------- */
+let wakeLock = null;
+async function syncWakeLock() {
+  const want = st.phase === 'running' && document.visibilityState === 'visible';
+  try {
+    if (want && !wakeLock && 'wakeLock' in navigator) {
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', () => { wakeLock = null; });
+    } else if (!want && wakeLock) { await wakeLock.release(); wakeLock = null; }
+  } catch { wakeLock = null; }
+}
+document.addEventListener('visibilitychange', () => { syncWakeLock(); render(); });
+
+/* ---------- Melding ---------- */
+let undoFn = null, toastTimer = null;
+function toast(msg, undo) {
+  undoFn = undo || null;
+  $('toast-text').textContent = msg;
+  $('toast-btn').hidden = !undo;
+  $('toast').classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { $('toast').classList.remove('show'); undoFn = null; }, undo ? 6000 : 2500);
+}
+$('toast-btn').addEventListener('click', () => { if (undoFn) undoFn(); undoFn = null; $('toast').classList.remove('show'); });
+
+/* ---------- Andere tabbladen gelijk houden ---------- */
+window.addEventListener('storage', e => { if (e.key === KEY) { st = load(); render(); renderSummary(); } });
+
+/* ---------- Start ---------- */
+if (st.phase === 'running' || st.phase === 'paused') {
+  // na herladen gewoon verder: de tijdstempels zeggen hoe lang het al loopt
+  if (st.euroOn || st.prep) $('more').open = st.euroOn || st.prep > 0;
+}
+render(); renderSummary(); syncWakeLock();
+setInterval(() => { if (st.phase === 'running') render(); }, 250);
+</script>
+</body>
+</html>
