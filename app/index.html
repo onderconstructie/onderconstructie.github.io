@@ -152,31 +152,61 @@ a { color:inherit; }
 .fchip[aria-pressed="true"] { background:var(--slate-800); border-color:var(--slate-800); color:var(--wit); }
 .fchip[aria-pressed="true"] .n { color:var(--slate-300); }
 .pdca {
-  display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:0; margin-bottom:0.625rem;
-  background:var(--wit); border:1px solid var(--slate-200); border-radius:14px; padding:4px; position:relative;
+  /* De cyclus als kring: Plan → Do → Check → Act → Plan, met de klok mee */
+  --gap:12px;
+  position:relative; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:auto auto;
+  grid-template-areas:"plan do" "act check"; gap:var(--gap);
+  padding:var(--gap); border-radius:22px; margin-bottom:0.25rem;
+  background:linear-gradient(180deg, #ffffff 0%, #f6fbf9 100%); border:1px solid #d9efe6;
+  box-shadow:0 1px 2px rgba(15,23,42,0.04);
 }
 .phase {
-  position:relative; display:flex; flex-direction:column; align-items:center; gap:0.0625rem;
-  padding:0.5rem 0.25rem 0.4375rem; border-radius:10px; min-width:0; transition:background 0.15s, color 0.15s;
+  position:relative; display:grid; grid-template-columns:auto 1fr; align-items:center; column-gap:0.625rem;
+  text-align:left; min-width:0; min-height:68px; padding:0.75rem 0.75rem 0.75rem 0.6875rem;
+  background:var(--wit); border:1px solid var(--slate-200); border-radius:16px;
+  transition:border-color 0.15s, box-shadow 0.15s, transform 0.15s, background 0.15s;
 }
-.phase:hover { background:var(--slate-50); }
-.phase .ph-name { font-size:0.9375rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.01em; }
-.phase .ph-sub { font-size:0.6875rem; color:var(--slate-500); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
-.phase .ph-n { position:absolute; top:4px; right:6px; font-size:0.6875rem; color:var(--slate-400); font-variant-numeric:tabular-nums; }
-/* pijltje naar de volgende fase */
-.phase:not([data-phase="act"])::after {
-  content:''; position:absolute; right:-4px; top:50%; width:7px; height:7px; margin-top:-4px; z-index:1;
-  border-top:1.5px solid var(--slate-300); border-right:1.5px solid var(--slate-300); transform:rotate(45deg);
+.phase[data-phase="plan"]  { grid-area:plan;  border-radius:28px 16px 16px 16px; }
+.phase[data-phase="do"]    { grid-area:do;    border-radius:16px 28px 16px 16px; }
+.phase[data-phase="check"] { grid-area:check; border-radius:16px 16px 28px 16px; }
+.phase[data-phase="act"]   { grid-area:act;   border-radius:16px 16px 16px 28px; }
+.phase:hover { border-color:#a7f3d0; box-shadow:0 4px 14px rgba(16,185,129,0.10); }
+.phase:active { transform:scale(0.98); }
+.ph-letter {
+  grid-row:1 / span 2; width:36px; height:36px; border-radius:11px; display:flex; align-items:center; justify-content:center;
+  font-size:1.0625rem; font-weight:700; color:var(--accent-dark); background:var(--accent-light);
 }
-/* na Act begint het opnieuw: klein kringpijltje */
-.phase[data-phase="act"]::after {
-  content:'↻'; position:absolute; right:-2px; top:50%; transform:translate(50%, -50%); font-size:0.875rem; line-height:1;
-  color:var(--slate-300); background:var(--slate-50); border-radius:50%; width:16px; height:16px; display:flex; align-items:center; justify-content:center;
+.phase .ph-name { font-size:0.9375rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.01em; line-height:1.2; }
+.phase .ph-sub { font-size:0.75rem; color:var(--slate-500); line-height:1.3; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.phase .ph-n {
+  position:absolute; top:8px; right:9px; min-width:20px; height:20px; padding:0 6px; border-radius:999px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:0.6875rem; font-weight:600; color:var(--slate-500); background:var(--slate-100); font-variant-numeric:tabular-nums;
 }
-.pdca { margin-right:8px; }
-.phase[aria-pressed="true"] { background:var(--slate-800); }
+.phase[aria-pressed="true"] { background:var(--slate-800); border-color:var(--slate-800); box-shadow:0 6px 18px rgba(15,23,42,0.18); }
+.phase[aria-pressed="true"] .ph-letter { background:var(--accent); color:var(--wit); }
 .phase[aria-pressed="true"] .ph-name { color:var(--wit); }
-.phase[aria-pressed="true"] .ph-sub, .phase[aria-pressed="true"] .ph-n { color:var(--slate-300); }
+.phase[aria-pressed="true"] .ph-sub { color:var(--slate-300); }
+.phase[aria-pressed="true"] .ph-n { background:rgba(255,255,255,0.12); color:var(--wit); }
+/* pijlen tussen de tegels, met de klok mee */
+.pdca-arrow {
+  position:absolute; width:18px; height:18px; display:flex; align-items:center; justify-content:center;
+  color:var(--accent); pointer-events:none; z-index:2;
+}
+.pdca-arrow svg { width:14px; height:14px; }
+.pdca-arrow.a1 { top:calc(var(--gap) + 34px - 9px); left:calc(50% - 9px); }                 /* Plan → Do   */
+.pdca-arrow.a2 { top:calc(50% - 9px); right:calc(var(--gap) + 25% - 9px); transform:rotate(90deg); }  /* Do → Check  */
+.pdca-arrow.a3 { bottom:calc(var(--gap) + 34px - 9px); left:calc(50% - 9px); transform:rotate(180deg); } /* Check → Act */
+.pdca-arrow.a4 { top:calc(50% - 9px); left:calc(var(--gap) + 25% - 9px); transform:rotate(-90deg); }   /* Act → Plan  */
+/* het hart van de cyclus */
+.pdca-hub {
+  position:absolute; left:50%; top:50%; width:44px; height:44px; margin:-22px 0 0 -22px; z-index:3; pointer-events:none;
+  border-radius:50%; background:var(--wit); border:1px solid #d9efe6; box-shadow:0 2px 8px rgba(15,23,42,0.08);
+  display:flex; align-items:center; justify-content:center; color:var(--accent-dark);
+}
+.pdca-hub svg { width:20px; height:20px; }
+.pdca-caption { display:flex; justify-content:center; gap:0.375rem; font-size:0.75rem; color:var(--slate-400); margin:0.375rem 0 0; }
+@media (prefers-reduced-motion: reduce) { .phase { transition:none; } }
 .filter-chips { margin-top:0.875rem; }
 .tag.pd { color:var(--accent-dark); background:var(--wit); box-shadow:inset 0 0 0 1px #a7f3d0; text-transform:capitalize; }
 .tag.pd.on { background:var(--accent-light); box-shadow:none; }
@@ -296,6 +326,7 @@ body.filtering #groups, body.filtering #list-tools { display:none; }
         <span class="filter-hint" id="filter-hint">Kies een fase of een thema</span>
       </div>
       <div class="pdca" id="pdca" role="toolbar" aria-label="Projectcyclus: plan, do, check, act"></div>
+      <p class="pdca-caption" id="pdca-caption">De projectcyclus: plan, do, check, act, en opnieuw</p>
       <div class="filter-chips" id="filter-chips" role="toolbar" aria-label="Filter op thema"></div>
     </section>
 
@@ -320,7 +351,7 @@ body.filtering #groups, body.filtering #list-tools { display:none; }
     <span class="sep">·</span>
     <a href="https://bit.ly/4azfO7S" target="_blank" rel="noopener">contact</a>
     <span class="sep">·</span>
-    <span class="app-version" title="Versie van de app">v6 · PDCA</span>
+    <span class="app-version" title="Versie van de app">v7</span>
   </footer>
 </div>
 
@@ -463,11 +494,15 @@ const isOn = (kind, v) => !!active && active.kind === kind && active.value === v
 function renderFilter() {
   const pc = {}; TOOLS.forEach(t => (t.pdca || []).forEach(p => pc[p] = (pc[p] || 0) + 1));
   const hasPdca = Object.keys(pc).length > 0;
-  $('pdca').hidden = !hasPdca;
+  $('pdca').hidden = !hasPdca; $('pdca-caption').hidden = !hasPdca;
+  const arrow = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
   $('pdca').innerHTML = PHASES.map(p => `
     <button class="phase" data-phase="${p.id}" aria-pressed="${isOn('pdca', p.id)}" title="${esc(p.long)}">
-      <span class="ph-name">${p.name}</span><span class="ph-sub">${p.sub}</span><span class="ph-n">${pc[p.id] || 0}</span>
-    </button>`).join('');
+      <span class="ph-letter">${p.name[0]}</span><span class="ph-name">${p.name}</span><span class="ph-sub">${p.sub}</span>
+      <span class="ph-n" aria-label="${pc[p.id] || 0} tools">${pc[p.id] || 0}</span>
+    </button>`).join('')
+    + ['a1', 'a2', 'a3', 'a4'].map(a => `<span class="pdca-arrow ${a}" aria-hidden="true">${arrow}</span>`).join('')
+    + '<span class="pdca-hub" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg></span>';
   const counts = {};
   TOOLS.forEach(t => (t.labels || []).forEach(l => counts[l] = (counts[l] || 0) + 1));
   const labels = Object.keys(counts).sort((a, b) => {
