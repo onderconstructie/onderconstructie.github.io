@@ -151,7 +151,37 @@ a { color:inherit; }
 .fchip:hover { border-color:var(--slate-300); }
 .fchip[aria-pressed="true"] { background:var(--slate-800); border-color:var(--slate-800); color:var(--wit); }
 .fchip[aria-pressed="true"] .n { color:var(--slate-300); }
+.pdca {
+  display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:0; margin-bottom:0.625rem;
+  background:var(--wit); border:1px solid var(--slate-200); border-radius:14px; padding:4px; position:relative;
+}
+.phase {
+  position:relative; display:flex; flex-direction:column; align-items:center; gap:0.0625rem;
+  padding:0.5rem 0.25rem 0.4375rem; border-radius:10px; min-width:0; transition:background 0.15s, color 0.15s;
+}
+.phase:hover { background:var(--slate-50); }
+.phase .ph-name { font-size:0.9375rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.01em; }
+.phase .ph-sub { font-size:0.6875rem; color:var(--slate-500); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+.phase .ph-n { position:absolute; top:4px; right:6px; font-size:0.6875rem; color:var(--slate-400); font-variant-numeric:tabular-nums; }
+/* pijltje naar de volgende fase */
+.phase:not([data-phase="act"])::after {
+  content:''; position:absolute; right:-4px; top:50%; width:7px; height:7px; margin-top:-4px; z-index:1;
+  border-top:1.5px solid var(--slate-300); border-right:1.5px solid var(--slate-300); transform:rotate(45deg);
+}
+/* na Act begint het opnieuw: klein kringpijltje */
+.phase[data-phase="act"]::after {
+  content:'↻'; position:absolute; right:-2px; top:50%; transform:translate(50%, -50%); font-size:0.875rem; line-height:1;
+  color:var(--slate-300); background:var(--slate-50); border-radius:50%; width:16px; height:16px; display:flex; align-items:center; justify-content:center;
+}
+.pdca { margin-right:8px; }
+.phase[aria-pressed="true"] { background:var(--slate-800); }
+.phase[aria-pressed="true"] .ph-name { color:var(--wit); }
+.phase[aria-pressed="true"] .ph-sub, .phase[aria-pressed="true"] .ph-n { color:var(--slate-300); }
+.filter-chips { margin-top:0.875rem; }
+.tag.pd { color:var(--accent-dark); background:var(--wit); box-shadow:inset 0 0 0 1px #a7f3d0; text-transform:capitalize; }
+.tag.pd.on { background:var(--accent-light); box-shadow:none; }
 .results-card { border-color:#cfe9dd; }
+.results-sub { display:block; font-size:0.8125rem; font-weight:400; color:var(--slate-500); letter-spacing:0; margin-top:0.125rem; }
 .results-head { display:flex; align-items:center; gap:0.75rem; padding:0.875rem 1rem; border-bottom:1px solid var(--slate-200); }
 .results-title { flex:1; font-size:1rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.02em; }
 .results-title .grp { font-weight:500; color:var(--slate-400); font-size:0.8125rem; }
@@ -263,9 +293,10 @@ body.filtering #groups, body.filtering #list-tools { display:none; }
     <section class="filter" id="filter" hidden>
       <div class="filter-head">
         <h2 class="section-label">Waarvoor?</h2>
-        <span class="filter-hint" id="filter-hint">Tik een label om de tools te zien</span>
+        <span class="filter-hint" id="filter-hint">Kies een fase of een thema</span>
       </div>
-      <div class="filter-chips" id="filter-chips" role="toolbar" aria-label="Filter op label"></div>
+      <div class="pdca" id="pdca" role="toolbar" aria-label="Projectcyclus: plan, do, check, act"></div>
+      <div class="filter-chips" id="filter-chips" role="toolbar" aria-label="Filter op thema"></div>
     </section>
 
     <section class="results" id="results" hidden aria-live="polite">
@@ -403,7 +434,11 @@ document.addEventListener('click', e => {
   saveCollapsed();
 });
 function rowHTML(t, opts = {}) {
-  const tags = (t.labels || []).map(l => `<span class="tag${l === opts.on ? ' on' : ''}">${esc(l)}</span>`).join('');
+  // In de rij: de PDCA-fase(n). Een thema alleen als er geen fase is, of als je net op dat thema filtert.
+  const pd = t.pdca || [];
+  const themes = (t.labels || []).filter(l => !pd.length || l === opts.on);
+  const tags = pd.map(p => `<span class="tag pd${p === opts.on ? ' on' : ''}">${esc(p)}</span>`).join('')
+             + themes.map(l => `<span class="tag${l === opts.on ? ' on' : ''}">${esc(l)}</span>`).join('');
   const grp = opts.showGroup ? `<span class="row-group">${esc((GROUPS.find(g => g.id === t.g) || {}).label || '')}</span>` : '';
   return `
           <button class="row" data-id="${esc(t.id)}" title="${esc(t.desc)}">
@@ -413,11 +448,24 @@ function rowHTML(t, opts = {}) {
           </button>`;
 }
 
-/* ---------- Filter op label ---------- */
-// Labels die bij projectwerk horen, in de volgorde van een project; daarna de rest alfabetisch.
-const LABEL_ORDER = ['inschatten', 'plannen', 'uitvoeren', 'opvolgen', 'mensen', 'vergaderen', 'inzicht'];
-let activeLabel = null;
+/* ---------- Filter: fase in de PDCA-cyclus of thema ---------- */
+const PHASES = [
+  { id:'plan',  name:'Plan',  sub:'voorbereiden', long:'Voorbereiden: inschatten, prioriteren, rollen en risico\'s' },
+  { id:'do',    name:'Do',    sub:'uitvoeren',    long:'Uitvoeren: het werk, de taken, de beslissingen' },
+  { id:'check', name:'Check', sub:'meten',        long:'Meten en terugkijken: hoe staan we ervoor?' },
+  { id:'act',   name:'Act',   sub:'bijsturen',    long:'Bijsturen en vastleggen wat we anders doen' }
+];
+const LABEL_ORDER = ['mensen', 'vergaderen', 'inzicht'];
+let active = null;   // { kind: 'pdca' | 'label', value }
+const isOn = (kind, v) => !!active && active.kind === kind && active.value === v;
 function renderFilter() {
+  const pc = {}; TOOLS.forEach(t => (t.pdca || []).forEach(p => pc[p] = (pc[p] || 0) + 1));
+  const hasPdca = Object.keys(pc).length > 0;
+  $('pdca').hidden = !hasPdca;
+  $('pdca').innerHTML = PHASES.map(p => `
+    <button class="phase" data-phase="${p.id}" aria-pressed="${isOn('pdca', p.id)}" title="${esc(p.long)}">
+      <span class="ph-name">${p.name}</span><span class="ph-sub">${p.sub}</span><span class="ph-n">${pc[p.id] || 0}</span>
+    </button>`).join('');
   const counts = {};
   TOOLS.forEach(t => (t.labels || []).forEach(l => counts[l] = (counts[l] || 0) + 1));
   const labels = Object.keys(counts).sort((a, b) => {
@@ -425,26 +473,38 @@ function renderFilter() {
     if (ia !== -1 || ib !== -1) return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
     return a.localeCompare(b, 'nl');
   });
-  $('filter').hidden = labels.length < 2;
+  $('filter').hidden = !hasPdca && labels.length < 2;
   $('filter-chips').innerHTML = labels.map(l =>
-    `<button class="fchip" data-label="${esc(l)}" aria-pressed="${l === activeLabel}">${esc(l)}<span class="n">${counts[l]}</span></button>`).join('');
+    `<button class="fchip" data-label="${esc(l)}" aria-pressed="${isOn('label', l)}">${esc(l)}<span class="n">${counts[l]}</span></button>`).join('');
 }
-function setFilter(label) {
-  activeLabel = label && label !== activeLabel ? label : null;
-  document.body.classList.toggle('filtering', !!activeLabel);
-  $('results').hidden = !activeLabel;
-  $('filter-hint').textContent = activeLabel ? 'Tik opnieuw om alles te tonen' : 'Tik een label om de tools te zien';
-  if (activeLabel) {
-    const list = byUsage(TOOLS.filter(t => (t.labels || []).includes(activeLabel)));
-    $('results-title').innerHTML = `${esc(activeLabel)} <span class="grp">${list.length} ${list.length === 1 ? 'tool' : 'tools'}</span>`;
-    $('results-list').innerHTML = list.map(t => rowHTML(t, { on: activeLabel, showGroup: true })).join('');
+function setFilter(kind, value) {
+  active = kind && !isOn(kind, value) ? { kind, value } : null;
+  document.body.classList.toggle('filtering', !!active);
+  $('results').hidden = !active;
+  $('filter-hint').textContent = active ? 'Tik opnieuw om alles te tonen' : 'Kies een fase of een thema';
+  if (active) {
+    let list, title;
+    if (active.kind === 'pdca') {
+      const ph = PHASES.find(p => p.id === active.value);
+      // eerst de tools waar deze fase hun sterkste is, dan de rest; binnen elk op gebruik
+      const inPhase = TOOLS.filter(t => (t.pdca || []).includes(active.value));
+      list = [...byUsage(inPhase.filter(t => t.pdca[0] === active.value)), ...byUsage(inPhase.filter(t => t.pdca[0] !== active.value))];
+      title = `${esc(ph.name)} <span class="grp">${list.length} ${list.length === 1 ? 'tool' : 'tools'}</span><span class="results-sub">${esc(ph.long)}</span>`;
+    } else {
+      list = byUsage(TOOLS.filter(t => (t.labels || []).includes(active.value)));
+      title = `${esc(active.value)} <span class="grp">${list.length} ${list.length === 1 ? 'tool' : 'tools'}</span>`;
+    }
+    $('results-title').innerHTML = title;
+    $('results-list').innerHTML = list.map(t => rowHTML(t, { on: active.value, showGroup: active.kind === 'label' })).join('');
     markLive();
   }
   renderFilter();
 }
 document.addEventListener('click', e => {
   const c = e.target.closest('.fchip');
-  if (c) setFilter(c.dataset.label);
+  if (c) { setFilter('label', c.dataset.label); return; }
+  const p = e.target.closest('.phase');
+  if (p) setFilter('pdca', p.dataset.phase);
 });
 function renderRecent() {
   const ids = store.get('recent', []).filter(id => byId[id]);

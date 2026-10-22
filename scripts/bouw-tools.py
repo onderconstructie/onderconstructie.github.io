@@ -5,7 +5,8 @@ Elke tool beschrijft zichzelf in zijn <head>:
     <title>Naam – Onder Constructie</title>
     <meta name="description" content="Wat de tool doet, in een zin of twee.">
     <meta name="oc:groep" content="projecten">           projecten | zakmes | reset
-    <meta name="oc:labels" content="plannen, uitvoeren"> een of meer, met komma's
+    <meta name="oc:labels" content="mensen, vergaderen">  thema's, met komma's (mag leeg als oc:pdca er is)
+    <meta name="oc:pdca" content="plan, do">              optioneel: fase(s) in de PDCA-cyclus, sterkste eerst
     <meta name="oc:kort" content="Kanbanbord voor sprints en taken">
     <meta name="oc:volgorde" content="20">               volgorde zolang je een tool nog niet gebruikte
     <meta name="oc:achtergrond" content="nee">           optioneel: niet open laten in de app
@@ -34,6 +35,7 @@ PADEN = [
     '/hier/', '/adem/', '/hart/',
 ]
 GROEPEN = {'projecten', 'zakmes', 'reset'}
+PDCA = ['plan', 'do', 'check', 'act']
 
 
 class Kop(HTMLParser):
@@ -94,9 +96,16 @@ def tool(pad, lokaal):
     groep = m.get('oc:groep', '').strip()
     if groep not in GROEPEN:
         raise fout(f'oc:groep moet een van {sorted(GROEPEN)} zijn, niet "{groep}"')
-    for nodig in ('oc:labels', 'oc:kort', 'description'):
+    for nodig in ('oc:kort', 'description'):
         if not m.get(nodig, '').strip():
             raise fout(f'{nodig} ontbreekt')
+    pdca = [p.strip().lower() for p in m.get('oc:pdca', '').split(',') if p.strip()]
+    for p in pdca:
+        if p not in PDCA:
+            raise fout(f'oc:pdca kent alleen {PDCA}, niet "{p}"')
+    labels = [l.strip() for l in m.get('oc:labels', '').split(',') if l.strip()]
+    if not labels and not pdca:
+        raise fout('geef minstens oc:labels of oc:pdca')
     titel = re.sub(r'\s*[–-]\s*Onder Constructie\s*$', '', html.unescape(k.titel).strip())
     return {
         'id': pad.strip('/').split('/')[-1],
@@ -105,7 +114,8 @@ def tool(pad, lokaal):
         'title': titel,
         'sub': m['oc:kort'].strip(),
         'desc': m['description'].strip(),
-        'labels': [l.strip() for l in m['oc:labels'].split(',') if l.strip()],
+        'labels': labels,
+        'pdca': pdca,
         'order': int(m.get('oc:volgorde', '999') or 999),
         'keep': m.get('oc:achtergrond', '').strip().lower() != 'nee',
         'icon': svg_uit(k.icoon, pad),
