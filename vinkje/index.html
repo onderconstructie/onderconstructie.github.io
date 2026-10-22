@@ -277,7 +277,9 @@ function load() {
   return { lists:[first], current:first.id, doneOpen:true };
 }
 let state = load();
-function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
+// Elke bewaring telt op; "Ongedaan" werkt alleen zolang er sindsdien niets anders veranderde.
+let version = 0;
+function save() { version++; try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
 const cur = () => state.lists.find(l => l.id === state.current) || state.lists[0];
 const $ = id => document.getElementById(id);
 const esc = s => s.replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
@@ -345,9 +347,10 @@ function render() {
 }
 
 /* ---------- Ongedaan maken ---------- */
-let undoFn = null, toastTimer = null;
+let undoFn = null, undoVersion = -1, toastTimer = null;
 function toast(msg, undo) {
   undoFn = undo || null;
+  undoVersion = version;
   $('toast-text').textContent = msg;
   $('toast-btn').hidden = !undo;
   $('toast').classList.add('show');
@@ -355,7 +358,8 @@ function toast(msg, undo) {
   toastTimer = setTimeout(() => { $('toast').classList.remove('show'); undoFn = null; }, undo ? 6000 : 2500);
 }
 $('toast-btn').addEventListener('click', () => {
-  if (undoFn) { undoFn(); undoFn = null; save(); render(); }
+  if (undoFn && version === undoVersion) { undoFn(); undoFn = null; save(); render(); }
+  else if (undoFn) { undoFn = null; toast('Ongedaan maken kan niet meer: er is intussen iets veranderd'); return; }
   $('toast').classList.remove('show');
 });
 function snapshot() { const copy = JSON.parse(JSON.stringify(state)); return () => { state = copy; }; }

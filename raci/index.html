@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RACI-matrix – Onder Constructie</title>
+<meta name="description" content="Leg vast wie een taak uitvoert, wie eindverantwoordelijk is, wie je vooraf raadpleegt en wie je achteraf informeert. Met een controle op ontbrekende of dubbele verantwoordelijken.">
+<meta name="oc:groep" content="projecten">
+<meta name="oc:labels" content="mensen, plannen">
+<meta name="oc:kort" content="Wie doet wat, wie beslist, wie hoort het">
+<meta name="oc:volgorde" content="35">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox=%220 0 40 40%22 fill=%22none%22 xmlns=%22http://www.w3.org/2000/svg%22%3E %3Ccircle cx=%2220%22 cy=%2220%22 r=%2216%22 fill=%22%23ecfdf5%22 stroke=%22%2310b981%22 stroke-width=%221.5%22/%3E %3Crect x=%2211.5%22 y=%2211.5%22 width=%227.5%22 height=%227.5%22 rx=%222%22 fill=%22%2310b981%22/%3E %3Crect x=%2221%22 y=%2211.5%22 width=%227.5%22 height=%227.5%22 rx=%222%22 fill=%22%231e293b%22/%3E %3Crect x=%2212%22 y=%2221.5%22 width=%226.5%22 height=%226.5%22 rx=%221.8%22 fill=%22%23ffffff%22 stroke=%22%2310b981%22 stroke-width=%221.3%22/%3E %3Crect x=%2221.5%22 y=%2221.5%22 width=%226.5%22 height=%226.5%22 rx=%221.8%22 fill=%22%23ffffff%22 stroke=%22%2394a3b8%22 stroke-width=%221.3%22/%3E %3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --slate-900:#0f172a; --slate-800:#1e293b; --slate-700:#334155; --slate-600:#475569;
+  --slate-500:#64748b; --slate-400:#94a3b8; --slate-300:#cbd5e1; --slate-200:#e2e8f0;
+  --slate-100:#f1f5f9; --slate-50:#f8fafc; --wit:#ffffff;
+  --accent:#10b981; --accent-dark:#059669; --accent-light:#d1fae5; --accent-50:#ecfdf5;
+  --rood:#ef4444; --oranje:#f59e0b;
+  --bottom: env(safe-area-inset-bottom, 0px);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body {
+  font-family:'DM Sans', system-ui, sans-serif; background:var(--slate-50); color:var(--slate-700);
+  line-height:1.5; min-height:100vh; -webkit-font-smoothing:antialiased;
+  display:flex; flex-direction:column;
+}
+button, input { font:inherit; color:inherit; }
+button { background:none; border:0; cursor:pointer; }
+[hidden] { display:none !important; }
+
+/* Kop */
+.header { background:var(--wit); border-bottom:1px solid var(--slate-200); padding:1.5rem 1.25rem 1.75rem; position:relative; text-align:center; }
+.back-link {
+  position:absolute; top:1.25rem; left:1.25rem; display:inline-flex; align-items:center; gap:0.5rem;
+  font-size:0.875rem; color:var(--slate-400); text-decoration:none; transition:color 0.2s;
+}
+.back-link:hover { color:var(--accent); }
+.back-link svg { width:16px; height:16px; }
+.logo svg { width:56px; height:56px; }
+.title { font-size:1.625rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.03em; line-height:1.2; margin-top:0.5rem; }
+.subtitle { font-size:0.9375rem; color:var(--slate-500); }
+
+.main { flex:1; width:100%; max-width:1100px; margin:0 auto; padding:1.25rem 1rem 3rem; }
+
+/* Matrixkeuze */
+.lists { display:flex; gap:0.5rem; overflow-x:auto; scrollbar-width:none; margin:0 -1rem 1rem; padding:0.125rem 1rem; }
+.lists::-webkit-scrollbar { display:none; }
+.tab {
+  flex-shrink:0; padding:0.4375rem 0.875rem; border-radius:999px; font-size:0.875rem; font-weight:600;
+  border:1px solid var(--slate-200); background:var(--wit); color:var(--slate-600); white-space:nowrap;
+  display:flex; align-items:center; gap:0.375rem;
+}
+.tab .n { font-size:0.75rem; font-weight:500; color:var(--slate-400); font-variant-numeric:tabular-nums; }
+.tab.active { background:var(--slate-800); border-color:var(--slate-800); color:var(--wit); }
+.tab.active .n { color:var(--slate-300); }
+.tab.add { color:var(--accent-dark); border-style:dashed; }
+
+/* Kaart */
+.card { background:var(--wit); border:1px solid var(--slate-200); border-radius:16px; box-shadow:0 1px 2px rgba(15,23,42,0.04); }
+.card-head { display:flex; align-items:center; gap:0.5rem; padding:1rem 0.75rem 0.5rem 1.125rem; }
+.list-name {
+  flex:1; min-width:0; font-size:1.25rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.02em;
+  border:0; background:none; outline:none; padding:0.125rem 0; border-bottom:1.5px solid transparent;
+}
+.list-name:focus, .list-name:focus-visible { border-bottom-color:var(--accent); outline:none; }
+.icon-btn { width:38px; height:38px; display:flex; align-items:center; justify-content:center; border-radius:10px; color:var(--slate-500); flex-shrink:0; }
+.icon-btn:hover { background:var(--slate-100); color:var(--slate-700); }
+.icon-btn svg { width:20px; height:20px; }
+
+/* Samenvatting */
+.status { padding:0 1.125rem 0.875rem; }
+.status-btn {
+  display:inline-flex; align-items:center; gap:0.5rem; padding:0.375rem 0.75rem; border-radius:999px;
+  font-size:0.8125rem; font-weight:600;
+}
+.status-btn svg { width:16px; height:16px; }
+.status-btn.ok { background:var(--accent-50); color:var(--accent-dark); cursor:default; }
+.status-btn.bad { background:#fff7ed; color:#c2410c; border:1px solid #fed7aa; }
+.status-btn.bad:hover { background:#ffedd5; }
+.status-btn.neutral { background:var(--slate-100); color:var(--slate-500); cursor:default; }
+
+/* Invoer */
+.adds { display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; padding:0 0.75rem 0.875rem; }
+.add-row { display:flex; gap:0.5rem; }
+.add-label { display:block; font-size:0.6875rem; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:var(--slate-400); margin:0 0 0.375rem 0.25rem; }
+.add-input {
+  flex:1; min-width:0; padding:0.625rem 0.875rem; border:1.5px solid var(--slate-200); border-radius:10px;
+  background:var(--slate-50); outline:none; font-size:1rem; transition:border-color 0.15s, background 0.15s;
+}
+.add-input:focus { border-color:var(--accent); background:var(--wit); }
+.add-input::placeholder { color:var(--slate-400); }
+.add-btn { width:44px; border-radius:10px; background:var(--accent); color:var(--wit); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.add-btn:hover { background:var(--accent-dark); }
+.add-btn svg { width:22px; height:22px; }
+@media (max-width:640px) { .adds { grid-template-columns:1fr; } }
+
+/* Tabel */
+.table-wrap { overflow-x:auto; border-top:1px solid var(--slate-100); -webkit-overflow-scrolling:touch; border-radius:0 0 15px 15px; }
+table { border-collapse:separate; border-spacing:0; width:100%; min-width:100%; }
+th, td { border-bottom:1px solid var(--slate-100); }
+thead th {
+  font-size:0.8125rem; font-weight:600; color:var(--slate-600); background:var(--slate-50);
+  padding:0.5rem 0.375rem; text-align:center; vertical-align:bottom; min-width:88px;
+}
+thead th.corner { text-align:left; padding-left:1.125rem; font-size:0.6875rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--slate-400); }
+.sticky { position:sticky; left:0; z-index:2; background:var(--wit); box-shadow:1px 0 0 var(--slate-100); }
+thead .sticky { background:var(--slate-50); z-index:3; }
+.role-head { display:flex; align-items:center; justify-content:center; gap:0.125rem; }
+.name {
+  outline:none; border-radius:6px; padding:0.125rem 0.25rem; cursor:text; overflow-wrap:break-word; word-break:normal; hyphens:auto;
+}
+thead .name { display:block; max-width:132px; line-height:1.3; }
+.name:focus { background:var(--accent-50); box-shadow:0 0 0 2px var(--accent-light); }
+.x { width:26px; height:26px; flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; color:var(--slate-300); border-radius:6px; }
+.x:hover { color:var(--rood); background:#fef2f2; }
+.x svg { width:14px; height:14px; }
+@media (hover:hover) { .x { opacity:0; } th:hover .x, th:focus-within .x { opacity:1; } }
+@media (hover:none) { .role-head { flex-direction:column; gap:0; } .role-head .x { width:30px; height:24px; } }
+
+tbody th { text-align:left; font-weight:500; font-size:0.9375rem; color:var(--slate-800); padding:0.375rem 0.25rem 0.375rem 0.875rem; min-width:190px; max-width:300px; }
+.task-cell { display:flex; align-items:flex-start; gap:0.25rem; }
+.task-main { flex:1; min-width:0; }
+.flags { display:flex; flex-wrap:wrap; gap:0.25rem; margin-top:0.125rem; padding-left:0.25rem; }
+.flag { font-size:0.6875rem; font-weight:600; color:#c2410c; background:#fff7ed; border-radius:999px; padding:0 0.4375rem; line-height:1.6; }
+tr.flash th, tr.flash td { animation:flash 1.4s ease; }
+@keyframes flash { 0%,40% { background:#fff7ed; } 100% { background:inherit; } }
+
+td.c { text-align:center; padding:0.25rem; }
+.cell {
+  width:44px; height:44px; border-radius:10px; font-weight:700; font-size:1rem; letter-spacing:0.02em;
+  display:inline-flex; align-items:center; justify-content:center; border:1.5px dashed var(--slate-200); color:transparent;
+  transition:background 0.12s, border-color 0.12s, transform 0.1s; user-select:none; -webkit-user-select:none; touch-action:manipulation;
+}
+.cell:hover { border-color:var(--slate-300); }
+.cell:active { transform:scale(0.92); }
+.cell.R { background:var(--accent); border:1.5px solid var(--accent); color:var(--wit); }
+.cell.A { background:var(--slate-800); border:1.5px solid var(--slate-800); color:var(--wit); }
+.cell.C { background:var(--accent-50); border:1.5px solid var(--accent); color:var(--accent-dark); }
+.cell.I { background:var(--wit); border:1.5px solid var(--slate-300); color:var(--slate-500); }
+
+tfoot td, tfoot th { background:var(--slate-50); border-bottom:0; font-size:0.75rem; color:var(--slate-500); padding:0.5rem 0.25rem; text-align:center; font-variant-numeric:tabular-nums; }
+tfoot th { text-align:left; padding-left:1.125rem; font-size:0.6875rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--slate-400); font-weight:600; }
+tfoot .sticky { background:var(--slate-50); }
+.load.over { color:#c2410c; font-weight:600; }
+.load .warn { display:block; font-size:0.6875rem; }
+
+.empty { padding:2rem 1.25rem 2.25rem; text-align:center; color:var(--slate-400); font-size:0.9375rem; border-top:1px solid var(--slate-100); }
+.empty strong { display:block; color:var(--slate-600); font-weight:600; margin-bottom:0.25rem; }
+.empty .btn { margin-top:1rem; }
+.btn { padding:0.5625rem 1rem; border-radius:10px; font-weight:600; font-size:0.9375rem; white-space:nowrap; }
+.btn-primary { background:var(--accent); color:var(--wit); }
+.btn-primary:hover { background:var(--accent-dark); }
+
+/* Legenda */
+.legend { display:grid; grid-template-columns:repeat(4, 1fr); gap:0.75rem; margin-top:1rem; }
+.leg { display:flex; gap:0.625rem; align-items:flex-start; background:var(--wit); border:1px solid var(--slate-200); border-radius:12px; padding:0.75rem; }
+.leg .cell { width:32px; height:32px; font-size:0.875rem; flex-shrink:0; cursor:default; }
+.leg strong { display:block; font-size:0.875rem; color:var(--slate-800); }
+.leg span { font-size:0.8125rem; color:var(--slate-500); line-height:1.4; }
+.tip { font-size:0.8125rem; color:var(--slate-400); text-align:center; margin-top:0.875rem; }
+@media (max-width:820px) { .legend { grid-template-columns:1fr 1fr; } }
+@media (max-width:420px) { .legend { grid-template-columns:1fr; } }
+
+/* Menu */
+.menu-wrap { position:relative; }
+.menu {
+  position:absolute; right:0; top:42px; z-index:20; min-width:230px; background:var(--wit); border:1px solid var(--slate-200);
+  border-radius:12px; box-shadow:0 12px 32px rgba(15,23,42,0.14); padding:0.375rem; display:none;
+}
+.menu.open { display:block; }
+.menu button { width:100%; display:flex; align-items:center; gap:0.625rem; padding:0.5625rem 0.625rem; border-radius:8px; font-size:0.9375rem; text-align:left; color:var(--slate-700); }
+.menu button:hover { background:var(--slate-100); }
+.menu button svg { width:18px; height:18px; color:var(--slate-400); flex-shrink:0; }
+.menu .sep { height:1px; background:var(--slate-100); margin:0.25rem 0.375rem; }
+.menu .danger { color:var(--rood); }
+.menu .danger svg { color:var(--rood); }
+
+/* Melding */
+.toast {
+  position:fixed; left:50%; bottom:calc(var(--bottom) + 1.25rem); transform:translate(-50%, calc(100% + 3rem)); visibility:hidden; z-index:50;
+  background:var(--slate-800); color:var(--wit); border-radius:12px; padding:0.625rem 0.625rem 0.625rem 1rem;
+  display:flex; align-items:center; gap:0.875rem; font-size:0.9375rem; box-shadow:0 10px 30px rgba(15,23,42,0.25);
+  transition:transform 0.25s ease, visibility 0s 0.25s; max-width:calc(100% - 2rem);
+}
+.toast.show { transform:translate(-50%, 0); visibility:visible; transition:transform 0.25s ease; }
+.toast button { color:#6ee7b7; font-weight:600; padding:0.25rem 0.5rem; border-radius:6px; }
+.toast button:hover { background:rgba(255,255,255,0.08); }
+
+.footer { text-align:center; padding:2rem 2rem calc(var(--bottom) + 2rem); border-top:1px solid var(--slate-200); background:var(--wit); }
+.quote { font-size:0.8125rem; color:var(--accent); }
+
+@media (max-width:640px) {
+  .back-link { position:static; margin-bottom:0.75rem; justify-content:center; display:flex; }
+  tbody th { min-width:150px; max-width:190px; font-size:0.875rem; padding-left:0.75rem; }
+  thead th { min-width:96px; font-size:0.75rem; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition:none !important; animation:none !important; } }
+:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.name:focus-visible { outline:none; }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <a href="https://onderconstructie.github.io/projectmanagement/" class="back-link">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Projectmanagement
+  </a>
+  <div class="logo">
+    <svg viewBox="0 0 80 80" fill="none" aria-hidden="true">
+      <circle cx="40" cy="40" r="36" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2"/>
+      <rect x="21" y="21" width="17" height="17" rx="4" fill="#10b981"/>
+      <rect x="42" y="21" width="17" height="17" rx="4" fill="#1e293b"/>
+      <rect x="22" y="43" width="15" height="15" rx="3.5" fill="#ecfdf5" stroke="#10b981" stroke-width="2"/>
+      <rect x="43" y="43" width="15" height="15" rx="3.5" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+      <text x="29.5" y="34.2" text-anchor="middle" font-family="DM Sans, system-ui, sans-serif" font-weight="700" font-size="11" fill="#fff">R</text>
+      <text x="50.5" y="34.2" text-anchor="middle" font-family="DM Sans, system-ui, sans-serif" font-weight="700" font-size="11" fill="#fff">A</text>
+      <text x="29.5" y="54.6" text-anchor="middle" font-family="DM Sans, system-ui, sans-serif" font-weight="700" font-size="10" fill="#059669">C</text>
+      <text x="50.5" y="54.6" text-anchor="middle" font-family="DM Sans, system-ui, sans-serif" font-weight="700" font-size="10" fill="#64748b">I</text>
+    </svg>
+  </div>
+  <h1 class="title">RACI-matrix</h1>
+  <p class="subtitle">Wie doet het, wie beslist, wie denkt mee, wie hoort het.</p>
+</header>
+
+<main class="main">
+  <nav class="lists" id="lists" aria-label="Matrices"></nav>
+
+  <section class="card" id="card">
+    <div class="card-head">
+      <input class="list-name" id="list-name" aria-label="Naam van de matrix" maxlength="60" spellcheck="false">
+      <div class="menu-wrap">
+        <button class="icon-btn" id="menu-btn" aria-label="Meer acties" aria-haspopup="true" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
+        </button>
+        <div class="menu" id="menu" role="menu">
+          <button data-act="md" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Kopieer als tabel</button>
+          <button data-act="csv" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m-5-5 5 5 5-5M5 21h14"/></svg>Download CSV</button>
+          <div class="sep"></div>
+          <button data-act="clear" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>Alle letters wissen</button>
+          <button data-act="delete" class="danger" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>Matrix verwijderen</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="status" id="status"></div>
+
+    <div class="adds">
+      <form class="add-form" id="add-task" autocomplete="off">
+        <label class="add-label" for="task-input">Taak of oplevering</label>
+        <div class="add-row">
+          <input class="add-input" id="task-input" placeholder="Bv. Budget goedkeuren" enterkeyhint="done">
+          <button class="add-btn" type="submit" aria-label="Taak toevoegen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+        </div>
+      </form>
+      <form class="add-form" id="add-role" autocomplete="off">
+        <label class="add-label" for="role-input">Persoon of rol</label>
+        <div class="add-row">
+          <input class="add-input" id="role-input" placeholder="Bv. Projectleider" enterkeyhint="done">
+          <button class="add-btn" type="submit" aria-label="Rol toevoegen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+        </div>
+      </form>
+    </div>
+
+    <div class="table-wrap" id="table-wrap"></div>
+    <div class="empty" id="empty" hidden></div>
+  </section>
+
+  <div class="legend" aria-label="Legenda">
+    <div class="leg"><span class="cell R" aria-hidden="true">R</span><div><strong>Responsible</strong><span>Voert het werk uit. Minstens één per taak.</span></div></div>
+    <div class="leg"><span class="cell A" aria-hidden="true">A</span><div><strong>Accountable</strong><span>Eindverantwoordelijk en beslist. Precies één per taak.</span></div></div>
+    <div class="leg"><span class="cell C" aria-hidden="true">C</span><div><strong>Consulted</strong><span>Denkt vooraf mee. Twee richtingen.</span></div></div>
+    <div class="leg"><span class="cell I" aria-hidden="true">I</span><div><strong>Informed</strong><span>Hoort het achteraf. Eén richting.</span></div></div>
+  </div>
+  <p class="tip">Tik op een vak om door R, A, C en I te wisselen. Lang drukken of rechtsklikken maakt het leeg. Plak meerdere regels om in één keer taken of rollen toe te voegen.</p>
+</main>
+
+<footer class="footer">
+  <p class="quote">Wat iedereen moet doen, doet niemand.</p>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-text"></span><button id="toast-btn" hidden>Ongedaan</button></div>
+
+<script>
+/* ---------- Opslag ---------- */
+const KEY = 'raci.v1';
+let undoFn = null, toastTimer = null;
+const CYCLE = ['', 'R', 'A', 'C', 'I'];
+const uid = () => Math.random().toString(36).slice(2, 10);
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+
+function blank(name) { return { id:uid(), name:name || 'Mijn project', roles:[], tasks:[] }; }
+function load() {
+  try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && Array.isArray(d.mats) && d.mats.length) return d; } catch {}
+  const m = blank();
+  return { mats:[m], current:m.id };
+}
+let state = load();
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {}
+  // Een nieuwe wijziging maakt een oud 'Ongedaan' ongeldig: dat zou ook deze wijziging terugdraaien.
+  if (undoFn) { undoFn = null; $('toast').classList.remove('show'); }
+}
+const cur = () => state.mats.find(m => m.id === state.current) || state.mats[0];
+
+/* ---------- Plakken: elke regel wordt een rij of kolom ---------- */
+function lines(text) {
+  return text.split(/\r?\n|\t/).map(l => l.trim().replace(/^([-*+•·]|\d+[.)])\s+/, '').trim()).filter(Boolean).map(l => l.slice(0, 120));
+}
+
+/* ---------- Controles ---------- */
+function rowFlags(m, t) {
+  if (!m.roles.length) return [];
+  const v = m.roles.map(r => t.cells[r.id] || '');
+  const a = v.filter(x => x === 'A').length, r = v.filter(x => x === 'R').length;
+  const f = [];
+  if (a === 0) f.push('geen A');
+  if (a > 1) f.push('meer dan één A');
+  if (r === 0) f.push('geen R');
+  return f;
+}
+function roleLoad(m, role) {
+  let r = 0, a = 0, c = 0, i = 0;
+  m.tasks.forEach(t => { const v = t.cells[role.id]; if (v === 'R') r++; else if (v === 'A') a++; else if (v === 'C') c++; else if (v === 'I') i++; });
+  const over = m.tasks.length >= 3 && (r + a) > m.tasks.length / 2;
+  return { r, a, c, i, over };
+}
+function problems(m) {
+  const rows = m.tasks.filter(t => rowFlags(m, t).length).map(t => ({ kind:'task', id:t.id }));
+  const cols = m.roles.filter(r => roleLoad(m, r).over).map(r => ({ kind:'role', id:r.id }));
+  return [...rows, ...cols];
+}
+
+/* ---------- Tekenen ---------- */
+const X = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+const LABEL = { R:'voert uit', A:'eindverantwoordelijk', C:'geraadpleegd', I:'geïnformeerd' };
+
+function renderTabs() {
+  $('lists').innerHTML = state.mats.map(m => {
+    const n = problems(m).length;
+    return `<button class="tab${m.id === state.current ? ' active' : ''}" data-mat="${m.id}">${esc(m.name || 'Naamloos')}${n ? `<span class="n">${n} ⚠︎</span>` : ''}</button>`;
+  }).join('') + '<button class="tab add" id="new-mat" aria-label="Nieuwe matrix">+ Matrix</button>';
+}
+
+function renderStatus(m) {
+  const p = problems(m);
+  let html;
+  if (!m.tasks.length || !m.roles.length) {
+    html = `<span class="status-btn neutral">Voeg taken en rollen toe</span>`;
+  } else if (!p.length) {
+    html = `<span class="status-btn ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Alles klopt: elke taak heeft één A en minstens één R</span>`;
+  } else {
+    html = `<button class="status-btn bad" id="jump" title="Spring naar het eerste probleem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>${p.length} ${p.length === 1 ? 'probleem' : 'problemen'}</button>`;
+  }
+  $('status').innerHTML = html;
+}
+
+function render() {
+  const m = cur();
+  if (document.activeElement !== $('list-name')) $('list-name').value = m.name;
+  renderTabs(); renderStatus(m);
+  const empty = !m.tasks.length && !m.roles.length;
+  $('empty').hidden = !empty;
+  $('table-wrap').hidden = empty;
+  if (empty) {
+    $('empty').innerHTML = '<strong>Nog leeg</strong>Voeg hierboven taken en rollen toe, of begin met een uitgewerkt voorbeeld.<br><button class="btn btn-primary" id="example">Begin met een voorbeeld</button>';
+    return;
+  }
+  const head = `<thead><tr><th class="sticky corner" scope="col">Taak</th>${m.roles.map(r => `
+      <th scope="col" data-role="${r.id}"><div class="role-head">
+        <span class="name" contenteditable="plaintext-only" spellcheck="false" data-edit="role">${esc(r.name)}</span>
+        <button class="x" data-del-role="${r.id}" aria-label="Verwijder ${esc(r.name)}">${X}</button>
+      </div></th>`).join('')}${m.roles.length ? '' : '<th class="c" style="color:var(--slate-400);font-weight:500">Voeg een rol toe</th>'}</tr></thead>`;
+  const body = `<tbody>${m.tasks.map(t => {
+      const flags = rowFlags(m, t);
+      return `<tr data-task="${t.id}"><th class="sticky" scope="row"><div class="task-cell">
+        <div class="task-main"><span class="name" contenteditable="plaintext-only" spellcheck="false" data-edit="task">${esc(t.name)}</span>
+        ${flags.length ? `<div class="flags">${flags.map(f => `<span class="flag">${f}</span>`).join('')}</div>` : ''}</div>
+        <button class="x" data-del-task="${t.id}" aria-label="Verwijder ${esc(t.name)}">${X}</button></div></th>
+        ${m.roles.map(r => { const v = t.cells[r.id] || '';
+          return `<td class="c"><button class="cell ${v}" data-t="${t.id}" data-r="${r.id}" aria-label="${esc(t.name)}, ${esc(r.name)}: ${v ? v + ', ' + LABEL[v] : 'leeg'}">${v || '·'}</button></td>`; }).join('')}
+        ${m.roles.length ? '' : '<td></td>'}</tr>`;
+    }).join('')}${m.tasks.length ? '' : `<tr><th class="sticky" style="color:var(--slate-400);font-weight:500">Voeg een taak toe</th>${m.roles.map(() => '<td></td>').join('')}</tr>`}</tbody>`;
+  const foot = m.tasks.length && m.roles.length ? `<tfoot><tr><th class="sticky" scope="row">Belasting</th>${m.roles.map(r => {
+      const l = roleLoad(m, r);
+      return `<td class="load${l.over ? ' over' : ''}" data-load="${r.id}" title="R ${l.r} · A ${l.a} · C ${l.c} · I ${l.i}">${l.r} R · ${l.a} A${l.over ? '<span class="warn">overbelast</span>' : ''}</td>`;
+    }).join('')}</tr></tfoot>` : '';
+  const sl = $('table-wrap').scrollLeft;
+  $('table-wrap').innerHTML = `<table>${head}${body}${foot}</table>`;
+  $('table-wrap').scrollLeft = sl;
+}
+
+/* ---------- Ongedaan maken ---------- */
+function toast(msg, undo) {
+  undoFn = undo || null;
+  $('toast-text').textContent = msg;
+  $('toast-btn').hidden = !undo;
+  $('toast').classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { $('toast').classList.remove('show'); undoFn = null; }, undo ? 6000 : 2500);
+}
+$('toast-btn').addEventListener('click', () => {
+  if (undoFn) { undoFn(); undoFn = null; save(); render(); }
+  $('toast').classList.remove('show');
+});
+function snapshot() { const copy = JSON.parse(JSON.stringify(state)); return () => { state = copy; }; }
+
+/* ---------- Toevoegen ---------- */
+function addTasks(text) {
+  const items = lines(text); if (!items.length) return 0;
+  cur().tasks.push(...items.map(n => ({ id:uid(), name:n, cells:{} })));
+  save(); render(); return items.length;
+}
+function addRoles(text) {
+  const items = lines(text); if (!items.length) return 0;
+  const m = cur();
+  items.forEach(n => { if (!m.roles.some(r => r.name.toLowerCase() === n.toLowerCase())) m.roles.push({ id:uid(), name:n }); });
+  save(); render(); return items.length;
+}
+function wireAdd(formId, inputId, fn, word) {
+  $(formId).addEventListener('submit', e => {
+    e.preventDefault();
+    if (fn($(inputId).value)) $(inputId).value = '';
+    $(inputId).focus();
+  });
+  $(inputId).addEventListener('paste', e => {
+    const text = (e.clipboardData || window.clipboardData).getData('text');
+    if (!/[\n\t]/.test(text.trim())) return;
+    e.preventDefault();
+    const restore = snapshot();
+    const n = fn(text);
+    if (n) toast(`${n} ${word} toegevoegd`, restore);
+  });
+}
+wireAdd('add-task', 'task-input', addTasks, 'taken');
+wireAdd('add-role', 'role-input', addRoles, 'rollen');
+
+/* ---------- Cellen ---------- */
+let pressTimer = null, longPressed = false;
+function setCell(tId, rId, v) {
+  const t = cur().tasks.find(x => x.id === tId); if (!t) return;
+  if (v) t.cells[rId] = v; else delete t.cells[rId];
+  save(); render();
+  const btn = document.querySelector(`.cell[data-t="${tId}"][data-r="${rId}"]`);
+  if (btn) btn.focus({ preventScroll:true });
+}
+document.addEventListener('click', e => {
+  const cell = e.target.closest('.cell[data-t]');
+  if (cell) {
+    if (longPressed) { longPressed = false; return; }
+    const t = cur().tasks.find(x => x.id === cell.dataset.t); if (!t) return;
+    const v = t.cells[cell.dataset.r] || '';
+    setCell(cell.dataset.t, cell.dataset.r, CYCLE[(CYCLE.indexOf(v) + 1) % CYCLE.length]);
+    if (navigator.vibrate) try { navigator.vibrate(6); } catch {}
+    return;
+  }
+  const dt = e.target.closest('[data-del-task]');
+  if (dt) {
+    const m = cur(), idx = m.tasks.findIndex(t => t.id === dt.dataset.delTask); if (idx < 0) return;
+    const restore = snapshot(), name = m.tasks[idx].name;
+    m.tasks.splice(idx, 1); save(); render();
+    toast(`Taak '${short(name)}' verwijderd`, restore); return;
+  }
+  const dr = e.target.closest('[data-del-role]');
+  if (dr) {
+    const m = cur(), idx = m.roles.findIndex(r => r.id === dr.dataset.delRole); if (idx < 0) return;
+    const restore = snapshot(), role = m.roles[idx];
+    m.roles.splice(idx, 1); m.tasks.forEach(t => delete t.cells[role.id]); save(); render();
+    toast(`Rol '${short(role.name)}' verwijderd`, restore); return;
+  }
+  if (e.target.closest('#example')) { loadExample(); return; }
+  if (e.target.closest('#jump')) { jump(); return; }
+});
+document.addEventListener('contextmenu', e => {
+  const cell = e.target.closest('.cell[data-t]'); if (!cell) return;
+  e.preventDefault(); setCell(cell.dataset.t, cell.dataset.r, '');
+});
+document.addEventListener('pointerdown', e => {
+  const cell = e.target.closest('.cell[data-t]'); if (!cell || e.pointerType === 'mouse') return;
+  longPressed = false;
+  pressTimer = setTimeout(() => { longPressed = true; setCell(cell.dataset.t, cell.dataset.r, ''); if (navigator.vibrate) try { navigator.vibrate(18); } catch {} }, 500);
+});
+['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => document.addEventListener(ev, () => clearTimeout(pressTimer)));
+// Toetsenbord: R, A, C, I of Delete op een gefocust vak
+document.addEventListener('keydown', e => {
+  const cell = e.target.closest && e.target.closest('.cell[data-t]'); if (!cell) return;
+  const k = e.key.toUpperCase();
+  if (['R', 'A', 'C', 'I'].includes(k)) { e.preventDefault(); setCell(cell.dataset.t, cell.dataset.r, k); }
+  if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); setCell(cell.dataset.t, cell.dataset.r, ''); }
+});
+const short = s => s.length > 28 ? s.slice(0, 28) + '…' : s;
+
+/* ---------- Namen aanpassen ---------- */
+document.addEventListener('keydown', e => {
+  if (!e.target.dataset || !e.target.dataset.edit) return;
+  if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); }
+  if (e.key === 'Escape') { e.target.dataset.cancel = '1'; e.target.blur(); }
+});
+document.addEventListener('focusout', e => {
+  const el = e.target; if (!el.dataset || !el.dataset.edit) return;
+  const m = cur();
+  const obj = el.dataset.edit === 'task'
+    ? m.tasks.find(t => t.id === el.closest('tr').dataset.task)
+    : m.roles.find(r => r.id === el.closest('th').dataset.role);
+  if (!obj) return;
+  const v = el.textContent.replace(/\s+/g, ' ').trim().slice(0, 120);
+  if (el.dataset.cancel || !v) { delete el.dataset.cancel; el.textContent = obj.name; return; }
+  if (v !== obj.name) { obj.name = v; save(); render(); }
+});
+
+/* ---------- Naar het eerste probleem springen ---------- */
+function jump() {
+  const p = problems(cur())[0]; if (!p) return;
+  if (p.kind === 'task') {
+    const tr = document.querySelector(`tr[data-task="${p.id}"]`); if (!tr) return;
+    tr.scrollIntoView({ behavior:'smooth', block:'center' });
+    tr.classList.remove('flash'); void tr.offsetWidth; tr.classList.add('flash');
+    const cell = tr.querySelector('.cell'); if (cell) cell.focus({ preventScroll:true });
+  } else {
+    const td = document.querySelector(`[data-load="${p.id}"]`); if (!td) return;
+    td.scrollIntoView({ behavior:'smooth', block:'center', inline:'center' });
+    td.classList.remove('flash'); void td.offsetWidth; td.parentElement.classList.add('flash');
+  }
+}
+
+/* ---------- Voorbeeld ---------- */
+function loadExample() {
+  const m = cur();
+  const roles = ['Projectleider', 'Diensthoofd', 'Communicatie'].map(n => ({ id:uid(), name:n }));
+  const [pl, dh, co] = roles.map(r => r.id);
+  m.roles = roles;
+  m.tasks = [
+    { name:'Projectplan opstellen', cells:{ [pl]:'R', [dh]:'A', [co]:'C' } },
+    { name:'Budget goedkeuren', cells:{ [pl]:'C', [dh]:'A' } },
+    { name:'Bewonersbrief schrijven', cells:{ [pl]:'A', [co]:'R', [dh]:'I' } },
+    { name:'Stuurgroep informeren', cells:{ [pl]:'R', [dh]:'A', [co]:'R' } },
+  ].map(t => ({ id:uid(), ...t }));
+  if (m.name === 'Mijn project') m.name = 'Heraanleg stadspark';
+  save(); render();
+  toast('Voorbeeld geladen: "Budget goedkeuren" heeft nog geen R');
+}
+
+/* ---------- Matrices ---------- */
+$('lists').addEventListener('click', e => {
+  if (e.target.closest('#new-mat')) {
+    const m = blank('Nieuw project'); state.mats.push(m); state.current = m.id; save(); render();
+    $('list-name').focus(); $('list-name').select(); return;
+  }
+  const t = e.target.closest('[data-mat]'); if (!t) return;
+  state.current = t.dataset.mat; save(); render();
+});
+$('list-name').addEventListener('input', () => { cur().name = $('list-name').value.slice(0, 60); save(); renderTabs(); });
+$('list-name').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('task-input').focus(); } });
+$('list-name').addEventListener('blur', () => { if (!cur().name.trim()) { cur().name = 'Naamloos'; save(); render(); } });
+
+/* ---------- Menu ---------- */
+function closeMenu() { $('menu').classList.remove('open'); $('menu-btn').setAttribute('aria-expanded', 'false'); }
+$('menu-btn').addEventListener('click', e => {
+  e.stopPropagation();
+  const open = !$('menu').classList.contains('open');
+  $('menu').classList.toggle('open', open); $('menu-btn').setAttribute('aria-expanded', String(open));
+});
+document.addEventListener('click', e => { if (!e.target.closest('.menu-wrap')) closeMenu(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
+
+const csvCell = v => /[";\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+const mdCell = v => String(v).replace(/\|/g, '\\|');
+$('menu').addEventListener('click', async e => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  closeMenu();
+  const m = cur(), act = b.dataset.act;
+  if ((act === 'md' || act === 'csv') && (!m.tasks.length || !m.roles.length)) { toast('Voeg eerst taken en rollen toe'); return; }
+  if (act === 'md') {
+    const rows = [
+      `| Taak | ${m.roles.map(r => mdCell(r.name)).join(' | ')} |`,
+      `|---|${m.roles.map(() => ':---:').join('|')}|`,
+      ...m.tasks.map(t => `| ${mdCell(t.name)} | ${m.roles.map(r => t.cells[r.id] || '').join(' | ')} |`)
+    ];
+    const txt = `${m.name}\n\n${rows.join('\n')}\n\nR = voert uit · A = eindverantwoordelijk · C = geraadpleegd · I = geïnformeerd`;
+    await copy(txt) ? toast('Gekopieerd als tabel') : toast('Kopiëren lukt hier niet');
+  }
+  if (act === 'csv') {
+    const rows = [['Taak', ...m.roles.map(r => r.name)], ...m.tasks.map(t => [t.name, ...m.roles.map(r => t.cells[r.id] || '')])];
+    const csv = '﻿' + rows.map(r => r.map(csvCell).join(';')).join('\r\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type:'text/csv;charset=utf-8' }));
+    a.download = (m.name || 'raci').replace(/[^\w\-]+/g, '-').replace(/^-+|-+$/g, '').toLowerCase() + '-raci.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    toast('CSV gedownload');
+  }
+  if (act === 'clear') {
+    const n = m.tasks.reduce((s, t) => s + Object.keys(t.cells).length, 0);
+    if (!n) { toast('Er staan nog geen letters in'); return; }
+    const restore = snapshot();
+    m.tasks.forEach(t => t.cells = {}); save(); render();
+    toast(`${n} letters gewist`, restore);
+  }
+  if (act === 'delete') {
+    const restore = snapshot();
+    state.mats = state.mats.filter(x => x.id !== m.id);
+    if (!state.mats.length) state.mats.push(blank());
+    state.current = state.mats[0].id; save(); render();
+    toast(`Matrix '${short(m.name)}' verwijderd`, restore);
+  }
+});
+async function copy(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch {}
+  try {
+    const t = document.createElement('textarea'); t.value = text; t.style.position = 'fixed'; t.style.opacity = '0';
+    document.body.appendChild(t); t.select(); const ok = document.execCommand('copy'); t.remove(); return ok;
+  } catch { return false; }
+}
+
+window.addEventListener('storage', e => { if (e.key === KEY) { state = load(); render(); } });
+render();
+</script>
+</body>
+</html>
