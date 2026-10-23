@@ -226,6 +226,21 @@ tfoot .sticky { background:var(--slate-50); }
 .ocw-row .ocw-yes { background:#dc2626; } .ocw-row .ocw-yes:hover { background:#b91c1c; }
 .ocw-row button { min-height:44px; }
 button.oc-import { color:#047857; min-height:44px; }
+
+/* Voorbeeld en wissen */
+.vb-bar { display:flex; flex-wrap:wrap; align-items:center; gap:0.5rem 0.75rem; margin:0.75rem 0.75rem 0; padding:0.5rem 0.5rem 0.5rem 0.75rem; background:#fffbeb; border:1px solid #fde68a; border-radius:12px; font-size:0.875rem; line-height:1.4; color:#78350f; }
+.vb-bar[hidden] { display:none !important; }
+.vb-bar svg { width:18px; height:18px; flex-shrink:0; color:#b45309; }
+.vb-bar .vb-text { flex:1 1 14rem; min-width:0; display:flex; gap:0.5rem; align-items:flex-start; }
+.vb-bar .vb-btns { display:flex; flex-wrap:wrap; gap:0.375rem; }
+.vb-btn { min-height:44px; padding:0.375rem 0.625rem; border-radius:10px; font-size:0.875rem; font-weight:600; background:var(--wit); border:1px solid var(--slate-200); }
+.vb-wis { color:#b91c1c; border-color:#fecaca; }
+.vb-wis:hover { background:#fef2f2; }
+.vb-eigen { color:var(--accent-dark); border-color:#a7f3d0; }
+.vb-eigen:hover { background:var(--accent-50); }
+.vb-tag { font-size:0.6875rem; font-weight:600; padding:0 0.375rem; border-radius:999px; background:#fef3c7; color:#92400e; }
+.icon-btn.del-unit:hover { color:#b91c1c; background:#fef2f2; }
+@media (max-width:420px) { .vb-btn { font-size:0.8125rem; padding:0.375rem 0.5rem; } }
 </style>
 </head>
 <body>
@@ -256,8 +271,13 @@ button.oc-import { color:#047857; min-height:44px; }
   <nav class="lists" id="lists" aria-label="Matrices"></nav>
 
   <section class="card" id="card">
+    <div class="vb-bar" id="vb-bar" role="note" hidden>
+      <span class="vb-text"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg><span>Dit is een voorbeeld om de tool te verkennen. Het telt niet mee in andere tools.</span></span>
+      <span class="vb-btns"><button type="button" class="vb-btn vb-wis" id="vb-wis">Wis voorbeeld</button><button type="button" class="vb-btn vb-eigen" id="vb-eigen">Maak er mijn eigen van</button></span>
+    </div>
     <div class="card-head">
       <input class="list-name" id="list-name" aria-label="Naam van de matrix" maxlength="60" spellcheck="false">
+      <button class="icon-btn del-unit" id="del-unit" type="button" aria-label="Verwijder matrix" title="Verwijder matrix"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg></button>
       <div class="menu-wrap">
         <button class="icon-btn" id="menu-btn" aria-label="Meer acties" aria-haspopup="true" aria-expanded="false">
           <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
@@ -511,7 +531,7 @@ function ocUndoable(restore) {
 }
 
 function ocPublish() {
-  ocShare.publish(OC_ID, OC_TOOL, state.mats.map(m => ({ name:m.name, items:[
+  ocShare.publish(OC_ID, OC_TOOL, state.mats.filter(m => !m.voorbeeld).map(m => ({ name:m.name, items:[
     ...m.roles.map(r => ({ type:'betrokkene', text:r.name })), ...m.tasks.map(t => ({ type:'taak', text:t.name })) ] })));
 }
 
@@ -696,7 +716,7 @@ const LABEL = { R:'voert uit', A:'eindverantwoordelijk', C:'geraadpleegd', I:'ge
 function renderTabs() {
   $('lists').innerHTML = state.mats.map(m => {
     const n = problems(m).length;
-    return `<button class="tab${m.id === state.current ? ' active' : ''}" data-mat="${m.id}">${esc(m.name || 'Naamloos')}${n ? `<span class="n">${n} ⚠︎</span>` : ''}</button>`;
+    return `<button class="tab${m.id === state.current ? ' active' : ''}" data-mat="${esc(m.id)}">${esc(m.name || 'Naamloos')}${m.voorbeeld ? '<span class="vb-tag">voorbeeld</span>' : ''}${n ? `<span class="n">${n} ⚠︎</span>` : ''}</button>`;
   }).join('') + '<button class="tab add" id="new-mat" aria-label="Nieuwe matrix">+ Matrix</button>';
 }
 
@@ -716,6 +736,7 @@ function renderStatus(m) {
 function render() {
   const m = cur();
   if (document.activeElement !== $('list-name')) $('list-name').value = m.name;
+  unitLabel(m);
   renderTabs(); renderStatus(m);
   const empty = !m.tasks.length && !m.roles.length;
   $('empty').hidden = !empty;
@@ -747,6 +768,10 @@ function render() {
   $('table-wrap').innerHTML = `<table>${head}${body}${foot}</table>`;
   $('table-wrap').scrollLeft = sl;
   scrollHint();
+}
+function unitLabel(m) {
+  $('vb-bar').hidden = !m.voorbeeld;
+  const dl = `Verwijder ${m.name || 'matrix'}`; $('del-unit').setAttribute('aria-label', dl); $('del-unit').title = dl;
 }
 function scrollHint() {
   const w = $('table-wrap');
@@ -932,7 +957,15 @@ function jump() {
 
 /* ---------- Voorbeeld ---------- */
 function loadExample() {
-  const m = cur();
+  // Bestaat er al een voorbeeld, spring er dan naartoe in plaats van een tweede te maken.
+  const bestaand = state.mats.find(x => x.voorbeeld);
+  if (bestaand) { state.current = bestaand.id; save(); render(); toast('Dit is het voorbeeld'); return; }
+  // Een lege matrix met een standaardnaam wordt het voorbeeld; anders komt het voorbeeld in een eigen matrix.
+  let m = cur();
+  if (m.tasks.length || m.roles.length || !['Mijn project', 'Nieuw project', 'Naamloos'].includes(m.name)) {
+    m = blank(); state.mats.push(m); state.current = m.id;
+  }
+  m.voorbeeld = true;
   const roles = ['Projectleider', 'Diensthoofd', 'Communicatie'].map(n => ({ id:uid(), name:n }));
   const [pl, dh, co] = roles.map(r => r.id);
   m.roles = roles;
@@ -942,7 +975,7 @@ function loadExample() {
     { name:'Bewonersbrief schrijven', cells:{ [pl]:'A', [co]:'R', [dh]:'I' } },
     { name:'Stuurgroep informeren', cells:{ [pl]:'R', [dh]:'A', [co]:'R' } },
   ].map(t => ({ id:uid(), ...t }));
-  if (m.name === 'Mijn project') m.name = 'Heraanleg stadspark';
+  m.name = 'Heraanleg stadspark';
   save(); render();
   toast('Voorbeeld geladen: "Budget goedkeuren" heeft nog geen R');
 }
@@ -956,9 +989,31 @@ $('lists').addEventListener('click', e => {
   const t = e.target.closest('[data-mat]'); if (!t) return;
   state.current = t.dataset.mat; save(); render();
 });
-$('list-name').addEventListener('input', () => { cur().name = $('list-name').value.slice(0, 60); save(); renderTabs(); });
+$('list-name').addEventListener('input', () => { cur().name = $('list-name').value.slice(0, 60); save(); renderTabs(); unitLabel(cur()); });
 $('list-name').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('task-input').focus(); } });
 $('list-name').addEventListener('blur', () => { if (!cur().name.trim()) { cur().name = 'Naamloos'; save(); render(); } });
+
+/* ---------- Voorbeeld wissen of houden, één matrix verwijderen ---------- */
+$('vb-wis').addEventListener('click', () => {
+  const restore = snapshot(), idx = state.mats.indexOf(cur());
+  state.mats = state.mats.filter(x => !x.voorbeeld);
+  if (!state.mats.length) state.mats.push(blank());
+  if (!state.mats.some(x => x.id === state.current)) state.current = state.mats[Math.min(Math.max(idx - 1, 0), state.mats.length - 1)].id;
+  save(); render();
+  toast('Voorbeeld gewist', restore);
+});
+$('vb-eigen').addEventListener('click', () => {
+  delete cur().voorbeeld; save(); render();
+  toast('Het voorbeeld is nu van jou');
+});
+function deleteMat(m) {
+  const restore = snapshot(), idx = state.mats.indexOf(m);
+  state.mats = state.mats.filter(x => x.id !== m.id);
+  if (!state.mats.length) state.mats.push(blank());
+  state.current = state.mats[Math.min(Math.max(idx - 1, 0), state.mats.length - 1)].id; save(); render();
+  toast(`${short(m.name || 'Matrix')} verwijderd`, restore);
+}
+$('del-unit').addEventListener('click', () => deleteMat(cur()));
 
 /* ---------- Menu ---------- */
 function closeMenu() { $('menu').classList.remove('open'); $('menu-btn').setAttribute('aria-expanded', 'false'); }
@@ -1013,13 +1068,7 @@ $('menu').addEventListener('click', async e => {
     m.tasks.forEach(t => t.cells = {}); save(); render();
     toast(`${n} letters gewist`, restore);
   }
-  if (act === 'delete') {
-    const restore = snapshot();
-    state.mats = state.mats.filter(x => x.id !== m.id);
-    if (!state.mats.length) state.mats.push(blank());
-    state.current = state.mats[0].id; save(); render();
-    toast(`Matrix '${short(m.name)}' verwijderd`, restore);
-  }
+  if (act === 'delete') deleteMat(m);
 });
 async function copy(text) {
   try { await navigator.clipboard.writeText(text); return true; } catch {}

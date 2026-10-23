@@ -335,6 +335,21 @@ button { background:none; border:0; cursor:pointer; }
 .ocw-row .ocw-yes { background:#dc2626; } .ocw-row .ocw-yes:hover { background:#b91c1c; }
 .ocw-row button { min-height:44px; }
 button.oc-import { color:#047857; min-height:44px; }
+
+/* Voorbeeld en wissen */
+.vb-bar { display:flex; flex-wrap:wrap; align-items:center; gap:0.5rem 0.75rem; margin:0.75rem 0.75rem 0; padding:0.5rem 0.5rem 0.5rem 0.75rem; background:#fffbeb; border:1px solid #fde68a; border-radius:12px; font-size:0.875rem; line-height:1.4; color:#78350f; }
+.vb-bar[hidden] { display:none !important; }
+.vb-bar svg { width:18px; height:18px; flex-shrink:0; color:#b45309; }
+.vb-bar .vb-text { flex:1 1 14rem; min-width:0; display:flex; gap:0.5rem; align-items:flex-start; }
+.vb-bar .vb-btns { display:flex; flex-wrap:wrap; gap:0.375rem; }
+.vb-btn { min-height:44px; padding:0.375rem 0.625rem; border-radius:10px; font-size:0.875rem; font-weight:600; background:var(--wit); border:1px solid var(--slate-200); }
+.vb-wis { color:#b91c1c; border-color:#fecaca; }
+.vb-wis:hover { background:#fef2f2; }
+.vb-eigen { color:var(--accent-dark); border-color:#a7f3d0; }
+.vb-eigen:hover { background:var(--accent-50); }
+.vb-tag { font-size:0.6875rem; font-weight:600; padding:0 0.375rem; border-radius:999px; background:#fef3c7; color:#92400e; }
+.icon-btn.del-unit:hover { color:#b91c1c; background:#fef2f2; }
+@media (max-width:420px) { .vb-btn { font-size:0.8125rem; padding:0.375rem 0.5rem; } }
 </style>
 </head>
 <body>
@@ -359,8 +374,13 @@ button.oc-import { color:#047857; min-height:44px; }
   <div style="margin:-0.5rem 0 1rem"><button type="button" class="oc-import" data-oc-types="betrokkene" id="oc-imp" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11M7.5 9.5L12 14l4.5-4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>Doelgroepen overnemen uit…</button></div>
 
   <section class="card" id="card">
+    <div class="vb-bar" id="vb-bar" role="note" hidden>
+      <span class="vb-text"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg><span>Dit is een voorbeeld om de tool te verkennen. Het telt niet mee in andere tools.</span></span>
+      <span class="vb-btns"><button type="button" class="vb-btn vb-wis" id="vb-wis">Wis voorbeeld</button><button type="button" class="vb-btn vb-eigen" id="vb-eigen">Maak er mijn eigen van</button></span>
+    </div>
     <div class="card-head">
       <input class="list-name" id="group-name" aria-label="Naam van de doelgroep" maxlength="60" spellcheck="false">
+      <button class="icon-btn del-unit" id="del-unit" type="button" aria-label="Verwijder doelgroep" title="Verwijder doelgroep"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg></button>
       <div class="menu-wrap">
         <button class="icon-btn" id="menu-btn" aria-label="Meer acties" aria-haspopup="true" aria-expanded="false">
           <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
@@ -612,12 +632,14 @@ function ocUndoable(restore) {
   };
 }
 
+// Doelgroepen uit het voorbeeld worden niet klaargelegd.
 function ocPublish() {
-  const lists = [{ name:'Doelgroepen', items: state.groups.map(g => {
+  const echt = state.groups.filter(g => !g.voorbeeld);
+  const lists = [{ name:'Doelgroepen', items: echt.map(g => {
     const d = dominant(levelScores(lastScan(g)));
     return { type:'betrokkene', text:g.name, note: d.length ? 'dominant: ' + d.map(x => x.L.stem.toLowerCase()).join(', ') : undefined };
   }) }];
-  state.groups.forEach(g => lists.push({ name:g.name, items: g.plan.filter(p => !p.done && p.text).map(p => ({ type:'actie', text:p.text, who:p.who, when:p.due || p.when })) }));
+  echt.forEach(g => lists.push({ name:g.name, items: g.plan.filter(p => !p.done && p.text).map(p => ({ type:'actie', text:p.text, who:p.who, when:p.due || p.when })) }));
   ocShare.publish(OC_ID, OC_TOOL, lists);
 }
 
@@ -896,7 +918,7 @@ function renderTabs() {
   $('lists').innerHTML = state.groups.map(g => {
     const d = dominant(levelScores(lastScan(g)));
     const col = d.length ? (d[0].pct >= 60 ? '#ef4444' : '#f59e0b') : '#cbd5e1';
-    return `<button class="tab${g.id === (cur() || {}).id ? ' active' : ''}" data-group="${g.id}"><span class="n" style="background:${col}"></span>${esc(g.name || 'Naamloos')}</button>`;
+    return `<button class="tab${g.id === (cur() || {}).id ? ' active' : ''}" data-group="${esc(g.id)}"><span class="n" style="background:${col}"></span>${esc(g.name || 'Naamloos')}${g.voorbeeld ? '<span class="vb-tag">voorbeeld</span>' : ''}</button>`;
   }).join('') + (state.groups.length ? '' : '<span class="tab active" aria-current="true">Nog geen doelgroep</span>')
     + '<button class="tab add" id="new-group" aria-label="Nieuwe doelgroep">+ Doelgroep</button>';
 }
@@ -909,6 +931,7 @@ function render() {
   if (!g) { renderEmpty(); return; }
   $('empty-state') && $('empty-state').remove();
   if (document.activeElement !== $('group-name')) $('group-name').value = g.name;
+  unitLabel(g);
   if (document.activeElement !== $('group-size')) $('group-size').value = g.size;
   if (document.activeElement !== $('group-change')) $('group-change').value = g.change;
   document.querySelectorAll('#views button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.view === state.view)));
@@ -917,6 +940,10 @@ function render() {
   ({ scan:renderScan, fase:renderFase, res:renderResult, plan:renderPlan, all:renderAll })[state.view](g);
 }
 
+function unitLabel(g) {
+  $('vb-bar').hidden = !g.voorbeeld;
+  const dl = `Verwijder ${g.name || 'doelgroep'}`; $('del-unit').setAttribute('aria-label', dl); $('del-unit').title = dl;
+}
 function renderEmpty() {
   let e = $('empty-state');
   if (!e) { e = document.createElement('section'); e.id = 'empty-state'; e.className = 'card empty'; $('card').after(e); }
@@ -1128,7 +1155,7 @@ function addGroup(name) {
   if (!name) { $('group-name').focus(); $('group-name').select(); }
   requestAnimationFrame(() => { const a = document.querySelector('.tab.active'); a && a.scrollIntoView({ inline:'nearest', block:'nearest' }); });
 }
-$('group-name').addEventListener('input', () => { const g = cur(); if (!g) return; g.name = $('group-name').value.slice(0, 60); save(); renderTabs(); });
+$('group-name').addEventListener('input', () => { const g = cur(); if (!g) return; g.name = $('group-name').value.slice(0, 60); save(); renderTabs(); unitLabel(g); });
 $('group-name').addEventListener('blur', () => { const g = cur(); if (g && !g.name.trim()) { g.name = 'Naamloos'; save(); render(); } });
 $('group-size').addEventListener('input', () => { const g = cur(); if (!g) return; g.size = $('group-size').value.replace(/\D/g, '').slice(0, 6); save(); });
 $('group-change').addEventListener('input', () => { const g = cur(); if (!g) return; g.change = $('group-change').value.slice(0, 200); save(); });
@@ -1298,15 +1325,35 @@ $('menu').addEventListener('click', async e => {
     try { await (act === 'png' ? ocExport.png(buildExport, base) : ocExport.pdf(buildExport, base)); toast(act === 'png' ? 'Afbeelding gedownload' : 'PDF gedownload'); }
     catch { toast('Downloaden lukt nu niet: geen verbinding?'); }
   }
-  if (act === 'delete') {
-    const restore = snapshot(), name = g.name;
-    state.groups = state.groups.filter(x => x !== g); state.current = state.groups[0] ? state.groups[0].id : null; save(); render();
-    toast(`Doelgroep '${name}' verwijderd`, restore);
-  }
+  if (act === 'delete') deleteGroup(g);
 });
+
+/* ---------- Voorbeeld wissen of houden, één doelgroep verwijderen ---------- */
+$('vb-wis').addEventListener('click', () => {
+  const restore = snapshot(), idx = state.groups.indexOf(cur());
+  state.groups = state.groups.filter(x => !x.voorbeeld);
+  if (!state.groups.some(x => x.id === state.current)) state.current = state.groups.length ? state.groups[Math.min(Math.max(idx - 1, 0), state.groups.length - 1)].id : null;
+  save(); render();
+  toast('Voorbeeld gewist', restore);
+});
+$('vb-eigen').addEventListener('click', () => {
+  // De doelgroepen van het voorbeeld horen samen: ze worden allemaal van jou.
+  state.groups.forEach(x => { delete x.voorbeeld; }); save(); render();
+  toast('Het voorbeeld is nu van jou');
+});
+function deleteGroup(g) {
+  const restore = snapshot(), idx = state.groups.indexOf(g);
+  state.groups = state.groups.filter(x => x !== g);
+  state.current = state.groups.length ? state.groups[Math.min(Math.max(idx - 1, 0), state.groups.length - 1)].id : null; save(); render();
+  toast(`${g.name || 'Doelgroep'} verwijderd`, restore);
+}
+$('del-unit').addEventListener('click', () => { const g = cur(); if (g) deleteGroup(g); });
 
 /* ---------- Voorbeeld ---------- */
 function loadExample() {
+  // Bestaat er al een voorbeeld, spring er dan naartoe in plaats van een tweede te maken.
+  const bestaand = state.groups.find(x => x.voorbeeld);
+  if (bestaand) { state.current = bestaand.id; save(); render(); toast('Dit is het voorbeeld'); return; }
   const ago = n => { const d = new Date(); d.setDate(d.getDate() - n); return d.toISOString().slice(0, 10); };
   const fill = (w, a) => { const o = {}; w.forEach((v, li) => v.forEach((x, i) => { if (x !== null) o['w' + (li + 1) + i] = x; }));
     ADKAR.forEach((E, ei) => a[ei].forEach((x, i) => { if (x !== null) o['a' + E.id + i] = x; })); return o; };
@@ -1324,6 +1371,7 @@ function loadExample() {
   const g2 = newGroup('Leidinggevenden');
   g2.size = '5'; g2.change = 'Zij sturen het team aan tijdens de overstap';
   g2.scans = [{ id:uid(), date:ago(3), a:fill([[0, 0, 1], [0, 1, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]], [[3, 3], [2, 3], [2, 2], [2, 1], [null, null]]) }];
+  g1.voorbeeld = g2.voorbeeld = true;   // tellen niet mee in andere tools tot je het voorbeeld van jou maakt
   state.groups.push(g1, g2); state.current = g1.id; state.view = 'res'; state.step = 0;
   $('empty-state') && $('empty-state').remove();
   save(); render();
