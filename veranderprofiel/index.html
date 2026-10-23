@@ -10,7 +10,7 @@
     <meta name="oc:pdca" content="plan">
     <meta name="oc:kort" content="Soort verandering en inspanning in één beeld">
     <meta name="oc:volgorde" content="37">
-    <meta name="oc:traject" content="verandering:4">
+    <meta name="oc:traject" content="verandering:5">
     <meta name="oc:opslag" content="veranderprofiel.v1, oc.share.veranderprofiel">
 <meta name="theme-color" content="#ffffff">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox=&quot;0 0 40 40&quot; fill=&quot;none&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;%3E%3Ccircle cx=&quot;20&quot; cy=&quot;20&quot; r=&quot;18&quot; fill=&quot;%23f8fafc&quot; stroke=&quot;%23e2e8f0&quot; stroke-width=&quot;1.5&quot;/%3E%3Cpath d=&quot;M11 12C17 12 19 20 25 20M11 20H25M11 28C17 28 19 20 25 20&quot; stroke=&quot;%23a7f3d0&quot; stroke-width=&quot;2.2&quot; stroke-linecap=&quot;round&quot; fill=&quot;none&quot;/%3E%3Ccircle cx=&quot;10&quot; cy=&quot;12&quot; r=&quot;2.6&quot; fill=&quot;%23f97316&quot;/%3E%3Ccircle cx=&quot;10&quot; cy=&quot;20&quot; r=&quot;2.6&quot; fill=&quot;%23334155&quot;/%3E%3Ccircle cx=&quot;10&quot; cy=&quot;28&quot; r=&quot;2.6&quot; fill=&quot;%2310b981&quot;/%3E%3Ccircle cx=&quot;28&quot; cy=&quot;20&quot; r=&quot;5&quot; fill=&quot;%23ecfdf5&quot; stroke=&quot;%2310b981&quot; stroke-width=&quot;2&quot;/%3E%3Cpath d=&quot;M26 20.2l1.5 1.5 2.7-3&quot; stroke=&quot;%23059669&quot; stroke-width=&quot;1.8&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; fill=&quot;none&quot;/%3E%3C/svg%3E">
@@ -231,7 +231,7 @@ a { color:var(--accent-dark); }
         <li><b>Overgang</b>: zware impact, maar het eindpunt is vooraf te beschrijven. Iets ouds wordt vervangen door iets nieuws.</li>
         <li><b>Grondige omvorming</b>: zware impact en het eindpunt groeit onderweg, of de verandering raakt aan gewoontes en cultuur terwijl bijna alles tegelijk verandert. Jullie antwoord op de eindpuntvraag gaat altijd voor.</li>
       </ul>
-      <p><b>De inspanning</b> vertrekt van het soort verandering (beperkt, gemiddeld of groot). Zware weerstand bij invloedrijke stakeholders telt er een niveau bij, een moeilijk klimaat ook. Zijn mensen en klimaat allebei licht, dan gaat er een niveau af. Een goed klimaat compenseert dus geen tegenstanders: elk zwaar punt telt apart.</p>
+      <p><b>De inspanning</b> vertrekt van het soort verandering (beperkt, gemiddeld of groot). Zware weerstand bij invloedrijke stakeholders telt er een niveau bij, een moeilijk klimaat ook, en een zwak sponsorschap (uit de tool Sponsorschap) ook. Zijn mensen en klimaat allebei licht, dan gaat er een niveau af. Een goed klimaat compenseert dus geen tegenstanders: elk zwaar punt telt apart.</p>
       <p>Dit is een vuistregel om het gesprek te voeren, geen meting. Schrijf op waar jullie anders over denken.</p>
     </div>
   </details>
@@ -593,6 +593,7 @@ function compute() {
   const I = ax.impact.level, S = ax.stakeholders.level, K = ax.klimaat.level;
   const culture = !ax.impact.manual && /cultuur/i.test(str(f, 'impact.zwaartepunten'));
   const breed = num(f, 'impact.breed');
+  const sponsorWeak = str(f, 'sponsor.zwak') === '1' || (str(f, 'sponsor.duidelijk') === 'nee');
 
   // Soort verandering
   let calcType = null, typeWhy = [];
@@ -619,12 +620,13 @@ function compute() {
     const t = TYPES.find(x => x.id === type), steps = [{ d: t.base, text: `${t.short}: vertrekpunt ${EFFORT[t.base - 1].toLowerCase()}`, kind:'base' }];
     if (S >= 3) steps.push({ d: 1, text: `Stakeholders ${LEVELS[S - 1].toLowerCase()}: invloedrijke mensen die (nog) niet mee willen`, kind:'up' });
     if (K >= 3) steps.push({ d: 1, text: `Klimaat ${LEVELS[K - 1].toLowerCase()}: weinig ruimte of vertrouwen`, kind:'up' });
+    if (sponsorWeak) steps.push({ d: 1, text: `Sponsorschap ${str(f, 'sponsor.niveau').toLowerCase() || 'zwak'}: te weinig steun van bovenaf`, kind:'up' });
     if (S === 1 && K === 1 && t.base > 1) steps.push({ d: -1, text: 'Mensen en klimaat zijn allebei licht', kind:'down' });
     const lvl = Math.max(1, Math.min(4, steps.reduce((s, x) => s + x.d, 0)));
     effort = { lvl, steps };
   }
   const known = AXES.filter(a => ax[a.id].level);
-  return { f, ax, calcType, type, typeWhy, culture, needEndpoint, effort, known, complete: known.length === 3 };
+  return { f, ax, calcType, type, typeWhy, culture, needEndpoint, effort, known, sponsorWeak, sponsorKnown: !!f['sponsor.score'], complete: known.length === 3 };
 }
 
 /* Weergave */
@@ -655,6 +657,10 @@ function render() {
   $('todo').innerHTML = advice(r).map(a => `<li class="${a.k ? 'k' : ''}"><span>${a.html}</span></li>`).join('');
 }
 
+function missing(r) {
+  const m = AXES.filter(a => !r.ax[a.id].level).map(a => a.short.toLowerCase());
+  return m.join(' en ') + (m.length > 1 ? ' ontbreken' : ' ontbreekt');
+}
 function onboardHTML(r) {
   return `<p class="onboard-intro">Drie analyses vormen samen het profiel. Begin waar je wil; elke ingevulde analyse verschijnt hier vanzelf.</p>
     <ol class="onboard">${AXES.map(a => `<li><span><a href="https://onderconstructie.github.io${a.path}">${a.tool} →</a><small>${a.q}</small></span></li>`).join('')}</ol>`;
@@ -682,7 +688,7 @@ function resultHTML(r) {
       <div class="meter l${lvl}" aria-hidden="true">${[1, 2, 3, 4].map(i => `<span class="${i <= lvl ? 'on' : ''}"></span>`).join('')}</div>
       <div class="meter-lbls" aria-hidden="true">${EFFORT.map((e, i) => `<span class="${i + 1 === lvl ? 'on' : ''}">${e}</span>`).join('')}</div>
       <ol class="chain">${r.effort.steps.map(s => `<li class="${s.kind}"><b>${s.kind === 'base' ? s.d : (s.d > 0 ? '+' : '−') + Math.abs(s.d)}</b><span>${esc(s.text)}</span></li>`).join('')}
-        <li class="sum"><b>=</b><span>${EFFORT[lvl - 1]}${r.complete ? '' : ` (voorlopig: ${AXES.filter(a => !r.ax[a.id].level).map(a => a.short.toLowerCase()).join(' en ')} ontbreekt)`}</span></li></ol>`
+        <li class="sum"><b>=</b><span>${EFFORT[lvl - 1]}${r.complete ? '' : ` (voorlopig: ${missing(r)})`}</span></li></ol>`
     : `<div class="r-big">–</div><div class="r-sub">Volgt zodra het soort verandering bekend is.</div>`;
   return `<div class="result">
     <div class="r-block"><div class="r-lbl">Soort verandering</div>${typeBlock}${ask}${own}</div>
@@ -717,6 +723,10 @@ function advice(r) {
     add('Spreek de invloedrijke mensen die (nog) niet mee willen vroeg en persoonlijk aan, met een aanpak per persoon (zie de Stakeholder Radar).', true);
   if (r.ax.klimaat.level >= 3)
     add('Erken eerdere ervaringen openlijk, beperk wat tegelijk loopt en lever snel iets zichtbaars op.', true);
+  if (r.sponsorWeak)
+    add('Het sponsorschap is zwak. Bespreek de gesprekspunten uit <a href="https://onderconstructie.github.io/sponsor/">Sponsorschap</a> met de sponsor, nog voor je verder gaat.', true);
+  else if (!r.sponsorKnown && r.type && r.type !== 'stap')
+    add('Toets ook hoe sterk de sponsor erachter staat, met <a href="https://onderconstructie.github.io/sponsor/">Sponsorschap</a>.');
   if (r.effort && r.effort.lvl >= 3)
     add('Reserveer genoeg tijd en mensen voor begeleiding. Een netwerk van sleutelfiguren dicht bij het werk helpt.', true);
   if (r.type !== 'stap' || (r.effort && r.effort.lvl >= 3))

@@ -4,7 +4,7 @@
   maar hij bemoeit zich alleen met de paden hieronder. Al de rest van de site gaat ongemoeid naar het netwerk.
   Wordt enkel geregistreerd wie /app/ opent.
 */
-const VERSION = 'oc-app-v9';
+const VERSION = 'oc-app-v10';
 
 const SHELL = [
   '/app/', '/tools.json', '/app/manifest.webmanifest', '/app/icon.svg',
