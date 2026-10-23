@@ -172,6 +172,9 @@ button { background:none; border:0; cursor:pointer; }
 .hist .when small { display:block; font-size:0.8125rem; color:var(--slate-500); font-variant-numeric:tabular-nums; }
 .hist .val { font-weight:600; color:var(--slate-800); font-variant-numeric:tabular-nums; text-align:right; }
 .hist .val small { display:block; font-weight:400; font-size:0.75rem; color:var(--slate-500); }
+.restart-row { display:flex; justify-content:center; margin-top:0.5rem; }
+.restart-btn { min-height:44px; padding:0.5rem 1rem; font:inherit; font-size:0.875rem; font-weight:500; color:var(--slate-500, #64748b); background:none; border:0; border-radius:10px; cursor:pointer; text-decoration:underline; text-decoration-color:#cbd5e1; text-underline-offset:3px; }
+.restart-btn:hover { color:#b91c1c; background:#fef2f2; text-decoration-color:currentColor; }
 .hist-clear { font-size:0.8125rem; color:var(--slate-500); padding:0.75rem 1.125rem 1rem; border-top:1px solid var(--slate-100); width:100%; text-align:left; }
 .hist-clear:hover { color:var(--rood); }
 
@@ -336,7 +339,7 @@ button.oc-import { color:#047857; min-height:44px; }
     <ul class="hist" id="hist"></ul>
     <button class="hist-clear" id="hist-clear">Historiek wissen</button>
   </section>
-  <div style="text-align:center;margin-top:1.5rem"><button class="hist-clear" id="oc-wipe" type="button">Alles wissen en opnieuw beginnen</button></div>
+  <div class="restart-row"><button type="button" class="restart-btn" id="oc-wipe" title="Alles wissen en opnieuw beginnen">Opnieuw beginnen</button></div>
 </main>
 
 <footer class="footer">
@@ -553,8 +556,8 @@ function ocPublish() {}
 async function ocWipeAll() {
   if (!await ocConfirm('Alles wissen in Vergaderkost?', 'De lopende vergadering, je instellingen en de historiek verdwijnen. Je kan dit nog ongedaan maken tot je iets anders doet.', 'Alles wissen')) return;
   const copy = JSON.parse(JSON.stringify(st));
-  try { localStorage.removeItem(KEY); } catch {}
   st = freshState(); save(); render(); renderSummary();
+  try { localStorage.removeItem(KEY); } catch {}   // na save(): echt leeg, ook de sleutel
   toast('Alles gewist', ocUndoable(() => { st = copy; save(); render(); renderSummary(); }));
 }
 document.addEventListener('click', e => { if (e.target.closest('#oc-wipe')) ocWipeAll(); });
