@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Stroom – Onder Constructie</title>
+<meta name="description" content="Teken eenvoudige processtromen zonder te slepen: typ de stappen onder elkaar, voeg keuzes en rollen toe, en de tekening ordent zichzelf. Exporteer als PDF, afbeelding of SVG.">
+    <meta name="oc:groep" content="projecten">
+    <meta name="oc:labels" content="inzicht">
+    <meta name="oc:pdca" content="plan, check">
+    <meta name="oc:kort" content="Eenvoudige processtroom tekenen">
+    <meta name="oc:volgorde" content="23">
+    <meta name="oc:opslag" content="stroom.v1, oc.share.stroom">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox=&quot;0 0 40 40&quot; fill=&quot;none&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;%3E%3Ccircle cx=&quot;20&quot; cy=&quot;20&quot; r=&quot;18&quot; fill=&quot;%23f8fafc&quot; stroke=&quot;%23e2e8f0&quot; stroke-width=&quot;1.5&quot;/%3E%3Crect x=&quot;13&quot; y=&quot;5&quot; width=&quot;14&quot; height=&quot;7&quot; rx=&quot;3.5&quot; fill=&quot;%2310b981&quot;/%3E%3Cpath d=&quot;M20 12v3M20 24v4&quot; stroke=&quot;%23334155&quot; stroke-width=&quot;1.6&quot;/%3E%3Cpath d=&quot;M20 15l5 4.5-5 4.5-5-4.5z&quot; fill=&quot;%23fffbeb&quot; stroke=&quot;%23d97706&quot; stroke-width=&quot;1.6&quot; stroke-linejoin=&quot;round&quot;/%3E%3Crect x=&quot;13&quot; y=&quot;28&quot; width=&quot;14&quot; height=&quot;7&quot; rx=&quot;2&quot; fill=&quot;%23ffffff&quot; stroke=&quot;%23334155&quot; stroke-width=&quot;1.6&quot;/%3E%3Cpath d=&quot;M25 19.5h5v12h-3&quot; stroke=&quot;%23334155&quot; stroke-width=&quot;1.6&quot; fill=&quot;none&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/fonts/fonts.css">
+<style>
+:root {
+  --slate-900:#0f172a; --slate-800:#1e293b; --slate-700:#334155; --slate-600:#475569;
+  --slate-500:#64748b; --slate-400:#94a3b8; --slate-300:#cbd5e1; --slate-200:#e2e8f0;
+  --slate-100:#f1f5f9; --slate-50:#f8fafc; --wit:#ffffff;
+  --accent:#10b981; --accent-dark:#047857; --accent-hover:#065f46; --accent-light:#d1fae5; --accent-50:#ecfdf5;
+  --rood:#ef4444; --oranje:#d97706; --oranje-50:#fffbeb;
+  --bottom: env(safe-area-inset-bottom, 0px);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body { font-family:'DM Sans', system-ui, sans-serif; background:var(--slate-50); color:var(--slate-700); line-height:1.5; min-height:100vh; -webkit-font-smoothing:antialiased; display:flex; flex-direction:column; }
+button, input, textarea, select { font:inherit; color:inherit; }
+button { background:none; border:0; cursor:pointer; }
+a { color:var(--accent-dark); }
+[hidden] { display:none !important; }
+
+.header { background:var(--wit); border-bottom:1px solid var(--slate-200); padding:1.5rem 1.25rem 1.75rem; position:relative; text-align:center; }
+.back-link { position:absolute; top:1.25rem; left:1.25rem; display:inline-flex; align-items:center; gap:0.5rem; font-size:0.875rem; color:var(--slate-500); text-decoration:none; transition:color 0.2s; }
+.back-link:hover { color:var(--accent-dark); }
+.back-link svg { width:16px; height:16px; }
+.logo svg { width:56px; height:56px; }
+.title { font-size:1.625rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.03em; line-height:1.2; margin-top:0.5rem; }
+.subtitle { font-size:0.9375rem; color:var(--slate-500); max-width:34rem; margin:0.125rem auto 0; }
+
+.main { flex:1; width:100%; max-width:880px; margin:0 auto; padding:1.25rem 1rem 3rem; display:flex; flex-direction:column; gap:1rem; }
+.card { background:var(--wit); border:1px solid var(--slate-200); border-radius:16px; box-shadow:0 1px 2px rgba(15,23,42,0.04); }
+.card-head { display:flex; align-items:center; gap:0.5rem; padding:1rem 0.75rem 0.5rem 1.125rem; }
+.card-title { flex:1; min-width:0; font-size:1.0625rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.01em; }
+.project { flex:1; min-width:0; font-size:1.25rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.02em; border:0; background:none; outline:none; padding:0.125rem 0; border-bottom:1.5px solid transparent; }
+.project:focus { border-bottom-color:var(--accent); }
+.project::placeholder { color:var(--slate-300); }
+.icon-btn { width:38px; height:38px; display:flex; align-items:center; justify-content:center; border-radius:10px; color:var(--slate-500); flex-shrink:0; }
+.icon-btn:hover { background:var(--slate-100); color:var(--slate-700); }
+.icon-btn svg { width:20px; height:20px; }
+.menu-wrap { position:relative; }
+.menu { display:none; position:absolute; right:0; top:calc(100% + 4px); z-index:50; min-width:230px; background:var(--wit); border:1px solid var(--slate-200); border-radius:12px; box-shadow:0 12px 32px rgba(15,23,42,0.14); padding:0.375rem; }
+.menu.open { display:block; }
+.menu button { width:100%; display:flex; align-items:center; gap:0.625rem; padding:0.5625rem 0.625rem; border-radius:8px; font-size:0.9375rem; text-align:left; color:var(--slate-700); white-space:nowrap; }
+.menu button:hover { background:var(--slate-100); }
+.menu button svg { width:18px; height:18px; color:var(--slate-500); flex-shrink:0; }
+.menu .sep { height:1px; background:var(--slate-100); margin:0.25rem 0.375rem; }
+.menu .danger, .menu .danger svg { color:var(--rood); }
+.warn { margin:0 1.125rem 1rem; font-size:0.8125rem; color:#92400e; background:var(--oranje-50); border:1px solid #fde68a; border-radius:10px; padding:0.5rem 0.75rem; }
+
+/* Aanpak */
+.todo { list-style:none; padding:0 1.125rem 0.5rem; }
+.todo li { display:flex; gap:0.625rem; padding:0.625rem 0; border-top:1px solid var(--slate-100); font-size:0.9375rem; color:var(--slate-700); }
+.todo li:first-child { border-top:0; }
+.todo li::before { content:''; flex-shrink:0; width:8px; height:8px; margin-top:0.5rem; border-radius:50%; background:var(--accent); }
+.todo li.k::before { background:var(--oranje); }
+.todo a { font-weight:600; }
+.notes { padding:0 1.125rem 1.125rem; }
+.notes textarea { width:100%; min-height:5.5rem; resize:vertical; padding:0.625rem 0.75rem; border:1.5px solid var(--slate-200); border-radius:10px; background:var(--slate-50); outline:none; font-size:0.9375rem; line-height:1.5; }
+.notes textarea:focus { border-color:var(--accent); background:var(--wit); }
+.lbl { display:block; font-size:0.75rem; font-weight:600; color:var(--slate-500); margin-bottom:0.3125rem; }
+
+.restart-row { display:flex; justify-content:center; }
+.restart-btn { min-height:44px; padding:0.5rem 1rem; font:inherit; font-size:0.875rem; font-weight:500; color:var(--slate-500, #64748b); background:none; border:0; border-radius:10px; cursor:pointer; text-decoration:underline; text-decoration-color:#cbd5e1; text-underline-offset:3px; }
+.restart-btn:hover { color:#b91c1c; background:#fef2f2; text-decoration-color:currentColor; }
+.explain { background:var(--wit); border:1px solid var(--slate-200); border-radius:16px; }
+.explain summary { padding:0.875rem 1.125rem; font-weight:600; color:var(--slate-700); cursor:pointer; list-style:none; display:flex; align-items:center; justify-content:space-between; }
+.explain summary::-webkit-details-marker { display:none; }
+.explain summary::after { content:'+'; color:var(--slate-500); font-size:1.25rem; font-weight:400; }
+.explain[open] summary::after { content:'−'; }
+.explain .inner { padding:0 1.125rem 1.125rem; font-size:0.9375rem; color:var(--slate-600); }
+.explain .inner p + p, .explain .inner ul { margin-top:0.5rem; }
+.explain .inner ul { padding-left:1.125rem; }
+
+.toast { position:fixed; left:50%; bottom:calc(var(--bottom) + 1.25rem); transform:translate(-50%, 200%); visibility:hidden; z-index:100; display:flex; align-items:center; gap:0.75rem; background:var(--slate-800); color:var(--wit); padding:0.625rem 0.75rem 0.625rem 1rem; border-radius:12px; font-size:0.875rem; box-shadow:0 10px 30px rgba(15,23,42,0.25); max-width:calc(100% - 2rem); transition:transform 0.25s ease, visibility 0s 0.25s; }
+.toast.show { transform:translate(-50%, 0); visibility:visible; transition:transform 0.25s ease; }
+.toast button { color:#6ee7b7; font-weight:600; padding:0.25rem 0.5rem; border-radius:6px; }
+
+.footer { text-align:center; padding:2rem 2rem calc(var(--bottom) + 2rem); border-top:1px solid var(--slate-200); background:var(--wit); }
+.quote { font-size:0.8125rem; color:var(--accent-dark); }
+@media (max-width:480px) { .card-hint { display:none; } .back-link span { display:none; } .bar { grid-template-columns:6rem minmax(0,1fr) 4.5rem; } }
+
+.oc-import{display:inline-flex;align-items:center;gap:.375rem;font:inherit;font-size:.8125rem;font-weight:600;color:#047857;background:#fff;border:1px dashed #a7f3d0;border-radius:999px;padding:.3125rem .75rem;cursor:pointer;white-space:nowrap}
+@media(hover:hover){.oc-import:hover{background:#ecfdf5;border-color:#10b981}} .oc-import svg{width:15px;height:15px}
+/* Toegankelijkheid (audit oktober 2026) */
+:focus-visible { outline:2px solid #047857 !important; outline-offset:2px; }
+.back-link { min-height:44px; min-width:44px; }
+.icon-btn, #menu-btn { min-width:44px; min-height:44px; }
+.tab { min-height:44px; }
+.btn { min-height:44px; }
+.views button { color:var(--slate-600); min-height:44px; }
+.views button[aria-selected="true"] { color:var(--slate-800); }
+.views small { color:var(--slate-600); }
+.explain summary { min-height:44px; }
+@media (max-width:480px) { .back-link { top:0.75rem; left:0.75rem; justify-content:center; } }
+.ocw-row .ocw-yes { background:#dc2626; } .ocw-row .ocw-yes:hover { background:#b91c1c; }
+.ocw-row button { min-height:44px; }
+button.oc-import { color:#047857; min-height:44px; }
+/* Stroom */
+.main { max-width:1240px; }
+.tabs { display:flex; gap:0.375rem; flex-wrap:wrap; align-items:center; }
+.tab { min-height:44px; padding:0.375rem 0.875rem; border-radius:999px; border:1px solid var(--slate-200); background:var(--wit); font-size:0.875rem; font-weight:600; color:var(--slate-600); display:inline-flex; align-items:center; gap:0.375rem; max-width:16rem; }
+.tab span.nm { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tab[aria-pressed="true"] { background:var(--slate-800); border-color:var(--slate-800); color:var(--wit); }
+.tab.add { color:var(--accent-dark); border-style:dashed; border-color:#a7f3d0; }
+.layout { display:grid; grid-template-columns:minmax(0,1fr); gap:1rem; align-items:start; }
+@media (min-width:1000px) { .layout { grid-template-columns:minmax(420px,1fr) minmax(0,1fr); } .draw-card { position:sticky; top:1rem; } .views { display:none !important; } .layout > section[hidden] { display:block !important; } }
+.views { display:flex; gap:0.25rem; padding:3px; background:var(--slate-100); border-radius:12px; }
+.views button { flex:1; min-height:44px; border-radius:9px; font-size:0.9375rem; font-weight:600; color:var(--slate-600); }
+.views button[aria-selected="true"] { background:var(--wit); color:var(--slate-800); box-shadow:0 1px 2px rgba(15,23,42,0.08); }
+
+.sub-h { display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; padding:0.25rem 1.125rem 0.5rem; }
+.sub-h b { font-size:0.8125rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--slate-500); flex:1; min-width:6rem; }
+.lanes { display:flex; flex-wrap:wrap; gap:0.375rem; padding:0 1.125rem 0.75rem; }
+.lane-chip { display:inline-flex; align-items:center; gap:0.125rem; padding:0 0 0 0.75rem; min-height:44px; border-radius:999px; background:var(--slate-100); font-size:0.875rem; color:var(--slate-700); }
+.lane-chip input { border:0; background:none; outline:none; width:8.5rem; min-width:0; font-weight:600; padding:0.25rem 0; }
+.lane-chip button { width:44px; height:44px; border-radius:50%; color:var(--slate-500); display:flex; align-items:center; justify-content:center; }
+.lane-chip button:hover { background:#fee2e2; color:#b91c1c; }
+.lane-chip button svg { width:14px; height:14px; }
+.chip-add { min-height:44px; padding:0 0.75rem; border-radius:999px; border:1px dashed #a7f3d0; color:var(--accent-dark); font-size:0.875rem; font-weight:600; }
+.hint-s { font-size:0.8125rem; color:var(--slate-500); padding:0 1.125rem 0.75rem; }
+
+.rows { list-style:none; padding:0 0.75rem 0.5rem; display:flex; flex-direction:column; gap:0.5rem; }
+.row { border:1px solid var(--slate-200); border-radius:12px; padding:0.5rem 0.5rem 0.5rem 0.625rem; background:var(--wit); }
+.row.t-keuze { border-color:#fcd34d; background:#fffdf5; }
+.row.t-start, .row.t-einde { border-color:#a7f3d0; background:#f6fefb; }
+.row-top { display:grid; grid-template-columns:auto auto minmax(0,1fr) auto; gap:0.375rem; align-items:center; }
+.num { width:26px; height:26px; border-radius:50%; background:var(--slate-100); color:var(--slate-600); font-size:0.75rem; font-weight:700; display:flex; align-items:center; justify-content:center; }
+.sel { min-height:40px; padding:0.25rem 1.5rem 0.25rem 0.5rem; border:1.5px solid var(--slate-200); border-radius:9px; background:var(--slate-50); font-size:0.8125rem; color:var(--slate-700); max-width:100%; min-width:0; }
+.sel:focus, .txt:focus { border-color:var(--accent); background:var(--wit); outline:none; }
+.txt { width:100%; min-width:0; min-height:40px; padding:0.375rem 0.625rem; border:1.5px solid var(--slate-200); border-radius:9px; background:var(--slate-50); font-size:0.9375rem; }
+.row-acts { display:flex; }
+.row-acts button { width:40px; height:44px; border-radius:9px; color:var(--slate-500); display:flex; align-items:center; justify-content:center; }
+.row-acts button:hover { background:var(--slate-100); color:var(--slate-800); }
+.row-acts button.del:hover { background:#fef2f2; color:#b91c1c; }
+.row-acts button:disabled { opacity:0.35; cursor:default; background:none; }
+.row-acts svg { width:18px; height:18px; }
+.row-more { display:flex; flex-wrap:wrap; gap:0.375rem 0.75rem; align-items:center; margin:0.375rem 0 0 2rem; font-size:0.8125rem; color:var(--slate-600); }
+.row-more label { display:inline-flex; align-items:center; gap:0.375rem; min-width:0; max-width:100%; }
+.row-more .lab { width:4.25rem; min-height:36px; padding:0.25rem 0.375rem; border:1.5px solid var(--slate-200); border-radius:8px; background:var(--slate-50); font-size:0.8125rem; }
+.adders { display:flex; flex-wrap:wrap; gap:0.375rem; padding:0.25rem 1.125rem 1rem; }
+.adders button { min-height:44px; padding:0 0.875rem; border-radius:10px; border:1px solid var(--slate-200); background:var(--wit); font-size:0.875rem; font-weight:600; color:var(--slate-700); display:inline-flex; align-items:center; gap:0.375rem; }
+.adders button:hover { border-color:#a7f3d0; background:var(--accent-50); }
+.adders .shape { width:16px; height:12px; display:inline-block; border:1.75px solid currentColor; border-radius:3px; }
+.adders .shape.d { width:12px; height:12px; transform:rotate(45deg) scale(0.85); border-radius:1px; color:#b45309; }
+.adders .shape.p { border-radius:99px; color:var(--accent-dark); }
+.imports { display:flex; flex-wrap:wrap; gap:0.375rem; padding:0 1.125rem 1rem; }
+
+.draw-head { display:flex; align-items:center; gap:0.5rem; padding:0.875rem 0.75rem 0.5rem 1.125rem; }
+.draw-head .card-title { flex:1; }
+.zoom { min-height:44px; padding:0 0.75rem; border-radius:10px; font-size:0.8125rem; font-weight:600; color:var(--slate-600); border:1px solid var(--slate-200); }
+.canvas { overflow:auto; padding:0.25rem 0.5rem 0.75rem; -webkit-overflow-scrolling:touch; }
+.canvas svg { display:block; margin:0 auto; }
+.empty-draw { padding:2rem 1.25rem 2.25rem; text-align:center; color:var(--slate-500); font-size:0.9375rem; }
+.hints { list-style:none; padding:0 1.125rem 1rem; display:grid; gap:0.375rem; }
+.hints li { display:flex; gap:0.5rem; font-size:0.8125rem; color:#92400e; background:var(--oranje-50); border:1px solid #fde68a; border-radius:10px; padding:0.4375rem 0.625rem; }
+.hints li.ok { color:#065f46; background:var(--accent-50); border-color:#a7f3d0; }
+.hints a, .hints button.lnk { color:inherit; font-weight:700; text-decoration:underline; background:none; border:0; padding:0; cursor:pointer; font:inherit; }
+
+.vb-bar { display:flex; flex-wrap:wrap; align-items:center; gap:0.5rem 0.75rem; margin:0 1rem 0.75rem; padding:0.5rem 0.5rem 0.5rem 0.75rem; background:#fffbeb; border:1px solid #fde68a; border-radius:12px; font-size:0.875rem; line-height:1.4; color:#78350f; }
+.vb-bar svg { width:18px; height:18px; flex-shrink:0; color:#b45309; }
+.vb-text { flex:1 1 14rem; min-width:0; display:flex; gap:0.5rem; align-items:flex-start; }
+.vb-btns { display:flex; flex-wrap:wrap; gap:0.375rem; }
+.vb-btn { min-height:44px; padding:0.375rem 0.625rem; border-radius:10px; font-size:0.875rem; font-weight:600; background:var(--wit); border:1px solid var(--slate-200); }
+.vb-wis { color:#b91c1c; border-color:#fecaca; }
+.vb-eigen { color:var(--accent-dark); border-color:#a7f3d0; }
+.vb-tag { font-size:0.6875rem; font-weight:600; padding:0 0.375rem; border-radius:999px; background:#fef3c7; color:#92400e; }
+.tab[aria-pressed="true"] .vb-tag { background:#fde68a; }
+.icon-btn.del-unit:hover { color:#b91c1c; background:#fef2f2; }
+.start-card { padding:1.5rem 1.25rem; text-align:center; }
+.start-card p { color:var(--slate-600); margin-bottom:0.875rem; }
+.start-card .btns { display:flex; gap:0.5rem; justify-content:center; flex-wrap:wrap; }
+.btn { min-height:44px; padding:0.5rem 1rem; border-radius:10px; font-weight:600; font-size:0.9375rem; }
+.btn-primary { background:var(--accent-dark); color:var(--wit); }
+.btn-primary:hover { background:var(--accent-hover); }
+.btn-ghost { background:var(--slate-100); color:var(--slate-700); }
+@media (max-width:520px) {
+  .row-top { grid-template-columns:auto minmax(0,1fr) auto; }
+  .row-top .sel.type { grid-column:1 / span 2; grid-row:2; justify-self:start; }
+  .row-more { margin-left:0; }
+  .lane-chip input { width:6.5rem; }
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <a href="https://onderconstructie.github.io/projectmanagement/" class="back-link" aria-label="Terug naar Projectmanagement">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    <span>Projectmanagement</span>
+  </a>
+  <div class="logo">
+    <svg viewBox="0 0 80 80" fill="none" aria-hidden="true">
+      <circle cx="40" cy="40" r="36" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2"/>
+      <g transform="scale(2)"><rect x="13" y="5" width="14" height="7" rx="3.5" fill="#10b981"/><path d="M20 12v3M20 24v4" stroke="#334155" stroke-width="1.6"/><path d="M20 15l5 4.5-5 4.5-5-4.5z" fill="#fffbeb" stroke="#d97706" stroke-width="1.6" stroke-linejoin="round"/><rect x="13" y="28" width="14" height="7" rx="2" fill="#ffffff" stroke="#334155" stroke-width="1.6"/><path d="M25 19.5h5v12h-3" stroke="#334155" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g>
+    </svg>
+  </div>
+  <h1 class="title">Stroom</h1>
+  <p class="subtitle">Typ de stappen onder elkaar. De tekening volgt vanzelf.</p>
+</header>
+
+<main class="main">
+  <div class="tabs" id="tabs" role="toolbar" aria-label="Stromen"></div>
+  <div id="app"></div>
+
+  <div class="restart-row"><button type="button" class="restart-btn" id="oc-restart">Opnieuw beginnen</button></div>
+
+  <details class="explain">
+    <summary>Hoe werkt dit?</summary>
+    <div class="inner">
+      <p>Je tekent niet met de muis: je schrijft de stappen in volgorde, en de tool zet ze onder elkaar met pijlen. Een stap gaat standaard naar de volgende. Wil je dat anders, kies dan bij "daarna" een andere stap.</p>
+      <ul>
+        <li><b>Start</b> en <b>einde</b>: waar het proces begint en stopt.</li>
+        <li><b>Stap</b>: iets dat iemand doet. Begin met een werkwoord: "Aanvraag registreren".</li>
+        <li><b>Keuze</b>: een vraag met twee uitwegen, standaard ja en nee. "Ja" gaat naar de volgende stap, "nee" kies je zelf. Zo maak je ook een lus terug.</li>
+      </ul>
+      <p><b>Rollen</b> zijn optioneel. Geef je ze op, dan krijgt elke rol een eigen baan en zie je meteen waar het werk van hand wisselt. Elke overdracht is een plek waar het kan haperen.</p>
+      <p>Tip voor een verandering: maak de stroom van vandaag, kies "Dupliceer" in het menu, en pas de kopie aan naar hoe het straks moet lopen. Zo zie je in de <a href="https://onderconstructie.github.io/gap/">Gap-analyse</a> precies wat er verandert.</p>
+      <p>De stappen en rollen liggen klaar voor andere tools, bijvoorbeeld om in de <a href="https://onderconstructie.github.io/raci/">RACI-matrix</a> te bepalen wie wat doet.</p>
+    </div>
+  </details>
+</main>
+
+<footer class="footer">
+  <p class="quote">Wie de stroom tekent, ziet waar het water blijft staan.</p>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-text"></span><button id="toast-btn" hidden>Ongedaan</button></div>
+
+<script>
+/* ---------- Overnemen tussen tools (gedeeld door de Onder Constructie-tools, v2) ----------
+   Alle tools draaien op hetzelfde domein en delen dus localStorage. Elke tool legt wat hij te bieden
+   heeft klaar onder 'oc.share.<tool-id>', in een vaste vorm, zodat andere tools het kunnen overnemen
+   zonder elkaars binnenkant te kennen.
+
+   Soorten (type):
+     'betrokkene'  persoon, rol, stakeholder, doelgroep of team   { text, note? }
+     'taak'        iets dat gedaan moet worden                     { text, note? }
+     'actie'       taak met eigenaar en/of termijn                 { text, who?, when? }
+     'risico'      risico met kans en impact                       { text, note? }
+
+   Gebruik:
+     ocShare.publish('raci', 'RACI-matrix', [
+       { name:'Heraanleg stadspark', items:[ { type:'betrokkene', text:'Projectleider' }, { type:'taak', text:'Budget goedkeuren' } ] }
+     ]);                                   // aanroepen na elke bewaring
+     ocShare.clear('raci');                // bij "Alles wissen"
+     const gekozen = await ocShare.pick({ types:['betrokkene'], self:'weerstand', title:'Doelgroepen overnemen' });
+     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source en .list erbij)
+*/
+const ocShare = (() => {
+  const PREFIX = 'oc.share.';
+  const LABEL = { betrokkene:'betrokkenen', taak:'taken', actie:'acties', risico:"risico's" };
+  const esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+
+  function publish(id, tool, lists) {
+    try {
+      const clean = (lists || []).map(l => ({
+        name: String(l.name || '').slice(0, 80),
+        items: (l.items || []).filter(i => i && i.type && String(i.text || '').trim())
+          .slice(0, 300).map(i => ({ type:i.type, text:String(i.text).trim().slice(0, 300),
+            note: i.note ? String(i.note).slice(0, 200) : undefined, who: i.who || undefined, when: i.when || undefined }))
+      })).filter(l => l.items.length);
+      if (!clean.length) { localStorage.removeItem(PREFIX + id); return; }
+      localStorage.setItem(PREFIX + id, JSON.stringify({ id, tool, updated: Date.now(), lists: clean }));
+    } catch {}
+  }
+  function clear(id) { try { localStorage.removeItem(PREFIX + id); } catch {} }
+
+  // Elke bron apart: één kapotte sleutel mag de andere niet verbergen.
+  function sources(types, self) {
+    const out = [];
+    let keys = [];
+    try { for (let i = 0; i < localStorage.length; i++) keys.push(localStorage.key(i)); } catch { return out; }
+    keys.forEach(k => {
+      if (!k || !k.startsWith(PREFIX) || k === PREFIX + self) return;
+      try {
+        const d = JSON.parse(localStorage.getItem(k));
+        if (!d || !Array.isArray(d.lists)) return;
+        d.lists.forEach(l => {
+          if (!l || !Array.isArray(l.items)) return;
+          const items = l.items.filter(it => it && types.includes(it.type) && typeof it.text === 'string');
+          if (items.length) out.push({ tool: String(d.tool || d.id || k.slice(PREFIX.length)), id: d.id, updated: +d.updated || 0, list: String(l.name || ''), items });
+        });
+      } catch {}
+    });
+    return out.sort((a, b) => (b.updated || 0) - (a.updated || 0));
+  }
+
+  let styled = false;
+  function style() {
+    if (styled) return; styled = true;
+    const s = document.createElement('style');
+    s.textContent = `
+      .ocs-back{position:fixed;inset:0;z-index:10000;display:flex;align-items:flex-end;justify-content:center;background:rgba(15,23,42,.45);
+        backdrop-filter:blur(3px);opacity:0;transition:opacity .15s;font-family:'DM Sans',system-ui,sans-serif}
+      @media(min-width:640px){.ocs-back{align-items:center;padding:1rem}}
+      .ocs-back.open{opacity:1}
+      .ocs{width:100%;max-width:520px;max-height:min(86vh,720px);display:flex;flex-direction:column;background:#fff;border-radius:18px 18px 0 0;
+        box-shadow:0 20px 50px rgba(15,23,42,.25);transform:translateY(12px);transition:transform .15s;color:#1e293b}
+      @media(min-width:640px){.ocs{border-radius:18px}}
+      .ocs-back.open .ocs{transform:none}
+      .ocs-head{padding:1.125rem 1.25rem .75rem;border-bottom:1px solid #e2e8f0}
+      .ocs-title{font-size:1.125rem;font-weight:700;letter-spacing:-.02em}
+      .ocs-sub{font-size:.8125rem;color:#64748b;margin-top:.125rem}
+      .ocs-body{overflow:auto;padding:.5rem 1.25rem 1rem;flex:1}
+      .ocs-src{margin-top:.875rem}
+      .ocs-src-head{display:flex;align-items:center;gap:.5rem;padding:.375rem 0}
+      .ocs-src-head b{font-size:.9375rem}
+      .ocs-src-head span{font-size:.75rem;color:#64748b}
+      .ocs-all{margin-left:auto;font:inherit;font-size:.8125rem;color:#047857;background:none;border:0;cursor:pointer;padding:.25rem .5rem;min-height:44px;border-radius:6px}
+      .ocs-all:hover{background:#d1fae5}
+      .ocs-item{display:flex;align-items:flex-start;gap:.625rem;padding:.625rem .25rem;min-height:44px;box-sizing:border-box;border-top:1px solid #f1f5f9;cursor:pointer;font-size:.9375rem;line-height:1.4}
+      .ocs-item input{width:18px;height:18px;margin-top:.125rem;accent-color:#10b981;flex:none}
+      .ocs-item small{display:block;font-size:.75rem;color:#64748b}
+      .ocs-empty{padding:1.5rem .25rem;color:#64748b;font-size:.9375rem;line-height:1.5}
+      .ocs-foot{display:flex;gap:.5rem;justify-content:flex-end;padding:.875rem 1.25rem calc(.875rem + env(safe-area-inset-bottom,0px));border-top:1px solid #e2e8f0}
+      .ocs-btn{font:inherit;font-size:.9375rem;font-weight:600;padding:.625rem 1rem;min-height:44px;border-radius:10px;border:0;cursor:pointer}
+      .ocs-cancel{background:#f1f5f9;color:#475569}
+      .ocs-ok{background:#047857;color:#fff}.ocs-ok:hover{background:#065f46}
+      .ocs-ok:disabled{background:#cbd5e1;color:#334155;cursor:default}
+      .ocs-back :focus-visible{outline:2px solid #047857;outline-offset:2px}`;
+    document.head.appendChild(s);
+  }
+
+  function pick({ types, self, title, intro }) {
+    style();
+    return new Promise(resolve => {
+      const src = sources(types, self);
+      const back = document.createElement('div');
+      back.className = 'ocs-back';
+      const what = types.map(t => LABEL[t] || t).join(' of ');
+      back.innerHTML = `<div class="ocs" role="dialog" aria-modal="true" aria-label="${esc(title || 'Overnemen')}">
+        <div class="ocs-head"><div class="ocs-title">${esc(title || 'Overnemen uit een andere tool')}</div>
+          <div class="ocs-sub">${esc(intro || `Kies welke ${what} je wil overnemen.`)}</div></div>
+        <div class="ocs-body">${src.length ? src.map((s, si) => `
+          <div class="ocs-src"><div class="ocs-src-head"><b>${esc(s.tool)}</b><span>${esc(s.list)} · ${s.items.length}</span>
+            <button class="ocs-all" type="button" data-all="${si}">alles</button></div>
+            ${s.items.map((it, ii) => `<label class="ocs-item"><input type="checkbox" data-s="${si}" data-i="${ii}">
+              <span>${esc(it.text)}${it.who || it.when || it.note ? `<small>${esc([it.who, it.when, it.note].filter(Boolean).join(' · '))}</small>` : ''}</span></label>`).join('')}
+          </div>`).join('') : `<p class="ocs-empty">Er zijn nog geen ${esc(what)} om over te nemen. Vul ze eerst in een andere tool in (bijvoorbeeld de Stakeholder Radar, de RACI-matrix of de Gap-analyse), dan verschijnen ze hier.</p>`}
+        </div>
+        <div class="ocs-foot"><button class="ocs-btn ocs-cancel" type="button">Annuleer</button>
+          <button class="ocs-btn ocs-ok" type="button" disabled>Neem over</button></div></div>`;
+      document.body.appendChild(back);
+      requestAnimationFrame(() => back.classList.add('open'));
+      const ok = back.querySelector('.ocs-ok');
+      const boxes = () => [...back.querySelectorAll('input[type=checkbox]')];
+      const sync = () => { const n = boxes().filter(b => b.checked).length; ok.disabled = !n; ok.textContent = n ? `Neem ${n} over` : 'Neem over'; };
+      back.addEventListener('change', sync);
+      back.addEventListener('click', e => {
+        const a = e.target.closest('[data-all]');
+        if (a) { const bs = boxes().filter(b => b.dataset.s === a.dataset.all); const all = bs.every(b => b.checked); bs.forEach(b => b.checked = !all); sync(); }
+        if (e.target === back) close([]);
+      });
+      function close(v) { document.removeEventListener('keydown', onKey, true); back.remove(); resolve(v); }
+      function onKey(e) { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close([]); } }
+      document.addEventListener('keydown', onKey, true);
+      back.querySelector('.ocs-cancel').addEventListener('click', () => close([]));
+      ok.addEventListener('click', () => close(boxes().filter(b => b.checked).map(b => {
+        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, list: s.list };
+      })));
+      const first = back.querySelector('input,.ocs-cancel'); first && first.focus();
+    });
+  }
+
+  // Hoeveel er klaarligt voor deze soorten (om een knop te tonen of een teller te zetten).
+  const count = (types, self) => sources(types, self).reduce((n, s) => n + s.items.length, 0);
+  return { publish, clear, pick, count, sources, esc };
+})();
+
+/* ---------- Download als afbeelding of PDF (gedeeld door de Onder Constructie-tools, v2) ----------
+   Gebruik:
+     ocExport.png(bouwFn, 'bestandsnaam', { landscape:true })
+     ocExport.pdf(bouwFn, 'bestandsnaam', { landscape:true })
+   bouwFn() geeft { node, title, subtitle } terug: een DOM-knoop met inline styles, zonder knoppen of invoervelden.
+   Die komt buiten beeld op een witte pagina met kop (titel, ondertitel, datum) en voet.
+   Zet data-oc-keep op blokken die in een PDF niet over twee pagina's gesplitst mogen worden
+   (een beslissing, een kaartje, een rij); ze schuiven dan door naar de volgende pagina.
+   html2canvas en jsPDF worden pas geladen bij de eerste download, van dezelfde adressen als de
+   andere tools, zodat de app ze offline kan bewaren. */
+const ocExport = (() => {
+  const LIBS = {
+    h2c: 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
+    pdf: 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
+  };
+  const A4 = { w: 210, h: 297 }, MARGIN = 10;   // mm
+  const loaded = {};
+  function load(url) {
+    if (!loaded[url]) loaded[url] = new Promise((ok, fail) => {
+      const s = document.createElement('script');
+      s.src = url; s.onload = ok; s.onerror = () => { delete loaded[url]; fail(new Error('laden mislukt')); };
+      document.head.appendChild(s);
+    });
+    return loaded[url];
+  }
+  const today = () => new Date().toLocaleDateString('nl-BE', { day: 'numeric', month: 'long', year: 'numeric' });
+  function page(content, { title, subtitle, width }) {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = `position:fixed;left:-20000px;top:0;width:${width}px;background:#fff;padding:36px 40px 28px;
+      font-family:'DM Sans',system-ui,-apple-system,sans-serif;color:#1e293b;-webkit-font-smoothing:antialiased;box-sizing:border-box;`;
+    const head = document.createElement('div');
+    head.style.cssText = 'display:flex;align-items:flex-end;justify-content:space-between;gap:24px;border-bottom:2px solid #10b981;padding-bottom:12px;margin-bottom:20px;';
+    head.innerHTML = `<div><div style="font-size:22px;font-weight:700;letter-spacing:-0.02em;color:#1e293b"></div>
+      <div style="font-size:14px;color:#64748b;margin-top:2px"></div></div>
+      <div style="font-size:12px;color:#94a3b8;white-space:nowrap">${today()}</div>`;
+    head.children[0].children[0].textContent = title || '';
+    head.children[0].children[1].textContent = subtitle || '';
+    const foot = document.createElement('div');
+    foot.style.cssText = 'margin-top:22px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;display:flex;justify-content:space-between;';
+    foot.innerHTML = '<span>Onder Constructie</span><span>onderconstructie.github.io</span>';
+    wrap.append(head, content, foot);
+    document.body.appendChild(wrap);
+    return wrap;
+  }
+  // Schuift blokken met data-oc-keep die over een paginagrens zouden vallen naar de volgende pagina.
+  function keepTogether(wrap, pageH) {
+    const top0 = () => wrap.getBoundingClientRect().top;
+    for (const el of wrap.querySelectorAll('[data-oc-keep]')) {
+      const r = el.getBoundingClientRect(), t = r.top - top0(), b = t + r.height;
+      if (r.height > pageH * 0.85) continue;            // te groot om heel te houden
+      const boundary = Math.ceil(t / pageH) * pageH;     // eerstvolgende grens na de bovenkant
+      if (t % pageH !== 0 && b > boundary && t < boundary) {
+        const gap = document.createElement('div');
+        gap.style.cssText = `height:${boundary - t + 6}px;`;
+        el.parentNode.insertBefore(gap, el);
+      }
+    }
+  }
+  async function canvasOf(build, opts) {
+    await load(LIBS.h2c);
+    const built = build();
+    const node = page(built.node, { title: built.title, subtitle: built.subtitle, width: opts.width });
+    try {
+      if (document.fonts && document.fonts.ready) await document.fonts.ready;
+      if (opts.pageH) keepTogether(node, opts.pageH);
+      return await window.html2canvas(node, { scale: 2, backgroundColor: '#ffffff', logging: false, useCORS: true });
+    } finally { node.remove(); }
+  }
+  function save(blob, name) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }
+  const widthFor = opts => opts.width || (opts.landscape ? 1120 : 800);
+  async function png(build, name, opts = {}) {
+    const c = await canvasOf(build, { width: widthFor(opts) });
+    await new Promise(ok => c.toBlob(b => { save(b, name + '.png'); ok(); }, 'image/png'));
+  }
+  async function pdf(build, name, opts = {}) {
+    const landscape = !!opts.landscape, width = widthFor(opts);
+    const pw = landscape ? A4.h : A4.w, ph = landscape ? A4.w : A4.h, w = pw - 2 * MARGIN;
+    const pageCss = (ph - 2 * MARGIN) / w * width;       // paginahoogte in CSS-pixels van de exportknoop
+    const [c] = await Promise.all([canvasOf(build, { width, pageH: pageCss }), load(LIBS.pdf)]);
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: landscape ? 'landscape' : 'portrait', unit: 'mm', format: 'a4' });
+    const scale = w / c.width, pageH = (ph - 2 * MARGIN) / scale;   // paginahoogte in canvaspixels
+    for (let y = 0, i = 0; y < c.height - 2; y += pageH, i++) {
+      const h = Math.min(pageH, c.height - y);
+      const part = document.createElement('canvas'); part.width = c.width; part.height = h;
+      part.getContext('2d').drawImage(c, 0, y, c.width, h, 0, 0, c.width, h);
+      if (i) doc.addPage();
+      doc.addImage(part.toDataURL('image/jpeg', 0.92), 'JPEG', MARGIN, MARGIN, w, h * scale);
+    }
+    save(doc.output('blob'), name + '.pdf');
+  }
+  return { png, pdf };
+})();
+
+/* ---------- Stroom ---------- */
+const OC_ID = 'stroom', OC_TOOL = 'Stroom', KEY = 'stroom.v1';
+const $ = id => document.getElementById(id);
+const esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const uid = () => Math.random().toString(36).slice(2, 10);
+const TYPES = { start:'Start', stap:'Stap', keuze:'Keuze', einde:'Einde' };
+const ICON = {
+  up:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>',
+  down:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>',
+  del:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>',
+  x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  imp:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>',
+  info:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>'
+};
+
+/* Opslag */
+const node = (type, text = '', lane = null) => ({ id:uid(), type, text, lane, to:'auto', no: type === 'keuze' ? 'none' : undefined, yesLabel:'ja', noLabel:'nee' });
+function newFlow(name) { return { id:uid(), name: name || 'Nieuwe stroom', lanes:[], nodes:[node('start', 'Start'), node('stap', ''), node('einde', 'Einde')] }; }
+function fresh() { return { flows:[], current:null, view:'edit', fit:true }; }
+function valid(s) {
+  if (!s || !Array.isArray(s.flows)) return fresh();
+  s.flows = s.flows.filter(f => f && Array.isArray(f.nodes)).map(f => ({
+    id: /^[\w-]+$/.test(f.id) ? f.id : uid(), name: String(f.name || 'Stroom').slice(0, 80), voorbeeld: !!f.voorbeeld,
+    lanes: (Array.isArray(f.lanes) ? f.lanes : []).filter(l => l && /^[\w-]+$/.test(l.id)).map(l => ({ id:l.id, name:String(l.name || '').slice(0, 40) })),
+    nodes: f.nodes.filter(n => n && /^[\w-]+$/.test(n.id) && TYPES[n.type]).map(n => ({ id:n.id, type:n.type, text:String(n.text || '').slice(0, 160),
+      lane: /^[\w-]+$/.test(n.lane || '') ? n.lane : null, to: typeof n.to === 'string' ? n.to : 'auto', no: typeof n.no === 'string' ? n.no : (n.type === 'keuze' ? 'none' : undefined),
+      yesLabel: String(n.yesLabel ?? 'ja').slice(0, 20), noLabel: String(n.noLabel ?? 'nee').slice(0, 20) }))
+  }));
+  return { ...fresh(), ...s, flows:s.flows };
+}
+function load() { try { return valid(JSON.parse(localStorage.getItem(KEY))); } catch { return fresh(); } }
+let state = load(), saves = 0;
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch { toast('Bewaren lukte niet: is de opslag vol?'); }
+  saves++; clearTimeout(save.t); save.t = setTimeout(publish, 300);
+}
+// Ongedaan maken kan zolang er na de melding niets anders bewaard werd (de melding legt het moment vast).
+const snapshot = () => { const c = JSON.stringify(state); const fn = () => { if (saves !== fn.mark) { setTimeout(() => toast('Ongedaan maken kan niet meer: er is intussen iets veranderd'), 60); return; } state = valid(JSON.parse(c)); save(); render(); toast('Teruggezet'); }; return fn; };
+const cur = () => state.flows.find(f => f.id === state.current) || state.flows[0] || null;
+
+/* Verbindingen: 'auto' = de volgende in de lijst, 'none' = geen pijl, anders een id */
+function target(f, n, key) {
+  const v = n[key], i = f.nodes.indexOf(n);
+  if (v === 'auto') return f.nodes[i + 1] || null;
+  if (!v || v === 'none') return null;
+  return f.nodes.find(x => x.id === v) || null;
+}
+function edges(f) {
+  const out = [];
+  f.nodes.forEach(n => {
+    if (n.type === 'einde') return;
+    const a = target(f, n, 'to');
+    if (n.type === 'keuze') {
+      const b = target(f, n, 'no');
+      if (a && b && a === b) out.push({ from:n, to:a, label:`${n.yesLabel} / ${n.noLabel}` });
+      else { if (a) out.push({ from:n, to:a, label:n.yesLabel }); if (b) out.push({ from:n, to:b, label:n.noLabel }); }
+    } else if (a) out.push({ from:n, to:a, label:'' });
+  });
+  return out;
+}
+
+/* Tekening */
+const LW = 196, NW = 164, GAP = 46, CH = 14, PAD = 12;
+function wrap(t, max = 24) {
+  const words = String(t || '').trim().split(/\s+/).filter(Boolean), lines = [];
+  let line = '';
+  words.forEach(w => {
+    while (w.length > max) { if (line) { lines.push(line); line = ''; } lines.push(w.slice(0, max - 1) + '-'); w = w.slice(max - 1); }
+    if ((line + ' ' + w).trim().length > max) { lines.push(line); line = w; } else line = (line + ' ' + w).trim();
+  });
+  if (line) lines.push(line);
+  if (lines.length > 4) { lines.length = 4; lines[3] = lines[3].replace(/.{0,2}$/, '…'); }
+  return lines.length ? lines : [''];
+}
+function layout(f) {
+  const lanes = f.lanes.length ? f.lanes : [{ id:null, name:'' }];
+  const laneIx = n => { const i = lanes.findIndex(l => l.id === n.lane); return i < 0 ? 0 : i; };
+  const top = f.lanes.length ? 46 : PAD;
+  let y = top;
+  const pos = new Map();
+  f.nodes.forEach((n, i) => {
+    const lines = wrap(n.text || (n.type === 'stap' ? '…' : TYPES[n.type]), n.type === 'keuze' ? 17 : 21);
+    const h = n.type === 'keuze' ? Math.max(76, lines.length * 16 + 46) : Math.max(46, lines.length * 16 + 22);
+    const w = n.type === 'keuze' ? NW + 20 : n.type === 'stap' ? NW : NW - 16;
+    const li = laneIx(n), cx = PAD + li * LW + LW / 2;
+    pos.set(n.id, { n, i, lines, w, h, cx, y, cy: y + h / 2, bottom: y + h, li });
+    y += h + GAP;
+  });
+  const E = edges(f).map(e => {
+    const a = pos.get(e.from.id), b = pos.get(e.to.id);
+    return { ...e, a, b, down: b.i === a.i + 1 };
+  });
+  // Sprongen lopen via kanalen rechts; de langste sprong krijgt het buitenste kanaal.
+  const side = E.filter(e => !e.down).sort((p, q) => Math.abs(p.b.i - p.a.i) - Math.abs(q.b.i - q.a.i));
+  side.forEach((e, k) => e.ch = k);
+  const lanesW = PAD * 2 + lanes.length * LW;
+  const width = lanesW + (side.length ? 8 + side.length * CH : 0);
+  return { lanes, top, pos, E, side, lanesW, width, height: Math.max(y - GAP + PAD, top + 40) };
+}
+function svgOf(f, { forExport = false } = {}) {
+  const L = layout(f), parts = [];
+  const font = "font-family=\"'DM Sans', system-ui, sans-serif\"";
+  parts.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${L.width} ${L.height}" width="${L.width}" height="${L.height}" role="img" aria-label="${esc(`Stroom ${f.name}: ${f.nodes.length} stappen`)}" ${font}>`);
+  parts.push(`<defs><marker id="pijl" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#475569"/></marker></defs>`);
+  parts.push(`<rect width="${L.width}" height="${L.height}" fill="#ffffff"/>`);
+  if (f.lanes.length) L.lanes.forEach((l, i) => {
+    const x = PAD + i * LW;
+    parts.push(`<rect x="${x}" y="${PAD - 6}" width="${LW}" height="${L.height - PAD}" fill="${i % 2 ? '#ffffff' : '#f8fafc'}" stroke="#e2e8f0"/>`);
+    parts.push(`<text x="${x + LW / 2}" y="${PAD + 16}" text-anchor="middle" font-size="13" font-weight="700" fill="#334155">${esc(l.name || 'Rol ' + (i + 1))}</text>`);
+  });
+  // pijlen
+  L.E.forEach(e => {
+    const { a, b } = e; let d, lx, ly, anchor = 'start';
+    if (e.down) {
+      const x1 = a.cx, y1 = a.bottom, x2 = b.cx, y2 = b.y;
+      d = x1 === x2 ? `M${x1} ${y1}V${y2 - 1}` : `M${x1} ${y1}V${y1 + GAP / 2}H${x2}V${y2 - 1}`;
+      lx = x1 + 7; ly = y1 + 15;
+    } else {
+      const xs = a.cx + a.w / 2, xc = L.lanesW - PAD + 10 + e.ch * CH, xe = b.cx + b.w / 2;
+      d = `M${xs} ${a.cy}H${xc}V${b.cy}H${xe + 1}`;
+      lx = xs + 6; ly = a.cy - 6;
+    }
+    parts.push(`<path d="${d}" fill="none" stroke="#475569" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#pijl)"/>`);
+    if (e.label) { const lw = e.label.length * 7.2 + 6; parts.push(`<rect x="${lx - 3}" y="${ly - 11}" width="${lw}" height="15" rx="3" fill="#ffffff"/><text x="${lx}" y="${ly}" font-size="13" font-weight="600" fill="#b45309" text-anchor="${anchor}">${esc(e.label)}</text>`); }
+  });
+  // knopen
+  L.pos.forEach(p => {
+    const { n, cx, y, w, h, lines } = p, x = cx - w / 2;
+    if (n.type === 'keuze') parts.push(`<path d="M${cx} ${y}L${cx + w / 2} ${y + h / 2}L${cx} ${y + h}L${cx - w / 2} ${y + h / 2}Z" fill="#fffbeb" stroke="#d97706" stroke-width="1.6" stroke-linejoin="round"/>`);
+    else if (n.type === 'stap') parts.push(`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="10" fill="#ffffff" stroke="#64748b" stroke-width="1.4"/>`);
+    else parts.push(`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${h / 2}" fill="#ecfdf5" stroke="#059669" stroke-width="1.6"/>`);
+    const ty = y + h / 2 - (lines.length - 1) * 8 + 5;
+    parts.push(`<text x="${cx}" text-anchor="middle" font-size="13" fill="${n.text ? '#1e293b' : '#94a3b8'}" font-weight="${n.type === 'stap' ? 500 : 600}">${lines.map((l, i) => `<tspan x="${cx}" y="${ty + i * 16}">${esc(l)}</tspan>`).join('')}</text>`);
+    const bx = n.type === 'keuze' ? cx - w / 4 - 6 : x + 2, by = n.type === 'keuze' ? y + h / 4 - 4 : y + 2;
+    parts.push(`<circle cx="${bx}" cy="${by}" r="10" fill="#ffffff" stroke="#cbd5e1"/><text x="${bx}" y="${by + 4}" text-anchor="middle" font-size="13" font-weight="700" fill="#475569">${p.i + 1}</text>`);
+  });
+  parts.push('</svg>');
+  return { svg: parts.join(''), L };
+}
+
+/* Controle: wat ontbreekt er nog? */
+function hints(f) {
+  const out = [], inc = new Map(f.nodes.map(n => [n.id, 0]));
+  edges(f).forEach(e => inc.set(e.to.id, inc.get(e.to.id) + 1));
+  const name = n => `${f.nodes.indexOf(n) + 1}${n.text ? ' (' + n.text.slice(0, 30) + ')' : ''}`;
+  f.nodes.forEach((n, i) => {
+    if (!n.text.trim() && n.type !== 'start' && n.type !== 'einde') out.push({ text:`Stap ${name(n)} heeft nog geen tekst.`, id:n.id });
+    if (n.type === 'keuze' && (!n.no || n.no === 'none')) out.push({ text:`Keuze ${name(n)}: kies waar "${n.noLabel || 'nee'}" naartoe gaat.`, id:n.id });
+    if (i > 0 && n.type !== 'start' && !inc.get(n.id)) out.push({ text:`Stap ${name(n)} is van nergens bereikbaar: geen enkele pijl komt er toe.`, id:n.id });
+    if (f.lanes.length && !f.lanes.some(l => l.id === n.lane)) out.push({ text:`Stap ${name(n)} heeft nog geen rol.`, id:n.id });
+    if (n.text.length > 60) out.push({ text:`Stap ${name(n)} is lang. Houd het bij een werkwoord en een voorwerp; uitleg past beter in een notitie.`, id:n.id });
+  });
+  if (f.nodes.length && !f.nodes.some(n => n.type === 'einde')) out.push({ text:'Er is geen einde. Sluit af, zodat duidelijk is waar het proces stopt.' });
+  const handoffs = edges(f).filter(e => f.lanes.length && e.from.lane && e.to.lane && e.from.lane !== e.to.lane).length;
+  return { list: out, handoffs };
+}
+
+/* Weergave */
+// Passend: zo breed als de kaart, maar op een breed scherm nooit kleiner dan 85%, zodat de tekst leesbaar blijft.
+function sizeSvg(el) {
+  const w = +el.getAttribute('width');
+  el.style.height = 'auto';
+  el.style.width = state.fit ? '100%' : w + 'px';
+  el.style.maxWidth = state.fit ? w + 'px' : 'none';
+  el.style.minWidth = state.fit && window.innerWidth >= 700 ? Math.round(w * 0.85) + 'px' : '0';
+}
+function render() {
+  const f = cur();
+  if (f && state.current !== f.id) state.current = f.id;
+  $('tabs').innerHTML = state.flows.map(x => `<button type="button" class="tab" data-flow="${x.id}" aria-pressed="${x.id === (f && f.id)}"><span class="nm">${esc(x.name || 'Stroom')}</span>${x.voorbeeld ? '<span class="vb-tag">voorbeeld</span>' : ''}</button>`).join('')
+    + `<button type="button" class="tab add" data-act="new-flow" aria-label="Nieuwe stroom">+ Stroom</button>`;
+  $('oc-restart').parentElement.hidden = !state.flows.length;
+  if (!f) {
+    $('app').innerHTML = `<section class="card start-card"><p>Nog geen stroom. Begin leeg, of bekijk eerst een voorbeeld.</p>
+      <div class="btns"><button type="button" class="btn btn-primary" data-act="new-flow">Nieuwe stroom</button><button type="button" class="btn btn-ghost" data-act="example">Begin met een voorbeeld</button></div></section>`;
+    return;
+  }
+  const keep = document.activeElement && document.activeElement.dataset ? { f: document.activeElement.dataset.f, id: document.activeElement.dataset.id, ss: document.activeElement.selectionStart } : null;
+  const opts = (n, key) => {
+    const i = f.nodes.indexOf(n), nxt = f.nodes[i + 1];
+    const list = [`<option value="auto"${n[key] === 'auto' ? ' selected' : ''}>${nxt ? `de volgende (${i + 2})` : 'de volgende (er is er geen)'}</option>`];
+    f.nodes.forEach((m, j) => { if (m !== n) list.push(`<option value="${m.id}"${n[key] === m.id ? ' selected' : ''}>${j + 1}. ${esc((m.text || TYPES[m.type]).slice(0, 32))}</option>`); });
+    list.push(`<option value="none"${(!n[key] || n[key] === 'none') ? ' selected' : ''}>${key === 'no' ? 'nog niet gekozen' : 'nergens (geen pijl)'}</option>`);
+    return list.join('');
+  };
+  const laneOpts = n => `<option value="">rol…</option>` + f.lanes.map(l => `<option value="${l.id}"${n.lane === l.id ? ' selected' : ''}>${esc(l.name || 'Rol')}</option>`).join('');
+  const rows = f.nodes.map((n, i) => `
+    <li class="row t-${n.type}">
+      <div class="row-top">
+        <span class="num" aria-hidden="true">${i + 1}</span>
+        <select class="sel type" data-f="type" data-id="${n.id}" aria-label="Soort van stap ${i + 1}">${Object.entries(TYPES).map(([k, v]) => `<option value="${k}"${n.type === k ? ' selected' : ''}>${v}</option>`).join('')}</select>
+        <input class="txt" data-f="text" data-id="${n.id}" value="${esc(n.text)}" maxlength="160" placeholder="${n.type === 'keuze' ? 'Een vraag, bv. Dossier volledig?' : n.type === 'stap' ? 'Wat gebeurt er? bv. Aanvraag registreren' : TYPES[n.type]}" aria-label="Tekst van stap ${i + 1}" enterkeyhint="next">
+        <div class="row-acts">
+          <button type="button" data-act="up" data-id="${n.id}" aria-label="Stap ${i + 1} omhoog" ${i ? '' : 'disabled'}>${ICON.up}</button>
+          <button type="button" data-act="down" data-id="${n.id}" aria-label="Stap ${i + 1} omlaag" ${i < f.nodes.length - 1 ? '' : 'disabled'}>${ICON.down}</button>
+          <button type="button" class="del" data-act="del" data-id="${n.id}" aria-label="Verwijder stap ${i + 1}">${ICON.del}</button>
+        </div>
+      </div>
+      ${(f.lanes.length || n.type !== 'einde') ? `<div class="row-more">
+        ${f.lanes.length ? `<label>Rol <select class="sel" data-f="lane" data-id="${n.id}" aria-label="Rol van stap ${i + 1}">${laneOpts(n)}</select></label>` : ''}
+        ${n.type === 'keuze' ? `
+          <label><input class="lab" data-f="yesLabel" data-id="${n.id}" value="${esc(n.yesLabel)}" maxlength="20" aria-label="Naam van de eerste uitweg">→ <select class="sel" data-f="to" data-id="${n.id}" aria-label="Waar ${esc(n.yesLabel)} naartoe gaat">${opts(n, 'to')}</select></label>
+          <label><input class="lab" data-f="noLabel" data-id="${n.id}" value="${esc(n.noLabel)}" maxlength="20" aria-label="Naam van de tweede uitweg">→ <select class="sel" data-f="no" data-id="${n.id}" aria-label="Waar ${esc(n.noLabel)} naartoe gaat">${opts(n, 'no')}</select></label>`
+        : n.type !== 'einde' ? `<label>daarna → <select class="sel" data-f="to" data-id="${n.id}" aria-label="Wat volgt na stap ${i + 1}">${opts(n, 'to')}</select></label>` : ''}
+      </div>` : ''}
+    </li>`).join('');
+  const { svg } = f.nodes.length ? svgOf(f) : { svg:'' };
+  const h = hints(f);
+  const view = state.view;
+  $('app').innerHTML = `
+    <div class="views" role="tablist" aria-label="Weergave">
+      <button role="tab" data-view="edit" aria-selected="${view === 'edit'}">Stappen</button>
+      <button role="tab" data-view="draw" aria-selected="${view === 'draw'}">Tekening</button>
+    </div>
+    <div class="layout">
+      <section class="card" ${view === 'edit' ? '' : 'hidden'}>
+        <div class="card-head">
+          <input class="project" data-f="name" data-id="flow" value="${esc(f.name)}" maxlength="80" aria-label="Naam van de stroom" placeholder="Naam van de stroom">
+          <button class="icon-btn del-unit" type="button" data-act="del-flow" aria-label="Verwijder ${esc(f.name)}" title="Verwijder ${esc(f.name)}">${ICON.del}</button>
+          <div class="menu-wrap">
+            <button class="icon-btn" id="menu-btn" type="button" aria-label="Meer acties" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg></button>
+            <div class="menu" id="menu" role="menu">
+              <button data-act="pdf" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 15h6M9 18h4"/></svg>Download als PDF</button>
+              <button data-act="png" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>Download als afbeelding</button>
+              <button data-act="svg" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Download als SVG (bewerkbaar)</button>
+              <button data-act="copy" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Kopieer als tekst</button>
+              <button data-act="mermaid" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg>Kopieer als Mermaid-code</button>
+              <div class="sep"></div>
+              <button data-act="dup" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M4 16V5a1 1 0 0 1 1-1h11"/></svg>Dupliceer (bv. voor straks)</button>
+              <div class="sep"></div>
+              <button data-act="wipe" class="danger" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>Alles wissen</button>
+            </div>
+          </div>
+        </div>
+        ${f.voorbeeld ? `<div class="vb-bar"><div class="vb-text">${ICON.info}<span>Dit is een voorbeeld om de tool te verkennen. Het telt niet mee in andere tools.</span></div>
+          <div class="vb-btns"><button type="button" class="vb-btn vb-wis" data-act="vb-wis">Wis voorbeeld</button><button type="button" class="vb-btn vb-eigen" data-act="vb-eigen">Maak er mijn eigen van</button></div></div>` : ''}
+        <div class="sub-h"><b>Rollen</b><button type="button" class="oc-import" data-oc-types="betrokkene" data-act="imp-lanes" hidden>${ICON.imp}Overnemen uit…</button></div>
+        ${f.lanes.length ? '' : '<p class="hint-s">Optioneel. Met rollen krijgt elke rol een eigen baan in de tekening.</p>'}
+        <div class="lanes">${f.lanes.map(l => `<span class="lane-chip"><input data-f="lane-name" data-id="${l.id}" value="${esc(l.name)}" maxlength="40" aria-label="Naam van de rol" placeholder="Rol"><button type="button" data-act="del-lane" data-id="${l.id}" aria-label="Verwijder rol ${esc(l.name)}">${ICON.x}</button></span>`).join('')}
+          <button type="button" class="chip-add" data-act="add-lane">+ Rol</button></div>
+        <div class="sub-h"><b>Stappen</b><button type="button" class="oc-import" data-oc-types="taak,actie" data-act="imp-steps" hidden>${ICON.imp}Overnemen uit…</button></div>
+        <ol class="rows">${rows}</ol>
+        <div class="adders">
+          <button type="button" data-act="add" data-type="stap"><span class="shape"></span>Stap</button>
+          <button type="button" data-act="add" data-type="keuze"><span class="shape d"></span>Keuze</button>
+          <button type="button" data-act="add" data-type="einde"><span class="shape p"></span>Einde</button>
+        </div>
+      </section>
+      <section class="card draw-card" ${view === 'draw' ? '' : 'hidden'}>
+        <div class="draw-head"><h2 class="card-title">Tekening</h2>${svg ? `<button type="button" class="zoom" data-act="fit">${state.fit ? 'Ware grootte' : 'Passend maken'}</button>` : ''}</div>
+        ${svg ? `<div class="canvas" id="canvas">${svg}</div>` : '<p class="empty-draw">Voeg een stap toe; de tekening verschijnt hier.</p>'}
+        <ul class="hints">${h.list.slice(0, 6).map(x => `<li>${ICON.info}<span>${esc(x.text)}${x.id ? ` <button type="button" class="lnk" data-act="goto" data-id="${x.id}">Toon</button>` : ''}</span></li>`).join('')}
+          ${h.list.length > 6 ? `<li><span>En nog ${h.list.length - 6} punten.</span></li>` : ''}
+          ${!h.list.length && f.nodes.length > 2 ? `<li class="ok"><span>De stroom is sluitend${f.lanes.length && h.handoffs < 4 ? `, met ${h.handoffs} ${h.handoffs === 1 ? 'overdracht' : 'overdrachten'} tussen rollen` : ''}.</span></li>` : ''}
+          ${h.handoffs >= 4 ? `<li><span>${h.handoffs} overdrachten tussen rollen. Elke overdracht is een plek waar werk kan blijven liggen: kunnen er minder?</span></li>` : ''}</ul>
+      </section>
+    </div>`;
+  const svgEl = document.querySelector('#canvas svg');
+  if (svgEl) sizeSvg(svgEl);
+  refreshImports();
+  if (keep && keep.f) {
+    const el = document.querySelector(`[data-f="${keep.f}"][data-id="${keep.id}"]`);
+    if (el) { el.focus({ preventScroll:true }); if (keep.ss != null && el.setSelectionRange) try { el.setSelectionRange(keep.ss, keep.ss); } catch {} }
+  }
+}
+// Alleen de tekening en de keuzelijsten bijwerken tijdens het typen (de invoervelden zelf niet opnieuw tekenen).
+function renderDrawingOnly() {
+  const f = cur(); if (!f) return;
+  const c = $('canvas');
+  if (!c || !f.nodes.length) { render(); return; }
+  c.innerHTML = svgOf(f).svg;
+  sizeSvg(c.querySelector('svg'));
+}
+
+/* Klaarleggen voor andere tools: rollen als betrokkenen, stappen als taken (voorbeelden niet) */
+function publish() {
+  const lists = [];
+  state.flows.filter(f => !f.voorbeeld).forEach(f => {
+    const items = [
+      ...f.lanes.filter(l => l.name.trim()).map(l => ({ type:'betrokkene', text:l.name.trim(), note:'rol in ' + f.name })),
+      ...f.nodes.filter(n => n.type === 'stap' && n.text.trim()).map(n => ({ type:'taak', text:n.text.trim(), note: (f.lanes.find(l => l.id === n.lane) || {}).name || undefined }))
+    ];
+    if (items.length) lists.push({ name:f.name, items });
+  });
+  ocShare.publish(OC_ID, OC_TOOL, lists);
+}
+function refreshImports() { document.querySelectorAll('[data-oc-types]').forEach(b => { b.hidden = !ocShare.count(b.dataset.ocTypes.split(','), OC_ID); }); }
+['focus', 'storage'].forEach(ev => window.addEventListener(ev, () => setTimeout(refreshImports, 50)));
+
+/* Voorbeeld */
+function example() {
+  const ex = state.flows.find(f => f.voorbeeld);
+  if (ex) { state.current = ex.id; save(); render(); return; }
+  const L = { b:uid(), l:uid(), d:uid() }, N = Array.from({ length:9 }, uid);
+  const mk = (i, type, text, lane, extra = {}) => ({ id:N[i], type, text, lane:L[lane], to:'auto', no: type === 'keuze' ? 'none' : undefined, yesLabel:'ja', noLabel:'nee', ...extra });
+  const f = { id:uid(), name:'Premieaanvraag behandelen', voorbeeld:true,
+    lanes:[{ id:L.b, name:'Burger' }, { id:L.l, name:'Loket' }, { id:L.d, name:'Dossierbeheer' }],
+    nodes:[
+      mk(0, 'start', 'Aanvraag ingediend', 'b'),
+      mk(1, 'stap', 'Aanvraag registreren', 'l'),
+      mk(2, 'keuze', 'Dossier volledig?', 'l', { no:N[6] }),
+      mk(3, 'stap', 'Voorwaarden toetsen', 'd'),
+      mk(4, 'keuze', 'Voldoet de aanvraag?', 'd', { no:N[7] }),
+      mk(5, 'stap', 'Premie uitbetalen', 'd', { to:N[8] }),
+      mk(6, 'stap', 'Ontbrekende stukken opvragen', 'l', { to:N[1] }),
+      mk(7, 'stap', 'Weigering motiveren en versturen', 'd'),
+      mk(8, 'einde', 'Burger is op de hoogte', 'b')
+    ] };
+  state.flows.push(f); state.current = f.id; save(); render();
+}
+
+/* Interactie */
+function move(arr, i, j) { const [x] = arr.splice(i, 1); arr.splice(j, 0, x); }
+// Bij verplaatsen of verwijderen blijven expliciete sprongen geldig; 'auto' blijft 'de volgende'.
+function removeNode(f, n) {
+  f.nodes.forEach(m => { if (m.to === n.id) m.to = 'none'; if (m.no === n.id) m.no = 'none'; });
+  f.nodes.splice(f.nodes.indexOf(n), 1);
+}
+document.addEventListener('click', async e => {
+  const t = e.target.closest('[data-act],[data-flow],[data-view]'); if (!t) return;
+  if (t.dataset.flow) { state.current = t.dataset.flow; save(); render(); return; }
+  if (t.dataset.view) { state.view = t.dataset.view; save(); render(); return; }
+  const f = cur(), act = t.dataset.act, id = t.dataset.id;
+  const n = f && f.nodes.find(x => x.id === id);
+  switch (act) {
+    case 'new-flow': { const x = newFlow(state.flows.length ? 'Stroom ' + (state.flows.length + 1) : 'Mijn stroom'); state.flows.push(x); state.current = x.id; state.view = 'edit'; save(); render(); const i = document.querySelector('[data-f="text"]:not([value="Start"])'); i && i.focus(); return; }
+    case 'example': example(); return;
+    case 'add': {
+      const last = f.nodes[f.nodes.length - 1], before = last && last.type === 'einde' && t.dataset.type !== 'einde' ? f.nodes.length - 1 : f.nodes.length;
+      const x = node(t.dataset.type, '', (f.nodes[before - 1] || {}).lane || null); f.nodes.splice(before, 0, x); save(); render();
+      const el = document.querySelector(`[data-f="text"][data-id="${x.id}"]`); el && el.focus(); return; }
+    case 'up': case 'down': { const i = f.nodes.indexOf(n), j = act === 'up' ? i - 1 : i + 1; if (j < 0 || j >= f.nodes.length) return; move(f.nodes, i, j); save(); render(); const b = document.querySelector(`[data-act="${act}"][data-id="${id}"]`); b && !b.disabled && b.focus(); return; }
+    case 'del': { const undo = snapshot(); removeNode(f, n); save(); render(); toast(`Stap verwijderd`, undo); return; }
+    case 'add-lane': { const l = { id:uid(), name:'' }; f.lanes.push(l); if (f.lanes.length === 1) f.nodes.forEach(m => m.lane = l.id); save(); render(); const el = document.querySelector(`[data-f="lane-name"][data-id="${l.id}"]`); el && el.focus(); return; }
+    case 'del-lane': { const undo = snapshot(); f.lanes = f.lanes.filter(l => l.id !== id); f.nodes.forEach(m => { if (m.lane === id) m.lane = f.lanes[0] ? f.lanes[0].id : null; }); save(); render(); toast('Rol verwijderd', undo); return; }
+    case 'del-flow': { const undo = snapshot(), i = state.flows.indexOf(f); state.flows.splice(i, 1); state.current = (state.flows[i - 1] || state.flows[0] || {}).id || null; save(); render(); toast(`${f.name || 'Stroom'} verwijderd`, undo); return; }
+    case 'vb-wis': { const undo = snapshot(); state.flows = state.flows.filter(x => !x.voorbeeld); state.current = (state.flows[0] || {}).id || null; save(); render(); toast('Voorbeeld gewist', undo); return; }
+    case 'vb-eigen': f.voorbeeld = false; save(); render(); toast('Het voorbeeld is nu van jou'); return;
+    case 'fit': state.fit = !state.fit; save(); render(); return;
+    case 'goto': { state.view = 'edit'; save(); render(); const el = document.querySelector(`[data-f="text"][data-id="${id}"]`); if (el) { el.scrollIntoView({ block:'center', behavior:'smooth' }); el.focus({ preventScroll:true }); } return; }
+    case 'imp-lanes': {
+      const picked = await ocShare.pick({ types:['betrokkene'], self:OC_ID, title:'Rollen overnemen', intro:'Kies rollen of betrokkenen. Elk wordt een baan in de tekening.' });
+      if (!picked.length) return;
+      const have = new Set(f.lanes.map(l => l.name.toLowerCase())); let k = 0;
+      picked.forEach(p => { const nm = p.text.slice(0, 40); if (have.has(nm.toLowerCase())) return; have.add(nm.toLowerCase()); f.lanes.push({ id:uid(), name:nm }); k++; });
+      if (f.lanes.length && f.nodes.every(m => !m.lane)) f.nodes.forEach(m => m.lane = f.lanes[0].id);
+      save(); render(); toast(k ? `${k} ${k === 1 ? 'rol' : 'rollen'} overgenomen` : 'Niets nieuws: die rollen stonden er al'); return; }
+    case 'imp-steps': {
+      const picked = await ocShare.pick({ types:['taak', 'actie'], self:OC_ID, title:'Stappen overnemen', intro:'Kies taken of acties uit andere tools. Elk wordt een stap, vóór het einde.' });
+      if (!picked.length) return;
+      const last = f.nodes[f.nodes.length - 1], at = last && last.type === 'einde' ? f.nodes.length - 1 : f.nodes.length;
+      f.nodes.splice(at, 0, ...picked.map(p => node('stap', p.text.slice(0, 160), (f.nodes[at - 1] || {}).lane || null)));
+      save(); render(); toast(`${picked.length} ${picked.length === 1 ? 'stap' : 'stappen'} overgenomen`); return; }
+  }
+});
+document.addEventListener('input', e => {
+  const el = e.target, k = el.dataset && el.dataset.f; if (!k) return;
+  const f = cur(); if (!f) return;
+  if (k === 'name') { f.name = el.value; save(); const tb = document.querySelector(`[data-flow="${f.id}"] .nm`); tb && (tb.textContent = el.value || 'Stroom'); return; }
+  if (k === 'lane-name') { const l = f.lanes.find(x => x.id === el.dataset.id); if (l) { l.name = el.value; save(); renderDrawingOnly(); } return; }
+  const n = f.nodes.find(x => x.id === el.dataset.id); if (!n) return;
+  if (k === 'text' || k === 'yesLabel' || k === 'noLabel') { n[k] = el.value; save(); renderDrawingOnly(); }
+});
+document.addEventListener('change', e => {
+  const el = e.target, k = el.dataset && el.dataset.f; if (!k || !['type', 'lane', 'to', 'no'].includes(k)) return;
+  const f = cur(), n = f.nodes.find(x => x.id === el.dataset.id); if (!n) return;
+  if (k === 'type') { n.type = el.value; if (n.type === 'keuze' && !n.no) n.no = 'none'; if (n.type === 'keuze' && n.text === '') n.yesLabel = n.yesLabel || 'ja'; }
+  else if (k === 'lane') n.lane = el.value || null;
+  else n[k] = el.value;
+  save(); render();
+});
+// Enter in een stap: meteen een nieuwe stap eronder, in dezelfde rol.
+document.addEventListener('keydown', e => {
+  const el = e.target;
+  if (e.key === 'Enter' && el.dataset && el.dataset.f === 'text') {
+    e.preventDefault();
+    const f = cur(), n = f.nodes.find(x => x.id === el.dataset.id), i = f.nodes.indexOf(n);
+    const x = node('stap', '', n.lane); f.nodes.splice(n.type === 'einde' ? i : i + 1, 0, x); save(); render();
+    const nx = document.querySelector(`[data-f="text"][data-id="${x.id}"]`); nx && nx.focus();
+  }
+  if (e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown') && el.dataset && el.dataset.f === 'text') {
+    e.preventDefault(); const b = document.querySelector(`[data-act="${e.key === 'ArrowUp' ? 'up' : 'down'}"][data-id="${el.dataset.id}"]`); b && !b.disabled && b.click();
+    const t = document.querySelector(`[data-f="text"][data-id="${el.dataset.id}"]`); t && t.focus();
+  }
+});
+
+/* Menu */
+document.addEventListener('click', e => {
+  const btn = e.target.closest('#menu-btn'), menu = $('menu');
+  if (btn) { e.stopPropagation(); const o = menu.classList.toggle('open'); btn.setAttribute('aria-expanded', o); return; }
+  if (menu && !e.target.closest('.menu-wrap')) { menu.classList.remove('open'); const b = $('menu-btn'); b && b.setAttribute('aria-expanded', 'false'); }
+}, true);
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('menu')) $('menu').classList.remove('open'); });
+
+let toastTimer, undoFn = null;
+function toast(msg, undo) {
+  undoFn = undo || null; if (undo) undo.mark = saves;
+  $('toast-text').textContent = msg; $('toast-btn').hidden = !undo;
+  $('toast').classList.add('show'); clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { $('toast').classList.remove('show'); undoFn = null; }, undo ? 6000 : 2600);
+}
+$('toast-btn').addEventListener('click', () => { const f = undoFn; undoFn = null; $('toast').classList.remove('show'); f && f(); });
+
+function ocConfirm(title, text, okText) {
+  if (!document.getElementById('ocw-style')) {
+    const s = document.createElement('style'); s.id = 'ocw-style';
+    s.textContent = `.ocw-back{position:fixed;inset:0;z-index:10001;display:flex;align-items:center;justify-content:center;padding:1rem;background:rgba(15,23,42,.45);backdrop-filter:blur(3px);font-family:'DM Sans',system-ui,sans-serif}
+      .ocw{width:100%;max-width:400px;background:#fff;border-radius:16px;padding:1.375rem 1.375rem 1.125rem;box-shadow:0 20px 50px rgba(15,23,42,.25);color:#1e293b}
+      .ocw b{display:block;font-size:1.0625rem;letter-spacing:-.01em;margin-bottom:.375rem}
+      .ocw p{font-size:.9375rem;line-height:1.5;color:#475569}
+      .ocw-row{display:flex;justify-content:flex-end;gap:.5rem;margin-top:1.25rem}
+      .ocw-row button{font:inherit;font-size:.9375rem;font-weight:600;padding:.625rem 1rem;min-height:44px;border-radius:10px;border:0;cursor:pointer}
+      .ocw-no{background:#f1f5f9;color:#475569} .ocw-yes{background:#dc2626;color:#fff} .ocw-yes:hover{background:#b91c1c}`;
+    document.head.appendChild(s);
+  }
+  return new Promise(resolve => {
+    const back = document.createElement('div'); back.className = 'ocw-back';
+    back.innerHTML = '<div class="ocw" role="alertdialog" aria-modal="true"><b></b><p></p><div class="ocw-row"><button class="ocw-no" type="button">Annuleer</button><button class="ocw-yes" type="button"></button></div></div>';
+    back.querySelector('b').textContent = title; back.querySelector('p').textContent = text; back.querySelector('.ocw-yes').textContent = okText;
+    document.body.appendChild(back);
+    const done = v => { document.removeEventListener('keydown', key, true); back.remove(); resolve(v); };
+    const key = e => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); done(false); } };
+    document.addEventListener('keydown', key, true);
+    back.querySelector('.ocw-no').onclick = () => done(false);
+    back.querySelector('.ocw-yes').onclick = () => done(true);
+    back.addEventListener('click', e => { if (e.target === back) done(false); });
+    back.querySelector('.ocw-no').focus();
+  });
+}
+
+/* Exports */
+function asText(f) {
+  const lines = [f.name, ''];
+  if (f.lanes.length) lines.push('Rollen: ' + f.lanes.map(l => l.name || 'Rol').join(', '), '');
+  f.nodes.forEach((n, i) => {
+    const lane = f.lanes.find(l => l.id === n.lane), to = target(f, n, 'to'), no = n.type === 'keuze' ? target(f, n, 'no') : null;
+    let s = `${i + 1}. ${n.type === 'stap' ? '' : '[' + TYPES[n.type].toLowerCase() + '] '}${n.text || TYPES[n.type]}${lane ? ' — ' + lane.name : ''}`;
+    if (n.type === 'keuze') s += `\n   ${n.yesLabel} → ${to ? f.nodes.indexOf(to) + 1 : '–'}; ${n.noLabel} → ${no ? f.nodes.indexOf(no) + 1 : '–'}`;
+    else if (n.type !== 'einde' && to && f.nodes.indexOf(to) !== i + 1) s += `\n   daarna → ${f.nodes.indexOf(to) + 1}`;
+    lines.push(s);
+  });
+  return lines.join('\n');
+}
+function asMermaid(f) {
+  const q = s => '"' + String(s || '').replace(/"/g, "'") + '"';
+  const shape = n => n.type === 'keuze' ? `{${q(n.text || 'Keuze')}}` : n.type === 'stap' ? `[${q(n.text || 'Stap')}]` : `([${q(n.text || TYPES[n.type])}])`;
+  const id = n => 's' + (f.nodes.indexOf(n) + 1);
+  const out = ['flowchart TD'];
+  if (f.lanes.length) f.lanes.forEach((l, i) => { out.push(`  subgraph r${i + 1}[${q(l.name || 'Rol')}]`); f.nodes.filter(n => n.lane === l.id).forEach(n => out.push(`    ${id(n)}${shape(n)}`)); out.push('  end'); });
+  f.nodes.filter(n => !f.lanes.some(l => l.id === n.lane)).forEach(n => out.push(`  ${id(n)}${shape(n)}`));
+  edges(f).forEach(e => out.push(`  ${id(e.from)} -->${e.label ? '|' + q(e.label) + '|' : ''} ${id(e.to)}`));
+  return out.join('\n');
+}
+function buildExport() {
+  const f = cur(), { svg, L } = svgOf(f, { forExport:true });
+  const node = document.createElement('div');
+  node.innerHTML = `<div style="display:flex;justify-content:center">${svg}</div>`;
+  const s = node.querySelector('svg'); s.style.maxWidth = '100%'; s.style.height = 'auto';
+  return { node, title: f.name || 'Stroom', subtitle: `${f.nodes.length} stappen${f.lanes.length ? ' · ' + f.lanes.length + ' rollen' : ''}` };
+}
+function save2(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
+document.addEventListener('click', async e => {
+  const b = e.target.closest('#menu [data-act]'); if (!b) return;
+  $('menu').classList.remove('open');
+  const f = cur(), act = b.dataset.act, base = (f.name || 'stroom').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'stroom';
+  if (act === 'png' || act === 'pdf') {
+    const w = layout(f).width;
+    toast('Bezig met downloaden…');
+    try { const o = { width: Math.min(2200, Math.max(800, w + 80)), landscape: w > 640 }; await (act === 'png' ? ocExport.png(buildExport, base, o) : ocExport.pdf(buildExport, base, o)); toast(act === 'png' ? 'Afbeelding gedownload' : 'PDF gedownload'); }
+    catch { toast('Downloaden lukte niet. Ben je online?'); }
+  } else if (act === 'svg') {
+    save2(new Blob(['<?xml version="1.0" encoding="UTF-8"?>\n' + svgOf(f).svg], { type:'image/svg+xml' }), base + '.svg'); toast('SVG gedownload');
+  } else if (act === 'copy' || act === 'mermaid') {
+    try { await navigator.clipboard.writeText(act === 'copy' ? asText(f) : asMermaid(f)); toast(act === 'copy' ? 'Gekopieerd als tekst' : 'Mermaid-code gekopieerd'); } catch { toast('Kopiëren lukte niet'); }
+  } else if (act === 'dup') {
+    const c = JSON.parse(JSON.stringify(f)), map = {};
+    c.id = uid(); c.voorbeeld = false; c.name = (f.name || 'Stroom') + ' (straks)';
+    c.lanes.forEach(l => { const o = l.id; l.id = uid(); map[o] = l.id; });
+    c.nodes.forEach(n => { const o = n.id; n.id = uid(); map[o] = n.id; });
+    c.nodes.forEach(n => { if (map[n.lane]) n.lane = map[n.lane]; if (map[n.to]) n.to = map[n.to]; if (map[n.no]) n.no = map[n.no]; });
+    state.flows.splice(state.flows.indexOf(f) + 1, 0, c); state.current = c.id; save(); render(); toast('Kopie gemaakt');
+  } else if (act === 'wipe') {
+    if (!await ocConfirm('Alles wissen in Stroom?', 'Alle stromen verdwijnen. Je kan dit nog ongedaan maken tot je iets anders doet.', 'Alles wissen')) return;
+    const undo = snapshot();
+    try { localStorage.removeItem(KEY); } catch {}
+    state = fresh(); ocShare.clear(OC_ID); render();
+    toast('Alles gewist', undo);
+  }
+});
+$('oc-restart').addEventListener('click', () => { const b = document.querySelector('#menu [data-act="wipe"]'); if (b) b.click(); });
+
+render();
+setTimeout(publish, 0);
+</script>
+</body>
+</html>
