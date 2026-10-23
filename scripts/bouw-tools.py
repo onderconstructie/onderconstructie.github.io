@@ -10,6 +10,9 @@ Elke tool beschrijft zichzelf in zijn <head>:
     <meta name="oc:kort" content="Kanbanbord voor sprints en taken">
     <meta name="oc:volgorde" content="20">               volgorde zolang je een tool nog niet gebruikte
     <meta name="oc:achtergrond" content="nee">           optioneel: niet open laten in de app
+    <meta name="oc:opslag" content="vinkje.v1, oc.share.vinkje">  optioneel: localStorage-sleutels van de tool
+                                                          (een * achteraan is een voorvoegsel, bv. mm.*)
+    <meta name="oc:traject" content="verandering:2">     optioneel: plaats in een stappenplan (naam:stap, komma's)
     <link rel="icon" href="data:image/svg+xml,...">      het icoon in de app
 
 Een nieuwe tool toevoegen: die tags in de tool zetten en zijn pad hieronder in PADEN.
@@ -31,12 +34,13 @@ PADEN = [
     '/project-radar/', '/kanban/', '/stakeholders/', '/risico/', '/mixer/', '/paradox/',
     '/fortuna/', '/check-in/', '/project-realisme/', '/vinkje/',
     '/beslissingen/', '/raci/', '/prioriteit/', '/retro/', '/vergaderkost/',
-    '/gap/', '/weerstand/',
+    '/gap/', '/weerstand/', '/impact/', '/klimaat/', '/veranderprofiel/',
     '/qr/', '/focus/', '/zakmes/looplicht/', '/zakmes/memomities/',
     '/hier/', '/adem/', '/hart/',
 ]
 GROEPEN = {'projecten', 'zakmes', 'reset'}
 PDCA = ['plan', 'do', 'check', 'act']
+TRAJECTEN = ['verandering', 'project']
 
 
 class Kop(HTMLParser):
@@ -104,6 +108,14 @@ def tool(pad, lokaal):
     for p in pdca:
         if p not in PDCA:
             raise fout(f'oc:pdca kent alleen {PDCA}, niet "{p}"')
+    traject = []
+    for t in m.get('oc:traject', '').split(','):
+        if not t.strip():
+            continue
+        naam, _, stap = t.strip().partition(':')
+        if naam not in TRAJECTEN or not stap.strip().isdigit():
+            raise fout(f'oc:traject moet naam:stap zijn met naam in {TRAJECTEN}, niet "{t.strip()}"')
+        traject.append({'naam': naam, 'stap': int(stap)})
     labels = [l.strip() for l in m.get('oc:labels', '').split(',') if l.strip()]
     if not labels and not pdca:
         raise fout('geef minstens oc:labels of oc:pdca')
@@ -119,6 +131,8 @@ def tool(pad, lokaal):
         'pdca': pdca,
         'order': int(m.get('oc:volgorde', '999') or 999),
         'keep': m.get('oc:achtergrond', '').strip().lower() != 'nee',
+        'traject': traject,
+        'storage': [k.strip() for k in m.get('oc:opslag', '').split(',') if k.strip()],
         'icon': svg_uit(k.icoon, pad),
     }
 

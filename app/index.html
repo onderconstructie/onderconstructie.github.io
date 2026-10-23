@@ -229,6 +229,48 @@ body.filtering #groups, body.filtering #list-tools { display:none; }
 .row.is-live .live { display:inline-block; }
 .row.is-live .chev { display:none; }
 
+/* Stappenplannen: tools die samen een aanpak vormen (oc:traject) */
+.paths { display:grid; grid-template-columns:repeat(auto-fit, minmax(290px, 1fr)); gap:0.75rem; margin-bottom:1.25rem; }
+body.filtering .paths-wrap { display:none; }
+.path { background:var(--wit); border:1px solid var(--slate-200); border-radius:16px; overflow:hidden; }
+.path.open { border-color:#cfe9dd; }
+.path-head { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:0.75rem; align-items:center; width:100%; text-align:left; padding:0.875rem 1rem; }
+.path-title { font-size:1rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.02em; }
+.path-note { display:block; font-size:0.8125rem; color:var(--slate-500); line-height:1.35; }
+.path-bar { display:flex; gap:3px; margin-top:0.5rem; }
+.path-bar span { flex:1; height:4px; border-radius:99px; background:var(--slate-200); }
+.path-bar span.done { background:var(--accent); }
+.path .toggle { transition:transform 0.22s ease; }
+.path:not(.open) .toggle { transform:rotate(-90deg); }
+.path-next { display:flex; align-items:center; gap:0.5rem; margin:0 1rem 0.875rem; padding:0.5rem 0.625rem 0.5rem 0.5rem; border-radius:12px; background:var(--accent-50, #ecfdf5); border:1px solid #a7f3d0; width:calc(100% - 2rem); text-align:left; }
+.path-next .icon { width:32px; height:32px; border-radius:8px; background:var(--wit); }
+.path-next .icon svg { width:26px; height:26px; }
+.path-next b { display:block; font-size:0.9375rem; color:var(--slate-800); line-height:1.25; }
+.path-next small { display:block; font-size:0.75rem; color:var(--accent-dark); font-weight:600; text-transform:uppercase; letter-spacing:0.04em; }
+.path-next .chev { margin-left:auto; color:var(--accent); }
+.path.open .path-next { display:none; }
+.steps { list-style:none; display:none; border-top:1px solid var(--slate-100); padding:0.375rem 0 0.5rem; }
+.path.open .steps { display:block; }
+.step { position:relative; }
+.step::before { content:''; position:absolute; left:calc(1rem + 13px); top:0; bottom:0; width:2px; background:var(--slate-200); }
+.step:first-child::before { top:50%; } .step:last-child::before { bottom:50%; }
+.step.done::before { background:#a7f3d0; }
+.step-btn { position:relative; display:grid; grid-template-columns:28px 36px minmax(0,1fr) auto; gap:0.625rem; align-items:center; width:100%; text-align:left; padding:0.4375rem 1rem; min-height:52px; }
+.step-btn:hover { background:var(--slate-50); }
+.step-dot { width:28px; height:28px; border-radius:50%; background:var(--wit); border:2px solid var(--slate-200); color:var(--slate-400); font-size:0.75rem; font-weight:700; display:flex; align-items:center; justify-content:center; z-index:1; }
+.step.done .step-dot { background:var(--accent); border-color:var(--accent); color:var(--wit); }
+.step.next .step-dot { border-color:var(--accent); color:var(--accent-dark); box-shadow:0 0 0 4px #d1fae5; }
+.step-dot svg { width:14px; height:14px; }
+.step .icon { width:36px; height:36px; border-radius:9px; }
+.step .icon svg { width:28px; height:28px; }
+.step-name { font-size:0.9375rem; font-weight:600; color:var(--slate-800); line-height:1.25; }
+.step-q { display:block; font-size:0.8125rem; color:var(--slate-500); line-height:1.3; }
+.step-st { font-size:0.6875rem; font-weight:600; color:var(--slate-400); white-space:nowrap; }
+.step.done .step-st { color:var(--accent-dark); }
+.step.next .step-st { color:var(--accent-dark); }
+.path-foot { font-size:0.75rem; color:var(--slate-400); padding:0 1rem 0.875rem 1rem; }
+@media (prefers-reduced-motion: reduce) { .path .toggle { transition:none; } }
+
 .recent { display:flex; gap:0.625rem; overflow-x:auto; padding:0 0.25rem 0.25rem; margin:0 -0.25rem; scrollbar-width:none; }
 .recent::-webkit-scrollbar { display:none; }
 .chip {
@@ -251,6 +293,43 @@ body.filtering #groups, body.filtering #list-tools { display:none; }
 .status.ok .dot { background:var(--accent); }
 .footer .sep { margin:0 0.5rem; color:var(--slate-300); }
 
+
+/* ---------- Gegevens ---------- */
+.footer-link { font:inherit; color:var(--slate-400); background:none; border:0; cursor:pointer; padding:0; }
+.footer-link:hover { color:var(--accent-dark); }
+.sheet-back[hidden] { display:none !important; }
+.sheet-back { position:fixed; inset:0; z-index:30; background:rgba(15,23,42,0.45); display:flex; align-items:flex-end; justify-content:center; }
+@media (min-width:640px) { .sheet-back { align-items:center; padding:1rem; } }
+.sheet { width:100%; max-width:560px; max-height:min(90vh, 760px); overflow:auto; background:var(--wit); border-radius:20px 20px 0 0;
+  padding:1rem 1.25rem calc(var(--bottom) + 1.25rem); box-shadow:0 20px 50px rgba(15,23,42,0.25); }
+@media (min-width:640px) { .sheet { border-radius:20px; } }
+.sheet-head { display:flex; align-items:center; justify-content:space-between; }
+.sheet-head h2 { font-size:1.25rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.02em; }
+.sheet-intro { font-size:0.875rem; color:var(--slate-500); margin:0.25rem 0 1rem; }
+.data-list { border:1px solid var(--slate-200); border-radius:14px; overflow:hidden; }
+.drow { display:grid; grid-template-columns:36px 1fr auto; gap:0.75rem; align-items:center; padding:0.625rem 0.75rem; border-top:1px solid var(--slate-100); }
+.drow:first-child { border-top:0; }
+.drow .icon { width:36px; height:36px; border-radius:9px; }
+.drow .icon svg { width:28px; height:28px; }
+.drow-name { font-size:0.9375rem; font-weight:600; color:var(--slate-800); }
+.drow-meta { font-size:0.75rem; color:var(--slate-400); }
+.drow-wipe { font-size:0.8125rem; font-weight:600; color:#dc2626; padding:0.375rem 0.625rem; border-radius:8px; }
+.drow-wipe:hover { background:#fef2f2; }
+.data-empty { padding:1.25rem; text-align:center; color:var(--slate-500); font-size:0.9375rem; }
+.data-actions { display:grid; gap:0.5rem; margin-top:1rem; }
+.dbtn { display:flex; align-items:center; justify-content:center; gap:0.5rem; padding:0.6875rem 1rem; border-radius:12px; font-size:0.9375rem; font-weight:600;
+  color:var(--slate-700); background:var(--slate-100); cursor:pointer; border:0; }
+.dbtn:hover { background:var(--slate-200); }
+.dbtn svg { width:18px; height:18px; }
+.dbtn.danger { color:#dc2626; background:#fef2f2; }
+.dbtn.danger:hover { background:#fee2e2; }
+.dbtn.danger.solid { color:#fff; background:#ef4444; }
+.dbtn.danger.solid:hover { background:#dc2626; }
+.confirm { margin-top:1rem; padding:1rem; border:1.5px solid #fecaca; border-radius:14px; background:#fffafa; }
+.confirm p { font-size:0.9375rem; color:var(--slate-700); margin-bottom:0.625rem; }
+.confirm-backup { display:flex; align-items:center; gap:0.5rem; font-size:0.875rem; color:var(--slate-600); margin-bottom:0.75rem; }
+.confirm-backup input { width:18px; height:18px; accent-color:var(--accent); }
+.confirm-btns { display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; }
 
 /* ---------- Toolweergave ---------- */
 .viewer {
@@ -340,6 +419,10 @@ body.filtering #groups, body.filtering #list-tools { display:none; }
       </div>
     </section>
 
+    <section class="paths-wrap" id="paths-wrap" hidden>
+      <div class="filter-head"><h2 class="section-label">Stappenplannen</h2><span class="filter-hint">Tools die op elkaar voortbouwen</span></div>
+      <div class="paths" id="paths"></div>
+    </section>
     <div class="list-tools" id="list-tools"><button id="all-open">Alles open</button><button id="all-closed">Alles dicht</button></div>
     <div id="groups"></div>
   </main>
@@ -351,8 +434,37 @@ body.filtering #groups, body.filtering #list-tools { display:none; }
     <span class="sep">·</span>
     <a href="https://bit.ly/4azfO7S" target="_blank" rel="noopener">contact</a>
     <span class="sep">·</span>
-    <span class="app-version" title="Versie van de app">v8</span>
+    <button class="footer-link" id="data-open" type="button">gegevens</button>
+    <span class="sep">·</span>
+    <span class="app-version" title="Versie van de app">v9</span>
   </footer>
+</div>
+
+<div class="sheet-back" id="data-sheet" hidden>
+  <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="data-title">
+    <div class="sheet-head">
+      <h2 id="data-title">Gegevens</h2>
+      <button class="tb-btn" id="data-close" aria-label="Sluit">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <p class="sheet-intro">Alles wat je in de tools invult, blijft op dit toestel, in deze browser. Niets gaat naar een server. Hier zie je wat er bewaard is, en wis je het om opnieuw te beginnen.</p>
+    <div class="data-list" id="data-list"></div>
+    <div class="data-actions">
+      <button class="dbtn" id="data-backup" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m-5-5 5 5 5-5M5 21h14"/></svg>Reservekopie downloaden</button>
+      <label class="dbtn" for="data-restore-file">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V9m-5 5 5-5 5 5M5 3h14"/></svg>Reservekopie terugzetten</label>
+      <input type="file" id="data-restore-file" accept="application/json,.json" hidden>
+      <button class="dbtn danger" id="data-wipe-all" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>Alles wissen en opnieuw beginnen</button>
+    </div>
+    <div class="confirm" id="data-confirm" hidden>
+      <p id="data-confirm-text"></p>
+      <label class="confirm-backup"><input type="checkbox" id="data-confirm-backup" checked> Eerst een reservekopie downloaden</label>
+      <div class="confirm-btns"><button class="dbtn" id="data-confirm-no" type="button">Annuleer</button><button class="dbtn danger solid" id="data-confirm-yes" type="button">Wis</button></div>
+    </div>
+  </section>
 </div>
 
 <div class="viewer" id="viewer" aria-hidden="true">
@@ -612,7 +724,7 @@ function showHome(fromHistory) {
   $('viewer').classList.remove('open');
   $('viewer').setAttribute('aria-hidden', 'true');
   document.title = 'Onder Constructie';
-  renderRecent(); markLive();
+  renderRecent(); renderPaths(); markLive();
   if (pendingReload) { location.reload(); return; }
   if (!fromHistory && history.state && history.state.tool) history.back();
 }
@@ -702,6 +814,152 @@ if ('serviceWorker' in navigator) {
     .catch(() => {});
 }
 
+/* ---------- Gegevens: zien, bewaren, wissen ----------
+   Welke sleutels een tool gebruikt, staat in tools.json (oc:opslag). Een * achteraan is een voorvoegsel.
+   De app zelf bewaart onder 'oc-app.' (laatst gebruikt, inklapstand, gebruik). */
+const APP_ENTRY = { id:'__app', title:'Deze app', sub:'laatst gebruikt, volgorde, ingeklapte blokken', storage:['oc-app.*'],
+  icon:'<svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="16" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/><path d="M14 15h12M14 20h12M14 25h8" stroke="#64748b" stroke-width="2" stroke-linecap="round"/></svg>' };
+function lsKeys() { const out = []; try { for (let i = 0; i < localStorage.length; i++) out.push(localStorage.key(i)); } catch {} return out; }
+function keysFor(patterns, all = lsKeys()) {
+  return all.filter(k => patterns.some(p => p.endsWith('*') ? k.startsWith(p.slice(0, -1)) : k === p));
+}
+function sizeOf(keys) { let n = 0; try { keys.forEach(k => n += k.length + (localStorage.getItem(k) || '').length); } catch {} return n * 2; }
+const kb = n => n < 1024 ? `${n} bytes` : `${(n / 1024).toFixed(n < 10240 ? 1 : 0).replace('.', ',')} kB`;
+function dataEntries() {
+  const all = lsKeys();
+  return [...TOOLS, APP_ENTRY].map(t => ({ t, keys: keysFor(t.storage || [], all) })).filter(e => e.keys.length);
+}
+let pendingWipe = null;
+function renderData() {
+  const entries = dataEntries();
+  $('data-list').innerHTML = entries.length ? entries.map(({ t, keys }) => `
+    <div class="drow"><span class="icon">${t.icon}</span>
+      <span><span class="drow-name">${esc(t.title)}</span><br><span class="drow-meta">${kb(sizeOf(keys))} bewaard</span></span>
+      <button class="drow-wipe" data-wipe="${esc(t.id)}">Wis</button></div>`).join('')
+    : '<p class="data-empty">Er is niets bewaard. Je begint met een schone lei.</p>';
+  $('data-wipe-all').hidden = !entries.length;
+  $('data-backup').hidden = !entries.length;
+}
+function openData() { renderData(); $('data-confirm').hidden = true; $('data-sheet').hidden = false; }
+function closeData() { $('data-sheet').hidden = true; pendingWipe = null; }
+$('data-open').addEventListener('click', openData);
+$('data-close').addEventListener('click', closeData);
+$('data-sheet').addEventListener('click', e => { if (e.target === $('data-sheet')) closeData(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('data-sheet').hidden) closeData(); });
+
+function backup(keys) {
+  const data = {}; keys.forEach(k => { try { data[k] = localStorage.getItem(k); } catch {} });
+  const blob = new Blob([JSON.stringify({ app:'Onder Constructie', version:1, created:new Date().toISOString(), data }, null, 1)], { type:'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `onderconstructie-reservekopie-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+function askWipe(ids) {
+  const entries = dataEntries().filter(e => ids.includes(e.t.id));
+  const names = entries.map(e => e.t.title);
+  pendingWipe = entries;
+  $('data-confirm-text').textContent = ids.length > 1
+    ? `Alles wissen in ${names.length} ${names.length === 1 ? 'tool' : 'tools'}? Je begint overal opnieuw. Dit kan je niet ongedaan maken.`
+    : `Alles wissen in ${names[0]}? Dit kan je niet ongedaan maken.`;
+  $('data-confirm-yes').textContent = ids.length > 1 ? 'Wis alles' : 'Wis';
+  $('data-confirm').hidden = false;
+  $('data-confirm').scrollIntoView({ block:'nearest', behavior:'smooth' });
+}
+$('data-list').addEventListener('click', e => { const b = e.target.closest('[data-wipe]'); if (b) askWipe([b.dataset.wipe]); });
+$('data-wipe-all').addEventListener('click', () => askWipe(dataEntries().map(e => e.t.id)));
+$('data-confirm-no').addEventListener('click', () => { $('data-confirm').hidden = true; pendingWipe = null; });
+$('data-confirm-yes').addEventListener('click', () => {
+  if (!pendingWipe) return;
+  const all = pendingWipe.length > 1;
+  // bij "alles wissen" ook alle klaargelegde lijsten voor overnemen, ook van tools die er niet meer zijn
+  const keys = [...new Set(pendingWipe.flatMap(e => e.keys).concat(all ? keysFor(['oc.share.*']) : []))];
+  if ($('data-confirm-backup').checked) backup(keys);
+  keys.forEach(k => { try { localStorage.removeItem(k); } catch {} });
+  // open tools sluiten, zodat ze bij het volgende openen leeg starten
+  pendingWipe.forEach(e => dropFrame(e.t.id));
+  const wipedApp = pendingWipe.some(e => e.t.id === '__app');
+  pendingWipe = null; $('data-confirm').hidden = true;
+  renderPaths();
+  if (wipedApp) { renderGroups(); renderRecent(); renderFilter(); GROUPS.forEach(g => setCollapsed(g.id, false)); }
+  markLive(); renderData();
+});
+$('data-backup').addEventListener('click', () => backup(dataEntries().flatMap(e => e.keys)));
+$('data-restore-file').addEventListener('change', async e => {
+  const file = e.target.files && e.target.files[0]; e.target.value = '';
+  if (!file) return;
+  try {
+    const d = JSON.parse(await file.text());
+    if (!d || d.app !== 'Onder Constructie' || typeof d.data !== 'object') throw new Error('vorm');
+    const allowed = [...TOOLS, APP_ENTRY].flatMap(t => t.storage || []).concat(['oc.share.*']);
+    let n = 0;
+    Object.entries(d.data).forEach(([k, v]) => {
+      if (typeof v !== 'string' || !keysFor(allowed, [k]).length) return;
+      try { localStorage.setItem(k, v); n++; } catch {}
+    });
+    [...frames.keys()].forEach(id => dropFrame(id));
+    renderGroups(); renderRecent(); renderFilter(); renderPaths(); markLive(); renderData();
+    $('data-confirm').hidden = true;
+    $('data-list').insertAdjacentHTML('beforebegin', `<p class="sheet-intro" style="color:var(--accent-dark)">Reservekopie teruggezet: ${n} onderdelen.</p>`);
+  } catch {
+    $('data-list').insertAdjacentHTML('beforebegin', '<p class="sheet-intro" style="color:#dc2626">Dit bestand is geen reservekopie van Onder Constructie.</p>');
+  }
+});
+
+/* ---------- Stappenplannen ----------
+   Tools zeggen zelf waar ze in een stappenplan staan (oc:traject, bv. "verandering:2").
+   De app toont per plan de stappen, welke al gegevens hebben, en wat de volgende stap is. */
+const TRAJECTEN = [
+  { id:'verandering', title:'Veranderaanpak', note:'Van wie er mee moet tot hoe mensen meegaan',
+    foot:'Stap 1 tot 3 voeden samen het Veranderprofiel.',
+    q:{ stakeholders:'Wie moet mee, en wil dat?', impact:'Wat verandert er, voor wie?', klimaat:'Hoeveel ruimte en vertrouwen is er?',
+        veranderprofiel:'Wat voor verandering, hoeveel inspanning?', weerstand:'Hoe gaan mensen mee?', retro:'Wat leren we eruit?' } },
+  { id:'project', title:'Projectaanpak', note:'Van vertrekpunt tot terugblik',
+    q:{ gap:'Waar staan we, waar willen we heen?', prioriteit:'Wat eerst?', raci:'Wie doet wat?', 'project-realisme':'Is het haalbaar?',
+        kanban:'Het werk zelf', 'project-radar':'Hoe staat het project ervoor?', retro:'Wat nemen we mee?' } }
+];
+const checkIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+// "Begonnen" = de tool heeft iets bewaard op dit toestel. Klaargelegde gegevens (oc.share.*) tellen ook.
+function hasData(t, all) {
+  if (!(t.storage || []).length) return null;
+  try { return keysFor(t.storage, all).some(k => { const v = localStorage.getItem(k); return v && v !== '[]' && v !== '{}' && v !== 'null'; }); } catch { return false; }
+}
+function renderPaths() {
+  const all = lsKeys(), openSet = store.get('paths-open', []);
+  const html = TRAJECTEN.map(tr => {
+    const steps = TOOLS.flatMap(t => (t.traject || []).filter(x => x.naam === tr.id).map(x => ({ t, n: x.stap })))
+      .sort((a, b) => a.n - b.n);
+    if (steps.length < 2) return '';
+    steps.forEach(s => s.done = hasData(s.t, all));
+    const next = steps.find(s => s.done === false) || null;
+    const nDone = steps.filter(s => s.done).length, isOpen = openSet.includes(tr.id);
+    return `<section class="path${isOpen ? ' open' : ''}" data-path="${tr.id}">
+      <button class="path-head" aria-expanded="${isOpen}">
+        <span><span class="path-title" role="heading" aria-level="2">${esc(tr.title)}</span>
+          <span class="path-note">${!next && nDone ? 'Alle stappen begonnen' : nDone ? `${nDone} van ${steps.length} stappen begonnen` : esc(tr.note)}</span>
+          <span class="path-bar" aria-hidden="true">${steps.map(s => `<span class="${s.done ? 'done' : ''}"></span>`).join('')}</span></span>
+        ${toggleIcon}
+      </button>
+      ${next ? `<button class="path-next" data-id="${esc(next.t.id)}"><span class="icon">${next.t.icon}</span>
+        <span><small>${nDone ? 'Volgende stap' : 'Begin hier'}</small><b>${esc(next.t.title)}</b></span>${chevron}</button>` : ''}
+      <ol class="steps">${steps.map((s, i) => `<li class="step${s.done ? ' done' : ''}${s === next ? ' next' : ''}">
+        <button class="step-btn" data-id="${esc(s.t.id)}" title="${esc(s.t.desc)}">
+          <span class="step-dot">${s.done ? checkIcon : i + 1}</span><span class="icon">${s.t.icon}</span>
+          <span><span class="step-name">${esc(s.t.title)}</span><span class="step-q">${esc(tr.q[s.t.id] || s.t.sub)}</span></span>
+          <span class="step-st">${s.done ? 'begonnen' : s === next ? 'volgende' : ''}</span>
+        </button></li>`).join('')}</ol>
+      ${isOpen && tr.foot ? `<p class="path-foot">${esc(tr.foot)} Een vinkje betekent dat er iets bewaard is op dit toestel.</p>` : ''}
+    </section>`;
+  }).join('');
+  $('paths').innerHTML = html;
+  $('paths-wrap').hidden = !html;
+}
+document.addEventListener('click', e => {
+  const h = e.target.closest('.path-head'); if (!h) return;
+  const id = h.closest('.path').dataset.path, set = new Set(store.get('paths-open', []));
+  set.has(id) ? set.delete(id) : set.add(id);
+  store.set('paths-open', [...set]); renderPaths();
+});
+
 /* ---------- Start ---------- */
 async function loadTools() {
   // Eerst het netwerk (nieuwste lijst); zonder verbinding geeft de service worker de bewaarde lijst.
@@ -713,7 +971,7 @@ async function loadTools() {
 }
 function start() {
   byId = Object.fromEntries(TOOLS.map(t => [t.id, t]));
-  renderGroups(); renderRecent(); renderFilter();
+  renderGroups(); renderRecent(); renderFilter(); renderPaths();
   $('results-clear').addEventListener('click', () => setFilter(null));
   GROUPS.forEach(g => setCollapsed(g.id, store.get('collapsed', []).includes(g.id)));
   const first = location.hash.slice(1) || new URLSearchParams(location.search).get('tool');
