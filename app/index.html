@@ -372,6 +372,19 @@ body.filtering .paths-wrap { display:none; }
 .list-tools button, .results-clear { min-height:44px; padding:0 0.75rem; }
 .footer a, .footer-link { display:inline-flex; align-items:center; min-height:44px; padding:0 0.375rem; }
 .install .dismiss { min-width:44px; min-height:44px; }
+
+/* Wissen vanuit de app: melding met Ongedaan en een korte bevestiging */
+.app-toast { position:fixed; left:50%; bottom:calc(env(safe-area-inset-bottom,0px) + 1.25rem); transform:translate(-50%, 200%); visibility:hidden; z-index:2000; display:flex; align-items:center; gap:0.75rem; background:#1e293b; color:#fff; padding:0.5rem 0.5rem 0.5rem 1rem; border-radius:12px; font-size:0.875rem; box-shadow:0 10px 30px rgba(15,23,42,0.25); max-width:calc(100% - 2rem); transition:transform 0.25s ease, visibility 0s 0.25s; }
+.app-toast.show { transform:translate(-50%, 0); visibility:visible; transition:transform 0.25s ease; }
+.app-toast button { color:#6ee7b7; font-weight:600; min-height:44px; padding:0 0.75rem; border-radius:8px; }
+.app-dlg-back { position:fixed; inset:0; z-index:2001; display:flex; align-items:center; justify-content:center; padding:1rem; background:rgba(15,23,42,0.45); backdrop-filter:blur(3px); }
+.app-dlg-back[hidden] { display:none !important; }
+.app-dlg { width:100%; max-width:400px; background:#fff; border-radius:16px; padding:1.375rem 1.375rem 1.125rem; box-shadow:0 20px 50px rgba(15,23,42,0.25); }
+.app-dlg b { display:block; font-size:1.0625rem; color:#1e293b; margin-bottom:0.375rem; }
+.app-dlg p { font-size:0.9375rem; line-height:1.5; color:#475569; }
+.app-dlg-row { display:flex; justify-content:flex-end; gap:0.5rem; margin-top:1.25rem; }
+.app-dlg-row .dbtn { min-height:44px; }
+#wipe-tool:hover { color:#b91c1c; }
 </style>
 </head>
 <body>
@@ -446,7 +459,7 @@ body.filtering .paths-wrap { display:none; }
     <span class="sep" aria-hidden="true">·</span>
     <button class="footer-link" id="data-open" type="button">gegevens</button>
     <span class="sep" aria-hidden="true">·</span>
-    <span class="app-version" title="Versie van de app">v12</span>
+    <span class="app-version" title="Versie van de app">v13</span>
   </footer>
 </div>
 
@@ -488,6 +501,9 @@ body.filtering .paths-wrap { display:none; }
       <button class="tb-btn" id="ext" aria-label="Open in de browser" title="Open in de browser">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/></svg>
       </button>
+      <button class="tb-btn" id="wipe-tool" aria-label="Gegevens van deze tool wissen" title="Gegevens van deze tool wissen" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>
+      </button>
       <button class="tb-btn" id="close" aria-label="Sluit deze tool" title="Sluit (wist wat niet bewaard is)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
       </button>
@@ -496,6 +512,9 @@ body.filtering .paths-wrap { display:none; }
   <div class="frames" id="frames"><div class="loading" id="loading">Laden…</div></div>
 </div>
 
+<div class="app-toast" id="app-toast" role="status" aria-live="polite"><span id="app-toast-text"></span><button type="button" id="app-toast-btn" hidden>Ongedaan</button></div>
+<div class="app-dlg-back" id="app-dlg" hidden><div class="app-dlg" role="alertdialog" aria-modal="true" aria-labelledby="app-dlg-t"><b id="app-dlg-t"></b><p id="app-dlg-p"></p>
+  <div class="app-dlg-row"><button type="button" class="dbtn" id="app-dlg-no">Annuleer</button><button type="button" class="dbtn danger solid" id="app-dlg-yes">Wis</button></div></div></div>
 <script>
 /* De lijst van tools komt uit /tools.json. Die wordt gebouwd uit de metatags in de tools zelf (scripts/bouw-tools.py). */
 let TOOLS = [];
@@ -712,7 +731,7 @@ function openTool(id, fromHistory) {
   frames.set(id, f);
   if (current && current !== id && byId[current] && !byId[current].keep) dropFrame(current);
   trimFrames(id);
-  current = id;
+  current = id; setTimeout(syncWipeBtn, 0);
   for (const [k, el] of frames) el.classList.toggle('active', k === id);
   $('tb-title').textContent = t.title;
   $('viewer').classList.add('open');
@@ -873,8 +892,8 @@ function askWipe(ids) {
   const names = entries.map(e => e.t.title);
   pendingWipe = entries;
   $('data-confirm-text').textContent = ids.length > 1
-    ? `Alles wissen in ${names.length} ${names.length === 1 ? 'tool' : 'tools'}? Je begint overal opnieuw. Dit kan je niet ongedaan maken.`
-    : `Alles wissen in ${names[0]}? Dit kan je niet ongedaan maken.`;
+    ? `Alles wissen in ${names.length} ${names.length === 1 ? 'tool' : 'tools'}? Je begint overal opnieuw. Je kan het meteen daarna nog ongedaan maken.`
+    : `Alles wissen in ${names[0]}? Je kan het meteen daarna nog ongedaan maken.`;
   $('data-confirm-yes').textContent = ids.length > 1 ? 'Wis alles' : 'Wis';
   $('data-confirm').hidden = false;
   $('data-confirm').scrollIntoView({ block:'nearest', behavior:'smooth' });
@@ -888,7 +907,7 @@ $('data-confirm-yes').addEventListener('click', () => {
   // bij "alles wissen" ook alle klaargelegde lijsten voor overnemen, ook van tools die er niet meer zijn
   const keys = [...new Set(pendingWipe.flatMap(e => e.keys).concat(all ? keysFor(['oc.share.*']) : []))];
   if ($('data-confirm-backup').checked) backup(keys);
-  keys.forEach(k => { try { localStorage.removeItem(k); } catch {} });
+  const restore = wipeKeys(keys), wiped = pendingWipe.map(e => e.t.id);
   // open tools sluiten, zodat ze bij het volgende openen leeg starten
   pendingWipe.forEach(e => dropFrame(e.t.id));
   const wipedApp = pendingWipe.some(e => e.t.id === '__app');
@@ -896,6 +915,7 @@ $('data-confirm-yes').addEventListener('click', () => {
   renderPaths();
   if (wipedApp) { renderGroups(); renderRecent(); renderFilter(); GROUPS.forEach(g => setCollapsed(g.id, false)); }
   markLive(); renderData();
+  appToast(all ? 'Alles gewist' : 'Gewist', () => { restore(); wiped.forEach(dropFrame); renderGroups(); renderRecent(); renderFilter(); renderPaths(); markLive(); renderData(); appToast('Teruggezet'); });
 });
 $('data-backup').addEventListener('click', () => backup(dataEntries().flatMap(e => e.keys)));
 function dataMsg(text, bad) {
@@ -993,6 +1013,43 @@ document.addEventListener('click', e => {
   const id = h.closest('.path').dataset.path, set = new Set(store.get('paths-open', []));
   set.has(id) ? set.delete(id) : set.add(id);
   store.set('paths-open', [...set]); renderPaths();
+});
+
+
+/* ---------- Wissen met Ongedaan ---------- */
+let appUndo = null, appToastT;
+function appToast(msg, undo) {
+  appUndo = undo || null;
+  $('app-toast-text').textContent = msg; $('app-toast-btn').hidden = !undo;
+  $('app-toast').classList.add('show'); clearTimeout(appToastT);
+  appToastT = setTimeout(() => { $('app-toast').classList.remove('show'); appUndo = null; }, undo ? 8000 : 2600);
+}
+$('app-toast-btn').addEventListener('click', () => { const f = appUndo; appUndo = null; $('app-toast').classList.remove('show'); f && f(); });
+// Wist sleutels en geeft een functie terug die ze exact terugzet.
+function wipeKeys(keys) {
+  const copy = {}; keys.forEach(k => { try { const v = localStorage.getItem(k); if (v != null) copy[k] = v; localStorage.removeItem(k); } catch {} });
+  return () => Object.entries(copy).forEach(([k, v]) => { try { localStorage.setItem(k, v); } catch {} });
+}
+function appConfirm(title, text, ok) {
+  return new Promise(resolve => {
+    $('app-dlg-t').textContent = title; $('app-dlg-p').textContent = text; $('app-dlg-yes').textContent = ok;
+    $('app-dlg').hidden = false; $('app-dlg-no').focus();
+    const done = v => { $('app-dlg').hidden = true; document.removeEventListener('keydown', key, true); $('app-dlg-yes').onclick = $('app-dlg-no').onclick = $('app-dlg').onclick = null; resolve(v); };
+    const key = e => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); done(false); } };
+    document.addEventListener('keydown', key, true);
+    $('app-dlg-yes').onclick = () => done(true); $('app-dlg-no').onclick = () => done(false);
+    $('app-dlg').onclick = e => { if (e.target === $('app-dlg')) done(false); };
+  });
+}
+const toolKeys = t => keysFor((t.storage || []).concat(t.id ? ['oc.share.' + t.id] : []));
+function syncWipeBtn() { const t = current && byId[current]; $('wipe-tool').hidden = !t || !toolKeys(t).length; }
+setInterval(() => { if (current) syncWipeBtn(); }, 1500);
+$('wipe-tool').addEventListener('click', async () => {
+  const id = current, t = byId[id]; if (!t) return;
+  if (!await appConfirm(`Gegevens van ${t.title} wissen?`, 'Alles wat je in deze tool bewaarde, verdwijnt. Je kan het meteen daarna nog ongedaan maken.', 'Wis')) return;
+  const restore = wipeKeys(toolKeys(t));
+  dropFrame(id); openTool(id); renderPaths(); syncWipeBtn();
+  appToast(`${t.title} is leeg`, () => { restore(); dropFrame(id); if (current === id || !current) openTool(id); renderPaths(); syncWipeBtn(); appToast('Teruggezet'); });
 });
 
 /* ---------- Start ---------- */

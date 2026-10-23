@@ -195,6 +195,12 @@ button { background:none; border:0; cursor:pointer; }
 .ocw-row .ocw-yes { background:#dc2626; } .ocw-row .ocw-yes:hover { background:#b91c1c; }
 .ocw-row button { min-height:44px; }
 button.oc-import { color:#047857; min-height:44px; }
+
+/* Opnieuw beginnen (zelfde knop in elke tool) */
+.oc-restart-row { display:flex; justify-content:center; padding:0.5rem 0 0; }
+.oc-restart-row[hidden] { display:none !important; }
+.oc-restart { min-height:44px; padding:0.5rem 1rem; font:inherit; font-size:0.875rem; font-weight:500; color:#64748b; background:none; border:0; border-radius:10px; cursor:pointer; text-decoration:underline; text-decoration-color:#cbd5e1; text-underline-offset:3px; }
+.oc-restart:hover { color:#b91c1c; background:#fef2f2; text-decoration-color:currentColor; }
 </style>
 </head>
 <body>
@@ -278,6 +284,7 @@ button.oc-import { color:#047857; min-height:44px; }
     <ul class="items" id="done-items"></ul>
   </section>
 
+<div class="oc-restart-row" id="oc-restart-row" hidden><button type="button" class="oc-restart" id="oc-restart-btn">Opnieuw beginnen</button></div>
 </main>
 
 <footer class="footer">
@@ -1003,6 +1010,45 @@ window.addEventListener('storage', e => { if (e.key === KEY) { state = load(); r
 
 checkImport();
 render();
+</script>
+<script>
+/* Opnieuw beginnen: zichtbaar zodra er echt iets ingevuld is; start de eigen 'Alles wissen' van de tool.
+   'Leeg' = wat de tool zelf bewaart zonder inbreng van de gebruiker (na een eerste bezoek of na wissen). */
+(() => {
+  const meta = document.querySelector('meta[name="oc:opslag"]');
+  const keys = meta ? meta.content.split(',').map(s => s.trim()).filter(k => k && !k.startsWith('oc.share.') && !k.endsWith('*')) : [];
+  const BASE = 'oc-app.leeg.' + location.pathname;
+  const get = k => { try { return localStorage.getItem(k); } catch { return null; } };
+  const vals = () => Object.fromEntries(keys.map(k => [k, get(k)]));
+  const has = v => Array.isArray(v) ? v.length > 0 : v && typeof v === 'object' ? Object.values(v).some(has) : typeof v === 'string' && v.trim().length > 0;
+  const content = raw => { try { return has(JSON.parse(raw)); } catch { return !!raw; } };
+  let base = null; try { base = JSON.parse(get(BASE) || 'null'); } catch {}
+  const setBase = () => { base = vals(); try { localStorage.setItem(BASE, JSON.stringify(base)); } catch {} sync(); };
+  const filled = () => { const v = vals(); return keys.some(k => v[k] != null && content(v[k]) && !(base && v[k] === base[k])); };
+  const row = document.getElementById('oc-restart-row');
+  function sync() { row.hidden = !filled() || !document.querySelector('[data-act="wipe"]'); }
+  let t; const later = () => { clearTimeout(t); t = setTimeout(sync, 350); };
+  ['click', 'input', 'change', 'keyup'].forEach(ev => document.addEventListener(ev, later, true));
+  window.addEventListener('storage', later); window.addEventListener('focus', later);
+  // Eerste bezoek: wat de tool zelf meteen bewaart, telt als leeg. Een tool die nog niets klaarlegde
+  // voor andere tools (oc.share.*), heeft nog geen echte inhoud.
+  const share = meta ? meta.content.split(',').map(s => s.trim()).find(k => k.startsWith('oc.share.')) : null;
+  if (!base && share && get(share) == null) setBase();
+  else if (keys.every(k => get(k) == null)) setTimeout(setBase, 900);
+  // Na wissen (via deze knop of het menu): de nieuwe toestand is de lege toestand.
+  document.addEventListener('click', e => {
+    if (!e.target.closest('[data-act="wipe"]')) return;
+    const before = JSON.stringify(vals()); let n = 0;
+    const iv = setInterval(() => {
+      if (++n > 40) return clearInterval(iv);
+      if (document.querySelector('.ocw-back')) return;               // bevestiging staat nog open
+      if (JSON.stringify(vals()) !== before) { clearInterval(iv); setTimeout(setBase, 400); }
+      else if (n > 5) clearInterval(iv);                              // geannuleerd
+    }, 150);
+  }, true);
+  document.getElementById('oc-restart-btn').addEventListener('click', () => { const w = document.querySelector('[data-act="wipe"]'); w && w.click(); });
+  sync();
+})();
 </script>
 </body>
 </html>

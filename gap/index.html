@@ -360,6 +360,12 @@ button.oc-import { color:#047857; min-height:44px; }
 .vb-tag { font-size:0.6875rem; font-weight:600; padding:0 0.375rem; border-radius:999px; background:#fef3c7; color:#92400e; }
 .icon-btn.del-unit:hover { color:#b91c1c; background:#fef2f2; }
 @media (max-width:420px) { .vb-btn { font-size:0.8125rem; padding:0.375rem 0.5rem; } }
+
+/* Opnieuw beginnen (zelfde knop in elke tool) */
+.oc-restart-row { display:flex; justify-content:center; padding:0.5rem 0 0; }
+.oc-restart-row[hidden] { display:none !important; }
+.oc-restart { min-height:44px; padding:0.5rem 1rem; font:inherit; font-size:0.875rem; font-weight:500; color:#64748b; background:none; border:0; border-radius:10px; cursor:pointer; text-decoration:underline; text-decoration-color:#cbd5e1; text-underline-offset:3px; }
+.oc-restart:hover { color:#b91c1c; background:#fef2f2; text-decoration-color:currentColor; }
 </style>
 </head>
 <body>
@@ -450,6 +456,7 @@ button.oc-import { color:#047857; min-height:44px; }
       <div style="margin:0.5rem 0 0"><button type="button" class="oc-import" data-oc-types="taak,risico" id="oc-imp" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11M7.5 9.5L12 14l4.5-4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>Kloven overnemen uit…</button></div>
     </div>
   </div>
+<div class="oc-restart-row" id="oc-restart-row" hidden><button type="button" class="oc-restart" id="oc-restart-btn">Opnieuw beginnen</button></div>
 </main>
 
 <footer class="footer">
@@ -1490,6 +1497,45 @@ $('menu').addEventListener('click', async e => {
 window.addEventListener('storage', e => { if (e.key === KEY) { state = load(); render(); } });
 window.addEventListener('resize', () => autosize($('question')));
 render();
+</script>
+<script>
+/* Opnieuw beginnen: zichtbaar zodra er echt iets ingevuld is; start de eigen 'Alles wissen' van de tool.
+   'Leeg' = wat de tool zelf bewaart zonder inbreng van de gebruiker (na een eerste bezoek of na wissen). */
+(() => {
+  const meta = document.querySelector('meta[name="oc:opslag"]');
+  const keys = meta ? meta.content.split(',').map(s => s.trim()).filter(k => k && !k.startsWith('oc.share.') && !k.endsWith('*')) : [];
+  const BASE = 'oc-app.leeg.' + location.pathname;
+  const get = k => { try { return localStorage.getItem(k); } catch { return null; } };
+  const vals = () => Object.fromEntries(keys.map(k => [k, get(k)]));
+  const has = v => Array.isArray(v) ? v.length > 0 : v && typeof v === 'object' ? Object.values(v).some(has) : typeof v === 'string' && v.trim().length > 0;
+  const content = raw => { try { return has(JSON.parse(raw)); } catch { return !!raw; } };
+  let base = null; try { base = JSON.parse(get(BASE) || 'null'); } catch {}
+  const setBase = () => { base = vals(); try { localStorage.setItem(BASE, JSON.stringify(base)); } catch {} sync(); };
+  const filled = () => { const v = vals(); return keys.some(k => v[k] != null && content(v[k]) && !(base && v[k] === base[k])); };
+  const row = document.getElementById('oc-restart-row');
+  function sync() { row.hidden = !filled() || !document.querySelector('[data-act="wipe"]'); }
+  let t; const later = () => { clearTimeout(t); t = setTimeout(sync, 350); };
+  ['click', 'input', 'change', 'keyup'].forEach(ev => document.addEventListener(ev, later, true));
+  window.addEventListener('storage', later); window.addEventListener('focus', later);
+  // Eerste bezoek: wat de tool zelf meteen bewaart, telt als leeg. Een tool die nog niets klaarlegde
+  // voor andere tools (oc.share.*), heeft nog geen echte inhoud.
+  const share = meta ? meta.content.split(',').map(s => s.trim()).find(k => k.startsWith('oc.share.')) : null;
+  if (!base && share && get(share) == null) setBase();
+  else if (keys.every(k => get(k) == null)) setTimeout(setBase, 900);
+  // Na wissen (via deze knop of het menu): de nieuwe toestand is de lege toestand.
+  document.addEventListener('click', e => {
+    if (!e.target.closest('[data-act="wipe"]')) return;
+    const before = JSON.stringify(vals()); let n = 0;
+    const iv = setInterval(() => {
+      if (++n > 40) return clearInterval(iv);
+      if (document.querySelector('.ocw-back')) return;               // bevestiging staat nog open
+      if (JSON.stringify(vals()) !== before) { clearInterval(iv); setTimeout(setBase, 400); }
+      else if (n > 5) clearInterval(iv);                              // geannuleerd
+    }, 150);
+  }, true);
+  document.getElementById('oc-restart-btn').addEventListener('click', () => { const w = document.querySelector('[data-act="wipe"]'); w && w.click(); });
+  sync();
+})();
 </script>
 </body>
 </html>
