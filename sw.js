@@ -4,7 +4,7 @@
   maar hij bemoeit zich alleen met de paden hieronder. Al de rest van de site gaat ongemoeid naar het netwerk.
   Wordt enkel geregistreerd wie /app/ opent.
 */
-const VERSION = 'oc-app-v10';
+const VERSION = 'oc-app-v11';
 
 const SHELL = [
   '/app/', '/tools.json', '/app/manifest.webmanifest', '/app/icon.svg',
@@ -25,6 +25,7 @@ const LIBS = [
   'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap',
   'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap',
   'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap',
+  'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
   'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js',
@@ -89,18 +90,34 @@ self.addEventListener('message', e => {
   })());
 });
 
+// Een nieuwe toollijst: ontbrekende tools meteen offline bewaren, verdwenen tools uit de bewaarde versie halen.
+async function syncTools(cache) {
+  const paths = await toolPaths(cache), have = (await cache.keys()).map(r => new URL(r.url));
+  const ownTool = u => u.origin === location.origin && !u.pathname.startsWith('/app/') && u.pathname !== '/tools.json';
+  await Promise.allSettled([
+    ...paths.map(async u => {
+      if (await cache.match(u)) return;
+      const res = await fetch(new Request(u, { cache: 'reload' }));
+      if (res.ok) await cache.put(u, await clean(res));
+    }),
+    ...have.filter(u => ownTool(u) && !paths.includes(norm(u.pathname))).map(u => cache.delete(u.href))
+  ]);
+}
+
 // Eerst het netwerk, zodat je altijd de nieuwste versie krijgt. Is dat traag of weg: de bewaarde versie.
 async function networkFirst(e, key) {
   const cache = await caches.open(VERSION);
   const net = fetch(e.request, { cache: 'no-cache' }).then(async res => {
     if (res.ok && res.type === 'basic') {
       await cache.put(key, await clean(res.clone()));
-      if (key === '/tools.json') TOOLS = [];   // nieuwe lijst: opnieuw inlezen
+      if (key === '/tools.json') { TOOLS = []; try { e.waitUntil(syncTools(cache).catch(() => {})); } catch {} }   // nieuwe lijst: opnieuw inlezen en bijwerken
     }
     return res;
   });
   e.waitUntil(net.catch(() => {}));
-  const cached = await cache.match(key, { ignoreSearch: true });
+  let cached = await cache.match(key, { ignoreSearch: true });
+  // Een onbekend adres binnen de app: toon offline de app zelf, niet een foutmelding.
+  if (!cached && key.startsWith('/app/') && e.request.mode === 'navigate') cached = await cache.match('/app/');
   if (!cached) {
     return net.catch(() => new Response(
       '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +

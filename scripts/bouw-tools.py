@@ -25,6 +25,7 @@ import html
 import json
 import re
 import sys
+import urllib.error
 import urllib.parse
 import urllib.request
 from html.parser import HTMLParser
@@ -34,7 +35,7 @@ PADEN = [
     '/project-radar/', '/kanban/', '/stakeholders/', '/risico/', '/mixer/', '/paradox/',
     '/fortuna/', '/check-in/', '/project-realisme/', '/vinkje/',
     '/beslissingen/', '/raci/', '/prioriteit/', '/retro/', '/vergaderkost/',
-    '/gap/', '/weerstand/', '/impact/', '/klimaat/', '/veranderprofiel/', '/sponsor/',
+    '/gap/', '/weerstand/', '/impact/', '/klimaat/', '/veranderprofiel/', '/sponsor/', '/communicatie/',
     '/qr/', '/focus/', '/zakmes/looplicht/', '/zakmes/memomities/',
     '/hier/', '/adem/', '/hart/',
 ]
@@ -144,12 +145,29 @@ def main():
         for arg in sys.argv[sys.argv.index('--lokaal') + 1:]:
             prefix, map_ = arg.split('=', 1)
             lokaal[prefix] = map_.rstrip('/') + '/'
-    tools, fouten = [], []
+    try:
+        vorige = {t['path']: t for t in json.load(open('tools.json', encoding='utf-8'))}
+    except Exception:
+        vorige = {}
+    tools, fouten, waarschuwingen = [], [], []
     for pad in PADEN:
         try:
             tools.append(tool(pad, lokaal))
+        except (FileNotFoundError, urllib.error.HTTPError, urllib.error.URLError, TimeoutError) as e:
+            # Nog niet (of tijdelijk niet) online: de vorige vermelding houden, zodat één tool niet alles tegenhoudt.
+            if pad in vorige:
+                tools.append(vorige[pad])
+                waarschuwingen.append(f'{pad}: niet bereikbaar ({e}), vorige vermelding behouden')
+            else:
+                waarschuwingen.append(f'{pad}: niet bereikbaar ({e}), nog niet opgenomen')
         except Exception as e:
             fouten.append(str(e))
+    ids = [t['id'] for t in tools]
+    dubbel = sorted({i for i in ids if ids.count(i) > 1})
+    if dubbel:
+        fouten.append('dubbele id: ' + ', '.join(dubbel))
+    for w in waarschuwingen:
+        print('Let op: ' + w, file=sys.stderr)
     if fouten:
         print('Niet gebouwd. Problemen:\n  ' + '\n  '.join(fouten), file=sys.stderr)
         sys.exit(1)
