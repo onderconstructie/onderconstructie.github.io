@@ -4,11 +4,13 @@
   maar hij bemoeit zich alleen met de paden hieronder. Al de rest van de site gaat ongemoeid naar het netwerk.
   Wordt enkel geregistreerd wie /app/ opent.
 */
-const VERSION = 'oc-app-v11';
+const VERSION = 'oc-app-v12';
 
 const SHELL = [
   '/app/', '/tools.json', '/app/manifest.webmanifest', '/app/icon.svg',
-  '/app/icon-180.png', '/app/icon-192.png', '/app/icon-512.png', '/app/icon-maskable.png'
+  '/app/icon-180.png', '/app/icon-192.png', '/app/icon-512.png', '/app/icon-maskable.png',
+  // eigen lettertypes: geen verkeer naar Google, en altijd offline beschikbaar
+  '/fonts/fonts.css', '/fonts/dm-sans-latin-400-normal.woff2', '/fonts/dm-sans-latin-ext-400-normal.woff2', '/fonts/dm-sans-latin-500-normal.woff2', '/fonts/dm-sans-latin-ext-500-normal.woff2', '/fonts/dm-sans-latin-600-normal.woff2', '/fonts/dm-sans-latin-ext-600-normal.woff2', '/fonts/dm-sans-latin-700-normal.woff2', '/fonts/dm-sans-latin-ext-700-normal.woff2', '/fonts/jetbrains-mono-latin-400-normal.woff2', '/fonts/jetbrains-mono-latin-500-normal.woff2', '/fonts/jetbrains-mono-latin-600-normal.woff2', '/fonts/jetbrains-mono-latin-700-normal.woff2'
 ];
 // Welke tools offline bewaard worden, staat in /tools.json (gebouwd uit de metatags in de tools).
 let TOOLS = [];
@@ -21,17 +23,12 @@ async function toolPaths(cache) {
   return TOOLS;
 }
 const LIBS = [
-  'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap',
-  'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap',
-  'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap',
-  'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap',
-  'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
   'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js',
   'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js'
 ];
-const CDN_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com', 'cdnjs.cloudflare.com', 'cdn.jsdelivr.net'];
+const CDN_HOSTS = ['cdnjs.cloudflare.com', 'cdn.jsdelivr.net'];
 const NETWORK_TIMEOUT = 3500;
 
 function norm(path) {
@@ -144,6 +141,7 @@ self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   if (url.origin === location.origin) {
     const path = url.pathname === '/tools.json' ? '/tools.json' : norm(url.pathname);
+    if (url.pathname.startsWith('/fonts/')) { e.respondWith(cacheFirst(e)); return; }
     if (path.startsWith('/app/') || path === '/tools.json') { e.respondWith(networkFirst(e, path)); return; }
     if (TOOLS.length) {
       if (!isOurs(path, TOOLS)) return;   // de rest van de site: niet aankomen
