@@ -84,7 +84,7 @@ a { color:var(--accent-dark); }
 
 .toast { position:fixed; left:50%; bottom:calc(var(--bottom) + 1.25rem); transform:translate(-50%, 200%); visibility:hidden; z-index:100; display:flex; align-items:center; gap:0.75rem; background:var(--slate-800); color:var(--wit); padding:0.625rem 0.75rem 0.625rem 1rem; border-radius:12px; font-size:0.875rem; box-shadow:0 10px 30px rgba(15,23,42,0.25); max-width:calc(100% - 2rem); transition:transform 0.25s ease, visibility 0s 0.25s; }
 .toast.show { transform:translate(-50%, 0); visibility:visible; transition:transform 0.25s ease; }
-.toast button { color:#6ee7b7; font-weight:600; padding:0.25rem 0.5rem; border-radius:6px; }
+.toast button { color:#6ee7b7; font-weight:600; padding:0 0.75rem; min-height:44px; border-radius:8px; }
 
 .footer { text-align:center; padding:2rem 2rem calc(var(--bottom) + 2rem); border-top:1px solid var(--slate-200); background:var(--wit); }
 .quote { font-size:0.8125rem; color:var(--accent-dark); }
@@ -157,7 +157,8 @@ button.oc-import { color:#047857; min-height:44px; }
 .imports { display:flex; flex-wrap:wrap; gap:0.375rem; padding:0 1.125rem 1rem; }
 
 .draw-head { display:flex; align-items:center; gap:0.5rem; padding:0.875rem 0.75rem 0.5rem 1.125rem; }
-.draw-head .card-title { flex:1; }
+.draw-head { flex-wrap:wrap; }
+.draw-head .card-title { flex:1; min-width:6rem; }
 .zoom { min-height:44px; padding:0 0.75rem; border-radius:10px; font-size:0.8125rem; font-weight:600; color:var(--slate-600); border:1px solid var(--slate-200); }
 .canvas { overflow:auto; padding:0.25rem 0.5rem 0.75rem; -webkit-overflow-scrolling:touch; }
 .canvas svg { display:block; margin:0 auto; }
@@ -185,8 +186,10 @@ button.oc-import { color:#047857; min-height:44px; }
 .btn-primary:hover { background:var(--accent-hover); }
 .btn-ghost { background:var(--slate-100); color:var(--slate-700); }
 @media (max-width:520px) {
-  .row-top { grid-template-columns:auto minmax(0,1fr) auto; }
+  .row-top { grid-template-columns:auto minmax(0,1fr); }
+  .row-top .txt { grid-column:2; grid-row:1; }
   .row-top .sel.type { grid-column:1 / span 2; grid-row:2; justify-self:start; }
+  .row-top .row-acts { grid-column:2; grid-row:2; justify-self:end; }
   .row-more { margin-left:0; }
   .lane-chip input { width:6.5rem; }
 }
@@ -495,7 +498,7 @@ const ICON = {
 /* Opslag */
 const node = (type, text = '', lane = null) => ({ id:uid(), type, text, lane, to:'auto', no: type === 'keuze' ? 'none' : undefined, yesLabel:'ja', noLabel:'nee' });
 function newFlow(name) { return { id:uid(), name: name || 'Nieuwe stroom', lanes:[], nodes:[node('start', 'Start'), node('stap', ''), node('einde', 'Einde')] }; }
-function fresh() { return { flows:[], current:null, view:'edit', fit:true }; }
+function fresh() { return { flows:[], current:null, view:'edit', fit:null }; }
 function valid(s) {
   if (!s || !Array.isArray(s.flows)) return fresh();
   s.flows = s.flows.filter(f => f && Array.isArray(f.nodes)).map(f => ({
@@ -513,6 +516,10 @@ function save() {
   try { localStorage.setItem(KEY, JSON.stringify(state)); } catch { toast('Bewaren lukte niet: is de opslag vol?'); }
   saves++; clearTimeout(save.t); save.t = setTimeout(publish, 300);
 }
+// Weergave of keuze van stroom bewaren telt niet als wijziging: Ongedaan blijft dan mogelijk.
+function saveUi() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
+// Een ander tabblad bewaarde iets: opnieuw inlezen, zodat het ene tabblad het andere niet overschrijft.
+window.addEventListener('storage', e => { if (e.key === KEY) { const v = state.view, c = state.current; state = load(); if (state.flows.some(f => f.id === c)) state.current = c; state.view = v; render(); } });
 // Ongedaan maken kan zolang er na de melding niets anders bewaard werd (de melding legt het moment vast).
 const snapshot = () => { const c = JSON.stringify(state); const fn = () => { if (saves !== fn.mark) { setTimeout(() => toast('Ongedaan maken kan niet meer: er is intussen iets veranderd'), 60); return; } state = valid(JSON.parse(c)); save(); render(); toast('Teruggezet'); }; return fn; };
 const cur = () => state.flows.find(f => f.id === state.current) || state.flows[0] || null;
@@ -572,8 +579,10 @@ function layout(f) {
   // Sprongen lopen via kanalen rechts; de langste sprong krijgt het buitenste kanaal.
   const side = E.filter(e => !e.down).sort((p, q) => Math.abs(p.b.i - p.a.i) - Math.abs(q.b.i - q.a.i));
   side.forEach((e, k) => e.ch = k);
+  const nth = new Map(); E.filter(e => !e.down).forEach(e => { const k = nth.get(e.from.id) || 0; e.k = k; nth.set(e.from.id, k + 1); });
   const lanesW = PAD * 2 + lanes.length * LW;
-  const width = lanesW + (side.length ? 8 + side.length * CH : 0);
+  let width = lanesW + (side.length ? 8 + side.length * CH : 0);
+  side.forEach(e => { const a = pos.get(e.from.id); width = Math.max(width, a.cx + a.w / 2 + 12 + (e.label || '').length * 7.2 + 8); });
   return { lanes, top, pos, E, side, lanesW, width, height: Math.max(y - GAP + PAD, top + 40) };
 }
 function svgOf(f, { forExport = false } = {}) {
@@ -595,9 +604,12 @@ function svgOf(f, { forExport = false } = {}) {
       d = x1 === x2 ? `M${x1} ${y1}V${y2 - 1}` : `M${x1} ${y1}V${y1 + GAP / 2}H${x2}V${y2 - 1}`;
       lx = x1 + 7; ly = y1 + 15;
     } else {
-      const xs = a.cx + a.w / 2, xc = L.lanesW - PAD + 10 + e.ch * CH, xe = b.cx + b.w / 2;
-      d = `M${xs} ${a.cy}H${xc}V${b.cy}H${xe + 1}`;
-      lx = xs + 6; ly = a.cy - 6;
+      // een tweede sprong uit dezelfde keuze vertrekt lager langs de rand van de ruit, met zijn label eronder
+      const dy = (e.k || 0) * 18, ys = a.cy + dy;
+      const xs = a.n.type === 'keuze' ? a.cx + a.w / 2 - dy * (a.w / a.h) : a.cx + a.w / 2;
+      const xc = L.lanesW - PAD + 10 + e.ch * CH, xe = b.cx + b.w / 2;
+      d = `M${xs} ${ys}H${xc}V${b.cy}H${xe + 1}`;
+      lx = a.cx + a.w / 2 + 6; ly = dy ? ys + 15 : ys - 6;
     }
     parts.push(`<path d="${d}" fill="none" stroke="#475569" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#pijl)"/>`);
     if (e.label) { const lw = e.label.length * 7.2 + 6; parts.push(`<rect x="${lx - 3}" y="${ly - 11}" width="${lw}" height="15" rx="3" fill="#ffffff"/><text x="${lx}" y="${ly}" font-size="13" font-weight="600" fill="#b45309" text-anchor="${anchor}">${esc(e.label)}</text>`); }
@@ -627,6 +639,7 @@ function hints(f) {
     if (n.type === 'keuze' && (!n.no || n.no === 'none')) out.push({ text:`Keuze ${name(n)}: kies waar "${n.noLabel || 'nee'}" naartoe gaat.`, id:n.id });
     if (i > 0 && n.type !== 'start' && !inc.get(n.id)) out.push({ text:`Stap ${name(n)} is van nergens bereikbaar: geen enkele pijl komt er toe.`, id:n.id });
     if (f.lanes.length && !f.lanes.some(l => l.id === n.lane)) out.push({ text:`Stap ${name(n)} heeft nog geen rol.`, id:n.id });
+    if ((n.type === 'stap' || n.type === 'start') && !target(f, n, 'to')) out.push({ text:`Stap ${name(n)} loopt dood: kies bij "daarna" waar het verder gaat, of maak er een einde van.`, id:n.id });
     if (n.text.length > 60) out.push({ text:`Stap ${name(n)} is lang. Houd het bij een werkwoord en een voorwerp; uitleg past beter in een notitie.`, id:n.id });
   });
   if (f.nodes.length && !f.nodes.some(n => n.type === 'einde')) out.push({ text:'Er is geen einde. Sluit af, zodat duidelijk is waar het proces stopt.' });
@@ -635,20 +648,28 @@ function hints(f) {
 }
 
 /* Weergave */
+function hintsHTML(f) {
+  const h = hints(f);
+  return `${h.list.slice(0, 6).map(x => `<li>${ICON.info}<span>${esc(x.text)}${x.id ? ` <button type="button" class="lnk" data-act="goto" data-id="${x.id}">Toon</button>` : ''}</span></li>`).join('')}
+          ${h.list.length > 6 ? `<li><span>En nog ${h.list.length - 6} punten.</span></li>` : ''}
+          ${!h.list.length && f.nodes.length > 2 ? `<li class="ok"><span>De stroom is sluitend${f.lanes.length && h.handoffs < 4 ? `, met ${h.handoffs} ${h.handoffs === 1 ? 'overdracht' : 'overdrachten'} tussen rollen` : ''}.</span></li>` : ''}
+          ${h.handoffs >= 4 ? `<li><span>${h.handoffs} overdrachten tussen rollen. Elke overdracht is een plek waar werk kan blijven liggen: kunnen er minder?</span></li>` : ''}`;
+}
 // Passend: zo breed als de kaart, maar op een breed scherm nooit kleiner dan 85%, zodat de tekst leesbaar blijft.
+const fitNow = () => state.fit == null ? window.innerWidth >= 700 : state.fit;
 function sizeSvg(el) {
-  const w = +el.getAttribute('width');
+  const w = +el.getAttribute('width'), fit = fitNow();
   el.style.height = 'auto';
-  el.style.width = state.fit ? '100%' : w + 'px';
-  el.style.maxWidth = state.fit ? w + 'px' : 'none';
-  el.style.minWidth = state.fit && window.innerWidth >= 700 ? Math.round(w * 0.85) + 'px' : '0';
+  el.style.width = fit ? '100%' : w + 'px';
+  el.style.maxWidth = fit ? w + 'px' : 'none';
+  el.style.minWidth = fit && window.innerWidth >= 700 ? Math.round(w * 0.85) + 'px' : '0';
 }
 function render() {
   const f = cur();
   if (f && state.current !== f.id) state.current = f.id;
   $('tabs').innerHTML = state.flows.map(x => `<button type="button" class="tab" data-flow="${x.id}" aria-pressed="${x.id === (f && f.id)}"><span class="nm">${esc(x.name || 'Stroom')}</span>${x.voorbeeld ? '<span class="vb-tag">voorbeeld</span>' : ''}</button>`).join('')
     + `<button type="button" class="tab add" data-act="new-flow" aria-label="Nieuwe stroom">+ Stroom</button>`;
-  $('oc-restart').parentElement.hidden = !state.flows.length;
+  $('oc-restart').parentElement.hidden = !state.flows.some(f => !f.voorbeeld);
   if (!f) {
     $('app').innerHTML = `<section class="card start-card"><p>Nog geen stroom. Begin leeg, of bekijk eerst een voorbeeld.</p>
       <div class="btns"><button type="button" class="btn btn-primary" data-act="new-flow">Nieuwe stroom</button><button type="button" class="btn btn-ghost" data-act="example">Begin met een voorbeeld</button></div></section>`;
@@ -726,12 +747,10 @@ function render() {
         </div>
       </section>
       <section class="card draw-card" ${view === 'draw' ? '' : 'hidden'}>
-        <div class="draw-head"><h2 class="card-title">Tekening</h2>${svg ? `<button type="button" class="zoom" data-act="fit">${state.fit ? 'Ware grootte' : 'Passend maken'}</button>` : ''}</div>
+        <div class="draw-head"><h2 class="card-title">Tekening</h2>${svg ? `<button type="button" class="zoom" data-act="fit">${fitNow() ? 'Leesbaar' : 'Hele stroom'}</button>
+          <button type="button" class="zoom" data-export="png" aria-label="Download als afbeelding">Afbeelding</button><button type="button" class="zoom" data-export="pdf" aria-label="Download als PDF">PDF</button>` : ''}</div>
         ${svg ? `<div class="canvas" id="canvas">${svg}</div>` : '<p class="empty-draw">Voeg een stap toe; de tekening verschijnt hier.</p>'}
-        <ul class="hints">${h.list.slice(0, 6).map(x => `<li>${ICON.info}<span>${esc(x.text)}${x.id ? ` <button type="button" class="lnk" data-act="goto" data-id="${x.id}">Toon</button>` : ''}</span></li>`).join('')}
-          ${h.list.length > 6 ? `<li><span>En nog ${h.list.length - 6} punten.</span></li>` : ''}
-          ${!h.list.length && f.nodes.length > 2 ? `<li class="ok"><span>De stroom is sluitend${f.lanes.length && h.handoffs < 4 ? `, met ${h.handoffs} ${h.handoffs === 1 ? 'overdracht' : 'overdrachten'} tussen rollen` : ''}.</span></li>` : ''}
-          ${h.handoffs >= 4 ? `<li><span>${h.handoffs} overdrachten tussen rollen. Elke overdracht is een plek waar werk kan blijven liggen: kunnen er minder?</span></li>` : ''}</ul>
+        <ul class="hints" id="hints">${hintsHTML(f)}</ul>
       </section>
     </div>`;
   const svgEl = document.querySelector('#canvas svg');
@@ -749,6 +768,7 @@ function renderDrawingOnly() {
   if (!c || !f.nodes.length) { render(); return; }
   c.innerHTML = svgOf(f).svg;
   sizeSvg(c.querySelector('svg'));
+  const hl = $('hints'); if (hl) hl.innerHTML = hintsHTML(f);
 }
 
 /* Klaarleggen voor andere tools: rollen als betrokkenen, stappen als taken (voorbeelden niet) */
@@ -792,13 +812,13 @@ function example() {
 function move(arr, i, j) { const [x] = arr.splice(i, 1); arr.splice(j, 0, x); }
 // Bij verplaatsen of verwijderen blijven expliciete sprongen geldig; 'auto' blijft 'de volgende'.
 function removeNode(f, n) {
-  f.nodes.forEach(m => { if (m.to === n.id) m.to = 'none'; if (m.no === n.id) m.no = 'none'; });
+  f.nodes.forEach(m => { if (m.to === n.id) m.to = 'auto'; if (m.no === n.id) m.no = 'none'; });
   f.nodes.splice(f.nodes.indexOf(n), 1);
 }
 document.addEventListener('click', async e => {
   const t = e.target.closest('[data-act],[data-flow],[data-view]'); if (!t) return;
-  if (t.dataset.flow) { state.current = t.dataset.flow; save(); render(); return; }
-  if (t.dataset.view) { state.view = t.dataset.view; save(); render(); return; }
+  if (t.dataset.flow) { state.current = t.dataset.flow; saveUi(); render(); return; }
+  if (t.dataset.view) { state.view = t.dataset.view; saveUi(); render(); return; }
   const f = cur(), act = t.dataset.act, id = t.dataset.id;
   const n = f && f.nodes.find(x => x.id === id);
   switch (act) {
@@ -815,7 +835,7 @@ document.addEventListener('click', async e => {
     case 'del-flow': { const undo = snapshot(), i = state.flows.indexOf(f); state.flows.splice(i, 1); state.current = (state.flows[i - 1] || state.flows[0] || {}).id || null; save(); render(); toast(`${f.name || 'Stroom'} verwijderd`, undo); return; }
     case 'vb-wis': { const undo = snapshot(); state.flows = state.flows.filter(x => !x.voorbeeld); state.current = (state.flows[0] || {}).id || null; save(); render(); toast('Voorbeeld gewist', undo); return; }
     case 'vb-eigen': f.voorbeeld = false; save(); render(); toast('Het voorbeeld is nu van jou'); return;
-    case 'fit': state.fit = !state.fit; save(); render(); return;
+    case 'fit': state.fit = !fitNow(); saveUi(); render(); return;
     case 'goto': { state.view = 'edit'; save(); render(); const el = document.querySelector(`[data-f="text"][data-id="${id}"]`); if (el) { el.scrollIntoView({ block:'center', behavior:'smooth' }); el.focus({ preventScroll:true }); } return; }
     case 'imp-lanes': {
       const picked = await ocShare.pick({ types:['betrokkene'], self:OC_ID, title:'Rollen overnemen', intro:'Kies rollen of betrokkenen. Elk wordt een baan in de tekening.' });
@@ -921,7 +941,7 @@ function asText(f) {
   return lines.join('\n');
 }
 function asMermaid(f) {
-  const q = s => '"' + String(s || '').replace(/"/g, "'") + '"';
+  const q = s => '"' + String(s || '').replace(/&/g, '#amp;').replace(/</g, '#lt;').replace(/>/g, '#gt;').replace(/#(?!amp;|lt;|gt;|quot;|35;)/g, '#35;').replace(/"/g, '#quot;') + '"';
   const shape = n => n.type === 'keuze' ? `{${q(n.text || 'Keuze')}}` : n.type === 'stap' ? `[${q(n.text || 'Stap')}]` : `([${q(n.text || TYPES[n.type])}])`;
   const id = n => 's' + (f.nodes.indexOf(n) + 1);
   const out = ['flowchart TD'];
@@ -939,9 +959,9 @@ function buildExport() {
 }
 function save2(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
 document.addEventListener('click', async e => {
-  const b = e.target.closest('#menu [data-act]'); if (!b) return;
-  $('menu').classList.remove('open');
-  const f = cur(), act = b.dataset.act, base = (f.name || 'stroom').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'stroom';
+  const b = e.target.closest('#menu [data-act], [data-export]'); if (!b) return;
+  if ($('menu')) $('menu').classList.remove('open');
+  const f = cur(), act = b.dataset.export || b.dataset.act, base = (f.name || 'stroom').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'stroom';
   if (act === 'png' || act === 'pdf') {
     const w = layout(f).width;
     toast('Bezig met downloaden…');

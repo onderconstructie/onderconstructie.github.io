@@ -326,9 +326,9 @@ body.filtering .paths-wrap { display:none; }
   color:var(--slate-700); background:var(--slate-100); cursor:pointer; border:0; }
 .dbtn:hover { background:var(--slate-200); }
 .dbtn svg { width:18px; height:18px; }
-.dbtn.danger { color:#dc2626; background:#fef2f2; }
+.dbtn.danger { color:#b91c1c; background:#fef2f2; }
 .dbtn.danger:hover { background:#fee2e2; }
-.dbtn.danger.solid { color:#fff; background:#ef4444; }
+.dbtn.danger.solid { color:#fff; background:#dc2626; }
 .dbtn.danger.solid:hover { background:#dc2626; }
 .confirm { margin-top:1rem; padding:1rem; border:1.5px solid #fecaca; border-radius:14px; background:#fffafa; }
 .confirm p { font-size:0.9375rem; color:var(--slate-700); margin-bottom:0.625rem; }
@@ -357,7 +357,7 @@ body.filtering .paths-wrap { display:none; }
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
 .tb-actions { display:flex; }
-.tb-btn { width:40px; height:40px; display:flex; align-items:center; justify-content:center; color:var(--slate-500); border-radius:8px; }
+.tb-btn { width:44px; height:44px; display:flex; align-items:center; justify-content:center; color:var(--slate-500); border-radius:8px; }
 .tb-btn:hover { background:var(--slate-100); }
 .tb-btn svg { width:20px; height:20px; }
 .frames { flex:1; position:relative; background:var(--slate-50); }
@@ -459,7 +459,7 @@ body.filtering .paths-wrap { display:none; }
     <span class="sep" aria-hidden="true">·</span>
     <button class="footer-link" id="data-open" type="button">gegevens</button>
     <span class="sep" aria-hidden="true">·</span>
-    <span class="app-version" title="Versie van de app">v13</span>
+    <span class="app-version" title="Versie van de app">v14</span>
   </footer>
 </div>
 
@@ -752,6 +752,7 @@ function dropFrame(id) {
   f.remove(); frames.delete(id);
 }
 function showHome(fromHistory) {
+  if (!$('app-dlg').hidden) $('app-dlg-no').click();   // een open wisvraag hoort bij de tool die je verlaat
   if (current && byId[current] && !byId[current].keep) dropFrame(current);
   current = null;
   $('viewer').classList.remove('open');
@@ -905,7 +906,7 @@ $('data-confirm-yes').addEventListener('click', () => {
   if (!pendingWipe) return;
   const all = pendingWipe.length > 1;
   // bij "alles wissen" ook alle klaargelegde lijsten voor overnemen, ook van tools die er niet meer zijn
-  const keys = [...new Set(pendingWipe.flatMap(e => e.keys).concat(all ? keysFor(['oc.share.*']) : []))];
+  const keys = [...new Set(pendingWipe.flatMap(e => e.keys).concat(all ? keysFor(['oc.share.*', 'oc.leeg.*', 'oc-app.leeg.*']) : []))];
   if ($('data-confirm-backup').checked) backup(keys);
   const restore = wipeKeys(keys), wiped = pendingWipe.map(e => e.t.id);
   // open tools sluiten, zodat ze bij het volgende openen leeg starten
@@ -915,7 +916,7 @@ $('data-confirm-yes').addEventListener('click', () => {
   renderPaths();
   if (wipedApp) { renderGroups(); renderRecent(); renderFilter(); GROUPS.forEach(g => setCollapsed(g.id, false)); }
   markLive(); renderData();
-  appToast(all ? 'Alles gewist' : 'Gewist', () => { restore(); wiped.forEach(dropFrame); renderGroups(); renderRecent(); renderFilter(); renderPaths(); markLive(); renderData(); appToast('Teruggezet'); });
+  appToast(all ? 'Alles gewist' : 'Gewist', async () => { if (!await restore()) return; wiped.forEach(dropFrame); renderGroups(); renderRecent(); renderFilter(); renderPaths(); markLive(); renderData(); appToast('Teruggezet'); });
 });
 $('data-backup').addEventListener('click', () => backup(dataEntries().flatMap(e => e.keys)));
 function dataMsg(text, bad) {
@@ -1026,9 +1027,19 @@ function appToast(msg, undo) {
 }
 $('app-toast-btn').addEventListener('click', () => { const f = appUndo; appUndo = null; $('app-toast').classList.remove('show'); f && f(); });
 // Wist sleutels en geeft een functie terug die ze exact terugzet.
+// Na het wissen zet de tool zelf een lege toestand neer; die leggen we vast. Is er daarna iets veranderd,
+// dan vraagt Ongedaan eerst of dat nieuwe werk overschreven mag worden.
 function wipeKeys(keys) {
   const copy = {}; keys.forEach(k => { try { const v = localStorage.getItem(k); if (v != null) copy[k] = v; localStorage.removeItem(k); } catch {} });
-  return () => Object.entries(copy).forEach(([k, v]) => { try { localStorage.setItem(k, v); } catch {} });
+  const read = () => JSON.stringify(keys.map(k => { try { return localStorage.getItem(k); } catch { return null; } }));
+  let after = null; setTimeout(() => { after = read(); }, 1200);
+  const put = () => Object.entries(copy).forEach(([k, v]) => { try { localStorage.setItem(k, v); } catch {} });
+  const restore = async () => {
+    if (after != null && read() !== after &&
+        !await appConfirm('Toch terugzetten?', 'Je hebt sinds het wissen al iets nieuws gedaan in deze tool. Terugzetten vervangt dat door wat er vroeger stond.', 'Terugzetten')) return false;
+    put(); return true;
+  };
+  return restore;
 }
 function appConfirm(title, text, ok) {
   return new Promise(resolve => {
@@ -1049,7 +1060,7 @@ $('wipe-tool').addEventListener('click', async () => {
   if (!await appConfirm(`Gegevens van ${t.title} wissen?`, 'Alles wat je in deze tool bewaarde, verdwijnt. Je kan het meteen daarna nog ongedaan maken.', 'Wis')) return;
   const restore = wipeKeys(toolKeys(t));
   dropFrame(id); openTool(id); renderPaths(); syncWipeBtn();
-  appToast(`${t.title} is leeg`, () => { restore(); dropFrame(id); if (current === id || !current) openTool(id); renderPaths(); syncWipeBtn(); appToast('Teruggezet'); });
+  appToast(`${t.title} is leeg`, async () => { if (!await restore()) return; dropFrame(id); if (current === id || !current) openTool(id); renderPaths(); syncWipeBtn(); appToast('Teruggezet'); });
 });
 
 /* ---------- Start ---------- */
