@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mindmap – Onder Constructie</title>
+<meta name="description" content="Zet ideeën op een rij als een gewone lijst met inspringingen en zie meteen een mindmap. Klap takken in, plak een lijst uit je notities, exporteer als PDF, afbeelding of SVG.">
+    <meta name="oc:groep" content="projecten">
+    <meta name="oc:labels" content="inzicht">
+    <meta name="oc:pdca" content="plan">
+    <meta name="oc:kort" content="Ideeën ordenen in een mindmap">
+    <meta name="oc:volgorde" content="22">
+    <meta name="oc:opslag" content="mindmap.v1, oc.share.mindmap">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox=&quot;0 0 40 40&quot; fill=&quot;none&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;%3E%3Ccircle cx=&quot;20&quot; cy=&quot;20&quot; r=&quot;18&quot; fill=&quot;%23f8fafc&quot; stroke=&quot;%23e2e8f0&quot; stroke-width=&quot;1.5&quot;/%3E%3Cpath d=&quot;M20 20C14 20 13 11 8 11M20 20C14 20 13 29 8 29M20 20C26 20 27 11 32 11M20 20C26 20 27 29 32 29&quot; stroke=&quot;%23334155&quot; stroke-width=&quot;1.6&quot; fill=&quot;none&quot; stroke-linecap=&quot;round&quot;/%3E%3Crect x=&quot;13&quot; y=&quot;16&quot; width=&quot;14&quot; height=&quot;8&quot; rx=&quot;4&quot; fill=&quot;%2310b981&quot;/%3E%3Ccircle cx=&quot;8&quot; cy=&quot;11&quot; r=&quot;3&quot; fill=&quot;%23ffffff&quot; stroke=&quot;%23334155&quot; stroke-width=&quot;1.6&quot;/%3E%3Ccircle cx=&quot;8&quot; cy=&quot;29&quot; r=&quot;3&quot; fill=&quot;%23ffffff&quot; stroke=&quot;%23334155&quot; stroke-width=&quot;1.6&quot;/%3E%3Ccircle cx=&quot;32&quot; cy=&quot;11&quot; r=&quot;3&quot; fill=&quot;%23ecfdf5&quot; stroke=&quot;%23047857&quot; stroke-width=&quot;1.6&quot;/%3E%3Ccircle cx=&quot;32&quot; cy=&quot;29&quot; r=&quot;3&quot; fill=&quot;%23ffffff&quot; stroke=&quot;%23334155&quot; stroke-width=&quot;1.6&quot;/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/fonts/fonts.css">
+<style>
+:root {
+  --slate-900:#0f172a; --slate-800:#1e293b; --slate-700:#334155; --slate-600:#475569;
+  --slate-500:#64748b; --slate-400:#94a3b8; --slate-300:#cbd5e1; --slate-200:#e2e8f0;
+  --slate-100:#f1f5f9; --slate-50:#f8fafc; --wit:#ffffff;
+  --accent:#10b981; --accent-dark:#047857; --accent-hover:#065f46; --accent-light:#d1fae5; --accent-50:#ecfdf5;
+  --rood:#ef4444; --oranje:#d97706; --oranje-50:#fffbeb;
+  --bottom: env(safe-area-inset-bottom, 0px);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body { font-family:'DM Sans', system-ui, sans-serif; background:var(--slate-50); color:var(--slate-700); line-height:1.5; min-height:100vh; -webkit-font-smoothing:antialiased; display:flex; flex-direction:column; }
+button, input, textarea, select { font:inherit; color:inherit; }
+button { background:none; border:0; cursor:pointer; }
+a { color:var(--accent-dark); }
+[hidden] { display:none !important; }
+
+.header { background:var(--wit); border-bottom:1px solid var(--slate-200); padding:1.5rem 1.25rem 1.75rem; position:relative; text-align:center; }
+.back-link { position:absolute; top:1.25rem; left:1.25rem; display:inline-flex; align-items:center; gap:0.5rem; font-size:0.875rem; color:var(--slate-500); text-decoration:none; transition:color 0.2s; }
+.back-link:hover { color:var(--accent-dark); }
+.back-link svg { width:16px; height:16px; }
+.logo svg { width:56px; height:56px; }
+.title { font-size:1.625rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.03em; line-height:1.2; margin-top:0.5rem; }
+.subtitle { font-size:0.9375rem; color:var(--slate-500); max-width:34rem; margin:0.125rem auto 0; }
+
+.main { flex:1; width:100%; max-width:880px; margin:0 auto; padding:1.25rem 1rem 3rem; display:flex; flex-direction:column; gap:1rem; }
+.card { background:var(--wit); border:1px solid var(--slate-200); border-radius:16px; box-shadow:0 1px 2px rgba(15,23,42,0.04); }
+.card-head { display:flex; align-items:center; gap:0.5rem; padding:1rem 0.75rem 0.5rem 1.125rem; }
+.card-title { flex:1; min-width:0; font-size:1.0625rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.01em; }
+.project { flex:1; min-width:0; font-size:1.25rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.02em; border:0; background:none; outline:none; padding:0.125rem 0; border-bottom:1.5px solid transparent; }
+.project:focus { border-bottom-color:var(--accent); }
+.project::placeholder { color:var(--slate-300); }
+.icon-btn { width:38px; height:38px; display:flex; align-items:center; justify-content:center; border-radius:10px; color:var(--slate-500); flex-shrink:0; }
+.icon-btn:hover { background:var(--slate-100); color:var(--slate-700); }
+.icon-btn svg { width:20px; height:20px; }
+.menu-wrap { position:relative; }
+.menu { display:none; position:absolute; right:0; top:calc(100% + 4px); z-index:50; min-width:230px; background:var(--wit); border:1px solid var(--slate-200); border-radius:12px; box-shadow:0 12px 32px rgba(15,23,42,0.14); padding:0.375rem; }
+.menu.open { display:block; }
+.menu button { width:100%; display:flex; align-items:center; gap:0.625rem; padding:0.5625rem 0.625rem; border-radius:8px; font-size:0.9375rem; text-align:left; color:var(--slate-700); white-space:nowrap; }
+.menu button:hover { background:var(--slate-100); }
+.menu button svg { width:18px; height:18px; color:var(--slate-500); flex-shrink:0; }
+.menu .sep { height:1px; background:var(--slate-100); margin:0.25rem 0.375rem; }
+.menu .danger, .menu .danger svg { color:var(--rood); }
+.warn { margin:0 1.125rem 1rem; font-size:0.8125rem; color:#92400e; background:var(--oranje-50); border:1px solid #fde68a; border-radius:10px; padding:0.5rem 0.75rem; }
+
+/* Aanpak */
+.todo { list-style:none; padding:0 1.125rem 0.5rem; }
+.todo li { display:flex; gap:0.625rem; padding:0.625rem 0; border-top:1px solid var(--slate-100); font-size:0.9375rem; color:var(--slate-700); }
+.todo li:first-child { border-top:0; }
+.todo li::before { content:''; flex-shrink:0; width:8px; height:8px; margin-top:0.5rem; border-radius:50%; background:var(--accent); }
+.todo li.k::before { background:var(--oranje); }
+.todo a { font-weight:600; }
+.notes { padding:0 1.125rem 1.125rem; }
+.notes textarea { width:100%; min-height:5.5rem; resize:vertical; padding:0.625rem 0.75rem; border:1.5px solid var(--slate-200); border-radius:10px; background:var(--slate-50); outline:none; font-size:0.9375rem; line-height:1.5; }
+.notes textarea:focus { border-color:var(--accent); background:var(--wit); }
+.lbl { display:block; font-size:0.75rem; font-weight:600; color:var(--slate-500); margin-bottom:0.3125rem; }
+
+.restart-row { display:flex; justify-content:center; }
+.restart-btn { min-height:44px; padding:0.5rem 1rem; font:inherit; font-size:0.875rem; font-weight:500; color:var(--slate-500, #64748b); background:none; border:0; border-radius:10px; cursor:pointer; text-decoration:underline; text-decoration-color:#cbd5e1; text-underline-offset:3px; }
+.restart-btn:hover { color:#b91c1c; background:#fef2f2; text-decoration-color:currentColor; }
+.explain { background:var(--wit); border:1px solid var(--slate-200); border-radius:16px; }
+.explain summary { padding:0.875rem 1.125rem; font-weight:600; color:var(--slate-700); cursor:pointer; list-style:none; display:flex; align-items:center; justify-content:space-between; }
+.explain summary::-webkit-details-marker { display:none; }
+.explain summary::after { content:'+'; color:var(--slate-500); font-size:1.25rem; font-weight:400; }
+.explain[open] summary::after { content:'−'; }
+.explain .inner { padding:0 1.125rem 1.125rem; font-size:0.9375rem; color:var(--slate-600); }
+.explain .inner p + p, .explain .inner ul { margin-top:0.5rem; }
+.explain .inner ul { padding-left:1.125rem; }
+
+.toast { position:fixed; left:50%; bottom:calc(var(--bottom) + 1.25rem); transform:translate(-50%, 200%); visibility:hidden; z-index:100; display:flex; align-items:center; gap:0.75rem; background:var(--slate-800); color:var(--wit); padding:0.625rem 0.75rem 0.625rem 1rem; border-radius:12px; font-size:0.875rem; box-shadow:0 10px 30px rgba(15,23,42,0.25); max-width:calc(100% - 2rem); transition:transform 0.25s ease, visibility 0s 0.25s; }
+.toast.show { transform:translate(-50%, 0); visibility:visible; transition:transform 0.25s ease; }
+.toast button { color:#6ee7b7; font-weight:600; padding:0 0.75rem; min-height:44px; border-radius:8px; }
+
+.footer { text-align:center; padding:2rem 2rem calc(var(--bottom) + 2rem); border-top:1px solid var(--slate-200); background:var(--wit); }
+.quote { font-size:0.8125rem; color:var(--accent-dark); }
+@media (max-width:480px) { .card-hint { display:none; } .back-link span { display:none; } .bar { grid-template-columns:6rem minmax(0,1fr) 4.5rem; } }
+
+.oc-import{display:inline-flex;align-items:center;gap:.375rem;font:inherit;font-size:.8125rem;font-weight:600;color:#047857;background:#fff;border:1px dashed #a7f3d0;border-radius:999px;padding:.3125rem .75rem;cursor:pointer;white-space:nowrap}
+@media(hover:hover){.oc-import:hover{background:#ecfdf5;border-color:#10b981}} .oc-import svg{width:15px;height:15px}
+/* Toegankelijkheid (audit oktober 2026) */
+:focus-visible { outline:2px solid #047857 !important; outline-offset:2px; }
+.back-link { min-height:44px; min-width:44px; }
+.icon-btn, #menu-btn { min-width:44px; min-height:44px; }
+.tab { min-height:44px; }
+.btn { min-height:44px; }
+.views button { color:var(--slate-600); min-height:44px; }
+.views button[aria-selected="true"] { color:var(--slate-800); }
+.views small { color:var(--slate-600); }
+.explain summary { min-height:44px; }
+@media (max-width:480px) { .back-link { top:0.75rem; left:0.75rem; justify-content:center; } }
+.ocw-row .ocw-yes { background:#dc2626; } .ocw-row .ocw-yes:hover { background:#b91c1c; }
+.ocw-row button { min-height:44px; }
+button.oc-import { color:#047857; min-height:44px; }
+/* Mindmap */
+.main { max-width:1240px; }
+.tabs { display:flex; gap:0.375rem; flex-wrap:wrap; align-items:center; }
+.tab { min-height:44px; padding:0.375rem 0.875rem; border-radius:999px; border:1px solid var(--slate-200); background:var(--wit); font-size:0.875rem; font-weight:600; color:var(--slate-600); display:inline-flex; align-items:center; gap:0.375rem; max-width:16rem; }
+.tab span.nm { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tab[aria-pressed="true"] { background:var(--slate-800); border-color:var(--slate-800); color:var(--wit); }
+.tab.add { color:var(--accent-dark); border-style:dashed; border-color:#a7f3d0; }
+.layout { display:grid; grid-template-columns:minmax(0,1fr); gap:1rem; align-items:start; }
+@media (min-width:1000px) { .layout { grid-template-columns:minmax(420px,1fr) minmax(0,1fr); } .draw-card { position:sticky; top:1rem; } .views { display:none !important; } .layout > section[hidden] { display:block !important; } }
+.views { display:flex; gap:0.25rem; padding:3px; background:var(--slate-100); border-radius:12px; }
+.views button { flex:1; min-height:44px; border-radius:9px; font-size:0.9375rem; font-weight:600; color:var(--slate-600); }
+.views button[aria-selected="true"] { background:var(--wit); color:var(--slate-800); box-shadow:0 1px 2px rgba(15,23,42,0.08); }
+
+.hint-s { font-size:0.8125rem; color:var(--slate-500); padding:0 1.125rem 0.75rem; }
+
+.adders { display:flex; flex-wrap:wrap; gap:0.375rem; padding:0.25rem 1.125rem 1rem; }
+.adders button { min-height:44px; padding:0 0.875rem; border-radius:10px; border:1px solid var(--slate-200); background:var(--wit); font-size:0.875rem; font-weight:600; color:var(--slate-700); display:inline-flex; align-items:center; gap:0.375rem; }
+.adders button:hover { border-color:#a7f3d0; background:var(--accent-50); }
+
+.draw-head { display:flex; align-items:center; gap:0.5rem; padding:0.875rem 0.75rem 0.5rem 1.125rem; }
+.draw-head { flex-wrap:wrap; }
+.draw-head .card-title { flex:1; min-width:6rem; }
+.zoom { min-height:44px; padding:0 0.75rem; border-radius:10px; font-size:0.8125rem; font-weight:600; color:var(--slate-600); border:1px solid var(--slate-200); }
+.canvas { overflow:auto; padding:0.25rem 0.5rem 0.75rem; -webkit-overflow-scrolling:touch; }
+.canvas svg { display:block; margin:0 auto; }
+
+.vb-bar { display:flex; flex-wrap:wrap; align-items:center; gap:0.5rem 0.75rem; margin:0 1rem 0.75rem; padding:0.5rem 0.5rem 0.5rem 0.75rem; background:#fffbeb; border:1px solid #fde68a; border-radius:12px; font-size:0.875rem; line-height:1.4; color:#78350f; }
+.vb-bar svg { width:18px; height:18px; flex-shrink:0; color:#b45309; }
+.vb-text { flex:1 1 14rem; min-width:0; display:flex; gap:0.5rem; align-items:flex-start; }
+.vb-btns { display:flex; flex-wrap:wrap; gap:0.375rem; }
+.vb-btn { min-height:44px; padding:0.375rem 0.625rem; border-radius:10px; font-size:0.875rem; font-weight:600; background:var(--wit); border:1px solid var(--slate-200); }
+.vb-wis { color:#b91c1c; border-color:#fecaca; }
+.vb-eigen { color:var(--accent-dark); border-color:#a7f3d0; }
+.vb-tag { font-size:0.6875rem; font-weight:600; padding:0 0.375rem; border-radius:999px; background:#fef3c7; color:#92400e; }
+.tab[aria-pressed="true"] .vb-tag { background:#fde68a; }
+.icon-btn.del-unit:hover { color:#b91c1c; background:#fef2f2; }
+.start-card { padding:1.5rem 1.25rem; text-align:center; }
+.start-card p { color:var(--slate-600); margin-bottom:0.875rem; }
+.start-card .btns { display:flex; gap:0.5rem; justify-content:center; flex-wrap:wrap; }
+.btn { min-height:44px; padding:0.5rem 1rem; border-radius:10px; font-weight:600; font-size:0.9375rem; }
+.btn-primary { background:var(--accent-dark); color:var(--wit); }
+.btn-primary:hover { background:var(--accent-hover); }
+.btn-ghost { background:var(--slate-100); color:var(--slate-700); }
+.mrows { list-style:none; padding:0 0.75rem 0.5rem; display:flex; flex-direction:column; gap:2px; }
+.mrow { display:flex; align-items:center; gap:0.25rem; padding-left:calc(min(var(--lvl), 7) * 1.125rem); position:relative; border-radius:10px; }
+.mrow:focus-within { background:var(--accent-50); }
+.mrow.root { padding-left:0; margin-bottom:0.25rem; }
+.mrow .dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; margin:0 13px 0 13px; }
+.mrow .tw { width:36px; height:44px; flex-shrink:0; display:flex; align-items:center; justify-content:center; color:var(--slate-600); border-radius:8px; }
+.mrow .tw:hover { background:var(--slate-100); }
+.mrow .tw svg { width:18px; height:18px; }
+.mtxt { flex:1; min-width:0; min-height:44px; padding:0.375rem 0.5rem; border:1.5px solid transparent; border-radius:9px; background:transparent; font-size:0.9375rem; color:var(--slate-800); }
+.mtxt:hover { border-color:var(--slate-200); }
+.mtxt:focus { border-color:var(--accent); background:var(--wit); outline:none; }
+.mrow.root .mtxt { font-size:1.0625rem; font-weight:700; border-color:var(--slate-200); background:var(--slate-50); padding-left:0.75rem; }
+.mrow.root .mtxt:focus { background:var(--wit); border-color:var(--accent); }
+.more { font-size:0.75rem; font-weight:700; color:var(--accent-dark); background:var(--accent-50); border-radius:999px; padding:0.125rem 0.5rem; flex-shrink:0; }
+.macts { display:flex; flex-shrink:0; }
+.mrow { --row-bg:var(--wit); }
+.mrow:focus-within { --row-bg:var(--accent-50); }
+@media (hover:hover) and (min-width:521px) {
+  .macts { position:absolute; right:0; top:0; padding-left:18px; background:linear-gradient(to right, transparent, var(--row-bg) 18px); border-radius:0 10px 10px 0; opacity:0; pointer-events:none; transition:opacity .12s; }
+  .mrow:hover .macts, .mrow:focus-within .macts { opacity:1; pointer-events:auto; }
+}
+.macts button { width:36px; height:44px; border-radius:8px; color:var(--slate-600); display:flex; align-items:center; justify-content:center; }
+.macts button:hover { background:var(--slate-100); color:var(--slate-800); }
+.macts button.del:hover { background:#fef2f2; color:#b91c1c; }
+.macts button:disabled { opacity:0.3; cursor:default; background:none; }
+.macts svg { width:17px; height:17px; }
+@media (max-width:520px) { .mrow { padding-left:calc(min(var(--lvl), 5) * 0.75rem); } .macts button { width:32px; } .mrow .dot { margin:0 8px; } }
+.canvas svg g[data-node]:hover rect { filter:brightness(0.97); }
+@media (min-width:1000px) { .layout { grid-template-columns:minmax(340px,400px) minmax(0,1fr); } }
+.canvas.pan { cursor:grab; } .canvas.panning { cursor:grabbing; user-select:none; }
+.stat { font-size:0.8125rem; font-weight:500; color:var(--slate-500); margin-left:0.25rem; white-space:nowrap; }
+.draw-head { flex-wrap:wrap; }
+@media (max-width:520px) { .draw-head .card-title { flex-basis:100%; } }
+
+</style>
+</head>
+<body>
+
+<header class="header">
+  <a href="https://onderconstructie.github.io/projectmanagement/" class="back-link" aria-label="Terug naar Projectmanagement">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    <span>Projectmanagement</span>
+  </a>
+  <div class="logo">
+    <svg viewBox="0 0 80 80" fill="none" aria-hidden="true">
+      <circle cx="40" cy="40" r="36" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2"/>
+      <g transform="scale(2)"><path d="M20 20C14 20 13 11 8 11M20 20C14 20 13 29 8 29M20 20C26 20 27 11 32 11M20 20C26 20 27 29 32 29" stroke="#334155" stroke-width="1.6" fill="none" stroke-linecap="round"/><rect x="13" y="16" width="14" height="8" rx="4" fill="#10b981"/><circle cx="8" cy="11" r="3" fill="#ffffff" stroke="#334155" stroke-width="1.6"/><circle cx="8" cy="29" r="3" fill="#ffffff" stroke="#334155" stroke-width="1.6"/><circle cx="32" cy="11" r="3" fill="#ecfdf5" stroke="#047857" stroke-width="1.6"/><circle cx="32" cy="29" r="3" fill="#ffffff" stroke="#334155" stroke-width="1.6"/></g>
+    </svg>
+  </div>
+  <h1 class="title">Mindmap</h1>
+  <p class="subtitle">Typ je ideeën als lijst. De kaart groeit vanzelf mee.</p>
+</header>
+
+<main class="main">
+  <div class="tabs" id="tabs" role="toolbar" aria-label="Mindmaps"></div>
+  <div id="app"></div>
+
+  <div class="restart-row"><button type="button" class="restart-btn" id="oc-restart">Opnieuw beginnen</button></div>
+
+  <details class="explain">
+    <summary>Hoe werkt dit?</summary>
+    <div class="inner">
+      <p>Bovenaan staat het centrale idee. Alles daaronder zijn takken. Je tekent niets: je typt, en de kaart ordent zichzelf links en rechts van het midden.</p>
+      <ul>
+        <li><b>Enter</b>: een nieuw idee op hetzelfde niveau. Heeft het idee al subtakken, dan komt het nieuwe idee erbij als eerste subtak.</li>
+        <li><b>Tab</b>: een niveau dieper (onder het idee erboven). <b>Shift+Tab</b>: een niveau terug. Op een telefoon doen de pijlknoppen hetzelfde.</li>
+        <li><b>Backspace</b> in een leeg veld: het idee verdwijnt.</li>
+        <li><b>Alt+↑ / Alt+↓</b>: een idee met zijn subtakken verschuiven.</li>
+        <li>Plak je een lijst met inspringingen (uit een mail, notities of een ander programma), dan komt de hele structuur in één keer mee.</li>
+      </ul>
+      <p>Met het driehoekje klap je een tak in. Ingeklapte takken tonen op de kaart hoeveel ideeën erachter zitten.</p>
+      <p>De hoofdtakken en hun ideeën liggen klaar voor andere tools, bijvoorbeeld om er in <a href="https://onderconstructie.github.io/prioriteit/">Prioriteren</a> of <a href="https://onderconstructie.github.io/vinkje/">Vinkje</a> mee verder te gaan.</p>
+    </div>
+  </details>
+</main>
+
+<footer class="footer">
+  <p class="quote">Een idee dat je opschrijft, kan je ook loslaten.</p>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-text"></span><button id="toast-btn" hidden>Ongedaan</button></div>
+
+<script>
+/* ---------- Overnemen tussen tools (gedeeld door de Onder Constructie-tools, v2) ----------
+   Alle tools draaien op hetzelfde domein en delen dus localStorage. Elke tool legt wat hij te bieden
+   heeft klaar onder 'oc.share.<tool-id>', in een vaste vorm, zodat andere tools het kunnen overnemen
+   zonder elkaars binnenkant te kennen.
+
+   Soorten (type):
+     'betrokkene'  persoon, rol, stakeholder, doelgroep of team   { text, note? }
+     'taak'        iets dat gedaan moet worden                     { text, note? }
+     'actie'       taak met eigenaar en/of termijn                 { text, who?, when? }
+     'risico'      risico met kans en impact                       { text, note? }
+
+   Gebruik:
+     ocShare.publish('raci', 'RACI-matrix', [
+       { name:'Heraanleg stadspark', items:[ { type:'betrokkene', text:'Projectleider' }, { type:'taak', text:'Budget goedkeuren' } ] }
+     ]);                                   // aanroepen na elke bewaring
+     ocShare.clear('raci');                // bij "Alles wissen"
+     const gekozen = await ocShare.pick({ types:['betrokkene'], self:'weerstand', title:'Doelgroepen overnemen' });
+     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source en .list erbij)
+*/
+const ocShare = (() => {
+  const PREFIX = 'oc.share.';
+  const LABEL = { betrokkene:'betrokkenen', taak:'taken', actie:'acties', risico:"risico's" };
+  const esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+
+  function publish(id, tool, lists) {
+    try {
+      const clean = (lists || []).map(l => ({
+        name: String(l.name || '').slice(0, 80),
+        items: (l.items || []).filter(i => i && i.type && String(i.text || '').trim())
+          .slice(0, 300).map(i => ({ type:i.type, text:String(i.text).trim().slice(0, 300),
+            note: i.note ? String(i.note).slice(0, 200) : undefined, who: i.who || undefined, when: i.when || undefined }))
+      })).filter(l => l.items.length);
+      if (!clean.length) { localStorage.removeItem(PREFIX + id); return; }
+      localStorage.setItem(PREFIX + id, JSON.stringify({ id, tool, updated: Date.now(), lists: clean }));
+    } catch {}
+  }
+  function clear(id) { try { localStorage.removeItem(PREFIX + id); } catch {} }
+
+  // Elke bron apart: één kapotte sleutel mag de andere niet verbergen.
+  function sources(types, self) {
+    const out = [];
+    let keys = [];
+    try { for (let i = 0; i < localStorage.length; i++) keys.push(localStorage.key(i)); } catch { return out; }
+    keys.forEach(k => {
+      if (!k || !k.startsWith(PREFIX) || k === PREFIX + self) return;
+      try {
+        const d = JSON.parse(localStorage.getItem(k));
+        if (!d || !Array.isArray(d.lists)) return;
+        d.lists.forEach(l => {
+          if (!l || !Array.isArray(l.items)) return;
+          const items = l.items.filter(it => it && types.includes(it.type) && typeof it.text === 'string');
+          if (items.length) out.push({ tool: String(d.tool || d.id || k.slice(PREFIX.length)), id: d.id, updated: +d.updated || 0, list: String(l.name || ''), items });
+        });
+      } catch {}
+    });
+    return out.sort((a, b) => (b.updated || 0) - (a.updated || 0));
+  }
+
+  let styled = false;
+  function style() {
+    if (styled) return; styled = true;
+    const s = document.createElement('style');
+    s.textContent = `
+      .ocs-back{position:fixed;inset:0;z-index:10000;display:flex;align-items:flex-end;justify-content:center;background:rgba(15,23,42,.45);
+        backdrop-filter:blur(3px);opacity:0;transition:opacity .15s;font-family:'DM Sans',system-ui,sans-serif}
+      @media(min-width:640px){.ocs-back{align-items:center;padding:1rem}}
+      .ocs-back.open{opacity:1}
+      .ocs{width:100%;max-width:520px;max-height:min(86vh,720px);display:flex;flex-direction:column;background:#fff;border-radius:18px 18px 0 0;
+        box-shadow:0 20px 50px rgba(15,23,42,.25);transform:translateY(12px);transition:transform .15s;color:#1e293b}
+      @media(min-width:640px){.ocs{border-radius:18px}}
+      .ocs-back.open .ocs{transform:none}
+      .ocs-head{padding:1.125rem 1.25rem .75rem;border-bottom:1px solid #e2e8f0}
+      .ocs-title{font-size:1.125rem;font-weight:700;letter-spacing:-.02em}
+      .ocs-sub{font-size:.8125rem;color:#64748b;margin-top:.125rem}
+      .ocs-body{overflow:auto;padding:.5rem 1.25rem 1rem;flex:1}
+      .ocs-src{margin-top:.875rem}
+      .ocs-src-head{display:flex;align-items:center;gap:.5rem;padding:.375rem 0}
+      .ocs-src-head b{font-size:.9375rem}
+      .ocs-src-head span{font-size:.75rem;color:#64748b}
+      .ocs-all{margin-left:auto;font:inherit;font-size:.8125rem;color:#047857;background:none;border:0;cursor:pointer;padding:.25rem .5rem;min-height:44px;border-radius:6px}
+      .ocs-all:hover{background:#d1fae5}
+      .ocs-item{display:flex;align-items:flex-start;gap:.625rem;padding:.625rem .25rem;min-height:44px;box-sizing:border-box;border-top:1px solid #f1f5f9;cursor:pointer;font-size:.9375rem;line-height:1.4}
+      .ocs-item input{width:18px;height:18px;margin-top:.125rem;accent-color:#10b981;flex:none}
+      .ocs-item small{display:block;font-size:.75rem;color:#64748b}
+      .ocs-empty{padding:1.5rem .25rem;color:#64748b;font-size:.9375rem;line-height:1.5}
+      .ocs-foot{display:flex;gap:.5rem;justify-content:flex-end;padding:.875rem 1.25rem calc(.875rem + env(safe-area-inset-bottom,0px));border-top:1px solid #e2e8f0}
+      .ocs-btn{font:inherit;font-size:.9375rem;font-weight:600;padding:.625rem 1rem;min-height:44px;border-radius:10px;border:0;cursor:pointer}
+      .ocs-cancel{background:#f1f5f9;color:#475569}
+      .ocs-ok{background:#047857;color:#fff}.ocs-ok:hover{background:#065f46}
+      .ocs-ok:disabled{background:#cbd5e1;color:#334155;cursor:default}
+      .ocs-back :focus-visible{outline:2px solid #047857;outline-offset:2px}`;
+    document.head.appendChild(s);
+  }
+
+  function pick({ types, self, title, intro }) {
+    style();
+    return new Promise(resolve => {
+      const src = sources(types, self);
+      const back = document.createElement('div');
+      back.className = 'ocs-back';
+      const what = types.map(t => LABEL[t] || t).join(' of ');
+      back.innerHTML = `<div class="ocs" role="dialog" aria-modal="true" aria-label="${esc(title || 'Overnemen')}">
+        <div class="ocs-head"><div class="ocs-title">${esc(title || 'Overnemen uit een andere tool')}</div>
+          <div class="ocs-sub">${esc(intro || `Kies welke ${what} je wil overnemen.`)}</div></div>
+        <div class="ocs-body">${src.length ? src.map((s, si) => `
+          <div class="ocs-src"><div class="ocs-src-head"><b>${esc(s.tool)}</b><span>${esc(s.list)} · ${s.items.length}</span>
+            <button class="ocs-all" type="button" data-all="${si}">alles</button></div>
+            ${s.items.map((it, ii) => `<label class="ocs-item"><input type="checkbox" data-s="${si}" data-i="${ii}">
+              <span>${esc(it.text)}${it.who || it.when || it.note ? `<small>${esc([it.who, it.when, it.note].filter(Boolean).join(' · '))}</small>` : ''}</span></label>`).join('')}
+          </div>`).join('') : `<p class="ocs-empty">Er zijn nog geen ${esc(what)} om over te nemen. Vul ze eerst in een andere tool in (bijvoorbeeld de Stakeholder Radar, de RACI-matrix of de Gap-analyse), dan verschijnen ze hier.</p>`}
+        </div>
+        <div class="ocs-foot"><button class="ocs-btn ocs-cancel" type="button">Annuleer</button>
+          <button class="ocs-btn ocs-ok" type="button" disabled>Neem over</button></div></div>`;
+      document.body.appendChild(back);
+      requestAnimationFrame(() => back.classList.add('open'));
+      const ok = back.querySelector('.ocs-ok');
+      const boxes = () => [...back.querySelectorAll('input[type=checkbox]')];
+      const sync = () => { const n = boxes().filter(b => b.checked).length; ok.disabled = !n; ok.textContent = n ? `Neem ${n} over` : 'Neem over'; };
+      back.addEventListener('change', sync);
+      back.addEventListener('click', e => {
+        const a = e.target.closest('[data-all]');
+        if (a) { const bs = boxes().filter(b => b.dataset.s === a.dataset.all); const all = bs.every(b => b.checked); bs.forEach(b => b.checked = !all); sync(); }
+        if (e.target === back) close([]);
+      });
+      function close(v) { document.removeEventListener('keydown', onKey, true); back.remove(); resolve(v); }
+      function onKey(e) { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close([]); } }
+      document.addEventListener('keydown', onKey, true);
+      back.querySelector('.ocs-cancel').addEventListener('click', () => close([]));
+      ok.addEventListener('click', () => close(boxes().filter(b => b.checked).map(b => {
+        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, list: s.list };
+      })));
+      const first = back.querySelector('input,.ocs-cancel'); first && first.focus();
+    });
+  }
+
+  // Hoeveel er klaarligt voor deze soorten (om een knop te tonen of een teller te zetten).
+  const count = (types, self) => sources(types, self).reduce((n, s) => n + s.items.length, 0);
+  return { publish, clear, pick, count, sources, esc };
+})();
+
+/* ---------- Download als afbeelding of PDF (gedeeld door de Onder Constructie-tools, v2) ----------
+   Gebruik:
+     ocExport.png(bouwFn, 'bestandsnaam', { landscape:true })
+     ocExport.pdf(bouwFn, 'bestandsnaam', { landscape:true })
+   bouwFn() geeft { node, title, subtitle } terug: een DOM-knoop met inline styles, zonder knoppen of invoervelden.
+   Die komt buiten beeld op een witte pagina met kop (titel, ondertitel, datum) en voet.
+   Zet data-oc-keep op blokken die in een PDF niet over twee pagina's gesplitst mogen worden
+   (een beslissing, een kaartje, een rij); ze schuiven dan door naar de volgende pagina.
+   html2canvas en jsPDF worden pas geladen bij de eerste download, van dezelfde adressen als de
+   andere tools, zodat de app ze offline kan bewaren. */
+const ocExport = (() => {
+  const LIBS = {
+    h2c: 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
+    pdf: 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
+  };
+  const A4 = { w: 210, h: 297 }, MARGIN = 10;   // mm
+  const loaded = {};
+  function load(url) {
+    if (!loaded[url]) loaded[url] = new Promise((ok, fail) => {
+      const s = document.createElement('script');
+      s.src = url; s.onload = ok; s.onerror = () => { delete loaded[url]; fail(new Error('laden mislukt')); };
+      document.head.appendChild(s);
+    });
+    return loaded[url];
+  }
+  const today = () => new Date().toLocaleDateString('nl-BE', { day: 'numeric', month: 'long', year: 'numeric' });
+  function page(content, { title, subtitle, width }) {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = `position:fixed;left:-20000px;top:0;width:${width}px;background:#fff;padding:36px 40px 28px;
+      font-family:'DM Sans',system-ui,-apple-system,sans-serif;color:#1e293b;-webkit-font-smoothing:antialiased;box-sizing:border-box;`;
+    const head = document.createElement('div');
+    head.style.cssText = 'display:flex;align-items:flex-end;justify-content:space-between;gap:24px;border-bottom:2px solid #10b981;padding-bottom:12px;margin-bottom:20px;';
+    head.innerHTML = `<div><div style="font-size:22px;font-weight:700;letter-spacing:-0.02em;color:#1e293b"></div>
+      <div style="font-size:14px;color:#64748b;margin-top:2px"></div></div>
+      <div style="font-size:12px;color:#94a3b8;white-space:nowrap">${today()}</div>`;
+    head.children[0].children[0].textContent = title || '';
+    head.children[0].children[1].textContent = subtitle || '';
+    const foot = document.createElement('div');
+    foot.style.cssText = 'margin-top:22px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;display:flex;justify-content:space-between;';
+    foot.innerHTML = '<span>Onder Constructie</span><span>onderconstructie.github.io</span>';
+    wrap.append(head, content, foot);
+    document.body.appendChild(wrap);
+    return wrap;
+  }
+  // Schuift blokken met data-oc-keep die over een paginagrens zouden vallen naar de volgende pagina.
+  function keepTogether(wrap, pageH) {
+    const top0 = () => wrap.getBoundingClientRect().top;
+    for (const el of wrap.querySelectorAll('[data-oc-keep]')) {
+      const r = el.getBoundingClientRect(), t = r.top - top0(), b = t + r.height;
+      if (r.height > pageH * 0.85) continue;            // te groot om heel te houden
+      const boundary = Math.ceil(t / pageH) * pageH;     // eerstvolgende grens na de bovenkant
+      if (t % pageH !== 0 && b > boundary && t < boundary) {
+        const gap = document.createElement('div');
+        gap.style.cssText = `height:${boundary - t + 6}px;`;
+        el.parentNode.insertBefore(gap, el);
+      }
+    }
+  }
+  async function canvasOf(build, opts) {
+    await load(LIBS.h2c);
+    const built = build();
+    const node = page(built.node, { title: built.title, subtitle: built.subtitle, width: opts.width });
+    try {
+      if (document.fonts && document.fonts.ready) await document.fonts.ready;
+      if (opts.pageH) keepTogether(node, opts.pageH);
+      return await window.html2canvas(node, { scale: 2, backgroundColor: '#ffffff', logging: false, useCORS: true });
+    } finally { node.remove(); }
+  }
+  function save(blob, name) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }
+  const widthFor = opts => opts.width || (opts.landscape ? 1120 : 800);
+  async function png(build, name, opts = {}) {
+    const c = await canvasOf(build, { width: widthFor(opts) });
+    await new Promise(ok => c.toBlob(b => { save(b, name + '.png'); ok(); }, 'image/png'));
+  }
+  async function pdf(build, name, opts = {}) {
+    const landscape = !!opts.landscape, width = widthFor(opts);
+    const pw = landscape ? A4.h : A4.w, ph = landscape ? A4.w : A4.h, w = pw - 2 * MARGIN;
+    const pageCss = (ph - 2 * MARGIN) / w * width;       // paginahoogte in CSS-pixels van de exportknoop
+    const [c] = await Promise.all([canvasOf(build, { width, pageH: pageCss }), load(LIBS.pdf)]);
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: landscape ? 'landscape' : 'portrait', unit: 'mm', format: 'a4' });
+    const scale = w / c.width, pageH = (ph - 2 * MARGIN) / scale;   // paginahoogte in canvaspixels
+    for (let y = 0, i = 0; y < c.height - 2; y += pageH, i++) {
+      const h = Math.min(pageH, c.height - y);
+      const part = document.createElement('canvas'); part.width = c.width; part.height = h;
+      part.getContext('2d').drawImage(c, 0, y, c.width, h, 0, 0, c.width, h);
+      if (i) doc.addPage();
+      doc.addImage(part.toDataURL('image/jpeg', 0.92), 'JPEG', MARGIN, MARGIN, w, h * scale);
+    }
+    save(doc.output('blob'), name + '.pdf');
+  }
+  return { png, pdf };
+})();
+
+
+/* ---------- Mindmap ---------- */
+const OC_ID = 'mindmap', OC_TOOL = 'Mindmap', KEY = 'mindmap.v1';
+const $ = id => document.getElementById(id);
+const esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const uid = () => Math.random().toString(36).slice(2, 10);
+// Takkleuren: alleen groen- en blauwgroentinten, in de sfeer van de app.
+const BRANCH = ['#047857', '#0f766e', '#15803d', '#4d7c0f', '#065f46', '#115e59', '#166534', '#3f6212'];
+const ICON = {
+  left:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>',
+  right:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>',
+  del:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>',
+  open:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 9l5 6 5-6z"/></svg>',
+  shut:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 7l6 5-6 5z"/></svg>',
+  imp:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>',
+  info:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>'
+};
+
+/* Opslag: een mindmap is een lijst ideeën met een niveau (0 = het centrum). */
+const idea = (text = '', level = 1) => ({ id:uid(), text, level, collapsed:false });
+function newMap(name) { return { id:uid(), name: name || 'Nieuwe mindmap', nodes:[idea('', 0), idea('', 1)] }; }
+function fresh() { return { maps:[], current:null, view:'edit', fit:null }; }
+function normalize(nodes) {
+  nodes.forEach((n, i) => { n.level = i === 0 ? 0 : Math.max(1, Math.min(n.level, nodes[i - 1].level + 1)); });
+  return nodes;
+}
+function valid(s) {
+  if (!s || !Array.isArray(s.maps)) return fresh();
+  s.maps = s.maps.filter(m => m && Array.isArray(m.nodes) && m.nodes.length).map(m => ({
+    id: /^[\w-]+$/.test(m.id) ? m.id : uid(), name: String(m.name || 'Mindmap').slice(0, 80), voorbeeld: !!m.voorbeeld,
+    nodes: normalize(m.nodes.filter(n => n && /^[\w-]+$/.test(n.id)).map(n => ({ id:n.id, text:String(n.text || '').slice(0, 160), level: Math.max(0, Math.min(12, parseInt(n.level) || 0)), collapsed: !!n.collapsed })))
+  })).filter(m => m.nodes.length);
+  return { ...fresh(), ...s, maps:s.maps, fit: typeof s.fit === 'boolean' ? s.fit : null };
+}
+function load() { try { return valid(JSON.parse(localStorage.getItem(KEY))); } catch { return fresh(); } }
+let state = load(), saves = 0;
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch { toast('Bewaren lukte niet: is de opslag vol?'); }
+  saves++; clearTimeout(save.t); save.t = setTimeout(publish, 300);
+}
+function saveUi() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
+window.addEventListener('storage', e => { if (e.key === KEY) { const v = state.view, c = state.current; state = load(); if (state.maps.some(m => m.id === c)) state.current = c; state.view = v; render(); } });
+const snapshot = () => { const c = JSON.stringify(state); const fn = () => { if (saves !== fn.mark) { setTimeout(() => toast('Ongedaan maken kan niet meer: er is intussen iets veranderd'), 60); return; } state = valid(JSON.parse(c)); save(); render(); toast('Teruggezet'); }; return fn; };
+const title = m => (m.nodes[0].text || '').trim() || m.name || 'Mindmap';
+const cur = () => state.maps.find(m => m.id === state.current) || state.maps[0] || null;
+
+/* Boom uit de lijst */
+const end = (nodes, i) => { let j = i + 1; while (j < nodes.length && nodes[j].level > nodes[i].level) j++; return j; };   // einde van de deelboom
+const hasKids = (nodes, i) => i + 1 < nodes.length && nodes[i + 1].level > nodes[i].level;
+function tree(m) {
+  const root = { n:m.nodes[0], kids:[], i:0 }, stack = [root];
+  for (let i = 1; i < m.nodes.length; i++) {
+    const n = m.nodes[i], t = { n, kids:[], i };
+    while (stack.length > n.level) stack.pop();
+    stack[stack.length - 1].kids.push(t); stack.push(t);
+  }
+  return root;
+}
+const count = t => t.kids.reduce((s, k) => s + 1 + count(k), 0);
+
+/* Tekening: centrum in het midden, hoofdtakken verdeeld over rechts en links */
+const PAD = 20, GAPX = 38, GAPY = 10;
+function wrap(t, max) {
+  const words = String(t || '').trim().split(/\s+/).filter(Boolean), lines = []; let line = '';
+  words.forEach(w => { while (w.length > max) { if (line) { lines.push(line); line = ''; } lines.push(w.slice(0, max - 1) + '-'); w = w.slice(max - 1); }
+    if ((line + ' ' + w).trim().length > max) { lines.push(line); line = w; } else line = (line + ' ' + w).trim(); });
+  if (line) lines.push(line);
+  if (lines.length > 3) { lines.length = 3; lines[2] = lines[2].replace(/.{0,2}$/, '…'); }
+  return lines.length ? lines : [''];
+}
+function size(t, depth) {
+  const fs = depth === 0 ? 16 : depth === 1 ? 14 : 13, max = depth === 0 ? 18 : depth === 1 ? 20 : 22;
+  const lines = wrap(t.n.text || (depth === 0 ? 'Centraal idee' : '…'), max);
+  const longest = Math.max(...lines.map(l => l.length));
+  return { lines, fs, w: Math.max(depth === 0 ? 120 : 56, Math.min(depth === 0 ? 220 : depth === 1 ? 200 : 180, longest * fs * 0.56 + (depth === 0 ? 36 : 24))), h: lines.length * (fs + 4) + (depth === 0 ? 24 : 14) };
+}
+function layout(m) {
+  const root = tree(m), boxes = [], links = [];
+  const visKids = t => t.n.collapsed ? [] : t.kids;
+  const measure = (t, depth) => { Object.assign(t, size(t, depth), { depth }); visKids(t).forEach(k => measure(k, depth + 1)); t.span = Math.max(t.h + GAPY, visKids(t).reduce((s, k) => s + k.span, 0)); };
+  measure(root, 0);
+  // verdeel de hoofdtakken: eerst rechts tot ongeveer de helft van de hoogte, de rest links
+  const main = visKids(root), total = main.reduce((s, k) => s + k.span, 0); let acc = 0;
+  const right = [], left = [];
+  main.forEach((k, i) => { (acc < total / 2 || i === 0 ? right : left).push(k); acc += k.span; });
+  const place = (t, x, yTop, dir, color) => {
+    t.color = color; t.y = yTop + t.span / 2 - t.h / 2; t.x = dir > 0 ? x : x - t.w; t.dir = dir;
+    let y = yTop + (t.span - visKids(t).reduce((s, k) => s + k.span, 0)) / 2;
+    visKids(t).forEach(k => { place(k, dir > 0 ? t.x + t.w + GAPX : t.x - GAPX, y, dir, color); y += k.span; });
+  };
+  const sideH = list => list.reduce((s, k) => s + k.span, 0);
+  const H = Math.max(sideH(right), sideH(left), root.h + GAPY);
+  root.x = -root.w / 2; root.y = H / 2 - root.h / 2; root.color = '#047857';
+  let y = (H - sideH(right)) / 2; right.forEach(k => { place(k, root.w / 2 + GAPX + 10, y, 1, BRANCH[main.indexOf(k) % BRANCH.length]); y += k.span; });
+  y = (H - sideH(left)) / 2; left.forEach(k => { place(k, -root.w / 2 - GAPX - 10, y, -1, BRANCH[main.indexOf(k) % BRANCH.length]); y += k.span; });
+  const walk = (t, parent) => { boxes.push(t); if (parent) links.push({ a:parent, b:t }); visKids(t).forEach(k => walk(k, t)); };
+  walk(root, null);
+  const minX = Math.min(...boxes.map(b => b.x)), maxX = Math.max(...boxes.map(b => b.x + b.w + (b.n.collapsed && b.kids.length ? 26 : 0))), minX2 = Math.min(minX, ...boxes.filter(b => b.n.collapsed && b.kids.length && b.dir < 0).map(b => b.x - 26));
+  const dx = PAD - minX2, dy = PAD;
+  boxes.forEach(b => { b.x += dx; b.y += dy; });
+  return { boxes, links, width: Math.ceil(maxX - minX2 + PAD * 2), height: Math.ceil(H + PAD * 2), root };
+}
+function svgOf(m) {
+  const L = layout(m), out = [];
+  out.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${L.width} ${L.height}" width="${L.width}" height="${L.height}" role="img" aria-label="${esc(`Mindmap ${title(m)}: ${m.nodes.length} ideeën`)}" font-family="'DM Sans', system-ui, sans-serif">`);
+  out.push(`<rect width="${L.width}" height="${L.height}" fill="#ffffff"/>`);
+  L.links.forEach(({ a, b }) => {
+    const ax = b.dir > 0 ? a.x + a.w : a.x, ay = a.y + a.h / 2, bx = b.dir > 0 ? b.x : b.x + b.w, by = b.y + b.h / 2, mx = (ax + bx) / 2;
+    out.push(`<path d="M${ax} ${ay}C${mx} ${ay} ${mx} ${by} ${bx} ${by}" fill="none" stroke="${b.color}" stroke-width="${b.depth === 1 ? 3 : b.depth === 2 ? 2 : 1.5}" stroke-linecap="round" opacity="0.85"/>`);
+  });
+  L.boxes.forEach(b => {
+    const root = b.depth === 0, lvl1 = b.depth === 1;
+    out.push(`<g data-node="${b.n.id}" style="cursor:pointer">`);
+    out.push(`<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="${root ? 16 : lvl1 ? 11 : 9}" fill="${root ? '#047857' : lvl1 ? '#ecfdf5' : '#ffffff'}" stroke="${root ? '#047857' : b.color}" stroke-width="${root ? 0 : lvl1 ? 1.8 : 1.2}"/>`);
+    const ty = b.y + b.h / 2 - (b.lines.length - 1) * (b.fs + 4) / 2 + b.fs * 0.35, cx = b.x + b.w / 2;
+    out.push(`<text x="${cx}" text-anchor="middle" font-size="${b.fs}" font-weight="${root ? 700 : lvl1 ? 600 : 500}" fill="${root ? '#ffffff' : b.n.text ? '#1e293b' : '#64748b'}">${b.lines.map((l, i) => `<tspan x="${cx}" y="${ty + i * (b.fs + 4)}">${esc(l)}</tspan>`).join('')}</text>`);
+    if (b.n.collapsed && b.kids.length) {
+      const n = count(b), bx = b.dir > 0 ? b.x + b.w + 14 : b.x - 14, by = b.y + b.h / 2;
+      out.push(`<circle cx="${bx}" cy="${by}" r="11" fill="#ffffff" stroke="${b.color}" stroke-width="1.4"/><text x="${bx}" y="${by + 4}" text-anchor="middle" font-size="11" font-weight="700" fill="${b.color}">+${n}</text>`);
+    }
+    out.push('</g>');
+  });
+  out.push('</svg>');
+  return out.join('');
+}
+
+/* Weergave */
+// Past de hele kaart leesbaar in het vak, dan tonen we ze helemaal; anders op ware grootte met scrollen.
+let shownFit = true;
+function fitNow() {
+  if (state.fit != null) return state.fit;
+  const c = $('canvas'), s = c && c.querySelector('svg');
+  return !c || !s || (c.clientWidth - 24) / +s.getAttribute('width') >= (window.innerWidth >= 1000 ? 0.7 : 0.8);
+}
+function sizeSvg(el, center = true) {
+  const w = +el.getAttribute('width'), fit = shownFit = fitNow();
+  el.style.height = 'auto'; el.style.width = fit ? '100%' : w + 'px'; el.style.maxWidth = fit ? w + 'px' : 'none';
+  const c = el.parentElement, b = $('fit-btn');
+  if (b) b.textContent = fit ? 'Ware grootte' : 'Hele kaart';
+  if (c) c.classList.toggle('pan', !fit);
+  if (!fit && c && center) { const r = el.querySelector('[data-node] rect'); if (r) c.scrollLeft = Math.max(0, +r.getAttribute('x') + +r.getAttribute('width') / 2 - c.clientWidth / 2); }
+}
+function branchColor(m, i) {
+  if (i === 0) return '#047857';
+  let k = i; while (k > 0 && m.nodes[k].level > 1) k--;
+  const firsts = m.nodes.map((n, j) => n.level === 1 ? j : -1).filter(j => j >= 0);
+  return BRANCH[Math.max(0, firsts.indexOf(k)) % BRANCH.length];
+}
+function render() {
+  const m = cur();
+  if (m && state.current !== m.id) state.current = m.id;
+  $('tabs').innerHTML = state.maps.map(x => `<button type="button" class="tab" data-map="${x.id}" aria-pressed="${x.id === (m && m.id)}"><span class="nm">${esc(title(x))}</span>${x.voorbeeld ? '<span class="vb-tag">voorbeeld</span>' : ''}</button>`).join('')
+    + `<button type="button" class="tab add" data-act="new-map" aria-label="Nieuwe mindmap">+ Mindmap</button>`;
+  $('oc-restart').parentElement.hidden = !state.maps.some(x => !x.voorbeeld);
+  if (!m) {
+    $('app').innerHTML = `<section class="card start-card"><p>Nog geen mindmap. Begin leeg, of bekijk eerst een voorbeeld.</p>
+      <div class="btns"><button type="button" class="btn btn-primary" data-act="new-map">Nieuwe mindmap</button><button type="button" class="btn btn-ghost" data-act="example">Begin met een voorbeeld</button></div></section>`;
+    return;
+  }
+  const a = document.activeElement, keep = a && a.dataset && a.dataset.id ? { id:a.dataset.id, ss:a.selectionStart } : null;
+  // ideeën onder een ingeklapte tak tonen we in de lijst ook niet
+  const hidden = new Set(); m.nodes.forEach((n, i) => { if (n.collapsed && !hidden.has(n.id)) for (let j = i + 1; j < end(m.nodes, i); j++) hidden.add(m.nodes[j].id); });
+  const rows = m.nodes.map((n, i) => {
+    if (hidden.has(n.id)) return '';
+    const kids = hasKids(m.nodes, i), col = branchColor(m, i), root = i === 0;
+    return `<li class="mrow${root ? ' root' : ''}" style="--lvl:${n.level}">
+      ${kids && !root ? `<button type="button" class="tw" data-act="toggle" data-id="${n.id}" aria-label="${n.collapsed ? 'Tak openklappen' : 'Tak inklappen'}" aria-expanded="${!n.collapsed}">${n.collapsed ? ICON.shut : ICON.open}</button>` : `<span class="dot" style="background:${col}" aria-hidden="true"></span>`}
+      <input class="mtxt" data-id="${n.id}" value="${esc(n.text)}" maxlength="160" placeholder="${root ? 'Het centrale idee' : 'Een idee…'}" aria-label="${root ? 'Centraal idee' : 'Idee op niveau ' + n.level}" enterkeyhint="next">
+      ${n.collapsed ? `<span class="more">+${end(m.nodes, i) - i - 1}</span>` : ''}
+      ${root ? '' : `<span class="macts">
+        <button type="button" data-act="out" data-id="${n.id}" aria-label="Een niveau terug" ${n.level > 1 ? '' : 'disabled'}>${ICON.left}</button>
+        <button type="button" data-act="in" data-id="${n.id}" aria-label="Een niveau dieper" ${i > 1 && m.nodes[i - 1].level >= n.level ? '' : 'disabled'}>${ICON.right}</button>
+        <button type="button" class="del" data-act="del" data-id="${n.id}" aria-label="Verwijder dit idee${kids ? ' en zijn subtakken' : ''}">${ICON.del}</button></span>`}
+    </li>`;
+  }).join('');
+  const nIdeas = m.nodes.length - 1, nMain = m.nodes.filter(n => n.level === 1).length, view = state.view;
+  $('app').innerHTML = `
+    <div class="views" role="tablist" aria-label="Weergave">
+      <button role="tab" data-view="edit" aria-selected="${view === 'edit'}">Lijst</button>
+      <button role="tab" data-view="draw" aria-selected="${view === 'draw'}">Kaart</button>
+    </div>
+    <div class="layout">
+      <section class="card" ${view === 'edit' ? '' : 'hidden'}>
+        <div class="card-head">
+          <h2 class="card-title">Ideeën</h2>
+          <button class="icon-btn del-unit" type="button" data-act="del-map" aria-label="Verwijder ${esc(title(m))}" title="Verwijder ${esc(title(m))}">${ICON.del}</button>
+          <div class="menu-wrap">
+            <button class="icon-btn" id="menu-btn" type="button" aria-label="Meer acties" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg></button>
+            <div class="menu" id="menu" role="menu">
+              <button data-act="pdf" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>Download als PDF</button>
+              <button data-act="png" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>Download als afbeelding</button>
+              <button data-act="svg" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Download als SVG (bewerkbaar)</button>
+              <button data-act="copy" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Kopieer als lijst</button>
+              <button data-act="mermaid" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg>Kopieer als Mermaid-code</button>
+              <div class="sep"></div>
+              <button data-act="expand" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 9l5 6 5-6"/></svg>Alles openklappen</button>
+              <button data-act="dup" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M4 16V5a1 1 0 0 1 1-1h11"/></svg>Dupliceer</button>
+              <div class="sep"></div>
+              <button data-act="wipe" class="danger" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>Alles wissen</button>
+            </div>
+          </div>
+        </div>
+        ${m.voorbeeld ? `<div class="vb-bar"><div class="vb-text">${ICON.info}<span>Dit is een voorbeeld om de tool te verkennen. Het telt niet mee in andere tools.</span></div>
+          <div class="vb-btns"><button type="button" class="vb-btn vb-wis" data-act="vb-wis">Wis voorbeeld</button><button type="button" class="vb-btn vb-eigen" data-act="vb-eigen">Maak er mijn eigen van</button></div></div>` : ''}
+        <p class="hint-s">Enter voor een nieuw idee, Tab om in te springen. Je kan ook een lijst met inspringingen plakken.</p>
+        <ol class="mrows">${rows}</ol>
+        <div class="adders">
+          <button type="button" data-act="add-main">+ Hoofdtak</button>
+          <button type="button" class="oc-import" data-oc-types="taak,actie,betrokkene,risico" data-act="imp" hidden>${ICON.imp}Overnemen uit…</button>
+        </div>
+      </section>
+      <section class="card draw-card" ${view === 'draw' ? '' : 'hidden'}>
+        <div class="draw-head"><h2 class="card-title">Kaart <span class="stat">${nIdeas} ${nIdeas === 1 ? 'idee' : 'ideeën'} · ${nMain} ${nMain === 1 ? 'hoofdtak' : 'hoofdtakken'}</span></h2>
+          <button type="button" class="zoom" id="fit-btn" data-act="fit">Hele kaart</button>
+          <button type="button" class="zoom" data-export="png" aria-label="Download als afbeelding">Afbeelding</button><button type="button" class="zoom" data-export="pdf" aria-label="Download als PDF">PDF</button></div>
+        <div class="canvas" id="canvas">${svgOf(m)}</div>
+        <p class="hint-s">Tik op een idee in de kaart om het in de lijst te bewerken.</p>
+      </section>
+    </div>`;
+  const s = document.querySelector('#canvas svg'); if (s) sizeSvg(s);
+  refreshImports();
+  if (keep) { const el = document.querySelector(`.mtxt[data-id="${keep.id}"]`); if (el) { el.focus({ preventScroll:true }); try { el.setSelectionRange(keep.ss, keep.ss); } catch {} } }
+}
+function renderMapOnly() { const m = cur(), c = $('canvas'); if (!m || !c) return; c.innerHTML = svgOf(m); sizeSvg(c.querySelector('svg'), false); }
+const focusNode = (id, atEnd = true) => { const el = document.querySelector(`.mtxt[data-id="${id}"]`); if (el) { el.focus(); if (atEnd) { const n = el.value.length; el.setSelectionRange(n, n); } } };
+
+/* Bewerken */
+function insertAfter(m, i, text = '') {
+  const n = m.nodes[i];
+  let at, level;
+  if (i === 0) { at = 1; level = 1; }
+  else if (hasKids(m.nodes, i) && !n.collapsed) { at = i + 1; level = n.level + 1; }        // eerste subtak
+  else { at = end(m.nodes, i); level = n.level; }                                           // volgende op hetzelfde niveau
+  const x = idea(text, level); m.nodes.splice(at, 0, x); return x;
+}
+function shift(m, i, d) {
+  const e = end(m.nodes, i);
+  if (d > 0 && !(i > 1 && m.nodes[i - 1].level >= m.nodes[i].level)) return false;
+  if (d < 0 && m.nodes[i].level <= 1) return false;
+  for (let j = i; j < e; j++) m.nodes[j].level += d;
+  if (d < 0) { // wie na de tak nog op het oude niveau stond, wordt geen kind van de verschoven tak: verschuif de tak achter zijn broers
+    const block = m.nodes.splice(i, e - i), lvl = block[0].level; let k = i;
+    while (k < m.nodes.length && m.nodes[k].level > lvl) k++;
+    m.nodes.splice(k, 0, ...block);
+  }
+  normalize(m.nodes); return true;
+}
+function moveBlock(m, i, d) {
+  const lvl = m.nodes[i].level, e = end(m.nodes, i);
+  if (d < 0) { let p = i - 1; while (p > 0 && m.nodes[p].level > lvl) p--; if (p < 1 || m.nodes[p].level !== lvl) return false;
+    const block = m.nodes.splice(i, e - i); m.nodes.splice(p, 0, ...block); return true; }
+  if (e >= m.nodes.length || m.nodes[e].level !== lvl) return false;
+  const e2 = end(m.nodes, e), next = m.nodes.splice(e, e2 - e); m.nodes.splice(i, 0, ...next); return true;
+}
+// Geplakte lijst met inspringingen omzetten naar ideeën
+function parseList(txt) {
+  const lines = txt.replace(/\r/g, '').split('\n').filter(l => l.trim());
+  const ind = l => { const m = l.match(/^[\t ]*/)[0]; return m.replace(/\t/g, '    ').length; };
+  const steps = [...new Set(lines.map(ind))].sort((a, b) => a - b);
+  return lines.map(l => ({ text: l.trim().replace(/^([-*•·–]|\d+[.)])\s+/, '').slice(0, 160), rel: steps.indexOf(ind(l)) }));
+}
+document.addEventListener('paste', e => {
+  const el = e.target; if (!el.classList || !el.classList.contains('mtxt')) return;
+  const txt = (e.clipboardData || window.clipboardData).getData('text');
+  if (!txt || !txt.includes('\n')) return;
+  e.preventDefault();
+  const m = cur(), i = m.nodes.findIndex(n => n.id === el.dataset.id), items = parseList(txt);
+  if (!items.length) return;
+  let at = i, base;
+  const n = m.nodes[i];
+  if (i === 0) { if (!n.text.trim()) { n.text = items.shift().text; items.forEach(x => x.rel = Math.max(0, x.rel - 1)); } base = 1; at = end(m.nodes, 0); }
+  else if (!n.text.trim()) { base = n.level; m.nodes.splice(i, 1); at = i; }
+  else { base = n.level; at = end(m.nodes, i); }
+  const add = items.map(x => idea(x.text, base + x.rel));
+  m.nodes.splice(at, 0, ...add); normalize(m.nodes); save(); render();
+  if (add.length) focusNode(add[add.length - 1].id);
+  toast(`${add.length + (i === 0 && !n.text ? 1 : 0)} ideeën geplakt`);
+});
+document.addEventListener('keydown', e => {
+  const el = e.target; if (!el.classList || !el.classList.contains('mtxt')) return;
+  const m = cur(), i = m.nodes.findIndex(n => n.id === el.dataset.id); if (i < 0) return;
+  if (e.key === 'Enter') {
+    e.preventDefault(); if (e.isComposing) return;
+    const nx = m.nodes[i + 1];
+    if (i === 0 && nx && !nx.text.trim()) { focusNode(nx.id); return; }   // er staat al een lege eerste tak klaar
+    const x = insertAfter(m, i); save(); render(); focusNode(x.id); }
+  else if (e.key === 'Tab') { e.preventDefault(); if (i > 0 && shift(m, i, e.shiftKey ? -1 : 1)) { save(); render(); focusNode(m.nodes[m.nodes.findIndex(n => n.id === el.dataset.id)].id, false); } }
+  else if (e.key === 'Backspace' && !el.value && i > 0 && !hasKids(m.nodes, i)) {
+    e.preventDefault(); const prev = m.nodes[i - 1]; m.nodes.splice(i, 1); normalize(m.nodes); save(); render(); focusNode(prev.id);
+  }
+  else if (e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown') && i > 0) { e.preventDefault(); if (moveBlock(m, i, e.key === 'ArrowUp' ? -1 : 1)) { save(); render(); focusNode(el.dataset.id, false); } }
+  else if (!e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+    const all = [...document.querySelectorAll('.mtxt')], k = all.indexOf(el) + (e.key === 'ArrowUp' ? -1 : 1);
+    if (all[k]) { e.preventDefault(); all[k].focus(); }
+  }
+});
+document.addEventListener('input', e => {
+  const el = e.target, m = cur(); if (!m) return;
+  if (!el.classList.contains('mtxt')) return;
+  const n = m.nodes.find(x => x.id === el.dataset.id); if (!n) return;
+  n.text = el.value; save(); renderMapOnly();
+  if (n.level === 0) { const tb = document.querySelector(`[data-map="${m.id}"] .nm`); if (tb) tb.textContent = title(m); }
+});
+document.addEventListener('click', async e => {
+  const g = e.target.closest('#canvas [data-node]');
+  if (g) { state.view = 'edit'; saveUi(); render(); const el = document.querySelector(`.mtxt[data-id="${g.dataset.node}"]`); if (el) { el.scrollIntoView({ block:'center', behavior:'smooth' }); el.focus({ preventScroll:true }); } else { const m = cur(); m.nodes.forEach(n => n.collapsed = false); save(); render(); focusNode(g.dataset.node); } return; }
+  const t = e.target.closest('[data-act],[data-map],[data-view]'); if (!t || t.closest('#menu')) return;
+  if (t.dataset.map) { state.current = t.dataset.map; saveUi(); render(); return; }
+  if (t.dataset.view) { state.view = t.dataset.view; saveUi(); render(); return; }
+  const m = cur(), act = t.dataset.act, id = t.dataset.id, i = m ? m.nodes.findIndex(n => n.id === id) : -1;
+  switch (act) {
+    case 'new-map': { const x = newMap(state.maps.length ? 'Mindmap ' + (state.maps.length + 1) : 'Mijn mindmap'); state.maps.push(x); state.current = x.id; state.view = 'edit'; save(); render(); focusNode(x.nodes[0].id); return; }
+    case 'example': example(); return;
+    case 'add-main': { const x = idea('', 1); m.nodes.push(x); save(); render(); focusNode(x.id); return; }
+    case 'toggle': m.nodes[i].collapsed = !m.nodes[i].collapsed; save(); render(); return;
+    case 'in': case 'out': if (shift(m, i, act === 'in' ? 1 : -1)) { save(); render(); const b = document.querySelector(`[data-act="${act}"][data-id="${id}"]`); b && !b.disabled && b.focus(); } return;
+    case 'del': { const undo = snapshot(), e2 = end(m.nodes, i), n = e2 - i; m.nodes.splice(i, n); normalize(m.nodes); save(); render(); toast(n > 1 ? `Idee en ${n - 1} ${n === 2 ? 'subtak' : 'subtakken'} verwijderd` : 'Idee verwijderd', undo); return; }
+    case 'del-map': { const undo = snapshot(), k = state.maps.indexOf(m); state.maps.splice(k, 1); state.current = (state.maps[k - 1] || state.maps[0] || {}).id || null; save(); render(); toast(`${title(m)} verwijderd`, undo); return; }
+    case 'vb-wis': { const undo = snapshot(); state.maps = state.maps.filter(x => !x.voorbeeld); state.current = (state.maps[0] || {}).id || null; save(); render(); toast('Voorbeeld gewist', undo); return; }
+    case 'vb-eigen': m.voorbeeld = false; save(); render(); toast('Het voorbeeld is nu van jou'); return;
+    case 'fit': state.fit = !shownFit; saveUi(); render(); return;
+    case 'imp': {
+      const picked = await ocShare.pick({ types:['taak', 'actie', 'betrokkene', 'risico'], self:OC_ID, title:'Ideeën overnemen', intro:'Kies items uit andere tools. Ze komen als nieuwe hoofdtakken in de mindmap.' });
+      if (!picked.length) return;
+      picked.forEach(p => m.nodes.push(idea(p.text.slice(0, 160), 1))); save(); render(); toast(`${picked.length} ${picked.length === 1 ? 'idee' : 'ideeën'} overgenomen`); return; }
+  }
+});
+
+/* Klaarleggen: hoofdtakken en hun ideeën als taken (voorbeelden niet) */
+function publish() {
+  const lists = [];
+  state.maps.filter(m => !m.voorbeeld).forEach(m => {
+    const items = [];
+    let main = '';
+    // ideeën zonder subtakken zijn de concrete punten; de hoofdtak gaat mee als notitie
+    m.nodes.forEach((n, i) => { if (n.level === 1) main = n.text.trim(); if (n.level >= 1 && n.text.trim() && !hasKids(m.nodes, i)) items.push({ type:'taak', text:n.text.trim(), note: n.level > 1 ? main || undefined : undefined }); });
+    if (items.length) lists.push({ name: title(m), items });
+  });
+  ocShare.publish(OC_ID, OC_TOOL, lists);
+}
+function refreshImports() { document.querySelectorAll('[data-oc-types]').forEach(b => { b.hidden = !ocShare.count(b.dataset.ocTypes.split(','), OC_ID); }); }
+['focus', 'storage'].forEach(ev => window.addEventListener(ev, () => setTimeout(refreshImports, 50)));
+
+/* Voorbeeld */
+function example() {
+  const ex = state.maps.find(x => x.voorbeeld);
+  if (ex) { state.current = ex.id; saveUi(); render(); return; }
+  const lines = [
+    [0, 'Nieuw digitaal loket'],
+    [1, 'Wie'], [2, 'Burgers die een premie aanvragen'], [2, 'Loketmedewerkers'], [2, 'Dossierbeheerders'],
+    [1, 'Waarom'], [2, 'Minder papier en wachttijd'], [2, 'Eén plek voor alle aanvragen'],
+    [1, 'Wat verandert'], [2, 'Aanvragen online indienen'], [2, 'Automatische controle op volledigheid'], [3, 'Ontbrekende stukken meteen opvragen'], [2, 'Nieuwe werkverdeling aan het loket'],
+    [1, 'Risico\'s'], [2, 'Burgers zonder computer'], [2, 'Opleiding komt te laat'],
+    [1, 'Eerste stappen'], [2, 'Proces van vandaag tekenen'], [2, 'Sleutelfiguren per team aanduiden'], [2, 'Proefperiode met één dienst']
+  ];
+  const x = { id:uid(), name:'Voorbeeld', voorbeeld:true, nodes: lines.map(([l, t]) => idea(t, l)) };
+  state.maps.push(x); state.current = x.id; save(); render();
+}
+
+/* Menu */
+document.addEventListener('click', e => {
+  const btn = e.target.closest('#menu-btn'), menu = $('menu');
+  if (btn) { e.stopPropagation(); const o = menu.classList.toggle('open'); btn.setAttribute('aria-expanded', o); return; }
+  if (menu && !e.target.closest('.menu-wrap')) { menu.classList.remove('open'); const b = $('menu-btn'); b && b.setAttribute('aria-expanded', 'false'); }
+}, true);
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('menu')) $('menu').classList.remove('open'); });
+
+let toastTimer, undoFn = null;
+function toast(msg, undo) {
+  undoFn = undo || null; if (undo) undo.mark = saves;
+  $('toast-text').textContent = msg; $('toast-btn').hidden = !undo;
+  $('toast').classList.add('show'); clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { $('toast').classList.remove('show'); undoFn = null; }, undo ? 6000 : 2600);
+}
+$('toast-btn').addEventListener('click', () => { const f = undoFn; undoFn = null; $('toast').classList.remove('show'); f && f(); });
+
+function ocConfirm(title, text, okText) {
+  if (!document.getElementById('ocw-style')) {
+    const s = document.createElement('style'); s.id = 'ocw-style';
+    s.textContent = `.ocw-back{position:fixed;inset:0;z-index:10001;display:flex;align-items:center;justify-content:center;padding:1rem;background:rgba(15,23,42,.45);backdrop-filter:blur(3px);font-family:'DM Sans',system-ui,sans-serif}
+      .ocw{width:100%;max-width:400px;background:#fff;border-radius:16px;padding:1.375rem 1.375rem 1.125rem;box-shadow:0 20px 50px rgba(15,23,42,.25);color:#1e293b}
+      .ocw b{display:block;font-size:1.0625rem;letter-spacing:-.01em;margin-bottom:.375rem}
+      .ocw p{font-size:.9375rem;line-height:1.5;color:#475569}
+      .ocw-row{display:flex;justify-content:flex-end;gap:.5rem;margin-top:1.25rem}
+      .ocw-row button{font:inherit;font-size:.9375rem;font-weight:600;padding:.625rem 1rem;min-height:44px;border-radius:10px;border:0;cursor:pointer}
+      .ocw-no{background:#f1f5f9;color:#475569} .ocw-yes{background:#dc2626;color:#fff} .ocw-yes:hover{background:#b91c1c}`;
+    document.head.appendChild(s);
+  }
+  return new Promise(resolve => {
+    const back = document.createElement('div'); back.className = 'ocw-back';
+    back.innerHTML = '<div class="ocw" role="alertdialog" aria-modal="true"><b></b><p></p><div class="ocw-row"><button class="ocw-no" type="button">Annuleer</button><button class="ocw-yes" type="button"></button></div></div>';
+    back.querySelector('b').textContent = title; back.querySelector('p').textContent = text; back.querySelector('.ocw-yes').textContent = okText;
+    document.body.appendChild(back);
+    const done = v => { document.removeEventListener('keydown', key, true); back.remove(); resolve(v); };
+    const key = e => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); done(false); } };
+    document.addEventListener('keydown', key, true);
+    back.querySelector('.ocw-no').onclick = () => done(false);
+    back.querySelector('.ocw-yes').onclick = () => done(true);
+    back.addEventListener('click', e => { if (e.target === back) done(false); });
+    back.querySelector('.ocw-no').focus();
+  });
+}
+
+
+/* Exports */
+function asList(m) { return m.nodes.map(n => '  '.repeat(n.level) + (n.level ? '- ' : '') + (n.text || '…')).join('\n'); }
+function asMermaid(m) {
+  const q = s => String(s || '…').replace(/[()[\]{}<>"#&]/g, c => ({ '(':'❨', ')':'❩', '[':'⟦', ']':'⟧', '{':'⦃', '}':'⦄', '<':'‹', '>':'›', '"':'”', '#':'♯', '&':'en' }[c]));
+  return ['mindmap', ...m.nodes.map((n, i) => '  '.repeat(n.level + 1) + (i === 0 ? `root((${q(n.text)}))` : q(n.text)))].join('\n');
+}
+function buildExport() {
+  const m = cur(), node = document.createElement('div');
+  node.innerHTML = `<div style="display:flex;justify-content:center">${svgOf(m)}</div>`;
+  const s = node.querySelector('svg'); s.style.maxWidth = '100%'; s.style.height = 'auto';
+  return { node, title: title(m), subtitle: `${m.nodes.length - 1} ideeën` };
+}
+function saveBlob(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
+document.addEventListener('click', async e => {
+  const b = e.target.closest('#menu [data-act], [data-export]'); if (!b) return;
+  if ($('menu')) $('menu').classList.remove('open');
+  const m = cur(), act = b.dataset.export || b.dataset.act;
+  const base = title(m).normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'mindmap';
+  if (act === 'png' || act === 'pdf') {
+    const w = layout(m).width;
+    toast('Bezig met downloaden…');
+    try { const o = { width: Math.min(2400, Math.max(800, w + 80)), landscape: w > 640 }; await (act === 'png' ? ocExport.png(buildExport, base, o) : ocExport.pdf(buildExport, base, o)); toast(act === 'png' ? 'Afbeelding gedownload' : 'PDF gedownload'); }
+    catch { toast('Downloaden lukte niet. Ben je online?'); }
+  } else if (act === 'svg') { saveBlob(new Blob(['<?xml version="1.0" encoding="UTF-8"?>\n' + svgOf(m)], { type:'image/svg+xml' }), base + '.svg'); toast('SVG gedownload'); }
+  else if (act === 'copy' || act === 'mermaid') { try { await navigator.clipboard.writeText(act === 'copy' ? asList(m) : asMermaid(m)); toast(act === 'copy' ? 'Gekopieerd als lijst' : 'Mermaid-code gekopieerd'); } catch { toast('Kopiëren lukte niet'); } }
+  else if (act === 'expand') { m.nodes.forEach(n => n.collapsed = false); save(); render(); }
+  else if (act === 'dup') { const c = JSON.parse(JSON.stringify(m)); c.id = uid(); c.voorbeeld = false; c.nodes.forEach(n => n.id = uid()); c.nodes[0].text = title(m).slice(0, 150) + ' (kopie)'; state.maps.splice(state.maps.indexOf(m) + 1, 0, c); state.current = c.id; save(); render(); toast('Kopie gemaakt'); }
+  else if (act === 'wipe') {
+    if (!await ocConfirm('Alles wissen in Mindmap?', 'Alle mindmaps verdwijnen. Je kan dit nog ongedaan maken tot je iets anders doet.', 'Alles wissen')) return;
+    const undo = snapshot();
+    try { localStorage.removeItem(KEY); } catch {}
+    state = fresh(); ocShare.clear(OC_ID); render(); toast('Alles gewist', undo);
+  }
+});
+$('oc-restart').addEventListener('click', () => { const b = document.querySelector('#menu [data-act="wipe"]'); if (b) b.click(); });
+
+/* Slepen om de kaart te verschuiven (muis); aanraken scrolt vanzelf */
+(() => {
+  let drag = null;
+  document.addEventListener('pointerdown', e => {
+    const c = e.target.closest('#canvas'); if (!c || e.pointerType !== 'mouse' || e.button !== 0) return;
+    if (c.scrollWidth <= c.clientWidth && c.scrollHeight <= c.clientHeight) return;
+    drag = { c, x:e.clientX, y:e.clientY, l:c.scrollLeft, t:c.scrollTop, moved:false };
+  });
+  document.addEventListener('pointermove', e => {
+    if (!drag) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    if (!drag.moved && Math.abs(dx) + Math.abs(dy) < 5) return;
+    drag.moved = true; drag.c.classList.add('panning'); drag.c.scrollLeft = drag.l - dx; drag.c.scrollTop = drag.t - dy;
+  });
+  document.addEventListener('pointerup', () => { if (!drag) return; const d = drag; drag = null; d.c.classList.remove('panning');
+    if (d.moved) { const stop = ev => { ev.stopPropagation(); ev.preventDefault(); }; document.addEventListener('click', stop, { capture:true, once:true }); setTimeout(() => document.removeEventListener('click', stop, true), 0); } });
+})();
+
+render();
+setTimeout(publish, 0);
+
+</script>
+</body>
+</html>

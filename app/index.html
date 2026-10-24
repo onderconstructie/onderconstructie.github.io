@@ -404,6 +404,17 @@ body.filtering .paths-wrap { display:none; }
 .nudge-later { min-height:44px; padding:0 0.75rem; border-radius:10px; font-size:0.875rem; font-weight:600; color:var(--slate-600); }
 .nudge-later:hover { background:#d1fae5; }
 .data-last { font-size:0.8125rem; color:var(--slate-600); margin-top:0.25rem; }
+
+.res-h { font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--slate-500); padding:0.75rem 1rem 0.25rem; }
+.hit { display:grid; grid-template-columns:44px minmax(0,1fr) auto; gap:0.875rem; align-items:start; width:100%; text-align:left; padding:0.75rem 0.875rem 0.75rem 1rem; border-top:1px solid var(--slate-100); }
+.hit:hover { background:var(--slate-50); }
+.hit-body { display:flex; flex-direction:column; gap:0.125rem; min-width:0; }
+.hit-snip { font-size:0.8125rem; color:var(--slate-600); line-height:1.4; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.hit-snip mark { background:#d1fae5; color:#065f46; border-radius:3px; padding:0 2px; }
+.hit-more { font-size:0.75rem; color:var(--slate-500); }
+.hit .chev { align-self:center; }
+
+body.searching #filter, body.searching #recent-section, body.searching #backup-nudge { display:none !important; }
 </style>
 </head>
 <body>
@@ -438,7 +449,7 @@ body.filtering .paths-wrap { display:none; }
 
     <div class="search-box" role="search">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-      <input id="search" type="search" placeholder="Zoek, bv. risico of wie doet wat" aria-label="Zoek een tool" autocomplete="off" enterkeyhint="search">
+      <input id="search" type="search" placeholder="Zoek in tools en je eigen gegevens" aria-label="Zoek in tools en in wat je zelf invulde" autocomplete="off" enterkeyhint="search">
     </div>
 
     <div class="nudge" id="backup-nudge" hidden role="region" aria-label="Reservekopie">
@@ -489,7 +500,7 @@ body.filtering .paths-wrap { display:none; }
     <span class="sep" aria-hidden="true">·</span>
     <button class="footer-link" id="data-open" type="button">gegevens</button>
     <span class="sep" aria-hidden="true">·</span>
-    <span class="app-version" title="Versie van de app">v15</span>
+    <span class="app-version" title="Versie van de app">v16</span>
   </footer>
 </div>
 
@@ -693,6 +704,7 @@ function setFilter(kind, value) {
   if (kind !== 'search' && $('search').value) $('search').value = '';
   active = kind === 'search' ? (value ? { kind, value } : null) : kind && !isOn(kind, value) ? { kind, value } : null;
   document.body.classList.toggle('filtering', !!active);
+  document.body.classList.toggle('searching', !!active && active.kind === 'search');
   $('results').hidden = !active;
   $('filter-hint').textContent = active ? 'Tik opnieuw om alles te tonen' : 'Kies een fase of een thema';
   if (active) {
@@ -705,7 +717,17 @@ function setFilter(kind, value) {
       title = `${esc(ph.name)} <span class="grp">${list.length} ${list.length === 1 ? 'tool' : 'tools'}</span><span class="results-sub">${esc(ph.long)}</span>`;
     } else if (active.kind === 'search') {
       list = searchTools(active.value);
-      title = `Zoeken: “${esc(active.value)}” <span class="grp">${list.length} ${list.length === 1 ? 'tool' : 'tools'}</span>`;
+      const hits = searchContent(active.value);
+      const n = hits.reduce((k, h) => k + h.snippets.length, 0);
+      const parts = [list.length && `${list.length} ${list.length === 1 ? 'tool' : 'tools'}`, n && `${n} ${n === 1 ? 'treffer' : 'treffers'} in je gegevens`].filter(Boolean);
+      title = `Zoeken: “${esc(active.value)}” <span class="grp">${parts.join(' · ')}</span>`;
+      $('results-title').innerHTML = title;
+      $('results-list').innerHTML = (hits.length ? `<h3 class="res-h">In je gegevens</h3>` + hits.map(h => `
+          <button class="hit" data-id="${esc(h.t.id)}"><span class="icon">${iconHTML(h.t.icon)}</span>
+            <span class="hit-body"><span class="row-title">${esc(h.t.title)}</span>${h.snippets.map(x => `<span class="hit-snip">${x}</span>`).join('')}${h.more ? `<span class="hit-more">en nog ${h.more}</span>` : ''}</span>${chevron}</button>`).join('') : '')
+        + (list.length ? `<h3 class="res-h">Tools</h3>` + list.map(t => rowHTML(t, { on: active.value, showGroup: true })).join('') : '')
+        + (!list.length && !hits.length ? '<p class="results-empty">Niets gevonden, niet in de tools en niet in je gegevens. Probeer een ander woord.</p>' : '');
+      markLive(); renderFilter(); return;
     } else {
       list = byUsage(TOOLS.filter(t => (t.labels || []).includes(active.value)));
       title = `${esc(active.value)} <span class="grp">${list.length} ${list.length === 1 ? 'tool' : 'tools'}</span>`;
@@ -1108,7 +1130,7 @@ $('wipe-tool').addEventListener('click', async () => {
 const SYNONIEMEN = {
   raci:'wie doet wat rollen verantwoordelijk taakverdeling', kanban:'planning sprint taken bord scrum backlog',
   vinkje:'checklist todo lijst afvinken boodschappen', beslissingen:'beslissing besluit afspraak notulen',
-  vergaderkost:'vergadering meeting kost tijd', 'check-in':'vergadering ronde opener', stroom:'proces flow schema stappen flowchart swimlane',
+  vergaderkost:'vergadering meeting kost tijd', 'check-in':'vergadering ronde opener', stroom:'proces flow schema stappen flowchart swimlane', mindmap:'brainstorm ideeen ordenen structuur boom overzicht',
   communicatie:'communicatie boodschap mail nieuwsbrief aankondigen', memomities:'mail notitie inbox', focus:'timer pomodoro concentratie',
   fortuna:'loting willekeurig naam trekken', mixer:'teams verdelen groepen indelen', 'project-realisme':'schatting planning tijd duur',
   stakeholders:'draagvlak betrokkenen invloed', sponsor:'draagvlak leiding top opdrachtgever', weerstand:'draagvlak weerstand adkar',
@@ -1126,6 +1148,34 @@ function searchTools(q) {
     return { t, score: words.reduce((n, w) => n + (title.startsWith(w) ? 3 : title.includes(w) ? 2 : 1), 0) + usageScore(t.id) / 50 };
   }).filter(Boolean).sort((a, b) => b.score - a.score).map(x => x.t);
 }
+
+/* Zoeken in eigen gegevens: alle tekst die tools op dit toestel bewaren. Niets verlaat het toestel. */
+const SKIP = /^(#[0-9a-f]{3,8}|[a-z0-9]{6,12}|\d{4}-\d{2}-\d{2}.*|https?:\/\/\S+|true|false|null|scan|plan|lijst|profiel|reeks|res|all|fase|edit|draw|auto|none|stap|keuze|start|einde|ja|nee)$/i;
+function strings(v, out) {
+  if (typeof v === 'string') { const t = v.trim(); if (t.length >= 3 && !SKIP.test(t)) out.push(t); }
+  else if (Array.isArray(v)) v.forEach(x => strings(x, out));
+  else if (v && typeof v === 'object') Object.values(v).forEach(x => strings(x, out));
+  return out;
+}
+function searchContent(q) {
+  const words = fold(q).split(/\s+/).filter(w => w.length >= 2); if (!words.length) return [];
+  const mark = txt => { let h = esc(txt); words.forEach(w => { h = h.replace(new RegExp('(' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi'), '<mark>$1</mark>'); }); return h; };
+  const res = [];
+  TOOLS.forEach(t => {
+    const keys = keysFor((t.storage || []).filter(k => !k.startsWith('oc.share.')));
+    const seen = new Set(), found = [];
+    keys.forEach(k => { let v; try { v = JSON.parse(localStorage.getItem(k)); } catch { return; }
+      strings(v, []).forEach(txt => { const f = fold(txt); if (seen.has(f) || !words.every(w => f.includes(w))) return; seen.add(f); found.push(txt); }); });
+    if (found.length) {
+      // een stukje rond het eerste woord, zodat je ziet waar het staat
+      const snip = txt => { const f = fold(txt), i = Math.max(0, f.indexOf(words[0]) - 30); return mark((i ? '…' : '') + txt.slice(i, i + 110)); };
+      res.push({ t, snippets: found.slice(0, 3).map(snip), more: Math.max(0, found.length - 3), n: found.length });
+    }
+  });
+  return res.sort((a, b) => b.n - a.n);
+}
+// klikken op een treffer opent de tool via de algemene [data-id]-afhandeling
+
 let searchT;
 $('search').addEventListener('input', e => { clearTimeout(searchT); const v = e.target.value.trim(); searchT = setTimeout(() => setFilter('search', v), 120); });
 $('search').addEventListener('keydown', e => {
