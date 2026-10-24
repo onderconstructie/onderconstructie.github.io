@@ -8,11 +8,13 @@ Decoratieve onderdelen (aria-hidden) en uitgeschakelde knoppen tellen niet mee.
 Gebruik:
     python3 scripts/test-tools.py                      test de tools in deze repo (lokale server)
     python3 scripts/test-tools.py --live               test de live site, alle tools uit tools.json
+    python3 scripts/test-tools.py --url=http://...     test alle tools op een ander adres (bv. een lokale kopie)
 """
 import functools, http.server, json, os, socketserver, sys, threading
 from playwright.sync_api import sync_playwright
 
-LIVE = '--live' in sys.argv
+URL = next((a.split('=', 1)[1] for a in sys.argv if a.startswith('--url=')), None)
+LIVE = '--live' in sys.argv or URL is not None
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 WIDTHS = (390, 1280)
 HUBS = ['/app/', '/']
@@ -74,7 +76,7 @@ def pages():
 
 
 def main():
-    base = 'https://onderconstructie.github.io' if LIVE else serve()
+    base = URL or ('https://onderconstructie.github.io' if LIVE else serve())
     fails, warns = [], []
     with sync_playwright() as pw:
         browser = pw.chromium.launch()
