@@ -385,6 +385,25 @@ body.filtering .paths-wrap { display:none; }
 .app-dlg-row { display:flex; justify-content:flex-end; gap:0.5rem; margin-top:1.25rem; }
 .app-dlg-row .dbtn { min-height:44px; }
 #wipe-tool:hover { color:#b91c1c; }
+
+/* Zoeken */
+.search-box { position:relative; margin-bottom:1rem; }
+.search-box svg { position:absolute; left:0.875rem; top:50%; transform:translateY(-50%); width:18px; height:18px; color:var(--slate-500); pointer-events:none; }
+.search-box input { width:100%; min-height:48px; padding:0.625rem 1rem 0.625rem 2.625rem; border:1.5px solid var(--slate-200); border-radius:14px; background:var(--wit); font:inherit; font-size:1rem; color:var(--slate-800); outline:none; }
+.search-box input:focus { border-color:var(--accent); box-shadow:0 0 0 3px #d1fae5; }
+.search-box input::placeholder { color:var(--slate-500); }
+.results-empty { padding:1rem; font-size:0.9375rem; color:var(--slate-600); }
+/* Herinnering reservekopie */
+.nudge { display:flex; flex-wrap:wrap; align-items:center; gap:0.625rem 0.875rem; margin-bottom:1rem; padding:0.75rem 0.875rem; border:1px solid #a7f3d0; background:#ecfdf5; border-radius:14px; }
+.nudge[hidden] { display:none !important; }
+.nudge svg { width:20px; height:20px; color:#047857; flex-shrink:0; }
+.nudge p { flex:1 1 14rem; min-width:0; font-size:0.875rem; color:var(--slate-700); }
+.nudge-btns { display:flex; gap:0.375rem; }
+.nudge .btn { min-height:44px; padding:0 0.875rem; border-radius:10px; background:#047857; color:#fff; font-weight:600; font-size:0.875rem; }
+.nudge .btn:hover { background:#065f46; }
+.nudge-later { min-height:44px; padding:0 0.75rem; border-radius:10px; font-size:0.875rem; font-weight:600; color:var(--slate-600); }
+.nudge-later:hover { background:#d1fae5; }
+.data-last { font-size:0.8125rem; color:var(--slate-600); margin-top:0.25rem; }
 </style>
 </head>
 <body>
@@ -415,6 +434,17 @@ body.filtering .paths-wrap { display:none; }
       <p id="install-text"></p>
       <button class="btn" id="install-btn" hidden>Installeer</button>
       <button class="dismiss" id="install-x" aria-label="Verberg">&times;</button>
+    </div>
+
+    <div class="search-box" role="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input id="search" type="search" placeholder="Zoek, bv. risico of wie doet wat" aria-label="Zoek een tool" autocomplete="off" enterkeyhint="search">
+    </div>
+
+    <div class="nudge" id="backup-nudge" hidden role="region" aria-label="Reservekopie">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
+      <p id="backup-text"></p>
+      <div class="nudge-btns"><button type="button" class="btn" id="backup-now">Reservekopie maken</button><button type="button" class="nudge-later" id="backup-later">Later</button></div>
     </div>
 
     <section class="section" id="recent-section" hidden>
@@ -459,7 +489,7 @@ body.filtering .paths-wrap { display:none; }
     <span class="sep" aria-hidden="true">·</span>
     <button class="footer-link" id="data-open" type="button">gegevens</button>
     <span class="sep" aria-hidden="true">·</span>
-    <span class="app-version" title="Versie van de app">v14</span>
+    <span class="app-version" title="Versie van de app">v15</span>
   </footer>
 </div>
 
@@ -660,7 +690,8 @@ function renderFilter() {
     `<button class="fchip" data-label="${esc(l)}" aria-pressed="${isOn('label', l)}">${esc(l)}<span class="n">${counts[l]}</span></button>`).join('');
 }
 function setFilter(kind, value) {
-  active = kind && !isOn(kind, value) ? { kind, value } : null;
+  if (kind !== 'search' && $('search').value) $('search').value = '';
+  active = kind === 'search' ? (value ? { kind, value } : null) : kind && !isOn(kind, value) ? { kind, value } : null;
   document.body.classList.toggle('filtering', !!active);
   $('results').hidden = !active;
   $('filter-hint').textContent = active ? 'Tik opnieuw om alles te tonen' : 'Kies een fase of een thema';
@@ -672,12 +703,16 @@ function setFilter(kind, value) {
       const inPhase = TOOLS.filter(t => (t.pdca || []).includes(active.value));
       list = [...byUsage(inPhase.filter(t => t.pdca[0] === active.value)), ...byUsage(inPhase.filter(t => t.pdca[0] !== active.value))];
       title = `${esc(ph.name)} <span class="grp">${list.length} ${list.length === 1 ? 'tool' : 'tools'}</span><span class="results-sub">${esc(ph.long)}</span>`;
+    } else if (active.kind === 'search') {
+      list = searchTools(active.value);
+      title = `Zoeken: “${esc(active.value)}” <span class="grp">${list.length} ${list.length === 1 ? 'tool' : 'tools'}</span>`;
     } else {
       list = byUsage(TOOLS.filter(t => (t.labels || []).includes(active.value)));
       title = `${esc(active.value)} <span class="grp">${list.length} ${list.length === 1 ? 'tool' : 'tools'}</span>`;
     }
     $('results-title').innerHTML = title;
-    $('results-list').innerHTML = list.map(t => rowHTML(t, { on: active.value, showGroup: active.kind === 'label' })).join('');
+    $('results-list').innerHTML = list.length ? list.map(t => rowHTML(t, { on: active.value, showGroup: active.kind !== 'pdca' })).join('')
+      : '<p class="results-empty">Niets gevonden. Probeer een ander woord, of kies hieronder een fase.</p>';
     markLive();
   }
   renderFilter();
@@ -758,7 +793,7 @@ function showHome(fromHistory) {
   $('viewer').classList.remove('open');
   $('viewer').setAttribute('aria-hidden', 'true');
   document.title = 'Onder Constructie';
-  renderRecent(); renderPaths(); markLive();
+  renderRecent(); renderPaths(); syncBackupNudge(); markLive();
   if (pendingReload) { location.reload(); return; }
   if (!fromHistory && history.state && history.state.tool) history.back();
 }
@@ -872,6 +907,9 @@ function renderData() {
       <button class="drow-wipe" data-wipe="${esc(t.id)}">Wis</button></div>`).join('')
     : '<p class="data-empty">Er is niets bewaard. Je begint met een schone lei.</p>';
   $('data-wipe-all').hidden = !entries.length;
+  const b = store.get('backup-at', 0), last = document.getElementById('data-last') || Object.assign(document.createElement('p'), { id:'data-last', className:'data-last' });
+  last.textContent = b ? `Laatste reservekopie: ${new Date(b).toLocaleDateString('nl-BE', { day:'numeric', month:'long', year:'numeric' })}.` : 'Nog geen reservekopie gemaakt op dit toestel.';
+  if (!last.parentNode) $('data-backup').after(last);
   $('data-backup').hidden = !entries.length;
 }
 function openData() { renderData(); $('data-confirm').hidden = true; $('data-sheet').hidden = false; }
@@ -887,6 +925,7 @@ function backup(keys) {
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
   a.download = `onderconstructie-reservekopie-${new Date().toISOString().slice(0, 10)}.json`;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  store.set('backup-at', Date.now()); store.set('backup-snooze', 0);
 }
 function askWipe(ids) {
   const entries = dataEntries().filter(e => ids.includes(e.t.id));
@@ -1063,6 +1102,62 @@ $('wipe-tool').addEventListener('click', async () => {
   appToast(`${t.title} is leeg`, async () => { if (!await restore()) return; dropFrame(id); if (current === id || !current) openTool(id); renderPaths(); syncWipeBtn(); appToast('Teruggezet'); });
 });
 
+
+/* ---------- Zoeken ---------- */
+// Woorden die mensen gebruiken, maar die niet letterlijk in de beschrijving van een tool staan.
+const SYNONIEMEN = {
+  raci:'wie doet wat rollen verantwoordelijk taakverdeling', kanban:'planning sprint taken bord scrum backlog',
+  vinkje:'checklist todo lijst afvinken boodschappen', beslissingen:'beslissing besluit afspraak notulen',
+  vergaderkost:'vergadering meeting kost tijd', 'check-in':'vergadering ronde opener', stroom:'proces flow schema stappen flowchart swimlane',
+  communicatie:'communicatie boodschap mail nieuwsbrief aankondigen', memomities:'mail notitie inbox', focus:'timer pomodoro concentratie',
+  fortuna:'loting willekeurig naam trekken', mixer:'teams verdelen groepen indelen', 'project-realisme':'schatting planning tijd duur',
+  stakeholders:'draagvlak betrokkenen invloed', sponsor:'draagvlak leiding top opdrachtgever', weerstand:'draagvlak weerstand adkar',
+  impact:'verandering gevolgen', klimaat:'verandering cultuur vertrouwen', veranderprofiel:'verandering samenvatting inspanning',
+  gap:'kloof huidige gewenste situatie', prioriteit:'prioriteren eisenhower quick wins', risico:'risico kans gevolg',
+  'project-radar':'status gezondheid project', retro:'terugblik evaluatie lessen', paradox:'afstemming overleg groepsgrootte',
+  adem:'stress rust ademhaling', hart:'meditatie mildheid', hier:'aarden stress rust', qr:'qr code link delen', looplicht:'veiligheid licht nacht'
+};
+const fold = v => String(v || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+function searchTools(q) {
+  const words = fold(q).split(/\s+/).filter(Boolean);
+  return TOOLS.map(t => {
+    const title = fold(t.title), rest = fold([t.sub, t.desc, (t.labels || []).join(' '), (t.pdca || []).join(' '), t.id, SYNONIEMEN[t.id]].join(' '));
+    if (!words.every(w => title.includes(w) || rest.includes(w))) return null;
+    return { t, score: words.reduce((n, w) => n + (title.startsWith(w) ? 3 : title.includes(w) ? 2 : 1), 0) + usageScore(t.id) / 50 };
+  }).filter(Boolean).sort((a, b) => b.score - a.score).map(x => x.t);
+}
+let searchT;
+$('search').addEventListener('input', e => { clearTimeout(searchT); const v = e.target.value.trim(); searchT = setTimeout(() => setFilter('search', v), 120); });
+$('search').addEventListener('keydown', e => {
+  if (e.key === 'Escape') { e.target.value = ''; setFilter('search', ''); }
+  if (e.key === 'Enter') { const first = document.querySelector('#results-list .row'); if (first) first.click(); }
+});
+// "/" zet de cursor in het zoekveld (op een toetsenbord), zoals op veel websites
+document.addEventListener('keydown', e => {
+  if (e.key === '/' && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName) && !$('viewer').classList.contains('open')) { e.preventDefault(); $('search').focus(); }
+});
+
+/* ---------- Herinnering: reservekopie ---------- */
+// Alles staat alleen in deze browser. Wie al twee weken gegevens heeft zonder reservekopie, krijgt een zachte herinnering.
+const DAY = 864e5, NUDGE_AFTER = 14 * DAY, SNOOZE = 7 * DAY;
+function userEntries() { return dataEntries().filter(e => e.t.id !== '__app'); }
+function syncBackupNudge() {
+  const has = userEntries().length, now = Date.now();
+  if (!has) { store.set('data-since', null); $('backup-nudge').hidden = true; return; }
+  if (!store.get('data-since', null)) store.set('data-since', now);
+  const since = Math.max(store.get('backup-at', 0) || 0, store.get('data-since', now)), snooze = store.get('backup-snooze', 0) || 0;
+  const due = now - since >= NUDGE_AFTER && now >= snooze;
+  $('backup-nudge').hidden = !due;
+  if (due) {
+    const b = store.get('backup-at', 0), days = Math.floor((now - (b || since)) / DAY);
+    $('backup-text').textContent = b
+      ? `Je laatste reservekopie is ${days} dagen oud. Je gegevens staan alleen in deze browser: maak een nieuwe kopie, zodat je niets verliest.`
+      : 'Je gegevens staan alleen in deze browser. Wordt die leeggemaakt of krijg je een nieuw toestel, dan zijn ze weg. Maak een reservekopie.';
+  }
+}
+$('backup-now').addEventListener('click', () => { backup(userEntries().flatMap(e => e.keys).concat(keysFor(['oc.share.*']))); syncBackupNudge(); appToast('Reservekopie gedownload. Bewaar ze op een veilige plek.'); });
+$('backup-later').addEventListener('click', () => { store.set('backup-snooze', Date.now() + SNOOZE); syncBackupNudge(); });
+
 /* ---------- Start ---------- */
 async function loadTools() {
   // Eerst het netwerk (nieuwste lijst); zonder verbinding geeft de service worker de bewaarde lijst.
@@ -1074,7 +1169,7 @@ async function loadTools() {
 }
 function start() {
   byId = Object.fromEntries(TOOLS.map(t => [t.id, t]));
-  renderGroups(); renderRecent(); renderFilter(); renderPaths();
+  renderGroups(); renderRecent(); renderFilter(); renderPaths(); syncBackupNudge();
   $('results-clear').addEventListener('click', () => setFilter(null));
   GROUPS.forEach(g => setCollapsed(g.id, store.get('collapsed', []).includes(g.id)));
   const first = location.hash.slice(1) || new URLSearchParams(location.search).get('tool');
