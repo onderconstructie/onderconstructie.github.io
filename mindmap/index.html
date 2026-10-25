@@ -198,6 +198,7 @@ button.oc-import { color:#047857; min-height:44px; }
 .mm-tip { text-shadow:0 0 3px #fff, 0 0 3px #fff; }
 button.more { border:0; cursor:pointer; min-height:28px; }
 .macts button.add { color:var(--accent-dark); }
+.sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
 .vb-bar.top { margin:0 0 0.75rem; }
 @media (max-width:520px) { .mrow .macts { display:none; } .mrow:focus-within .macts { display:flex; } } .canvas.panning { cursor:grabbing; user-select:none; }
 .stat { font-size:0.8125rem; font-weight:500; color:var(--slate-500); margin-left:0.25rem; white-space:nowrap; }
@@ -251,6 +252,7 @@ button.more { border:0; cursor:pointer; min-height:28px; }
   <p class="quote">Een idee dat je opschrijft, kan je ook loslaten.</p>
 </footer>
 
+<div class="sr-only" id="mm-live" aria-live="polite"></div>
 <div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-text"></span><button id="toast-btn" hidden>Ongedaan</button></div>
 
 <script>
@@ -702,7 +704,7 @@ function render() {
         <div class="draw-head"><h2 class="card-title">Kaart <span class="stat">${nIdeas} ${nIdeas === 1 ? 'idee' : 'ideeën'} · ${nMain} ${nMain === 1 ? 'hoofdtak' : 'hoofdtakken'}</span></h2>
           <button type="button" class="zoom" id="fit-btn" data-act="fit">Hele kaart</button>
           <button type="button" class="zoom" data-export="png" aria-label="Download als afbeelding">Afbeelding</button><button type="button" class="zoom" data-export="pdf" aria-label="Download als PDF">PDF</button></div>
-        <div class="canvas" id="canvas" tabindex="0" aria-label="Kaart. Kies een idee met de pijltjes. Enter voegt een idee toe, Tab een subidee, F2 wijzigt de tekst.">${svgOf(m, { ui:true, sel:sel.id })}</div>
+        <div class="canvas" id="canvas" tabindex="0" aria-label="Kaart. Druk Enter om een idee te kiezen, dan pijltjes. Enter voegt een idee toe, Tab een subidee, F2 wijzigt, Esc stopt.">${svgOf(m, { ui:true, sel:sel.id })}</div>
         <p class="hint-s">${matchMedia('(hover:hover)').matches
           ? 'Klik op een idee om het te kiezen. Enter voegt een idee ernaast toe, Tab een subidee. Dubbelklik of begin te typen om de tekst te wijzigen.'
           : 'Tik op een idee voor de knoppen. Tik nog eens om de tekst te wijzigen.'}</p>
@@ -797,7 +799,11 @@ function reveal() {   // het gekozen idee (en zijn balk) in beeld schuiven
   const v = c.getBoundingClientRect(); if (v.top < 0 || v.top > innerHeight - 120) c.scrollIntoView({ block:'nearest' });
   overlay();
 }
-function choose(id, bar = true) { sel = { id, bar, edit:null }; renderMapOnly(); reveal(); const c = $('canvas'); if (c && document.activeElement !== c) c.focus({ preventScroll:true }); }
+function say(t) { const l = $('mm-live'); if (l) { l.textContent = ''; setTimeout(() => { l.textContent = t; }, 30); } }
+function choose(id, bar = true) {
+  const mm = cur(), n = mm && mm.nodes.find(x => x.id === id);
+  if (n) say(`${n.text || 'Leeg idee'}, niveau ${n.level}${n.collapsed ? ', ingeklapt' : ''}. Enter: idee ernaast, Tab: subidee, F2: wijzigen, Esc: stoppen.`);
+  sel = { id, bar, edit:null }; renderMapOnly(); reveal(); const c = $('canvas'); if (c && document.activeElement !== c) c.focus({ preventScroll:true }); }
 function startEdit(id, fresh = false, start = null) {
   const m = cur(), n = m.nodes.find(x => x.id === id); if (!n) return;
   sel = { id, bar:false, edit:id, fresh, orig:n.text, start };
@@ -927,7 +933,9 @@ document.addEventListener('keydown', e => {
     return;
   }
   const c = $('canvas');
-  if (!c || el !== c || !sel.id || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (!c || el !== c || e.ctrlKey || e.metaKey || e.altKey) return;
+  // Nog niets gekozen: Tab laat je gewoon verder springen; Enter, spatie of een pijltje kiest het centrale idee
+  if (!sel.id) { if (['Enter', ' ', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) { e.preventDefault(); const m = cur(); if (m) choose(m.nodes[0].id); } return; }
   const m = cur(), i = m.nodes.findIndex(n => n.id === sel.id); if (i < 0) return;
   const dirs = { ArrowRight:'right', ArrowLeft:'left', ArrowUp:'up', ArrowDown:'down' };
   if (dirs[e.key]) { e.preventDefault(); const to = nearest(dirs[e.key]); if (to) choose(to); }
@@ -936,13 +944,12 @@ document.addEventListener('keydown', e => {
   else if (e.key === 'F2') { e.preventDefault(); startEdit(sel.id); }
   else if (e.key === ' ' && hasKids(m.nodes, i) && i) { e.preventDefault(); m.nodes[i].collapsed = !m.nodes[i].collapsed; save(); render(); reveal(); }
   else if ((e.key === 'Delete' || e.key === 'Backspace') && i) { e.preventDefault(); removeNode(m, i); }
-  else if (e.key === 'Escape') { sel = { id:null, bar:false, edit:null }; renderMapOnly(); }
+  else if (e.key === 'Escape') { sel = { id:null, bar:false, edit:null }; renderMapOnly(); say('Niets gekozen. Tab gaat verder.'); }
   else if (e.key.length === 1 && e.key !== ' ') { e.preventDefault(); startEdit(sel.id, false, e.key); }
 });
 document.addEventListener('dblclick', e => { const g = e.target.closest('#canvas [data-node]'); if (g) { e.preventDefault(); startEdit(g.dataset.node); } });
 document.addEventListener('focusin', e => {
   const el = e.target;
-  if (el.id === 'canvas' && !sel.id) { const m = cur(); if (m) choose(m.nodes[0].id); return; }
   if (el.classList && el.classList.contains('mtxt') && sel.id !== el.dataset.id) { sel = { id:el.dataset.id, bar:false, edit:null }; renderMapOnly(); }
 });
 document.addEventListener('focusout', e => {   // klik of tab weg uit de bewerkregel: bewaren

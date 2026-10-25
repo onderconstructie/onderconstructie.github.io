@@ -361,8 +361,8 @@ body.filtering #groups, body.filtering #list-tools { display:none; }
 .tb-btn:hover { background:var(--slate-100); }
 .tb-btn svg { width:20px; height:20px; }
 .frames { flex:1; position:relative; background:var(--slate-50); }
-.frames iframe { position:absolute; inset:0; width:100%; height:100%; border:0; background:var(--wit); display:none; }
-.frames iframe.active { display:block; }
+.frames iframe { position:absolute; inset:0; width:100%; height:100%; border:0; background:var(--wit); visibility:hidden; pointer-events:none; }
+.frames iframe.active { visibility:visible; pointer-events:auto; z-index:1; }
 .loading { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--slate-500); font-size:0.875rem; pointer-events:none; }
 
 :focus-visible { outline:2px solid #047857; outline-offset:2px; }
@@ -586,7 +586,7 @@ body.filtering .list-tools { visibility:hidden; }
     <span class="sep" aria-hidden="true">·</span>
     <button class="footer-link" id="data-open" type="button">gegevens</button>
     <span class="sep" aria-hidden="true">·</span>
-    <span class="app-version" title="Versie van de app">v21</span>
+    <span class="app-version" title="Versie van de app">v22</span>
   </footer>
 </div>
 
@@ -663,7 +663,7 @@ const store = {
   set(k, v) { try { localStorage.setItem(KEY + k, JSON.stringify(v)); } catch {} }
 };
 const $ = id => document.getElementById(id);
-const chevron = '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
+const chevron = '<svg class="chev" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
 
 function norm(path) {
   path = path.replace(/index\.html$/, '');
@@ -696,7 +696,7 @@ function byUsage(tools) {
   return tools.map((t, i) => ({ t, i: t.order ?? i, sc: usageScore(t.id, now) }))
     .sort((a, b) => (b.sc - a.sc) || (a.i - b.i)).map(x => x.t);
 }
-const toggleIcon = '<svg class="toggle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
+const toggleIcon = '<svg class="toggle" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
 function renderGroups() {
   const closed = store.get('collapsed', []);
   $('groups').innerHTML = GROUPS.map(g => {
@@ -705,7 +705,7 @@ function renderGroups() {
     return `
     <section class="group${isClosed ? ' collapsed' : ''}" data-group="${g.id}">
       <button class="group-head" aria-expanded="${!isClosed}" aria-controls="body-${g.id}">
-        <span class="group-logo">${g.logo}</span>
+        <span class="group-logo" aria-hidden="true">${g.logo}</span>
         <span><span class="group-title" role="heading" aria-level="2">${g.label}</span><br><span class="group-note">${g.note}</span></span>
         <span class="group-meta"><span class="count count-live"></span><span class="count">${tools.length}</span></span>
         ${toggleIcon}
@@ -811,7 +811,7 @@ function setFilter(kind, value) {
       $('results-list').innerHTML = (hits.length ? `<h3 class="res-h">In je gegevens</h3>` + hits.map(h => `
           <button class="hit" data-id="${esc(h.t.id)}"><span class="icon">${iconHTML(h.t.icon)}</span>
             <span class="hit-body"><span class="row-title">${esc(h.t.title)}</span>${h.snippets.map(x => `<span class="hit-snip">${x}</span>`).join('')}${h.more ? `<span class="hit-more">en nog ${h.more}</span>` : ''}</span>${chevron}</button>`).join('') : '')
-        + (list.length ? `<h3 class="res-h">Tools</h3>` + list.map(t => rowHTML(t, { on: active.value, showGroup: true })).join('') : '')
+        + (list.length ? `<h3 class="res-h">Tools</h3>` + list.map(t => rowHTML(t, { on: active.value })).join('') : '')
         + (!list.length && !hits.length ? '<p class="results-empty">Niets gevonden, niet in de tools en niet in je gegevens. Probeer een ander woord.</p>' : '');
       markLive(); renderFilter(); return;
     } else {
@@ -819,7 +819,7 @@ function setFilter(kind, value) {
       title = `${esc(active.value)} <span class="grp">${list.length} ${list.length === 1 ? 'tool' : 'tools'}</span>`;
     }
     $('results-title').innerHTML = title;
-    $('results-list').innerHTML = list.length ? list.map(t => rowHTML(t, { on: active.value, showGroup: active.kind !== 'pdca' })).join('')
+    $('results-list').innerHTML = list.length ? list.map(t => rowHTML(t, { on: active.value })).join('')
       : '<p class="results-empty">Niets gevonden. Probeer een ander woord, of kies hieronder een fase.</p>';
     markLive();
   }
@@ -841,7 +841,8 @@ function ago(t) {
 function preview(t) {
   try {
     const d = JSON.parse(localStorage.getItem('oc.share.' + t.id) || 'null');
-    const names = d && Array.isArray(d.lists) ? [...new Set(d.lists.map(l => String(l.name || '').trim()).filter(Boolean))] : [];
+    const own = d && Array.isArray(d.lists) ? d.lists.filter(l => (l.items || []).some(i => i.type !== 'kerncijfer')) : [];
+    const names = [...new Set(own.map(l => String(l.name || '').trim()).filter(n => n && !/^kerncijfers?$/i.test(n)))];
     if (names.length) return names.slice(0, 2).join(', ') + (names.length > 2 ? ` en nog ${names.length - 2}` : '');
   } catch {}
   return '';
@@ -883,6 +884,9 @@ document.addEventListener('click', e => {
 
 /* ---------- Tools openen in de app ---------- */
 const frames = new Map();   // id -> iframe, in volgorde van gebruik
+let lastOpener = null;
+// Esc in de balk van de app (niet in de tool zelf, die gebruikt Esc voor eigen menu's) = terug naar het startscherm
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('viewer').classList.contains('open') && $('viewer').contains(document.activeElement) && document.activeElement.tagName !== 'IFRAME' && $('app-dlg').hidden) { e.preventDefault(); showHome(); } });
 let current = null;
 let pendingReload = false;
 
@@ -910,6 +914,11 @@ function openTool(id, fromHistory) {
   $('tb-title').textContent = t.title;
   $('viewer').classList.add('open');
   $('viewer').setAttribute('aria-hidden', 'false');
+  lastOpener = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.id || null : null;
+  $('home').inert = true; $('viewer').inert = false;
+  // de focus naar de tool: met Tab ga je meteen door de tool, niet door het verborgen startscherm
+  const focusTool = () => { try { f.contentWindow.focus(); } catch {} $('back').focus({ preventScroll:true }); };
+  if (f.contentDocument && f.contentDocument.readyState === 'complete') setTimeout(focusTool, 0); else f.addEventListener('load', focusTool, { once:true });
   document.title = t.title + ' · Onder Constructie';
   if (!fromHistory) { history.pushState({ tool:id }, '', '#' + id); logUse(id); }
   const recent = [id, ...store.get('recent', []).filter(x => x !== id)].slice(0, 5);
@@ -929,10 +938,16 @@ function showHome(fromHistory) {
   if (!$('app-dlg').hidden) $('app-dlg-no').click();   // een open wisvraag hoort bij de tool die je verlaat
   if (current && byId[current] && !byId[current].keep) dropFrame(current);
   current = null;
+  const was = current;
   $('viewer').classList.remove('open');
   $('viewer').setAttribute('aria-hidden', 'true');
+  $('viewer').inert = true; $('home').inert = false;
   document.title = 'Onder Constructie';
   renderRecent(); renderPaths(); syncBackupNudge(); markLive();
+  // focus terug waar je vertrok (of op de kaart/rij van die tool)
+  const vis = id => id && [...document.querySelectorAll(`#home [data-id="${CSS.escape(id)}"]`)].find(x => x.offsetParent);
+  const back = vis(lastOpener) || vis(was);
+  if (back) back.focus({ preventScroll:true });
   if (pendingReload) { location.reload(); return; }
   if (!fromHistory && history.state && history.state.tool) history.back();
 }
@@ -1043,16 +1058,26 @@ function renderData() {
   $('data-list').innerHTML = entries.length ? entries.map(({ t, keys }) => `
     <div class="drow"><span class="icon">${iconHTML(t.icon)}</span>
       <span><span class="drow-name">${esc(t.title)}</span><br><span class="drow-meta">${esc(t.id === '__app' ? t.sub : preview(t) || 'Je gegevens')} · ${kb(sizeOf(keys))}</span></span>
-      <button class="drow-wipe" data-wipe="${esc(t.id)}">Wis</button></div>`).join('')
+      <button class="drow-wipe" data-wipe="${esc(t.id)}" aria-label="Wis ${esc(t.title)}">Wis</button></div>`).join('')
     : '<p class="data-empty">Er is niets bewaard. Je begint met een schone lei.</p>';
   $('data-wipe-all').hidden = !entries.length;
   const b = store.get('backup-at', 0), last = document.getElementById('data-last') || Object.assign(document.createElement('p'), { id:'data-last', className:'data-last' });
   last.textContent = b ? `Laatste reservekopie: ${new Date(b).toLocaleDateString('nl-BE', { day:'numeric', month:'long', year:'numeric' })}.` : 'Nog geen reservekopie gemaakt op dit toestel.';
   if (!last.parentNode) $('data-backup').after(last);
   $('data-backup').hidden = !entries.length;
+  last.textContent += ' Een reservekopie is een leesbaar bestand met alles wat je invulde: bewaar het zoals een vertrouwelijk document.';
 }
-function openData() { renderData(); $('data-confirm').hidden = true; $('data-sheet').hidden = false; }
-function closeData() { $('data-sheet').hidden = true; pendingWipe = null; renderRecent(); renderPaths(); }
+let dataOpener = null;
+function openData() { dataOpener = document.activeElement; renderData(); $('data-confirm').hidden = true; $('data-sheet').hidden = false; $('home').inert = true; $('data-close').focus(); }
+function closeData() { $('data-sheet').hidden = true; $('home').inert = false; pendingWipe = null; renderRecent(); renderPaths(); if (dataOpener && dataOpener.isConnected) dataOpener.focus(); }
+// Tab blijft in het venster
+$('data-sheet').addEventListener('keydown', e => {
+  if (e.key !== 'Tab') return;
+  const f = [...$('data-sheet').querySelectorAll('button, [href], input:not([type=file]), label')].filter(x => !x.hidden && x.offsetParent && !x.disabled);
+  if (!f.length) return; const first = f[0], last = f[f.length - 1];
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+});
 function syncData() { if (!$('data-sheet').hidden) renderData(); }
 $('data-open').addEventListener('click', openData);
 $('manage').addEventListener('click', openData);
@@ -1061,6 +1086,7 @@ $('data-sheet').addEventListener('click', e => { if (e.target === $('data-sheet'
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('data-sheet').hidden) closeData(); });
 
 function backup(keys) {
+  keys = keys.filter(k => k !== 'oc-app.tools-cache');   // de toollijst komt altijd van de site
   const data = {}; keys.forEach(k => { try { data[k] = localStorage.getItem(k); } catch {} });
   const blob = new Blob([JSON.stringify({ app:'Onder Constructie', version:1, created:new Date().toISOString(), data }, null, 1)], { type:'application/json' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
@@ -1112,15 +1138,23 @@ $('data-restore-file').addEventListener('change', async e => {
     if (!d || d.app !== 'Onder Constructie' || typeof d.data !== 'object') throw new Error('vorm');
     const allowed = [...TOOLS, APP_ENTRY].flatMap(t => t.storage || []).concat(['oc.share.*']);
     const never = ['oc-app.tools-cache'];   // de toollijst komt altijd van de site zelf, nooit uit een bestand
+    const put = Object.entries(d.data).filter(([k, v]) => typeof v === 'string' && !never.includes(k) && keysFor(allowed, [k]).length);
+    const cur = k => { try { return localStorage.getItem(k); } catch { return null; } };
+    // welke tools hebben nu iets anders dan in de kopie? die worden overschreven
+    const changed = [...new Set(put.filter(([k, v]) => cur(k) != null && cur(k) !== v).map(([k]) => {
+      const t = [...TOOLS, APP_ENTRY].find(t => keysFor((t.storage || []).concat('oc.share.' + t.id), [k]).length); return t ? t.title : null; }).filter(x => x && x !== 'Deze app'))];
+    const when = d.created ? new Date(d.created).toLocaleDateString('nl-BE', { day:'numeric', month:'long', year:'numeric' }) : 'een eerder moment';
+    if (changed.length && !await appConfirm('Reservekopie terugzetten?', `Je kopie is van ${when}. Wat je sindsdien veranderde in ${changed.join(', ')} wordt vervangen. Je kan dit meteen daarna ongedaan maken.`, 'Terugzetten')) return;
+    const before = Object.fromEntries(put.map(([k]) => [k, cur(k)]));
     let n = 0;
-    Object.entries(d.data).forEach(([k, v]) => {
-      if (typeof v !== 'string' || never.includes(k) || !keysFor(allowed, [k]).length) return;
-      try { localStorage.setItem(k, v); n++; } catch {}
+    put.forEach(([k, v]) => { try { localStorage.setItem(k, v); n++; } catch {} });
+    const refresh = () => { [...frames.keys()].forEach(id => dropFrame(id)); renderGroups(); renderRecent(); renderFilter(); renderPaths(); markLive(); renderData(); };
+    refresh(); $('data-confirm').hidden = true;
+    dataMsg(`Reservekopie van ${when} teruggezet.`, false);
+    appToast('Reservekopie teruggezet', () => {
+      Object.entries(before).forEach(([k, v]) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} });
+      refresh(); dataMsg('Terugzetten ongedaan gemaakt.', false); appToast('Zoals voordien');
     });
-    [...frames.keys()].forEach(id => dropFrame(id));
-    renderGroups(); renderRecent(); renderFilter(); renderPaths(); markLive(); renderData();
-    $('data-confirm').hidden = true;
-    dataMsg(`Reservekopie teruggezet: ${n} onderdelen.`, false);
   } catch {
     dataMsg('Dit bestand is geen reservekopie van Onder Constructie.', true);
   }
@@ -1249,27 +1283,30 @@ $('wipe-tool').addEventListener('click', async () => {
 const SYNONIEMEN = {
   raci:'wie doet wat rollen verantwoordelijk taakverdeling', kanban:'planning sprint taken bord scrum backlog',
   vinkje:'checklist todo lijst afvinken boodschappen', beslissingen:'beslissing besluit afspraak notulen',
-  vergaderkost:'vergadering meeting kost tijd', 'check-in':'vergadering ronde opener', stroom:'proces flow schema stappen flowchart swimlane', mindmap:'brainstorm ideeen ordenen structuur boom overzicht',
+  vergaderkost:'vergadering meeting kost tijd', 'check-in':'vergadering ronde rondje opener beurt spreektijd', stroom:'proces flow schema stappen flowchart swimlane', mindmap:'brainstorm ideeen ordenen structuur boom overzicht',
   communicatie:'communicatie boodschap mail nieuwsbrief aankondigen', memomities:'mail notitie inbox', focus:'timer pomodoro concentratie',
-  fortuna:'loting willekeurig naam trekken', mixer:'teams verdelen groepen indelen', 'project-realisme':'schatting planning tijd duur',
+  fortuna:'loting willekeurig naam trekken wie begint beurt kiezen rad', mixer:'teams verdelen groepen groepjes indelen samenstellen',
+  'project-realisme':'schatting planning tijd duur',
   stakeholders:'draagvlak betrokkenen invloed', sponsor:'draagvlak leiding top opdrachtgever', weerstand:'draagvlak weerstand adkar',
   impact:'verandering gevolgen', klimaat:'verandering cultuur vertrouwen', veranderprofiel:'verandering samenvatting inspanning',
   gap:'kloof huidige gewenste situatie', prioriteit:'prioriteren eisenhower quick wins', risico:'risico kans gevolg',
   'project-radar':'status gezondheid project', retro:'terugblik evaluatie lessen', paradox:'afstemming overleg groepsgrootte',
-  adem:'stress rust ademhaling', hart:'meditatie mildheid', hier:'aarden stress rust', qr:'qr code link delen', looplicht:'veiligheid licht nacht'
+  adem:'stress rust ademhaling ontspannen kalm', hart:'meditatie mildheid ontspannen rust', hier:'aarden stress rust ontspannen', qr:'qr code link delen', looplicht:'veiligheid licht nacht'
 };
 const fold = v => String(v || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
 function searchTools(q) {
   const words = fold(q).split(/\s+/).filter(Boolean);
   return TOOLS.map(t => {
     const title = fold(t.title), rest = fold([t.sub, t.desc, (t.labels || []).join(' '), (t.pdca || []).join(' '), t.id, SYNONIEMEN[t.id]].join(' '));
-    if (!words.every(w => title.includes(w) || rest.includes(w))) return null;
+    // ook verwante woordvormen: "vergadering" vindt "vergaderen"
+    const has = (txt, w) => txt.includes(w) || (w.length >= 7 && txt.includes(w.slice(0, w.length - 3)));
+    if (!words.every(w => has(title, w) || has(rest, w))) return null;
     return { t, score: words.reduce((n, w) => n + (title.startsWith(w) ? 3 : title.includes(w) ? 2 : 1), 0) + usageScore(t.id) / 50 };
   }).filter(Boolean).sort((a, b) => b.score - a.score).map(x => x.t);
 }
 
 /* Zoeken in eigen gegevens: alle tekst die tools op dit toestel bewaren. Niets verlaat het toestel. */
-const SKIP = /^(#[0-9a-f]{3,8}|[a-z0-9]{6,12}|\d{4}-\d{2}-\d{2}.*|https?:\/\/\S+|true|false|null|scan|plan|lijst|profiel|reeks|res|all|fase|edit|draw|auto|none|stap|keuze|start|einde|ja|nee)$/i;
+const SKIP = /^(#[0-9a-f]{3,8}|[a-z0-9]{6,12}|\d{4}-\d{2}-\d{2}.*|https?:\/\/\S+|true|false|null|scan|plan|lijst|profiel|reeks|res|all|fase|edit|draw|auto|none|stap|keuze|start|einde|ja|nee|todo|doing|done|kerncijfer|kerncijfers)$/i;
 function strings(v, out) {
   if (typeof v === 'string') { const t = v.trim(); if (t.length >= 3 && !SKIP.test(t)) out.push(t); }
   else if (Array.isArray(v)) v.forEach(x => strings(x, out));
@@ -1304,13 +1341,21 @@ function closeSearch() {
   $('hsearch').classList.remove('open'); $('search-open').setAttribute('aria-expanded', 'false');
 }
 $('search-open').addEventListener('click', openSearch);
+// pijltjes door de resultaten
+$('results-list').addEventListener('keydown', e => {
+  if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+  const all = [...document.querySelectorAll('#results-list .hit, #results-list .row')], i = all.indexOf(document.activeElement); if (i < 0) return;
+  e.preventDefault(); const n = all[i + (e.key === 'ArrowDown' ? 1 : -1)];
+  if (n) n.focus(); else if (e.key === 'ArrowUp' && document.body.classList.contains('searching')) $('search').focus();
+});
 $('search-close').addEventListener('click', () => { closeSearch(); $('search-open').focus(); });
 $('search').addEventListener('blur', () => { if (!$('search').value.trim()) setTimeout(() => { if (document.activeElement !== $('search') && !$('search').value.trim()) { $('hsearch').classList.remove('open'); $('search-open').setAttribute('aria-expanded', 'false'); } }, 150); });
 let searchT;
 $('search').addEventListener('input', e => { clearTimeout(searchT); const v = e.target.value.trim(); searchT = setTimeout(() => setFilter('search', v), 120); });
 $('search').addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closeSearch(); $('search-open').focus(); }
-  if (e.key === 'Enter') { const first = document.querySelector('#results-list .row'); if (first) first.click(); }
+  if (e.key === 'Escape') { closeSearch(); const b = $('search-open'); b.offsetParent ? b.focus() : $('search').blur(); }
+  if (e.key === 'Enter') { const first = document.querySelector('#results-list .hit, #results-list .row'); if (first) first.click(); }
+  if (e.key === 'ArrowDown') { const first = document.querySelector('#results-list .hit, #results-list .row'); if (first) { e.preventDefault(); first.focus(); } }
 });
 // "/" zet de cursor in het zoekveld (op een toetsenbord), zoals op veel websites
 document.addEventListener('keydown', e => {
