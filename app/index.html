@@ -576,7 +576,7 @@ body.filtering .list-tools { visibility:hidden; }
     <span class="sep" aria-hidden="true">·</span>
     <button class="footer-link" id="data-open" type="button">gegevens</button>
     <span class="sep" aria-hidden="true">·</span>
-    <span class="app-version" title="Versie van de app">v19</span>
+    <span class="app-version" title="Versie van de app">v20</span>
   </footer>
 </div>
 
@@ -678,6 +678,9 @@ function logUse(id) {
   store.set('usage', all);
 }
 // Nooit gebruikte tools houden hun vaste volgorde, onderaan.
+// Lijsten in vaste volgorde: tools blijven op dezelfde plek staan, zodat je ze terugvindt.
+// Wat je zelf gebruikt, staat al bovenaan bij "Verder werken".
+const byOrder = tools => tools.map((t, i) => ({ t, i: t.order ?? 999 + i })).sort((a, b) => a.i - b.i).map(x => x.t);
 function byUsage(tools) {
   const now = Date.now();
   return tools.map((t, i) => ({ t, i: t.order ?? i, sc: usageScore(t.id, now) }))
@@ -687,7 +690,7 @@ const toggleIcon = '<svg class="toggle" viewBox="0 0 24 24" fill="none" stroke="
 function renderGroups() {
   const closed = store.get('collapsed', []);
   $('groups').innerHTML = GROUPS.map(g => {
-    const tools = byUsage(TOOLS.filter(t => t.g === g.id));
+    const tools = byOrder(TOOLS.filter(t => t.g === g.id));
     const isClosed = closed.includes(g.id);
     return `
     <section class="group${isClosed ? ' collapsed' : ''}" data-group="${g.id}">
@@ -786,7 +789,7 @@ function setFilter(kind, value) {
       const ph = PHASES.find(p => p.id === active.value);
       // eerst de tools waar deze fase hun sterkste is, dan de rest; binnen elk op gebruik
       const inPhase = TOOLS.filter(t => (t.pdca || []).includes(active.value));
-      list = [...byUsage(inPhase.filter(t => t.pdca[0] === active.value)), ...byUsage(inPhase.filter(t => t.pdca[0] !== active.value))];
+      list = [...byOrder(inPhase.filter(t => t.pdca[0] === active.value)), ...byOrder(inPhase.filter(t => t.pdca[0] !== active.value))];
       title = `${esc(ph.name)} <span class="grp">${list.length} ${list.length === 1 ? 'tool' : 'tools'}</span><span class="results-sub">${esc(ph.long)}</span>`;
     } else if (active.kind === 'search') {
       list = searchTools(active.value);
@@ -802,7 +805,7 @@ function setFilter(kind, value) {
         + (!list.length && !hits.length ? '<p class="results-empty">Niets gevonden, niet in de tools en niet in je gegevens. Probeer een ander woord.</p>' : '');
       markLive(); renderFilter(); return;
     } else {
-      list = byUsage(TOOLS.filter(t => (t.labels || []).includes(active.value)));
+      list = byOrder(TOOLS.filter(t => (t.labels || []).includes(active.value)));
       title = `${esc(active.value)} <span class="grp">${list.length} ${list.length === 1 ? 'tool' : 'tools'}</span>`;
     }
     $('results-title').innerHTML = title;
@@ -835,10 +838,13 @@ function preview(t) {
 }
 function renderRecent() {
   const all = lsKeys(), usage = store.get('usage', {});
-  const ids = new Set(store.get('recent', []).filter(id => byId[id]));
-  TOOLS.forEach(t => { if (hasData(t, all)) ids.add(t.id); });
+  // Erin: tools met jouw gegevens, en tools zonder opslag (timer, ademhaling…) die je de laatste twee weken opende.
+  // Niet: een tool die je alleen even bekeek. Daar valt niets verder te doen.
+  const now = Date.now(), ids = new Set();
+  TOOLS.forEach(t => { const d = hasData(t, all), at = (usage[t.id] || {}).t || 0;
+    if (d || (d === null && at && now - at < 14 * 864e5)) ids.add(t.id); });
   const items = [...ids].map(id => ({ t: byId[id], at: (usage[id] || {}).t || 0, data: hasData(byId[id], all) }))
-    .sort((a, b) => (b.at - a.at) || ((b.data ? 1 : 0) - (a.data ? 1 : 0))).slice(0, 6);
+    .sort((a, b) => b.at - a.at).slice(0, 6);
   $('continue').hidden = !items.length;
   document.body.classList.toggle('returning', items.length > 0);
   $('cont').innerHTML = items.map(({ t, at, data }) => {
@@ -846,7 +852,7 @@ function renderRecent() {
     return `<button class="ccard" data-id="${esc(t.id)}" title="${esc(t.desc)}">
       <span class="icon">${iconHTML(t.icon)}</span>
       <span class="cc-body"><span class="cc-title">${esc(t.title)}</span>
-        <span class="cc-sub">${esc(pv || (data ? 'Met je gegevens' : t.sub))}</span>
+        <span class="cc-sub">${esc(pv || t.sub)}</span>
         ${at ? `<span class="cc-when">${ago(at)}</span>` : ''}</span>
       <span class="live">open</span></button>`;
   }).join('');
