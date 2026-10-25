@@ -245,6 +245,7 @@ button.more { border:0; cursor:pointer; min-height:28px; }
       <p><b>Op de kaart</b>: kies een idee met een klik of tik: er verschijnt een balk met <b>Subidee</b>, <b>Ernaast</b>, wijzigen, in- of uitklappen en verwijderen. Typ je een nieuw idee, dan geeft Enter meteen het volgende en Tab een subidee; Esc stopt. Met een toetsenbord kies je ideeën met de pijltjes, wijzig je met F2 of door gewoon te typen, en verwijder je met Delete.</p>
       <p><b>In- en uitklappen</b>: met het bolletje aan de rand van een idee op de kaart, met het driehoekje in de lijst, of voor alles tegelijk via het menu (⋯). Een ingeklapte tak toont hoeveel ideeën erachter zitten; tik op dat getal om ze weer te zien.</p>
       <p><b>Sjabloon projectaanpak</b>: tien hoofdtakken om een project voor te bereiden: doel, globale planning, risico, afhankelijkheden, betrokkenen, communicatie, monitoring, HRM, budget, en facility en ICT. De vragen staan schuin. Je antwoord komt eronder: kies een vraag en druk Enter, begin te typen, of tik op +. Zo blijft de vraag staan. Wat je niet nodig hebt, verwijder je. Heb je in de app een projectnaam ingesteld, dan staat die in het midden.</p>
+      <p><b>Sjabloon vraag achter de vraag</b>: zes vragen om eerst het echte probleem te begrijpen, voor je een oplossing kiest. Handig als iemand vraagt om "een opleiding" of "een tool": wat is het probleem, wat moet er anders, hoe weet je dat het gelukt is, wat staat in de weg, wie doet wat, en wie meet het succes?</p>
       <p><b>Sjabloon business case</b>: wat wil je precies rechtvaardigen, en drie voorstellen naast elkaar (niets doen, het minimale doen, iets doen), elk met verwachte voordelen en nadelen, tijdschema, kosten (personeel, investering, onderhoud) en risico's en afhankelijkheden. Zo vergelijk je de opties op dezelfde punten.</p>
       <p>Je eigen ideeën (niet de vragen uit een sjabloon) liggen klaar voor andere tools, bijvoorbeeld om er in <a href="https://onderconstructie.github.io/prioriteit/">Prioriteren</a> of <a href="https://onderconstructie.github.io/vinkje/">Vinkje</a> mee verder te gaan.</p>
     </div>
@@ -1041,6 +1042,13 @@ function refreshImports() { document.querySelectorAll('[data-oc-types]').forEach
    en gaan niet als taak naar andere tools. */
 function ocProject(fb) { try { const p = JSON.parse(localStorage.getItem('oc.project')); return p && typeof p.name === 'string' && p.name.trim() ? p.name.trim().slice(0, 80) : fb; } catch { return fb; } }
 const TEMPLATES = {
+  vraag: { name:'Vraag achter de vraag', root: p => p ? 'Vraag achter de vraag: ' + p : 'Vraag achter de vraag', lines:`
+1. Wat is het probleem?
+2. Wat moeten mensen anders doen, en met welk resultaat?
+3. Hoe weet je dat het gelukt is?
+4. Wat staat dat vandaag in de weg?
+5. Wie doet wat om het op te lossen?
+6. Wie meet het succes?` },
   businesscase: { name:'Business case', root: p => p ? 'Business case: ' + p : 'Business case', lines:`
 Wat wil je precies rechtvaardigen?
 A. Niets doen
@@ -1129,7 +1137,7 @@ function fromTemplate(key) {
   nodes.forEach((n, i) => { if (n.level === 1 && hasKids(nodes, i)) n.collapsed = true; });   // eerst een overzicht van de hoofdtakken
   const x = { id:uid(), name:tp.name, nodes };
   state.maps.push(x); state.current = x.id; state.view = 'draw'; save(); render();
-  toast(`Sjabloon klaar. Klap een tak open; onder elke vraag zet je je antwoord met Enter of +.`);
+  toast(nodes.some(n => n.collapsed) ? 'Sjabloon klaar. Klap een tak open; onder elke vraag zet je je antwoord met Enter of +.' : 'Sjabloon klaar. Onder elke vraag zet je je antwoord met Enter of +.');
 }
 
 /* Voorbeeld */
