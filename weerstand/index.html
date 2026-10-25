@@ -156,7 +156,7 @@ button { background:none; border:0; cursor:pointer; }
 .bar-val small { display:block; font-size:0.6875rem; font-weight:600; line-height:1; }
 .up { color:var(--rood); } .down { color:var(--accent-dark); } .same { color:var(--slate-500); }
 
-/* ADKAR-pijlen */
+/* Fase-pijlen */
 .adkar { display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:4px; }
 .ak {
   position:relative; display:flex; flex-direction:column; justify-content:center; min-width:0;
@@ -421,17 +421,16 @@ button.oc-import { color:#047857; min-height:44px; }
   <details class="explain">
     <summary><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>Hoe werkt dit?</summary>
     <div class="inner">
-      <p>De <b>scan</b> toetst vijf vormen van weerstand aan gedrag dat je kan waarnemen: begrijpen, willen, zich aangesproken voelen, kunnen en vertrouwen. De <b>fase</b> gebruikt de vijf fasen van het ADKAR®-model: Awareness, Desire, Knowledge, Ability en Reinforcement. Dat is een praktijkmodel, geen wet: mensen doorlopen de fasen meestal in die volgorde, maar niet altijd netjes na elkaar. Begin daarom meestal bij de eerste fase die niet in orde is; die noemen we het knelpunt.</p>
+      <p>De <b>scan</b> toetst vijf vormen van weerstand aan gedrag dat je kan waarnemen: begrijpen, willen, zich aangesproken voelen, kunnen en vertrouwen. De <b>fase</b> volgt vijf stappen die mensen in een verandering meestal zetten: het waarom zien, mee willen, weten hoe, het kunnen en het volhouden. Dat is een hulpmiddel, geen wet: mensen doorlopen de fasen meestal in die volgorde, maar niet altijd netjes na elkaar. Begin daarom meestal bij de eerste fase die niet in orde is; die noemen we het knelpunt.</p>
       <p style="margin-top:0.5rem">Hoe de twee samenhangen:</p>
       <div class="map">
-        <span>Begrijpen</span><span>↔</span><span>Awareness</span>
-        <span>Willen</span><span>↔</span><span>Desire</span>
-        <span>Zich aangesproken voelen</span><span>↔</span><span>Desire, Knowledge</span>
-        <span>Kunnen</span><span>↔</span><span>Knowledge, Ability</span>
+        <span>Begrijpen</span><span>↔</span><span>Het waarom zien</span>
+        <span>Willen</span><span>↔</span><span>Mee willen</span>
+        <span>Zich aangesproken voelen</span><span>↔</span><span>Mee willen, weten hoe</span>
+        <span>Kunnen</span><span>↔</span><span>Weten hoe, het kunnen</span>
         <span>Vertrouwen</span><span>↔</span><span>loopt door alle fasen heen</span>
       </div>
       <p>Beide zijn een inschatting. Toets ze bij de groep zelf.</p>
-      <p class="source">ADKAR® is een geregistreerd handelsmerk van Prosci. Deze tool is niet verbonden aan Prosci en gebruikt eigen formuleringen.</p>
     </div>
   </details>
 <div class="oc-restart-row" id="oc-restart-row" hidden><button type="button" class="oc-restart" id="oc-restart-btn">Opnieuw beginnen</button></div>
@@ -772,7 +771,7 @@ const ocExport = (() => {
 
 /* ---------- Inhoud: vijf vormen van weerstand (eigen formulering) ----------
    Elke vorm heeft een label, een typische uitspraak, wat erachter zit en wat helpt.
-   De koppeling met ADKAR staat in 'adkar' ('*' = loopt door alle fasen). */
+   De koppeling met de fasen staat in 'adkar' ('*' = loopt door alle fasen). */
 const LEVELS = [
   { id:1, stem:'Begrijpen', voice:'Wat gaat er nu eigenlijk veranderen?', adkar:['aw'],
     cause:'Het beeld van de verandering is vaag, of verschilt van persoon tot persoon',
@@ -802,18 +801,17 @@ const LEVELS = [
 ];
 const SCALE = ['Herken ik niet', 'Een beetje', 'Duidelijk', 'Sterk'];
 
-/* ---------- ADKAR: de vijf fasen, beschreven met eigen vragen ----------
-   ADKAR® is een geregistreerd handelsmerk van Prosci. Deze tool is niet verbonden aan Prosci. */
-const ADKAR = [
-  { id:'aw', l:'A', name:'Awareness', ik:'Ik zie waarom', slide:'Begrijpt de groep waarom er iets moet veranderen?',
+/* ---------- Veranderfase: vijf stappen, in eigen woorden ---------- */
+const FASEN = [
+  { id:'aw', l:'1', name:'Het waarom zien', ik:'Ik zie waarom', slide:'Begrijpt de groep waarom er iets moet veranderen?',
     q:['De groep kan uitleggen waarom de verandering nodig is.', 'De groep ziet wat het kost om alles bij het oude te laten.'] },
-  { id:'de', l:'D', name:'Desire', ik:'Ik wil mee', slide:'Kiest de groep er zelf voor om mee te gaan?',
+  { id:'de', l:'2', name:'Mee willen', ik:'Ik wil mee', slide:'Kiest de groep er zelf voor om mee te gaan?',
     q:['Mensen zien wat ze er zelf aan hebben.', 'Mensen geven uit zichzelf aan dat ze ervoor willen gaan.'] },
-  { id:'kn', l:'K', name:'Knowledge', ik:'Ik weet wat anders moet', slide:'Weet de groep wat ze concreet anders moet doen?',
+  { id:'kn', l:'3', name:'Weten hoe', ik:'Ik weet wat anders moet', slide:'Weet de groep wat ze concreet anders moet doen?',
     q:['Mensen weten welke stappen, afspraken of systemen veranderen.', 'Mensen weten waar ze terechtkunnen met vragen.'] },
-  { id:'ab', l:'A', name:'Ability', ik:'Ik krijg het gedaan', slide:'Lukt het in de praktijk ook echt?',
+  { id:'ab', l:'4', name:'Het kunnen', ik:'Ik krijg het gedaan', slide:'Lukt het in de praktijk ook echt?',
     q:['Mensen passen het nieuwe toe in hun gewone werk, zonder grote hindernissen.', 'Er is tijd en begeleiding om te oefenen.'] },
-  { id:'re', l:'R', name:'Reinforcement', ik:'Ik hou het vol', slide:'Blijft het nieuwe overeind als de aandacht zakt?',
+  { id:'re', l:'5', name:'Volhouden', ik:'Ik hou het vol', slide:'Blijft het nieuwe overeind als de aandacht zakt?',
     q:['Het nieuwe is gewoonte geworden, ook zonder herinneringen.', 'Wat goed loopt, wordt gezien en erkend.'] }
 ];
 const ASCALE = ['Nog niet', 'Deels', 'Groten\u00addeels', 'Volledig'];   // zacht afbreekstreepje voor smalle knoppen
@@ -868,7 +866,7 @@ function dominant(scores) {
 }
 // Fase: in orde als elk gekend antwoord minstens "Grotendeels" is. De eerste fase die niet in orde is, is het knelpunt.
 function adkarScores(scan) {
-  const els = ADKAR.map(E => {
+  const els = FASEN.map(E => {
     const vals = E.q.map((_, i) => scan.a['a' + E.id + i]);
     const known = vals.filter(v => typeof v === 'number');
     const pct = known.length ? Math.round(known.reduce((s, v) => s + v, 0) / (known.length * 3) * 100) : null;
@@ -883,10 +881,10 @@ function adkarScores(scan) {
 }
 const answeredCount = (scan, pre) => Object.keys(scan.a).filter(k => k.startsWith(pre)).length;
 
-// Zeggen scan en ADKAR hetzelfde?
+// Zeggen scan en fase hetzelfde?
 function agreement(dom, ak) {
   if (!dom.length || ak.barrier < 0) return null;
-  const bid = ADKAR[ak.barrier].id;
+  const bid = FASEN[ak.barrier].id;
   const nonTrust = dom.filter(s => s.L.id !== 5);
   if (!nonTrust.length) return { kind:'trust', bid };
   return nonTrust.some(s => s.L.adkar.includes(bid)) ? { kind:'match', bid, lvl:nonTrust.find(s => s.L.adkar.includes(bid)).L } : { kind:'diff', bid };
@@ -990,7 +988,7 @@ function renderScan(g) {
   $('view').innerHTML = h;
 }
 
-/* --- Fase (ADKAR) --- */
+/* --- Veranderfase --- */
 function adkarRow(ak) {
   return `<div class="adkar">${ak.els.map((e, i) => {
     const cls = i === ak.barrier ? 'barrier' : (ak.barrier >= 0 && i > ak.barrier) ? 'after' : e.pass ? 'pass' : (e.pass === null && e.answered) ? 'unk' : '';
@@ -1000,11 +998,11 @@ function adkarRow(ak) {
 }
 function barrierNote(ak) {
   if (ak.barrier >= 0) {
-    const E = ADKAR[ak.barrier];
+    const E = FASEN[ak.barrier];
     return `<div class="barrier-note">Knelpunt: <b>${E.name}</b> (“${esc(E.ik)}”). Hier zit de groep waarschijnlijk vast. Begin meestal bij deze fase: zolang ze niet in orde is, halen latere fasen vaak minder uit.</div>`;
   }
-  if (ak.blocked >= 0) return `<div class="banner unk">${ICON.q}<span>Over <b>${ADKAR[ak.blocked].name}</b> is nog niets gekend. Zonder dat kan je niet zeggen waar de groep vastzit.</span></div>`;
-  if (ak.any) return `<div class="banner low">${ICON.check}<span>Alle vijf fasen staan op “grotendeels” of beter. Blijf <b>Reinforcement</b> opvolgen.</span></div>`;
+  if (ak.blocked >= 0) return `<div class="banner unk">${ICON.q}<span>Over <b>${FASEN[ak.blocked].name}</b> is nog niets gekend. Zonder dat kan je niet zeggen waar de groep vastzit.</span></div>`;
+  if (ak.any) return `<div class="banner low">${ICON.check}<span>Alle vijf fasen staan op “grotendeels” of beter. Blijf <b>het volhouden</b> opvolgen.</span></div>`;
   return '';
 }
 function renderFase(g) {
@@ -1012,7 +1010,7 @@ function renderFase(g) {
   let h = scanTop(g, 'a', 10);
   h += `<p class="hint">Het model beschrijft fasen die mensen meestal in deze volgorde doorlopen. Antwoord voor de groep als geheel. De eerste fase die niet minstens “Grotendeels” haalt, is het knelpunt.</p>`;
   h += adkarRow(ak) + `<div style="margin:0.625rem 0 1rem">${barrierNote(ak)}</div>`;
-  h += ADKAR.map((E, ei) => `
+  h += FASEN.map((E, ei) => `
     <div class="lvl">
       <div class="lvl-head"><span class="lvl-num">${E.l}</span><span class="lvl-stem">${E.name}</span><span class="adk-q-ik">“${esc(E.ik)}”</span></div>
       <p class="lvl-sub">${esc(E.slide)}</p>
@@ -1046,7 +1044,7 @@ function renderResult(g) {
   const low = known.length && known.every(x => x.pct < 25);
   const unk = sc.reduce((a, x) => a + x.unknown, 0) + ak.els.reduce((a, x) => a + x.unknown, 0);
   if (trust) h += `<div class="banner trust">${ICON.shield}<span><b>Begin bij vertrouwen:</b> zonder vertrouwen werken de andere aanpakken minder. Het bepaalt hoe al de rest ontvangen wordt.</span></div>`;
-  if (low && ak.barrier >= 0) h += `<div class="banner diff">${ICON.info}<span><b>Weinig zichtbare weerstand.</b> Toch wijst je fase-inschatting op <b>${ADKAR[ak.barrier].name}</b> (“${esc(ADKAR[ak.barrier].ik)}”) als knelpunt: daar loopt het waarschijnlijk vast, ook al zie je weinig verzet. Stilte of afwezigheid kan ook weerstand zijn.</span></div>`;
+  if (low && ak.barrier >= 0) h += `<div class="banner diff">${ICON.info}<span><b>Weinig zichtbare weerstand.</b> Toch wijst je fase-inschatting op <b>${FASEN[ak.barrier].name}</b> (“${esc(FASEN[ak.barrier].ik)}”) als knelpunt: daar loopt het waarschijnlijk vast, ook al zie je weinig verzet. Stilte of afwezigheid kan ook weerstand zijn.</span></div>`;
   else if (low) h += `<div class="banner low">${ICON.info}<span><b>Weinig zichtbare weerstand.</b> Let op: stilte of afwezigheid kan ook weerstand zijn. Blijf preventief werken (zie hieronder).</span></div>`;
   if (dom.diffuse) h += `<div class="banner diff">${ICON.info}<span><b>Het beeld is diffuus:</b> meerdere vormen van weerstand scoren ongeveer even hoog. Hieronder staan er twee om mee te beginnen. Bespreek met de groep wat het zwaarst doorweegt.</span></div>`;
   if (unk) {
@@ -1054,9 +1052,9 @@ function renderResult(g) {
     h += `<div class="banner unk">${ICON.q}<span>Bij <b>${unk} ${unk === 1 ? 'signaal' : 'signalen'}</b> heb je geen zicht (${esc(where.join(', '))}): vraag het na.</span></div>`;
   }
   const ag = agreement(dom, ak);
-  if (ag && ag.kind === 'match') h += `<div class="banner match">${ICON.arrows}<span><b>Beide wijzen in dezelfde richting:</b> ${esc(ag.lvl.stem)} en het knelpunt ${ADKAR.find(e => e.id === ag.bid).name}. Dat is een sterker signaal.</span></div>`;
+  if (ag && ag.kind === 'match') h += `<div class="banner match">${ICON.arrows}<span><b>Beide wijzen in dezelfde richting:</b> ${esc(ag.lvl.stem)} en het knelpunt ${FASEN.find(e => e.id === ag.bid).name}. Dat is een sterker signaal.</span></div>`;
   if (ag && ag.kind === 'diff') h += `<div class="banner diff">${ICON.arrows}<span><b>Scan en fase wijzen elk een andere kant op.</b> Bespreek dit met de groep: het blijft een inschatting.</span></div>`;
-  if (ag && ag.kind === 'trust') h += `<div class="banner diff">${ICON.arrows}<span>Vertrouwen loopt door alle fasen heen. Het knelpunt <b>${ADKAR.find(e => e.id === ag.bid).name}</b> pak je best aan samen met het vertrouwen.</span></div>`;
+  if (ag && ag.kind === 'trust') h += `<div class="banner diff">${ICON.arrows}<span>Vertrouwen loopt door alle fasen heen. Het knelpunt <b>${FASEN.find(e => e.id === ag.bid).name}</b> pak je best aan samen met het vertrouwen.</span></div>`;
 
   h += `<h3 class="sec-title">Profiel van de weerstand${prev ? ` <span style="text-transform:none;letter-spacing:0;font-weight:500">· vergeleken met ${fmtDate(prev.date)}</span>` : ''}</h3><div class="bars">`;
   h += sc.map((x, i) => `<div class="bar-row${dom.some(d => d.L.id === x.L.id) ? ' dom' : ''}${x.L.id === 5 ? ' trustlvl' : ''}">
@@ -1064,7 +1062,7 @@ function renderResult(g) {
       <span class="bar-track"><span class="bar-fill" style="width:${x.pct || 0}%;display:block"></span></span>
       <span class="bar-val">${x.pct === null ? '–' : x.pct + '%'}${psc ? deltaHTML(x.pct, psc[i].pct) : ''}</span></div>`).join('') + '</div>';
 
-  h += `<h3 class="sec-title">Fase${pak && pak.barrier !== ak.barrier && pak.barrier >= 0 ? ` <span style="text-transform:none;letter-spacing:0;font-weight:500">· knelpunt was ${ADKAR[pak.barrier].name}</span>` : ''}</h3>`;
+  h += `<h3 class="sec-title">Fase${pak && pak.barrier !== ak.barrier && pak.barrier >= 0 ? ` <span style="text-transform:none;letter-spacing:0;font-weight:500">· knelpunt was ${FASEN[pak.barrier].name}</span>` : ''}</h3>`;
   h += ak.any ? adkarRow(ak) + `<div style="margin-top:0.625rem">${barrierNote(ak)}</div>` : `<p class="hint">Nog niet ingevuld. <button class="btn btn-line" data-do="to-fase" style="margin-left:0.5rem">Naar de fase</button></p>`;
 
   const focus = dom.length ? dom.map(d => d.L) : [];
@@ -1074,7 +1072,7 @@ function renderResult(g) {
     h += ordered.map((L, i) => `<div class="lv-card${i === 0 ? ' top' : ''}" data-oc-keep>
         <div class="lv-stem">${esc(L.stem)} <span class="adk-q-ik">“${esc(L.voice)}”</span></div>
         <p class="lv-meta"><b>Oorzaak:</b> ${esc(L.cause)} · <b>Onderliggend:</b> ${esc(L.under)}</p>
-        <span class="lv-link">${L.adkar[0] === '*' ? 'Fase: loopt door alle fasen heen' : (L.adkar.length > 1 ? 'Fasen: ' : 'Fase: ') + L.adkar.map(id => ADKAR.find(e => e.id === id).name).join(', ')}</span>
+        <span class="lv-link">${L.adkar[0] === '*' ? 'Fase: loopt door alle fasen heen' : (L.adkar.length > 1 ? 'Fasen: ' : 'Fase: ') + L.adkar.map(id => FASEN.find(e => e.id === id).name).join(', ')}</span>
         ${L.aanpak.map(a => `<div class="act"><span>${esc(a)}</span>${inPlan(g, a) ? '<span class="add-plan in" style="flex:none">In plan ✓</span>' : `<button class="add-plan" data-plan="${esc(a)}" data-src="lvl${L.id}">Neem op in plan</button>`}</div>`).join('')}
       </div>`).join('');
   }
@@ -1089,7 +1087,7 @@ function renderResult(g) {
   if (g.scans.length > 1) {
     h += `<h3 class="sec-title">Metingen</h3><div class="history">${g.scans.map((m, i) => {
       const a = adkarScores(m);
-      return `<span class="hist${i === g.scans.length - 1 ? ' cur' : ''}">${spark(m)}${fmtDate(m.date)}${a.barrier >= 0 ? ' · ' + ADKAR[a.barrier].name : ''}</span>`;
+      return `<span class="hist${i === g.scans.length - 1 ? ' cur' : ''}">${spark(m)}${fmtDate(m.date)}${a.barrier >= 0 ? ' · ' + FASEN[a.barrier].name : ''}</span>`;
     }).join('')}</div>`;
   }
   $('view').innerHTML = h;
@@ -1117,7 +1115,7 @@ function renderPlan(g) {
   h += `<form class="add-row" data-form="plan"><input class="field" name="t" placeholder="Eigen actie toevoegen" aria-label="Eigen actie toevoegen" maxlength="200"><button class="btn btn-primary">Voeg toe</button></form>`;
 
   h += `<h3 class="sec-title">Neem de fasen mee in je project</h3>`;
-  h += ADKAR.map((E, i) => {
+  h += FASEN.map((E, i) => {
     const items = g.plan.filter(p => p.src === 'adk:' + E.id);
     return `<div class="adk-plan${i === ak.barrier ? ' barrier' : ''}" data-oc-keep>
       <div class="adk-plan-h"><b>${E.name}</b><span>“${esc(E.ik)}” · ${esc(E.slide)}</span>${i === ak.barrier ? '<span class="tagb">knelpunt</span>' : ''}</div>
@@ -1144,7 +1142,7 @@ function renderAll() {
     <button class="cmp" data-open="${r.g.id}">
       <span class="cmp-name">${esc(r.g.name)}${r.g.size ? ` <span style="font-weight:500;color:var(--slate-500)">· ${esc(r.g.size)} pers.</span>` : ''}</span>
       <span class="cmp-score">${r.max}%<small>${fmtDate(r.s.date)}</small></span>
-      <span class="cmp-sub">${r.d.length ? r.d.map(x => esc(x.L.stem)).join(', ') : 'Weinig zichtbare weerstand'}${r.ak.barrier >= 0 ? ' · knelpunt ' + ADKAR[r.ak.barrier].name : ''}${r.trust ? ' · vertrouwen eerst' : ''}</span>
+      <span class="cmp-sub">${r.d.length ? r.d.map(x => esc(x.L.stem)).join(', ') : 'Weinig zichtbare weerstand'}${r.ak.barrier >= 0 ? ' · knelpunt ' + FASEN[r.ak.barrier].name : ''}${r.trust ? ' · vertrouwen eerst' : ''}</span>
       <span class="cmp-bar"><i style="width:${r.max}%"></i></span>
     </button>`).join('');
 }
@@ -1233,7 +1231,7 @@ async function copy(text) {
   try { await navigator.clipboard.writeText(text); return true; } catch {}
   try { const t = document.createElement('textarea'); t.value = text; t.style.position = 'fixed'; t.style.opacity = '0'; document.body.appendChild(t); t.select(); const ok = document.execCommand('copy'); t.remove(); return ok; } catch { return false; }
 }
-const planSrcLabel = p => p.src && p.src.startsWith('lvl') ? LEVELS[+p.src.slice(3) - 1].stem : p.src && p.src.startsWith('adk:') ? ADKAR.find(e => e.id === p.src.slice(4)).name : ({ preventie:'Voorkomen', reageren:'Reageren', algemeen:'Algemene tip' })[p.src] || 'Eigen actie';
+const planSrcLabel = p => p.src && p.src.startsWith('lvl') ? LEVELS[+p.src.slice(3) - 1].stem : p.src && p.src.startsWith('adk:') ? FASEN.find(e => e.id === p.src.slice(4)).name : ({ preventie:'Voorkomen', reageren:'Reageren', algemeen:'Algemene tip' })[p.src] || 'Eigen actie';
 
 function asText(g) {
   const s = lastScan(g), sc = levelScores(s), dom = dominant(sc), ak = adkarScores(s);
@@ -1242,15 +1240,15 @@ function asText(g) {
   if (g.size) t += `Aantal personen: ${g.size}\n`;
   t += `Meting van ${fmtDate(s.date)}\n\n## Profiel van de weerstand\n\n`;
   t += sc.map(x => `- ${x.L.stem}: ${x.pct === null ? 'onbekend' : x.pct + '%'}${dom.some(d => d.L.id === x.L.id) ? ' (dominant)' : ''}`).join('\n') + '\n';
-  t += `\n## Fase (ADKAR)\n\n` + ak.els.map((e, i) => `- ${e.E.name} (“${e.E.ik}”): ${e.pct === null ? 'onbekend' : e.pct + '%'}${i === ak.barrier ? ' ← knelpunt' : ''}`).join('\n') + '\n';
-  if (ak.barrier >= 0) t += `\nKnelpunt: ${ADKAR[ak.barrier].name}. Hier zit de groep waarschijnlijk vast. Begin meestal bij deze fase: zolang ze niet in orde is, halen latere fasen vaak minder uit.\n`;
+  t += `\n## Veranderfase\n\n` + ak.els.map((e, i) => `- ${e.E.name} (“${e.E.ik}”): ${e.pct === null ? 'onbekend' : e.pct + '%'}${i === ak.barrier ? ' ← knelpunt' : ''}`).join('\n') + '\n';
+  if (ak.barrier >= 0) t += `\nKnelpunt: ${FASEN[ak.barrier].name}. Hier zit de groep waarschijnlijk vast. Begin meestal bij deze fase: zolang ze niet in orde is, halen latere fasen vaak minder uit.\n`;
   const ag = agreement(dom, ak);
   if (ag) t += `\n${ag.kind === 'match' ? 'Beide wijzen in dezelfde richting.' : ag.kind === 'diff' ? 'Scan en fase wijzen elk een andere kant op: bespreek dit met de groep.' : 'Vertrouwen loopt door alle fasen heen.'}\n`;
   if (sc[4].pct !== null && sc[4].pct >= 50) t += `\nBegin bij vertrouwen: zonder vertrouwen werken de andere aanpakken minder.\n`;
   if (dom.diffuse) t += `\nHet beeld is diffuus: meerdere vormen van weerstand scoren ongeveer even hoog. Hieronder de twee hoogste.\n`;
   if (dom.length) t += `\n## Wat speelt er, en wat doe je eraan\n` + dom.map(d => `\n### ${d.L.stem} (“${d.L.voice}”)\nOorzaak: ${d.L.cause}. Onderliggend: ${d.L.under}.\n` + d.L.aanpak.map(a => `- ${a}`).join('\n')).join('\n') + '\n';
   if (g.plan.length) t += `\n## Plan\n\n` + g.plan.map(p => `- [${p.done ? 'x' : ' '}] ${p.text} (${planSrcLabel(p)}${p.when ? ', ' + WHEN[p.when] : ''}${p.who ? ', ' + p.who : ''}${p.due ? ', tegen ' + p.due : ''})`).join('\n') + '\n';
-  if (g.scans.length > 1) t += `\n## Metingen\n\n` + g.scans.map(m => `- ${fmtDate(m.date)}: ` + levelScores(m).map(x => `${x.L.id}=${x.pct === null ? '–' : x.pct + '%'}`).join(', ') + (adkarScores(m).barrier >= 0 ? `; knelpunt ${ADKAR[adkarScores(m).barrier].name}` : '')).join('\n') + '\n';
+  if (g.scans.length > 1) t += `\n## Metingen\n\n` + g.scans.map(m => `- ${fmtDate(m.date)}: ` + levelScores(m).map(x => `${x.L.id}=${x.pct === null ? '–' : x.pct + '%'}`).join(', ') + (adkarScores(m).barrier >= 0 ? `; knelpunt ${FASEN[adkarScores(m).barrier].name}` : '')).join('\n') + '\n';
   t += `\nToets je beeld: leg de signalen voor aan de groep, peil met een korte vragenlijst, vraag leidinggevenden wat ze horen.\n`;
   return t;
 }
@@ -1281,14 +1279,14 @@ function buildExport() {
       <span style="text-align:right;font-weight:600">${x.pct === null ? '–' : x.pct + '%'}${d !== null && d !== 0 ? ` <span style="font-size:11px;color:${d > 0 ? '#ef4444' : '#059669'}">${d > 0 ? '▲' : '▼'}${Math.abs(d)}</span>` : ''}</span></div>`;
   }).join('') + '</div>';
   if (ak.any) {
-    h += `<div data-oc-keep>${H('Fase (ADKAR)')}<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px">` + ak.els.map((e, i) => {
+    h += `<div data-oc-keep>${H('Veranderfase')}<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px">` + ak.els.map((e, i) => {
       const bg = i === ak.barrier ? '#ef4444' : (ak.barrier >= 0 && i > ak.barrier) ? '#f1f5f9' : e.pass ? '#d1fae5' : '#f1f5f9';
       const col = i === ak.barrier ? '#fff' : e.pass ? '#065f46' : '#64748b';
       return `<div style="background:${bg};color:${col};padding:10px 12px;border-radius:6px;opacity:${ak.barrier >= 0 && i > ak.barrier ? 0.55 : 1}">
         <div style="font-size:18px;font-weight:700">${e.E.l}</div><div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em">${e.E.name}</div>
         <div style="font-size:12px;margin-top:2px">“${esc(e.E.ik)}”</div><div style="font-size:13px;font-weight:700;margin-top:4px">${e.pct === null ? '–' : e.pct + '%'}</div></div>`;
     }).join('') + '</div>';
-    if (ak.barrier >= 0) h += `<div style="margin-top:10px;border:1px solid #fecaca;background:#fef2f2;color:#991b1b;border-radius:10px;padding:10px 14px;font-size:14px">Knelpunt: <b>${ADKAR[ak.barrier].name}</b>. Hier zit de groep waarschijnlijk vast. Begin meestal bij deze fase: zolang ze niet in orde is, halen latere fasen vaak minder uit.</div>`;
+    if (ak.barrier >= 0) h += `<div style="margin-top:10px;border:1px solid #fecaca;background:#fef2f2;color:#991b1b;border-radius:10px;padding:10px 14px;font-size:14px">Knelpunt: <b>${FASEN[ak.barrier].name}</b>. Hier zit de groep waarschijnlijk vast. Begin meestal bij deze fase: zolang ze niet in orde is, halen latere fasen vaak minder uit.</div>`;
     const ag = agreement(dom, ak);
     if (ag) h += `<div style="margin-top:8px;font-size:13px;color:#475569">${ag.kind === 'match' ? '<b>Beide wijzen in dezelfde richting.</b> Dat is een sterker signaal.' : ag.kind === 'diff' ? '<b>Scan en fase wijzen elk een andere kant op:</b> bespreek dit met de groep.' : 'Vertrouwen loopt door alle fasen heen.'}</div>`;
     h += '</div>';
@@ -1308,10 +1306,9 @@ function buildExport() {
   }
   if (g.scans.length > 1) {
     h += `<div data-oc-keep>${H('Metingen')}` + g.scans.map(m => { const x = levelScores(m), a = adkarScores(m);
-      return `<div style="font-size:13px;color:#475569;padding:3px 0">${fmtDate(m.date)}: ${x.map(v => `${v.L.id}. ${v.pct === null ? '–' : v.pct + '%'}`).join(' · ')}${a.barrier >= 0 ? ' · knelpunt ' + ADKAR[a.barrier].name : ''}</div>`; }).join('') + '</div>';
+      return `<div style="font-size:13px;color:#475569;padding:3px 0">${fmtDate(m.date)}: ${x.map(v => `${v.L.id}. ${v.pct === null ? '–' : v.pct + '%'}`).join(' · ')}${a.barrier >= 0 ? ' · knelpunt ' + FASEN[a.barrier].name : ''}</div>`; }).join('') + '</div>';
   }
-  h += `<div data-oc-keep>${H('Toets je beeld')}<div style="font-size:14px;color:#334155">Je scan is jouw inschatting. Leg de signalen voor aan de groep, peil met een korte vragenlijst, en vraag leidinggevenden wat ze in hun team horen.</div>
-    <div style="font-size:11px;color:#94a3b8;margin-top:10px">ADKAR® is een geregistreerd handelsmerk van Prosci. Deze tool is niet verbonden aan Prosci en gebruikt eigen formuleringen.</div></div>`;
+  h += `<div data-oc-keep>${H('Toets je beeld')}<div style="font-size:14px;color:#334155">Je scan is jouw inschatting. Leg de signalen voor aan de groep, peil met een korte vragenlijst, en vraag leidinggevenden wat ze in hun team horen.</div></div>`;
   const node = document.createElement('div'); node.innerHTML = h;
   return { node, title:'Weerstand', subtitle:`${g.name} · meting van ${fmtDate(s.date)}` };
 }
@@ -1361,7 +1358,7 @@ function loadExample() {
   if (bestaand) { state.current = bestaand.id; save(); render(); toast('Dit is het voorbeeld'); return; }
   const ago = n => { const d = new Date(); d.setDate(d.getDate() - n); return d.toISOString().slice(0, 10); };
   const fill = (w, a) => { const o = {}; w.forEach((v, li) => v.forEach((x, i) => { if (x !== null) o['w' + (li + 1) + i] = x; }));
-    ADKAR.forEach((E, ei) => a[ei].forEach((x, i) => { if (x !== null) o['a' + E.id + i] = x; })); return o; };
+    FASEN.forEach((E, ei) => a[ei].forEach((x, i) => { if (x !== null) o['a' + E.id + i] = x; })); return o; };
   const g1 = newGroup('Team dossierbeheer');
   g1.size = '14'; g1.change = 'Overstap van papieren dossiers naar het digitale dossierbeheersysteem';
   g1.scans = [
