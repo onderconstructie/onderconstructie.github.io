@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Visgraatdiagram – Onder Constructie</title>
+<meta name="description" content="Zet alle mogelijke oorzaken van een probleem op een rij in een visgraatdiagram, per soort (mens, machine, methode, materiaal, milieu, metingen), en kies de waarschijnlijkste.">
+    <meta name="oc:groep" content="projecten">
+    <meta name="oc:labels" content="inzicht">
+    <meta name="oc:pdca" content="plan, check">
+    <meta name="oc:kort" content="Wat veroorzaakt het probleem?">
+    <meta name="oc:volgorde" content="24">
+    <meta name="oc:opslag" content="visgraat.v1, oc.share.visgraat">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox=&quot;0 0 40 40&quot; fill=&quot;none&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;%3E%3Ccircle cx=&quot;20&quot; cy=&quot;20&quot; r=&quot;18&quot; fill=&quot;%23f8fafc&quot; stroke=&quot;%23e2e8f0&quot; stroke-width=&quot;1.5&quot;/%3E%3Cpath d=&quot;M7 20h19&quot; stroke=&quot;%23334155&quot; stroke-width=&quot;2.2&quot; stroke-linecap=&quot;round&quot;/%3E%3Cpath d=&quot;M11 12l4 8M18 12l4 8M11 28l4-8M18 28l4-8&quot; stroke=&quot;%23334155&quot; stroke-width=&quot;1.8&quot; stroke-linecap=&quot;round&quot;/%3E%3Crect x=&quot;25&quot; y=&quot;15&quot; width=&quot;9&quot; height=&quot;10&quot; rx=&quot;3&quot; fill=&quot;%2310b981&quot;/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/fonts/fonts.css">
+<style>
+:root {
+  --slate-900:#0f172a; --slate-800:#1e293b; --slate-700:#334155; --slate-600:#475569;
+  --slate-500:#64748b; --slate-400:#94a3b8; --slate-300:#cbd5e1; --slate-200:#e2e8f0;
+  --slate-100:#f1f5f9; --slate-50:#f8fafc; --wit:#ffffff;
+  --accent:#10b981; --accent-dark:#047857; --accent-hover:#065f46; --accent-light:#d1fae5; --accent-50:#ecfdf5;
+  --rood:#ef4444; --oranje:#d97706; --oranje-50:#fffbeb;
+  --bottom: env(safe-area-inset-bottom, 0px);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body { font-family:'DM Sans', system-ui, sans-serif; background:var(--slate-50); color:var(--slate-700); line-height:1.5; min-height:100vh; -webkit-font-smoothing:antialiased; display:flex; flex-direction:column; }
+button, input, textarea, select { font:inherit; color:inherit; }
+button { background:none; border:0; cursor:pointer; }
+a { color:var(--accent-dark); }
+[hidden] { display:none !important; }
+
+.header { background:var(--wit); border-bottom:1px solid var(--slate-200); padding:1.5rem 1.25rem 1.75rem; position:relative; text-align:center; }
+.back-link { position:absolute; top:1.25rem; left:1.25rem; display:inline-flex; align-items:center; gap:0.5rem; font-size:0.875rem; color:var(--slate-500); text-decoration:none; transition:color 0.2s; }
+.back-link:hover { color:var(--accent-dark); }
+.back-link svg { width:16px; height:16px; }
+.logo svg { width:56px; height:56px; }
+.title { font-size:1.625rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.03em; line-height:1.2; margin-top:0.5rem; }
+.subtitle { font-size:0.9375rem; color:var(--slate-500); max-width:34rem; margin:0.125rem auto 0; }
+
+.main { flex:1; width:100%; max-width:880px; margin:0 auto; padding:1.25rem 1rem 3rem; display:flex; flex-direction:column; gap:1rem; }
+.card { background:var(--wit); border:1px solid var(--slate-200); border-radius:16px; box-shadow:0 1px 2px rgba(15,23,42,0.04); }
+.card-head { display:flex; align-items:center; gap:0.5rem; padding:1rem 0.75rem 0.5rem 1.125rem; }
+.card-title { flex:1; min-width:0; font-size:1.0625rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.01em; }
+.project { flex:1; min-width:0; font-size:1.25rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.02em; border:0; background:none; outline:none; padding:0.125rem 0; border-bottom:1.5px solid transparent; }
+.project:focus { border-bottom-color:var(--accent); }
+.project::placeholder { color:var(--slate-300); }
+.icon-btn { width:38px; height:38px; display:flex; align-items:center; justify-content:center; border-radius:10px; color:var(--slate-500); flex-shrink:0; }
+.icon-btn:hover { background:var(--slate-100); color:var(--slate-700); }
+.icon-btn svg { width:20px; height:20px; }
+.menu-wrap { position:relative; }
+.menu { display:none; position:absolute; right:0; top:calc(100% + 4px); z-index:50; min-width:230px; background:var(--wit); border:1px solid var(--slate-200); border-radius:12px; box-shadow:0 12px 32px rgba(15,23,42,0.14); padding:0.375rem; }
+.menu.open { display:block; }
+.menu button { width:100%; display:flex; align-items:center; gap:0.625rem; padding:0.5625rem 0.625rem; border-radius:8px; font-size:0.9375rem; text-align:left; color:var(--slate-700); white-space:nowrap; }
+.menu button:hover { background:var(--slate-100); }
+.menu button svg { width:18px; height:18px; color:var(--slate-500); flex-shrink:0; }
+.menu .sep { height:1px; background:var(--slate-100); margin:0.25rem 0.375rem; }
+.menu .danger, .menu .danger svg { color:var(--rood); }
+.warn { margin:0 1.125rem 1rem; font-size:0.8125rem; color:#92400e; background:var(--oranje-50); border:1px solid #fde68a; border-radius:10px; padding:0.5rem 0.75rem; }
+
+/* Aanpak */
+.todo { list-style:none; padding:0 1.125rem 0.5rem; }
+.todo li { display:flex; gap:0.625rem; padding:0.625rem 0; border-top:1px solid var(--slate-100); font-size:0.9375rem; color:var(--slate-700); }
+.todo li:first-child { border-top:0; }
+.todo li::before { content:''; flex-shrink:0; width:8px; height:8px; margin-top:0.5rem; border-radius:50%; background:var(--accent); }
+.todo li.k::before { background:var(--oranje); }
+.todo a { font-weight:600; }
+.notes { padding:0 1.125rem 1.125rem; }
+.notes textarea { width:100%; min-height:5.5rem; resize:vertical; padding:0.625rem 0.75rem; border:1.5px solid var(--slate-200); border-radius:10px; background:var(--slate-50); outline:none; font-size:0.9375rem; line-height:1.5; }
+.notes textarea:focus { border-color:var(--accent); background:var(--wit); }
+.lbl { display:block; font-size:0.75rem; font-weight:600; color:var(--slate-500); margin-bottom:0.3125rem; }
+
+.restart-row { display:flex; justify-content:center; }
+.restart-btn { min-height:44px; padding:0.5rem 1rem; font:inherit; font-size:0.875rem; font-weight:500; color:var(--slate-500, #64748b); background:none; border:0; border-radius:10px; cursor:pointer; text-decoration:underline; text-decoration-color:#cbd5e1; text-underline-offset:3px; }
+.restart-btn:hover { color:#b91c1c; background:#fef2f2; text-decoration-color:currentColor; }
+.explain { background:var(--wit); border:1px solid var(--slate-200); border-radius:16px; }
+.explain summary { padding:0.875rem 1.125rem; font-weight:600; color:var(--slate-700); cursor:pointer; list-style:none; display:flex; align-items:center; justify-content:space-between; }
+.explain summary::-webkit-details-marker { display:none; }
+.explain summary::after { content:'+'; color:var(--slate-500); font-size:1.25rem; font-weight:400; }
+.explain[open] summary::after { content:'−'; }
+.explain .inner { padding:0 1.125rem 1.125rem; font-size:0.9375rem; color:var(--slate-600); }
+.explain .inner p + p, .explain .inner ul { margin-top:0.5rem; }
+.explain .inner ul { padding-left:1.125rem; }
+
+.toast { position:fixed; left:50%; bottom:calc(var(--bottom) + 1.25rem); transform:translate(-50%, 200%); visibility:hidden; z-index:100; display:flex; align-items:center; gap:0.75rem; background:var(--slate-800); color:var(--wit); padding:0.625rem 0.75rem 0.625rem 1rem; border-radius:12px; font-size:0.875rem; box-shadow:0 10px 30px rgba(15,23,42,0.25); max-width:calc(100% - 2rem); transition:transform 0.25s ease, visibility 0s 0.25s; }
+.toast.show { transform:translate(-50%, 0); visibility:visible; transition:transform 0.25s ease; }
+.toast button { color:#6ee7b7; font-weight:600; padding:0 0.75rem; min-height:44px; border-radius:8px; }
+
+.footer { text-align:center; padding:2rem 2rem calc(var(--bottom) + 2rem); border-top:1px solid var(--slate-200); background:var(--wit); }
+.quote { font-size:0.8125rem; color:var(--accent-dark); }
+@media (max-width:480px) { .card-hint { display:none; } .back-link span { display:none; } .bar { grid-template-columns:6rem minmax(0,1fr) 4.5rem; } }
+
+.oc-import{display:inline-flex;align-items:center;gap:.375rem;font:inherit;font-size:.8125rem;font-weight:600;color:#047857;background:#fff;border:1px dashed #a7f3d0;border-radius:999px;padding:.3125rem .75rem;cursor:pointer;white-space:nowrap}
+@media(hover:hover){.oc-import:hover{background:#ecfdf5;border-color:#10b981}} .oc-import svg{width:15px;height:15px}
+/* Toegankelijkheid (audit oktober 2026) */
+:focus-visible { outline:2px solid #047857 !important; outline-offset:2px; }
+.back-link { min-height:44px; min-width:44px; }
+.icon-btn, #menu-btn { min-width:44px; min-height:44px; }
+.tab { min-height:44px; }
+.btn { min-height:44px; }
+.views button { color:var(--slate-600); min-height:44px; }
+.views button[aria-selected="true"] { color:var(--slate-800); }
+.views small { color:var(--slate-600); }
+.explain summary { min-height:44px; }
+@media (max-width:480px) { .back-link { top:0.75rem; left:0.75rem; justify-content:center; } }
+.ocw-row .ocw-yes { background:#dc2626; } .ocw-row .ocw-yes:hover { background:#b91c1c; }
+.ocw-row button { min-height:44px; }
+button.oc-import { color:#047857; min-height:44px; }
+/* Visgraatdiagram */
+.main { max-width:1240px; }
+.tabs { display:flex; gap:0.375rem; flex-wrap:wrap; align-items:center; }
+.tab { min-height:44px; padding:0.375rem 0.875rem; border-radius:999px; border:1px solid var(--slate-200); background:var(--wit); font-size:0.875rem; font-weight:600; color:var(--slate-600); display:inline-flex; align-items:center; gap:0.375rem; max-width:16rem; }
+.tab span.nm { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tab[aria-pressed="true"] { background:var(--slate-800); border-color:var(--slate-800); color:var(--wit); }
+.tab.add { color:var(--accent-dark); border-style:dashed; border-color:#a7f3d0; }
+.layout { display:grid; grid-template-columns:minmax(0,1fr); gap:1rem; align-items:start; }
+@media (min-width:1000px) { .layout { grid-template-columns:minmax(420px,1fr) minmax(0,1fr); } .draw-card { position:sticky; top:1rem; } .views { display:none !important; } .layout > section[hidden] { display:block !important; } }
+.views { display:flex; gap:0.25rem; padding:3px; background:var(--slate-100); border-radius:12px; }
+.views button { flex:1; min-height:44px; border-radius:9px; font-size:0.9375rem; font-weight:600; color:var(--slate-600); }
+.views button[aria-selected="true"] { background:var(--wit); color:var(--slate-800); box-shadow:0 1px 2px rgba(15,23,42,0.08); }
+
+.hint-s { font-size:0.8125rem; color:var(--slate-500); padding:0 1.125rem 0.75rem; }
+
+.adders { display:flex; flex-wrap:wrap; gap:0.375rem; padding:0.25rem 1.125rem 1rem; }
+.adders button { min-height:44px; padding:0 0.875rem; border-radius:10px; border:1px solid var(--slate-200); background:var(--wit); font-size:0.875rem; font-weight:600; color:var(--slate-700); display:inline-flex; align-items:center; gap:0.375rem; }
+.adders button:hover { border-color:#a7f3d0; background:var(--accent-50); }
+
+.draw-head { display:flex; align-items:center; gap:0.5rem; padding:0.875rem 0.75rem 0.5rem 1.125rem; }
+.draw-head { flex-wrap:wrap; }
+.draw-head .card-title { flex:1; min-width:6rem; }
+.zoom { min-height:44px; padding:0 0.75rem; border-radius:10px; font-size:0.8125rem; font-weight:600; color:var(--slate-600); border:1px solid var(--slate-200); }
+.canvas { overflow:auto; padding:0.25rem 0.5rem 0.75rem; -webkit-overflow-scrolling:touch; }
+.canvas svg { display:block; margin:0 auto; }
+
+.vb-bar { display:flex; flex-wrap:wrap; align-items:center; gap:0.5rem 0.75rem; margin:0 1rem 0.75rem; padding:0.5rem 0.5rem 0.5rem 0.75rem; background:#fffbeb; border:1px solid #fde68a; border-radius:12px; font-size:0.875rem; line-height:1.4; color:#78350f; }
+.vb-bar svg { width:18px; height:18px; flex-shrink:0; color:#b45309; }
+.vb-text { flex:1 1 14rem; min-width:0; display:flex; gap:0.5rem; align-items:flex-start; }
+.vb-btns { display:flex; flex-wrap:wrap; gap:0.375rem; }
+.vb-btn { min-height:44px; padding:0.375rem 0.625rem; border-radius:10px; font-size:0.875rem; font-weight:600; background:var(--wit); border:1px solid var(--slate-200); }
+.vb-wis { color:#b91c1c; border-color:#fecaca; }
+.vb-eigen { color:var(--accent-dark); border-color:#a7f3d0; }
+.vb-tag { font-size:0.6875rem; font-weight:600; padding:0 0.375rem; border-radius:999px; background:#fef3c7; color:#92400e; }
+.tab[aria-pressed="true"] .vb-tag { background:#fde68a; }
+.icon-btn.del-unit:hover { color:#b91c1c; background:#fef2f2; }
+.start-card { padding:1.5rem 1.25rem; text-align:center; }
+.start-card p { color:var(--slate-600); margin-bottom:0.875rem; }
+.start-card .btns { display:flex; gap:0.5rem; justify-content:center; flex-wrap:wrap; }
+.btn { min-height:44px; padding:0.5rem 1rem; border-radius:10px; font-weight:600; font-size:0.9375rem; }
+.btn-primary { background:var(--accent-dark); color:var(--wit); }
+.btn-primary:hover { background:var(--accent-hover); }
+.btn-ghost { background:var(--slate-100); color:var(--slate-700); }
+.start-lead { color:var(--slate-700); font-size:1rem; line-height:1.5; max-width:34rem; margin:0 auto 1rem; }
+.card { margin-bottom:1rem; }
+.card .body { padding:0 1.125rem 1.125rem; }
+.stepno { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:50%; background:#047857; color:#fff; font-size:0.8125rem; font-weight:700; margin-right:0.5rem; vertical-align:2px; flex-shrink:0; }
+.card-head .count { font-size:0.8125rem; color:var(--slate-600); font-weight:600; margin-left:auto; }
+.card-head .del-unit { margin-left:auto; }
+.big { width:100%; min-height:48px; padding:0.625rem 0.875rem; border:1.5px solid var(--slate-200); border-radius:12px; background:var(--slate-50); font:inherit; font-size:1.0625rem; font-weight:600; color:var(--slate-800); outline:none; }
+.big:focus { border-color:var(--accent); background:var(--wit); }
+.fhelp { font-size:0.8125rem; color:var(--slate-600); margin-top:0.375rem; }
+.lead { font-size:0.9375rem; color:var(--slate-600); margin-bottom:0.875rem; line-height:1.5; }
+.stat { font-size:0.8125rem; font-weight:600; color:var(--slate-600); margin-left:0.5rem; }
+.draw-head { display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; padding:1rem 1.125rem 0.5rem; }
+.draw-head .card-title { margin:0; }
+.draw-head .zoom { margin-left:auto; }
+.canvas { overflow:auto; padding:0 0.5rem 0.75rem; -webkit-overflow-scrolling:touch; }
+.canvas svg { display:block; margin:0 auto; }
+.cats { display:grid; gap:0.75rem; margin-bottom:0.75rem; }
+@media (min-width:760px) { .cats { grid-template-columns:repeat(2, 1fr); } }
+.cat { border:1px solid var(--slate-200); border-radius:14px; padding:0.625rem; background:var(--wit); min-width:0; }
+.cat-head { display:flex; align-items:center; gap:0.25rem; }
+.cat-name { flex:1; min-width:0; min-height:40px; padding:0.25rem 0.5rem; border:1.5px solid transparent; border-radius:9px; background:transparent; font:inherit; font-size:1rem; font-weight:700; color:#047857; outline:none; }
+.cat-name:hover { border-color:var(--slate-200); } .cat-name:focus { border-color:var(--accent); }
+.cat-hint { font-size:0.8125rem; color:var(--slate-600); margin:0 0.5rem 0.5rem; line-height:1.4; }
+.causes { list-style:none; display:grid; gap:0.25rem; margin-bottom:0.375rem; }
+.cz { display:flex; align-items:center; gap:0.125rem; }
+.cz input, .cz-add { flex:1; min-width:0; min-height:44px; padding:0.375rem 0.625rem; border:1.5px solid var(--slate-200); border-radius:10px; background:var(--slate-50); font:inherit; font-size:16px; color:var(--slate-800); outline:none; }
+.cz input:focus, .cz-add:focus { border-color:var(--accent); background:var(--wit); }
+.cz.sub { padding-left:1.5rem; position:relative; }
+.cz.sub::before { content:''; position:absolute; left:0.625rem; top:0; bottom:50%; width:0.625rem; border-left:1.5px solid var(--slate-300); border-bottom:1.5px solid var(--slate-300); border-bottom-left-radius:6px; }
+.cz.sub input { font-size:0.9375rem; }
+.cz.likely input { border-color:#a7f3d0; background:#ecfdf5; font-weight:600; }
+.cz-add { width:100%; border-style:dashed; background:var(--wit); }
+.cz-add::placeholder { color:#047857; font-weight:600; }
+.mini { width:40px; height:44px; flex-shrink:0; display:flex; align-items:center; justify-content:center; border-radius:9px; color:var(--slate-500); }
+.mini:hover { background:var(--slate-100); color:var(--slate-800); }
+.mini svg { width:17px; height:17px; }
+.add-cat { display:inline-flex; align-items:center; gap:0.375rem; min-height:44px; padding:0 0.875rem; border-radius:10px; border:1px dashed #a7f3d0; color:var(--accent-dark); font-weight:600; font-size:0.875rem; }
+.add-cat svg { width:16px; height:16px; } .add-cat:hover { background:var(--accent-50); }
+.pick { display:grid; gap:0.75rem; }
+@media (min-width:760px) { .pick { grid-template-columns:repeat(2, 1fr); } }
+.pick-cat { display:flex; flex-direction:column; gap:0.375rem; min-width:0; }
+.pick-cat > b { font-size:0.75rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--slate-600); }
+.pick-c { display:flex; align-items:flex-start; gap:0.5rem; text-align:left; min-height:44px; padding:0.5rem 0.75rem; border:1.5px solid var(--slate-200); border-radius:12px; background:var(--slate-50); font-size:0.9375rem; color:var(--slate-800); line-height:1.35; }
+.pick-c.sub { margin-left:1.25rem; font-size:0.875rem; }
+.pick-c svg { width:18px; height:18px; flex-shrink:0; margin-top:1px; color:var(--slate-400); }
+.pick-c:hover { border-color:#a7f3d0; background:var(--wit); }
+.pick-c.on { border-color:#047857; background:#ecfdf5; font-weight:600; } .pick-c.on svg { color:#047857; }
+.pick-c span { min-width:0; overflow-wrap:anywhere; }
+.sub-h { font-size:0.9375rem; font-weight:700; color:var(--slate-800); margin:1.125rem 0 0.5rem; }
+.toets { list-style:none; display:grid; gap:0.625rem; }
+.toets li { display:flex; flex-direction:column; gap:0.375rem; }
+.toets b { font-size:0.9375rem; color:#047857; overflow-wrap:anywhere; }
+.toets input { width:100%; min-height:44px; padding:0.5rem 0.75rem; border:1.5px solid var(--slate-200); border-radius:10px; background:var(--slate-50); font:inherit; font-size:16px; color:var(--slate-800); outline:none; }
+.toets input:focus { border-color:var(--accent); background:var(--wit); }
+.empty { font-size:0.9375rem; color:var(--slate-600); background:var(--slate-50); border-radius:12px; padding:0.875rem; }
+.warn { margin-top:0.75rem; }
+@media (max-width:480px) { .draw-head .stat { order:3; flex-basis:100%; margin-left:2.125rem; } }
+
+</style>
+</head>
+<body>
+
+<header class="header">
+  <a href="https://onderconstructie.github.io/projectmanagement/" class="back-link" aria-label="Terug naar Projectmanagement">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    <span>Projectmanagement</span>
+  </a>
+  <div class="logo">
+    <svg viewBox="0 0 80 80" fill="none" aria-hidden="true">
+      <circle cx="40" cy="40" r="36" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2"/>
+      <g transform="scale(2)"><path d="M7 20h19" stroke="#334155" stroke-width="2.2" stroke-linecap="round"/><path d="M11 12l4 8M18 12l4 8M11 28l4-8M18 28l4-8" stroke="#334155" stroke-width="1.8" stroke-linecap="round"/><rect x="25" y="15" width="9" height="10" rx="3" fill="#10b981"/></g>
+    </svg>
+  </div>
+  <h1 class="title">Visgraatdiagram</h1>
+  <p class="subtitle">Wat veroorzaakt het probleem?</p>
+</header>
+
+<main class="main">
+  <div class="tabs" id="tabs" role="toolbar" aria-label="Analyses"></div>
+  <div id="app"></div>
+
+  <div class="restart-row"><button type="button" class="restart-btn" id="oc-restart">Opnieuw beginnen</button></div>
+
+  <details class="explain">
+    <summary>Hoe werkt dit?</summary>
+    <div class="inner">
+      <p>Een visgraatdiagram zet alle mogelijke oorzaken van één probleem overzichtelijk bij elkaar. Het probleem staat rechts, als de kop van de vis. De graten zijn de soorten oorzaken.</p>
+      <ul>
+        <li><b>Beschrijf het probleem</b> zo concreet mogelijk: wat gaat er mis, waar, sinds wanneer, en hoe vaak of hoeveel?</li>
+        <li><b>Kies de soorten oorzaken.</b> Je start met zes: mens, machine, methode, materiaal, milieu en metingen. Hernoem ze, haal er weg of voeg er toe, zodat ze passen bij jouw werk.</li>
+        <li><b>Verzamel oorzaken</b> per soort, liefst met de mensen die het werk doen. Vraag bij elke oorzaak "en waarom gebeurt dat?": het antwoord wordt een suboorzaak.</li>
+        <li><b>Kies de waarschijnlijkste oorzaken.</b> Vraag bij elke: als we dit wegnemen, is het probleem dan grotendeels weg? Kies er liefst niet meer dan drie, en schrijf op hoe je ze nagaat voor je ze aanpakt.</li>
+      </ul>
+      <p>Tip: Enter geeft meteen een nieuwe oorzaak, en een lijst plakken in een veld zet elke regel als aparte oorzaak.</p>
+      <p>De oorzaken die je kiest, liggen klaar voor andere tools, bijvoorbeeld om er in <a href="https://onderconstructie.github.io/prioriteit/">Prioriteren</a> of <a href="https://onderconstructie.github.io/kanban/">SprintFlow</a> mee verder te gaan.</p>
+    </div>
+  </details>
+</main>
+
+<footer class="footer">
+  <p class="quote">Wie de oorzaak kent, hoeft het symptoom niet te blijven bestrijden.</p>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-text"></span><button id="toast-btn" hidden>Ongedaan</button></div>
+
+<script>
+/* ---------- Overnemen tussen tools (gedeeld door de Onder Constructie-tools, v2) ----------
+   Alle tools draaien op hetzelfde domein en delen dus localStorage. Elke tool legt wat hij te bieden
+   heeft klaar onder 'oc.share.<tool-id>', in een vaste vorm, zodat andere tools het kunnen overnemen
+   zonder elkaars binnenkant te kennen.
+
+   Soorten (type):
+     'betrokkene'  persoon, rol, stakeholder, doelgroep of team   { text, note? }
+     'taak'        iets dat gedaan moet worden                     { text, note? }
+     'actie'       taak met eigenaar en/of termijn                 { text, who?, when? }
+     'risico'      risico met kans en impact                       { text, note? }
+
+   Gebruik:
+     ocShare.publish('raci', 'RACI-matrix', [
+       { name:'Heraanleg stadspark', items:[ { type:'betrokkene', text:'Projectleider' }, { type:'taak', text:'Budget goedkeuren' } ] }
+     ]);                                   // aanroepen na elke bewaring
+     ocShare.clear('raci');                // bij "Alles wissen"
+     const gekozen = await ocShare.pick({ types:['betrokkene'], self:'weerstand', title:'Doelgroepen overnemen' });
+     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source en .list erbij)
+*/
+const ocShare = (() => {
+  const PREFIX = 'oc.share.';
+  const LABEL = { betrokkene:'betrokkenen', taak:'taken', actie:'acties', risico:"risico's" };
+  const esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+
+  function publish(id, tool, lists) {
+    try {
+      const clean = (lists || []).map(l => ({
+        name: String(l.name || '').slice(0, 80),
+        items: (l.items || []).filter(i => i && i.type && String(i.text || '').trim())
+          .slice(0, 300).map(i => ({ type:i.type, text:String(i.text).trim().slice(0, 300),
+            note: i.note ? String(i.note).slice(0, 200) : undefined, who: i.who || undefined, when: i.when || undefined }))
+      })).filter(l => l.items.length);
+      if (!clean.length) { localStorage.removeItem(PREFIX + id); return; }
+      localStorage.setItem(PREFIX + id, JSON.stringify({ id, tool, updated: Date.now(), lists: clean }));
+    } catch {}
+  }
+  function clear(id) { try { localStorage.removeItem(PREFIX + id); } catch {} }
+
+  // Elke bron apart: één kapotte sleutel mag de andere niet verbergen.
+  function sources(types, self) {
+    const out = [];
+    let keys = [];
+    try { for (let i = 0; i < localStorage.length; i++) keys.push(localStorage.key(i)); } catch { return out; }
+    keys.forEach(k => {
+      if (!k || !k.startsWith(PREFIX) || k === PREFIX + self) return;
+      try {
+        const d = JSON.parse(localStorage.getItem(k));
+        if (!d || !Array.isArray(d.lists)) return;
+        d.lists.forEach(l => {
+          if (!l || !Array.isArray(l.items)) return;
+          const items = l.items.filter(it => it && types.includes(it.type) && typeof it.text === 'string');
+          if (items.length) out.push({ tool: String(d.tool || d.id || k.slice(PREFIX.length)), id: d.id, updated: +d.updated || 0, list: String(l.name || ''), items });
+        });
+      } catch {}
+    });
+    return out.sort((a, b) => (b.updated || 0) - (a.updated || 0));
+  }
+
+  let styled = false;
+  function style() {
+    if (styled) return; styled = true;
+    const s = document.createElement('style');
+    s.textContent = `
+      .ocs-back{position:fixed;inset:0;z-index:10000;display:flex;align-items:flex-end;justify-content:center;background:rgba(15,23,42,.45);
+        backdrop-filter:blur(3px);opacity:0;transition:opacity .15s;font-family:'DM Sans',system-ui,sans-serif}
+      @media(min-width:640px){.ocs-back{align-items:center;padding:1rem}}
+      .ocs-back.open{opacity:1}
+      .ocs{width:100%;max-width:520px;max-height:min(86vh,720px);display:flex;flex-direction:column;background:#fff;border-radius:18px 18px 0 0;
+        box-shadow:0 20px 50px rgba(15,23,42,.25);transform:translateY(12px);transition:transform .15s;color:#1e293b}
+      @media(min-width:640px){.ocs{border-radius:18px}}
+      .ocs-back.open .ocs{transform:none}
+      .ocs-head{padding:1.125rem 1.25rem .75rem;border-bottom:1px solid #e2e8f0}
+      .ocs-title{font-size:1.125rem;font-weight:700;letter-spacing:-.02em}
+      .ocs-sub{font-size:.8125rem;color:#64748b;margin-top:.125rem}
+      .ocs-body{overflow:auto;padding:.5rem 1.25rem 1rem;flex:1}
+      .ocs-src{margin-top:.875rem}
+      .ocs-src-head{display:flex;align-items:center;gap:.5rem;padding:.375rem 0}
+      .ocs-src-head b{font-size:.9375rem}
+      .ocs-src-head span{font-size:.75rem;color:#64748b}
+      .ocs-all{margin-left:auto;font:inherit;font-size:.8125rem;color:#047857;background:none;border:0;cursor:pointer;padding:.25rem .5rem;min-height:44px;border-radius:6px}
+      .ocs-all:hover{background:#d1fae5}
+      .ocs-item{display:flex;align-items:flex-start;gap:.625rem;padding:.625rem .25rem;min-height:44px;box-sizing:border-box;border-top:1px solid #f1f5f9;cursor:pointer;font-size:.9375rem;line-height:1.4}
+      .ocs-item input{width:18px;height:18px;margin-top:.125rem;accent-color:#10b981;flex:none}
+      .ocs-item small{display:block;font-size:.75rem;color:#64748b}
+      .ocs-empty{padding:1.5rem .25rem;color:#64748b;font-size:.9375rem;line-height:1.5}
+      .ocs-foot{display:flex;gap:.5rem;justify-content:flex-end;padding:.875rem 1.25rem calc(.875rem + env(safe-area-inset-bottom,0px));border-top:1px solid #e2e8f0}
+      .ocs-btn{font:inherit;font-size:.9375rem;font-weight:600;padding:.625rem 1rem;min-height:44px;border-radius:10px;border:0;cursor:pointer}
+      .ocs-cancel{background:#f1f5f9;color:#475569}
+      .ocs-ok{background:#047857;color:#fff}.ocs-ok:hover{background:#065f46}
+      .ocs-ok:disabled{background:#cbd5e1;color:#334155;cursor:default}
+      .ocs-back :focus-visible{outline:2px solid #047857;outline-offset:2px}`;
+    document.head.appendChild(s);
+  }
+
+  function pick({ types, self, title, intro }) {
+    style();
+    return new Promise(resolve => {
+      const src = sources(types, self);
+      const back = document.createElement('div');
+      back.className = 'ocs-back';
+      const what = types.map(t => LABEL[t] || t).join(' of ');
+      back.innerHTML = `<div class="ocs" role="dialog" aria-modal="true" aria-label="${esc(title || 'Overnemen')}">
+        <div class="ocs-head"><div class="ocs-title">${esc(title || 'Overnemen uit een andere tool')}</div>
+          <div class="ocs-sub">${esc(intro || `Kies welke ${what} je wil overnemen.`)}</div></div>
+        <div class="ocs-body">${src.length ? src.map((s, si) => `
+          <div class="ocs-src"><div class="ocs-src-head"><b>${esc(s.tool)}</b><span>${esc(s.list)} · ${s.items.length}</span>
+            <button class="ocs-all" type="button" data-all="${si}">alles</button></div>
+            ${s.items.map((it, ii) => `<label class="ocs-item"><input type="checkbox" data-s="${si}" data-i="${ii}">
+              <span>${esc(it.text)}${it.who || it.when || it.note ? `<small>${esc([it.who, it.when, it.note].filter(Boolean).join(' · '))}</small>` : ''}</span></label>`).join('')}
+          </div>`).join('') : `<p class="ocs-empty">Er zijn nog geen ${esc(what)} om over te nemen. Vul ze eerst in een andere tool in (bijvoorbeeld de Stakeholder Radar, de RACI-matrix of de Gap-analyse), dan verschijnen ze hier.</p>`}
+        </div>
+        <div class="ocs-foot"><button class="ocs-btn ocs-cancel" type="button">Annuleer</button>
+          <button class="ocs-btn ocs-ok" type="button" disabled>Neem over</button></div></div>`;
+      document.body.appendChild(back);
+      requestAnimationFrame(() => back.classList.add('open'));
+      const ok = back.querySelector('.ocs-ok');
+      const boxes = () => [...back.querySelectorAll('input[type=checkbox]')];
+      const sync = () => { const n = boxes().filter(b => b.checked).length; ok.disabled = !n; ok.textContent = n ? `Neem ${n} over` : 'Neem over'; };
+      back.addEventListener('change', sync);
+      back.addEventListener('click', e => {
+        const a = e.target.closest('[data-all]');
+        if (a) { const bs = boxes().filter(b => b.dataset.s === a.dataset.all); const all = bs.every(b => b.checked); bs.forEach(b => b.checked = !all); sync(); }
+        if (e.target === back) close([]);
+      });
+      function close(v) { document.removeEventListener('keydown', onKey, true); back.remove(); resolve(v); }
+      function onKey(e) { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close([]); } }
+      document.addEventListener('keydown', onKey, true);
+      back.querySelector('.ocs-cancel').addEventListener('click', () => close([]));
+      ok.addEventListener('click', () => close(boxes().filter(b => b.checked).map(b => {
+        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, list: s.list };
+      })));
+      const first = back.querySelector('input,.ocs-cancel'); first && first.focus();
+    });
+  }
+
+  // Hoeveel er klaarligt voor deze soorten (om een knop te tonen of een teller te zetten).
+  const count = (types, self) => sources(types, self).reduce((n, s) => n + s.items.length, 0);
+  return { publish, clear, pick, count, sources, esc };
+})();
+
+/* ---------- Download als afbeelding of PDF (gedeeld door de Onder Constructie-tools, v2) ----------
+   Gebruik:
+     ocExport.png(bouwFn, 'bestandsnaam', { landscape:true })
+     ocExport.pdf(bouwFn, 'bestandsnaam', { landscape:true })
+   bouwFn() geeft { node, title, subtitle } terug: een DOM-knoop met inline styles, zonder knoppen of invoervelden.
+   Die komt buiten beeld op een witte pagina met kop (titel, ondertitel, datum) en voet.
+   Zet data-oc-keep op blokken die in een PDF niet over twee pagina's gesplitst mogen worden
+   (een beslissing, een kaartje, een rij); ze schuiven dan door naar de volgende pagina.
+   html2canvas en jsPDF worden pas geladen bij de eerste download, van dezelfde adressen als de
+   andere tools, zodat de app ze offline kan bewaren. */
+const ocExport = (() => {
+  const LIBS = {
+    h2c: '/lib/html2canvas-1.4.1.min.js',
+    pdf: '/lib/jspdf-2.5.1.umd.min.js'
+  };
+  const A4 = { w: 210, h: 297 }, MARGIN = 10;   // mm
+  const loaded = {};
+  function load(url) {
+    if (!loaded[url]) loaded[url] = new Promise((ok, fail) => {
+      const s = document.createElement('script');
+      s.src = url; s.onload = ok; s.onerror = () => { delete loaded[url]; fail(new Error('laden mislukt')); };
+      document.head.appendChild(s);
+    });
+    return loaded[url];
+  }
+  const today = () => new Date().toLocaleDateString('nl-BE', { day: 'numeric', month: 'long', year: 'numeric' });
+  function page(content, { title, subtitle, width }) {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = `position:fixed;left:-20000px;top:0;width:${width}px;background:#fff;padding:36px 40px 28px;
+      font-family:'DM Sans',system-ui,-apple-system,sans-serif;color:#1e293b;-webkit-font-smoothing:antialiased;box-sizing:border-box;`;
+    const head = document.createElement('div');
+    head.style.cssText = 'display:flex;align-items:flex-end;justify-content:space-between;gap:24px;border-bottom:2px solid #10b981;padding-bottom:12px;margin-bottom:20px;';
+    head.innerHTML = `<div><div style="font-size:22px;font-weight:700;letter-spacing:-0.02em;color:#1e293b"></div>
+      <div style="font-size:14px;color:#64748b;margin-top:2px"></div></div>
+      <div style="font-size:12px;color:#94a3b8;white-space:nowrap">${today()}</div>`;
+    head.children[0].children[0].textContent = title || '';
+    head.children[0].children[1].textContent = subtitle || '';
+    const foot = document.createElement('div');
+    foot.style.cssText = 'margin-top:22px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;display:flex;justify-content:space-between;';
+    foot.innerHTML = '<span>Onder Constructie</span><span>onderconstructie.github.io</span>';
+    wrap.append(head, content, foot);
+    document.body.appendChild(wrap);
+    return wrap;
+  }
+  // Schuift blokken met data-oc-keep die over een paginagrens zouden vallen naar de volgende pagina.
+  function keepTogether(wrap, pageH) {
+    const top0 = () => wrap.getBoundingClientRect().top;
+    for (const el of wrap.querySelectorAll('[data-oc-keep]')) {
+      const r = el.getBoundingClientRect(), t = r.top - top0(), b = t + r.height;
+      if (r.height > pageH * 0.85) continue;            // te groot om heel te houden
+      const boundary = Math.ceil(t / pageH) * pageH;     // eerstvolgende grens na de bovenkant
+      if (t % pageH !== 0 && b > boundary && t < boundary) {
+        const gap = document.createElement('div');
+        gap.style.cssText = `height:${boundary - t + 6}px;`;
+        el.parentNode.insertBefore(gap, el);
+      }
+    }
+  }
+  async function canvasOf(build, opts) {
+    await load(LIBS.h2c);
+    const built = build();
+    const node = page(built.node, { title: built.title, subtitle: built.subtitle, width: opts.width });
+    try {
+      if (document.fonts && document.fonts.ready) await document.fonts.ready;
+      if (opts.pageH) keepTogether(node, opts.pageH);
+      return await window.html2canvas(node, { scale: 2, backgroundColor: '#ffffff', logging: false, useCORS: true });
+    } finally { node.remove(); }
+  }
+  function save(blob, name) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }
+  const widthFor = opts => opts.width || (opts.landscape ? 1120 : 800);
+  async function png(build, name, opts = {}) {
+    const c = await canvasOf(build, { width: widthFor(opts) });
+    await new Promise(ok => c.toBlob(b => { save(b, name + '.png'); ok(); }, 'image/png'));
+  }
+  async function pdf(build, name, opts = {}) {
+    const landscape = !!opts.landscape, width = widthFor(opts);
+    const pw = landscape ? A4.h : A4.w, ph = landscape ? A4.w : A4.h, w = pw - 2 * MARGIN;
+    const pageCss = (ph - 2 * MARGIN) / w * width;       // paginahoogte in CSS-pixels van de exportknoop
+    const [c] = await Promise.all([canvasOf(build, { width, pageH: pageCss }), load(LIBS.pdf)]);
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: landscape ? 'landscape' : 'portrait', unit: 'mm', format: 'a4' });
+    const scale = w / c.width, pageH = (ph - 2 * MARGIN) / scale;   // paginahoogte in canvaspixels
+    for (let y = 0, i = 0; y < c.height - 2; y += pageH, i++) {
+      const h = Math.min(pageH, c.height - y);
+      const part = document.createElement('canvas'); part.width = c.width; part.height = h;
+      part.getContext('2d').drawImage(c, 0, y, c.width, h, 0, 0, c.width, h);
+      if (i) doc.addPage();
+      doc.addImage(part.toDataURL('image/jpeg', 0.92), 'JPEG', MARGIN, MARGIN, w, h * scale);
+    }
+    save(doc.output('blob'), name + '.pdf');
+  }
+  return { png, pdf };
+})();
+
+
+/* ---------- Visgraatdiagram ---------- */
+const OC_ID = 'visgraat', OC_TOOL = 'Visgraatdiagram', KEY = 'visgraat.v1';
+const $ = id => document.getElementById(id);
+const esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const uid = () => Math.random().toString(36).slice(2, 10);
+function ocProject(fb) { try { const p = JSON.parse(localStorage.getItem('oc.project')); return p && typeof p.name === 'string' && p.name.trim() ? p.name.trim().slice(0, 80) : fb; } catch { return fb; } }
+const ICON = {
+  del:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>',
+  info:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>',
+  plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  sub:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 5v8a3 3 0 0 0 3 3h9M15 13l3 3-3 3"/></svg>',
+  x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  star:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.8 6.8 19.6l1-5.8L3.5 9.7l5.9-.8z"/></svg>',
+  starOn:'<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.8 6.8 19.6l1-5.8L3.5 9.7l5.9-.8z"/></svg>'
+};
+const DEFAULT_CATS = [
+  ['Mens', 'Mensen: opleiding, ervaring, bezetting, afspraken'],
+  ['Machine', 'Apparatuur, gereedschap en technologie'],
+  ['Methode', 'Processen, procedures en werkwijzen'],
+  ['Materiaal', 'Grondstoffen, onderdelen, formulieren en gegevens'],
+  ['Milieu', 'Omgeving: locatie, werkplek, temperatuur, drukte'],
+  ['Metingen', 'Controle, ijking en hoe gegevens verzameld worden']
+];
+const cat = (name, hint = '') => ({ id:uid(), name, hint });
+const cause = (catId, text = '', parent = null) => ({ id:uid(), cat:catId, text, parent, likely:false, toets:'' });
+function newUnit() { return { id:uid(), probleem:'', cats: DEFAULT_CATS.map(([n, h]) => cat(n, h)), causes:[] }; }
+function fresh() { return { units:[], current:null }; }
+function valid(s) {
+  if (!s || !Array.isArray(s.units)) return fresh();
+  const str = (v, n) => String(v == null ? '' : v).slice(0, n), okId = v => typeof v === 'string' && /^[\w-]+$/.test(v);
+  s.units = s.units.filter(u => u && Array.isArray(u.cats)).map(u => {
+    const cats = u.cats.filter(c => c && okId(c.id)).slice(0, 10).map(c => ({ id:c.id, name:str(c.name, 40), hint:str(c.hint, 120) }));
+    const ids = new Set(cats.map(c => c.id));
+    let causes = (Array.isArray(u.causes) ? u.causes : []).filter(c => c && okId(c.id) && ids.has(c.cat)).map(c => ({ id:c.id, cat:c.cat, text:str(c.text, 160), parent: okId(c.parent) ? c.parent : null, likely:!!c.likely, toets:str(c.toets, 240) }));
+    const cids = new Set(causes.map(c => c.id));
+    causes = causes.map(c => ({ ...c, parent: c.parent && cids.has(c.parent) ? c.parent : null }));
+    return { id: okId(u.id) ? u.id : uid(), voorbeeld:!!u.voorbeeld, probleem:str(u.probleem, 200), cats, causes };
+  });
+  return { units:s.units, current:s.current };
+}
+function load() { try { return valid(JSON.parse(localStorage.getItem(KEY))); } catch { return fresh(); } }
+let state = load(), saves = 0;
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch { toast('Bewaren lukte niet: is de opslag vol?'); }
+  saves++; clearTimeout(save.t); save.t = setTimeout(publish, 300);
+}
+window.addEventListener('storage', e => { if (e.key === KEY) { const c = state.current; state = load(); if (state.units.some(u => u.id === c)) state.current = c; render(); } });
+const snapshot = () => { const c = JSON.stringify(state); const fn = () => { if (saves !== fn.mark) { setTimeout(() => toast('Ongedaan maken kan niet meer: er is intussen iets veranderd'), 60); return; } state = valid(JSON.parse(c)); save(); render(); toast('Teruggezet'); }; return fn; };
+const cur = () => state.units.find(u => u.id === state.current) || state.units[0] || null;
+const title = u => u.probleem.trim() || 'Nieuwe analyse';
+// oorzaken van een categorie, in volgorde: elke hoofdoorzaak gevolgd door zijn suboorzaken
+function ordered(u, catId) {
+  const tops = u.causes.filter(c => c.cat === catId && !c.parent);
+  return tops.flatMap(t => [t, ...u.causes.filter(c => c.parent === t.id)]);
+}
+
+/* ---------- Tekening ---------- */
+const measureCtx = document.createElement('canvas').getContext('2d');
+function textW(t, fs, wt) { measureCtx.font = `${wt} ${fs}px "DM Sans", system-ui, sans-serif`; return measureCtx.measureText(t).width; }
+function clip(t, fs, wt, max) { if (textW(t, fs, wt) <= max) return t; let s = t; while (s.length > 1 && textW(s + '…', fs, wt) > max) s = s.slice(0, -1); return s.trimEnd() + '…'; }
+function wrapW(t, fs, wt, max, lines) {
+  const words = String(t || '').split(/\s+/).filter(Boolean), out = []; let line = '';
+  words.forEach(w => { const tr = line ? line + ' ' + w : w; if (textW(tr, fs, wt) <= max || !line) line = tr; else { out.push(line); line = w; } });
+  if (line) out.push(line);
+  if (out.length > lines) { out.length = lines; out[lines - 1] = clip(out[lines - 1] + '…', fs, wt, max); }
+  return out.map(l => clip(l, fs, wt, max));
+}
+function svgOf(u) {
+  const PAD = 24, LH = 16, GAP = 9, MAXT = 200, D = 56, LBLH = 30, HEADW = 210;
+  const cols = [];
+  for (let i = 0; i < u.cats.length; i += 2) cols.push([u.cats[i], u.cats[i + 1]].filter(Boolean));
+  // elke oorzaak: max. 2 regels tekst, suboorzaken iets kleiner en verder van de graat
+  const items = c => ordered(u, c.id).filter(x => x.text.trim()).map(l => { const sub = !!l.parent, fs = sub ? 12 : 13, wt = l.likely ? 700 : 500, w = MAXT - (sub ? 26 : 12); return { l, sub, fs, wt, lines: wrapW(l.text, fs, wt, w, 2) }; });
+  const hOf = its => its.reduce((s, it) => s + it.lines.length * LH + GAP, 0);
+  const sideH = its => LBLH + 16 + Math.max(hOf(its), LH + GAP) + 10;
+  const hTop = Math.max(LBLH + 40, ...cols.map(cc => sideH(items(cc[0])))), hBot = Math.max(LBLH + 40, ...cols.map(cc => cc[1] ? sideH(items(cc[1])) : 0));
+  const spineY = PAD + hTop;
+  let x = PAD; const parts = [], ribs = [];
+  cols.forEach(cc => {
+    const tw = Math.min(MAXT, Math.max(80, ...cc.flatMap(c => [textW(c.name, 13, 700) / 2 + 10, ...items(c).map(it => Math.max(...it.lines.map(t => textW(t, it.fs, it.wt))) + (it.sub ? 26 : 12))])));
+    const L = x + tw + 12, J = L + D;
+    cc.forEach((c, k) => {
+      const top = k === 0, its = items(c);
+      const yLbl = top ? PAD : spineY + hBot - LBLH, yStart = top ? PAD + LBLH : spineY + hBot - LBLH;
+      const lw = Math.max(64, Math.min(tw + 40, textW(c.name, 13, 700) + 24));
+      parts.push(`<line x1="${L}" y1="${yStart}" x2="${J}" y2="${spineY}" stroke="#94a3b8" stroke-width="2.5" stroke-linecap="round"/>`);
+      parts.push(`<rect x="${L - lw / 2}" y="${yLbl}" width="${lw}" height="${LBLH}" rx="9" fill="#047857"/><text x="${L}" y="${yLbl + 20}" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">${esc(clip(c.name || 'Soort', 13, 700, lw - 16))}</text>`);
+      // bovenaan: van label naar graat; onderaan: van graat naar label, zodat de volgorde leesbaar blijft
+      let acc = 14;
+      its.forEach(it => {
+        const h = it.lines.length * LH + GAP; acc += h;
+        const dy = acc - GAP + 3, py = top ? yStart + dy : spineY + 6 + (acc - GAP + 3);
+        const px = L + (J - L) * (py - yStart) / (spineY - yStart);
+        const bx = y => L + (J - L) * (y - yStart) / (spineY - yStart), topY = py - 5 - (it.lines.length - 1) * LH - 11;
+        const end = Math.min(px, bx(topY)) - (it.sub ? 22 : 8), wMax = Math.max(...it.lines.map(t => textW(t, it.fs, it.wt)));
+        const col = it.l.likely ? '#047857' : it.sub ? '#475569' : '#1e293b';
+        ribs.push(`<line x1="${end - wMax - 2}" y1="${py}" x2="${px}" y2="${py}" stroke="${it.l.likely ? '#047857' : it.sub ? '#cbd5e1' : '#94a3b8'}" stroke-width="${it.l.likely ? 2 : 1.2}"/>`);
+        if (it.l.likely) ribs.push(`<circle cx="${px}" cy="${py}" r="4.5" fill="#047857"/>`);
+        const cut = it.lines.join(' ') !== it.l.text.trim().replace(/\s+/g, ' ');
+        ribs.push(`<text text-anchor="end" font-size="${it.fs}" font-weight="${it.wt}" fill="${col}">${it.lines.map((t, i) => `<tspan x="${end}" y="${py - 5 - (it.lines.length - 1 - i) * LH}">${esc(t)}</tspan>`).join('')}${cut ? `<title>${esc(it.l.text)}</title>` : ''}</text>`);
+      });
+    });
+    x = J + 18;
+  });
+  const headX = x + 10, lines = wrapW(u.probleem.trim() || 'Het probleem', 15, 700, HEADW - 28, 4);
+  const headH = Math.max(56, lines.length * 20 + 24), W = headX + HEADW + PAD, H = spineY + hBot + PAD;
+  const out = [`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${esc('Visgraatdiagram: ' + title(u))}" font-family="'DM Sans', system-ui, sans-serif">`,
+    `<rect width="${W}" height="${H}" fill="#ffffff"/>`,
+    `<line x1="${PAD - 6}" y1="${spineY}" x2="${headX}" y2="${spineY}" stroke="#047857" stroke-width="4" stroke-linecap="round"/>`,
+    `<path d="M${headX - 14} ${spineY - 9} L${headX} ${spineY} L${headX - 14} ${spineY + 9}" fill="none" stroke="#047857" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>`,
+    ...parts, ...ribs,
+    `<rect x="${headX}" y="${spineY - headH / 2}" width="${HEADW}" height="${headH}" rx="14" fill="#064e3b"/>`,
+    `<text text-anchor="middle" font-size="15" font-weight="700" fill="#ffffff">${lines.map((l, i) => `<tspan x="${headX + HEADW / 2}" y="${spineY - (lines.length - 1) * 10 + 5 + i * 20}">${esc(l)}</tspan>`).join('')}</text>`,
+    '</svg>'];
+  return out.join('');
+}
+
+/* ---------- Weergave ---------- */
+let fitShown = true, fitPref = null;
+function sizeSvg() {
+  const c = $('canvas'), s = c && c.querySelector('svg'); if (!s) return;
+  const w = +s.getAttribute('width'), fit = fitShown = fitPref != null ? fitPref : (c.clientWidth - 16) / w >= 0.72;
+  s.style.width = fit ? '100%' : w + 'px'; s.style.maxWidth = fit ? w + 'px' : 'none'; s.style.height = 'auto';
+  const b = $('fit-btn'); if (b) b.textContent = fit ? 'Ware grootte' : 'Hele diagram';
+}
+function render() {
+  const u = cur();
+  if (u && state.current !== u.id) state.current = u.id;
+  $('tabs').innerHTML = state.units.map(x => `<button type="button" class="tab" data-unit="${x.id}" aria-pressed="${x.id === (u && u.id)}"><span class="nm">${esc(title(x))}</span>${x.voorbeeld ? '<span class="vb-tag">voorbeeld</span>' : ''}</button>`).join('')
+    + `<button type="button" class="tab add" data-act="new" aria-label="Nieuwe analyse">+ Analyse</button>`;
+  $('oc-restart').parentElement.hidden = !state.units.some(x => !x.voorbeeld);
+  if (!u) {
+    $('app').innerHTML = `<section class="card start-card">
+      <p class="start-lead">Zet alle mogelijke oorzaken van één probleem op een rij, ordend per soort, en kies welke het meest waarschijnlijk zijn.</p>
+      <div class="btns"><button type="button" class="btn btn-primary" data-act="new">Begin met een probleem</button><button type="button" class="btn btn-ghost" data-act="example">Voorbeeld bekijken</button></div></section>`;
+    return;
+  }
+  const a = document.activeElement, keep = a && a.dataset && (a.dataset.f || a.dataset.cid || a.dataset.catname || a.dataset.add) ? { sel: a.dataset.cid ? `[data-cid="${a.dataset.cid}"]${a.dataset.k ? `[data-k="${a.dataset.k}"]` : ':not([data-k])'}` : a.dataset.catname ? `[data-catname="${a.dataset.catname}"]` : a.dataset.add ? `[data-add="${a.dataset.add}"]` : `[data-f="${a.dataset.f}"]`, ss:a.selectionStart } : null;
+  const n = u.causes.filter(c => c.text.trim()).length, likely = u.causes.filter(c => c.likely && c.text.trim());
+  $('app').innerHTML = `
+  ${u.voorbeeld ? `<div class="vb-bar"><div class="vb-text">${ICON.info}<span>Dit is een voorbeeld om de tool te verkennen. Het telt niet mee in andere tools.</span></div>
+    <div class="vb-btns"><button type="button" class="vb-btn vb-wis" data-act="vb-wis">Wis voorbeeld</button><button type="button" class="vb-btn vb-eigen" data-act="vb-eigen">Maak er mijn eigen van</button></div></div>` : ''}
+  <section class="card">
+    <div class="card-head">
+      <h2 class="card-title"><span class="stepno">1</span>Wat is het probleem?</h2>
+      <button class="icon-btn del-unit" type="button" data-act="del-unit" aria-label="Verwijder ${esc(title(u))}" title="Verwijder deze analyse">${ICON.del}</button>
+      <div class="menu-wrap">
+        <button class="icon-btn" id="menu-btn" type="button" aria-label="Meer acties" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg></button>
+        <div class="menu" id="menu" role="menu">
+          <button data-act="pdf" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>Download als PDF</button>
+          <button data-act="png" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>Download als afbeelding</button>
+          <button data-act="svg" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Download als SVG (bewerkbaar)</button>
+          <button data-act="copy" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Kopieer als lijst</button>
+          <div class="sep"></div>
+          <button data-act="wipe" class="danger" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>Alles wissen</button>
+        </div>
+      </div>
+    </div>
+    <div class="body">
+      <input class="big" data-f="probleem" value="${esc(u.probleem)}" maxlength="200" aria-label="Het probleem" placeholder="Bv. 30% van de premieaanvragen is onvolledig bij indiening">
+      <p class="fhelp">Concreet: wat gaat er mis, waar, sinds wanneer, en hoe vaak of hoeveel?</p>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="draw-head"><h2 class="card-title"><span class="stepno">2</span>Het diagram</h2><span class="stat">${n} ${n === 1 ? 'oorzaak' : 'oorzaken'}${likely.length ? ` · ${likely.length} waarschijnlijk` : ''}</span>
+      <button type="button" class="zoom" id="fit-btn" data-act="fit">Hele diagram</button></div>
+    <div class="canvas" id="canvas">${svgOf(u)}</div>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><h2 class="card-title"><span class="stepno">3</span>Welke oorzaken zie je?</h2></div>
+    <div class="body">
+      <p class="lead">Vul per soort aan. Vraag telkens "en waarom gebeurt dat?": dat wordt een suboorzaak. Enter geeft een nieuwe regel, een lijst plakken mag ook.</p>
+      <div class="cats">${u.cats.map(c => catPanel(u, c)).join('')}</div>
+      <button type="button" class="add-cat" data-act="add-cat">${ICON.plus}Soort oorzaak toevoegen</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><h2 class="card-title"><span class="stepno">4</span>Wat is de echte oorzaak?</h2><span class="count">${likely.length} gekozen</span></div>
+    <div class="body">
+      <p class="lead">Duid de oorzaken aan die het probleem het meest waarschijnlijk verklaren: als je die wegneemt, is het probleem dan grotendeels weg? Kies er liefst niet meer dan drie.</p>
+      ${!n ? '<p class="empty">Vul eerst oorzaken in bij stap 3.</p>' : `<div class="pick">${u.cats.map(c => { const ls = ordered(u, c.id).filter(x => x.text.trim()); return ls.length ? `<div class="pick-cat"><b>${esc(c.name)}</b>${ls.map(l => `<button type="button" class="pick-c${l.likely ? ' on' : ''}${l.parent ? ' sub' : ''}" data-act="likely" data-id="${l.id}" aria-pressed="${l.likely}">${l.likely ? ICON.starOn : ICON.star}<span>${esc(l.text)}</span></button>`).join('')}</div>` : ''; }).join('')}</div>`}
+      ${likely.length > 3 ? '<p class="warn">Je koos er meer dan drie. Kan je er een paar laten vallen? Focus maakt het nagaan haalbaar.</p>' : ''}
+      ${likely.length ? `<h3 class="sub-h">Hoe ga je na of het klopt?</h3><ul class="toets">${likely.map(l => `<li><b>${esc(l.text)}</b><input data-cid="${l.id}" data-k="toets" value="${esc(l.toets)}" maxlength="240" placeholder="Bv. 20 dossiers nakijken, met het loket praten, cijfers opvragen" aria-label="Hoe ga je na of ${esc(l.text)} klopt?"></li>`).join('')}</ul>` : ''}
+    </div>
+  </section>`;
+  sizeSvg();
+  if (keep) { const el = document.querySelector(keep.sel); if (el) { el.focus({ preventScroll:true }); try { el.setSelectionRange(keep.ss, keep.ss); } catch {} } }
+}
+function catPanel(u, c) {
+  const ls = ordered(u, c.id);
+  return `<div class="cat" data-cat="${c.id}">
+    <div class="cat-head"><input class="cat-name" data-catname="${c.id}" value="${esc(c.name)}" maxlength="40" aria-label="Naam van deze soort">
+      <button type="button" class="mini" data-act="del-cat" data-id="${c.id}" aria-label="Verwijder de soort ${esc(c.name)}" title="Verwijder deze soort">${ICON.x}</button></div>
+    ${c.hint ? `<p class="cat-hint">${esc(c.hint)}</p>` : ''}
+    <ul class="causes">${ls.map(l => `<li class="cz${l.parent ? ' sub' : ''}${l.likely ? ' likely' : ''}">
+      <input data-cid="${l.id}" value="${esc(l.text)}" maxlength="160" aria-label="${l.parent ? 'Suboorzaak' : 'Oorzaak'}" placeholder="${l.parent ? 'Waarom gebeurt dat?' : 'Een oorzaak…'}">
+      ${l.parent ? '' : `<button type="button" class="mini" data-act="add-sub" data-id="${l.id}" aria-label="Suboorzaak toevoegen" title="Waarom gebeurt dat? Voeg een suboorzaak toe">${ICON.sub}</button>`}
+      <button type="button" class="mini" data-act="del" data-id="${l.id}" aria-label="Verwijder ${esc(l.text || 'deze oorzaak')}">${ICON.x}</button></li>`).join('')}</ul>
+    <input class="cz-add" data-add="${c.id}" maxlength="160" placeholder="+ Oorzaak toevoegen" aria-label="Oorzaak toevoegen bij ${esc(c.name)}">
+  </div>`;
+}
+function renderDiagram() { const c = $('canvas'), u = cur(); if (!c || !u) return; c.innerHTML = svgOf(u); sizeSvg(); }
+const focusSel = sel => { const el = document.querySelector(sel); if (el) el.focus(); };
+
+/* ---------- Bewerken ---------- */
+document.addEventListener('input', e => {
+  const el = e.target, u = cur(); if (!u) return;
+  if (el.dataset.f === 'probleem') { u.probleem = el.value; save(); renderDiagram(); const tb = document.querySelector(`[data-unit="${u.id}"] .nm`); if (tb) tb.textContent = title(u); return; }
+  if (el.dataset.catname) { const c = u.cats.find(x => x.id === el.dataset.catname); if (c) { c.name = el.value; save(); renderDiagram(); } return; }
+  if (el.dataset.cid) { const c = u.causes.find(x => x.id === el.dataset.cid); if (!c) return; if (el.dataset.k === 'toets') c.toets = el.value; else c.text = el.value; save(); if (!el.dataset.k) renderDiagram(); }
+});
+function addLines(u, catId, lines, parent) {
+  const made = lines.map(t => cause(catId, t.slice(0, 160), parent));
+  // na de laatste suboorzaak van de ouder, of achteraan
+  u.causes.push(...made); return made;
+}
+document.addEventListener('keydown', e => {
+  const el = e.target, u = cur(); if (!u || e.isComposing) return;
+  if (el.dataset.add && e.key === 'Enter') {
+    e.preventDefault(); const v = el.value.trim(); if (!v) return;
+    addLines(u, el.dataset.add, [v], null); save(); render(); focusSel(`[data-add="${el.dataset.add}"]`); return;
+  }
+  if (el.dataset.cid && !el.dataset.k) {
+    const c = u.causes.find(x => x.id === el.dataset.cid); if (!c) return;
+    if (e.key === 'Enter') { e.preventDefault(); const x = cause(c.cat, '', c.parent); const i = u.causes.indexOf(c); u.causes.splice(i + 1, 0, x); save(); render(); focusSel(`[data-cid="${x.id}"]:not([data-k])`); }
+    else if (e.key === 'Backspace' && !el.value && !u.causes.some(x => x.parent === c.id)) {
+      e.preventDefault(); const list = ordered(u, c.cat), k = list.indexOf(c), prev = list[k - 1];
+      u.causes.splice(u.causes.indexOf(c), 1); save(); render(); if (prev) focusSel(`[data-cid="${prev.id}"]:not([data-k])`); else focusSel(`[data-add="${c.cat}"]`);
+    }
+  }
+});
+document.addEventListener('paste', e => {
+  const el = e.target, u = cur(); if (!u || !(el.dataset.add || (el.dataset.cid && !el.dataset.k))) return;
+  const txt = (e.clipboardData || window.clipboardData).getData('text'); if (!txt || !txt.includes('\n')) return;
+  e.preventDefault();
+  const lines = txt.split(/\r?\n/).map(l => l.trim().replace(/^([-*•·–]|\d+[.)])\s+/, '')).filter(Boolean);
+  if (el.dataset.add) addLines(u, el.dataset.add, lines, null);
+  else { const c = u.causes.find(x => x.id === el.dataset.cid); if (!c.text.trim()) { c.text = lines.shift() || ''; } const made = lines.map(t => cause(c.cat, t.slice(0, 160), c.parent)); u.causes.splice(u.causes.indexOf(c) + 1, 0, ...made); }
+  save(); render(); toast(`${lines.length} oorzaken toegevoegd`);
+});
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-act],[data-unit]'); if (!t || t.closest('#menu')) return;
+  if (t.dataset.unit) { state.current = t.dataset.unit; save(); render(); return; }
+  const u = cur(), id = t.dataset.id;
+  switch (t.dataset.act) {
+    case 'new': { const x = newUnit(); state.units.push(x); state.current = x.id; save(); render(); focusSel('[data-f="probleem"]'); return; }
+    case 'example': example(); return;
+    case 'fit': fitPref = !fitShown; sizeSvg(); return;
+    case 'add-sub': { const p = u.causes.find(x => x.id === id), subs = u.causes.filter(x => x.parent === id), last = subs[subs.length - 1] || p, x = cause(p.cat, '', id); u.causes.splice(u.causes.indexOf(last) + 1, 0, x); save(); render(); focusSel(`[data-cid="${x.id}"]:not([data-k])`); return; }
+    case 'del': { const undo = snapshot(), c = u.causes.find(x => x.id === id), gone = u.causes.filter(x => x.id === id || x.parent === id).length; u.causes = u.causes.filter(x => x.id !== id && x.parent !== id); save(); render(); toast(gone > 1 ? `Oorzaak en ${gone - 1} ${gone === 2 ? 'suboorzaak' : 'suboorzaken'} verwijderd` : `${(c && c.text) || 'Oorzaak'} verwijderd`, undo); return; }
+    case 'likely': { const c = u.causes.find(x => x.id === id); c.likely = !c.likely; save(); render(); const b = document.querySelector(`[data-act="likely"][data-id="${id}"]`); if (b) b.focus({ preventScroll:true }); return; }
+    case 'add-cat': { if (u.cats.length >= 10) { toast('Tien soorten is het maximum'); return; } const c = cat('Nieuwe soort'); u.cats.push(c); save(); render(); const i = document.querySelector(`[data-catname="${c.id}"]`); if (i) { i.focus(); i.select(); } return; }
+    case 'del-cat': { const undo = snapshot(), c = u.cats.find(x => x.id === id), k = u.causes.filter(x => x.cat === id).length; u.cats = u.cats.filter(x => x.id !== id); u.causes = u.causes.filter(x => x.cat !== id); save(); render(); toast(`${c.name || 'Soort'} verwijderd${k ? ` met ${k} ${k === 1 ? 'oorzaak' : 'oorzaken'}` : ''}`, undo); return; }
+    case 'del-unit': { const undo = snapshot(), k = state.units.indexOf(u); state.units.splice(k, 1); state.current = (state.units[k - 1] || state.units[0] || {}).id || null; save(); render(); toast(`${title(u)} verwijderd`, undo); return; }
+    case 'vb-wis': { const undo = snapshot(); state.units = state.units.filter(x => !x.voorbeeld); state.current = (state.units[0] || {}).id || null; save(); render(); toast('Voorbeeld gewist', undo); return; }
+    case 'vb-eigen': u.voorbeeld = false; save(); render(); toast('Het voorbeeld is nu van jou'); return;
+  }
+});
+
+/* Klaarleggen: de gekozen oorzaken (voorbeelden niet) */
+function publish() {
+  const lists = state.units.filter(u => !u.voorbeeld && u.causes.some(c => c.likely && c.text.trim())).map(u => ({
+    name: title(u).slice(0, 80),
+    items: u.causes.filter(c => c.likely && c.text.trim()).map(c => ({ type:'taak', text:c.text.trim(), note: c.toets.trim() ? 'nagaan: ' + c.toets.trim() : 'waarschijnlijke oorzaak' }))
+  }));
+  ocShare.publish(OC_ID, OC_TOOL, lists);
+}
+
+/* Voorbeeld */
+function example() {
+  const ex = state.units.find(x => x.voorbeeld);
+  if (ex) { state.current = ex.id; save(); render(); return; }
+  const u = newUnit(); u.voorbeeld = true; u.probleem = '30% van de premieaanvragen is onvolledig bij indiening';
+  const [mens, machine, methode, materiaal, milieu, metingen] = u.cats.map(c => c.id);
+  const add = (c, t, likely, subs = []) => { const x = cause(c, t); x.likely = !!likely; u.causes.push(x); subs.forEach(s => u.causes.push(cause(c, s, x.id))); return x; };
+  add(mens, 'Burgers weten niet welke bewijsstukken nodig zijn', true, ['Uitleg staat pas onderaan de pagina']);
+  add(mens, 'Nieuwe loketmedewerkers kennen de regels nog niet');
+  add(machine, 'Uploaden van bijlagen loopt vast op de gsm', true, ['Bestanden boven 5 MB worden geweigerd']);
+  add(methode, 'Volledigheid wordt pas na indienen gecontroleerd', true);
+  add(methode, 'Geen vaste checklist voor het loket');
+  add(materiaal, 'Aanvraagformulier vraagt dubbele gegevens');
+  add(milieu, 'Piek aan aanvragen vlak voor de deadline');
+  add(metingen, 'Er wordt niet bijgehouden welk stuk het vaakst ontbreekt');
+  u.causes.find(c => c.text.startsWith('Burgers weten')).toets = '20 onvolledige dossiers nakijken: welk stuk ontbreekt?';
+  state.units.push(u); state.current = u.id; save(); render();
+}
+
+/* Menu */
+document.addEventListener('click', e => {
+  const btn = e.target.closest('#menu-btn'), menu = $('menu');
+  if (btn) { e.stopPropagation(); const o = menu.classList.toggle('open'); btn.setAttribute('aria-expanded', o); return; }
+  if (menu && !e.target.closest('.menu-wrap')) { menu.classList.remove('open'); const b = $('menu-btn'); b && b.setAttribute('aria-expanded', 'false'); }
+}, true);
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('menu')) $('menu').classList.remove('open'); });
+
+let toastTimer, undoFn = null;
+function toast(msg, undo) {
+  undoFn = undo || null; if (undo) undo.mark = saves;
+  $('toast-text').textContent = msg; $('toast-btn').hidden = !undo;
+  $('toast').classList.add('show'); clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { $('toast').classList.remove('show'); undoFn = null; }, undo ? 6000 : 2600);
+}
+$('toast-btn').addEventListener('click', () => { const f = undoFn; undoFn = null; $('toast').classList.remove('show'); f && f(); });
+
+function ocConfirm(title, text, okText) {
+  if (!document.getElementById('ocw-style')) {
+    const s = document.createElement('style'); s.id = 'ocw-style';
+    s.textContent = `.ocw-back{position:fixed;inset:0;z-index:10001;display:flex;align-items:center;justify-content:center;padding:1rem;background:rgba(15,23,42,.45);backdrop-filter:blur(3px);font-family:'DM Sans',system-ui,sans-serif}
+      .ocw{width:100%;max-width:400px;background:#fff;border-radius:16px;padding:1.375rem 1.375rem 1.125rem;box-shadow:0 20px 50px rgba(15,23,42,.25);color:#1e293b}
+      .ocw b{display:block;font-size:1.0625rem;letter-spacing:-.01em;margin-bottom:.375rem}
+      .ocw p{font-size:.9375rem;line-height:1.5;color:#475569}
+      .ocw-row{display:flex;justify-content:flex-end;gap:.5rem;margin-top:1.25rem}
+      .ocw-row button{font:inherit;font-size:.9375rem;font-weight:600;padding:.625rem 1rem;min-height:44px;border-radius:10px;border:0;cursor:pointer}
+      .ocw-no{background:#f1f5f9;color:#475569} .ocw-yes{background:#dc2626;color:#fff} .ocw-yes:hover{background:#b91c1c}`;
+    document.head.appendChild(s);
+  }
+  return new Promise(resolve => {
+    const back = document.createElement('div'); back.className = 'ocw-back';
+    back.innerHTML = '<div class="ocw" role="alertdialog" aria-modal="true"><b></b><p></p><div class="ocw-row"><button class="ocw-no" type="button">Annuleer</button><button class="ocw-yes" type="button"></button></div></div>';
+    back.querySelector('b').textContent = title; back.querySelector('p').textContent = text; back.querySelector('.ocw-yes').textContent = okText;
+    document.body.appendChild(back);
+    const done = v => { document.removeEventListener('keydown', key, true); back.remove(); resolve(v); };
+    const key = e => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); done(false); } };
+    document.addEventListener('keydown', key, true);
+    back.querySelector('.ocw-no').onclick = () => done(false);
+    back.querySelector('.ocw-yes').onclick = () => done(true);
+    back.addEventListener('click', e => { if (e.target === back) done(false); });
+    back.querySelector('.ocw-no').focus();
+  });
+}
+
+
+/* Exports */
+function asList(u) {
+  const L = [title(u), ''];
+  u.cats.forEach(c => { const ls = ordered(u, c.id).filter(x => x.text.trim()); if (!ls.length) return; L.push(c.name); ls.forEach(l => L.push(`${l.parent ? '    - ' : '  - '}${l.text}${l.likely ? ' (waarschijnlijk)' : ''}`)); });
+  const lk = u.causes.filter(c => c.likely && c.text.trim());
+  if (lk.length) { L.push('', 'Waarschijnlijke oorzaken'); lk.forEach(c => L.push(`- ${c.text}${c.toets ? ': nagaan door ' + c.toets : ''}`)); }
+  return L.join('\n');
+}
+function buildExport() {
+  const u = cur(), node = document.createElement('div');
+  const lk = u.causes.filter(c => c.likely && c.text.trim());
+  node.innerHTML = `<div style="display:flex;justify-content:center">${svgOf(u)}</div>${lk.length ? `<div style="font-family:'DM Sans',system-ui,sans-serif;margin-top:22px"><div style="font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b;margin-bottom:8px">Waarschijnlijke oorzaken</div>${lk.map(c => `<div style="padding:7px 0;border-bottom:1px solid #f1f5f9;font-size:14px;color:#1e293b"><b>${esc(c.text)}</b>${c.toets ? `<span style="color:#475569"> · nagaan: ${esc(c.toets)}</span>` : ''}</div>`).join('')}</div>` : ''}`;
+  const s = node.querySelector('svg'); s.style.maxWidth = '100%'; s.style.height = 'auto';
+  return { node, title:'Visgraatdiagram', subtitle: title(u) };
+}
+function saveBlob(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
+document.addEventListener('click', async e => {
+  const b = e.target.closest('#menu [data-act]'); if (!b) return;
+  $('menu').classList.remove('open');
+  const u = cur(), act = b.dataset.act, base = ('visgraat-' + title(u)).normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
+  if (act === 'png' || act === 'pdf') {
+    const w = +((svgOf(u).match(/width="(\d+)"/) || [])[1] || 1000);
+    toast('Bezig met downloaden…');
+    try { const o = { width: Math.min(2400, Math.max(900, w + 80)), landscape:true }; await (act === 'png' ? ocExport.png(buildExport, base, o) : ocExport.pdf(buildExport, base, o)); toast(act === 'png' ? 'Afbeelding gedownload' : 'PDF gedownload'); }
+    catch { toast('Downloaden lukte niet.'); }
+  } else if (act === 'svg') { saveBlob(new Blob(['<?xml version="1.0" encoding="UTF-8"?>\n' + svgOf(u)], { type:'image/svg+xml' }), base + '.svg'); toast('SVG gedownload'); }
+  else if (act === 'copy') { try { await navigator.clipboard.writeText(asList(u)); toast('Gekopieerd als lijst'); } catch { toast('Kopiëren lukte niet'); } }
+  else if (act === 'wipe') {
+    if (!await ocConfirm('Alles wissen in Visgraatdiagram?', 'Alle analyses verdwijnen. Je kan dit nog ongedaan maken tot je iets anders doet.', 'Alles wissen')) return;
+    const undo = snapshot();
+    try { localStorage.removeItem(KEY); } catch {}
+    state = fresh(); ocShare.clear(OC_ID); render(); toast('Alles gewist', undo);
+  }
+});
+$('oc-restart').addEventListener('click', () => { const b = document.querySelector('#menu [data-act="wipe"]'); if (b) b.click(); });
+window.addEventListener('resize', () => { clearTimeout(sizeSvg.t); sizeSvg.t = setTimeout(sizeSvg, 120); });
+
+render();
+setTimeout(publish, 0);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { const a = document.activeElement; if (!a || a === document.body) render(); else renderDiagram(); });
+
+</script>
+</body>
+</html>

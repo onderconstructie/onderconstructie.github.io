@@ -35,7 +35,7 @@ PADEN = [
     '/project-radar/', '/kanban/', '/stakeholders/', '/risico/', '/mixer/', '/paradox/',
     '/fortuna/', '/check-in/', '/project-realisme/', '/vinkje/',
     '/beslissingen/', '/raci/', '/prioriteit/', '/retro/', '/vergaderkost/',
-    '/gap/', '/weerstand/', '/impact/', '/klimaat/', '/veranderprofiel/', '/sponsor/', '/communicatie/', '/stroom/', '/mindmap/', '/gedrag/',
+    '/gap/', '/weerstand/', '/impact/', '/klimaat/', '/veranderprofiel/', '/sponsor/', '/communicatie/', '/stroom/', '/mindmap/', '/gedrag/', '/visgraat/',
     '/qr/', '/focus/', '/zakmes/looplicht/', '/zakmes/memomities/',
     '/hier/', '/adem/', '/hart/',
 ]
