@@ -236,7 +236,7 @@ body.filtering #groups, body.filtering #list-tools { display:none; }
 
 /* Stappenplannen: tools die samen een aanpak vormen (oc:traject) */
 .paths { display:grid; grid-template-columns:repeat(auto-fit, minmax(290px, 1fr)); gap:0.75rem; margin-bottom:1.25rem; align-items:start; }
-body.filtering .paths-wrap { display:none; }
+
 .path { background:var(--wit); border:1px solid var(--slate-200); border-radius:16px; overflow:hidden; }
 .path.open { border-color:#cfe9dd; }
 .path-head { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:0.75rem; align-items:center; width:100%; text-align:left; padding:0.875rem 1rem; }
@@ -414,7 +414,82 @@ body.filtering .paths-wrap { display:none; }
 .hit-more { font-size:0.75rem; color:var(--slate-500); }
 .hit .chev { align-self:center; }
 
-body.searching #filter, body.searching #recent-section, body.searching #backup-nudge { display:none !important; }
+/* ---------- Startscherm v19: eerst wat je zelf doet, dan alles ---------- */
+/* Zoeken: klein in de kop. Op een telefoon een vergrootglas dat openklapt. */
+.header-inner { position:relative; }
+.brand { flex:1; min-width:0; }
+.hsearch { display:flex; align-items:center; gap:0.25rem; flex-shrink:0; }
+.hs-open, .hs-close { width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; color:var(--slate-600); }
+.hs-open:hover, .hs-close:hover { background:var(--slate-100); color:var(--slate-800); }
+.hs-open svg, .hs-close svg { width:20px; height:20px; }
+.hs-field { position:relative; display:none; }
+.hs-field svg { position:absolute; left:0.75rem; top:50%; transform:translateY(-50%); width:16px; height:16px; color:var(--slate-500); pointer-events:none; }
+.hs-field input { width:100%; min-height:44px; padding:0.5rem 0.75rem 0.5rem 2.25rem; border:1.5px solid var(--slate-200); border-radius:12px; background:var(--slate-50); font:inherit; font-size:16px; color:var(--slate-800); outline:none; }
+.hs-field input:focus { border-color:var(--accent); background:var(--wit); box-shadow:0 0 0 3px #d1fae5; }
+.hs-field input::placeholder { color:var(--slate-500); }
+.hs-field input::-webkit-search-cancel-button { display:none; }
+.hs-close { display:none; }
+.hsearch.open { position:absolute; inset:0; background:var(--wit); z-index:2; }
+.hsearch.open .hs-open { display:none; }
+.hsearch.open .hs-field { display:block; flex:1; }
+.hsearch.open .hs-close { display:flex; }
+@media (min-width:700px) {
+  .hs-open { display:none; }
+  .hs-field { display:block; width:15rem; }
+  .hs-field input { font-size:0.875rem; }
+  .hsearch.open { position:static; background:none; }
+  .hsearch.open .hs-field { width:17rem; flex:none; }
+  .hsearch .hs-close { display:none; }
+  .hsearch.open .hs-close { display:flex; }
+}
+.header { padding-bottom:1.25rem; }
+
+/* Verder werken */
+.cont { display:grid; grid-template-columns:repeat(auto-fill, minmax(min(100%, 210px), 1fr)); gap:0.625rem; }
+@media (max-width:699px) { .cont { grid-template-columns:1fr 1fr; } .ccard:nth-child(n+5) { display:none; } }
+.ccard { position:relative; display:flex; flex-direction:column; align-items:flex-start; gap:0.5rem; text-align:left; min-width:0;
+  padding:0.875rem; background:var(--wit); border:1px solid var(--slate-200); border-radius:16px; transition:border-color .15s, box-shadow .15s; }
+.ccard:hover { border-color:#a7f3d0; box-shadow:0 4px 14px rgba(16,185,129,0.10); }
+.ccard:active { transform:scale(0.99); }
+.ccard .icon { width:40px; height:40px; border-radius:10px; }
+.ccard .icon img { width:30px; height:30px; }
+.cc-body { display:flex; flex-direction:column; min-width:0; width:100%; }
+.cc-title { font-size:0.9375rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.01em; line-height:1.3; }
+.cc-sub { font-size:0.8125rem; color:var(--slate-600); line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.cc-when { font-size:0.75rem; color:var(--slate-500); margin-top:0.25rem; }
+.ccard .live { position:absolute; top:0.75rem; right:0.75rem; }
+@media (min-width:700px) {
+  .cont { grid-template-columns:1fr 1fr; }
+  .ccard { flex-direction:row; align-items:center; gap:0.875rem; padding:0.75rem 0.875rem; }
+  .ccard .icon { flex-shrink:0; }
+  .cc-sub { -webkit-line-clamp:1; }
+  .cc-when { margin-top:0.125rem; }
+}
+.ccard.is-live .live { display:inline-block; }
+
+/* Alle tools: kop met open/dicht, daaronder een smalle filterbalk */
+.alltools { margin-top:0.25rem; }
+.all-head { display:flex; align-items:center; gap:0.5rem; padding:0 0.25rem; margin-bottom:0.375rem; }
+.all-head .section-label { flex:1; }
+.all-head .list-tools { padding:0; }
+.filter { margin-bottom:0.875rem; }
+.pdca { display:flex; align-items:center; gap:0.25rem; padding:0; margin:0; border:0; border-radius:0; background:none; box-shadow:none; }
+.phase { flex:1; display:flex; align-items:center; justify-content:center; gap:0.375rem; min-height:44px; min-width:0; padding:0 0.5rem;
+  border:1px solid var(--slate-200); border-radius:12px !important; background:var(--wit); }
+.phase .ph-name { font-size:0.875rem; font-weight:600; color:var(--slate-700); }
+.phase .ph-n { position:static; font-size:0.75rem; font-weight:600; color:var(--slate-500); background:none; padding:0; min-width:0; height:auto; }
+.phase[aria-pressed="true"] .ph-n { background:none; color:var(--slate-300); }
+.ph-arrow { color:var(--slate-300); display:flex; flex-shrink:0; }
+.ph-arrow svg { width:12px; height:12px; }
+.filter-chips { margin-top:0.5rem; }
+.pdca-caption { display:none !important; }
+.results { margin-bottom:1rem; }
+
+/* Tijdens zoeken: alleen de resultaten. Tijdens filteren: geen groepen. */
+body.searching #continue, body.searching .paths-wrap, body.searching #filter, body.searching #all-head,
+body.searching #groups, body.searching #backup-nudge { display:none !important; }
+body.filtering #groups { display:none; }
+body.filtering .list-tools { visibility:hidden; }
 </style>
 </head>
 <body>
@@ -433,9 +508,15 @@ body.searching #filter, body.searching #recent-section, body.searching #backup-n
         <g fill="#cbd5e1"><circle cx="20" cy="28" r="3"/><circle cx="60" cy="24" r="3"/><circle cx="20" cy="48" r="3"/><circle cx="64" cy="52" r="3"/><circle cx="44" cy="20" r="3"/><circle cx="28" cy="56" r="3"/><circle cx="52" cy="58" r="3"/></g>
         <g fill="#10b981"><circle cx="32" cy="40" r="4"/><circle cx="48" cy="32" r="4"/><circle cx="56" cy="44" r="3"/><circle cx="40" cy="52" r="3"/></g>
       </svg>
-      <div>
+      <div class="brand">
         <h1 class="site-title">Onder Constructie</h1>
         <p class="site-subtitle">Werk in uitvoering, altijd bij de hand.</p>
+      </div>
+      <div class="hsearch" id="hsearch" role="search">
+        <button type="button" class="hs-open" id="search-open" aria-label="Zoeken" title="Zoeken (/)" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button>
+        <label class="hs-field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          <input id="search" type="search" placeholder="Zoek in tools en je gegevens" aria-label="Zoek in tools en in wat je zelf invulde" autocomplete="off" enterkeyhint="search"></label>
+        <button type="button" class="hs-close" id="search-close" aria-label="Zoeken sluiten"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
       </div>
     </div>
   </header>
@@ -447,48 +528,43 @@ body.searching #filter, body.searching #recent-section, body.searching #backup-n
       <button class="dismiss" id="install-x" aria-label="Verberg">&times;</button>
     </div>
 
-    <div class="search-box" role="search">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-      <input id="search" type="search" placeholder="Zoek in tools en je eigen gegevens" aria-label="Zoek in tools en in wat je zelf invulde" autocomplete="off" enterkeyhint="search">
-    </div>
-
     <div class="nudge" id="backup-nudge" hidden role="region" aria-label="Reservekopie">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
       <p id="backup-text"></p>
       <div class="nudge-btns"><button type="button" class="btn" id="backup-now">Reservekopie maken</button><button type="button" class="nudge-later" id="backup-later">Later</button></div>
     </div>
 
-    <section class="section" id="recent-section" hidden>
-      <div class="section-head"><h2 class="section-label">Laatst gebruikt</h2></div>
-      <div class="recent" id="recent"></div>
-    </section>
-
-    <section class="filter" id="filter" hidden>
-      <div class="filter-head">
-        <h2 class="section-label">Waarvoor?</h2>
-        <span class="filter-hint" id="filter-hint">Kies een fase of een thema</span>
-      </div>
-      <div class="pdca" id="pdca" role="toolbar" aria-label="Projectcyclus: plan, do, check, act"></div>
-      <p class="pdca-caption" id="pdca-caption">De projectcyclus: plan, do, check, act, en opnieuw</p>
-      <div class="filter-chips" id="filter-chips" role="toolbar" aria-label="Filter op thema"></div>
-    </section>
-
-    <section class="results" id="results" hidden aria-live="polite">
-      <div class="group results-card">
-        <div class="results-head">
-          <span class="results-title" id="results-title"></span>
-          <button class="results-clear" id="results-clear">Toon alles</button>
-        </div>
-        <div class="list" id="results-list"></div>
-      </div>
+    <section class="section" id="continue" hidden>
+      <div class="section-head"><h2 class="section-label">Verder werken</h2></div>
+      <div class="cont" id="cont"></div>
     </section>
 
     <section class="paths-wrap" id="paths-wrap" hidden>
       <div class="filter-head"><h2 class="section-label">Stappenplannen</h2><span class="filter-hint">Tools die op elkaar voortbouwen</span></div>
       <div class="paths" id="paths"></div>
     </section>
-    <div class="list-tools" id="list-tools"><button id="all-open">Alles open</button><button id="all-closed">Alles dicht</button></div>
-    <div id="groups"></div>
+
+    <section class="alltools" id="alltools" aria-labelledby="alltools-h">
+      <div class="all-head" id="all-head">
+        <h2 class="section-label" id="alltools-h">Alle tools</h2>
+        <div class="list-tools" id="list-tools"><button id="all-open">Alles open</button><button id="all-closed">Alles dicht</button></div>
+      </div>
+      <div class="filter" id="filter" hidden>
+        <div class="pdca" id="pdca" role="toolbar" aria-label="Filter op fase in de projectcyclus: plan, do, check, act"></div>
+        <div class="filter-chips" id="filter-chips" role="toolbar" aria-label="Filter op thema"></div>
+        <p class="pdca-caption" id="pdca-caption"><span id="filter-hint">Filter op fase of thema</span></p>
+      </div>
+      <div class="results" id="results" hidden aria-live="polite">
+        <div class="group results-card">
+          <div class="results-head">
+            <span class="results-title" id="results-title"></span>
+            <button class="results-clear" id="results-clear">Toon alles</button>
+          </div>
+          <div class="list" id="results-list"></div>
+        </div>
+      </div>
+      <div id="groups"></div>
+    </section>
   </main>
 
   <footer class="footer">
@@ -500,7 +576,7 @@ body.searching #filter, body.searching #recent-section, body.searching #backup-n
     <span class="sep" aria-hidden="true">·</span>
     <button class="footer-link" id="data-open" type="button">gegevens</button>
     <span class="sep" aria-hidden="true">·</span>
-    <span class="app-version" title="Versie van de app">v18</span>
+    <span class="app-version" title="Versie van de app">v19</span>
   </footer>
 </div>
 
@@ -681,13 +757,10 @@ function renderFilter() {
   const hasPdca = Object.keys(pc).length > 0;
   $('pdca').hidden = !hasPdca; $('pdca-caption').hidden = !hasPdca;
   const arrow = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
-  $('pdca').innerHTML = PHASES.map(p => `
-    <button class="phase" data-phase="${p.id}" aria-pressed="${isOn('pdca', p.id)}" title="${esc(p.long)}">
-      <span class="ph-letter">${p.name[0]}</span><span class="ph-name">${p.name}</span><span class="ph-sub">${p.sub}</span>
-      <span class="ph-n" aria-label="${pc[p.id] || 0} tools">${pc[p.id] || 0}</span>
-    </button>`).join('')
-    + ['a1', 'a2', 'a3', 'a4'].map(a => `<span class="pdca-arrow ${a}" aria-hidden="true">${arrow}</span>`).join('')
-    + '<span class="pdca-hub" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg></span>';
+  $('pdca').innerHTML = PHASES.map((p, i) => (i ? `<span class="ph-arrow" aria-hidden="true">${arrow}</span>` : '') + `
+    <button class="phase" data-phase="${p.id}" aria-pressed="${isOn('pdca', p.id)}" title="${esc(p.long)}" aria-label="${p.name}: ${p.sub}, ${pc[p.id] || 0} tools">
+      <span class="ph-name">${p.name}</span><span class="ph-n">${pc[p.id] || 0}</span>
+    </button>`).join('');
   const counts = {};
   TOOLS.forEach(t => (t.labels || []).forEach(l => counts[l] = (counts[l] || 0) + 1));
   // Een thema dat maar naar één tool leidt, is geen filter maar een omweg: weglaten.
@@ -706,7 +779,7 @@ function setFilter(kind, value) {
   document.body.classList.toggle('filtering', !!active);
   document.body.classList.toggle('searching', !!active && active.kind === 'search');
   $('results').hidden = !active;
-  $('filter-hint').textContent = active ? 'Tik opnieuw om alles te tonen' : 'Kies een fase of een thema';
+
   if (active) {
     let list, title;
     if (active.kind === 'pdca') {
@@ -745,14 +818,41 @@ document.addEventListener('click', e => {
   const p = e.target.closest('.phase');
   if (p) setFilter('pdca', p.dataset.phase);
 });
+/* Verder werken: tools waar je iets in bewaarde of die je onlangs opende, het laatst gebruikte eerst.
+   Met wat erin staat (de naam van je lijst, analyse of kaart) en wanneer je er was. */
+function ago(t) {
+  if (!t) return '';
+  const d = Math.floor((new Date().setHours(0, 0, 0, 0) - new Date(t).setHours(0, 0, 0, 0)) / 864e5);
+  return d <= 0 ? 'vandaag' : d === 1 ? 'gisteren' : d < 7 ? `${d} dagen geleden` : d < 14 ? 'vorige week' : d < 60 ? `${Math.round(d / 7)} weken geleden` : 'een tijd geleden';
+}
+function preview(t) {
+  try {
+    const d = JSON.parse(localStorage.getItem('oc.share.' + t.id) || 'null');
+    const names = d && Array.isArray(d.lists) ? [...new Set(d.lists.map(l => String(l.name || '').trim()).filter(Boolean))] : [];
+    if (names.length) return names.slice(0, 2).join(', ') + (names.length > 2 ? ` en nog ${names.length - 2}` : '');
+  } catch {}
+  return '';
+}
 function renderRecent() {
-  const ids = store.get('recent', []).filter(id => byId[id]);
-  $('recent-section').hidden = ids.length === 0;
-  $('recent').innerHTML = ids.map(id => `
-    <button class="chip" data-id="${esc(id)}"><span class="icon">${iconHTML(byId[id].icon)}</span>${esc(byId[id].title)}</button>`).join('');
+  const all = lsKeys(), usage = store.get('usage', {});
+  const ids = new Set(store.get('recent', []).filter(id => byId[id]));
+  TOOLS.forEach(t => { if (hasData(t, all)) ids.add(t.id); });
+  const items = [...ids].map(id => ({ t: byId[id], at: (usage[id] || {}).t || 0, data: hasData(byId[id], all) }))
+    .sort((a, b) => (b.at - a.at) || ((b.data ? 1 : 0) - (a.data ? 1 : 0))).slice(0, 6);
+  $('continue').hidden = !items.length;
+  document.body.classList.toggle('returning', items.length > 0);
+  $('cont').innerHTML = items.map(({ t, at, data }) => {
+    const pv = data ? preview(t) : '';
+    return `<button class="ccard" data-id="${esc(t.id)}" title="${esc(t.desc)}">
+      <span class="icon">${iconHTML(t.icon)}</span>
+      <span class="cc-body"><span class="cc-title">${esc(t.title)}</span>
+        <span class="cc-sub">${esc(pv || (data ? 'Met je gegevens' : t.sub))}</span>
+        ${at ? `<span class="cc-when">${ago(at)}</span>` : ''}</span>
+      <span class="live">open</span></button>`;
+  }).join('');
 }
 function markLive() {
-  document.querySelectorAll('.row').forEach(r => r.classList.toggle('is-live', frames.has(r.dataset.id)));
+  document.querySelectorAll('.row, .ccard').forEach(r => r.classList.toggle('is-live', frames.has(r.dataset.id)));
   document.querySelectorAll('.group[data-group]').forEach(g => {
     const n = g.querySelectorAll('.row.is-live').length;
     g.classList.toggle('has-live', n > 0);
@@ -1176,15 +1276,26 @@ function searchContent(q) {
 }
 // klikken op een treffer opent de tool via de algemene [data-id]-afhandeling
 
+function openSearch() {
+  $('hsearch').classList.add('open'); $('search-open').setAttribute('aria-expanded', 'true');
+  $('search').focus();
+}
+function closeSearch() {
+  $('search').value = ''; setFilter('search', '');
+  $('hsearch').classList.remove('open'); $('search-open').setAttribute('aria-expanded', 'false');
+}
+$('search-open').addEventListener('click', openSearch);
+$('search-close').addEventListener('click', () => { closeSearch(); $('search-open').focus(); });
+$('search').addEventListener('blur', () => { if (!$('search').value.trim()) setTimeout(() => { if (document.activeElement !== $('search') && !$('search').value.trim()) { $('hsearch').classList.remove('open'); $('search-open').setAttribute('aria-expanded', 'false'); } }, 150); });
 let searchT;
 $('search').addEventListener('input', e => { clearTimeout(searchT); const v = e.target.value.trim(); searchT = setTimeout(() => setFilter('search', v), 120); });
 $('search').addEventListener('keydown', e => {
-  if (e.key === 'Escape') { e.target.value = ''; setFilter('search', ''); }
+  if (e.key === 'Escape') { closeSearch(); $('search-open').focus(); }
   if (e.key === 'Enter') { const first = document.querySelector('#results-list .row'); if (first) first.click(); }
 });
 // "/" zet de cursor in het zoekveld (op een toetsenbord), zoals op veel websites
 document.addEventListener('keydown', e => {
-  if (e.key === '/' && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName) && !$('viewer').classList.contains('open')) { e.preventDefault(); $('search').focus(); }
+  if (e.key === '/' && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName) && !$('viewer').classList.contains('open')) { e.preventDefault(); openSearch(); }
 });
 
 /* ---------- Herinnering: reservekopie ---------- */
