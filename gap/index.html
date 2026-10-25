@@ -411,7 +411,6 @@ button.oc-import { color:#047857; min-height:44px; }
               <button data-act="copy" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Kopieer als tekst</button>
               <button data-act="csv" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h8"/></svg>Download CSV</button>
               <div class="sep"></div>
-              <button data-act="delete" class="danger" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>Analyse verwijderen</button>
           <div class="sep"></div>
           <button data-act="wipe" class="danger" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>Alles wissen</button>
             </div>
@@ -466,6 +465,8 @@ button.oc-import { color:#047857; min-height:44px; }
 <div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-text"></span><button id="toast-btn" hidden>Ongedaan</button></div>
 
 <script>
+/* Het actieve project uit de app (oc.project): nieuwe projecten, analyses en lijsten krijgen die naam. */
+function ocProject(fb) { try { const p = JSON.parse(localStorage.getItem('oc.project')); return p && typeof p.name === 'string' && p.name.trim() ? p.name.trim().slice(0, 80) : fb; } catch { return fb; } }
 /* ---------- Overnemen tussen tools (gedeeld door de Onder Constructie-tools, v2) ----------
    Alle tools draaien op hetzelfde domein en delen dus localStorage. Elke tool legt wat hij te bieden
    heeft klaar onder 'oc.share.<tool-id>', in een vaste vorm, zodat andere tools het kunnen overnemen
@@ -700,8 +701,8 @@ document.addEventListener('click', async e => {
    andere tools, zodat de app ze offline kan bewaren. */
 const ocExport = (() => {
   const LIBS = {
-    h2c: 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
-    pdf: 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
+    h2c: '/lib/html2canvas-1.4.1.min.js',
+    pdf: '/lib/jspdf-2.5.1.umd.min.js'
   };
   const A4 = { w: 210, h: 297 }, MARGIN = 10;   // mm
   const loaded = {};
@@ -816,7 +817,7 @@ const newGap = theme => ({ id:uid(), theme:theme || '', asis:{ text:'', indicato
   tobe:{ text:'', value:'', by:'' }, evidence:[], whys:[''], actions:[], impact:3, feas:3, open:true });
 function load() {
   try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && Array.isArray(d.analyses) && d.analyses.length) return d; } catch {}
-  const first = { id:uid(), name:'Mijn analyse', question:'', gaps:[] };
+  const first = { id:uid(), name:ocProject('Mijn analyse'), question:'', gaps:[] };
   return { analyses:[first], current:first.id };
 }
 let state = load();
@@ -1288,7 +1289,7 @@ $('example').addEventListener('click', () => {
   if (bestaand) { state.current = bestaand.id; save(); render(); toast('Dit is het voorbeeld'); return; }
   // Een lege, onaangeroerde analyse wordt het voorbeeld; anders komt het voorbeeld in een eigen analyse.
   let a = cur();
-  if (a.gaps.length || a.question.trim() || !['Mijn analyse', 'Nieuwe analyse', 'Naamloos'].includes(a.name)) {
+  if (a.gaps.length || a.question.trim() || !['Mijn analyse', 'Nieuwe analyse', 'Naamloos', ocProject('')].includes(a.name)) {
     a = { id:uid(), name:'', question:'', gaps:[] }; state.analyses.push(a); state.current = a.id;
   }
   a.voorbeeld = true;
@@ -1325,7 +1326,7 @@ $('vb-wis').addEventListener('click', () => {
   const restore = snapshot();
   const curIdx = state.analyses.findIndex(x => x.id === cur().id);
   state.analyses = state.analyses.filter(x => !x.voorbeeld);
-  if (!state.analyses.length) state.analyses.push({ id:uid(), name:'Mijn analyse', question:'', gaps:[] });
+  if (!state.analyses.length) state.analyses.push({ id:uid(), name:ocProject('Mijn analyse'), question:'', gaps:[] });
   if (!state.analyses.some(x => x.id === state.current)) state.current = state.analyses[Math.min(Math.max(curIdx - 1, 0), state.analyses.length - 1)].id;
   save(); render();
   toast('Voorbeeld gewist', restore);
@@ -1337,7 +1338,7 @@ $('vb-eigen').addEventListener('click', () => {
 function deleteAnalysis(a) {
   const restore = snapshot(), idx = state.analyses.findIndex(x => x.id === a.id);
   state.analyses = state.analyses.filter(x => x.id !== a.id);
-  if (!state.analyses.length) state.analyses.push({ id:uid(), name:'Mijn analyse', question:'', gaps:[] });
+  if (!state.analyses.length) state.analyses.push({ id:uid(), name:ocProject('Mijn analyse'), question:'', gaps:[] });
   state.current = state.analyses[Math.min(Math.max(idx - 1, 0), state.analyses.length - 1)].id; save(); render();
   toast(`${a.name || 'Analyse'} verwijderd`, restore);
 }

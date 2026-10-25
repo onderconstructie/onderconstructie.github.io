@@ -4,7 +4,7 @@
   maar hij bemoeit zich alleen met de paden hieronder. Al de rest van de site gaat ongemoeid naar het netwerk.
   Wordt enkel geregistreerd wie /app/ opent.
 */
-const VERSION = 'oc-app-v23';
+const VERSION = 'oc-app-v24';
 
 const SHELL = [
   '/app/', '/tools.json', '/app/manifest.webmanifest', '/app/icon.svg',
@@ -22,12 +22,8 @@ async function toolPaths(cache) {
   } catch {}
   return TOOLS;
 }
-const LIBS = [
-  'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
-  'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js',
-  'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js'
-];
+// Bibliotheken staan op de eigen site (geen verkeer naar externe servers); ze veranderen niet.
+const LIBS = ['/lib/html2canvas-1.4.1.min.js', '/lib/jspdf-2.5.1.umd.min.js', '/lib/chart-4.4.1.umd.js', '/lib/qrcode-generator-1.4.4.js'];
 const CDN_HOSTS = ['cdnjs.cloudflare.com', 'cdn.jsdelivr.net'];
 const NETWORK_TIMEOUT = 3500;
 
@@ -58,8 +54,8 @@ self.addEventListener('install', e => {
         if (res.ok) await cache.put(u, await clean(res));
       }),
       ...LIBS.map(async u => {
-        const res = await fetch(u, { mode: 'no-cors' });
-        if (res.ok || res.type === 'opaque') await cache.put(u, res);
+        const res = await fetch(u);
+        if (res.ok) await cache.put(u, res);
       })
     ]);
     await self.skipWaiting();
@@ -141,7 +137,7 @@ self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   if (url.origin === location.origin) {
     const path = url.pathname === '/tools.json' ? '/tools.json' : norm(url.pathname);
-    if (url.pathname.startsWith('/fonts/')) { e.respondWith(cacheFirst(e)); return; }
+    if (url.pathname.startsWith('/fonts/') || url.pathname.startsWith('/lib/')) { e.respondWith(cacheFirst(e)); return; }
     if (path.startsWith('/app/') || path === '/tools.json') { e.respondWith(networkFirst(e, path)); return; }
     if (TOOLS.length) {
       if (!isOurs(path, TOOLS)) return;   // de rest van de site: niet aankomen

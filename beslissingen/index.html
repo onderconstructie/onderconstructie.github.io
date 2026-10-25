@@ -246,7 +246,6 @@ button.oc-import { color:#047857; min-height:44px; }
           <button data-act="copy" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Kopieer als tekst</button>
           <button data-act="csv" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Download CSV (Excel)</button>
           <div class="sep"></div>
-          <button data-act="delete" class="danger" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>Log verwijderen</button>
           <div class="sep"></div>
           <button data-act="wipe" class="danger" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>Alles wissen</button>
         </div>
@@ -296,6 +295,8 @@ button.oc-import { color:#047857; min-height:44px; }
 <div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-text"></span><button id="toast-btn" hidden>Ongedaan</button></div>
 
 <script>
+/* Het actieve project uit de app (oc.project): nieuwe projecten, analyses en lijsten krijgen die naam. */
+function ocProject(fb) { try { const p = JSON.parse(localStorage.getItem('oc.project')); return p && typeof p.name === 'string' && p.name.trim() ? p.name.trim().slice(0, 80) : fb; } catch { return fb; } }
 /* ---------- Overnemen tussen tools (gedeeld door de Onder Constructie-tools, v2) ----------
    Alle tools draaien op hetzelfde domein en delen dus localStorage. Elke tool legt wat hij te bieden
    heeft klaar onder 'oc.share.<tool-id>', in een vaste vorm, zodat andere tools het kunnen overnemen
@@ -514,8 +515,8 @@ document.addEventListener('click', e => { if (e.target.closest('[data-act="wipe"
    andere tools, zodat de app ze offline kan bewaren. */
 const ocExport = (() => {
   const LIBS = {
-    h2c: 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
-    pdf: 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
+    h2c: '/lib/html2canvas-1.4.1.min.js',
+    pdf: '/lib/jspdf-2.5.1.umd.min.js'
   };
   const A4 = { w: 210, h: 297 }, MARGIN = 10;   // mm
   const loaded = {};
@@ -607,7 +608,7 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 const today = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
 function load() {
   try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && Array.isArray(d.logs) && d.logs.length) return d; } catch {}
-  const first = { id:uid(), name:'Mijn project', items:[] };
+  const first = { id:uid(), name:ocProject('Mijn project'), items:[] };
   return { logs:[first], current:first.id, lastWho:'' };
 }
 let state = load();
@@ -889,7 +890,7 @@ function deleteLog(l) {
   const restore = snapshot();
   const idx = state.logs.findIndex(x => x.id === l.id);
   state.logs = state.logs.filter(x => x.id !== l.id);
-  if (!state.logs.length) state.logs.push({ id:uid(), name:'Mijn project', items:[] });
+  if (!state.logs.length) state.logs.push({ id:uid(), name:ocProject('Mijn project'), items:[] });
   state.current = state.logs[Math.min(Math.max(idx - 1, 0), state.logs.length - 1)].id;
   openId = null; setReplacing(null); $('search').value = ''; save(); render();
   try { ocPublish(); } catch {}
