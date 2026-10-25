@@ -177,7 +177,7 @@ button.oc-import { color:#047857; min-height:44px; }
 .macts svg { width:17px; height:17px; }
 @media (max-width:520px) { .mrow { padding-left:calc(min(var(--lvl), 5) * 0.75rem); } .macts button { width:32px; } .mrow .dot { margin:0 8px; } }
 .canvas svg g[data-node]:hover rect { filter:brightness(0.97); }
-@media (min-width:1000px) { .layout { grid-template-columns:minmax(340px,400px) minmax(0,1fr); } }
+@media (min-width:1000px) { .layout { grid-template-columns:minmax(0,1fr); } .draw-card { position:static; } }
 .canvas.pan { cursor:grab; }
 .canvas { position:relative; outline:none; border-radius:12px; display:flex; align-items:center; min-height:300px; }
 .canvas svg { margin:auto; flex-shrink:0; }
@@ -197,7 +197,9 @@ button.oc-import { color:#047857; min-height:44px; }
 .mm-tip { position:absolute; z-index:6; font-size:0.75rem; color:var(--slate-600); text-align:center; pointer-events:none; }
 .mm-tip { text-shadow:0 0 3px #fff, 0 0 3px #fff; }
 button.more { border:0; cursor:pointer; min-height:28px; }
-.macts button.add { color:var(--accent-dark); } .canvas.panning { cursor:grabbing; user-select:none; }
+.macts button.add { color:var(--accent-dark); }
+.vb-bar.top { margin:0 0 0.75rem; }
+@media (max-width:520px) { .mrow .macts { display:none; } .mrow:focus-within .macts { display:flex; } } .canvas.panning { cursor:grabbing; user-select:none; }
 .stat { font-size:0.8125rem; font-weight:500; color:var(--slate-500); margin-left:0.25rem; white-space:nowrap; }
 .draw-head { flex-wrap:wrap; }
 @media (max-width:520px) { .draw-head .card-title { flex-basis:100%; } }
@@ -218,7 +220,7 @@ button.more { border:0; cursor:pointer; min-height:28px; }
     </svg>
   </div>
   <h1 class="title">Mindmap</h1>
-  <p class="subtitle">Typ je ideeën als lijst. De kaart groeit vanzelf mee.</p>
+  <p class="subtitle">Bouw je ideeën op in de kaart of als lijst. Alles ordent zich vanzelf.</p>
 </header>
 
 <main class="main">
@@ -230,7 +232,7 @@ button.more { border:0; cursor:pointer; min-height:28px; }
   <details class="explain">
     <summary>Hoe werkt dit?</summary>
     <div class="inner">
-      <p>Bovenaan staat het centrale idee. Alles daaronder zijn takken. Je tekent niets: je typt, en de kaart ordent zichzelf links en rechts van het midden.</p>
+      <p>In het midden staat het centrale idee, daarrond de takken. Je tekent niets: je typt, en de kaart ordent zichzelf links en rechts van het midden. Elk niveau krijgt een eigen tint, van donkergroen in het midden naar lichter aan de rand. Onder de kaart staat dezelfde mindmap als lijst; wat je in de ene wijzigt, verandert meteen in de andere.</p>
       <ul>
         <li><b>Enter</b>: een nieuw idee op hetzelfde niveau. Heeft het idee al subtakken, dan komt het nieuwe idee erbij als eerste subtak.</li>
         <li><b>Tab</b>: een niveau dieper (onder het idee erboven). <b>Shift+Tab</b>: een niveau terug. Op een telefoon doen de pijlknoppen hetzelfde.</li>
@@ -238,7 +240,7 @@ button.more { border:0; cursor:pointer; min-height:28px; }
         <li><b>Alt+↑ / Alt+↓</b>: een idee met zijn subtakken verschuiven.</li>
         <li>Plak je een lijst met inspringingen (uit een mail, notities of een ander programma), dan komt de hele structuur in één keer mee.</li>
       </ul>
-      <p><b>Op de kaart werken</b> kan ook. Kies een idee met een klik of tik: er verschijnt een balk met <b>Subidee</b>, <b>Ernaast</b>, wijzigen, in- of uitklappen en verwijderen. Typ je een nieuw idee, dan geeft Enter meteen het volgende en Tab een subidee; Esc stopt. Met een toetsenbord kies je ideeën met de pijltjes, wijzig je met F2 of door gewoon te typen, en verwijder je met Delete.</p>
+      <p><b>Op de kaart</b>: kies een idee met een klik of tik: er verschijnt een balk met <b>Subidee</b>, <b>Ernaast</b>, wijzigen, in- of uitklappen en verwijderen. Typ je een nieuw idee, dan geeft Enter meteen het volgende en Tab een subidee; Esc stopt. Met een toetsenbord kies je ideeën met de pijltjes, wijzig je met F2 of door gewoon te typen, en verwijder je met Delete.</p>
       <p><b>In- en uitklappen</b>: met het bolletje aan de rand van een idee op de kaart, met het driehoekje in de lijst, of voor alles tegelijk via het menu (⋯). Een ingeklapte tak toont hoeveel ideeën erachter zitten; tik op dat getal om ze weer te zien.</p>
       <p>De hoofdtakken en hun ideeën liggen klaar voor andere tools, bijvoorbeeld om er in <a href="https://onderconstructie.github.io/prioriteit/">Prioriteren</a> of <a href="https://onderconstructie.github.io/vinkje/">Vinkje</a> mee verder te gaan.</p>
     </div>
@@ -498,7 +500,17 @@ const $ = id => document.getElementById(id);
 const esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
 const uid = () => Math.random().toString(36).slice(2, 10);
 // Takkleuren: alleen groen- en blauwgroentinten, in de sfeer van de app.
-const BRANCH = ['#047857', '#0f766e', '#15803d', '#4d7c0f', '#065f46', '#115e59', '#166534', '#3f6212'];
+// Elk niveau een eigen tint, van donkergroen in het midden naar licht en grijs aan de rand.
+// fill = vak, line = rand en verbindingslijn, ink = tekst (contrast ≥ 4.5:1 op het vak)
+const LV = [
+  { fill:'#064e3b', line:'#064e3b', ink:'#ffffff', w:3 },
+  { fill:'#047857', line:'#047857', ink:'#ffffff', w:3 },
+  { fill:'#a7f3d0', line:'#10b981', ink:'#064e3b', w:2.2 },
+  { fill:'#d1fae5', line:'#34d399', ink:'#1e293b', w:1.8 },
+  { fill:'#f0fdf4', line:'#6ee7b7', ink:'#1e293b', w:1.5 },
+  { fill:'#ffffff', line:'#94a3b8', ink:'#1e293b', w:1.3 }
+];
+const lv = d => LV[Math.min(d, LV.length - 1)];
 const ICON = {
   left:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>',
   right:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>',
@@ -513,7 +525,7 @@ const ICON = {
 /* Opslag: een mindmap is een lijst ideeën met een niveau (0 = het centrum). */
 const idea = (text = '', level = 1) => ({ id:uid(), text, level, collapsed:false });
 function newMap(name) { return { id:uid(), name: name || 'Nieuwe mindmap', nodes:[idea('', 0)] }; }
-function fresh() { return { maps:[], current:null, view:'edit', fit:null }; }
+function fresh() { return { maps:[], current:null, view:'draw', fit:null }; }
 function normalize(nodes) {
   nodes.forEach((n, i) => { n.level = i === 0 ? 0 : Math.max(1, Math.min(n.level, nodes[i - 1].level + 1)); });
   return nodes;
@@ -578,15 +590,15 @@ function layout(m) {
   const right = [], left = [];
   main.forEach((k, i) => { (acc < total / 2 || i === 0 ? right : left).push(k); acc += k.span; });
   const place = (t, x, yTop, dir, color) => {
-    t.color = color; t.y = yTop + t.span / 2 - t.h / 2; t.x = dir > 0 ? x : x - t.w; t.dir = dir;
+    t.color = lv(t.depth).line; t.y = yTop + t.span / 2 - t.h / 2; t.x = dir > 0 ? x : x - t.w; t.dir = dir;
     let y = yTop + (t.span - visKids(t).reduce((s, k) => s + k.span, 0)) / 2;
     visKids(t).forEach(k => { place(k, dir > 0 ? t.x + t.w + GAPX : t.x - GAPX, y, dir, color); y += k.span; });
   };
   const sideH = list => list.reduce((s, k) => s + k.span, 0);
   const H = Math.max(sideH(right), sideH(left), root.h + GAPY);
-  root.x = -root.w / 2; root.y = H / 2 - root.h / 2; root.color = '#047857';
-  let y = (H - sideH(right)) / 2; right.forEach(k => { place(k, root.w / 2 + GAPX + 10, y, 1, BRANCH[main.indexOf(k) % BRANCH.length]); y += k.span; });
-  y = (H - sideH(left)) / 2; left.forEach(k => { place(k, -root.w / 2 - GAPX - 10, y, -1, BRANCH[main.indexOf(k) % BRANCH.length]); y += k.span; });
+  root.x = -root.w / 2; root.y = H / 2 - root.h / 2; root.color = lv(0).line;
+  let y = (H - sideH(right)) / 2; right.forEach(k => { place(k, root.w / 2 + GAPX + 10, y, 1, null); y += k.span; });
+  y = (H - sideH(left)) / 2; left.forEach(k => { place(k, -root.w / 2 - GAPX - 10, y, -1, null); y += k.span; });
   const walk = (t, parent) => { boxes.push(t); if (parent) links.push({ a:parent, b:t }); visKids(t).forEach(k => walk(k, t)); };
   walk(root, null);
   const minX = Math.min(...boxes.map(b => b.x)), maxX = Math.max(...boxes.map(b => b.x + b.w + (b.n.collapsed && b.kids.length ? 26 : 0))), minX2 = Math.min(minX, ...boxes.filter(b => b.n.collapsed && b.kids.length && b.dir < 0).map(b => b.x - 26));
@@ -601,15 +613,16 @@ function svgOf(m, opts = {}) {
   out.push(`<rect width="${L.width}" height="${L.height}" fill="#ffffff"/>`);
   L.links.forEach(({ a, b }) => {
     const ax = b.dir > 0 ? a.x + a.w : a.x, ay = a.y + a.h / 2, bx = b.dir > 0 ? b.x : b.x + b.w, by = b.y + b.h / 2, mx = (ax + bx) / 2;
-    out.push(`<path d="M${ax} ${ay}C${mx} ${ay} ${mx} ${by} ${bx} ${by}" fill="none" stroke="${b.color}" stroke-width="${b.depth === 1 ? 3 : b.depth === 2 ? 2 : 1.5}" stroke-linecap="round" opacity="0.85"/>`);
+    out.push(`<path d="M${ax} ${ay}C${mx} ${ay} ${mx} ${by} ${bx} ${by}" fill="none" stroke="${lv(b.depth).line}" stroke-width="${lv(b.depth).w}" stroke-linecap="round"/>`);
   });
   L.boxes.forEach(b => {
     const root = b.depth === 0, lvl1 = b.depth === 1, on = ui && opts.sel === b.n.id;
     out.push(ui ? `<g data-node="${b.n.id}" class="${on ? 'sel' : ''}">` : '<g>');
-    if (on) out.push(`<rect x="${b.x - 4}" y="${b.y - 4}" width="${b.w + 8}" height="${b.h + 8}" rx="${root ? 19 : 13}" fill="none" stroke="#10b981" stroke-width="2.5"/>`);
-    out.push(`<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="${root ? 16 : lvl1 ? 11 : 9}" fill="${root ? '#047857' : lvl1 ? '#ecfdf5' : '#ffffff'}" stroke="${root ? '#047857' : b.color}" stroke-width="${root ? 0 : lvl1 ? 1.8 : 1.2}"/>`);
+    if (on) out.push(`<rect x="${b.x - 4}" y="${b.y - 4}" width="${b.w + 8}" height="${b.h + 8}" rx="${root ? 19 : 13}" fill="none" stroke="#1e293b" stroke-width="2"/>`);
+    const c = lv(b.depth);
+    out.push(`<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="${root ? 16 : lvl1 ? 11 : 9}" fill="${c.fill}" stroke="${c.line}" stroke-width="${b.depth < 2 ? 0 : 1.3}"/>`);
     const ty = b.y + b.h / 2 - (b.lines.length - 1) * (b.fs + 4) / 2 + b.fs * 0.35, cx = b.x + b.w / 2;
-    out.push(`<text x="${cx}" text-anchor="middle" font-size="${b.fs}" font-weight="${root ? 700 : lvl1 ? 600 : 500}" fill="${root ? '#ffffff' : b.n.text ? '#1e293b' : '#64748b'}">${b.lines.map((l, i) => `<tspan x="${cx}" y="${ty + i * (b.fs + 4)}">${esc(l)}</tspan>`).join('')}</text>`);
+    out.push(`<text x="${cx}" text-anchor="middle" font-size="${b.fs}" font-weight="${root ? 700 : lvl1 ? 600 : 500}" fill="${c.ink}" opacity="${b.n.text ? 1 : 0.7}">${b.lines.map((l, i) => `<tspan x="${cx}" y="${ty + i * (b.fs + 4)}">${esc(l)}</tspan>`).join('')}</text>`);
     out.push('</g>');
     // Inklapbolletje aan de buitenrand: "+n" als de tak dicht is, "−" (bij aanwijzen of selectie) als ze open is
     if (b.kids.length && !root && (b.n.collapsed || ui)) {
@@ -618,8 +631,8 @@ function svgOf(m, opts = {}) {
       const tip = b.n.collapsed ? `Tak openklappen (${count(b)} ideeën)` : 'Tak inklappen';
       const open = ui ? ` data-toggle="${b.n.id}" class="tg${b.n.collapsed ? '' : ' tg-open'}${on ? ' on' : ''}"` : '';
       out.push(`<g${open}>${ui ? `<title>${tip}</title>` : ''}${hit}`);
-      if (b.n.collapsed) out.push(`<circle cx="${bx}" cy="${by}" r="11" fill="#ffffff" stroke="${b.color}" stroke-width="1.4"/><text x="${bx}" y="${by + 4}" text-anchor="middle" font-size="11" font-weight="700" fill="${b.color}">+${count(b)}</text>`);
-      else out.push(`<circle cx="${bx}" cy="${by}" r="8" fill="#ffffff" stroke="${b.color}" stroke-width="1.4"/><path d="M${bx - 4} ${by}h8" stroke="${b.color}" stroke-width="1.8" stroke-linecap="round"/>`);
+      if (b.n.collapsed) out.push(`<circle cx="${bx}" cy="${by}" r="11" fill="#ffffff" stroke="#047857" stroke-width="1.4"/><text x="${bx}" y="${by + 4}" text-anchor="middle" font-size="11" font-weight="700" fill="#047857">+${count(b)}</text>`);
+      else out.push(`<circle cx="${bx}" cy="${by}" r="8" fill="#ffffff" stroke="#047857" stroke-width="1.4"/><path d="M${bx - 4} ${by}h8" stroke="#047857" stroke-width="1.8" stroke-linecap="round"/>`);
       out.push('</g>');
     }
   });
@@ -643,12 +656,7 @@ function sizeSvg(el, center = true) {
   if (c) c.classList.toggle('pan', !fit);
   if (!fit && c && center) { const r = el.querySelector('[data-node] rect'); if (r) c.scrollLeft = Math.max(0, +r.getAttribute('x') + +r.getAttribute('width') / 2 - c.clientWidth / 2); }
 }
-function branchColor(m, i) {
-  if (i === 0) return '#047857';
-  let k = i; while (k > 0 && m.nodes[k].level > 1) k--;
-  const firsts = m.nodes.map((n, j) => n.level === 1 ? j : -1).filter(j => j >= 0);
-  return BRANCH[Math.max(0, firsts.indexOf(k)) % BRANCH.length];
-}
+function branchColor(m, i) { return lv(m.nodes[i].level).line; }
 function render() {
   const m = cur();
   if (m && state.current !== m.id) state.current = m.id;
@@ -683,11 +691,22 @@ function render() {
   }).join('');
   const nIdeas = m.nodes.length - 1, nMain = m.nodes.filter(n => n.level === 1).length, view = state.view;
   $('app').innerHTML = `
+        ${m.voorbeeld ? `<div class="vb-bar top"><div class="vb-text">${ICON.info}<span>Dit is een voorbeeld om de tool te verkennen. Het telt niet mee in andere tools.</span></div>
+          <div class="vb-btns"><button type="button" class="vb-btn vb-wis" data-act="vb-wis">Wis voorbeeld</button><button type="button" class="vb-btn vb-eigen" data-act="vb-eigen">Maak er mijn eigen van</button></div></div>` : ''}
     <div class="views" role="tablist" aria-label="Weergave">
-      <button role="tab" data-view="edit" aria-selected="${view === 'edit'}">Lijst</button>
       <button role="tab" data-view="draw" aria-selected="${view === 'draw'}">Kaart</button>
+      <button role="tab" data-view="edit" aria-selected="${view === 'edit'}">Lijst</button>
     </div>
     <div class="layout">
+      <section class="card draw-card" ${view === 'draw' ? '' : 'hidden'}>
+        <div class="draw-head"><h2 class="card-title">Kaart <span class="stat">${nIdeas} ${nIdeas === 1 ? 'idee' : 'ideeën'} · ${nMain} ${nMain === 1 ? 'hoofdtak' : 'hoofdtakken'}</span></h2>
+          <button type="button" class="zoom" id="fit-btn" data-act="fit">Hele kaart</button>
+          <button type="button" class="zoom" data-export="png" aria-label="Download als afbeelding">Afbeelding</button><button type="button" class="zoom" data-export="pdf" aria-label="Download als PDF">PDF</button></div>
+        <div class="canvas" id="canvas" tabindex="0" aria-label="Kaart. Kies een idee met de pijltjes. Enter voegt een idee toe, Tab een subidee, F2 wijzigt de tekst.">${svgOf(m, { ui:true, sel:sel.id })}</div>
+        <p class="hint-s">${matchMedia('(hover:hover)').matches
+          ? 'Klik op een idee om het te kiezen. Enter voegt een idee ernaast toe, Tab een subidee. Dubbelklik of begin te typen om de tekst te wijzigen.'
+          : 'Tik op een idee voor de knoppen. Tik nog eens om de tekst te wijzigen.'}</p>
+      </section>
       <section class="card" ${view === 'edit' ? '' : 'hidden'}>
         <div class="card-head">
           <h2 class="card-title">Ideeën</h2>
@@ -709,23 +728,12 @@ function render() {
             </div>
           </div>
         </div>
-        ${m.voorbeeld ? `<div class="vb-bar"><div class="vb-text">${ICON.info}<span>Dit is een voorbeeld om de tool te verkennen. Het telt niet mee in andere tools.</span></div>
-          <div class="vb-btns"><button type="button" class="vb-btn vb-wis" data-act="vb-wis">Wis voorbeeld</button><button type="button" class="vb-btn vb-eigen" data-act="vb-eigen">Maak er mijn eigen van</button></div></div>` : ''}
-        <p class="hint-s">Enter voor een nieuw idee, Tab om in te springen. Je kan ook een lijst met inspringingen plakken.</p>
+        <p class="hint-s">${matchMedia('(hover:hover)').matches ? 'Enter voor een nieuw idee, Tab om in te springen. Je kan ook een lijst met inspringingen plakken.' : 'Tik op een regel om te typen; dan verschijnen ook de knoppen om een subidee toe te voegen, te verschuiven of te verwijderen.'}</p>
         <ol class="mrows">${rows}</ol>
         <div class="adders">
           <button type="button" data-act="add-main">+ Hoofdtak</button>
           <button type="button" class="oc-import" data-oc-types="taak,actie,betrokkene,risico" data-act="imp" hidden>${ICON.imp}Overnemen uit…</button>
         </div>
-      </section>
-      <section class="card draw-card" ${view === 'draw' ? '' : 'hidden'}>
-        <div class="draw-head"><h2 class="card-title">Kaart <span class="stat">${nIdeas} ${nIdeas === 1 ? 'idee' : 'ideeën'} · ${nMain} ${nMain === 1 ? 'hoofdtak' : 'hoofdtakken'}</span></h2>
-          <button type="button" class="zoom" id="fit-btn" data-act="fit">Hele kaart</button>
-          <button type="button" class="zoom" data-export="png" aria-label="Download als afbeelding">Afbeelding</button><button type="button" class="zoom" data-export="pdf" aria-label="Download als PDF">PDF</button></div>
-        <div class="canvas" id="canvas" tabindex="0" aria-label="Kaart. Kies een idee met de pijltjes. Enter voegt een idee toe, Tab een subidee, F2 wijzigt de tekst.">${svgOf(m, { ui:true, sel:sel.id })}</div>
-        <p class="hint-s">${matchMedia('(hover:hover)').matches
-          ? 'Klik op een idee om het te kiezen. Enter voegt een idee ernaast toe, Tab een subidee. Dubbelklik of begin te typen om de tekst te wijzigen.'
-          : 'Tik op een idee voor de knoppen. Tik nog eens om de tekst te wijzigen.'}</p>
       </section>
     </div>`;
   const s = document.querySelector('#canvas svg');
@@ -979,7 +987,7 @@ document.addEventListener('click', async e => {
   if (t.dataset.view) { state.view = t.dataset.view; saveUi(); render(); return; }
   const m = cur(), act = t.dataset.act, id = t.dataset.id, i = m ? m.nodes.findIndex(n => n.id === id) : -1;
   switch (act) {
-    case 'new-map': { const x = newMap(state.maps.length ? 'Mindmap ' + (state.maps.length + 1) : 'Mijn mindmap'); state.maps.push(x); state.current = x.id; state.view = 'edit'; save(); render(); focusNode(x.nodes[0].id); return; }
+    case 'new-map': { const x = newMap(state.maps.length ? 'Mindmap ' + (state.maps.length + 1) : 'Mijn mindmap'); state.maps.push(x); state.current = x.id; state.view = 'draw'; save(); render(); startEdit(x.nodes[0].id, true); return; }
     case 'example': example(); return;
     case 'add-main': { const x = idea('', 1); m.nodes.push(x); save(); render(); focusNode(x.id); return; }
     case 'toggle': { m.nodes[i].collapsed = !m.nodes[i].collapsed; save(); render(); const b = document.querySelector(`.tw[data-id="${id}"]`); b && b.focus(); return; }
@@ -1109,6 +1117,9 @@ document.addEventListener('click', async e => {
   }
 });
 $('oc-restart').addEventListener('click', () => { const b = document.querySelector('#menu [data-act="wipe"]'); if (b) b.click(); });
+
+// Knoppen naast een regel nemen de focus niet over: zo blijven ze zichtbaar en tikbaar op een telefoon
+document.addEventListener('pointerdown', e => { if (e.target.closest('.macts button')) e.preventDefault(); });
 
 /* Slepen om de kaart te verschuiven (muis); aanraken scrolt vanzelf */
 (() => {
