@@ -759,12 +759,15 @@ function vsBars(ms) {
    Een kaartje van 1200 × 630, rechtstreeks op een canvas getekend: het grote getal, de context,
    en een balk gepland tegenover werkelijk. */
 function ocProject(fb) { try { const p = JSON.parse(localStorage.getItem('oc.project')); return p && typeof p.name === 'string' && p.name.trim() ? p.name.trim().slice(0, 80) : fb; } catch { return fb; } }
+/* Bestandsnaam: tool-project-datum (JJJJ-MM-DD), zonder dubbele datum of dubbele toolnaam */
 function ocFileName(tool, project) {
   const d = new Date(), iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   const slug = s => String(s || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-  let p = slug(project).replace(/(^|-)\d{1,4}-\d{1,2}-\d{1,4}(?=-|$)/g, '').replace(/^-+|-+$/g, '').slice(0, 50).replace(/-$/, '');
-  if (p === slug(tool)) p = '';
-  return [slug(tool), p, iso].filter(Boolean).join('-');
+  const t = slug(tool);
+  let p = slug(project).replace(/(^|-)\d{1,4}-\d{1,2}-\d{1,4}(?=-|$)/g, '').replace(/^-+|-+$/g, '');
+  if (p === t) p = ''; else if (p.startsWith(t + '-')) p = p.slice(t.length + 1);
+  p = p.slice(0, 50).replace(/-+$/, '');
+  return [t, p, iso].filter(Boolean).join('-');
 }
 async function exportCanvas() {
   if (document.fonts && document.fonts.load) { try { await Promise.all(['400', '600', '700'].map(w => document.fonts.load(`${w} 20px "DM Sans"`))); } catch {} }
