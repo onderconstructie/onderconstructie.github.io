@@ -4,18 +4,15 @@
 
 Welkom in mijn digitale werkplaats. Deze repository is de thuisbasis van een verzameling webtools, experimenten en digitale handigheidjes.
 
-## ✨ Over Vibecoding
+## ✨ Hoe deze tools ontstaan
 
-Alle tools in deze repository zijn gebouwd volgens het principe van **Vibecoding**. 
+Alle tools in deze repository zijn gebouwd door te beschrijven wat ze moeten doen, niet door zelf elke regel te programmeren.
 
-Dit betekent dat er geen traditionele "code-first" aanpak is gebruikt. In plaats daarvan zijn deze projecten ontstaan vanuit een idee, een gevoel of een specifieke behoefte, waarna de technische realisatie is uitbesteed aan geavanceerde AI-modellen.
+Dit betekent dat er geen klassieke aanpak is gebruikt waarbij eerst de code komt. In plaats daarvan zijn deze projecten ontstaan vanuit een idee, een gevoel of een specifieke behoefte, waarna de technische realisatie is uitbesteed aan geavanceerde AI-modellen.
 
-## 🤖 Het AI Team
+## 🤖 Met hulp van AI
 
-Deze code is mede mogelijk gemaakt door de volgende generatie chatbots:
-* **Claude Opus 4.5**
-* **Gemini 3 Pro**
-* **ChatGPT 5.2**
+De code is mee geschreven door verschillende AI-taalmodellen.
 
 ## 🚀 Gebruik
 
@@ -27,18 +24,15 @@ Bezoek de live omgeving om de tools direct te gebruiken, of blader door de mappe
 
 Welcome to my digital workshop. This repository is the home of a collection of web tools, experiments, and digital utilities.
 
-## ✨ About Vibecoding
+## ✨ How these tools come about
 
-All tools in this repository are built using the **Vibecoding** principle.
+All tools in this repository are built by describing what they should do, rather than by programming every line by hand.
 
-This means there is no traditional "code-first" approach. Instead, these projects originated from an idea, a feeling, or a specific need, after which the technical realization was outsourced to advanced AI models.
+This means there is no traditional approach where the code comes first. Instead, these projects originated from an idea, a feeling, or a specific need, after which the technical realization was outsourced to advanced AI models.
 
-## 🤖 The AI Team
+## 🤖 With help from AI
 
-This code was made possible by the following generation of chatbots:
-* **Claude Opus 4.5**
-* **Gemini 3 Pro**
-* **ChatGPT 5.2**
+The code was co-written by several AI language models.
 
 ## 🚀 Usage
 

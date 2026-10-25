@@ -4,12 +4,12 @@
   maar hij bemoeit zich alleen met de paden hieronder. Al de rest van de site gaat ongemoeid naar het netwerk.
   Wordt enkel geregistreerd wie /app/ opent.
 */
-const VERSION = 'oc-app-v29';
+const VERSION = 'oc-app-v30';
 
 const SHELL = [
   '/app/', '/tools.json', '/app/manifest.webmanifest', '/app/icon.svg',
   '/app/icon-180.png', '/app/icon-192.png', '/app/icon-512.png', '/app/icon-maskable.png',
-  // eigen lettertypes: geen verkeer naar Google, en altijd offline beschikbaar
+  // eigen lettertypes: geen verkeer naar externe lettertypediensten, en altijd offline beschikbaar
   '/fonts/fonts.css', '/fonts/dm-sans-latin-400-normal.woff2', '/fonts/dm-sans-latin-ext-400-normal.woff2', '/fonts/dm-sans-latin-500-normal.woff2', '/fonts/dm-sans-latin-ext-500-normal.woff2', '/fonts/dm-sans-latin-600-normal.woff2', '/fonts/dm-sans-latin-ext-600-normal.woff2', '/fonts/dm-sans-latin-700-normal.woff2', '/fonts/dm-sans-latin-ext-700-normal.woff2', '/fonts/jetbrains-mono-latin-400-normal.woff2', '/fonts/jetbrains-mono-latin-500-normal.woff2', '/fonts/jetbrains-mono-latin-600-normal.woff2', '/fonts/jetbrains-mono-latin-700-normal.woff2'
 ];
 // Welke tools offline bewaard worden, staat in /tools.json (gebouwd uit de metatags in de tools).

@@ -7,7 +7,7 @@ Elke tool beschrijft zichzelf in zijn <head>:
     <meta name="oc:groep" content="projecten">           projecten | zakmes | reset
     <meta name="oc:labels" content="mensen, vergaderen">  thema's, met komma's (mag leeg als oc:pdca er is)
     <meta name="oc:pdca" content="plan, do">              optioneel: fase(s) in de PDCA-cyclus, sterkste eerst
-    <meta name="oc:kort" content="Kanbanbord voor sprints en taken">
+    <meta name="oc:kort" content="Je taken op een bord: te doen, bezig, klaar">
     <meta name="oc:volgorde" content="20">               volgorde zolang je een tool nog niet gebruikte
     <meta name="oc:achtergrond" content="nee">           optioneel: niet open laten in de app
     <meta name="oc:opslag" content="vinkje.v1, oc.share.vinkje">  optioneel: localStorage-sleutels van de tool

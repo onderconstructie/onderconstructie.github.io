@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Mindmap – Onder Constructie</title>
-<meta name="description" content="Zet ideeën op een rij als een gewone lijst met inspringingen en zie meteen een mindmap. Klap takken in, plak een lijst uit je notities, exporteer als PDF, afbeelding of SVG.">
+<title>Ideeënkaart – Onder Constructie</title>
+<meta name="description" content="Zet ideeën op een rij als een gewone lijst met inspringingen en zie meteen een kaart. Klap takken in, plak een lijst uit je notities, exporteer als PDF, afbeelding of SVG.">
     <meta name="oc:groep" content="projecten">
     <meta name="oc:labels" content="inzicht">
     <meta name="oc:pdca" content="plan">
@@ -251,12 +251,12 @@ button.more { border:0; cursor:pointer; min-height:28px; }
       <g transform="scale(2)"><path d="M20 20C14 20 13 11 8 11M20 20C14 20 13 29 8 29M20 20C26 20 27 11 32 11M20 20C26 20 27 29 32 29" stroke="#334155" stroke-width="1.6" fill="none" stroke-linecap="round"/><rect x="13" y="16" width="14" height="8" rx="4" fill="#10b981"/><circle cx="8" cy="11" r="3" fill="#ffffff" stroke="#334155" stroke-width="1.6"/><circle cx="8" cy="29" r="3" fill="#ffffff" stroke="#334155" stroke-width="1.6"/><circle cx="32" cy="11" r="3" fill="#ecfdf5" stroke="#047857" stroke-width="1.6"/><circle cx="32" cy="29" r="3" fill="#ffffff" stroke="#334155" stroke-width="1.6"/></g>
     </svg>
   </div>
-  <h1 class="title">Mindmap</h1>
+  <h1 class="title">Ideeënkaart</h1>
   <p class="subtitle">Ideeën ordenen rond één centraal idee</p>
 </header>
 
 <main class="main">
-  <div class="tabs" id="tabs" role="toolbar" aria-label="Mindmaps"></div>
+  <div class="tabs" id="tabs" role="toolbar" aria-label="Ideeënkaarten"></div>
   <div id="app"></div>
 
   <div class="restart-row"><button type="button" class="restart-btn" id="oc-restart">Opnieuw beginnen</button></div>
@@ -264,7 +264,7 @@ button.more { border:0; cursor:pointer; min-height:28px; }
   <details class="explain">
     <summary>Hoe werkt dit?</summary>
     <div class="inner">
-      <p>In het midden staat het centrale idee, daarrond de takken. Je tekent niets: je typt, en de kaart ordent zichzelf links en rechts van het midden. Elk niveau krijgt een eigen tint, van donkergroen in het midden naar lichter aan de rand. Onder de kaart staat dezelfde mindmap als lijst; wat je in de ene wijzigt, verandert meteen in de andere.</p>
+      <p>In het midden staat het centrale idee, daarrond de takken. Je tekent niets: je typt, en de kaart ordent zichzelf links en rechts van het midden. Elk niveau krijgt een eigen tint, van donkergroen in het midden naar lichter aan de rand. Onder de kaart staat dezelfde kaart als lijst; wat je in de ene wijzigt, verandert meteen in de andere.</p>
       <ul>
         <li><b>Enter</b>: een nieuw idee op hetzelfde niveau. Heeft het idee al subtakken, dan komt het nieuwe idee erbij als eerste subtak.</li>
         <li><b>Tab</b>: een niveau dieper (onder het idee erboven). <b>Shift+Tab</b>: een niveau terug. Op een telefoon doen de pijlknoppen hetzelfde.</li>
@@ -399,7 +399,7 @@ const ocShare = (() => {
             <button class="ocs-all" type="button" data-all="${si}">alles</button></div>
             ${s.items.map((it, ii) => `<label class="ocs-item"><input type="checkbox" data-s="${si}" data-i="${ii}">
               <span>${esc(it.text)}${it.who || it.when || it.note ? `<small>${esc([it.who, it.when, it.note].filter(Boolean).join(' · '))}</small>` : ''}</span></label>`).join('')}
-          </div>`).join('') : `<p class="ocs-empty">Er zijn nog geen ${esc(what)} om over te nemen. Vul ze eerst in een andere tool in (bijvoorbeeld de Stakeholder Radar, de RACI-matrix of de Gap-analyse), dan verschijnen ze hier.</p>`}
+          </div>`).join('') : `<p class="ocs-empty">Er zijn nog geen ${esc(what)} om over te nemen. Vul ze eerst in een andere tool van Onder Constructie in, dan verschijnen ze hier.</p>`}
         </div>
         <div class="ocs-foot"><button class="ocs-btn ocs-cancel" type="button">Annuleer</button>
           <button class="ocs-btn ocs-ok" type="button" disabled>Neem over</button></div></div>`;
@@ -530,8 +530,8 @@ const ocExport = (() => {
 })();
 
 
-/* ---------- Mindmap ---------- */
-const OC_ID = 'mindmap', OC_TOOL = 'Mindmap', KEY = 'mindmap.v1';
+/* ---------- Ideeënkaart ---------- */
+const OC_ID = 'mindmap', OC_TOOL = 'Ideeënkaart', KEY = 'mindmap.v1';
 const $ = id => document.getElementById(id);
 const esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
 const uid = () => Math.random().toString(36).slice(2, 10);
@@ -559,9 +559,9 @@ const ICON = {
   info:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>'
 };
 
-/* Opslag: een mindmap is een lijst ideeën met een niveau (0 = het centrum). */
+/* Opslag: een ideeënkaart is een lijst ideeën met een niveau (0 = het centrum). */
 const idea = (text = '', level = 1) => ({ id:uid(), text, level, collapsed:false });
-function newMap(name) { return { id:uid(), name: name || 'Nieuwe mindmap', nodes:[idea('', 0)] }; }
+function newMap(name) { return { id:uid(), name: name || 'Nieuwe ideeënkaart', nodes:[idea('', 0)] }; }
 function fresh() { return { maps:[], current:null, view:'draw', fit:null }; }
 function normalize(nodes) {
   nodes.forEach((n, i) => { n.level = i === 0 ? 0 : Math.max(1, Math.min(n.level, nodes[i - 1].level + 1)); });
@@ -570,7 +570,7 @@ function normalize(nodes) {
 function valid(s) {
   if (!s || !Array.isArray(s.maps)) return fresh();
   s.maps = s.maps.filter(m => m && Array.isArray(m.nodes) && m.nodes.length).map(m => ({
-    id: /^[\w-]+$/.test(m.id) ? m.id : uid(), name: String(m.name || 'Mindmap').slice(0, 80), voorbeeld: !!m.voorbeeld,
+    id: /^[\w-]+$/.test(m.id) ? m.id : uid(), name: String(m.name || 'Ideeënkaart').slice(0, 80), voorbeeld: !!m.voorbeeld,
     nodes: normalize(m.nodes.filter(n => n && /^[\w-]+$/.test(n.id)).map(n => ({ id:n.id, text:String(n.text || '').slice(0, 160), level: Math.max(0, Math.min(12, parseInt(n.level) || 0)), collapsed: !!n.collapsed, ...(n.hint ? { hint:true } : {}) })))
   })).filter(m => m.nodes.length);
   return { ...fresh(), ...s, maps:s.maps, fit: typeof s.fit === 'boolean' ? s.fit : null };
@@ -584,7 +584,7 @@ function save() {
 function saveUi() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
 window.addEventListener('storage', e => { if (e.key === KEY) { const v = state.view, c = state.current; state = load(); if (state.maps.some(m => m.id === c)) state.current = c; state.view = v; render(); } });
 const snapshot = () => { const c = JSON.stringify(state); const fn = () => { if (saves !== fn.mark) { setTimeout(() => toast('Ongedaan maken kan niet meer: er is intussen iets veranderd'), 60); return; } state = valid(JSON.parse(c)); save(); render(); toast('Teruggezet'); }; return fn; };
-const title = m => (m.nodes[0].text || '').trim() || m.name || 'Mindmap';
+const title = m => (m.nodes[0].text || '').trim() || m.name || 'Ideeënkaart';
 const cur = () => state.maps.find(m => m.id === state.current) || state.maps[0] || null;
 
 /* Boom uit de lijst */
@@ -665,7 +665,7 @@ function layout(m) {
 // opts.ui: de interactieve kaart in de pagina (selectie, inklapbolletjes); zonder opts: voor export
 function svgOf(m, opts = {}) {
   const L = layout(m), out = [], ui = !!opts.ui;
-  out.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${L.width} ${L.height}" width="${L.width}" height="${L.height}" role="img" aria-label="${esc(`Mindmap ${title(m)}: ${m.nodes.length} ideeën`)}" font-family="'DM Sans', system-ui, sans-serif">`);
+  out.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${L.width} ${L.height}" width="${L.width}" height="${L.height}" role="img" aria-label="${esc(`Ideeënkaart ${title(m)}: ${m.nodes.length} ideeën`)}" font-family="'DM Sans', system-ui, sans-serif">`);
   out.push(`<rect width="${L.width}" height="${L.height}" fill="#ffffff"/>`);
   L.links.forEach(({ a, b }) => {
     const ax = b.dir > 0 ? a.x + a.w : a.x, ay = a.y + a.h / 2, bx = b.dir > 0 ? b.x : b.x + b.w, by = b.y + b.h / 2, mx = (ax + bx) / 2;
@@ -721,7 +721,7 @@ function render() {
   const m = cur();
   if (m && state.current !== m.id) state.current = m.id;
   $('tabs').innerHTML = state.maps.map(x => `<button type="button" class="tab" data-map="${x.id}" aria-pressed="${x.id === (m && m.id)}"><span class="nm">${esc(title(x))}</span>${x.voorbeeld ? '<span class="vb-tag">voorbeeld</span>' : ''}</button>`).join('')
-    + `<button type="button" class="tab add" data-act="gallery" aria-label="Nieuwe mindmap: leeg, uit een sjabloon of een voorbeeld" aria-haspopup="dialog">+ Mindmap</button>`;
+    + `<button type="button" class="tab add" data-act="gallery" aria-label="Nieuwe ideeënkaart: leeg, uit een sjabloon of een voorbeeld" aria-haspopup="dialog">+ Kaart</button>`;
   $('oc-restart').parentElement.hidden = !state.maps.some(x => !x.voorbeeld);
   if (!m) {
     $('app').innerHTML = `<section class="start-gal"><h2 class="gal-h">Hoe wil je beginnen?</h2>${gallery()}</section>`;
@@ -1057,7 +1057,7 @@ document.addEventListener('click', async e => {
   if (t.dataset.view) { state.view = t.dataset.view; saveUi(); render(); return; }
   const m = cur(), act = t.dataset.act, id = t.dataset.id, i = m ? m.nodes.findIndex(n => n.id === id) : -1;
   switch (act) {
-    case 'new-map': { closeGallery(); const x = newMap(state.maps.length ? 'Mindmap ' + (state.maps.length + 1) : 'Mijn mindmap'); state.maps.push(x); state.current = x.id; state.view = 'draw'; save(); render(); startEdit(x.nodes[0].id, true); return; }
+    case 'new-map': { closeGallery(); const x = newMap(state.maps.length ? 'Ideeënkaart ' + (state.maps.length + 1) : 'Mijn ideeënkaart'); state.maps.push(x); state.current = x.id; state.view = 'draw'; save(); render(); startEdit(x.nodes[0].id, true); return; }
     case 'example': closeGallery(); example(); return;
     case 'gallery': openGallery(); return;
     case 'tpl': closeGallery(); fromTemplate(t.dataset.tpl); return;
@@ -1071,7 +1071,7 @@ document.addEventListener('click', async e => {
     case 'vb-eigen': m.voorbeeld = false; save(); render(); toast('Het voorbeeld is nu van jou'); return;
     case 'fit': state.fit = !shownFit; saveUi(); render(); return;
     case 'imp': {
-      const picked = await ocShare.pick({ types:['taak', 'actie', 'betrokkene', 'risico'], self:OC_ID, title:'Ideeën overnemen', intro:'Kies items uit andere tools. Ze komen als nieuwe hoofdtakken in de mindmap.' });
+      const picked = await ocShare.pick({ types:['taak', 'actie', 'betrokkene', 'risico'], self:OC_ID, title:'Ideeën overnemen', intro:'Kies items uit andere tools. Ze komen als nieuwe hoofdtakken in de ideeënkaart.' });
       if (!picked.length) return;
       picked.forEach(p => m.nodes.push(idea(p.text.slice(0, 160), 1))); save(); render(); toast(`${picked.length} ${picked.length === 1 ? 'idee' : 'ideeën'} overgenomen`); return; }
   }
@@ -1207,7 +1207,7 @@ function gallery() {
   return `<div class="tgal">
     ${card('new-map', '', 'Leeg beginnen', 'Eén centraal idee, en jij bouwt verder.', '', blank, true)}
     ${Object.entries(TEMPLATES).map(([k, t]) => card('tpl', ` data-tpl="${k}"`, t.name, t.desc || '', count(t), mini(tplNodes(t, t.name)))).join('')}
-    ${card('example', '', 'Voorbeeld bekijken', 'Een ingevulde mindmap over een nieuw digitaal loket.', 'voorbeeld', mini([idea(EXAMPLE_ROOT, 0), ...EXAMPLE_MAIN.flatMap(t => [idea(t, 1), idea('…', 2)])]))}
+    ${card('example', '', 'Voorbeeld bekijken', 'Een ingevulde ideeënkaart over een nieuw digitaal loket.', 'voorbeeld', mini([idea(EXAMPLE_ROOT, 0), ...EXAMPLE_MAIN.flatMap(t => [idea(t, 1), idea('…', 2)])]))}
   </div>`;
 }
 let galOpener = null;
@@ -1216,7 +1216,7 @@ function openGallery() {
   closeGallery(); galOpener = document.activeElement;
   const back = document.createElement('div'); back.className = 'gal-back'; back.id = 'gal';
   back.innerHTML = `<section class="gal-sheet" role="dialog" aria-modal="true" aria-labelledby="gal-h">
-    <div class="gal-top"><h2 class="gal-h" id="gal-h">Nieuwe mindmap</h2><button type="button" class="icon-btn" data-act="gal-close" aria-label="Sluit">${ICON.x}</button></div>
+    <div class="gal-top"><h2 class="gal-h" id="gal-h">Nieuwe ideeënkaart</h2><button type="button" class="icon-btn" data-act="gal-close" aria-label="Sluit">${ICON.x}</button></div>
     ${gallery()}</section>`;
   document.body.appendChild(back);
   back.addEventListener('click', e => { if (e.target === back || e.target.closest('[data-act="gal-close"]')) closeGallery(true); });
@@ -1307,12 +1307,12 @@ function asMermaid(m) {
   const q = s => String(s || '…').replace(/[()[\]{}<>"#&]/g, c => ({ '(':'❨', ')':'❩', '[':'⟦', ']':'⟧', '{':'⦃', '}':'⦄', '<':'‹', '>':'›', '"':'”', '#':'♯', '&':'en' }[c]));
   return ['mindmap', ...m.nodes.map((n, i) => '  '.repeat(n.level + 1) + (i === 0 ? `root((${q(n.text)}))` : q(n.text)))].join('\n');
 }
-// Bestandsnaam: mindmap-titel-JJJJ-MM-DD (een datum die al in de titel staat, komt er niet twee keer in).
+// Bestandsnaam: ideeenkaart-titel-JJJJ-MM-DD (een datum die al in de titel staat, komt er niet twee keer in).
 function fileBase(m) {
   const d = new Date(), iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   const slug = s => String(s || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/\d{4}-\d{2}-\d{2}/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-  const nm = slug(title(m)).replace(/^mindmap(-|$)/, '').slice(0, 50).replace(/-$/, '');
-  return ['mindmap', nm, iso].filter(Boolean).join('-');
+  const nm = slug(title(m)).replace(/^(mindmap|ideeenkaart)(-|$)/, '').slice(0, 50).replace(/-$/, '');
+  return ['ideeenkaart', nm, iso].filter(Boolean).join('-');
 }
 function buildExport() {
   const m = cur(), node = document.createElement('div');
@@ -1338,7 +1338,7 @@ document.addEventListener('click', async e => {
   else if (act === 'collapse') { m.nodes.forEach((n, i) => { n.collapsed = n.level === 1 && hasKids(m.nodes, i); }); save(); render(); toast('Ingeklapt tot de hoofdtakken'); }
   else if (act === 'dup') { const c = JSON.parse(JSON.stringify(m)); c.id = uid(); c.voorbeeld = false; c.nodes.forEach(n => n.id = uid()); c.nodes[0].text = title(m).slice(0, 150) + ' (kopie)'; state.maps.splice(state.maps.indexOf(m) + 1, 0, c); state.current = c.id; save(); render(); toast('Kopie gemaakt'); }
   else if (act === 'wipe') {
-    if (!await ocConfirm('Alles wissen in Mindmap?', 'Alle mindmaps verdwijnen. Je kan dit nog ongedaan maken tot je iets anders doet.', 'Alles wissen')) return;
+    if (!await ocConfirm('Alles wissen in Ideeënkaart?', 'Alle ideeënkaarten verdwijnen. Je kan dit nog ongedaan maken tot je iets anders doet.', 'Alles wissen')) return;
     const undo = snapshot();
     try { localStorage.removeItem(KEY); } catch {}
     state = fresh(); ocShare.clear(OC_ID); render(); toast('Alles gewist', undo);
