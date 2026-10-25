@@ -361,6 +361,7 @@ button.oc-import { color:#047857; min-height:44px; }
 <script>
 /* Het actieve project uit de app (oc.project): nieuwe projecten, analyses en lijsten krijgen die naam. */
 function ocProject(fb) { try { const p = JSON.parse(localStorage.getItem('oc.project')); return p && typeof p.name === 'string' && p.name.trim() ? p.name.trim().slice(0, 80) : fb; } catch { return fb; } }
+function ocPickProject(st, arr, cur = 'current') { const p = ocProject(''); if (!p || !st || !Array.isArray(st[arr])) return; const u = st[arr].find(x => x && x.name === p); if (u) st[cur] = u.id; }   // open het actieve project uit de app
 /* ---------- Overnemen tussen tools (gedeeld door de Onder Constructie-tools, v2) ----------
    Alle tools draaien op hetzelfde domein en delen dus localStorage. Elke tool legt wat hij te bieden
    heeft klaar onder 'oc.share.<tool-id>', in een vaste vorm, zodat andere tools het kunnen overnemen
@@ -715,6 +716,7 @@ function load() {
   return { lists:[first], current:first.id, scale:N };
 }
 let state = load();
+ocPickProject(state, 'lists');
 try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {}   // bewaart meteen een eventuele omzetting naar 1–4
 function save() { ocAfterSave(); try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
 const cur = () => state.lists.find(l => l.id === state.current) || state.lists[0];

@@ -1031,7 +1031,9 @@ function publish() {
     let main = '';
     // ideeën zonder subtakken zijn de concrete punten; de hoofdtak gaat mee als notitie
     m.nodes.forEach((n, i) => { if (n.level === 1) main = n.text.trim(); if (n.level >= 1 && n.text.trim() && !n.hint && !hasKids(m.nodes, i)) items.push({ type:'taak', text:n.text.trim(), note: n.level > 1 ? main || undefined : undefined }); });
-    if (items.length) lists.push({ name: title(m), items });
+    // ook een kaart met alleen sjabloonvragen telt als werk: een kerncijfer met het aantal ideeën
+    items.push({ type:'kerncijfer', text:'mindmap.ideeen', note:String(m.nodes.length - 1) });
+    if (m.nodes.length > 1 || m.nodes[0].text.trim()) lists.push({ name: title(m), items });
   });
   ocShare.publish(OC_ID, OC_TOOL, lists);
 }

@@ -129,7 +129,7 @@ a { color:inherit; }
 }
 .icon svg, .icon img { width:34px; height:34px; display:block; }
 .row-title { font-size:1rem; font-weight:600; color:var(--slate-800); letter-spacing:-0.01em; line-height:1.3; }
-.row-sub { font-size:0.875rem; color:var(--slate-500); line-height:1.35; }
+.row-sub { font-size:0.9375rem; color:var(--slate-600); line-height:1.35; }
 .tag {
   display:inline-block; vertical-align:2px; margin-left:0.375rem; padding:0 0.4375rem; border-radius:999px;
   font-size:0.75rem; font-weight:500; line-height:1.55; color:var(--slate-600); background:var(--slate-100);
@@ -481,6 +481,39 @@ body.filtering #groups, body.filtering #list-tools { display:none; }
 .cc-when { font-size:0.75rem; color:var(--slate-500); margin-top:0.25rem; }
 .ccard .live { position:absolute; top:0.75rem; right:0.75rem; }
 .section-head { align-items:center; }
+/* Mijn werk: project, verder werken en gegevens in één kaart */
+.mywork { background:var(--wit); border:1px solid #cfe9dd; border-radius:18px; padding:0.875rem 0.875rem 1rem; margin-bottom:1.5rem; }
+.mywork[hidden], .start[hidden] { display:none; }
+.mw-head { display:flex; align-items:center; gap:0.5rem; padding:0 0.125rem 0.25rem; }
+.mw-head .section-label { flex:1; }
+.mywork .proj { margin-bottom:0.75rem; }
+.mywork .proj-line { border:0; background:var(--accent-50, #f0fdf4); padding:0.25rem 0.25rem 0.25rem 0.75rem; }
+.mywork .ccard { background:var(--slate-50); }
+.mywork .ccard:hover { background:var(--wit); }
+.cont[hidden] { display:none; }
+/* Waar begin je? */
+.start { margin-bottom:1.5rem; }
+.start .section-label { display:block; padding:0 0.25rem; margin-bottom:0.625rem; }
+.stiles { display:grid; grid-template-columns:1fr; gap:0.5rem; }
+@media (min-width:700px) { .stiles { grid-template-columns:1fr 1fr; } }
+.stile { display:grid; grid-template-columns:44px minmax(0,1fr) auto; gap:0.875rem; align-items:center; text-align:left; padding:0.875rem 0.75rem 0.875rem 0.875rem; background:var(--wit); border:1px solid var(--slate-200); border-radius:16px; min-height:72px; transition:border-color .15s, box-shadow .15s; }
+.stile:hover { border-color:#a7f3d0; box-shadow:0 4px 14px rgba(16,185,129,0.10); }
+.stile .icon.g svg { width:40px; height:40px; }
+.st-body { display:flex; flex-direction:column; min-width:0; gap:0.125rem; }
+.st-body b { font-size:1rem; color:var(--slate-800); line-height:1.3; letter-spacing:-0.01em; }
+.st-body span { font-size:0.9375rem; color:var(--slate-600); line-height:1.35; }
+.st-body small { font-size:0.8125rem; color:var(--accent-dark); font-weight:600; margin-top:0.125rem; }
+.start .proj { margin:0.75rem 0 0; }
+.paths-more { font-size:0.875rem; color:var(--slate-600); margin:-0.5rem 0.25rem 1.25rem; }
+.paths-more:empty { display:none; }
+.lnk { color:var(--accent-dark); font-weight:600; text-decoration:underline; text-underline-offset:2px; min-height:32px; font-size:inherit; }
+.filter-toggle { min-height:44px; padding:0 0.625rem; border-radius:10px; font-size:0.8125rem; font-weight:600; color:var(--slate-600); }
+.filter-toggle[aria-expanded="true"] { color:var(--accent-dark); background:var(--accent-light); }
+.filter-toggle:hover { background:var(--slate-100); }
+.all-head .section-label { flex:1; }
+/* voettekst netjes laten afbreken */
+@media (max-width:480px) { .footer { display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:0.375rem 1rem; } .footer .sep { display:none; } }
+
 /* Actief project */
 /* Privacy */
 .privacy { margin-top:1rem; border-top:1px solid var(--slate-200); padding-top:0.5rem; }
@@ -548,7 +581,7 @@ body.searching .proj { display:none; }
 .results { margin-bottom:1rem; }
 
 /* Tijdens zoeken: alleen de resultaten. Tijdens filteren: geen groepen. */
-body.searching #continue, body.searching .paths-wrap, body.searching #filter, body.searching #all-head,
+body.searching #mywork, body.searching #start, body.searching .paths-wrap, body.searching #filter, body.searching #all-head,
 body.searching #groups, body.searching #backup-nudge { display:none !important; }
 body.filtering #groups { display:none; }
 body.filtering .list-tools { visibility:hidden; }
@@ -596,22 +629,32 @@ body.filtering .list-tools { visibility:hidden; }
       <div class="nudge-btns"><button type="button" class="btn" id="backup-now">Reservekopie maken</button><button type="button" class="nudge-later" id="backup-later">Later</button></div>
     </div>
 
-    <div class="proj" id="proj"></div>
-
-    <section class="section" id="continue" hidden>
-      <div class="section-head"><h2 class="section-label">Verder werken</h2>
-        <button type="button" class="manage" id="manage" aria-haspopup="dialog">Beheren</button></div>
+    <!-- 1. Mijn werk: project, wat je laatst deed, je gegevens (verschijnt zodra er iets is) -->
+    <section class="mywork" id="mywork" hidden aria-labelledby="mywork-h">
+      <div class="mw-head"><h2 class="section-label" id="mywork-h">Mijn werk</h2>
+        <button type="button" class="manage" id="manage" aria-haspopup="dialog">Gegevens</button></div>
+      <div class="proj" id="proj"></div>
       <div class="cont" id="cont"></div>
     </section>
 
+    <!-- 2. Waar begin je? (zolang er geen stappenplan loopt) -->
+    <section class="start" id="start" hidden aria-labelledby="start-h">
+      <h2 class="section-label" id="start-h">Waar begin je?</h2>
+      <div class="stiles" id="stiles"></div>
+      <div class="proj" id="proj-start"></div>
+    </section>
+
+    <!-- 3. Stappenplannen waar je mee bezig bent -->
     <section class="paths-wrap" id="paths-wrap" hidden>
       <div class="filter-head"><h2 class="section-label">Stappenplannen</h2><span class="filter-hint">Tools die op elkaar voortbouwen</span></div>
       <div class="paths" id="paths"></div>
+      <p class="paths-more" id="paths-more"></p>
     </section>
 
     <section class="alltools" id="alltools" aria-labelledby="alltools-h">
       <div class="all-head" id="all-head">
         <h2 class="section-label" id="alltools-h">Alle tools</h2>
+        <button type="button" class="filter-toggle" id="filter-toggle" aria-expanded="false" aria-controls="filter">Filter op fase</button>
         <div class="list-tools" id="list-tools"><button id="all-open">Alles open</button><button id="all-closed">Alles dicht</button></div>
       </div>
       <div class="filter" id="filter" hidden>
@@ -639,16 +682,16 @@ body.filtering .list-tools { visibility:hidden; }
     <span class="sep" aria-hidden="true">·</span>
     <a href="https://bit.ly/4azfO7S" target="_blank" rel="noopener">contact</a>
     <span class="sep" aria-hidden="true">·</span>
-    <button class="footer-link" id="data-open" type="button">gegevens en privacy</button>
+    <button class="footer-link" id="data-open" type="button">gegevens</button>
     <span class="sep" aria-hidden="true">·</span>
-    <span class="app-version" title="Versie van de app">v25</span>
+    <span class="app-version" title="Versie van de app">v26</span>
   </footer>
 </div>
 
 <div class="sheet-back" id="data-sheet" hidden>
   <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="data-title">
     <div class="sheet-head">
-      <h2 id="data-title">Gegevens</h2>
+      <h2 id="data-title">Gegevens en privacy</h2>
       <button class="tb-btn" id="data-close" aria-label="Sluit">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
       </button>
@@ -812,8 +855,7 @@ function setCollapsed(id, closed) {
 // behalve de groep van de tool die je het laatst gebruikte.
 function closedGroups() {
   const c = store.get('collapsed', null); if (Array.isArray(c)) return c;
-  const u = store.get('usage', {}), last = Object.keys(u).filter(id => byId[id]).sort((a, b) => u[b].t - u[a].t)[0];
-  return GROUPS.map(g => g.id).filter(id => !last || byId[last].g !== id);
+  return GROUPS.map(g => g.id);   // standaard alles dicht: een overzicht van vijf groepen
 }
 function saveCollapsed() {
   store.set('collapsed', [...document.querySelectorAll('.group.collapsed')].map(g => g.dataset.group));
@@ -833,8 +875,8 @@ document.addEventListener('click', e => {
 });
 function rowHTML(t, opts = {}) {
   // In de rij: de PDCA-fase(n). Een thema alleen als er geen fase is, of als je net op dat thema filtert.
-  const pd = t.pdca || [];
-  const themes = (t.labels || []).filter(l => !pd.length || l === opts.on);
+  const pd = opts.on ? PHASES.map(x => x.id).filter(x => (t.pdca || []).includes(x)) : [];
+  const themes = opts.on ? (t.labels || []).filter(l => l === opts.on) : [];
   const tags = pd.map(p => `<span class="tag pd${p === opts.on ? ' on' : ''}">${esc((PHASES.find(x => x.id === p) || { name:p }).name)}</span>`).join('')
              + themes.map(l => `<span class="tag${l === opts.on ? ' on' : ''}">${esc(l)}</span>`).join('');
   const grp = opts.showGroup ? `<span class="row-group">${esc((GROUPS.find(g => g.id === t.g) || {}).label || '')}</span>` : '';
@@ -854,6 +896,13 @@ const PHASES = [
   { id:'act',   name:'Bijsturen',   sub:'bijsturen',    long:'Bijsturen en vastleggen wat we anders doen' }
 ];
 const LABEL_ORDER = ['mensen', 'vergaderen', 'inzicht'];
+let filterOpen = false;
+document.addEventListener('click', e => {
+  if (!e.target.closest('#filter-toggle')) return;
+  filterOpen = !filterOpen; $('filter-toggle').setAttribute('aria-expanded', filterOpen);
+  if (!filterOpen && active && active.kind === 'pdca') setFilter(null);
+  renderFilter();
+});
 let active = null;   // { kind: 'pdca' | 'label', value }
 const isOn = (kind, v) => !!active && active.kind === kind && active.value === v;
 function renderFilter() {
@@ -874,8 +923,11 @@ function renderFilter() {
     if (ia !== -1 || ib !== -1) return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
     return a.localeCompare(b, 'nl');
   });
-  $('filter').hidden = !hasPdca && labels.length < 2;
-  $('filter-chips').innerHTML = labels.map(l =>
+  $('filter-toggle').hidden = !hasPdca;
+  $('filter').hidden = !hasPdca || !filterOpen;
+  // thema's niet meer als aparte knoppen: de groepen en het zoeken dekken ze (dezelfde woorden vinden dezelfde tools)
+  $('filter-chips').innerHTML = '';
+  void labels.map(l =>
     `<button class="fchip" data-label="${esc(l)}" aria-pressed="${isOn('label', l)}">${esc(l)}<span class="n">${counts[l]}</span></button>`).join('');
 }
 function setFilter(kind, value) {
@@ -927,10 +979,12 @@ document.addEventListener('click', e => {
 const PROJ_KEY = 'oc.project';
 const getProject = () => { try { const p = JSON.parse(localStorage.getItem(PROJ_KEY)); return p && p.name ? p : null; } catch { return null; } };
 let projEdit = false;
+function projBox() { return $('mywork').hidden ? $('proj-start') : $('proj'); }
 function renderProject() {
   const p = getProject(), hist = store.get('projects', []);
+  const box = projBox(), other = box.id === 'proj' ? $('proj-start') : $('proj'); other.innerHTML = '';
   if (projEdit) {
-    $('proj').innerHTML = `<form class="proj-form" id="proj-form">
+    box.innerHTML = `<form class="proj-form" id="proj-form">
       <label for="proj-name">Aan welk project werk je?</label>
       <div class="proj-row"><input id="proj-name" list="proj-list" maxlength="80" autocomplete="off" placeholder="Bv. Digitaal premieloket" value="${esc(p ? p.name : '')}">
         <datalist id="proj-list">${hist.map(n => `<option value="${esc(n)}">`).join('')}</datalist>
@@ -940,9 +994,9 @@ function renderProject() {
     const i = $('proj-name'); i.focus(); i.select();
     return;
   }
-  $('proj').innerHTML = p
+  box.innerHTML = p
     ? `<div class="proj-line"><span class="proj-k">Project</span><b class="proj-v">${isPrivate() ? 'verborgen' : esc(p.name)}</b><button type="button" class="proj-edit" id="proj-open">Wijzig</button></div>`
-    : `<button type="button" class="proj-set" id="proj-open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Projectnaam instellen<span>dan gebruiken alle tools dezelfde naam</span></button>`;
+    : `<button type="button" class="proj-set" id="proj-open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Werk je aan een project? Geef het een naam<span>Dan gebruiken alle tools dezelfde naam.</span></button>`;
 }
 document.addEventListener('click', e => {
   if (e.target.closest('#proj-open')) { projEdit = true; renderProject(); }
@@ -952,11 +1006,12 @@ document.addEventListener('click', e => {
 document.addEventListener('submit', e => {
   if (e.target.id !== 'proj-form') return;
   e.preventDefault();
-  const name = $('proj-name').value.trim().slice(0, 80);
+  const name = $('proj-name').value.trim().slice(0, 80), was = (getProject() || {}).name;
   try { name ? localStorage.setItem(PROJ_KEY, JSON.stringify({ name, since: Date.now() })) : localStorage.removeItem(PROJ_KEY); } catch {}
   if (name) store.set('projects', [name, ...store.get('projects', []).filter(n => n !== name)].slice(0, 8));
   projEdit = false; renderProject();
-  if (name) appToast(`Project: ${name}`);
+  if (name && was && was !== name) appToast(`Project: ${name}. Tools openen dit project als het er al is; anders maak je het met + aan.`);
+  else if (name) appToast(`Project: ${name}`);
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && projEdit && e.target.id === 'proj-name') { projEdit = false; renderProject(); $('proj-open').focus(); } });
 
@@ -972,14 +1027,13 @@ function preview(t) {
   if (isPrivate()) return '';
   try {
     const d = JSON.parse(localStorage.getItem('oc.share.' + t.id) || 'null');
-    const own = d && Array.isArray(d.lists) ? d.lists.filter(l => (l.items || []).some(i => i.type !== 'kerncijfer')) : [];
+    const own = d && Array.isArray(d.lists) ? d.lists.filter(l => (l.items || []).length) : [];
     const names = [...new Set(own.map(l => String(l.name || '').trim()).filter(n => n && !/^kerncijfers?$/i.test(n)))];
     if (names.length) return names.slice(0, 2).join(', ') + (names.length > 2 ? ` en nog ${names.length - 2}` : '');
   } catch {}
   return '';
 }
 function renderRecent() {
-  if (!projEdit) renderProject();
   const all = lsKeys(), usage = store.get('usage', {});
   // Erin: tools met jouw gegevens, en tools zonder opslag (timer, ademhaling…) die je de laatste twee weken opende.
   // Niet: een tool die je alleen even bekeek. Daar valt niets verder te doen.
@@ -988,17 +1042,20 @@ function renderRecent() {
     if (d || (d === null && at && now - at < 14 * 864e5)) ids.add(t.id); });
   const items = [...ids].map(id => ({ t: byId[id], at: (usage[id] || {}).t || 0, data: hasData(byId[id], all) }))
     .sort((a, b) => b.at - a.at).slice(0, 6);
-  $('continue').hidden = !items.length;
+  // Mijn werk verschijnt zodra er werk is; daarvoor staat de projectnaam bij 'Waar begin je?'
+  $('mywork').hidden = !items.length;
   document.body.classList.toggle('returning', items.length > 0);
   $('cont').innerHTML = items.map(({ t, at, data }) => {
-    const pv = data ? preview(t) : '';
+    const pr = getProject(), pv0 = data ? preview(t) : '', pv = pr && pv0 === pr.name ? '' : pv0;   // de projectnaam staat al bovenaan
     return `<button class="ccard" data-id="${esc(t.id)}" title="${esc(t.desc)}">
       <span class="icon">${iconHTML(t.icon)}</span>
       <span class="cc-body"><span class="cc-title">${esc(t.title)}</span>
         <span class="cc-sub">${esc(pv || t.sub)}</span>
         ${at ? `<span class="cc-when">${ago(at)}</span>` : ''}</span>
-      <span class="live">open</span></button>`;
+      <span class="live">geopend</span></button>`;
   }).join('');
+  if (!projEdit) renderProject();
+  renderStart();
   syncData();
 }
 function markLive() {
@@ -1006,7 +1063,7 @@ function markLive() {
   document.querySelectorAll('.group[data-group]').forEach(g => {
     const n = g.querySelectorAll('.row.is-live').length;
     g.classList.toggle('has-live', n > 0);
-    g.querySelector('.count-live').textContent = n + ' open';
+    g.querySelector('.count-live').textContent = n + ' geopend';
   });
 }
 document.addEventListener('click', e => {
@@ -1174,7 +1231,7 @@ if ('serviceWorker' in navigator) {
 /* ---------- Gegevens: zien, bewaren, wissen ----------
    Welke sleutels een tool gebruikt, staat in tools.json (oc:opslag). Een * achteraan is een voorvoegsel.
    De app zelf bewaart onder 'oc-app.' (laatst gebruikt, inklapstand, gebruik). */
-const APP_ENTRY = { id:'__app', title:'Deze app', sub:'laatst gebruikt, volgorde, ingeklapte blokken', storage:['oc-app.*', 'oc.project'],
+const APP_ENTRY = { id:'__app', title:'Instellingen van de app', sub:'laatst gebruikt, volgorde, ingeklapte blokken', storage:['oc-app.*', 'oc.project'],
   icon:'<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="16" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/><path d="M14 15h12M14 20h12M14 25h8" stroke="#64748b" stroke-width="2" stroke-linecap="round"/></svg>' };
 function lsKeys() { const out = []; try { for (let i = 0; i < localStorage.length; i++) out.push(localStorage.key(i)); } catch {} return out; }
 function keysFor(patterns, all = lsKeys()) {
@@ -1240,6 +1297,7 @@ function backup(keys) {
   a.download = `onderconstructie-reservekopie-${new Date().toISOString().slice(0, 10)}.json`;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
   store.set('backup-at', Date.now()); store.set('backup-snooze', 0);
+  if (!$('data-sheet').hidden) renderData();
 }
 function askWipe(ids) {
   const entries = dataEntries().filter(e => ids.includes(e.t.id));
@@ -1329,14 +1387,20 @@ function meaningful(v) {
   return typeof v === 'string' && v.trim().length > 0 && !/^(scan|plan|lijst|profiel|reeks|res|all|fase)$/.test(v);
 }
 function hasData(t, all) {
-  const share = 'oc.share.' + t.id;
+  const share = 'oc.share.' + t.id, st = t.storage || [];
+  if (!st.length) return null;
+  const parse = v => { try { return meaningful(JSON.parse(v)); } catch { return !!v; } };
   try {
-    if ((t.storage || []).includes(share)) {
+    if (st.includes(share)) {
       const d = JSON.parse(localStorage.getItem(share) || 'null');
-      return !!(d && Array.isArray(d.lists) && d.lists.some(l => l.items && l.items.length));
+      if (d && Array.isArray(d.lists) && d.lists.some(l => l.items && l.items.length)) return true;
     }
-    if (!(t.storage || []).length) return null;
-    return keysFor(t.storage, all).some(k => { try { return meaningful(JSON.parse(localStorage.getItem(k))); } catch { return !!localStorage.getItem(k); } });
+    // De tool bewaart bij het eerste bezoek hoe "leeg" eruitziet (oc.leeg.<pad>). Wijkt de opslag daarvan af, dan is er begonnen.
+    let base = null; try { base = JSON.parse(localStorage.getItem('oc.leeg.' + t.path) || 'null'); } catch {}
+    const own = keysFor(st.filter(k => k !== share), all);
+    if (base) return own.some(k => { const v = localStorage.getItem(k); return v != null && v !== base[k] && parse(v); });
+    if (st.includes(share)) return false;
+    return own.some(k => parse(localStorage.getItem(k)));
   } catch { return false; }
 }
 function stepsOf(trId, all = lsKeys()) {
@@ -1345,7 +1409,11 @@ function stepsOf(trId, all = lsKeys()) {
 }
 /* Stappenplanbalk in de app: in welk plan zit je, welke stap, wat komt hierna */
 let pathCtx = store.get('path-ctx', null);
-document.addEventListener('click', e => { const p = e.target.closest('.path[data-path], .pathbar[data-path]'); if (p && e.target.closest('[data-id]')) { pathCtx = p.dataset.path; store.set('path-ctx', pathCtx); } }, true);
+document.addEventListener('click', e => {
+  const c = e.target.closest('[data-ctx]'), p = e.target.closest('.path[data-path], .pathbar[data-path]');
+  const id = c ? c.dataset.ctx : p && e.target.closest('[data-id]') ? p.dataset.path : null;
+  if (id) { pathCtx = id; store.set('path-ctx', pathCtx); }
+}, true);
 function renderPathbar(id) {
   const t = byId[id], bar = $('pathbar'), plans = (t && t.traject || []).map(x => x.naam).filter(n => TRAJECTEN.some(tr => tr.id === n));
   if (!plans.length) { bar.hidden = true; bar.innerHTML = ''; return; }
@@ -1363,8 +1431,32 @@ function renderPathbar(id) {
         : `<span class="pb-end">Laatste stap</span>`}
     </span>`;
 }
+/* Waar begin je? Vier ingangen in gewone taal, zolang er geen stappenplan loopt */
+const STARTS = [
+  { path:'project', title:'Een project opzetten', sub:'Stap voor stap, van vertrekpunt tot terugblik' },
+  { path:'verandering', title:'Mensen meekrijgen in een verandering', sub:'Wie moet mee, en hoe pak je het aan?' },
+  { group:'vergaderen', title:'Een vergadering vlot laten lopen', sub:'Wie begint, groepjes, een rondje' },
+  { group:'reset', title:'Even tot rust komen', sub:'Ademen, aarden, vriendelijk zijn voor jezelf' }
+];
+function renderStart() {
+  const all = lsKeys(), started = TRAJECTEN.some(tr => stepsOf(tr.id, all).some(s => s.done));
+  $('start').hidden = started;
+  if (started) return;
+  $('stiles').innerHTML = STARTS.map(st => {
+    if (st.path) { const first = stepsOf(st.path, all)[0]; if (!first) return '';
+      return `<button type="button" class="stile" data-id="${esc(first.t.id)}" data-ctx="${st.path}"><span class="icon">${iconHTML(first.t.icon)}</span><span class="st-body"><b>${esc(st.title)}</b><span>${esc(st.sub)}</span><small>Begint met ${esc(first.t.title)}</small></span>${chevron}</button>`; }
+    const g = GROUPS.find(x => x.id === st.group); if (!g) return '';
+    return `<button type="button" class="stile" data-group-open="${g.id}"><span class="icon g">${g.logo}</span><span class="st-body"><b>${esc(st.title)}</b><span>${esc(st.sub)}</span><small>Naar ${esc(g.label)}</small></span>${chevron}</button>`;
+  }).join('');
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-group-open]'); if (!b) return;
+  const id = b.dataset.groupOpen; setCollapsed(id, false); saveCollapsed();
+  const g = document.querySelector(`.group[data-group="${id}"]`);
+  if (g) { g.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block:'start' }); g.querySelector('.group-head').focus({ preventScroll:true }); }
+});
 function renderPaths() {
-  const all = lsKeys(), openSet = store.get('paths-open', []);
+  const all = lsKeys(), openSet = store.get('paths-open', []), notStarted = [];
   const html = TRAJECTEN.map(tr => {
     const steps = TOOLS.flatMap(t => (t.traject || []).filter(x => x.naam === tr.id).map(x => ({ t, n: x.stap })))
       .sort((a, b) => a.n - b.n);
@@ -1372,6 +1464,7 @@ function renderPaths() {
     steps.forEach(s => s.done = hasData(s.t, all));
     const next = steps.find(s => s.done === false) || null;
     const nDone = steps.filter(s => s.done).length, isOpen = openSet.includes(tr.id);
+    if (!nDone) { notStarted.push({ tr, first: steps[0] }); return ''; }
     return `<section class="path${isOpen ? ' open' : ''}" data-path="${tr.id}">
       <button class="path-head" aria-expanded="${isOpen}">
         <span><span class="path-title" role="heading" aria-level="2">${esc(tr.title)}</span>
@@ -1391,6 +1484,7 @@ function renderPaths() {
     </section>`;
   }).join('');
   $('paths').innerHTML = html;
+  $('paths-more').innerHTML = html && notStarted.length ? 'Ook: ' + notStarted.map(x => `<button type="button" class="lnk" data-id="${esc(x.first.t.id)}" data-ctx="${x.tr.id}">${esc(x.tr.title)}</button>`).join(', ') : '';
   $('paths-wrap').hidden = !html;
 }
 document.addEventListener('click', e => {
@@ -1455,14 +1549,14 @@ $('wipe-tool').addEventListener('click', async () => {
 const SYNONIEMEN = {
   raci:'wie doet wat rollen verantwoordelijk taakverdeling', kanban:'planning sprint taken bord scrum backlog',
   vinkje:'checklist todo lijst afvinken boodschappen', beslissingen:'beslissing besluit afspraak notulen',
-  vergaderkost:'vergadering meeting kost tijd', 'check-in':'vergadering ronde rondje opener beurt spreektijd', stroom:'proces flow schema stappen flowchart swimlane', mindmap:'brainstorm ideeen ordenen structuur boom overzicht',
+  vergaderkost:'vergadering meeting kost tijd', 'check-in':'vergadering overleg team ronde rondje opener beurt spreektijd', stroom:'proces flow schema stappen flowchart swimlane', mindmap:'brainstorm ideeen ordenen structuur boom overzicht',
   communicatie:'communicatie boodschap mail nieuwsbrief aankondigen', memomities:'mail notitie inbox', focus:'timer pomodoro concentratie',
-  fortuna:'loting willekeurig naam trekken wie begint beurt kiezen rad', mixer:'teams verdelen groepen groepjes indelen samenstellen',
+  fortuna:'loting willekeurig naam trekken wie begint beurt kiezen rad team vergadering', mixer:'teams verdelen groepen groepjes indelen samenstellen team vergadering',
   'project-realisme':'schatting planning tijd duur',
   stakeholders:'draagvlak betrokkenen invloed', sponsor:'draagvlak leiding top opdrachtgever', weerstand:'draagvlak weerstand adkar',
   impact:'verandering gevolgen', klimaat:'verandering cultuur vertrouwen', veranderprofiel:'verandering samenvatting inspanning',
   gap:'kloof huidige gewenste situatie', prioriteit:'prioriteren eisenhower quick wins', risico:'risico kans gevolg',
-  'project-radar':'status gezondheid project', retro:'terugblik evaluatie lessen', paradox:'afstemming overleg groepsgrootte',
+  'project-radar':'status gezondheid project', retro:'terugblik evaluatie lessen overleg team vergadering', paradox:'afstemming overleg groepsgrootte',
   adem:'stress rust ademhaling ontspannen kalm', hart:'meditatie mildheid ontspannen rust', hier:'aarden stress rust ontspannen', qr:'qr code link delen', looplicht:'veiligheid licht nacht'
 };
 const fold = v => String(v || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
