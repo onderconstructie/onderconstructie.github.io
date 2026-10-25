@@ -377,6 +377,39 @@ button.oc-import { color:#047857; min-height:44px; }
 .who summary::after { content:'Wijzig'; font-weight:600; color:var(--accent-dark); flex-shrink:0; }
 .who[open] summary::after { content:'Klaar'; }
 .who .chips { padding:0 0.625rem 0.625rem; }
+
+/* Designpanel (oktober 2026) */
+.project, .gname { min-height:44px; }
+.check { min-height:44px; align-items:center; }
+.menu button { min-height:44px; }
+.today { color:var(--slate-800); }
+.today::before, .today::after { background:var(--slate-700); }
+.kaart-btns { display:flex; gap:0.375rem; margin-left:auto; }
+.btn-s { min-height:44px; padding:0 0.875rem; border-radius:10px; border:1.5px solid var(--slate-200); background:var(--wit); font-size:0.875rem; font-weight:600; color:var(--accent-dark); white-space:nowrap; }
+.btn-s:hover:not(:disabled) { border-color:#a7f3d0; background:var(--accent-50); }
+.btn-s:disabled { color:var(--slate-400); cursor:default; }
+.plan-head { flex-wrap:wrap; }
+@media (max-width:480px) { .kaart-btns { margin-left:0; width:100%; } .btn-s { flex:1; } }
+.namehint { font-size:0.875rem; color:var(--slate-600); }
+.namehint .lnk { min-height:44px; padding:0 0.25rem; }
+.mrow .inp, select.inp { min-height:44px; }
+.startrow { display:flex; align-items:center; justify-content:space-between; gap:0.5rem 0.75rem; flex-wrap:wrap; margin:0 1.125rem 1rem; padding:0.5rem 0.5rem 0.5rem 0.875rem; border:1px dashed var(--slate-300); border-radius:12px; font-size:0.875rem; color:var(--slate-600); }
+.vb-bar { display:flex; flex-wrap:wrap; align-items:center; gap:0.5rem 0.75rem; margin:0 1rem 0.75rem; padding:0.5rem 0.5rem 0.5rem 0.75rem; background:#fffbeb; border:1px solid #fde68a; border-radius:12px; font-size:0.875rem; line-height:1.4; color:#78350f; }
+.vb-bar[hidden] { display:none !important; }
+.vb-bar svg { width:18px; height:18px; flex-shrink:0; color:#b45309; }
+.vb-bar .vb-text { flex:1 1 14rem; min-width:0; display:flex; gap:0.5rem; align-items:flex-start; }
+.vb-bar .vb-btns { display:flex; flex-wrap:wrap; gap:0.375rem; }
+.vb-btn { min-height:44px; padding:0.375rem 0.625rem; border-radius:10px; font-size:0.875rem; font-weight:600; background:var(--wit); border:1px solid var(--slate-200); }
+.vb-wis { color:#b91c1c; border-color:#fecaca; } .vb-wis:hover { background:#fef2f2; }
+.vb-eigen { color:var(--accent-dark); border-color:#a7f3d0; } .vb-eigen:hover { background:var(--accent-50); }
+@media (max-width:420px) { .vb-btn { font-size:0.8125rem; padding:0.375rem 0.5rem; } }
+.tracks { padding:0 1.125rem 1.125rem; }
+.tracks-legend { display:flex; flex-wrap:wrap; gap:0.25rem 1rem; font-size:0.75rem; color:var(--slate-500); margin-top:0.5rem; }
+@media (max-width:480px) { .tracks { padding-left:0.875rem; padding-right:0.875rem; } }
+@media (min-width:900px) {
+  .toast { left:auto; right:1.25rem; max-width:360px; transform:translateY(200%); }
+  .toast.show { transform:none; }
+}
 </style>
 </head>
 <body>
@@ -398,7 +431,7 @@ button.oc-import { color:#047857; min-height:44px; }
 
 <main class="main">
   <section class="card" id="hero">
-    <div class="card-head">
+    <div class="card-head" style="padding-bottom:0.25rem">
       <input class="project" id="project" data-f="name" maxlength="100" placeholder="Naam van het project" aria-label="Naam van het project">
       <div class="menu-wrap">
         <button class="icon-btn" id="menu-btn" aria-label="Meer acties" aria-haspopup="true" aria-expanded="false">
@@ -414,6 +447,11 @@ button.oc-import { color:#047857; min-height:44px; }
         </div>
       </div>
     </div>
+    <div class="vb-bar" id="vb-bar" role="note" hidden>
+      <span class="vb-text"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg><span>Dit is een voorbeeld om de tool te verkennen. Het telt niet mee in andere tools.</span></span>
+      <span class="vb-btns"><button type="button" class="vb-btn vb-wis" id="vb-wis">Wis voorbeeld</button><button type="button" class="vb-btn vb-eigen" id="vb-eigen">Maak er mijn eigen van</button></span>
+    </div>
+    <div class="startrow" id="startrow" hidden><span>Liever eerst zien hoe een afgewerkt plan eruitziet?</span><button type="button" class="btn" id="example">Voorbeeld bekijken</button></div>
     <div class="tabs" role="tablist" aria-label="Weergave">
       <button role="tab" data-view="wizard" id="tab-wizard">Stappen</button>
       <button role="tab" data-view="plan" id="tab-plan">Plan</button>
@@ -732,12 +770,16 @@ const SENDERS = [
 ];
 const CHANNEL_GROUPS = [
   { id:'persoonlijk', label:'Persoonlijk', items:[['gesprek', 'Gesprek'], ['teamoverleg', 'Teamoverleg'], ['infosessie', 'Infosessie'], ['rondgang', 'Rondgang op de vloer']] },
-  { id:'geschreven', label:'Geschreven', items:[['mail', 'Mail'], ['intranet', 'Intranet'], ['nieuwsbrief', 'Nieuwsbrief'], ['affiche', 'Affiche']] },
+  { id:'geschreven', label:'Geschreven', items:[['mail', 'Mail'], ['intranet', 'Intranet'], ['nieuwsbrief', 'Nieuwsbrief'], ['website', 'Website'], ['affiche', 'Affiche']] },
   { id:'digitaal', label:'Digitaal', items:[['video', 'Video'], ['chat', 'Chat of Teams-kanaal'], ['webinar', 'Webinar']] },
   { id:'anders', label:'Anders', items:[['ander', 'Iets anders']] }
 ];
 const CHANNELS = Object.fromEntries(CHANNEL_GROUPS.flatMap(g => g.items.map(([id, label]) => [id, { id, label, group:g.id }])));
 const PERSONAL = new Set(CHANNEL_GROUPS[0].items.map(x => x[0]));
+// Kanalen die alleen binnen de organisatie werken: niet voor burgers, klanten of partners.
+const INTERNAL = new Set(['teamoverleg', 'rondgang', 'intranet', 'chat']);
+const EXT_RE = /klant|burger|inwoner|bewoner|aanvrager|bezoeker|partner|leverancier|pers\b|media|publiek|extern|ondernem|gebruiker/i;
+const isExt = g => EXT_RE.test(g.name || '') && !LEAD_RE.test(g.name || '');
 const TOETS = [
   { id:'kort', label:'Kort en eenvoudig', sub:'Eén hoofdidee, geen opsomming.', tip:'Schrap tot er één idee overblijft. Wat moet iemand onthouden als hij maar één ding onthoudt?' },
   { id:'onverwacht', label:'Iets wat men niet verwacht', sub:'Een invalshoek waarbij mensen even opkijken.', tip:'Wat denkt je publiek nu verkeerd over deze verandering? Begin daar, en zet het recht.' },
@@ -764,6 +806,10 @@ const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')
 const addDays = (s, n) => { const d = D(s); d.setDate(d.getDate() + n); return iso(d); };
 const todayIso = () => iso(new Date());
 const dmy = s => { const d = D(s); return d ? `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}` : ''; };
+// "1 nov 2026", zoals elders op de site
+const kort = s => { const d = D(s); return d ? `${d.getDate()} ${d.toLocaleDateString('nl-BE', { month:'short' }).replace('.', '')} ${d.getFullYear()}` : ''; };
+// Voorgestelde momenten vallen op een werkdag: zaterdag schuift twee dagen op, zondag één.
+const workday = s => { const d = D(s); if (!d) return s; const w = d.getDay(); return w === 6 ? addDays(s, 2) : w === 0 ? addDays(s, 1) : s; };
 const nice = (s, opt = { day:'numeric', month:'short' }) => { const d = D(s); return d ? d.toLocaleDateString('nl-BE', opt) : ''; };
 const daysBetween = (a, b) => Math.round((D(b) - D(a)) / 864e5);
 const words = t => (String(t || '').trim().match(/\S+/g) || []).length;
@@ -960,6 +1006,8 @@ function render() {
   else if (state.view === 'plan') $('view').innerHTML = planHTML();
   else $('view').innerHTML = calHTML();
   refreshImports(); showRestart();
+  $('vb-bar').hidden = !state.voorbeeld;
+  $('startrow').hidden = hasContent();
 }
 // Focus terugzetten na een volledige hertekening (bv. na een wijziging in een ander tabblad).
 function focusKey(el) {
@@ -1065,8 +1113,7 @@ function stepVertrek() {
   const known = bits.length ? `<div class="known"><div class="known-h">Al bekend uit andere tools</div>${bits.join('')}</div>`
     : `<div class="known"><div class="known-h">Tip</div><div class="muted">Vulde je het <a href="https://onderconstructie.github.io/veranderprofiel/">Veranderprofiel</a> of de Stakeholder Radar al in op dit toestel? Dan verschijnt hier wat ze weten, en stemt deze tool zijn voorstellen erop af.</div></div>`;
   return `${known}
-    <label class="field"><span class="lbl">Naam van het project of de verandering</span>
-      <input class="inp" data-f="name" maxlength="100" value="${esc(state.name)}" placeholder="bv. Nieuw zaakbeheersysteem"></label>
+    ${state.name.trim() ? '' : `<p class="namehint">Geef je project eerst een naam, <button type="button" class="lnk" data-focus-name>bovenaan</button>.</p>`}
     <label class="field"><span class="lbl">Wat verandert er, in één zin?</span>
       <textarea class="inp" data-f="what" maxlength="300" rows="2" placeholder="bv. Vanaf maart behandelen we alle aanvragen digitaal, niet meer op papier.">${esc(state.what)}</textarea></label>
     <label class="field"><span class="lbl">Waarom? <small>Het verhaal achter de verandering</small></span>
@@ -1208,13 +1255,14 @@ function baseDate() {
 }
 function bestChannel(g, prefer) {
   const ch = g.channels;
+  if (isExt(g)) return ch.find(c => !INTERNAL.has(c) && (prefer !== 'personal' || c !== 'gesprek')) || (prefer === 'personal' ? 'website' : 'mail');
   if (prefer === 'personal') return ch.find(c => PERSONAL.has(c)) || (heavy(g) ? 'gesprek' : ch[0] || 'teamoverleg');
   if (prefer === 'written') return ch.find(c => !PERSONAL.has(c)) || 'mail';
   return ch[0] || 'teamoverleg';
 }
-const mk = (date, groups, channel, sender, msg) => ({ id:uid(), date, groups, channel, sender, msg, done:false });
+const mk = (date, groups, channel, sender, msg) => ({ id:uid(), date: date ? workday(date) : date, groups, channel, sender, msg, done:false });
 function quickMoments(kind) {
-  const L = baseDate(), gs = state.groups, out = [], short = t => String(t || '').trim().replace(/\s+/g, ' ').slice(0, 90);
+  const L = baseDate(), gs = state.groups, out = [], short = t => { const x = String(t || '').trim().replace(/\s+/g, ' '); return x.length > 90 ? x.slice(0, 89).replace(/\s+\S*$/, '') + '…' : x; };
   const leads = gs.filter(g => g.lead), teams = gs.filter(g => !g.lead);
   if (kind === 'aankondiging') {
     if (leads.length) out.push(mk(addDays(L, -35), leads.map(g => g.id), 'gesprek', 'sponsor', 'Vooraf: wat komt er, en jullie rol erin'));
@@ -1226,8 +1274,16 @@ function quickMoments(kind) {
     gs.filter(g => intens(g) === 'sterk').forEach(g => out.push(mk(addDays(L, -7), [g.id], 'gesprek', senderOf(g), 'Vragen en zorgen bespreken')));
   }
   if (kind === 'voor') out.push(mk(addDays(L, -2), [], 'mail', 'team', 'Praktisch: wat verandert er vanaf de start'));
-  if (kind === 'na') out.push(mk(addDays(L, 7), [], gs.some(heavy) ? 'rondgang' : 'teamoverleg', 'leiding', 'Hoe loopt het? Vragen ophalen'));
-  if (kind === 'maand') out.push(mk(addDays(L, 30), [], 'teamoverleg', 'team', 'Opvolgen: wat werkt, wat moet beter'));
+  // Interne kanalen (teamoverleg, rondgang) zijn niets voor externen: die krijgen een eigen moment via mail of website.
+  const ext = gs.filter(isExt), int = gs.filter(g => !isExt(g)), split = ext.length && int.length;
+  if (kind === 'na') {
+    if (!ext.length || int.length) out.push(mk(addDays(L, 7), split ? int.map(g => g.id) : [], gs.some(heavy) ? 'rondgang' : 'teamoverleg', 'leiding', 'Hoe loopt het? Vragen ophalen'));
+    if (ext.length) out.push(mk(addDays(L, 7), split ? ext.map(g => g.id) : [], 'mail', 'team', 'Hoe loopt het? Laat weten waar je op botst'));
+  }
+  if (kind === 'maand') {
+    if (!ext.length || int.length) out.push(mk(addDays(L, 30), split ? int.map(g => g.id) : [], 'teamoverleg', 'team', 'Opvolgen: wat werkt, wat moet beter'));
+    if (ext.length) out.push(mk(addDays(L, 30), split ? ext.map(g => g.id) : [], 'website', 'team', 'Stand van zaken en antwoorden op veelgestelde vragen'));
+  }
   if (kind === 'leeg') out.push(mk(state.launch || '', [], 'mail', '', ''));
   return out;
 }
@@ -1291,20 +1347,24 @@ function stepKlaar() {
     ${!must.length ? `<div class="allgood">${ICON.ok}<span><b>Je plan staat.</b> ${soft.length ? 'Hieronder nog wat punten om het sterker te maken.' : 'Alles is ingevuld.'} ${open ? (open === 1 ? 'Het open moment ligt klaar voor SprintFlow en Vinkje.' : `De ${open} momenten liggen klaar voor SprintFlow en Vinkje.`) : ''}</span></div>` : ''}
     ${must.length ? `<div><span class="lbl">Wat nog ontbreekt</span><ul class="issues">${must.map(x => `<li><span>${esc(x.t)}</span><button type="button" data-go="${x.step}">${STEPS[x.step].name} →</button></li>`).join('')}</ul></div>` : ''}
     ${soft.length ? `<div><span class="lbl">Om sterker te maken</span><ul class="issues">${soft.map(x => `<li class="soft"><span>${esc(x.t)}</span><button type="button" data-go="${x.step}">${STEPS[x.step].name} →</button></li>`).join('')}</ul></div>` : ''}
-    <div class="btnrow"><button class="btn primary" type="button" data-view="plan">Bekijk het plan</button><button class="btn" type="button" data-view="kal">Naar de kalender</button><button class="btn" type="button" data-act="pdf">Download als PDF</button></div>`;
+    <div class="btnrow"><button class="btn primary" type="button" data-view="plan">Bekijk het plan</button><button class="btn" type="button" data-view="kal">Naar de kalender</button><button class="btn" type="button" data-act="png"${hasPlan() ? '' : ' disabled'}>Afbeelding</button><button class="btn" type="button" data-act="pdf"${hasPlan() ? '' : ' disabled'}>PDF</button></div>`;
 }
 
 /* ---------- Plan ---------- */
 function planHTML() {
   if (!state.groups.length && !state.core.trim()) return `<section class="card"><div class="step"><div class="empty"><b>Nog geen plan</b>Begin met de stappen. Na een paar minuten staat hier je plan per doelgroep.<div style="margin-top:0.75rem"><button class="btn primary" type="button" data-view="wizard">Naar de stappen</button></div></div></div></section>`;
-  const ms = sortedMoments();
-  return `<section class="card"><div class="plan-top">
+  const ms = sortedMoments(), tr = tracksHTML();
+  return `<section class="card"><div class="card-head plan-head"><h2 class="card-title">Je plan</h2>
+      <div class="kaart-btns"><button type="button" class="btn-s" data-act="png">Afbeelding</button><button type="button" class="btn-s" data-act="pdf">PDF</button></div></div>
+    <div class="plan-top" style="padding-top:0.5rem">
       <div><div class="r-lbl">Kernboodschap</div>
         <div class="core-big">${state.core.trim() ? '“' + esc(state.core.trim()) + '”' : '<span style="color:var(--slate-500);font-weight:400;font-size:1rem">Nog geen kernboodschap</span>'}</div>
         <div class="core-by">Gebracht door ${esc(state.coreSender === 'ander' ? (state.coreSenderOther || 'iemand anders') : senderLabel(state.coreSender))}${state.what.trim() ? ' · ' + esc(state.what.trim()) : ''}</div></div>
       <div class="ident"><div class="r-lbl">Herkenbaarheid</div>${identHTML()}
         ${state.start || state.launch ? `<div>${state.start ? 'Start ' + nice(state.start, { day:'numeric', month:'long', year:'numeric' }) : ''}${state.start && state.launch ? ' · ' : ''}${state.launch ? 'Lancering <b>' + nice(state.launch, { day:'numeric', month:'long', year:'numeric' }) + '</b>' : ''}</div>` : ''}</div>
     </div></section>
+    ${tr ? `<section class="card"><div class="card-head"><h2 class="card-title">Wie hoort wanneer iets</h2></div><div class="tracks">${tr}
+      <div class="tracks-legend"><span>● gedaan</span><span>○ gepland</span>${state.launch ? '<span style="color:var(--accent-dark);font-weight:600">| lancering</span>' : ''}<span>Per kolom één week</span></div></div></section>` : ''}
     <section class="card"><div class="card-head"><h2 class="card-title">Per doelgroep</h2></div>
       <div class="gplan">${state.groups.map(g => { const gm = momentsFor(g);
         return `<div class="gp"><div class="gcard-h"><i class="gdot ${g.lead ? 'lead' : ''}"></i><span class="gtitle">${esc(g.name)}</span><span class="tag ${intens(g) === 'sterk' ? 'mine' : ''}">${INTENS[intens(g)].label}</span></div>
@@ -1383,6 +1443,7 @@ function setView(v) {
 }
 
 function publish() {
+  if (state.voorbeeld) { ocShare.publish(OC_ID, OC_TOOL, []); return; }   // een voorbeeld telt niet mee in andere tools
   const ms = sortedMoments().filter(m => !m.done);
   ocShare.publish(OC_ID, OC_TOOL, [
     { name:'Momenten', items: ms.map(m => ({ type:'actie', text:`${chanLabel(m.channel)}: ${groupNames(m)} – ${(m.msg || 'moment').trim()}`, who: momentSender(m) || undefined, when: dmy(m.date) || undefined })) },
@@ -1440,7 +1501,8 @@ function addGroup(n, extra) {
 document.addEventListener('click', async e => {
   const el = e.target.closest('button, [data-go]'); if (!el) return;
   const d = el.dataset;
-  if (d.go != null) { go(+d.go); return; }
+  if (d.go != null) { go(+d.go); if (+d.go === 0 && !state.name.trim()) $('project').focus(); return; }
+  if (d.focusName != null) { $('project').focus(); return; }
   if (d.view) { setView(d.view); return; }
   if (d.usename) { state.name = d.usename; save(); render(); toast('Naam overgenomen'); return; }
   if (d.addgroup) { if (addGroup(d.addgroup)) render(); return; }
@@ -1564,17 +1626,17 @@ function asText() {
   L.push(`Gebracht door: ${state.coreSender === 'ander' ? (state.coreSenderOther || 'iemand anders') : senderLabel(state.coreSender)}`);
   const id = state.ident;
   if (id.slogan.trim() || id.place.trim()) L.push(`Herkenbaar aan: ${[id.slogan.trim(), id.image.trim(), id.place.trim() ? 'alle info op ' + id.place.trim() : ''].filter(Boolean).join(' · ')}`);
-  if (state.start || state.launch) L.push([state.start && 'Start: ' + dmy(state.start), state.launch && 'Lancering: ' + dmy(state.launch)].filter(Boolean).join(' · '));
+  if (state.start || state.launch) L.push([state.start && 'Start: ' + kort(state.start), state.launch && 'Lancering: ' + kort(state.launch)].filter(Boolean).join(' · '));
   state.groups.forEach(g => {
     L.push('', `== ${g.name} ==`);
     if (g.change.trim()) L.push(`Wat verandert: ${g.change.trim()}`);
-    L.push(`Doel: ${g.goals.map(x => GOALS.find(y => y.id === x).label.toLowerCase()).join(', ') || '-'} · ${INTENS[intens(g)].label.toLowerCase()}`);
+    L.push(`Doel: ${g.goals.map(x => GOALS.find(y => y.id === x).label.toLowerCase()).join(', ') || '-'} · intensiteit: ${INTENS[intens(g)].label.toLowerCase()}`);
     if (g.msg.trim()) L.push(`Boodschap: ${g.msg.trim()}`);
     L.push(`Afzender: ${gSender(g)}`, `Kanalen: ${g.channels.map(c => chanLabel(c, g)).join(', ') || '-'}`);
   });
   const ms = sortedMoments();
-  if (ms.length) { L.push('', 'Tijdlijn:'); ms.forEach(m => L.push(`${m.done ? '[x]' : '[ ]'} ${dmy(m.date) || 'zonder datum'} · ${chanLabel(m.channel)} · ${groupNames(m)} · ${momentSender(m) || '-'}${m.msg ? ' · ' + m.msg : ''}`)); }
-  if (state.measures.length) { L.push('', 'Meten:'); state.measures.forEach(x => L.push(`- ${measLabel(x)} (${x.group && G(x.group) ? G(x.group).name : 'iedereen'})${x.date ? ' op ' + dmy(x.date) : ''}${x.target ? ': ' + x.target : ''}`)); }
+  if (ms.length) { L.push('', 'Tijdlijn:'); ms.forEach(m => L.push(`${m.done ? '[x]' : '[ ]'} ${kort(m.date) || 'zonder datum'} · ${chanLabel(m.channel)} · ${groupNames(m)} · ${momentSender(m) || '-'}${m.msg ? ' · ' + m.msg : ''}`)); }
+  if (state.measures.length) { L.push('', 'Meten:'); state.measures.forEach(x => L.push(`- ${measLabel(x)} (${x.group && G(x.group) ? G(x.group).name : 'iedereen'})${x.date ? ' op ' + kort(x.date) : ''}${x.target ? ': ' + x.target : ''}`)); }
   return L.join('\n');
 }
 function csv() {
@@ -1597,11 +1659,13 @@ function buildExport() {
       <div style="${box}"><div style="${lbl}">Herkenbaarheid</div>
         <div style="display:flex;align-items:center;gap:10px;margin-top:6px"><span style="width:34px;height:34px;border-radius:9px;background:${esc(col)};color:${inkOn(col)};font-weight:700;font-size:16px;display:flex;align-items:center;justify-content:center">${esc((id.slogan.trim() || state.name.trim() || '?').charAt(0).toUpperCase())}</span>
           <span style="font-size:15px;font-weight:700;color:#1e293b">${esc(id.slogan.trim() || state.name.trim() || '–')}</span></div>
-        <div style="font-size:12px;color:#475569;margin-top:6px;line-height:1.5">${id.image.trim() ? esc(id.image.trim()) + '<br>' : ''}${id.place.trim() ? 'Alle info: ' + esc(id.place.trim()) + '<br>' : ''}${state.start ? 'Start ' + dmy(state.start) : ''}${state.start && state.launch ? ' · ' : ''}${state.launch ? '<b>Lancering ' + dmy(state.launch) + '</b>' : ''}</div></div>
+        <div style="font-size:12px;color:#475569;margin-top:6px;line-height:1.5">${id.image.trim() ? esc(id.image.trim()) + '<br>' : ''}${id.place.trim() ? 'Alle info: ' + esc(id.place.trim()) + '<br>' : ''}${state.start ? 'Start ' + kort(state.start) : ''}${state.start && state.launch ? ' · ' : ''}${state.launch ? '<b>Lancering ' + kort(state.launch) + '</b>' : ''}</div></div>
     </div>
+    ${tracksHTML() ? `<div data-oc-keep style="margin-bottom:16px"><div style="font-size:15px;font-weight:700;color:#1e293b;margin-bottom:6px">Wie hoort wanneer iets</div>${tracksHTML()}
+      <div style="font-size:11px;color:#64748b;margin-top:6px">● gedaan · ○ gepland${state.launch ? ' · <span style="color:#047857;font-weight:700">| lancering</span>' : ''} · per kolom één week</div></div>` : ''}
     <div style="display:grid;grid-template-columns:repeat(${gcols},1fr);gap:12px;margin-bottom:16px">${state.groups.map(g => `
       <div data-oc-keep style="${box}">
-        <div style="display:flex;align-items:center;gap:6px"><span style="width:9px;height:9px;border-radius:50%;background:${g.lead ? '#334155' : '#10b981'}"></span><span style="font-size:15px;font-weight:700;color:#1e293b;flex:1">${esc(g.name)}</span><span style="font-size:11px;font-weight:700;color:${intens(g) === 'sterk' ? '#b45309' : '#64748b'}">${INTENS[intens(g)].label.toUpperCase()}</span></div>
+        <div style="display:flex;align-items:center;gap:6px"><span style="width:9px;height:9px;border-radius:50%;background:${g.lead ? '#334155' : '#10b981'}"></span><span style="font-size:15px;font-weight:700;color:#1e293b;flex:1">${esc(g.name)}</span><span style="font-size:11px;font-weight:600;color:${intens(g) === 'sterk' ? '#b45309' : '#64748b'}">intensiteit: ${INTENS[intens(g)].label.toLowerCase()}</span></div>
         <div style="font-size:13px;color:#1e293b;margin:6px 0 8px;font-weight:500">${esc(g.msg.trim() || '–')}</div>
         <div style="font-size:12px;color:#475569;line-height:1.6">
           <div><b style="color:#64748b">Doel</b> ${g.goals.map(x => GOALS.find(y => y.id === x).label).join(', ') || '–'}</div>
@@ -1612,11 +1676,88 @@ function buildExport() {
     ${ms.length ? `<div style="font-size:15px;font-weight:700;color:#1e293b;margin-bottom:6px">Tijdlijn</div>
     <div style="display:grid;grid-template-columns:90px 1.2fr 1fr 1.1fr 2.2fr 40px;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;background:#f8fafc;border-radius:8px;padding:6px 10px"><span>Datum</span><span>Voor wie</span><span>Kanaal</span><span>Afzender</span><span>Boodschap</span><span>Klaar</span></div>
     ${ms.map(m => `<div data-oc-keep style="display:grid;grid-template-columns:90px 1.2fr 1fr 1.1fr 2.2fr 40px;font-size:12px;color:#334155;padding:7px 10px;border-bottom:1px solid #f1f5f9;${m.done ? 'opacity:.55;' : ''}">
-      <span style="font-weight:600">${dmy(m.date) || '–'}</span><span>${esc(groupNames(m))}</span><span>${esc(chanLabel(m.channel))}</span><span>${esc(momentSender(m))}</span><span>${esc(m.msg)}</span><span style="color:#059669;font-weight:700">${m.done ? '✓' : ''}</span></div>`).join('')}` : ''}
+      <span style="font-weight:600">${kort(m.date) || '–'}</span><span>${esc(groupNames(m))}</span><span>${esc(chanLabel(m.channel))}</span><span>${esc(momentSender(m))}</span><span>${esc(m.msg)}</span><span style="color:#059669;font-weight:700">${m.done ? '✓' : ''}</span></div>`).join('')}` : ''}
     ${state.measures.length ? `<div data-oc-keep style="margin-top:16px;${box}"><div style="${lbl};margin-bottom:4px">Hoe we weten dat het aankwam</div>
-      ${state.measures.map(x => `<div style="font-size:12px;color:#334155;padding:3px 0"><b>${esc(measLabel(x))}</b> · ${esc(x.group && G(x.group) ? G(x.group).name : 'iedereen')}${x.date ? ' · ' + dmy(x.date) : ''}${x.target ? ' · goed genoeg: ' + esc(x.target) : ''}</div>`).join('')}</div>` : ''}`;
+      ${state.measures.map(x => `<div style="font-size:12px;color:#334155;padding:3px 0"><b>${esc(measLabel(x))}</b> · ${esc(x.group && G(x.group) ? G(x.group).name : 'iedereen')}${x.date ? ' · ' + kort(x.date) : ''}${x.target ? ' · goed genoeg: ' + esc(x.target) : ''}</div>`).join('')}</div>` : ''}`;
   return { node, title: 'Communicatieplan' + (state.name.trim() ? ' – ' + state.name.trim() : ''), subtitle: state.what.trim() || 'Wie hoort wat, wanneer en van wie' };
 }
+const hasPlan = () => !!(state.groups.length || state.core.trim() || state.moments.length);
+function ocProjectName() { try { const p = JSON.parse(localStorage.getItem('oc.project')); return p && typeof p.name === 'string' ? p.name.trim() : ''; } catch { return ''; } }
+// Bestandsnaam: tool-project-datum (jjjj-mm-dd), zonder dubbele datum.
+function fileBase(tool, name) {
+  const slug = String(name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\b\d{4}-\d{2}-\d{2}\b/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 50);
+  return [tool, slug, todayIso()].filter(Boolean).join('-');
+}
+
+/* Sporen: per doelgroep een rij, per week een kolom, een stip per moment (gevuld = gedaan), een groene lijn op de lancering.
+   Gewone HTML met inline stijlen, zodat dezelfde weergave ook in de afbeelding en de PDF komt. */
+function tracksHTML() {
+  const ms = sortedMoments().filter(m => m.date && D(m.date)), gs = state.groups;
+  if (!ms.length || !gs.length) return '';
+  const DAY = 864e5, mon = s => { const d = D(s); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return d; };
+  const all = ms.map(m => m.date).concat(state.launch && D(state.launch) ? [state.launch] : []).sort();
+  const t0 = mon(all[0]).getTime(), nW = Math.round((mon(all[all.length - 1]).getTime() - t0) / (7 * DAY)) + 1, span = nW * 7 * DAY;
+  const pctOf = s => Math.max(0, Math.min(100, (D(s).getTime() + DAY / 2 - t0) / span * 100));
+  const wkPct = s => (Math.floor((D(s).getTime() - t0) / (7 * DAY)) + 0.5) / nW * 100;
+  const lp = state.launch && D(state.launch) ? pctOf(state.launch) : null;
+  const line = lp == null ? '' : `<span style="position:absolute;top:0;bottom:0;left:${lp}%;width:2px;margin-left:-1px;background:#10b981"></span>`;
+  // maanden en weken boven de sporen
+  let head = '', last = -9;
+  for (let i = 0; i < nW; i++) {
+    const d = new Date(t0 + i * 7 * DAY), left = i / nW * 100;
+    head += `<span style="position:absolute;left:${left}%;top:16px;bottom:0;width:1px;background:#e2e8f0"></span>`;
+    if ((i === 0 || d.getDate() <= 7) && i - last >= 3) { head += `<span style="position:absolute;left:${left}%;top:0;font-size:11px;font-weight:700;color:#64748b;padding-left:3px;white-space:nowrap">${d.toLocaleDateString('nl-BE', { month:'short' }).replace('.', '')}</span>`; last = i; }
+  }
+  if (lp != null) head += `<span style="position:absolute;left:${lp}%;top:0;transform:translateX(${lp > 80 ? '-100%' : '4px'});font-size:11px;font-weight:700;color:#047857;white-space:nowrap">lancering</span>`;
+  const rows = gs.map(g => {
+    const mine = ms.filter(m => !m.groups.length || m.groups.includes(g.id)), seen = {};
+    const dots = mine.map(m => {
+      const k = Math.floor((D(m.date).getTime() - t0) / (7 * DAY)), n = seen[k] = (seen[k] || 0) + 1;
+      return `<span title="${esc(nice(m.date) + ': ' + (m.msg || chanLabel(m.channel)))}" style="position:absolute;top:50%;left:${wkPct(m.date)}%;width:12px;height:12px;margin:-6px 0 0 ${-6 + (n - 1) * 5}px;border-radius:50%;box-sizing:border-box;border:2px solid #334155;background:${m.done ? '#334155' : '#ffffff'}"></span>`;
+    }).join('');
+    return `<div style="display:flex;align-items:center;min-height:32px;padding-right:8px;font-size:12px;font-weight:${g.lead ? 700 : 500};color:#1e293b;border-top:1px solid #f1f5f9;overflow:hidden"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(g.name)}</span></div>
+      <div style="position:relative;min-height:32px;border-top:1px solid #f1f5f9;background:linear-gradient(#e2e8f0,#e2e8f0) left 50%/100% 1px no-repeat">${line}${dots}</div>`;
+  }).join('');
+  return `<div style="display:grid;grid-template-columns:minmax(80px,140px) minmax(0,1fr);font-family:inherit">
+    <div></div><div style="position:relative;height:26px">${head}</div>${rows}</div>`;
+}
+
+/* ---------- Voorbeeld ---------- */
+function loadExample() {
+  if (hasContent() && !state.voorbeeld) { toast('Wis eerst je eigen plan om het voorbeeld te bekijken'); return; }
+  const L = workday(addDays(todayIso(), 49));
+  const s = fresh();
+  Object.assign(s, { voorbeeld:true, view:'plan', step:8, name:'Digitaal premieloket',
+    what:'Vanaf de lancering vraag je een renovatiepremie alleen nog online aan, niet meer op papier.',
+    why:'Papieren aanvragen raken zoek tussen post, mail en dossierkasten. Aanvragers wachten weken op een antwoord en bellen het loket plat. Online zie je meteen wat ontbreekt en volg je je aanvraag zelf op.',
+    sponsor:'Afdelingshoofd', coreSender:'sponsor', start:addDays(todayIso(), -14), launch:L,
+    core:'Geen papieren dossiers meer: je vraagt je premie online aan en ziet altijd hoe ver ze staat.',
+    checks:{ kort:true, concreet:true, raakt:true, verhaal:true },
+    ident:{ slogan:'Premie online', color:'#10b981', image:'een huisje met een vinkje', place:'intranet › Projecten › Premieloket' } });
+  const tl = newGroup('Teamleiders loket'), lo = newGroup('Loketmedewerkers'), aa = newGroup('Aanvragers (burgers)');
+  Object.assign(tl, { lead:true, change:'ze plannen de opleiding en vangen vragen van hun team op', goals:['weten', 'willen'], sender:'sponsor', channels:['gesprek'],
+    msg:'Jullie zijn het eerste aanspreekpunt voor je team. We zorgen voor tijd en opleiding vóór de start.' });
+  Object.assign(lo, { change:'ze behandelen aanvragen voortaan in het nieuwe systeem', goals:['willen', 'kunnen'], intens:'sterk', sender:'leiding', channels:['teamoverleg', 'infosessie'],
+    msg:'Minder zoeken en overtypen: elke aanvraag staat op één plek, met alle bijlagen erbij.' });
+  Object.assign(aa, { change:'ze dienen hun aanvraag online in', goals:['weten', 'kunnen'], intens:'midden', sender:'team', channels:['mail', 'website'],
+    msg:'Je vraagt je premie online aan en volgt je aanvraag zelf op. Hulp nodig? Het loket helpt je verder.' });
+  s.groups = [tl, lo, aa];
+  s.measures = [{ id:uid(), kind:'vragen', group:aa.id, target:'na een maand minder dan 20 telefoontjes per week over de stand van een aanvraag', date:workday(addDays(L, 30)), label:'' },
+                { id:uid(), kind:'gebruik', group:'', target:'9 op 10 aanvragen komen online binnen', date:workday(addDays(L, 60)), label:'' }];
+  const cur0 = state; state = s;
+  s.moments = ['aankondiging', 'uitleg', 'voor', 'na', 'maand'].flatMap(quickMoments);
+  s.moments.push(mk(addDays(todayIso(), -10), [tl.id], 'gesprek', 'sponsor', 'Kennismaking met het project en jullie rol'));
+  s.moments[s.moments.length - 1].done = true;
+  state = cur0;
+  const copy = snapshot(); state = s; autoSponsor = false; save(); render();
+  toast('Voorbeeld geladen', undoable(copy));
+}
+document.addEventListener('click', e => {
+  if (e.target.closest('#example')) { loadExample(); return; }
+  if (e.target.closest('#vb-wis')) { const copy = snapshot(); state = fresh(); autoSponsor = false; suggestSponsor(); save(); render(); toast('Voorbeeld gewist', undoable(copy)); return; }
+  if (e.target.closest('#vb-eigen')) { delete state.voorbeeld; save(); render(); toast('Het voorbeeld is nu van jou'); }
+});
+
 function download(text, name, type) {
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
@@ -1625,7 +1766,8 @@ function download(text, name, type) {
 document.addEventListener('click', async e => {
   const b = e.target.closest('[data-act]'); if (!b) return;
   menu.classList.remove('open');
-  const act = b.dataset.act, base = 'communicatieplan' + (state.name.trim() ? '-' + state.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') : '');
+  const act = b.dataset.act, base = fileBase('communicatie', state.name.trim() || ocProjectName());
+  if ((act === 'png' || act === 'pdf') && !hasPlan()) { toast('Er is nog niets om te downloaden'); return; }
   if (act === 'png' || act === 'pdf') {
     toast('Bezig met downloaden…');
     try { await (act === 'png' ? ocExport.png(buildExport, base, { landscape:true }) : ocExport.pdf(buildExport, base, { landscape:true })); toast(act === 'png' ? 'Afbeelding gedownload' : 'PDF gedownload'); }

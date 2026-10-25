@@ -315,6 +315,20 @@ table.cmp tr:last-child td { border-bottom:0; font-weight:700; }
 .ocw-row button { min-height:44px; }
 button.oc-import { color:#047857; min-height:44px; }
 
+/* Panel november 2026 */
+.list-name, .p-name, .field { min-height:44px; }
+.act { grid-template-columns:36px minmax(0, 1fr) 44px; }
+.chk-hit { display:flex; align-items:center; justify-content:center; width:44px; height:44px; margin:-0.125rem 0 0 -0.5rem; cursor:pointer; }
+.act .chk { margin:0; }
+.sc.s3[aria-checked="true"] { border-color:#f59e0b; background:#fffbeb; }
+.sc.s3[aria-checked="true"] b { color:#b45309; }
+.sc.s3[aria-checked="true"] span { color:#92400e; }
+.exp-btns { display:flex; gap:0.375rem; margin-left:auto; }
+.btn-s { min-height:44px; padding:0 0.875rem; border-radius:10px; border:1.5px solid var(--slate-200); background:var(--wit); font-size:0.875rem; font-weight:600; color:#047857; white-space:nowrap; }
+.btn-s:hover:not(:disabled) { border-color:#a7f3d0; background:var(--accent-50); }
+.btn-s:disabled { color:var(--slate-400); cursor:not-allowed; }
+@media (min-width:768px) { .toast { left:auto; right:1.25rem; max-width:360px; transform:translateY(calc(100% + 3rem)); } .toast.show { transform:none; } }
+
 /* Voorbeeld en wissen */
 .vb-bar { display:flex; flex-wrap:wrap; align-items:center; gap:0.5rem 0.75rem; margin:0.75rem 0.75rem 0; padding:0.5rem 0.5rem 0.5rem 0.75rem; background:#fffbeb; border:1px solid #fde68a; border-radius:12px; font-size:0.875rem; line-height:1.4; color:#78350f; }
 .vb-bar[hidden] { display:none !important; }
@@ -404,7 +418,7 @@ button.oc-import { color:#047857; min-height:44px; }
 
   <div class="empty" id="empty" hidden>
     <p><strong>Nog niets gescoord.</strong> Probeer het voorbeeld: een dienst die overstapt naar een nieuw dossiersysteem, met drie groepen die het elk anders voelen.</p>
-    <button class="btn btn-primary" id="example-btn" type="button">Begin met een voorbeeld</button>
+    <button class="btn btn-primary" id="example-btn" type="button">Voorbeeld bekijken</button>
   </div>
 
   <div class="bar">
@@ -412,6 +426,7 @@ button.oc-import { color:#047857; min-height:44px; }
       <button type="button" data-view="profiel" aria-pressed="true">Per profiel</button>
       <button type="button" data-view="vergelijk" aria-pressed="false">Vergelijken</button>
     </div>
+    <div class="exp-btns" id="exp-btns"><button type="button" class="btn-s" data-exp="png">Afbeelding</button><button type="button" class="btn-s" data-exp="pdf">PDF</button></div>
   </div>
 
   <section id="view-profiel">
@@ -909,7 +924,7 @@ function dimHTML(p, d, i) {
     <p class="f-label">Maatregel${v.actions.length > 1 ? 'en' : ''}</p>
     <div class="acts">${v.actions.map((x, n) => `
       <div class="act${x.done ? ' done' : ''}" data-aid="${x.id}">
-        <input type="checkbox" class="chk" data-done="${x.id}" data-dim="${d.id}" ${x.done ? 'checked' : ''} aria-label="Maatregel ${n + 1} gedaan">
+        <label class="chk-hit"><input type="checkbox" class="chk" data-done="${x.id}" data-dim="${d.id}" ${x.done ? 'checked' : ''} aria-label="Maatregel ${n + 1} gedaan"></label>
         <textarea class="field a-text" rows="1" maxlength="300" data-af="text" data-aid="${x.id}" data-dim="${d.id}" placeholder="Wat ga je doen?" aria-label="Maatregel ${n + 1} bij ${esc(d.name.toLowerCase())}">${esc(x.text)}</textarea>
         <button class="del" type="button" data-adel="${x.id}" data-dim="${d.id}" aria-label="Verwijder maatregel ${n + 1}">${ICON_DEL}</button>
         <div class="act-meta">
@@ -972,7 +987,7 @@ function renderCompare() {
   requestAnimationFrame(fitShapes);
 }
 function cellStyle(v) {
-  const bg = ['#f8fafc', '#ecfdf5', '#d1fae5', '#fed7aa', '#fdba74'][v], fg = v >= 3 ? '#9a3412' : v ? '#065f46' : '#94a3b8';
+  const bg = ['#f8fafc', '#ecfdf5', '#d1fae5', '#fef3c7', '#fdba74'][v], fg = v === 4 ? '#9a3412' : v === 3 ? '#92400e' : v ? '#065f46' : '#94a3b8';
   return `background:${bg};color:${fg}`;
 }
 function tableHTML(a) {
@@ -1001,6 +1016,7 @@ function render() {
   if (fresh || document.activeElement !== $('a-change')) $('a-change').value = a.change;
   autosize($('a-change'));
   renderTabs(); renderEmpty(); unitLabel(a);
+  document.querySelectorAll('[data-exp]').forEach(b => { b.disabled = !a.profiles.some(touched); });
   document.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === a.view)));
   $('view-profiel').hidden = a.view !== 'profiel';
   $('view-vergelijk').hidden = a.view !== 'vergelijk';
@@ -1336,44 +1352,63 @@ function buildExport() {
   const a = cur();
   const node = document.createElement('div');
   const block = (inner, extra = '') => `<div data-oc-keep style="border-top:1px solid #e2e8f0;padding:18px 0 6px;${extra}">${inner}</div>`;
-  let html = a.change.trim() ? `<p style="font-size:15px;color:#334155;margin:0 0 14px;line-height:1.5">${esc(a.change.trim())}</p>` : '';
+  const multi = a.profiles.length > 1;
+  const swatch = p => `<span style="width:12px;height:12px;border-radius:4px;background:${colorOf(a, p)};display:inline-block;flex-shrink:0"></span>`;
+  const badge = (v, mark) => `<span style="display:inline-block;min-width:26px;text-align:center;border-radius:6px;padding:0 5px;font-weight:700;border:2px solid ${mark ? '#f97316' : 'transparent'};${cellStyle(v)}">${sv(v)}</span>`;
+  // 1. Impactkaart: vorm, heatmap en zwaartepunten op één blad
+  const heat = `<table style="border-collapse:collapse;width:100%;font-size:13px">
+      <tr><th style="text-align:left;padding:6px 8px 6px 0;color:#64748b;font-weight:600">Dimensie</th>${a.profiles.map(p => `<th style="padding:6px 4px;color:#64748b;font-weight:600;font-size:12px;line-height:1.3;vertical-align:bottom"><div style="display:flex;flex-direction:column;align-items:center;gap:4px">${swatch(p)}<span style="overflow-wrap:anywhere">${esc(p.name)}</span></div></th>`).join('')}</tr>
+      ${DIMS.map(d => { const vals = a.profiles.map(p => p.dims[d.id].score), max = Math.max(...vals);
+        return `<tr><td style="padding:6px 8px 6px 0;border-top:1px solid #f1f5f9">${esc(d.name)}</td>${vals.map(v => `<td style="text-align:center;padding:6px 8px;border-top:1px solid #f1f5f9">${badge(v, multi && v === max && v > 0)}</td>`).join('')}</tr>`; }).join('')}
+      <tr><td style="padding:6px 8px 6px 0;border-top:2px solid #e2e8f0;font-weight:700">Gemiddeld</td>${a.profiles.map(p => `<td style="text-align:center;padding:6px 8px;border-top:2px solid #e2e8f0;font-weight:700">${touched(p) ? fmt(avgOf(p)) : '–'}</td>`).join('')}</tr></table>`;
+  const weights = a.profiles.map(p => { const hs = hotDims(p);
+    return `<div style="display:flex;align-items:baseline;gap:8px;font-size:13px;margin:5px 0;line-height:1.45">${swatch(p)}<span><b style="color:#1e293b">${esc(p.name)}</b>
+      <span style="color:#64748b">· gemiddeld ${touched(p) ? fmt(avgOf(p)) : '–'} op 4${touched(p) ? ` · ${weightOf(p)}` : ''}</span><br>
+      ${hs.length ? `<span style="color:#475569">Zwaartepunten: <b style="color:#9a3412">${hs.map(d => esc(d.name)).join(', ')}</b></span>` : '<span style="color:#64748b">Geen zwaartepunten</span>'}</span></div>`; }).join('');
+  const shapes = a.profiles.map(p => ({ scores:scores(p), color:colorOf(a, p), fillOpacity:multi ? 0.12 : undefined }));
+  let html = `<div data-oc-keep style="padding:0 0 10px">
+    <div style="font-size:18px;font-weight:700;color:#1e293b;margin-bottom:4px">Impactkaart</div>
+    ${a.change.trim() ? `<p style="font-size:14px;color:#334155;margin:0 0 12px;line-height:1.5">${esc(a.change.trim())}</p>` : ''}
+    <div style="display:grid;grid-template-columns:320px minmax(0, 1fr);gap:24px;align-items:start">
+      <div style="width:320px">${pentagon(shapes, multi ? { px:320 } : { highlight:scores(a.profiles[0]), px:320 })}</div>
+      <div>${heat}<div style="margin-top:14px">${weights}</div>
+        ${multi ? '<div style="font-size:11px;color:#94a3b8;margin-top:6px">Oranje omrand: de groep die op die dimensie het hardst geraakt wordt.</div>' : ''}</div></div></div>`;
+  // 2. Details per profiel
   a.profiles.forEach(p => {
-    const hs = hotDims(p), sc = scores(p);
+    const sc = scores(p);
     const rows = DIMS.map(d => {
       const v = p.dims[d.id], acts = v.actions.filter(x => x.text.trim());
       return `<tr>
         <td style="padding:7px 8px 7px 0;vertical-align:top;font-weight:600;color:#1e293b;white-space:nowrap">${esc(d.name)}</td>
-        <td style="padding:7px 8px;vertical-align:top"><span style="display:inline-block;min-width:24px;text-align:center;border-radius:6px;padding:1px 6px;font-weight:700;${cellStyle(v.score)}">${sv(v.score)}</span></td>
+        <td style="padding:7px 8px;vertical-align:top">${badge(v.score, false)}</td>
         <td style="padding:7px 0;vertical-align:top;color:#475569;line-height:1.45">${v.what.trim() ? esc(v.what.trim()) : '<span style="color:#cbd5e1">–</span>'}
           ${acts.map(x => `<div style="margin-top:3px;color:#065f46">${x.done ? '☑' : '☐'} ${esc(x.text.trim())}${x.who || x.by ? ` <span style="color:#94a3b8">(${esc([x.who, x.by].filter(Boolean).join(', '))})</span>` : ''}</div>`).join('')}
-          ${v.score >= HOT && !acts.length ? '<div style="margin-top:3px;color:#c2410c">Nog geen maatregel</div>' : ''}</td></tr>`;
+          ${v.score >= HOT && !acts.length ? '<div style="margin-top:3px;color:#b45309">Nog geen maatregel</div>' : ''}</td></tr>`;
     }).join('');
-    html += block(`<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:6px">
-        <span style="width:12px;height:12px;border-radius:4px;background:${colorOf(a, p)};display:inline-block"></span>
-        <span style="font-size:18px;font-weight:700;color:#1e293b">${esc(p.name)}</span>
+    html += block(`<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">${swatch(p)}
+        <span style="font-size:17px;font-weight:700;color:#1e293b">${esc(p.name)}</span>
         <span style="font-size:13px;color:#64748b">gemiddeld ${fmt(avgOf(p))} op 4${touched(p) ? ` · ${weightOf(p)}` : ''}</span></div>
-      <div style="font-size:13px;color:#475569;margin-bottom:6px">${hs.length ? `Zwaartepunten: <b style="color:#c2410c">${hs.map(d => esc(d.name)).join(', ')}</b>` : 'Geen zwaartepunten'}</div>
-      <div style="display:grid;grid-template-columns:250px 1fr;gap:18px;align-items:start">
-        <div style="width:250px">${pentagon([{ scores:sc, color:colorOf(a, p) }], { highlight:sc, px:250 })}</div>
+      <div style="display:grid;grid-template-columns:${multi ? '170px ' : ''}1fr;gap:18px;align-items:start">
+        ${multi ? `<div style="width:170px">${pentagon([{ scores:sc, color:colorOf(a, p) }], { size:'mini', highlight:sc, px:170 })}</div>` : ''}
         <table style="border-collapse:collapse;width:100%;font-size:13px">${rows}</table></div>`);
   });
-  if (a.profiles.length > 1) {
-    const t = `<table style="border-collapse:collapse;width:100%;font-size:13px;margin-top:8px">
-      <tr><th style="text-align:left;padding:6px 8px 6px 0;color:#64748b;font-weight:600">Dimensie</th>${a.profiles.map(p => `<th style="padding:6px 8px;color:#64748b;font-weight:600">${esc(p.name)}</th>`).join('')}</tr>
-      ${DIMS.map(d => { const vals = a.profiles.map(p => p.dims[d.id].score), max = Math.max(...vals);
-        return `<tr><td style="padding:6px 8px 6px 0;border-top:1px solid #f1f5f9">${esc(d.name)}</td>${vals.map(v => `<td style="text-align:center;padding:6px 8px;border-top:1px solid #f1f5f9"><span style="display:inline-block;min-width:26px;border-radius:6px;padding:1px 6px;font-weight:700;${cellStyle(v)};${v === max && v > 0 ? 'box-shadow:0 0 0 2px #f97316 inset' : ''}">${v}</span></td>`).join('')}</tr>`; }).join('')}
-      <tr><td style="padding:6px 8px 6px 0;border-top:2px solid #e2e8f0;font-weight:700">Gemiddeld</td>${a.profiles.map(p => `<td style="text-align:center;padding:6px 8px;border-top:2px solid #e2e8f0;font-weight:700">${fmt(avgOf(p))}</td>`).join('')}</tr></table>`;
-    html += block(`<div style="font-size:18px;font-weight:700;color:#1e293b;margin-bottom:8px">Vergelijking</div>
-      <div style="display:grid;grid-template-columns:300px 1fr;gap:18px;align-items:center">
-        <div style="width:300px">${pentagon(a.profiles.map(p => ({ scores:scores(p), color:colorOf(a, p), fillOpacity:0.12 })), { px:300 })}</div>
-        <div>${a.profiles.map(p => `<div style="display:flex;align-items:center;gap:8px;font-size:14px;margin:4px 0"><span style="width:12px;height:12px;border-radius:4px;background:${colorOf(a, p)};display:inline-block"></span>${esc(p.name)}<span style="margin-left:auto;color:#94a3b8">${fmt(avgOf(p))}</span></div>`).join('')}</div></div>${t}
-      <div style="font-size:11px;color:#94a3b8;margin-top:6px">Oranje omrand: de groep die op die dimensie het hardst geraakt wordt.</div>`);
-  }
   html += `<div data-oc-keep style="font-size:11px;color:#94a3b8;margin-top:12px">Schaal: 1 beperkt, 2 merkbaar, 3 groot, 4 ingrijpend; – is nog niet gescoord. Vanaf 3 is een dimensie een zwaartepunt.</div>`;
   node.innerHTML = html;
   const n = a.profiles.length;
   return { node, title:'Impactanalyse', subtitle:`${a.name} · ${n} ${n === 1 ? 'profiel' : 'profielen'}` };
 }
+
+async function doExport(act) {
+  const a = cur();
+  if (!a.profiles.some(touched)) { toast('Nog niets gescoord in deze analyse'); return; }
+  toast('Bezig…');
+  const base = `impactanalyse-${kebab(a.name)}-${stamp()}`;
+  try {
+    await (act === 'pdf' ? ocExport.pdf(buildExport, base, { width:900 }) : ocExport.png(buildExport, base, { width:900 }));
+    toast(act === 'pdf' ? 'PDF gedownload' : 'Afbeelding gedownload');
+  } catch { toast('Downloaden lukt nu niet: geen verbinding?'); }
+}
+document.addEventListener('click', e => { const b = e.target.closest('[data-exp]'); if (b && !b.disabled) doExport(b.dataset.exp); });
 
 $('menu').addEventListener('click', async e => {
   const b = e.target.closest('[data-act]'); if (!b) return;
@@ -1384,14 +1419,7 @@ $('menu').addEventListener('click', async e => {
   if ((act === 'pdf' || act === 'png' || act === 'copy' || act === 'csv') && empty) { toast('Nog niets gescoord in deze analyse'); return; }
   if (act === 'copy') { (await copyText(asMarkdown(a))) ? toast('Gekopieerd als tekst') : toast('Kopiëren lukt hier niet'); }
   if (act === 'csv') { download(new Blob([asCSV(a)], { type:'text/csv;charset=utf-8' }), `impactanalyse-${kebab(a.name)}-${stamp()}.csv`); toast('CSV gedownload'); }
-  if (act === 'pdf' || act === 'png') {
-    toast('Bezig…');
-    const base = `impactanalyse-${kebab(a.name)}-${stamp()}`;
-    try {
-      await (act === 'pdf' ? ocExport.pdf(buildExport, base) : ocExport.png(buildExport, base));
-      toast(act === 'pdf' ? 'PDF gedownload' : 'Afbeelding gedownload');
-    } catch { toast('Downloaden lukt nu niet: geen verbinding?'); }
-  }
+  if (act === 'pdf' || act === 'png') await doExport(act);
   if (act === 'delete') deleteAnalysis(a);
 });
 document.addEventListener('click', e => { if (e.target.closest('[data-act="wipe"]')) { closeMenu(); ocWipeAll(); } });

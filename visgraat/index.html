@@ -162,7 +162,7 @@ button.oc-import { color:#047857; min-height:44px; }
 .stat { font-size:0.8125rem; font-weight:600; color:var(--slate-600); margin-left:0.5rem; }
 .draw-head { display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; padding:1rem 1.125rem 0.5rem; }
 .draw-head .card-title { margin:0; }
-.draw-head .zoom { margin-left:auto; }
+.draw-head #fit-btn { margin-left:auto; }
 .canvas { overflow:auto; padding:0 0.5rem 0.75rem; -webkit-overflow-scrolling:touch; }
 .canvas svg { display:block; margin:0 auto; }
 .cats { display:grid; gap:0.75rem; margin-bottom:0.75rem; }
@@ -206,6 +206,8 @@ button.oc-import { color:#047857; min-height:44px; }
 .empty { font-size:0.9375rem; color:var(--slate-600); background:var(--slate-50); border-radius:12px; padding:0.875rem; }
 .warn { margin-top:0.75rem; }
 @media (max-width:480px) { .draw-head .stat { order:3; flex-basis:100%; margin-left:2.125rem; } }
+.zoom:disabled { opacity:0.45; cursor:default; }
+.explain .inner a { padding:12px 4px; margin:0 -4px; }
 
 </style>
 </head>
@@ -566,8 +568,8 @@ function svgOf(u) {
   const PAD = 24, LH = 16, GAP = 9, MAXT = 200, D = 56, LBLH = 30, HEADW = 210;
   const cols = [];
   for (let i = 0; i < u.cats.length; i += 2) cols.push([u.cats[i], u.cats[i + 1]].filter(Boolean));
-  // elke oorzaak: max. 2 regels tekst, suboorzaken iets kleiner en verder van de graat
-  const items = c => ordered(u, c.id).filter(x => x.text.trim()).map(l => { const sub = !!l.parent, fs = sub ? 12 : 13, wt = l.likely ? 700 : 500, w = MAXT - (sub ? 26 : 12); return { l, sub, fs, wt, lines: wrapW(l.text, fs, wt, w, 2) }; });
+  // elke oorzaak: max. 3 regels tekst (zo past een gewone zin zonder afkappen), suboorzaken iets kleiner en verder van de graat
+  const items = c => ordered(u, c.id).filter(x => x.text.trim()).map(l => { const sub = !!l.parent, fs = sub ? 13 : 14, wt = l.likely ? 700 : 500, w = MAXT - (sub ? 26 : 12); return { l, sub, fs, wt, lines: wrapW(l.text, fs, wt, w, 3) }; });
   const hOf = its => its.reduce((s, it) => s + it.lines.length * LH + GAP, 0);
   const sideH = its => LBLH + 16 + Math.max(hOf(its), LH + GAP) + 10;
   const hTop = Math.max(LBLH + 40, ...cols.map(cc => sideH(items(cc[0])))), hBot = Math.max(LBLH + 40, ...cols.map(cc => cc[1] ? sideH(items(cc[1])) : 0));
@@ -661,7 +663,8 @@ function render() {
 
   <section class="card">
     <div class="draw-head"><h2 class="card-title"><span class="stepno">2</span>Het diagram</h2><span class="stat">${n} ${n === 1 ? 'oorzaak' : 'oorzaken'}${likely.length ? ` · ${likely.length} waarschijnlijk` : ''}</span>
-      <button type="button" class="zoom" id="fit-btn" data-act="fit">Hele diagram</button></div>
+      <button type="button" class="zoom" id="fit-btn" data-act="fit">Hele diagram</button>
+      <button type="button" class="zoom" data-act="png" aria-label="Download als afbeelding"${n ? '' : ' disabled'}>Afbeelding</button><button type="button" class="zoom" data-act="pdf" aria-label="Download als PDF"${n ? '' : ' disabled'}>PDF</button></div>
     <div class="canvas" id="canvas">${svgOf(u)}</div>
   </section>
 
@@ -699,7 +702,7 @@ function catPanel(u, c) {
     <input class="cz-add" data-add="${c.id}" maxlength="160" placeholder="+ Oorzaak toevoegen" aria-label="Oorzaak toevoegen bij ${esc(c.name)}">
   </div>`;
 }
-function renderDiagram() { const c = $('canvas'), u = cur(); if (!c || !u) return; c.innerHTML = svgOf(u); sizeSvg(); }
+function renderDiagram() { const c = $('canvas'), u = cur(); if (!c || !u) return; c.innerHTML = svgOf(u); sizeSvg(); const none = !u.causes.some(x => x.text.trim()); document.querySelectorAll('.draw-head [data-act="png"], .draw-head [data-act="pdf"]').forEach(b => b.disabled = none); }
 const focusSel = sel => { const el = document.querySelector(sel); if (el) el.focus(); };
 
 /* ---------- Bewerken ---------- */
@@ -845,11 +848,18 @@ function buildExport() {
   const s = node.querySelector('svg'); s.style.maxWidth = '100%'; s.style.height = 'auto';
   return { node, title:'Visgraatdiagram', subtitle: title(u) };
 }
+// Bestandsnaam: visgraat-probleem-JJJJ-MM-DD (een datum die al in de titel staat, komt er niet twee keer in).
+function fileBase(u) {
+  const d = new Date(), iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const slug = s => String(s || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/\d{4}-\d{2}-\d{2}/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const nm = slug(title(u)).replace(/^visgraat(diagram)?(-|$)/, '').slice(0, 50).replace(/-$/, '');
+  return ['visgraat', nm, iso].filter(Boolean).join('-');
+}
 function saveBlob(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
 document.addEventListener('click', async e => {
-  const b = e.target.closest('#menu [data-act]'); if (!b) return;
-  $('menu').classList.remove('open');
-  const u = cur(), act = b.dataset.act, base = ('visgraat-' + title(u)).normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
+  const b = e.target.closest('#menu [data-act], .draw-head [data-act="png"], .draw-head [data-act="pdf"]'); if (!b) return;
+  if ($('menu')) $('menu').classList.remove('open');
+  const u = cur(), act = b.dataset.act, base = fileBase(u);
   if (act === 'png' || act === 'pdf') {
     const w = +((svgOf(u).match(/width="(\d+)"/) || [])[1] || 1000);
     toast('Bezig met downloaden…');
@@ -869,7 +879,16 @@ window.addEventListener('resize', () => { clearTimeout(sizeSvg.t); sizeSvg.t = s
 
 render();
 setTimeout(publish, 0);
-if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { const a = document.activeElement; if (!a || a === document.body) render(); else renderDiagram(); });
+// De tekstbreedtes worden gemeten met DM Sans. document.fonts.ready alleen volstaat niet: als het lettertype
+// nog niet gevraagd is, is 'ready' meteen klaar en meten we met het reservelettertype (labels te vroeg afgekapt).
+// Daarom vragen we de gebruikte gewichten expliciet op en tekenen we opnieuw zodra ze er zijn, ook als er een
+// veld de focus heeft (dan alleen het diagram, zodat de invoer niet verspringt).
+function redrawAfterFonts() { const a = document.activeElement; if (!a || a === document.body) render(); else renderDiagram(); }
+if (document.fonts && document.fonts.load) {
+  const faces = ['500 14px "DM Sans"', '700 14px "DM Sans"', '500 13px "DM Sans"', '700 13px "DM Sans"', '700 15px "DM Sans"'];
+  Promise.all(faces.map(f => document.fonts.load(f).catch(() => null))).then(() => document.fonts.ready).then(redrawAfterFonts);
+  document.fonts.addEventListener && document.fonts.addEventListener('loadingdone', () => { clearTimeout(redrawAfterFonts.t); redrawAfterFonts.t = setTimeout(renderDiagram, 30); });
+}
 
 </script>
 </body>
