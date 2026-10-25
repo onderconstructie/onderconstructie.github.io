@@ -148,7 +148,7 @@ button { background:none; border:0; cursor:pointer; }
 .v-nums { font-size:0.75rem; color:var(--slate-500); font-variant-numeric:tabular-nums; }
 .chip { font-size:0.6875rem; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; padding:0 0.4375rem; border-radius:6px; }
 .chip.uns { color:var(--slate-600); border:1px dashed var(--slate-400); background:var(--wit); }
-.chip.adj { color:#1d4ed8; border:1px solid #bfdbfe; background:#eff6ff; }
+.chip.adj { color:#334155; border:1px solid #cbd5e1; background:#f1f5f9; }
 .v-adj { display:grid; gap:0.25rem; margin-top:0.25rem; }
 .v-empty { margin-top:0.875rem; border:1px dashed var(--slate-300); border-radius:12px; padding:0.75rem 0.875rem; font-size:0.875rem; color:var(--slate-500); }
 
@@ -305,6 +305,15 @@ select.field { appearance:none; -webkit-appearance:none; padding-right:1.75rem; 
 .ocw-row button { min-height:44px; }
 button.oc-import { color:#047857; min-height:44px; }
 
+/* Panel november 2026 */
+.u-name, .list-name { min-height:44px; }
+.act label { min-height:44px; align-items:center; }
+.exp-btns { display:flex; gap:0.375rem; padding:0.75rem 0.25rem 0.125rem; }
+.btn-s { flex:1; min-height:44px; padding:0 0.875rem; border-radius:10px; border:1.5px solid var(--slate-200); background:var(--wit); font-size:0.875rem; font-weight:600; color:#047857; white-space:nowrap; }
+.btn-s:hover:not(:disabled) { border-color:#a7f3d0; background:var(--accent-50); }
+.btn-s:disabled { color:var(--slate-400); cursor:not-allowed; }
+@media (min-width:768px) { .toast { left:auto; right:1.25rem; max-width:360px; transform:translateY(calc(100% + 3rem)); } .toast.show { transform:none; } }
+
 /* Voorbeeld en wissen */
 .vb-bar { display:flex; flex-wrap:wrap; align-items:center; gap:0.5rem 0.75rem; margin:0.75rem 0.75rem 0; padding:0.5rem 0.5rem 0.5rem 0.75rem; background:#fffbeb; border:1px solid #fde68a; border-radius:12px; font-size:0.875rem; line-height:1.4; color:#78350f; }
 .vb-bar[hidden] { display:none !important; }
@@ -357,6 +366,7 @@ button.oc-import { color:#047857; min-height:44px; }
           <span class="lg-calc"><i></i>berekende plek van een bijgesteld punt (*)</span>
         </div>
         <p class="mx-hint">Sleep een punt als je inschatting anders is dan de berekening.</p>
+        <div class="exp-btns"><button type="button" class="btn-s" data-exp="png">Afbeelding</button><button type="button" class="btn-s" data-exp="pdf">PDF</button></div>
       </section>
     </aside>
 
@@ -412,7 +422,7 @@ button.oc-import { color:#047857; min-height:44px; }
       <div class="card empty" id="empty" hidden>
         <strong>Nog niets ingevuld</strong>
         Begin bij een team of afdeling: welke veranderingen maakten de mensen mee?
-        <br><button class="btn btn-primary" id="example">Begin met een voorbeeld</button>
+        <br><button class="btn btn-primary" id="example">Voorbeeld bekijken</button>
       </div>
 
       <div class="units-bar">
@@ -808,7 +818,7 @@ const CLIM = {
           'Knip de verandering op in kleinere stappen met rustpunten ertussen',
           'Maak zichtbaar welke taken wegvallen of lichter worden',
           'Stem de timing af op andere lopende veranderingen in dit team'] },
-  afw: { name:'Afwachtend', color:'#1d4ed8', bg:'#eff6ff', soft:'#f5f9ff', border:'#bfdbfe',
+  afw: { name:'Afwachtend', color:'#475569', bg:'#f1f5f9', soft:'#f8fafc', border:'#cbd5e1',
     text:'Mensen geloven het pas als ze het zien. Begin klein, toon snel zichtbaar resultaat en wees eerlijk over wat vroeger misliep.',
     acts:['Start met een kleine proef die snel een zichtbaar resultaat oplevert',
           'Zeg openlijk wat er vroeger misliep en wat je nu anders doet',
@@ -906,6 +916,19 @@ const xOf = x => M.L + (x + 1) / 2 * M.W;   // ervaring −1..+1
 const yOf = y => M.T + (1 - y) * M.H;       // belasting 0..1, veel boven
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const shortLabel = (s, n = 16) => s.length > n ? s.slice(0, n - 1).trimEnd() + '…' : s;
+// Naam over hoogstens twee regels van n tekens; wat dan nog overblijft, wordt ingekort.
+function wrapLabel(s, n) {
+  const words = String(s).trim().split(/\s+/), lines = [''];
+  words.forEach(wd => {
+    const cur = lines[lines.length - 1];
+    if (!cur) lines[lines.length - 1] = wd;
+    else if ((cur + ' ' + wd).length <= n) lines[lines.length - 1] = cur + ' ' + wd;
+    else lines.push(wd);
+  });
+  const out = lines.slice(0, 2).map(l => shortLabel(l, n + 2));
+  if (lines.length > 2) out[1] = shortLabel(lines.slice(1).join(' '), n);
+  return out;
+}
 const F = `font-family="'DM Sans', system-ui, sans-serif"`;
 
 // Tekst in de matrix nooit kleiner dan 11px op het scherm (bij export rekenen we met de volle 400px).
@@ -948,31 +971,38 @@ function renderMatrix(svgEl = $('matrix'), forExport = false) {
   const pts = a.units.map(u => ({ u, r:result(u) })).filter(p => p.r);
   $('mx-count').textContent = pts.length ? `${pts.length} van ${a.units.length} ingevuld` : '';
   // Labels boven het punt; botst een label met een eerder label, dan eronder.
+  // Punten blijven binnen het vlak (4–96% breed) en onder of boven de kwadrantnamen, zodat ze niet over de rand of een naam vallen.
+  const nameH = 6 + fs(10.5) + 9;
+  const inX = v => clamp(v, M.L + 0.04 * M.W, M.L + 0.96 * M.W), inY = v => clamp(v, M.T + Math.max(0.04 * M.H, nameH), M.T + M.H - Math.max(0.04 * M.H, nameH));
+  const narrow = mScale < 0.85;
   const placed = [];
   let ghosts = '', dots = '';
   pts.forEach(({ u, r }) => {
-    const px = xOf(r.x), py = yOf(r.y), c = CLIM[r.cid];
+    const px = inX(xOf(r.x)), py = inY(yOf(r.y)), c = CLIM[r.cid];
     if (r.adjusted && r.has) {
-      const gx = xOf(r.calcX), gy = yOf(r.calcY);
+      const gx = inX(xOf(r.calcX)), gy = inY(yOf(r.calcY));
       ghosts += `<line x1="${gx}" y1="${gy}" x2="${px}" y2="${py}" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3 3"/>
         <circle cx="${gx}" cy="${gy}" r="4.5" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>`;
     }
-    const lf = fs(10.5);
-    const label = shortLabel(u.name || 'Naamloos', mScale < 0.85 ? 12 : 18) + (r.adjusted ? ' *' : '');
-    const w = label.length * lf * 0.54 + 6;
-    let ly = py - 13;
-    const hit = (y) => placed.some(b => Math.abs(b.x - px) < (b.w + w) / 2 && Math.abs(b.y - y) < lf + 1.5);
-    if (py < M.T + 30 || hit(ly)) ly = py + 10 + lf;
-    if (ly < M.T + 6 + fs(10.5) + lf + 4) ly = M.T + 6 + fs(10.5) + lf + 4;   // niet over de naam van het kwadrant
-    if (hit(ly)) ly = py - 15 - lf;
+    const lf = fs(10.5), lh = lf * 1.1;
+    const lines = narrow ? wrapLabel(u.name || 'Naamloos', 14) : [shortLabel(u.name || 'Naamloos', 18)];
+    if (r.adjusted) lines[lines.length - 1] += ' *';
+    const w = Math.max(...lines.map(l => l.length)) * lf * 0.54 + 6, h = lines.length * lh;
+    const hit = top => placed.some(b => Math.abs(b.x - px) < (b.w + w) / 2 && top < b.top + b.h + 1.5 && top + h > b.top - 1.5);
+    const above = py - 13 - lf * 0.85 - (lines.length - 1) * lh, below = py + 10 + lf * 0.15;
+    let top = above;
+    if (py < M.T + 30 || hit(top)) top = below;
+    const minTop = M.T + 6 + fs(10.5) + 4;   // niet over de naam van het kwadrant
+    if (top < minTop) top = minTop;
+    if (hit(top)) top = py - 15 - h;
     const lx = clamp(px, M.L + w / 2, M.L + M.W - w / 2);
-    placed.push({ x:lx, y:ly, w });
+    placed.push({ x:lx, top, w, h });
     const uns = r.unsure && !r.adjusted;
     dots += `<g class="pt${dragging && dragging.id === u.id ? ' dragging' : ''}" data-id="${u.id}" ${forExport ? '' : 'tabindex="0" role="button"'} aria-label="${esc(u.name)}: ${c.name}${uns ? ', onzeker' : ''}${r.adjusted ? ', bijgesteld' : ''}. Pijltjes om te verplaatsen.">
       <circle cx="${px}" cy="${py}" r="${Math.max(18, 22.5 / mScale).toFixed(1)}" fill="transparent"/>
       <circle class="ring" cx="${px}" cy="${py}" r="11" fill="none" stroke="${c.color}" stroke-width="1.5" opacity="0"/>
       <circle cx="${px}" cy="${py}" r="7.5" fill="${uns ? '#ffffff' : c.color}" stroke="${uns ? c.color : '#ffffff'}" stroke-width="${uns ? 2 : 2}" ${uns ? 'stroke-dasharray="3 2.2"' : ''}/>
-      <text x="${lx}" y="${ly}" ${F} font-size="${lf}" font-weight="600" fill="#1e293b" text-anchor="middle" stroke="#ffffff" stroke-width="3" stroke-linejoin="round" paint-order="stroke">${esc(label)}</text>
+      <text ${F} font-size="${lf}" font-weight="600" fill="#1e293b" text-anchor="middle" stroke="#ffffff" stroke-width="3" stroke-linejoin="round" paint-order="stroke">${lines.map((l, i) => `<tspan x="${lx}" y="${(top + lf * 0.85 + i * lh).toFixed(1)}">${esc(l)}</tspan>`).join('')}</text>
     </g>`;
   });
   svgEl.innerHTML = matrixStatic() + ghosts + `<g id="points">${dots}</g>`;
@@ -1117,6 +1147,7 @@ function grow(t) { t.style.height = 'auto'; t.style.height = t.scrollHeight + 'p
 function render() {
   const keep = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.key : null;
   const a = cur();
+  document.querySelectorAll('[data-exp]').forEach(b => { b.disabled = a.units.every(isBlank); });
   renderTabs();
   if (document.activeElement !== $('name')) $('name').value = a.name;
   if (document.activeElement !== $('question')) $('question').value = a.change;
@@ -1465,6 +1496,7 @@ async function exportGuide(units) {
   catch { toast('Downloaden lukt nu niet: geen verbinding?'); }
 }
 
+document.addEventListener('click', e => { const b = e.target.closest('[data-exp]'); if (b && !b.disabled) document.querySelector(`#menu [data-act="${b.dataset.exp}"]`).click(); });
 $('menu').addEventListener('click', async e => {
   const b = e.target.closest('[data-act]'); if (!b) return;
   closeMenu();
