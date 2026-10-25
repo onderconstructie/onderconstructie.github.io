@@ -165,6 +165,12 @@ input[type=range]:focus-visible::-webkit-slider-thumb { box-shadow:0 0 0 4px var
 .item.done .item-name { color:var(--slate-500); text-decoration:line-through; text-decoration-color:var(--slate-300); }
 .scores { font-size:0.75rem; color:var(--slate-500); white-space:nowrap; font-variant-numeric:tabular-nums; padding-right:0.25rem; }
 .scores b { font-weight:600; color:var(--slate-700); }
+.todo-item { display:flex; flex-wrap:wrap; align-items:center; gap:0.375rem; padding:0.5rem 0.25rem 0.625rem; }
+.todo-item .item-name { flex:1 1 100%; padding-left:0.25rem; }
+.pick { display:flex; flex-wrap:wrap; gap:0.25rem; flex:1; }
+.pick-btn { min-height:40px; padding:0 0.625rem; border-radius:999px; border:1px solid var(--slate-200); background:var(--wit); font-size:0.8125rem; font-weight:600; color:var(--c); }
+.pick-btn:hover, .pick-btn:focus-visible { background:var(--b); border-color:var(--c); }
+.todo-item .del { opacity:1 !important; }
 .del { width:36px; height:44px; display:flex; align-items:center; justify-content:center; color:var(--slate-300); border-radius:8px; }
 .del:hover { color:var(--rood); }
 .del svg { width:17px; height:17px; }
@@ -564,14 +570,15 @@ document.addEventListener('click', e => { if (e.target.closest('[data-act="wipe"
 document.addEventListener('click', async e => {
   if (!e.target.closest('#oc-imp')) return;
   e.preventDefault();
-  const picked = await ocShare.pick({ types:['taak','actie','risico'], self:OC_ID, title:'Overnemen om te prioriteren', intro:'Kies taken, acties of risico\'s uit andere tools. Ze komen op 3 · 3.' });
+  const picked = await ocShare.pick({ types:['taak','actie','risico'], self:OC_ID, title:'Overnemen om te prioriteren', intro:'Kies taken, acties of risico\'s uit andere tools. Daarna schat je ze snel in.' });
   if (!picked.length) return;
   const l = cur(), have = new Set(l.items.map(i => i.name.toLowerCase())), restore = snapshot();
   let n = 0;
   picked.forEach(p => { const name = p.text.slice(0, 120); if (have.has(name.toLowerCase())) return; have.add(name.toLowerCase());
-    l.items.push({ id:uid(), name, impact:3, effort:3, done:false }); n++; });
+    l.items.push({ id:uid(), name, impact:3, effort:3, done:false, nieuw:true }); n++; });
   save(); render();
-  toast(n ? `${n} overgenomen op 3 · 3: zet impact en inspanning nog juist` : 'Alles stond al in de lijst', n ? restore : undefined);
+  toast(n ? `${n} overgenomen. Schat ze bovenaan het overzicht in.` : 'Alles stond al in de lijst', n ? restore : undefined);
+  if (n) setTimeout(() => { const t = document.querySelector('.items.todo'); t && t.previousElementSibling.scrollIntoView({ block:'start', behavior:'smooth' }); }, 50);
 });
 
 /* ---------- Download als afbeelding of PDF (gedeeld door de Onder Constructie-tools, v2) ----------
@@ -683,7 +690,9 @@ const Q = [
   { id:'vul',     name:'Opvullers',       sub:'als er tijd is', color:'#94a3b8', ink:'#475569', bg:'#f8fafc', test:i => i.impact <= 2 && i.effort <= 2 },
   { id:'verspil', name:'Tijdverspillers', sub:'laten liggen',   color:'#f59e0b', ink:'#b45309', bg:'#fffbeb', test:i => i.impact <= 2 && i.effort >= 3 },
 ];
-const quadOf = it => Q.find(q => q.test(it));
+const quadOf = it => it.nieuw ? null : Q.find(q => q.test(it));
+// Snel inschatten: één tik zet een item midden in het gekozen kwadrant; fijnregelen kan daarna
+const PRESET = { quick:{ impact:3, effort:2 }, groot:{ impact:3, effort:3 }, vul:{ impact:2, effort:2 }, verspil:{ impact:2, effort:3 } };
 
 /* ---------- Opslag ---------- */
 const KEY = 'prioriteit.v1';
@@ -791,11 +800,11 @@ new ResizeObserver(() => { const w = $('matrix').getBoundingClientRect().width /
 function renderMatrix() {
   const l = cur(), svg = $('matrix');
   measureMatrix();
-  const pos = positions(l.items);
+  const pos = positions(l.items.filter(i => !i.nieuw));
   const f = `font-family="'DM Sans', system-ui, sans-serif"`;
   let pts = '';
   // gedane items onderaan tekenen, actieve erboven
-  const order = [...l.items].sort((a, b) => (b.done - a.done));
+  const order = l.items.filter(i => !i.nieuw).sort((a, b) => (b.done - a.done));
   order.forEach(it => {
     const p = pos[it.id], q = quadOf(it);
     const sel = it.id === editing;
@@ -837,7 +846,14 @@ function renderList() {
     $('list').innerHTML = `<div class="empty"><strong>Nog niets om te ordenen</strong>Voeg items toe, of bekijk eerst hoe het werkt.<br><button id="example">Begin met een voorbeeld</button></div>`;
     return;
   }
-  $('list').innerHTML = Q.map(q => {
+  const todo = l.items.filter(i => i.nieuw);
+  $('list').innerHTML = (todo.length ? `<div class="q-head"><i style="background:#cbd5e1"></i>Nog in te schatten<span class="q-sub">· één tik per item</span><span class="q-n">${todo.length}</span></div>
+      <ul class="items todo">${todo.map(it => `
+        <li class="item todo-item" data-id="${it.id}">
+          <span class="item-name">${esc(it.name)}</span>
+          <span class="pick" role="group" aria-label="Kwadrant voor ${esc(it.name)}">${Q.map(q => `<button type="button" class="pick-btn" data-pick="${q.id}" style="--c:${q.ink};--b:${q.bg}">${({ quick:'Quick win', groot:'Grote klus', vul:'Opvuller', verspil:'Tijdverspiller' })[q.id]}</button>`).join('')}</span>
+          <button class="del" aria-label="Verwijder ${esc(it.name)}">${ICON_DEL}</button>
+        </li>`).join('')}</ul>` : '') + Q.map(q => {
     const items = sorted(l.items.filter(i => quadOf(i) === q));
     if (!items.length) return '';
     return `<div class="q-head"><i style="background:${q.color}"></i>${q.name}<span class="q-sub">· ${q.sub}</span><span class="q-n">${items.length}</span></div>
@@ -916,7 +932,7 @@ $('form').addEventListener('submit', e => {
   const impact = +$('impact').value, effort = +$('effort').value;
   if (editing) {
     const it = cur().items.find(i => i.id === editing);
-    if (it) { if (name) it.name = name.slice(0, 120); it.impact = impact; it.effort = effort; }
+    if (it) { if (name) it.name = name.slice(0, 120); it.impact = impact; it.effort = effort; delete it.nieuw; }
     editing = null; $('name').value = '';
     $('impact').value = 3; $('effort').value = 3;
     save(); render(); return;
@@ -937,15 +953,16 @@ $('name').addEventListener('paste', e => {
   const names = parseLines(text);
   if (!names.length) return;
   const l = cur();
-  names.forEach(n => l.items.push({ id:uid(), name:n, impact:3, effort:3, done:false }));
+  names.forEach(n => l.items.push({ id:uid(), name:n, impact:3, effort:3, done:false, nieuw:true }));
   save(); render();
-  toast(`${names.length} items toegevoegd op 3 · 3. Versleep ze in de matrix.`, () => { l.items.splice(l.items.length - names.length, names.length); });
+  toast(`${names.length} items toegevoegd. Schat ze bovenaan het overzicht in.`, () => { l.items.splice(l.items.length - names.length, names.length); });
+  setTimeout(() => { const t = document.querySelector('.items.todo'); t && t.previousElementSibling.scrollIntoView({ block:'start', behavior:'smooth' }); }, 50);
 });
 ['impact', 'effort'].forEach(k => $(k).addEventListener('input', () => {
   paintSliders();
   if (editing) {
     const it = cur().items.find(i => i.id === editing);
-    if (it) { it[k] = +$(k).value; save(); renderMatrix(); renderList(); }
+    if (it) { it[k] = +$(k).value; delete it.nieuw; save(); renderMatrix(); renderList(); }
   }
 }));
 $('name').addEventListener('input', () => {
@@ -957,6 +974,16 @@ $('name').addEventListener('input', () => {
 $('cancel-edit').addEventListener('click', () => {
   editing = null; $('name').value = ''; $('impact').value = 3; $('effort').value = 3; render(); $('name').focus();
 });
+document.addEventListener('click', e => {
+  const b = e.target.closest('.pick-btn'); if (!b) return;
+  e.stopPropagation();
+  const id = b.closest('[data-id]').dataset.id, it = cur().items.find(i => i.id === id); if (!it) return;
+  Object.assign(it, PRESET[b.dataset.pick]); delete it.nieuw;
+  save(); render();
+  const left = cur().items.filter(i => i.nieuw).length;
+  toast(left ? `${it.name.slice(0, 40)}: ${Q.find(q => q.id === b.dataset.pick).name.toLowerCase()}. Nog ${left}.` : 'Alles ingeschat. Versleep een punt om fijn te regelen.');
+  const nx = document.querySelector('.todo-item .pick-btn'); if (nx) nx.focus({ preventScroll:true });
+}, true);
 function startEdit(id) {
   editing = id; $('name').value = '';
   render();
@@ -1134,12 +1161,13 @@ function asText() {
     const items = sorted(l.items.filter(i => quadOf(i) === q));
     if (!items.length) return '';
     return `\n${q.name} (${q.sub})\n` + items.map(i => `- [${i.done ? 'x' : ' '}] ${i.name} (impact ${i.impact}, inspanning ${i.effort})`).join('\n');
-  }).join('\n').replace(/\n{3,}/g, '\n\n') + '\n';
+  }).join('\n').replace(/\n{3,}/g, '\n\n') + (l.items.some(i => i.nieuw) ? '\nNog in te schatten\n' + l.items.filter(i => i.nieuw).map(i => `- ${i.name}`).join('\n') + '\n' : '\n');
 }
 function asCSV() {
   const cell = v => /[;"\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v);
   const rows = [['Kwadrant', 'Item', 'Impact', 'Inspanning', 'Gedaan']];
   Q.forEach(q => sorted(cur().items.filter(i => quadOf(i) === q)).forEach(i => rows.push([q.name, i.name, i.impact, i.effort, i.done ? 'ja' : 'nee'])));
+  cur().items.filter(i => i.nieuw).forEach(i => rows.push(['Nog in te schatten', i.name, '', '', i.done ? 'ja' : 'nee']));
   return '﻿' + rows.map(r => r.map(cell).join(';')).join('\r\n') + '\r\n';
 }
 /* Exportweergave: matrix links, de lijst per kwadrant rechts. */

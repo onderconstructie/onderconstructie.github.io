@@ -1059,7 +1059,8 @@ function stepVertrek() {
   const nm = p.names.filter((x, i, a) => x[1].toLowerCase() !== state.name.trim().toLowerCase() && a.findIndex(y => y[1].toLowerCase() === x[1].toLowerCase()) === i);
   if (nm.length) bits.push(`<div class="chips" style="margin-top:0.125rem">${nm.map(x => `<button type="button" class="chip add" data-usename="${esc(x[1])}" title="Uit ${esc(x[0])}">Naam: ${esc(x[1])}</button>`).join('')}</div>`);
   if (sp) bits.push(`<div>Sponsor: <b>${esc(sp.name)}</b>${sp.role ? ', ' + esc(sp.role) : ''} <span class="tag auto">uit ${esc(sp.tool)}</span></div>`);
-  const nb = ocShare.count(['betrokkene'], OC_ID);
+  // dezelfde persoon of rol uit twee tools telt één keer
+  const nb = new Set(ocShare.sources(['betrokkene'], OC_ID).flatMap(x => x.items.map(i => i.text.trim().toLowerCase()))).size;
   if (nb) bits.push(`<div>${nb} ${nb === 1 ? 'betrokkene ligt' : 'betrokkenen liggen'} klaar om over te nemen als doelgroep (volgende stap).</div>`);
   const known = bits.length ? `<div class="known"><div class="known-h">Al bekend uit andere tools</div>${bits.join('')}</div>`
     : `<div class="known"><div class="known-h">Tip</div><div class="muted">Vulde je het <a href="https://onderconstructie.github.io/veranderprofiel/">Veranderprofiel</a> of de Stakeholder Radar al in op dit toestel? Dan verschijnt hier wat ze weten, en stemt deze tool zijn voorstellen erop af.</div></div>`;

@@ -357,6 +357,28 @@ body.filtering #groups, body.filtering #list-tools { display:none; }
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
 .tb-actions { display:flex; }
+/* Stappenplanbalk */
+.pathbar { display:flex; align-items:center; gap:0.75rem; padding:0.25rem 0.5rem 0.25rem 1rem; background:#f6fefb; border-bottom:1px solid #d9efe6; min-height:48px; }
+.pathbar[hidden] { display:none; }
+.pb-where { display:flex; align-items:baseline; gap:0.5rem; min-width:0; font-size:0.8125rem; color:var(--slate-600); white-space:nowrap; }
+.pb-where b { color:var(--slate-800); font-weight:700; overflow:hidden; text-overflow:ellipsis; }
+.pb-dots { display:flex; gap:3px; flex:1; max-width:180px; }
+.pb-dots span { flex:1; height:4px; border-radius:2px; background:var(--slate-200); }
+.pb-dots span.done { background:#6ee7b7; }
+.pb-dots span.here { background:var(--accent-dark); }
+.pb-nav { display:flex; align-items:center; gap:0.25rem; margin-left:auto; flex-shrink:0; }
+.pb-prev { width:44px; height:44px; border-radius:10px; display:flex; align-items:center; justify-content:center; color:var(--slate-600); }
+.pb-prev:hover { background:#e2f5ec; }
+.pb-prev svg, .pb-next svg { width:18px; height:18px; }
+.pb-next { display:inline-flex; align-items:center; gap:0.25rem; min-height:40px; padding:0 0.5rem 0 0.875rem; border-radius:10px; background:var(--accent-dark); color:var(--wit); font-size:0.8125rem; font-weight:600; max-width:15rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.pb-next:hover { background:#065f46; }
+.pb-end { font-size:0.8125rem; color:var(--slate-500); padding-right:0.5rem; }
+@media (max-width:560px) {
+  .pb-dots { display:none; }
+  .pb-where { flex-direction:column; gap:0; line-height:1.25; }
+  .pb-lbl { display:none; }
+  .pb-next { max-width:11rem; }
+}
 .tb-btn { width:44px; height:44px; display:flex; align-items:center; justify-content:center; color:var(--slate-500); border-radius:8px; }
 .tb-btn:hover { background:var(--slate-100); }
 .tb-btn svg { width:20px; height:20px; }
@@ -586,7 +608,7 @@ body.filtering .list-tools { visibility:hidden; }
     <span class="sep" aria-hidden="true">·</span>
     <button class="footer-link" id="data-open" type="button">gegevens</button>
     <span class="sep" aria-hidden="true">·</span>
-    <span class="app-version" title="Versie van de app">v22</span>
+    <span class="app-version" title="Versie van de app">v23</span>
   </footer>
 </div>
 
@@ -631,11 +653,12 @@ body.filtering .list-tools { visibility:hidden; }
       <button class="tb-btn" id="wipe-tool" aria-label="Gegevens van deze tool wissen" title="Gegevens van deze tool wissen" hidden>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>
       </button>
-      <button class="tb-btn" id="close" aria-label="Sluit deze tool" title="Sluit (wist wat niet bewaard is)">
+      <button class="tb-btn" id="close" aria-label="Sluit deze tool" title="Sluit deze tool">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
       </button>
     </div>
   </div>
+  <nav class="pathbar" id="pathbar" aria-label="Stappenplan" hidden></nav>
   <div class="frames" id="frames"><div class="loading" id="loading">Laden…</div></div>
 </div>
 
@@ -651,10 +674,23 @@ const iconHTML = svg => typeof svg === 'string' && /^\s*<svg[\s>]/i.test(svg)
   ? `<img alt="" src="data:image/svg+xml,${encodeURIComponent(svg)}">` : '';
 const esc = v => String(v).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
 const GROUPS = [
-  { id:'projecten', label:'Projecten', note:'Je projecten scherp houden', logo:"<svg viewBox=\"0 0 80 80\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"> <circle cx=\"40\" cy=\"40\" r=\"36\" fill=\"#f8fafc\" stroke=\"#e2e8f0\" stroke-width=\"2\"/> <rect x=\"16\" y=\"18\" width=\"12\" height=\"44\" rx=\"2\" fill=\"#cbd5e1\"/> <rect x=\"34\" y=\"18\" width=\"12\" height=\"44\" rx=\"2\" fill=\"#cbd5e1\"/> <rect x=\"52\" y=\"18\" width=\"12\" height=\"44\" rx=\"2\" fill=\"#cbd5e1\"/> <rect x=\"18\" y=\"22\" width=\"8\" height=\"8\" rx=\"1\" fill=\"#10b981\"/> </svg>" },
+  { id:'projecten', label:'Projecten', note:'Plannen, taken en overzicht', logo:"<svg viewBox=\"0 0 80 80\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"> <circle cx=\"40\" cy=\"40\" r=\"36\" fill=\"#f8fafc\" stroke=\"#e2e8f0\" stroke-width=\"2\"/> <rect x=\"16\" y=\"18\" width=\"12\" height=\"44\" rx=\"2\" fill=\"#cbd5e1\"/> <rect x=\"34\" y=\"18\" width=\"12\" height=\"44\" rx=\"2\" fill=\"#cbd5e1\"/> <rect x=\"52\" y=\"18\" width=\"12\" height=\"44\" rx=\"2\" fill=\"#cbd5e1\"/> <rect x=\"18\" y=\"22\" width=\"8\" height=\"8\" rx=\"1\" fill=\"#10b981\"/> </svg>" },
+  { id:'verandering', label:'Verandering', note:'Mensen meekrijgen in een verandering', logo:"<svg viewBox=\"0 0 80 80\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"> <circle cx=\"40\" cy=\"40\" r=\"36\" fill=\"#f8fafc\" stroke=\"#e2e8f0\" stroke-width=\"2\"/> <path d=\"M18 54 C30 54 30 26 44 26 H56\" stroke=\"#cbd5e1\" stroke-width=\"6\" stroke-linecap=\"round\"/> <path d=\"M52 18 L62 26 L52 34\" stroke=\"#10b981\" stroke-width=\"6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/> <circle cx=\"18\" cy=\"54\" r=\"5\" fill=\"#10b981\"/> </svg>" },
+  { id:'vergaderen', label:'Vergaderen', note:'Samen beter overleggen', logo:"<svg viewBox=\"0 0 80 80\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"> <circle cx=\"40\" cy=\"40\" r=\"36\" fill=\"#f8fafc\" stroke=\"#e2e8f0\" stroke-width=\"2\"/> <ellipse cx=\"40\" cy=\"42\" rx=\"16\" ry=\"11\" fill=\"#cbd5e1\"/> <circle cx=\"40\" cy=\"20\" r=\"5\" fill=\"#10b981\"/> <circle cx=\"18\" cy=\"38\" r=\"5\" fill=\"#cbd5e1\"/> <circle cx=\"62\" cy=\"38\" r=\"5\" fill=\"#cbd5e1\"/> <circle cx=\"26\" cy=\"60\" r=\"5\" fill=\"#cbd5e1\"/> <circle cx=\"54\" cy=\"60\" r=\"5\" fill=\"#cbd5e1\"/> </svg>" },
   { id:'zakmes',    label:'Zakmes',    note:'Kleine hulpjes voor onderweg', logo:"<svg viewBox=\"0 0 80 80\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"> <circle cx=\"40\" cy=\"40\" r=\"36\" fill=\"#f8fafc\" stroke=\"#e2e8f0\" stroke-width=\"2\"/> <rect x=\"26\" y=\"34\" width=\"28\" height=\"12\" rx=\"3\" fill=\"#cbd5e1\"/> <circle cx=\"30\" cy=\"40\" r=\"1.5\" fill=\"#94a3b8\"/> <path d=\"M54 37 L62 29 L63.5 30.5 L55.5 38.5 Z\" fill=\"#10b981\"/> <path d=\"M40 34 Q43 30 40 27 Q37 24 40 21\" stroke=\"#10b981\" stroke-width=\"2\" stroke-linecap=\"round\" fill=\"none\"/> <rect x=\"16\" y=\"38.5\" width=\"10\" height=\"3\" rx=\"0.75\" fill=\"#10b981\"/> <path d=\"M54 43 L60 49 L58.5 50.5 L57 49 L55.5 50.5 L54 49 L52.5 50.5 L52.5 44.5 Z\" fill=\"#cbd5e1\"/> </svg>" },
   { id:'reset',     label:'Reset',     note:'Pauze, en herstarten', logo:"<svg viewBox=\"0 0 80 80\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"> <path d=\"M20 32C16 38 16 44 19 50C22 58 30 64 40 64C50 64 58 58 61 50C64 42 62 36 58 30\" stroke=\"#cbd5e1\" stroke-width=\"5\" stroke-linecap=\"round\"/> <line x1=\"40\" y1=\"16\" x2=\"40\" y2=\"36\" stroke=\"#10b981\" stroke-width=\"5\" stroke-linecap=\"round\"/> </svg>" }
 ];
+// De groep Projecten is in de app opgesplitst: zo vind je sneller wat je zoekt.
+// Verandering = tools uit het stappenplan Veranderaanpak; Vergaderen = tools met het thema vergaderen.
+const SUB_EXCEPT = { paradox:'vergaderen', vinkje:'projecten' };
+function subGroup(t) {
+  if (t.g !== 'projecten') return t.g;
+  if (SUB_EXCEPT[t.id]) return SUB_EXCEPT[t.id];
+  const tr = (t.traject || []).map(x => x.naam);
+  if ((t.labels || []).includes('vergaderen')) return 'vergaderen';
+  if (tr.includes('verandering') && !tr.includes('project')) return 'verandering';
+  return 'projecten';
+}
 const HUBS = ['/', '/projectmanagement/', '/zakmes/', '/reset/', '/app/'];
 const MAX_LIVE = 4;
 const KEY = 'oc-app.';
@@ -698,7 +734,7 @@ function byUsage(tools) {
 }
 const toggleIcon = '<svg class="toggle" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
 function renderGroups() {
-  const closed = store.get('collapsed', []);
+  const closed = closedGroups();
   $('groups').innerHTML = GROUPS.map(g => {
     const tools = byOrder(TOOLS.filter(t => t.g === g.id));
     const isClosed = closed.includes(g.id);
@@ -723,6 +759,13 @@ function setCollapsed(id, closed) {
   el.classList.toggle('collapsed', closed);
   el.querySelector('.group-head').setAttribute('aria-expanded', String(!closed));
   el.querySelectorAll('.row').forEach(r => r.tabIndex = closed ? -1 : 0);
+}
+// Zolang je zelf niets open- of dichtklapte: alle groepen dicht (een overzicht van vijf),
+// behalve de groep van de tool die je het laatst gebruikte.
+function closedGroups() {
+  const c = store.get('collapsed', null); if (Array.isArray(c)) return c;
+  const u = store.get('usage', {}), last = Object.keys(u).filter(id => byId[id]).sort((a, b) => u[b].t - u[a].t)[0];
+  return GROUPS.map(g => g.id).filter(id => !last || byId[last].g !== id);
 }
 function saveCollapsed() {
   store.set('collapsed', [...document.querySelectorAll('.group.collapsed')].map(g => g.dataset.group));
@@ -777,7 +820,8 @@ function renderFilter() {
   const counts = {};
   TOOLS.forEach(t => (t.labels || []).forEach(l => counts[l] = (counts[l] || 0) + 1));
   // Een thema dat maar naar één tool leidt, is geen filter maar een omweg: weglaten.
-  const labels = Object.keys(counts).filter(l => counts[l] > 1).sort((a, b) => {
+  // een thema dat al een eigen groep is (vergaderen), is geen extra filter
+  const labels = Object.keys(counts).filter(l => counts[l] > 1 && !GROUPS.some(g => g.id === l)).sort((a, b) => {
     const ia = LABEL_ORDER.indexOf(a), ib = LABEL_ORDER.indexOf(b);
     if (ia !== -1 || ib !== -1) return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
     return a.localeCompare(b, 'nl');
@@ -912,6 +956,7 @@ function openTool(id, fromHistory) {
   current = id; setTimeout(syncWipeBtn, 0);
   for (const [k, el] of frames) el.classList.toggle('active', k === id);
   $('tb-title').textContent = t.title;
+  renderPathbar(id);
   $('viewer').classList.add('open');
   $('viewer').setAttribute('aria-hidden', 'false');
   lastOpener = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.id || null : null;
@@ -920,7 +965,8 @@ function openTool(id, fromHistory) {
   const focusTool = () => { try { f.contentWindow.focus(); } catch {} $('back').focus({ preventScroll:true }); };
   if (f.contentDocument && f.contentDocument.readyState === 'complete') setTimeout(focusTool, 0); else f.addEventListener('load', focusTool, { once:true });
   document.title = t.title + ' · Onder Constructie';
-  if (!fromHistory) { history.pushState({ tool:id }, '', '#' + id); logUse(id); }
+  // van tool naar tool (stappenplan, link): de geschiedenis vervangen, zodat "terug" altijd naar het startscherm gaat
+  if (!fromHistory) { (history.state && history.state.tool ? history.replaceState : history.pushState).call(history, { tool:id }, '', '#' + id); logUse(id); }
   const recent = [id, ...store.get('recent', []).filter(x => x !== id)].slice(0, 5);
   store.set('recent', recent);
 }
@@ -1193,6 +1239,30 @@ function hasData(t, all) {
     return keysFor(t.storage, all).some(k => { try { return meaningful(JSON.parse(localStorage.getItem(k))); } catch { return !!localStorage.getItem(k); } });
   } catch { return false; }
 }
+function stepsOf(trId, all = lsKeys()) {
+  return TOOLS.flatMap(t => (t.traject || []).filter(x => x.naam === trId).map(x => ({ t, n: x.stap })))
+    .sort((a, b) => a.n - b.n).map(s => Object.assign(s, { done: hasData(s.t, all) }));
+}
+/* Stappenplanbalk in de app: in welk plan zit je, welke stap, wat komt hierna */
+let pathCtx = store.get('path-ctx', null);
+document.addEventListener('click', e => { const p = e.target.closest('.path[data-path], .pathbar[data-path]'); if (p && e.target.closest('[data-id]')) { pathCtx = p.dataset.path; store.set('path-ctx', pathCtx); } }, true);
+function renderPathbar(id) {
+  const t = byId[id], bar = $('pathbar'), plans = (t && t.traject || []).map(x => x.naam).filter(n => TRAJECTEN.some(tr => tr.id === n));
+  if (!plans.length) { bar.hidden = true; bar.innerHTML = ''; return; }
+  const trId = plans.includes(pathCtx) ? pathCtx : plans[0], tr = TRAJECTEN.find(x => x.id === trId);
+  const steps = stepsOf(trId), i = steps.findIndex(s => s.t.id === id);
+  if (steps.length < 2 || i < 0) { bar.hidden = true; return; }
+  const prev = steps[i - 1], next = steps[i + 1];
+  bar.dataset.path = trId; bar.hidden = false;
+  bar.innerHTML = `
+    <span class="pb-where"><b>${esc(tr.title)}</b><span class="pb-n">stap ${i + 1} van ${steps.length}</span></span>
+    <span class="pb-dots" aria-hidden="true">${steps.map((s, k) => `<span class="${k === i ? 'here' : s.done ? 'done' : ''}"></span>`).join('')}</span>
+    <span class="pb-nav">
+      ${prev ? `<button type="button" class="pb-prev" data-id="${esc(prev.t.id)}" aria-label="Vorige stap: ${esc(prev.t.title)}" title="Vorige: ${esc(prev.t.title)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>` : ''}
+      ${next ? `<button type="button" class="pb-next" data-id="${esc(next.t.id)}"><span class="pb-lbl">Volgende:</span> ${esc(next.t.title)}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>`
+        : `<span class="pb-end">Laatste stap</span>`}
+    </span>`;
+}
 function renderPaths() {
   const all = lsKeys(), openSet = store.get('paths-open', []);
   const html = TRAJECTEN.map(tr => {
@@ -1393,10 +1463,11 @@ async function loadTools() {
   return list;
 }
 function start() {
+  TOOLS.forEach(t => { t.g = subGroup(t); });
   byId = Object.fromEntries(TOOLS.map(t => [t.id, t]));
   renderGroups(); renderRecent(); renderFilter(); renderPaths(); syncBackupNudge();
   $('results-clear').addEventListener('click', () => setFilter(null));
-  GROUPS.forEach(g => setCollapsed(g.id, store.get('collapsed', []).includes(g.id)));
+  const cl = closedGroups(); GROUPS.forEach(g => setCollapsed(g.id, cl.includes(g.id)));
   const first = location.hash.slice(1) || new URLSearchParams(location.search).get('tool');
   if (byId[first]) { history.replaceState(null, '', location.pathname); openTool(first); }
 }
