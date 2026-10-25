@@ -245,6 +245,7 @@ button.more { border:0; cursor:pointer; min-height:28px; }
       <p><b>Op de kaart</b>: kies een idee met een klik of tik: er verschijnt een balk met <b>Subidee</b>, <b>Ernaast</b>, wijzigen, in- of uitklappen en verwijderen. Typ je een nieuw idee, dan geeft Enter meteen het volgende en Tab een subidee; Esc stopt. Met een toetsenbord kies je ideeën met de pijltjes, wijzig je met F2 of door gewoon te typen, en verwijder je met Delete.</p>
       <p><b>In- en uitklappen</b>: met het bolletje aan de rand van een idee op de kaart, met het driehoekje in de lijst, of voor alles tegelijk via het menu (⋯). Een ingeklapte tak toont hoeveel ideeën erachter zitten; tik op dat getal om ze weer te zien.</p>
       <p><b>Sjabloon projectaanpak</b>: tien hoofdtakken om een project voor te bereiden: doel, globale planning, risico, afhankelijkheden, betrokkenen, communicatie, monitoring, HRM, budget, en facility en ICT. De vragen staan schuin. Je antwoord komt eronder: kies een vraag en druk Enter, begin te typen, of tik op +. Zo blijft de vraag staan. Wat je niet nodig hebt, verwijder je. Heb je in de app een projectnaam ingesteld, dan staat die in het midden.</p>
+      <p><b>Sjabloon business case</b>: wat wil je precies rechtvaardigen, en drie voorstellen naast elkaar (niets doen, het minimale doen, iets doen), elk met verwachte voordelen en nadelen, tijdschema, kosten (personeel, investering, onderhoud) en risico's en afhankelijkheden. Zo vergelijk je de opties op dezelfde punten.</p>
       <p>Je eigen ideeën (niet de vragen uit een sjabloon) liggen klaar voor andere tools, bijvoorbeeld om er in <a href="https://onderconstructie.github.io/prioriteit/">Prioriteren</a> of <a href="https://onderconstructie.github.io/vinkje/">Vinkje</a> mee verder te gaan.</p>
     </div>
   </details>
@@ -669,7 +670,7 @@ function render() {
   $('oc-restart').parentElement.hidden = !state.maps.some(x => !x.voorbeeld);
   if (!m) {
     $('app').innerHTML = `<section class="card start-card"><p>Nog geen mindmap. Begin leeg, met een sjabloon, of bekijk eerst een voorbeeld.</p>
-      <div class="btns"><button type="button" class="btn btn-primary" data-act="new-map">Nieuwe mindmap</button><button type="button" class="btn btn-ghost" data-act="tpl" data-tpl="projectaanpak">Sjabloon: projectaanpak</button><button type="button" class="btn btn-ghost" data-act="example">Begin met een voorbeeld</button></div></section>`;
+      <div class="btns"><button type="button" class="btn btn-primary" data-act="new-map">Nieuwe mindmap</button>${Object.entries(TEMPLATES).map(([k, t]) => `<button type="button" class="btn btn-ghost" data-act="tpl" data-tpl="${k}">Sjabloon: ${t.name.toLowerCase()}</button>`).join('')}<button type="button" class="btn btn-ghost" data-act="example">Begin met een voorbeeld</button></div></section>`;
     return;
   }
   const a = document.activeElement, keep = a && a.classList && a.classList.contains('mtxt') ? { id:a.dataset.id, ss:a.selectionStart } : null;
@@ -726,7 +727,7 @@ function render() {
               <div class="sep"></div>
               <button data-act="expand" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 9l5 6 5-6"/></svg>Alles openklappen</button>
               <button data-act="collapse" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 7l6 5-6 5"/></svg>Inklappen tot hoofdtakken</button>
-              <button data-act="tpl" data-tpl="projectaanpak" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>Nieuw uit sjabloon: projectaanpak</button>
+              ${Object.entries(TEMPLATES).map(([k, t]) => `<button data-act="tpl" data-tpl="${k}" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>Nieuw uit sjabloon: ${t.name.toLowerCase()}</button>`).join('')}
               <button data-act="dup" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M4 16V5a1 1 0 0 1 1-1h11"/></svg>Dupliceer</button>
               <div class="sep"></div>
               <button data-act="wipe" class="danger" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>Alles wissen</button>
@@ -1040,6 +1041,35 @@ function refreshImports() { document.querySelectorAll('[data-oc-types]').forEach
    en gaan niet als taak naar andere tools. */
 function ocProject(fb) { try { const p = JSON.parse(localStorage.getItem('oc.project')); return p && typeof p.name === 'string' && p.name.trim() ? p.name.trim().slice(0, 80) : fb; } catch { return fb; } }
 const TEMPLATES = {
+  businesscase: { name:'Business case', root: p => p ? 'Business case: ' + p : 'Business case', lines:`
+Wat wil je precies rechtvaardigen?
+A. Niets doen
+  Verwachte voordelen
+  Verwachte nadelen
+  Tijdschema
+  Kosten
+    Personeel
+    Investering
+    Onderhoud
+  Risico's en afhankelijkheden
+B. Het minimale doen
+  Verwachte voordelen
+  Verwachte nadelen
+  Tijdschema
+  Kosten
+    Personeel
+    Investering
+    Onderhoud
+  Risico's en afhankelijkheden
+C. Iets doen
+  Verwachte voordelen
+  Verwachte nadelen
+  Tijdschema
+  Kosten
+    Personeel
+    Investering
+    Onderhoud
+  Risico's en afhankelijkheden` },
   projectaanpak: { name:'Projectaanpak', lines:`
 Doel
   Probleemanalyse: waarom dit project?
@@ -1093,7 +1123,7 @@ Facility en ICT
 };
 function fromTemplate(key) {
   const tp = TEMPLATES[key]; if (!tp) return;
-  const nodes = [idea(ocProject(tp.name), 0)];
+  const nodes = [idea(tp.root ? tp.root(ocProject('')).slice(0, 160) : ocProject(tp.name), 0)];
   tp.lines.split('\n').filter(l => l.trim()).forEach(l => { const n = idea(l.trim(), 1 + (l.match(/^ */)[0].length / 2)); n.hint = true; nodes.push(n); });
   normalize(nodes);
   nodes.forEach((n, i) => { if (n.level === 1 && hasKids(nodes, i)) n.collapsed = true; });   // eerst een overzicht van de hoofdtakken
