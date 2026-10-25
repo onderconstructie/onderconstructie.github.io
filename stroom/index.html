@@ -193,6 +193,18 @@ button.oc-import { color:#047857; min-height:44px; }
   .row-more { margin-left:0; }
   .lane-chip input { width:6.5rem; }
 }
+/* Stroom: tikdoelen, genummerde stappen, titel over meerdere regels (buiten het gedeelde stuk) */
+.sel, .txt { min-height:44px; }
+.row-acts button { width:44px; height:44px; }
+.row-more .lab { min-height:44px; }
+.row-more .nw { white-space:nowrap; }
+.lane-chip input { width:auto; max-width:12rem; }
+.stepno { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:50%; background:#047857; color:#fff; font-size:0.8125rem; font-weight:700; flex-shrink:0; letter-spacing:0; }
+.sub-h b { display:inline-flex; align-items:center; gap:0.5rem; text-transform:none; letter-spacing:-0.01em; font-size:1rem; color:var(--slate-800); }
+.draw-head .card-title { display:inline-flex; align-items:center; gap:0.5rem; }
+textarea.project { resize:none; overflow:hidden; line-height:1.3; font-family:inherit; display:block; min-height:44px; padding:0.5rem 0; }
+.explain .inner a { padding:12px 4px; margin:0 -4px; }
+@media (max-width:520px) { .row-acts { margin-right:-4px; } }
 </style>
 </head>
 <body>
@@ -546,7 +558,23 @@ function edges(f) {
 }
 
 /* Tekening */
-const LW = 196, NW = 164, GAP = 46, CH = 14, PAD = 12;
+const LW = 196, NW = 164, GAP = 46, CH = 14, PAD = 12, PORT = 12;
+// Kruisingen tellen: het horizontale stuk van een buitenste sprong snijdt het verticale stuk van een binnenste
+// als het begin of einde ervan strikt tussen het begin en einde van die binnenste valt.
+function sideOrder(side) {
+  const byLen = side.slice().sort((p, q) => Math.abs(p.b.i - p.a.i) - Math.abs(q.b.i - q.a.i) || p.a.i - q.a.i);
+  if (byLen.length < 2 || byLen.length > 6) return byLen;
+  const cross = ord => { let c = 0; ord.forEach((inner, k) => { const lo = Math.min(inner.a.i, inner.b.i), hi = Math.max(inner.a.i, inner.b.i);
+    ord.slice(k + 1).forEach(o => [o.a.i, o.b.i].forEach(r => { if (r > lo && r < hi) c++; })); }); return c; };
+  const lenCost = ord => ord.reduce((s, e, k) => s + k * Math.abs(e.b.i - e.a.i), 0);
+  let best = byLen, bc = cross(byLen), bl = lenCost(byLen);
+  const perm = (rest, acc) => {
+    if (!rest.length) { const c = cross(acc); if (c < bc || (c === bc && lenCost(acc) < bl)) { best = acc; bc = c; bl = lenCost(acc); } return; }
+    rest.forEach((e, k) => perm(rest.slice(0, k).concat(rest.slice(k + 1)), acc.concat([e])));
+  };
+  perm(byLen, []);
+  return best;
+}
 function wrap(t, max = 24) {
   const words = String(t || '').trim().split(/\s+/).filter(Boolean), lines = [];
   let line = '';
@@ -576,10 +604,25 @@ function layout(f) {
     const a = pos.get(e.from.id), b = pos.get(e.to.id);
     return { ...e, a, b, down: b.i === a.i + 1 };
   });
-  // Sprongen lopen via kanalen rechts; de langste sprong krijgt het buitenste kanaal.
-  const side = E.filter(e => !e.down).sort((p, q) => Math.abs(p.b.i - p.a.i) - Math.abs(q.b.i - q.a.i));
+  // Sprongen lopen via eigen sporen rechts van de banen: de kortste binnenaan, de langste buitenaan.
+  // Bij weinig sprongen kiezen we de volgorde met de minste kruisingen (bij gelijkstand: op lengte).
+  const side = sideOrder(E.filter(e => !e.down));
   side.forEach((e, k) => e.ch = k);
-  const nth = new Map(); E.filter(e => !e.down).forEach(e => { const k = nth.get(e.from.id) || 0; e.k = k; nth.set(e.from.id, k + 1); });
+  // Poorten: elke sprong krijgt aan de rechterkant van zijn stap een eigen hoogte, zodat lijnen niet over elkaar lopen.
+  // Van boven naar onder: sprongen naar boven (binnenste spoor eerst), dan sprongen naar onder (buitenste spoor eerst).
+  const ports = new Map();
+  side.forEach(e => {
+    [[e.a, e.b], [e.b, e.a]].forEach(([me, other], end) => {
+      if (!ports.has(me.n.id)) ports.set(me.n.id, []);
+      ports.get(me.n.id).push({ e, end, up: other.i < me.i, ch: e.ch });
+    });
+  });
+  ports.forEach((list, id) => {
+    const p = pos.get(id);
+    list.sort((x, y) => (x.up === y.up ? (x.up ? x.ch - y.ch : y.ch - x.ch) : (x.up ? -1 : 1)));
+    const max = Math.max(0, p.h / 2 - (p.n.type === 'keuze' ? 14 : 9)), step = Math.min(PORT, list.length > 1 ? 2 * max / (list.length - 1) : 0);
+    list.forEach((q, k) => { const dy = (k - (list.length - 1) / 2) * step; if (q.end === 0) q.e.dyA = dy; else q.e.dyB = dy; });
+  });
   const lanesW = PAD * 2 + lanes.length * LW;
   let width = lanesW + (side.length ? 8 + side.length * CH : 0);
   side.forEach(e => { const a = pos.get(e.from.id); width = Math.max(width, a.cx + a.w / 2 + 12 + (e.label || '').length * 7.2 + 8); });
@@ -596,7 +639,8 @@ function svgOf(f, { forExport = false } = {}) {
     parts.push(`<rect x="${x}" y="${PAD - 6}" width="${LW}" height="${L.height - PAD}" fill="${i % 2 ? '#ffffff' : '#f8fafc'}" stroke="#e2e8f0"/>`);
     parts.push(`<text x="${x + LW / 2}" y="${PAD + 16}" text-anchor="middle" font-size="13" font-weight="700" fill="#334155">${esc(l.name || 'Rol ' + (i + 1))}</text>`);
   });
-  // pijlen
+  // pijlen (labels pas na alle lijnen, zodat geen lijn over een label loopt)
+  const labels = [];
   L.E.forEach(e => {
     const { a, b } = e; let d, lx, ly, anchor = 'start';
     if (e.down) {
@@ -604,16 +648,17 @@ function svgOf(f, { forExport = false } = {}) {
       d = x1 === x2 ? `M${x1} ${y1}V${y2 - 1}` : `M${x1} ${y1}V${y1 + GAP / 2}H${x2}V${y2 - 1}`;
       lx = x1 + 7; ly = y1 + 15;
     } else {
-      // een tweede sprong uit dezelfde keuze vertrekt lager langs de rand van de ruit, met zijn label eronder
-      const dy = (e.k || 0) * 18, ys = a.cy + dy;
-      const xs = a.n.type === 'keuze' ? a.cx + a.w / 2 - dy * (a.w / a.h) : a.cx + a.w / 2;
-      const xc = L.lanesW - PAD + 10 + e.ch * CH, xe = b.cx + b.w / 2;
-      d = `M${xs} ${ys}H${xc}V${b.cy}H${xe + 1}`;
-      lx = a.cx + a.w / 2 + 6; ly = dy ? ys + 15 : ys - 6;
+      // elke sprong vertrekt en komt aan op zijn eigen poort aan de rechterrand (bij een ruit: langs de schuine rand)
+      const edgeX = (p, dy) => p.n.type === 'keuze' ? p.cx + p.w / 2 - Math.abs(dy) * (p.w / p.h) : p.cx + p.w / 2;
+      const dyA = e.dyA || 0, dyB = e.dyB || 0, ys = a.cy + dyA, ye = b.cy + dyB;
+      const xs = edgeX(a, dyA), xc = L.lanesW - PAD + 10 + e.ch * CH, xe = edgeX(b, dyB);
+      d = `M${xs} ${ys}H${xc}V${ye}H${xe + 1}`;
+      lx = xs + 6; ly = dyA > 0 ? ys + 15 : ys - 6;
     }
     parts.push(`<path d="${d}" fill="none" stroke="#475569" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#pijl)"/>`);
-    if (e.label) { const lw = e.label.length * 7.2 + 6; parts.push(`<rect x="${lx - 3}" y="${ly - 11}" width="${lw}" height="15" rx="3" fill="#ffffff"/><text x="${lx}" y="${ly}" font-size="13" font-weight="600" fill="#b45309" text-anchor="${anchor}">${esc(e.label)}</text>`); }
+    if (e.label) { const lw = e.label.length * 7.2 + 6; labels.push(`<rect x="${lx - 3}" y="${ly - 11}" width="${lw}" height="15" rx="3" fill="#ffffff"/><text x="${lx}" y="${ly}" font-size="13" font-weight="600" fill="#b45309" text-anchor="${anchor}">${esc(e.label)}</text>`); }
   });
+  parts.push(...labels);
   // knopen
   L.pos.forEach(p => {
     const { n, cx, y, w, h, lines } = p, x = cx - w / 2;
@@ -672,7 +717,7 @@ function render() {
   $('oc-restart').parentElement.hidden = !state.flows.some(f => !f.voorbeeld);
   if (!f) {
     $('app').innerHTML = `<section class="card start-card"><p>Nog geen stroom. Begin leeg, of bekijk eerst een voorbeeld.</p>
-      <div class="btns"><button type="button" class="btn btn-primary" data-act="new-flow">Nieuwe stroom</button><button type="button" class="btn btn-ghost" data-act="example">Begin met een voorbeeld</button></div></section>`;
+      <div class="btns"><button type="button" class="btn btn-primary" data-act="new-flow">Nieuwe stroom</button><button type="button" class="btn btn-ghost" data-act="example">Voorbeeld bekijken</button></div></section>`;
     return;
   }
   const keep = document.activeElement && document.activeElement.dataset ? { f: document.activeElement.dataset.f, id: document.activeElement.dataset.id, ss: document.activeElement.selectionStart } : null;
@@ -701,7 +746,7 @@ function render() {
         ${n.type === 'keuze' ? `
           <label><input class="lab" data-f="yesLabel" data-id="${n.id}" value="${esc(n.yesLabel)}" maxlength="20" aria-label="Naam van de eerste uitweg">→ <select class="sel" data-f="to" data-id="${n.id}" aria-label="Waar ${esc(n.yesLabel)} naartoe gaat">${opts(n, 'to')}</select></label>
           <label><input class="lab" data-f="noLabel" data-id="${n.id}" value="${esc(n.noLabel)}" maxlength="20" aria-label="Naam van de tweede uitweg">→ <select class="sel" data-f="no" data-id="${n.id}" aria-label="Waar ${esc(n.noLabel)} naartoe gaat">${opts(n, 'no')}</select></label>`
-        : n.type !== 'einde' ? `<label>daarna → <select class="sel" data-f="to" data-id="${n.id}" aria-label="Wat volgt na stap ${i + 1}">${opts(n, 'to')}</select></label>` : ''}
+        : n.type !== 'einde' ? `<label><span class="nw">daarna →</span> <select class="sel" data-f="to" data-id="${n.id}" aria-label="Wat volgt na stap ${i + 1}">${opts(n, 'to')}</select></label>` : ''}
       </div>` : ''}
     </li>`).join('');
   const { svg } = f.nodes.length ? svgOf(f) : { svg:'' };
@@ -715,7 +760,7 @@ function render() {
     <div class="layout">
       <section class="card" ${view === 'edit' ? '' : 'hidden'}>
         <div class="card-head">
-          <input class="project" data-f="name" data-id="flow" value="${esc(f.name)}" maxlength="80" aria-label="Naam van de stroom" placeholder="Naam van de stroom">
+          <textarea class="project" data-f="name" data-id="flow" rows="1" maxlength="80" aria-label="Naam van de stroom" placeholder="Naam van de stroom" enterkeyhint="done">${esc(f.name)}</textarea>
           <button class="icon-btn del-unit" type="button" data-act="del-flow" aria-label="Verwijder ${esc(f.name)}" title="Verwijder ${esc(f.name)}">${ICON.del}</button>
           <div class="menu-wrap">
             <button class="icon-btn" id="menu-btn" type="button" aria-label="Meer acties" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg></button>
@@ -724,7 +769,7 @@ function render() {
               <button data-act="png" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>Download als afbeelding</button>
               <button data-act="svg" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Download als SVG (bewerkbaar)</button>
               <button data-act="copy" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Kopieer als tekst</button>
-              <button data-act="mermaid" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg>Kopieer als Mermaid-code</button>
+              <button data-act="mermaid" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg>Kopieer als diagramcode</button>
               <div class="sep"></div>
               <button data-act="dup" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M4 16V5a1 1 0 0 1 1-1h11"/></svg>Dupliceer (bv. voor straks)</button>
               <div class="sep"></div>
@@ -734,11 +779,11 @@ function render() {
         </div>
         ${f.voorbeeld ? `<div class="vb-bar"><div class="vb-text">${ICON.info}<span>Dit is een voorbeeld om de tool te verkennen. Het telt niet mee in andere tools.</span></div>
           <div class="vb-btns"><button type="button" class="vb-btn vb-wis" data-act="vb-wis">Wis voorbeeld</button><button type="button" class="vb-btn vb-eigen" data-act="vb-eigen">Maak er mijn eigen van</button></div></div>` : ''}
-        <div class="sub-h"><b>Rollen</b><button type="button" class="oc-import" data-oc-types="betrokkene" data-act="imp-lanes" hidden>${ICON.imp}Overnemen uit…</button></div>
+        <div class="sub-h"><b><span class="stepno" aria-hidden="true">1</span>Rollen</b><button type="button" class="oc-import" data-oc-types="betrokkene" data-act="imp-lanes" hidden>${ICON.imp}Overnemen uit…</button></div>
         ${f.lanes.length ? '' : '<p class="hint-s">Optioneel. Met rollen krijgt elke rol een eigen baan in de tekening.</p>'}
-        <div class="lanes">${f.lanes.map(l => `<span class="lane-chip"><input data-f="lane-name" data-id="${l.id}" value="${esc(l.name)}" maxlength="40" aria-label="Naam van de rol" placeholder="Rol"><button type="button" data-act="del-lane" data-id="${l.id}" aria-label="Verwijder rol ${esc(l.name)}">${ICON.x}</button></span>`).join('')}
+        <div class="lanes">${f.lanes.map(l => `<span class="lane-chip"><input data-f="lane-name" data-id="${l.id}" value="${esc(l.name)}" size="${laneSize(l.name)}" maxlength="40" aria-label="Naam van de rol" placeholder="Rol"><button type="button" data-act="del-lane" data-id="${l.id}" aria-label="Verwijder rol ${esc(l.name)}">${ICON.x}</button></span>`).join('')}
           <button type="button" class="chip-add" data-act="add-lane">+ Rol</button></div>
-        <div class="sub-h"><b>Stappen</b><button type="button" class="oc-import" data-oc-types="taak,actie" data-act="imp-steps" hidden>${ICON.imp}Overnemen uit…</button></div>
+        <div class="sub-h"><b><span class="stepno" aria-hidden="true">2</span>Stappen</b><button type="button" class="oc-import" data-oc-types="taak,actie" data-act="imp-steps" hidden>${ICON.imp}Overnemen uit…</button></div>
         <ol class="rows">${rows}</ol>
         <div class="adders">
           <button type="button" data-act="add" data-type="stap"><span class="shape"></span>Stap</button>
@@ -747,7 +792,7 @@ function render() {
         </div>
       </section>
       <section class="card draw-card" ${view === 'draw' ? '' : 'hidden'}>
-        <div class="draw-head"><h2 class="card-title">Tekening</h2>${svg ? `<button type="button" class="zoom" data-act="fit">${fitNow() ? 'Leesbaar' : 'Hele stroom'}</button>
+        <div class="draw-head"><h2 class="card-title"><span class="stepno" aria-hidden="true">3</span>Tekening</h2>${svg ? `<button type="button" class="zoom" data-act="fit">${fitNow() ? 'Leesbaar' : 'Hele stroom'}</button>
           <button type="button" class="zoom" data-export="png" aria-label="Download als afbeelding">Afbeelding</button><button type="button" class="zoom" data-export="pdf" aria-label="Download als PDF">PDF</button>` : ''}</div>
         ${svg ? `<div class="canvas" id="canvas">${svg}</div>` : '<p class="empty-draw">Voeg een stap toe; de tekening verschijnt hier.</p>'}
         <ul class="hints" id="hints">${hintsHTML(f)}</ul>
@@ -755,12 +800,17 @@ function render() {
     </div>`;
   const svgEl = document.querySelector('#canvas svg');
   if (svgEl) sizeSvg(svgEl);
+  growName();
   refreshImports();
   if (keep && keep.f) {
     const el = document.querySelector(`[data-f="${keep.f}"][data-id="${keep.id}"]`);
     if (el) { el.focus({ preventScroll:true }); if (keep.ss != null && el.setSelectionRange) try { el.setSelectionRange(keep.ss, keep.ss); } catch {} }
   }
 }
+// De titel is een tekstvak dat meegroeit, zodat een lange naam op een smal scherm niet wordt afgekapt.
+function growName() { const el = document.querySelector('textarea.project'); if (!el) return; el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
+window.addEventListener('resize', () => { clearTimeout(growName.t); growName.t = setTimeout(growName, 100); });
+const laneSize = v => Math.max(6, Math.min(24, String(v || '').length + 1));
 // Alleen de tekening en de keuzelijsten bijwerken tijdens het typen (de invoervelden zelf niet opnieuw tekenen).
 function renderDrawingOnly() {
   const f = cur(); if (!f) return;
@@ -855,8 +905,8 @@ document.addEventListener('click', async e => {
 document.addEventListener('input', e => {
   const el = e.target, k = el.dataset && el.dataset.f; if (!k) return;
   const f = cur(); if (!f) return;
-  if (k === 'name') { f.name = el.value; save(); const tb = document.querySelector(`[data-flow="${f.id}"] .nm`); tb && (tb.textContent = el.value || 'Stroom'); return; }
-  if (k === 'lane-name') { const l = f.lanes.find(x => x.id === el.dataset.id); if (l) { l.name = el.value; save(); renderDrawingOnly(); } return; }
+  if (k === 'name') { if (/\n/.test(el.value)) el.value = el.value.replace(/\s*\n\s*/g, ' '); f.name = el.value; growName(); save(); const tb = document.querySelector(`[data-flow="${f.id}"] .nm`); tb && (tb.textContent = el.value || 'Stroom'); return; }
+  if (k === 'lane-name') { const l = f.lanes.find(x => x.id === el.dataset.id); if (l) { l.name = el.value; el.size = laneSize(el.value); save(); renderDrawingOnly(); } return; }
   const n = f.nodes.find(x => x.id === el.dataset.id); if (!n) return;
   if (k === 'text' || k === 'yesLabel' || k === 'noLabel') { n[k] = el.value; save(); renderDrawingOnly(); }
 });
@@ -871,6 +921,7 @@ document.addEventListener('change', e => {
 // Enter in een stap: meteen een nieuwe stap eronder, in dezelfde rol.
 document.addEventListener('keydown', e => {
   const el = e.target;
+  if (e.key === 'Enter' && el.dataset && el.dataset.f === 'name') { e.preventDefault(); el.blur(); return; }
   if (e.key === 'Enter' && el.dataset && el.dataset.f === 'text') {
     e.preventDefault();
     const f = cur(), n = f.nodes.find(x => x.id === el.dataset.id), i = f.nodes.indexOf(n);
@@ -957,11 +1008,18 @@ function buildExport() {
   const s = node.querySelector('svg'); s.style.maxWidth = '100%'; s.style.height = 'auto';
   return { node, title: f.name || 'Stroom', subtitle: `${f.nodes.length} stappen${f.lanes.length ? ' · ' + f.lanes.length + ' rollen' : ''}` };
 }
+// Bestandsnaam: stroom-naam-JJJJ-MM-DD (een datum die al in de naam staat, komt er niet twee keer in).
+function fileBase(f) {
+  const d = new Date(), iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const slug = s => String(s || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/\d{4}-\d{2}-\d{2}/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const nm = slug(f && f.name).replace(/^stroom(-|$)/, '').slice(0, 50).replace(/-$/, '');
+  return ['stroom', nm, iso].filter(Boolean).join('-');
+}
 function save2(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
 document.addEventListener('click', async e => {
   const b = e.target.closest('#menu [data-act], [data-export]'); if (!b) return;
   if ($('menu')) $('menu').classList.remove('open');
-  const f = cur(), act = b.dataset.export || b.dataset.act, base = (f.name || 'stroom').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'stroom';
+  const f = cur(), act = b.dataset.export || b.dataset.act, base = fileBase(f);
   if (act === 'png' || act === 'pdf') {
     const w = layout(f).width;
     toast('Bezig met downloaden…');
@@ -970,7 +1028,7 @@ document.addEventListener('click', async e => {
   } else if (act === 'svg') {
     save2(new Blob(['<?xml version="1.0" encoding="UTF-8"?>\n' + svgOf(f).svg], { type:'image/svg+xml' }), base + '.svg'); toast('SVG gedownload');
   } else if (act === 'copy' || act === 'mermaid') {
-    try { await navigator.clipboard.writeText(act === 'copy' ? asText(f) : asMermaid(f)); toast(act === 'copy' ? 'Gekopieerd als tekst' : 'Mermaid-code gekopieerd'); } catch { toast('Kopiëren lukte niet'); }
+    try { await navigator.clipboard.writeText(act === 'copy' ? asText(f) : asMermaid(f)); toast(act === 'copy' ? 'Gekopieerd als tekst' : 'Diagramcode gekopieerd'); } catch { toast('Kopiëren lukte niet'); }
   } else if (act === 'dup') {
     const c = JSON.parse(JSON.stringify(f)), map = {};
     c.id = uid(); c.voorbeeld = false; c.name = (f.name || 'Stroom') + ' (straks)';
