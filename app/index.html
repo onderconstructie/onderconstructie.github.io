@@ -458,6 +458,15 @@ body.filtering #groups, body.filtering #list-tools { display:none; }
 .cc-sub { font-size:0.8125rem; color:var(--slate-600); line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 .cc-when { font-size:0.75rem; color:var(--slate-500); margin-top:0.25rem; }
 .ccard .live { position:absolute; top:0.75rem; right:0.75rem; }
+.section-head { align-items:center; }
+.manage { margin-left:auto; min-height:44px; padding:0 0.625rem; border-radius:10px; font-size:0.8125rem; font-weight:600; color:var(--slate-600); }
+.manage:hover { background:var(--slate-100); color:var(--slate-800); }
+@media (max-width:480px) {
+  .header { padding:calc(var(--top) + 1rem) 1rem 0.875rem; }
+  .header-inner > svg { width:40px; height:40px; }
+  .site-title { font-size:1.25rem; }
+  .site-subtitle { font-size:0.8125rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+}
 @media (min-width:700px) {
   .cont { grid-template-columns:1fr 1fr; }
   .ccard { flex-direction:row; align-items:center; gap:0.875rem; padding:0.75rem 0.875rem; }
@@ -535,7 +544,8 @@ body.filtering .list-tools { visibility:hidden; }
     </div>
 
     <section class="section" id="continue" hidden>
-      <div class="section-head"><h2 class="section-label">Verder werken</h2></div>
+      <div class="section-head"><h2 class="section-label">Verder werken</h2>
+        <button type="button" class="manage" id="manage" aria-haspopup="dialog">Beheren</button></div>
       <div class="cont" id="cont"></div>
     </section>
 
@@ -576,7 +586,7 @@ body.filtering .list-tools { visibility:hidden; }
     <span class="sep" aria-hidden="true">·</span>
     <button class="footer-link" id="data-open" type="button">gegevens</button>
     <span class="sep" aria-hidden="true">·</span>
-    <span class="app-version" title="Versie van de app">v20</span>
+    <span class="app-version" title="Versie van de app">v21</span>
   </footer>
 </div>
 
@@ -856,6 +866,7 @@ function renderRecent() {
         ${at ? `<span class="cc-when">${ago(at)}</span>` : ''}</span>
       <span class="live">open</span></button>`;
   }).join('');
+  syncData();
 }
 function markLive() {
   document.querySelectorAll('.row, .ccard').forEach(r => r.classList.toggle('is-live', frames.has(r.dataset.id)));
@@ -1015,7 +1026,7 @@ if ('serviceWorker' in navigator) {
    Welke sleutels een tool gebruikt, staat in tools.json (oc:opslag). Een * achteraan is een voorvoegsel.
    De app zelf bewaart onder 'oc-app.' (laatst gebruikt, inklapstand, gebruik). */
 const APP_ENTRY = { id:'__app', title:'Deze app', sub:'laatst gebruikt, volgorde, ingeklapte blokken', storage:['oc-app.*'],
-  icon:'<svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="16" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/><path d="M14 15h12M14 20h12M14 25h8" stroke="#64748b" stroke-width="2" stroke-linecap="round"/></svg>' };
+  icon:'<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="16" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/><path d="M14 15h12M14 20h12M14 25h8" stroke="#64748b" stroke-width="2" stroke-linecap="round"/></svg>' };
 function lsKeys() { const out = []; try { for (let i = 0; i < localStorage.length; i++) out.push(localStorage.key(i)); } catch {} return out; }
 function keysFor(patterns, all = lsKeys()) {
   return all.filter(k => patterns.some(p => p.endsWith('*') ? k.startsWith(p.slice(0, -1)) : k === p));
@@ -1031,7 +1042,7 @@ function renderData() {
   const entries = dataEntries();
   $('data-list').innerHTML = entries.length ? entries.map(({ t, keys }) => `
     <div class="drow"><span class="icon">${iconHTML(t.icon)}</span>
-      <span><span class="drow-name">${esc(t.title)}</span><br><span class="drow-meta">${kb(sizeOf(keys))} bewaard</span></span>
+      <span><span class="drow-name">${esc(t.title)}</span><br><span class="drow-meta">${esc(t.id === '__app' ? t.sub : preview(t) || 'Je gegevens')} · ${kb(sizeOf(keys))}</span></span>
       <button class="drow-wipe" data-wipe="${esc(t.id)}">Wis</button></div>`).join('')
     : '<p class="data-empty">Er is niets bewaard. Je begint met een schone lei.</p>';
   $('data-wipe-all').hidden = !entries.length;
@@ -1041,8 +1052,10 @@ function renderData() {
   $('data-backup').hidden = !entries.length;
 }
 function openData() { renderData(); $('data-confirm').hidden = true; $('data-sheet').hidden = false; }
-function closeData() { $('data-sheet').hidden = true; pendingWipe = null; }
+function closeData() { $('data-sheet').hidden = true; pendingWipe = null; renderRecent(); renderPaths(); }
+function syncData() { if (!$('data-sheet').hidden) renderData(); }
 $('data-open').addEventListener('click', openData);
+$('manage').addEventListener('click', openData);
 $('data-close').addEventListener('click', closeData);
 $('data-sheet').addEventListener('click', e => { if (e.target === $('data-sheet')) closeData(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('data-sheet').hidden) closeData(); });
@@ -1158,11 +1171,11 @@ function renderPaths() {
     return `<section class="path${isOpen ? ' open' : ''}" data-path="${tr.id}">
       <button class="path-head" aria-expanded="${isOpen}">
         <span><span class="path-title" role="heading" aria-level="2">${esc(tr.title)}</span>
-          <span class="path-note">${!next && nDone ? 'Alle stappen begonnen' : nDone ? `${nDone} van ${steps.length} stappen begonnen` : esc(tr.note)}</span>
+          <span class="path-note">${!next && nDone ? 'Alle stappen begonnen' : nDone ? `${nDone} van ${steps.length} stappen begonnen` : document.body.classList.contains('returning') && next ? `${esc(tr.note)}. Begin met ${esc(next.t.title)}.` : esc(tr.note)}</span>
           <span class="path-bar" aria-hidden="true">${steps.map(s => `<span class="${s.done ? 'done' : ''}"></span>`).join('')}</span></span>
         ${toggleIcon}
       </button>
-      ${next ? `<button class="path-next" data-id="${esc(next.t.id)}"><span class="icon">${iconHTML(next.t.icon)}</span>
+      ${next && (nDone || !document.body.classList.contains('returning')) ? `<button class="path-next" data-id="${esc(next.t.id)}"><span class="icon">${iconHTML(next.t.icon)}</span>
         <span><small>${nDone ? 'Volgende stap' : 'Begin hier'}</small><b>${esc(next.t.title)}</b></span>${chevron}</button>` : ''}
       <ol class="steps">${steps.map((s, i) => `<li class="step${s.done ? ' done' : ''}${s === next ? ' next' : ''}">
         <button class="step-btn" data-id="${esc(s.t.id)}" title="${esc(s.t.desc)}">
