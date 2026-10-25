@@ -472,7 +472,7 @@ button.oc-import { color:#047857; min-height:44px; }
       <ul>
         <li><b>Doelgroepen</b> neem je over uit andere tools, zoals de Stakeholder Radar, de Impactanalyse of de Weerstand-scan, als je die op dit toestel gebruikte.</li>
         <li><b>Het Veranderprofiel</b> stuurt mee: bij een zware verandering stelt de tool meer momenten en meer persoonlijk contact voor.</li>
-        <li><b>De toets voor je boodschap</b> vraagt zes dingen die maken dat mensen iets onthouden. Niet elke boodschap heeft ze alle zes nodig, maar elk ontbrekend punt is een kans.</li>
+        <li><b>De toets voor je boodschap</b> stelt vijf vragen die elke lezer zich stelt: wat verandert er voor mij, wat moet ik doen en tegen wanneer, waarom, is het in gewone taal, en bij wie kan ik terecht. Elk ontbrekend punt is een kans om het beter te zeggen.</li>
         <li><b>Je momenten</b> komen als acties klaar te staan voor SprintFlow en Vinkje, met afzender en datum.</li>
       </ul>
       <p>Twee vuistregels lopen door het hele plan. Wie leiding geeft, hoort het vóór zijn team, zodat niemand het nieuws eerst op de gang opvangt. En hoe groter de verandering, hoe meer je zegt in gesprek in plaats van op papier.</p>
@@ -780,13 +780,13 @@ const PERSONAL = new Set(CHANNEL_GROUPS[0].items.map(x => x[0]));
 const INTERNAL = new Set(['teamoverleg', 'rondgang', 'intranet', 'chat']);
 const EXT_RE = /klant|burger|inwoner|bewoner|aanvrager|bezoeker|partner|leverancier|pers\b|media|publiek|extern|ondernem|gebruiker/i;
 const isExt = g => EXT_RE.test(g.name || '') && !LEAD_RE.test(g.name || '');
+// Wat een overheidsboodschap nodig heeft, gezien vanuit wie ze leest.
 const TOETS = [
-  { id:'kort', label:'Kort en eenvoudig', sub:'Eén hoofdidee, geen opsomming.', tip:'Schrap tot er één idee overblijft. Wat moet iemand onthouden als hij maar één ding onthoudt?' },
-  { id:'onverwacht', label:'Iets wat men niet verwacht', sub:'Een invalshoek waarbij mensen even opkijken.', tip:'Wat denkt je publiek nu verkeerd over deze verandering? Begin daar, en zet het recht.' },
-  { id:'concreet', label:'Concreet en tastbaar', sub:'Een voorbeeld, een beeld, iets uit de werkdag.', tip:'Vervang een abstract woord door een herkenbaar voorbeeld: wie doet wat, waar, en wat merk je ervan.' },
-  { id:'geloof', label:'Geloofwaardig', sub:'Een feit, een cijfer of iemand die het meemaakte.', tip:'Voeg één cijfer toe, of laat een collega vertellen hoe het bij hen liep.' },
-  { id:'raakt', label:'Het raakt mensen', sub:'Het gaat over iets waar ze om geven.', tip:'Zeg wat het oplevert voor wie het hoort: minder gedoe, meer tijd, meer zekerheid.' },
-  { id:'verhaal', label:'Het zit in een verhaal', sub:'Hoe het nu loopt, wat er knelt, hoe het straks wordt.', tip:'Vertel in drie zinnen: zo gaat het nu, hier loopt het mis, zo wordt het beter.' }
+  { id:'mij', label:'Wat verandert er voor mij?', sub:'De lezer ziet meteen wat het voor hem of haar betekent.', tip:'Begin bij de lezer, niet bij de organisatie: wat merkt iemand ervan in zijn werk of bij zijn aanvraag?' },
+  { id:'doen', label:'Wat moet ik doen, en tegen wanneer?', sub:'Een concrete actie, met een datum.', tip:'Zeg in één zin wat er van de lezer verwacht wordt, en vanaf of tegen welke datum. Niets te doen? Zeg dat dan ook.' },
+  { id:'waarom', label:'Waarom?', sub:'Eén heldere reden, geen opsomming.', tip:'Kies de reden die voor de lezer het zwaarst weegt, en laat de rest weg.' },
+  { id:'taal', label:'Gewone taal', sub:'Korte zinnen, geen vakjargon of afkortingen.', tip:'Lees de zin hardop. Zou je het zo zeggen aan het loket of aan de telefoon? Vervang elk woord dat je moet uitleggen.' },
+  { id:'contact', label:'Bij wie kan ik terecht?', sub:'Een contactpersoon, mailadres of vraagpunt.', tip:'Noem één plek voor vragen: een naam, een mailadres of een vast vraagmoment.' }
 ];
 const JARGON = ['implementatie', 'implementeren', 'synergie', 'optimalisatie', 'optimaliseren', 'stakeholder', 'roll-out', 'rollout', 'transitie', 'paradigma', 'governance', 'alignment', 'faciliteren', 'operationaliseren', 'efficiëntiewinst', 'leverage', 'change management', 'best practice', 'value', 'kpi', 'scope'];
 const MEAS = [
@@ -825,7 +825,12 @@ function newGroup(name) {
 function load() {
   try {
     const s = JSON.parse(localStorage.getItem(KEY));
-    if (s && typeof s === 'object') { const f = fresh(); return { ...f, ...s, ident:{ ...f.ident, ...(s.ident || {}) }, checks:{ ...(s.checks || {}) } }; }
+    if (s && typeof s === 'object') {
+      const f = fresh(), c = s.checks && typeof s.checks === 'object' ? s.checks : {}, checks = {};
+      ['mij', 'doen', 'waarom', 'taal', 'contact'].forEach(k => { if (c[k] === true) checks[k] = true; });
+      if (c.kort === true && !('taal' in c)) checks.taal = true;   // oude toets: 'kort en eenvoudig' wordt 'gewone taal'
+      return { ...f, ...s, ident:{ ...f.ident, ...(s.ident || {}) }, checks };
+    }
   } catch {}
   return fresh();
 }
@@ -974,7 +979,7 @@ function issues() {
   else {
     if (words(state.core) > 30) add(2, 'De kernboodschap is langer dan 30 woorden.', true);
     if (jargonIn(state.core).length) add(2, 'De kernboodschap bevat vakjargon.', true);
-    if (toetsScore() < 4) add(2, `De boodschap scoort ${toetsScore()} op 6 in de toets. Kijk welke punten je nog kan versterken.`, true);
+    if (toetsScore() < 4) add(2, `De boodschap scoort ${toetsScore()} op ${TOETS.length} in de toets. Kijk welke punten je nog kan versterken.`, true);
   }
   state.groups.forEach(g => { if (!g.msg.trim()) add(2, `${g.name}: wat betekent het voor hen?`); });
   state.groups.forEach(g => { if (!g.sender) add(3, `${g.name}: bevestig wie het brengt (nu een voorstel).`, true); });
@@ -1155,9 +1160,9 @@ function stepBoodschap() {
       <textarea class="inp" data-f="core" maxlength="400" rows="3" placeholder="bv. Geen papieren dossiers meer: vanaf maart vind je elke aanvraag op één plek terug, ook thuis.">${esc(state.core)}</textarea>
       <div class="sigs" data-sig="core">${sigHTML(state.core)}</div></label>
     <div class="toets" id="toets">
-      <div class="toets-h"><b>Blijft het hangen?</b><span class="score" id="toets-score"><span class="dots">${TOETS.map((x, i) => `<i class="${i < sc ? 'on' : ''}"></i>`).join('')}</span>${sc} van 6</span></div>
+      <div class="toets-h"><b>Komt de boodschap aan?</b><span class="score" id="toets-score"><span class="dots">${TOETS.map((x, i) => `<i class="${i < sc ? 'on' : ''}"></i>`).join('')}</span>${sc} van ${TOETS.length}</span></div>
       ${TOETS.map(x => `<label class="titem ${state.checks[x.id] ? 'on' : ''}"><input type="checkbox" data-check="${x.id}" ${state.checks[x.id] ? 'checked' : ''}>
-        <div><b>${x.label}</b><span>${x.sub}</span>${x.id === 'kort' && state.checks.kort && w > 30 ? '<span class="ttip" style="display:block">Aangevinkt, maar de boodschap telt meer dan 30 woorden.</span>' : ''}<span class="ttip">${x.tip}</span></div></label>`).join('')}
+        <div><b>${x.label}</b><span>${x.sub}</span>${x.id === 'taal' && state.checks.taal && (w > 30 || jargonIn(state.core).length) ? `<span class="ttip" style="display:block">Aangevinkt, maar ${w > 30 ? 'de boodschap telt meer dan 30 woorden' : 'er staat nog vakjargon in'}.</span>` : ''}<span class="ttip">${x.tip}</span></div></label>`).join('')}
     </div>
     ${state.groups.length ? `<div><span class="lbl" style="margin-bottom:0.5rem">Per doelgroep: wat betekent het voor jou?</span>
       <div class="blocks" style="margin-top:0">${state.groups.map(g => `<div class="gcard">
@@ -1342,7 +1347,7 @@ function stepKlaar() {
       <div class="stat"><b>${state.groups.length}</b><span>doelgroepen</span></div>
       <div class="stat"><b>${state.moments.length}</b><span>momenten</span></div>
       <div class="stat"><b>${new Set(state.groups.flatMap(g => g.channels)).size}</b><span>kanalen</span></div>
-      <div class="stat"><b>${toetsScore()}/6</b><span>boodschaptoets</span></div>
+      <div class="stat"><b>${toetsScore()}/${TOETS.length}</b><span>boodschaptoets</span></div>
     </div>
     ${!must.length ? `<div class="allgood">${ICON.ok}<span><b>Je plan staat.</b> ${soft.length ? 'Hieronder nog wat punten om het sterker te maken.' : 'Alles is ingevuld.'} ${open ? (open === 1 ? 'Het open moment ligt klaar voor SprintFlow en Vinkje.' : `De ${open} momenten liggen klaar voor SprintFlow en Vinkje.`) : ''}</span></div>` : ''}
     ${must.length ? `<div><span class="lbl">Wat nog ontbreekt</span><ul class="issues">${must.map(x => `<li><span>${esc(x.t)}</span><button type="button" data-go="${x.step}">${STEPS[x.step].name} →</button></li>`).join('')}</ul></div>` : ''}
@@ -1364,7 +1369,7 @@ function planHTML() {
         ${state.start || state.launch ? `<div>${state.start ? 'Start ' + nice(state.start, { day:'numeric', month:'long', year:'numeric' }) : ''}${state.start && state.launch ? ' · ' : ''}${state.launch ? 'Lancering <b>' + nice(state.launch, { day:'numeric', month:'long', year:'numeric' }) + '</b>' : ''}</div>` : ''}</div>
     </div></section>
     ${tr ? `<section class="card"><div class="card-head"><h2 class="card-title">Wie hoort wanneer iets</h2></div><div class="tracks">${tr}
-      <div class="tracks-legend"><span>● gedaan</span><span>○ gepland</span>${state.launch ? '<span style="color:var(--accent-dark);font-weight:600">| lancering</span>' : ''}<span>Per kolom één week</span></div></div></section>` : ''}
+      <div class="tracks-legend"><span>● gedaan</span><span>○ gepland</span><span>Per kolom één week</span></div></div></section>` : ''}
     <section class="card"><div class="card-head"><h2 class="card-title">Per doelgroep</h2></div>
       <div class="gplan">${state.groups.map(g => { const gm = momentsFor(g);
         return `<div class="gp"><div class="gcard-h"><i class="gdot ${g.lead ? 'lead' : ''}"></i><span class="gtitle">${esc(g.name)}</span><span class="tag ${intens(g) === 'sterk' ? 'mine' : ''}">${INTENS[intens(g)].label}</span></div>
@@ -1623,6 +1628,8 @@ function asText() {
   if (state.what.trim()) L.push(state.what.trim());
   if (state.why.trim()) L.push('', 'Waarom:', state.why.trim());
   L.push('', `Kernboodschap: ${state.core.trim() || '(nog niet ingevuld)'}`);
+  const mis = TOETS.filter(x => !state.checks[x.id]).map(x => x.label.replace(/\?$/, '').toLowerCase());
+  if (state.core.trim()) L.push(`Boodschaptoets: ${toetsScore()} van ${TOETS.length}${mis.length ? ' (nog te bekijken: ' + mis.join('; ') + ')' : ''}`);
   L.push(`Gebracht door: ${state.coreSender === 'ander' ? (state.coreSenderOther || 'iemand anders') : senderLabel(state.coreSender)}`);
   const id = state.ident;
   if (id.slogan.trim() || id.place.trim()) L.push(`Herkenbaar aan: ${[id.slogan.trim(), id.image.trim(), id.place.trim() ? 'alle info op ' + id.place.trim() : ''].filter(Boolean).join(' · ')}`);
@@ -1655,6 +1662,7 @@ function buildExport() {
     <div data-oc-keep style="display:grid;grid-template-columns:1.7fr 1fr;gap:12px;margin-bottom:14px">
       <div style="${box}background:#ecfdf5;border-color:#a7f3d0"><div style="${lbl};color:#059669">Kernboodschap</div>
         <div style="font-size:20px;font-weight:700;color:#1e293b;margin-top:4px;line-height:1.3">${state.core.trim() ? '“' + esc(state.core.trim()) + '”' : '–'}</div>
+        ${state.core.trim() ? `<div style="font-size:12px;color:#047857;font-weight:600;margin-top:6px">Boodschaptoets: ${toetsScore()} van ${TOETS.length} · ${TOETS.map(x => (state.checks[x.id] ? '✓ ' : '○ ') + esc(x.label.replace(/\?$/, ''))).join(' · ')}</div>` : ''}
         <div style="font-size:12px;color:#475569;margin-top:6px">Gebracht door ${esc(state.coreSender === 'ander' ? (state.coreSenderOther || 'iemand anders') : senderLabel(state.coreSender))}${state.why.trim() ? ' · ' + esc(state.why.trim().slice(0, 220)) + (state.why.trim().length > 220 ? '…' : '') : ''}</div></div>
       <div style="${box}"><div style="${lbl}">Herkenbaarheid</div>
         <div style="display:flex;align-items:center;gap:10px;margin-top:6px"><span style="width:34px;height:34px;border-radius:9px;background:${esc(col)};color:${inkOn(col)};font-weight:700;font-size:16px;display:flex;align-items:center;justify-content:center">${esc((id.slogan.trim() || state.name.trim() || '?').charAt(0).toUpperCase())}</span>
@@ -1708,7 +1716,7 @@ function tracksHTML() {
     head += `<span style="position:absolute;left:${left}%;top:16px;bottom:0;width:1px;background:#e2e8f0"></span>`;
     if ((i === 0 || d.getDate() <= 7) && i - last >= 3) { head += `<span style="position:absolute;left:${left}%;top:0;font-size:11px;font-weight:700;color:#64748b;padding-left:3px;white-space:nowrap">${d.toLocaleDateString('nl-BE', { month:'short' }).replace('.', '')}</span>`; last = i; }
   }
-  if (lp != null) head += `<span style="position:absolute;left:${lp}%;top:0;transform:translateX(${lp > 80 ? '-100%' : '4px'});font-size:11px;font-weight:700;color:#047857;white-space:nowrap">lancering</span>`;
+  const foot = lp == null ? '' : `<div></div><div style="position:relative;height:18px"><span style="position:absolute;left:${lp}%;top:2px;transform:translateX(${lp > 55 ? 'calc(-100% - 4px)' : '4px'});font-size:11px;font-weight:700;color:#047857;white-space:nowrap">lancering ${esc(nice(state.launch))}</span></div>`;
   const rows = gs.map(g => {
     const mine = ms.filter(m => !m.groups.length || m.groups.includes(g.id)), seen = {};
     const dots = mine.map(m => {
@@ -1719,7 +1727,7 @@ function tracksHTML() {
       <div style="position:relative;min-height:32px;border-top:1px solid #f1f5f9;background:linear-gradient(#e2e8f0,#e2e8f0) left 50%/100% 1px no-repeat">${line}${dots}</div>`;
   }).join('');
   return `<div style="display:grid;grid-template-columns:minmax(80px,140px) minmax(0,1fr);font-family:inherit">
-    <div></div><div style="position:relative;height:26px">${head}</div>${rows}</div>`;
+    <div></div><div style="position:relative;height:26px">${head}</div>${rows}${foot}</div>`;
 }
 
 /* ---------- Voorbeeld ---------- */
@@ -1732,7 +1740,7 @@ function loadExample() {
     why:'Papieren aanvragen raken zoek tussen post, mail en dossierkasten. Aanvragers wachten weken op een antwoord en bellen het loket plat. Online zie je meteen wat ontbreekt en volg je je aanvraag zelf op.',
     sponsor:'Afdelingshoofd', coreSender:'sponsor', start:addDays(todayIso(), -14), launch:L,
     core:'Geen papieren dossiers meer: je vraagt je premie online aan en ziet altijd hoe ver ze staat.',
-    checks:{ kort:true, concreet:true, raakt:true, verhaal:true },
+    checks:{ mij:true, waarom:true, taal:true, contact:true },
     ident:{ slogan:'Premie online', color:'#10b981', image:'een huisje met een vinkje', place:'intranet › Projecten › Premieloket' } });
   const tl = newGroup('Teamleiders loket'), lo = newGroup('Loketmedewerkers'), aa = newGroup('Aanvragers (burgers)');
   Object.assign(tl, { lead:true, change:'ze plannen de opleiding en vangen vragen van hun team op', goals:['weten', 'willen'], sender:'sponsor', channels:['gesprek'],
