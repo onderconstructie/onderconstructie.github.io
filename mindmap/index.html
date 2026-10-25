@@ -198,6 +198,7 @@ button.oc-import { color:#047857; min-height:44px; }
 .mm-tip { text-shadow:0 0 3px #fff, 0 0 3px #fff; }
 button.more { border:0; cursor:pointer; min-height:28px; }
 .macts button.add { color:var(--accent-dark); }
+.mtxt.hint:not(:focus) { font-style:italic; color:var(--slate-600); }
 .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
 .vb-bar.top { margin:0 0 0.75rem; }
 @media (max-width:520px) { .mrow .macts { display:none; } .mrow:focus-within .macts { display:flex; } } .canvas.panning { cursor:grabbing; user-select:none; }
@@ -243,7 +244,8 @@ button.more { border:0; cursor:pointer; min-height:28px; }
       </ul>
       <p><b>Op de kaart</b>: kies een idee met een klik of tik: er verschijnt een balk met <b>Subidee</b>, <b>Ernaast</b>, wijzigen, in- of uitklappen en verwijderen. Typ je een nieuw idee, dan geeft Enter meteen het volgende en Tab een subidee; Esc stopt. Met een toetsenbord kies je ideeën met de pijltjes, wijzig je met F2 of door gewoon te typen, en verwijder je met Delete.</p>
       <p><b>In- en uitklappen</b>: met het bolletje aan de rand van een idee op de kaart, met het driehoekje in de lijst, of voor alles tegelijk via het menu (⋯). Een ingeklapte tak toont hoeveel ideeën erachter zitten; tik op dat getal om ze weer te zien.</p>
-      <p>De hoofdtakken en hun ideeën liggen klaar voor andere tools, bijvoorbeeld om er in <a href="https://onderconstructie.github.io/prioriteit/">Prioriteren</a> of <a href="https://onderconstructie.github.io/vinkje/">Vinkje</a> mee verder te gaan.</p>
+      <p><b>Sjabloon projectaanpak</b>: een volledige structuur om een project voor te bereiden, van rechtvaardiging en kernvragen tot planning, risico's, betrokkenen, communicatie, monitoring, mensen, budget en ICT. De vragen staan schuin. Je antwoord komt eronder: kies een vraag en druk Enter, begin te typen, of tik op +. Zo blijft de vraag staan. Wat je niet nodig hebt, verwijder je. Heb je in de app een projectnaam ingesteld, dan staat die in het midden.</p>
+      <p>Je eigen ideeën (niet de vragen uit een sjabloon) liggen klaar voor andere tools, bijvoorbeeld om er in <a href="https://onderconstructie.github.io/prioriteit/">Prioriteren</a> of <a href="https://onderconstructie.github.io/vinkje/">Vinkje</a> mee verder te gaan.</p>
     </div>
   </details>
 </main>
@@ -536,7 +538,7 @@ function valid(s) {
   if (!s || !Array.isArray(s.maps)) return fresh();
   s.maps = s.maps.filter(m => m && Array.isArray(m.nodes) && m.nodes.length).map(m => ({
     id: /^[\w-]+$/.test(m.id) ? m.id : uid(), name: String(m.name || 'Mindmap').slice(0, 80), voorbeeld: !!m.voorbeeld,
-    nodes: normalize(m.nodes.filter(n => n && /^[\w-]+$/.test(n.id)).map(n => ({ id:n.id, text:String(n.text || '').slice(0, 160), level: Math.max(0, Math.min(12, parseInt(n.level) || 0)), collapsed: !!n.collapsed })))
+    nodes: normalize(m.nodes.filter(n => n && /^[\w-]+$/.test(n.id)).map(n => ({ id:n.id, text:String(n.text || '').slice(0, 160), level: Math.max(0, Math.min(12, parseInt(n.level) || 0)), collapsed: !!n.collapsed, ...(n.hint ? { hint:true } : {}) })))
   })).filter(m => m.nodes.length);
   return { ...fresh(), ...s, maps:s.maps, fit: typeof s.fit === 'boolean' ? s.fit : null };
 }
@@ -624,7 +626,7 @@ function svgOf(m, opts = {}) {
     const c = lv(b.depth);
     out.push(`<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="${root ? 16 : lvl1 ? 11 : 9}" fill="${c.fill}" stroke="${c.line}" stroke-width="${b.depth < 2 ? 0 : 1.3}"/>`);
     const ty = b.y + b.h / 2 - (b.lines.length - 1) * (b.fs + 4) / 2 + b.fs * 0.35, cx = b.x + b.w / 2;
-    out.push(`<text x="${cx}" text-anchor="middle" font-size="${b.fs}" font-weight="${root ? 700 : lvl1 ? 600 : 500}" fill="${c.ink}" opacity="${b.n.text ? 1 : 0.7}">${b.lines.map((l, i) => `<tspan x="${cx}" y="${ty + i * (b.fs + 4)}">${esc(l)}</tspan>`).join('')}</text>`);
+    out.push(`<text x="${cx}" text-anchor="middle" font-size="${b.fs}" font-weight="${root ? 700 : lvl1 ? 600 : 500}" fill="${c.ink}" opacity="${!b.n.text ? 0.7 : b.n.hint && !b.kids.length ? 0.78 : 1}"${b.n.hint && !b.kids.length ? ' font-style="italic"' : ''}>${b.lines.map((l, i) => `<tspan x="${cx}" y="${ty + i * (b.fs + 4)}">${esc(l)}</tspan>`).join('')}</text>`);
     out.push('</g>');
     // Inklapbolletje aan de buitenrand: "+n" als de tak dicht is, "−" (bij aanwijzen of selectie) als ze open is
     if (b.kids.length && !root && (b.n.collapsed || ui)) {
@@ -666,8 +668,8 @@ function render() {
     + `<button type="button" class="tab add" data-act="new-map" aria-label="Nieuwe mindmap">+ Mindmap</button>`;
   $('oc-restart').parentElement.hidden = !state.maps.some(x => !x.voorbeeld);
   if (!m) {
-    $('app').innerHTML = `<section class="card start-card"><p>Nog geen mindmap. Begin leeg, of bekijk eerst een voorbeeld.</p>
-      <div class="btns"><button type="button" class="btn btn-primary" data-act="new-map">Nieuwe mindmap</button><button type="button" class="btn btn-ghost" data-act="example">Begin met een voorbeeld</button></div></section>`;
+    $('app').innerHTML = `<section class="card start-card"><p>Nog geen mindmap. Begin leeg, met een sjabloon, of bekijk eerst een voorbeeld.</p>
+      <div class="btns"><button type="button" class="btn btn-primary" data-act="new-map">Nieuwe mindmap</button><button type="button" class="btn btn-ghost" data-act="tpl" data-tpl="projectaanpak">Sjabloon: projectaanpak</button><button type="button" class="btn btn-ghost" data-act="example">Begin met een voorbeeld</button></div></section>`;
     return;
   }
   const a = document.activeElement, keep = a && a.classList && a.classList.contains('mtxt') ? { id:a.dataset.id, ss:a.selectionStart } : null;
@@ -682,7 +684,7 @@ function render() {
     const kids = hasKids(m.nodes, i), col = branchColor(m, i), root = i === 0;
     return `<li class="mrow${root ? ' root' : ''}" style="--lvl:${n.level}">
       ${kids && !root ? `<button type="button" class="tw" data-act="toggle" data-id="${n.id}" aria-label="${n.collapsed ? 'Tak openklappen' : 'Tak inklappen'}" aria-expanded="${!n.collapsed}">${n.collapsed ? ICON.shut : ICON.open}</button>` : `<span class="dot" style="background:${col}" aria-hidden="true"></span>`}
-      <input class="mtxt" data-id="${n.id}" value="${esc(n.text)}" maxlength="160" placeholder="${root ? 'Het centrale idee' : 'Een idee…'}" aria-label="${root ? 'Centraal idee' : 'Idee op niveau ' + n.level}" enterkeyhint="next">
+      <input class="mtxt${n.hint && !kids ? ' hint' : ''}" data-id="${n.id}" value="${esc(n.text)}" maxlength="160" placeholder="${root ? 'Het centrale idee' : 'Een idee…'}" aria-label="${root ? 'Centraal idee' : 'Idee op niveau ' + n.level}" enterkeyhint="next">
       ${n.collapsed ? `<button type="button" class="more" data-act="toggle" data-id="${n.id}" aria-label="Tak openklappen: ${end(m.nodes, i) - i - 1} ideeën">+${end(m.nodes, i) - i - 1}</button>` : ''}
       ${root ? '' : `<span class="macts">
         <button type="button" class="add" data-act="child" data-id="${n.id}" aria-label="Subidee toevoegen" title="Subidee toevoegen">${ICON.plus}</button>
@@ -724,6 +726,7 @@ function render() {
               <div class="sep"></div>
               <button data-act="expand" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 9l5 6 5-6"/></svg>Alles openklappen</button>
               <button data-act="collapse" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 7l6 5-6 5"/></svg>Inklappen tot hoofdtakken</button>
+              <button data-act="tpl" data-tpl="projectaanpak" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>Nieuw uit sjabloon: projectaanpak</button>
               <button data-act="dup" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M4 16V5a1 1 0 0 1 1-1h11"/></svg>Dupliceer</button>
               <div class="sep"></div>
               <button data-act="wipe" class="danger" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>Alles wissen</button>
@@ -907,6 +910,7 @@ document.addEventListener('keydown', e => {
     e.preventDefault(); if (e.isComposing) return;
     const nx = m.nodes[i + 1];
     if (i === 0 && nx && !nx.text.trim()) { focusNode(nx.id); return; }   // er staat al een lege eerste tak klaar
+    if (m.nodes[i].hint && i > 0) { const x = addChild(m, i); save(); render(); focusNode(x.id); return; }   // sjabloonvraag: antwoord eronder
     const x = insertAfter(m, i); save(); render(); focusNode(x.id); }
   else if (e.key === 'Tab') { e.preventDefault(); if (i > 0 && shift(m, i, e.shiftKey ? -1 : 1)) { save(); render(); focusNode(m.nodes[m.nodes.findIndex(n => n.id === el.dataset.id)].id, false); } }
   else if (e.key === 'Backspace' && !el.value && i > 0 && !hasKids(m.nodes, i)) {
@@ -939,13 +943,17 @@ document.addEventListener('keydown', e => {
   const m = cur(), i = m.nodes.findIndex(n => n.id === sel.id); if (i < 0) return;
   const dirs = { ArrowRight:'right', ArrowLeft:'left', ArrowUp:'up', ArrowDown:'down' };
   if (dirs[e.key]) { e.preventDefault(); const to = nearest(dirs[e.key]); if (to) choose(to); }
-  else if (e.key === 'Enter') { e.preventDefault(); const x = addSibling(m, i); save(); render(); startEdit(x.id, true); }
+  else if (e.key === 'Enter') { e.preventDefault(); const x = m.nodes[i].hint && i ? addChild(m, i) : addSibling(m, i); save(); render(); startEdit(x.id, true); }
   else if (e.key === 'Tab' && !e.shiftKey) { e.preventDefault(); const x = addChild(m, i); save(); render(); startEdit(x.id, true); }
   else if (e.key === 'F2') { e.preventDefault(); startEdit(sel.id); }
   else if (e.key === ' ' && hasKids(m.nodes, i) && i) { e.preventDefault(); m.nodes[i].collapsed = !m.nodes[i].collapsed; save(); render(); reveal(); }
   else if ((e.key === 'Delete' || e.key === 'Backspace') && i) { e.preventDefault(); removeNode(m, i); }
   else if (e.key === 'Escape') { sel = { id:null, bar:false, edit:null }; renderMapOnly(); say('Niets gekozen. Tab gaat verder.'); }
-  else if (e.key.length === 1 && e.key !== ' ') { e.preventDefault(); startEdit(sel.id, false, e.key); }
+  else if (e.key.length === 1 && e.key !== ' ') {
+    e.preventDefault();
+    if (m.nodes[i].hint && i) { const x = addChild(m, i); save(); render(); startEdit(x.id, true, e.key); }   // een vraag overschrijf je niet per ongeluk
+    else startEdit(sel.id, false, e.key);
+  }
 });
 document.addEventListener('dblclick', e => { const g = e.target.closest('#canvas [data-node]'); if (g) { e.preventDefault(); startEdit(g.dataset.node); } });
 document.addEventListener('focusin', e => {
@@ -960,14 +968,14 @@ document.addEventListener('input', e => {
   const el = e.target, m = cur(); if (!m) return;
   if (el.classList.contains('mm-edit')) {
     const n = m.nodes.find(x => x.id === el.dataset.id); if (!n) return;
-    n.text = el.value; save(); renderMapOnly();
+    n.text = el.value; delete n.hint; save(); renderMapOnly();
     const li = document.querySelector(`.mtxt[data-id="${n.id}"]`); if (li) li.value = el.value;
     if (n.level === 0) { const tb = document.querySelector(`[data-map="${m.id}"] .nm`); if (tb) tb.textContent = title(m); }
     return;
   }
   if (!el.classList.contains('mtxt')) return;
   const n = m.nodes.find(x => x.id === el.dataset.id); if (!n) return;
-  n.text = el.value; save(); renderMapOnly();
+  n.text = el.value; delete n.hint; save(); renderMapOnly();
   if (n.level === 0) { const tb = document.querySelector(`[data-map="${m.id}"] .nm`); if (tb) tb.textContent = title(m); }
 });
 document.addEventListener('click', async e => {
@@ -996,6 +1004,7 @@ document.addEventListener('click', async e => {
   switch (act) {
     case 'new-map': { const x = newMap(state.maps.length ? 'Mindmap ' + (state.maps.length + 1) : 'Mijn mindmap'); state.maps.push(x); state.current = x.id; state.view = 'draw'; save(); render(); startEdit(x.nodes[0].id, true); return; }
     case 'example': example(); return;
+    case 'tpl': fromTemplate(t.dataset.tpl); return;
     case 'add-main': { const x = idea('', 1); m.nodes.push(x); save(); render(); focusNode(x.id); return; }
     case 'toggle': { m.nodes[i].collapsed = !m.nodes[i].collapsed; save(); render(); const b = document.querySelector(`.tw[data-id="${id}"]`); b && b.focus(); return; }
     case 'child': { const x = addChild(m, i); save(); render(); focusNode(x.id); return; }
@@ -1019,13 +1028,107 @@ function publish() {
     const items = [];
     let main = '';
     // ideeën zonder subtakken zijn de concrete punten; de hoofdtak gaat mee als notitie
-    m.nodes.forEach((n, i) => { if (n.level === 1) main = n.text.trim(); if (n.level >= 1 && n.text.trim() && !hasKids(m.nodes, i)) items.push({ type:'taak', text:n.text.trim(), note: n.level > 1 ? main || undefined : undefined }); });
+    m.nodes.forEach((n, i) => { if (n.level === 1) main = n.text.trim(); if (n.level >= 1 && n.text.trim() && !n.hint && !hasKids(m.nodes, i)) items.push({ type:'taak', text:n.text.trim(), note: n.level > 1 ? main || undefined : undefined }); });
     if (items.length) lists.push({ name: title(m), items });
   });
   ocShare.publish(OC_ID, OC_TOOL, lists);
 }
 function refreshImports() { document.querySelectorAll('[data-oc-types]').forEach(b => { b.hidden = !ocShare.count(b.dataset.ocTypes.split(','), OC_ID); }); }
 ['focus', 'storage'].forEach(ev => window.addEventListener(ev, () => setTimeout(refreshImports, 50)));
+
+/* Sjablonen: een vaste structuur met vragen. De vragen tonen schuin tot je ze aanpast,
+   en gaan niet als taak naar andere tools. */
+function ocProject(fb) { try { const p = JSON.parse(localStorage.getItem('oc.project')); return p && typeof p.name === 'string' && p.name.trim() ? p.name.trim().slice(0, 80) : fb; } catch { return fb; } }
+const TEMPLATES = {
+  projectaanpak: { name:'Projectaanpak', lines:`
+Rechtvaardiging
+  Wat wil je precies rechtvaardigen?
+  Drie opties
+    A. Niets doen
+    B. Het minimale doen
+    C. Iets doen
+  Verwachte voordelen en nadelen
+  Tijdschema
+  Kosten
+    Personeel
+    Investering
+    Onderhoud
+  Risico's en afhankelijkheden
+Zes kernvragen
+  Wat is het probleem?
+  Wat is het verwachte gedrag of eindresultaat?
+  Hoe weet je of dat behaald wordt?
+  Wat zijn de huidige obstakels?
+  Wat is ieders rol in de oplossing?
+  Wie meet het succes?
+Uitleg in gewone taal
+  Wat probeer je te doen, zonder jargon?
+  Hoe gebeurt het vandaag, en waar loopt dat vast?
+  Wat is nieuw aan je aanpak, en waarom zal het lukken?
+  Wie ligt er wakker van? Welk verschil maak je als het lukt?
+  Wat zijn de risico's?
+  Hoeveel kost het?
+  Hoe lang duurt het?
+  Hoe meet je tussentijds en op het eind of het lukt?
+Doel
+  Probleemanalyse: waarom dit project?
+  Doelstelling: hoe los je het probleem op?
+  Eindproduct: wat is het concrete resultaat?
+  Link met visie, beleidsnota, beleidsbrief of jaarlijks ondernemingsplan
+Globale planning
+  Deelprojecten
+  Prioriteit van de deelprojecten
+  Globale timing
+Risico's
+  Risico's met hun kans en impact
+  Maatregelen per risico
+  Zo weinig mogelijk administratie: kostprijs, frequentie, duur
+Afhankelijkheden
+  Impactanalyse
+Betrokkenen
+  Doelgroepen
+  Partners en uitbesteding
+  Afstemming met andere afdelingen
+Communicatie
+  Doel: de link tussen project en visie of ondernemingsplan
+  Betrokkenen
+    Externen
+    Andere afdelingen en diensten
+    Overleg intern en extern
+    Handleiding vooraf bespreken met partners
+    Acties communiceren naar de doelgroep
+    Privacy verzekeren
+  Rapportering
+    Tijdspad van meetresultaten naar de bevoegde fora
+    Rapporteringsaanvraag
+  Organisatie
+    Rollen en taakverdeling in het project
+Monitoring
+  Meetsystemen om het project op te volgen
+  Evaluatie van partners
+  Tijdspad van meetresultaten
+  Tussentijds evalueren
+Mensen en competenties
+  Competenties en profielen van projectmedewerkers
+  Opleidingsbehoeften
+  Systematische coaching inplannen
+Budget
+  Financieringsbron
+  Blijven de uitgaven binnen het budget?
+Facility en ICT
+  Behoeften
+  Afstemming met partners` }
+};
+function fromTemplate(key) {
+  const tp = TEMPLATES[key]; if (!tp) return;
+  const nodes = [idea(ocProject(tp.name), 0)];
+  tp.lines.split('\n').filter(l => l.trim()).forEach(l => { const n = idea(l.trim(), 1 + (l.match(/^ */)[0].length / 2)); n.hint = true; nodes.push(n); });
+  normalize(nodes);
+  nodes.forEach((n, i) => { if (n.level === 1 && hasKids(nodes, i)) n.collapsed = true; });   // eerst een overzicht van de hoofdtakken
+  const x = { id:uid(), name:tp.name, nodes };
+  state.maps.push(x); state.current = x.id; state.view = 'draw'; save(); render();
+  toast(`Sjabloon klaar. Klap een tak open; onder elke vraag zet je je antwoord met Enter of +.`);
+}
 
 /* Voorbeeld */
 function example() {
@@ -1113,6 +1216,7 @@ document.addEventListener('click', async e => {
     catch { toast('Downloaden lukte niet. Ben je online?'); }
   } else if (act === 'svg') { saveBlob(new Blob(['<?xml version="1.0" encoding="UTF-8"?>\n' + svgOf(m)], { type:'image/svg+xml' }), base + '.svg'); toast('SVG gedownload'); }
   else if (act === 'copy' || act === 'mermaid') { try { await navigator.clipboard.writeText(act === 'copy' ? asList(m) : asMermaid(m)); toast(act === 'copy' ? 'Gekopieerd als lijst' : 'Mermaid-code gekopieerd'); } catch { toast('Kopiëren lukte niet'); } }
+  else if (act === 'tpl') fromTemplate(b.dataset.tpl);
   else if (act === 'expand') { m.nodes.forEach(n => n.collapsed = false); save(); render(); toast('Alles opengeklapt'); }
   else if (act === 'collapse') { m.nodes.forEach((n, i) => { n.collapsed = n.level === 1 && hasKids(m.nodes, i); }); save(); render(); toast('Ingeklapt tot de hoofdtakken'); }
   else if (act === 'dup') { const c = JSON.parse(JSON.stringify(m)); c.id = uid(); c.voorbeeld = false; c.nodes.forEach(n => n.id = uid()); c.nodes[0].text = title(m).slice(0, 150) + ' (kopie)'; state.maps.splice(state.maps.indexOf(m) + 1, 0, c); state.current = c.id; save(); render(); toast('Kopie gemaakt'); }
