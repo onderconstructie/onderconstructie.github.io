@@ -6,11 +6,11 @@
 <title>Beslissingslog – Onder Constructie</title>
 <meta name="description" content="Leg vast wat er beslist is, door wie, wanneer en waarom. Zo voer je dezelfde discussie geen drie keer.">
     <meta name="oc:groep" content="projecten">
-    <meta name="oc:labels" content="">
+    <meta name="oc:labels" content="vergaderen">
     <meta name="oc:pdca" content="do, act">
     <meta name="oc:kort" content="Wat is beslist, door wie en waarom?">
     <meta name="oc:volgorde" content="105">
-    <meta name="oc:opslag" content="beslissingen.v1">
+    <meta name="oc:opslag" content="beslissingen.v1, oc.share.beslissingen">
 <meta name="theme-color" content="#ffffff">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80' fill='none'%3E%3Ccircle cx='40' cy='40' r='36' fill='%23f8fafc' stroke='%23e2e8f0' stroke-width='2'/%3E%3Crect x='24' y='19' width='27' height='35' rx='4' fill='%23fff' stroke='%23cbd5e1' stroke-width='2.5'/%3E%3Crect x='30' y='28' width='15' height='3.5' rx='1.75' fill='%23cbd5e1'/%3E%3Crect x='30' y='35' width='15' height='3.5' rx='1.75' fill='%23cbd5e1'/%3E%3Crect x='30' y='42' width='9' height='3.5' rx='1.75' fill='%23cbd5e1'/%3E%3Ccircle cx='52' cy='54' r='10' fill='%2310b981'/%3E%3Cpath d='M47.5 54.2l3 3 5.5-6' stroke='%23fff' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="/fonts/fonts.css">
@@ -220,6 +220,48 @@ textarea.field { resize:vertical; min-height:4.25rem; line-height:1.45; }
 .ocw-row button { min-height:44px; }
 button.oc-import { color:#047857; min-height:44px; }
 
+/* Bewaren, foutmelding, acties */
+.err { margin:0.375rem 0.125rem 0; font-size:0.875rem; font-weight:500; color:#b91c1c; }
+.add-input[aria-invalid="true"] { border-color:#dc2626; background:var(--wit); }
+.save-row { display:flex; justify-content:flex-end; margin-top:0.75rem; }
+.save-btn { min-height:44px; padding:0 1.25rem; font-size:0.9375rem; border-radius:10px; }
+@media (max-width:480px) { .save-btn { width:100%; } }
+.acts-edit { display:flex; flex-direction:column; gap:0.375rem; }
+.act-row { display:grid; grid-template-columns:minmax(0, 1fr) 8.5rem 9.75rem 44px; gap:0.375rem; align-items:center; }
+.act-row .field { min-height:44px; padding-top:0.5rem; padding-bottom:0.5rem; font-size:0.9375rem; }
+.act-row.has-check { grid-template-columns:44px minmax(0, 1fr) 8.5rem 9.75rem 44px; }
+@media (max-width:600px) {
+  .act-row { grid-template-columns:minmax(0, 1fr) minmax(0, 1fr) 44px; padding-bottom:0.375rem; border-bottom:1px solid var(--slate-100); }
+  .act-row [data-a="text"], .act-row [data-af="text"] { grid-column:1 / -1; }
+  .act-row.has-check { grid-template-columns:44px minmax(0, 1fr) minmax(0, 1fr) 44px; }
+  .act-row.has-check [data-af="text"] { grid-column:2 / -1; }
+  .act-row.has-check [data-af="who"] { grid-column:2; }
+}
+.act-x { color:var(--slate-500); }
+.add-act { align-self:flex-start; min-height:44px; padding:0 0.5rem; margin-left:-0.375rem; border-radius:8px; font-size:0.875rem; font-weight:600; color:var(--accent-dark); }
+.add-act:hover { background:var(--accent-50); }
+.dec-acts { list-style:none; padding:0 1.125rem 0.75rem 0.625rem; margin-top:-0.375rem; }
+.dec-act { display:grid; grid-template-columns:44px minmax(0, 1fr); align-items:center; font-size:0.9375rem; color:var(--slate-700); }
+.dec-act .meta { display:block; font-size:0.8125rem; color:var(--slate-500); font-variant-numeric:tabular-nums; }
+.dec-act.done .txt { color:var(--slate-500); text-decoration:line-through; text-decoration-color:var(--slate-300); }
+.act-check { width:44px; height:44px; display:flex; align-items:center; justify-content:center; }
+.act-box { width:20px; height:20px; border-radius:6px; border:2px solid #94a3b8; display:flex; align-items:center; justify-content:center; }
+.act-box svg { width:13px; height:13px; color:#fff; opacity:0; }
+.act-check:hover .act-box { border-color:var(--accent-dark); }
+.done > .act-check .act-box, .act-check[aria-pressed="true"] .act-box { background:var(--accent-dark); border-color:var(--accent-dark); }
+.done > .act-check .act-box svg, .act-check[aria-pressed="true"] .act-box svg { opacity:1; }
+/* Delen: mail en kopie links, downloads rechts */
+.export-row { flex-wrap:wrap; justify-content:space-between; }
+.mail-btns { display:flex; flex-wrap:wrap; gap:0.5rem; }
+.export-row .exp-main { background:var(--accent-dark); color:#fff; }
+.export-row .exp-main:hover { background:var(--accent-hover); color:#fff; }
+@media (max-width:480px) {
+  .export-row { display:grid; grid-template-columns:1fr 1fr; }
+  .export-row[hidden] { display:none; }
+  .mail-btns { display:contents; }
+  .export-row .exp-btn { justify-content:center; padding:0 0.5rem; }
+}
+
 /* Opnieuw beginnen (zelfde knop in elke tool) */
 .oc-restart-row { display:flex; justify-content:center; padding:0.5rem 0 0; }
 .oc-restart-row[hidden] { display:none !important; }
@@ -230,9 +272,9 @@ button.oc-import { color:#047857; min-height:44px; }
 <body>
 
 <header class="header">
-  <a href="https://onderconstructie.github.io/projectmanagement/" class="back-link" aria-label="Terug naar Projectmanagement">
+  <a href="https://onderconstructie.github.io/projectmanagement/" class="back-link" aria-label="Terug naar Onder Constructie">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-    Projectmanagement
+    Onder Constructie
   </a>
   <div class="logo">
     <svg viewBox="0 0 80 80" fill="none" aria-hidden="true">
@@ -267,7 +309,7 @@ button.oc-import { color:#047857; min-height:44px; }
         <div class="menu" id="menu" role="menu">
           <button data-act="pdf" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M9 15h6M12 12v6"/></svg>Als PDF</button>
           <button data-act="png" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>Als afbeelding</button>
-          <button data-act="copy" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Kopieer als tekst</button>
+          <button data-act="copy" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Kopieer voor e-mail</button>
           <button data-act="csv" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Download CSV (rekenblad)</button>
           <div class="sep"></div>
           <div class="sep"></div>
@@ -283,13 +325,11 @@ button.oc-import { color:#047857; min-height:44px; }
         <button type="button" id="replacing-x" aria-label="Niet koppelen">Annuleer</button>
       </div>
       <div class="add-row">
-        <input class="add-input" id="add-what" placeholder="Wat is er beslist?" aria-label="Wat is er beslist?" maxlength="300" enterkeyhint="done">
-        <button class="add-btn" type="submit" aria-label="Bewaar beslissing">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-        </button>
+        <input class="add-input" id="add-what" placeholder="Wat is er beslist?" aria-label="Wat is er beslist?" maxlength="300" enterkeyhint="done" aria-describedby="add-err">
       </div>
+      <p class="err" id="add-err" hidden>Typ eerst wat er beslist is.</p>
       <button type="button" class="more-toggle" id="more-toggle" aria-expanded="false" aria-controls="more">
-        Waarom, wie en wanneer
+        Waarom, wie, wanneer en acties
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
       </button>
       <div class="grid" id="more" hidden>
@@ -297,7 +337,12 @@ button.oc-import { color:#047857; min-height:44px; }
         <label><span class="lbl">Beslist door</span><input class="field" id="add-who" placeholder="Bv. stuurgroep" maxlength="120" list="who-list"></label>
         <label><span class="lbl">Datum</span><input class="field" id="add-date" type="date"></label>
         <label class="full"><span class="lbl">Alternatieven die afvielen</span><textarea class="field" id="add-alt" placeholder="Wat lag nog op tafel, en waarom niet" maxlength="2000"></textarea></label>
+        <div class="full acts-edit"><span class="lbl" id="add-acts-lbl">Acties: wie doet wat, tegen wanneer?</span>
+          <div id="add-acts" role="group" aria-labelledby="add-acts-lbl"></div>
+          <button type="button" class="add-act" id="add-act">+ Nog een actie</button>
+        </div>
       </div>
+      <div class="save-row"><button type="submit" class="btn btn-primary save-btn">Bewaar beslissing</button></div>
       <datalist id="who-list"></datalist>
     </form>
 
@@ -310,6 +355,10 @@ button.oc-import { color:#047857; min-height:44px; }
     <div class="empty" id="empty" hidden></div>
   </section>
   <div class="export-row" id="export-row" hidden>
+    <div class="mail-btns">
+      <button type="button" class="exp-btn exp-main" id="mail-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>Mail naar de groep</button>
+      <button type="button" class="exp-btn" id="copy-mail"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Kopieer voor e-mail</button>
+    </div>
     <button type="button" class="exp-btn" data-exp="png" title="Download als afbeelding"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>Afbeelding</button>
     <button type="button" class="exp-btn" data-exp="pdf" title="Download als PDF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M9 13h6M9 17h4"/></svg>PDF</button>
   </div>
@@ -336,6 +385,8 @@ function ocPickProject(st, arr, cur = 'current') { const p = ocProject(''); if (
      'taak'        iets dat gedaan moet worden                     { text, note? }
      'actie'       taak met eigenaar en/of termijn                 { text, who?, when? }
      'risico'      risico met kans en impact                       { text, note? }
+     'besluit'     beslissing (Beslissingslog)                     { text, note?, who?, when? }
+                   Andere tools kiezen zelf welke soorten ze tonen (types in pick/count/sources) en slaan onbekende soorten dus over.
 
    Gebruik:
      ocShare.publish('raci', 'RACI-matrix', [
@@ -347,7 +398,7 @@ function ocPickProject(st, arr, cur = 'current') { const p = ocProject(''); if (
 */
 const ocShare = (() => {
   const PREFIX = 'oc.share.';
-  const LABEL = { betrokkene:'betrokkenen', taak:'taken', actie:'acties', risico:"risico's" };
+  const LABEL = { betrokkene:'betrokkenen', taak:'taken', actie:'acties', risico:"risico's", besluit:'besluiten' };
   const esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
 
   function publish(id, tool, lists) {
@@ -519,7 +570,15 @@ function ocUndoable(restore) {
   };
 }
 
-function ocPublish() {}
+/* Klaarleggen voor andere tools: besluiten die van kracht zijn (soort 'besluit') en open acties (soort 'actie').
+   Een voorbeeld-log wordt nooit klaargelegd. */
+function ocPublish() {
+  ocShare.publish(OC_ID, OC_TOOL, state.logs.filter(l => !l.voorbeeld).map(l => ({ name:l.name, items:[
+    ...sorted(l.items).filter(it => it.status === 'genomen').map(it => ({ type:'besluit', text:it.what, note:it.why || undefined, who:it.who || undefined, when:it.date || undefined })),
+    ...sorted(l.items).filter(it => it.status !== 'ingetrokken').flatMap(it => (it.actions || []).filter(a => !a.done && a.text && a.text.trim())
+      .map(a => ({ type:'actie', text:a.text, who:a.who || undefined, when:a.when || undefined })))
+  ] })));
+}
 
 async function ocWipeAll() {
   if (!await ocConfirm(`Alles wissen in ${OC_TOOL}?`, 'Alle logs en beslissingen verdwijnen. Je kan dit nog ongedaan maken tot je iets anders doet.', 'Alles wissen')) return;
@@ -636,7 +695,10 @@ const KEY = 'beslissingen.v1';
 const uid = () => Math.random().toString(36).slice(2, 10);
 const today = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
 function load() {
-  try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && Array.isArray(d.logs) && d.logs.length) return d; } catch {}
+  try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && Array.isArray(d.logs) && d.logs.length) {
+    // oudere bewaringen hebben geen acties: die blijven gewoon laden (acties zijn optioneel)
+    d.logs.forEach(l => { if (!Array.isArray(l.items)) l.items = []; l.items.forEach(it => { if (it.actions && !Array.isArray(it.actions)) delete it.actions; }); });
+    return d; } } catch {}
   const first = { id:uid(), name:ocProject('Mijn project'), items:[] };
   return { logs:[first], current:first.id, lastWho:'' };
 }
@@ -652,6 +714,7 @@ function fmtDate(iso) {
   const d = new Date(iso + 'T12:00:00');
   return isNaN(d) ? iso : d.toLocaleDateString('nl-BE', { day:'numeric', month:'short', year:'numeric' });
 }
+function actMeta(a) { return [a.who, a.when ? 'tegen ' + fmtDate(a.when) : ''].filter(Boolean).join(' · '); }
 function sorted(items) {
   return [...items].sort((a, b) => (b.date || '').localeCompare(a.date || '') || b.created - a.created);
 }
@@ -659,16 +722,60 @@ function sorted(items) {
 /* ---------- Toevoegen ---------- */
 let openId = null, replacesId = null;
 $('add-date').value = today();
-$('more-toggle').addEventListener('click', () => {
-  const open = $('more').hidden;
+const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+/* Een actierij in het formulier (data-a) of bij een bewaarde beslissing (data-af, met afvinkvakje) */
+function actRowHTML(a, saved) {
+  const k = saved ? 'data-af' : 'data-a';
+  return `<div class="act-row${saved ? ' has-check' + (a.done ? ' done' : '') : ''}"${saved ? ` data-aid="${a.id}"` : ''}>
+    ${saved ? `<button type="button" class="act-check" aria-pressed="${!!a.done}" aria-label="Actie klaar"><span class="act-box">${ICON_CHECK}</span></button>` : ''}
+    <input class="field" ${k}="text" value="${esc(a.text || '')}" placeholder="Wat moet er gebeuren?" aria-label="Actie" maxlength="300">
+    <input class="field" ${k}="who" value="${esc(a.who || '')}" placeholder="Wie" aria-label="Wie" maxlength="80" list="who-list">
+    <input class="field" ${k}="when" type="date" value="${esc(a.when || '')}" aria-label="Tegen wanneer">
+    <button type="button" class="icon-btn act-x" aria-label="Verwijder actie">${ICON_X}</button>
+  </div>`;
+}
+function resetAddActs() { $('add-acts').innerHTML = actRowHTML({}, false); }
+resetAddActs();
+function setMore(open) {
   $('more').hidden = !open;
   $('more-toggle').setAttribute('aria-expanded', String(open));
   if (open && !$('add-who').value) $('add-who').value = state.lastWho || '';
+}
+$('more-toggle').addEventListener('click', () => {
+  const open = $('more').hidden;
+  setMore(open);
+  state.moreOpen = open; try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {}
 });
+if (state.moreOpen) setMore(true);
+$('add-act').addEventListener('click', () => {
+  $('add-acts').insertAdjacentHTML('beforeend', actRowHTML({}, false));
+  const rows = $('add-acts').querySelectorAll('.act-row'); rows[rows.length - 1].querySelector('input').focus();
+});
+$('add-acts').addEventListener('click', e => {
+  const x = e.target.closest('.act-x'); if (!x) return;
+  const row = x.closest('.act-row');
+  if ($('add-acts').children.length > 1) row.remove(); else row.querySelectorAll('input').forEach(i => i.value = '');
+  const f = $('add-acts').querySelector('input'); f && f.focus();
+});
+// Enter in een actieveld: nieuwe actierij in plaats van meteen bewaren
+$('add-acts').addEventListener('keydown', e => {
+  if (e.key !== 'Enter' || !e.target.matches('input')) return;
+  e.preventDefault();
+  const row = e.target.closest('.act-row');
+  if (row.nextElementSibling) { row.nextElementSibling.querySelector('input').focus(); return; }
+  if (row.querySelector('[data-a="text"]').value.trim()) $('add-act').click();
+});
+function showErr(on) {
+  $('add-err').hidden = !on;
+  if (on) $('add-what').setAttribute('aria-invalid', 'true'); else $('add-what').removeAttribute('aria-invalid');
+}
+$('add-what').addEventListener('input', () => { if (!$('add-err').hidden && $('add-what').value.trim()) showErr(false); });
 $('add-form').addEventListener('submit', e => {
   e.preventDefault();
   const what = $('add-what').value.trim();
-  if (!what) { $('add-what').focus(); return; }
+  if (!what) { showErr(true); $('add-what').focus(); return; }
+  showErr(false);
   // Detailvelden tellen alleen mee als je ze ziet: niets wordt stil ingevuld.
   const more = !$('more').hidden;
   const it = {
@@ -679,6 +786,12 @@ $('add-form').addEventListener('submit', e => {
     alt:more ? $('add-alt').value.trim() : '',
     status:'genomen', note:'', created:Date.now()
   };
+  if (more) {
+    const acts = [...$('add-acts').querySelectorAll('.act-row')].map(r => ({
+      id:uid(), text:r.querySelector('[data-a="text"]').value.trim(), who:r.querySelector('[data-a="who"]').value.trim(),
+      when:r.querySelector('[data-a="when"]').value, done:false })).filter(a => a.text);
+    if (acts.length) it.actions = acts;
+  }
   const l = cur();
   if (replacesId) {
     const old = l.items.find(x => x.id === replacesId);
@@ -689,9 +802,8 @@ $('add-form').addEventListener('submit', e => {
   save();
   ['add-what', 'add-why', 'add-alt'].forEach(id => $(id).value = '');
   $('add-date').value = today();
-  // paneel dicht, zodat de lijst in beeld komt; "Beslist door" blijft onthouden voor de volgende keer
-  $('more').hidden = true;
-  $('more-toggle').setAttribute('aria-expanded', 'false');
+  resetAddActs();
+  // het paneel blijft zoals de gebruiker het zette: wie meerdere beslissingen na elkaar noteert, hoeft niet telkens te openen
   setReplacing(null);
   openId = null;
   render();
@@ -727,7 +839,11 @@ function decHTML(it, l) {
         ${!open ? links : ''}
       </span>${CHEV}
     </button>`;
-  if (!open) return `<li class="dec ${it.status}" data-id="${it.id}">${head}</li>`;
+  const acts = it.actions || [];
+  const actList = acts.length ? `<ul class="dec-acts" aria-label="Acties">${acts.map(a => `<li class="dec-act${a.done ? ' done' : ''}" data-aid="${a.id}">
+      <button type="button" class="act-check" aria-pressed="${!!a.done}" aria-label="Klaar: ${esc(a.text)}"><span class="act-box">${ICON_CHECK}</span></button>
+      <span><span class="txt">${esc(a.text)}</span>${actMeta(a) ? `<span class="meta">${esc(actMeta(a))}</span>` : ''}</span></li>`).join('')}</ul>` : '';
+  if (!open) return `<li class="dec ${it.status}" data-id="${it.id}">${head}${actList}</li>`;
   return `<li class="dec open ${it.status}" data-id="${it.id}">${head}
     <div class="dec-edit">
       <div class="grid">
@@ -743,6 +859,10 @@ function decHTML(it, l) {
         </div>
         <label class="full" ${it.status === 'genomen' ? 'hidden' : ''}><span class="lbl">${it.status === 'herzien' ? 'Wat is er veranderd, en waarom?' : 'Waarom ingetrokken?'}</span><textarea class="field" data-f="note" maxlength="2000">${esc(it.note)}</textarea></label>
         ${links ? `<div class="full">${links}</div>` : ''}
+        <div class="full acts-edit"><span class="lbl">Acties: wie doet wat, tegen wanneer?</span>
+          ${acts.map(a => actRowHTML(a, true)).join('')}
+          <button type="button" class="add-act" data-act="add-action">+ Actie</button>
+        </div>
       </div>
       <div class="edit-actions">
         <button type="button" class="btn btn-danger" data-act="del">Verwijder</button>
@@ -761,11 +881,13 @@ function renderTabs() {
 
 function matches(it, q) {
   if (!q) return true;
-  return [it.what, it.why, it.who, it.alt, it.note, it.date, fmtDate(it.date), STATUS[it.status]].join(' ').toLowerCase().includes(q);
+  return [it.what, it.why, it.who, it.alt, it.note, it.date, fmtDate(it.date), STATUS[it.status], ...(it.actions || []).flatMap(a => [a.text, a.who])].join(' ').toLowerCase().includes(q);
 }
 
 function render() {
   const l = cur();
+  // lege acties (aangemaakt maar niet ingevuld) verdwijnen zodra de beslissing dichtgaat
+  l.items.forEach(it => { if (it.id !== openId && it.actions) { it.actions = it.actions.filter(x => x.text && x.text.trim()); if (!it.actions.length) delete it.actions; } });
   if (document.activeElement !== $('list-name')) $('list-name').value = l.name;
   const delLabel = `Verwijder ${l.name || 'Naamloos'}`;
   $('del-btn').setAttribute('aria-label', delLabel); $('del-btn').title = delLabel;
@@ -777,8 +899,9 @@ function render() {
   $('decs').hidden = list.length === 0;
 
   const active = l.items.filter(i => i.status === 'genomen').length;
+  const openActs = l.items.reduce((n, i) => n + (i.actions || []).filter(a => !a.done).length, 0);
   $('count-line').textContent = total
-    ? `${total} ${total === 1 ? 'beslissing' : 'beslissingen'}${active !== total ? `, ${active} van kracht` : ''}`
+    ? `${total} ${total === 1 ? 'beslissing' : 'beslissingen'}${active !== total ? `, ${active} van kracht` : ''}${openActs ? ` · ${openActs} open ${openActs === 1 ? 'actie' : 'acties'}` : ''}`
     : '';
   $('count-line').hidden = !total;
 
@@ -791,7 +914,7 @@ function render() {
   $('export-row').hidden = total === 0;
 
   document.querySelectorAll('.dec-edit textarea').forEach(grow);
-  const whos = [...new Set(state.logs.flatMap(x => x.items.map(i => i.who)).filter(Boolean))];
+  const whos = [...new Set(state.logs.flatMap(x => x.items.flatMap(i => [i.who, ...(i.actions || []).map(a => a.who)])).filter(Boolean))];
   $('who-list').innerHTML = whos.map(w => `<option value="${esc(w)}">`).join('');
   renderTabs();
 }
@@ -804,7 +927,28 @@ function findIt(el) {
   const l = cur(); const idx = l.items.findIndex(i => i.id === li.dataset.id);
   return { li, l, idx, it:l.items[idx] };
 }
+function findAct(el) {
+  const { it } = findIt(el); const row = el.closest('[data-aid]');
+  if (!it || !row) return {};
+  const list = it.actions || []; const idx = list.findIndex(a => a.id === row.dataset.aid);
+  return { it, list, idx, a:list[idx] };
+}
 $('decs').addEventListener('click', e => {
+  const ck = e.target.closest('.act-check');
+  if (ck) {
+    const { a, it } = findAct(ck); if (!a) return;
+    a.done = !a.done; save(); render();
+    const again = document.querySelector(`.dec[data-id="${it.id}"] [data-aid="${a.id}"] .act-check`); again && again.focus();
+    return;
+  }
+  const ax = e.target.closest('.act-x');
+  if (ax) {
+    const { a, list, idx, it } = findAct(ax); if (!a) return;
+    const restore = snapshot();
+    list.splice(idx, 1); if (!list.length) delete it.actions;
+    save(); render(); toast('Actie verwijderd', restore);
+    return;
+  }
   const head = e.target.closest('.dec-head');
   if (head) {
     const { it } = findIt(head); if (!it) return;
@@ -826,6 +970,12 @@ $('decs').addEventListener('click', e => {
   if (!act) return;
   const { l, idx, it } = findIt(act); if (!it) return;
   if (act.dataset.act === 'close') { openId = null; render(); }
+  if (act.dataset.act === 'add-action') {
+    const a = { id:uid(), text:'', who:'', when:'', done:false };
+    (it.actions = it.actions || []).push(a); render();
+    const inp = document.querySelector(`.dec[data-id="${it.id}"] [data-aid="${a.id}"] [data-af="text"]`); inp && inp.focus();
+    return;
+  }
   if (act.dataset.act === 'replace') {
     openId = null; render(); setReplacing(it.id);
     $('add-what').focus(); $('add-form').scrollIntoView({ block:'center', behavior:'smooth' });
@@ -839,6 +989,8 @@ $('decs').addEventListener('click', e => {
   }
 });
 $('decs').addEventListener('input', e => {
+  const af = e.target.dataset && e.target.dataset.af;
+  if (af) { const { a } = findAct(e.target); if (a) { a[af] = af === 'when' ? e.target.value : e.target.value.slice(0, af === 'text' ? 300 : 80); save(); } return; }
   const f = e.target.dataset && e.target.dataset.f; if (!f) return;
   const { it } = findIt(e.target); if (!it) return;
   it[f] = e.target.value;
@@ -846,6 +998,7 @@ $('decs').addEventListener('input', e => {
   save(); renderTabs();
 });
 $('decs').addEventListener('focusout', e => {
+  if (e.target.dataset && e.target.dataset.af) { const { a } = findAct(e.target); if (a && typeof a[e.target.dataset.af] === 'string') { a[e.target.dataset.af] = a[e.target.dataset.af].trim(); save(); } return; }
   const f = e.target.dataset && e.target.dataset.f; if (!f) return;
   const { it } = findIt(e.target); if (!it) return;
   if (f === 'what' && !it.what.trim()) { it.what = e.target.defaultValue || 'Zonder titel'; e.target.value = it.what; }
@@ -853,6 +1006,7 @@ $('decs').addEventListener('focusout', e => {
   save();
 });
 $('decs').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.matches('input[data-af]')) { e.preventDefault(); e.target.blur(); return; }
   if (e.key === 'Enter' && e.target.matches('input.field')) { e.preventDefault(); openId = null; render(); }
   if (e.key === 'Escape' && openId) { openId = null; render(); }
 });
@@ -917,7 +1071,7 @@ $('menu').addEventListener('click', async e => {
     } catch { toast('Downloaden lukt nu niet: geen verbinding?'); }
     return;
   }
-  if (act === 'copy') (await copy(markdown(l))) ? toast('Gekopieerd als tekst') : toast('Kopiëren lukt hier niet');
+  if (act === 'copy') await copyForMail(l);
   if (act === 'csv') { downloadCSV(l); toast('CSV gedownload'); }
   if (act === 'delete') deleteLog(l);
 });
@@ -960,6 +1114,8 @@ document.addEventListener('click', e => {
   const b = mk('Wie geen computer heeft, kan aan het loket geholpen worden', 'Digitaal mag niemand uitsluiten. Het loket vult de aanvraag samen met de burger in.', 'Diensthoofd', 12, '');
   const c = mk('Elke vrijdag een korte stand van zaken naar het kabinet', 'Er kwamen te veel losse vragen tussendoor.', 'Teamleider', 3, 'Een maandelijks rapport.');
   a.status = 'herzien'; a.note = 'Aangevuld: hulp aan het loket blijft mogelijk.'; a.replacedBy = b.id; b.replaces = a.id;
+  b.actions = [{ id:uid(), text:'Loketmedewerkers kort opleiden', who:'Diensthoofd', when:d(-14), done:false }, { id:uid(), text:'Affiche aan het loket ophangen', who:'Communicatie', when:d(-7), done:true }];
+  c.actions = [{ id:uid(), text:'Vast sjabloon voor de stand van zaken maken', who:'Teamleider', when:d(-4), done:false }];
   const l = { id:uid(), name:'Renovatiepremie', items:[a, b, c], voorbeeld:true };
   state.logs.push(l); state.current = l.id; openId = null; save(); render(); toast('Voorbeeld geladen');
 });
@@ -993,6 +1149,9 @@ function buildExport(l, q, paginate) {
         ${it.why ? lab('Waarom') + para(it.why) : ''}
         ${it.alt ? lab('Afgevallen alternatieven') + para(it.alt) : ''}
         ${gone && it.note ? lab(it.status === 'ingetrokken' ? 'Ingetrokken' : 'Herzien') + para(it.note) : ''}
+        ${(it.actions || []).length ? lab('Acties') + it.actions.map(a => `<div style="display:flex;gap:8px;align-items:baseline;font-size:14px;line-height:1.5;color:${a.done ? C.muted : C.soft}">
+          <span style="flex:none;width:12px;height:12px;border-radius:3px;${a.done ? `background:${C.accent};` : 'border:1.5px solid #94a3b8;'}display:inline-block;transform:translateY(1px)"></span>
+          <span style="${a.done ? 'text-decoration:line-through;' : ''}">${esc(a.text)}${actMeta(a) ? `<span style="color:${C.muted}"> · ${esc(actMeta(a))}</span>` : ''}</span></div>`).join('') : ''}
         ${rep ? `<div style="font-size:12.5px;color:${C.soft};margin-top:8px">Vervangt: <em>${esc(rep.what)}</em></div>` : ''}
         ${by ? `<div style="font-size:12.5px;color:${C.soft};margin-top:8px">Vervangen door: <em>${esc(by.what)}</em></div>` : ''}
       </div></div>`;
@@ -1030,26 +1189,74 @@ function keepTogether(node, title, sub) {
   } finally { probe.remove(); node.remove(); }
 }
 
-function markdown(l) {
-  const out = [`# Beslissingen: ${l.name}`, ''];
-  for (const it of sorted(l.items)) {
+/* ---------- Mailen: opgemaakte tekst (text/html) en platte tekst zonder opmaaktekens ---------- */
+function forMail(l) { return [...l.items].sort((a, b) => (a.date || '').localeCompare(b.date || '') || a.created - b.created); }
+function mailSubject(l) { return `Beslissingen: ${l.name || 'Naamloos'}`; }
+function plainText(l) {
+  const out = [mailSubject(l), ''];
+  forMail(l).forEach((it, i) => {
     const tag = it.status !== 'genomen' ? ` (${STATUS[it.status].toLowerCase()})` : '';
-    out.push(`## ${it.what}${tag}`);
+    out.push(`${i + 1}. ${it.what}${tag}`);
     const meta = [fmtDate(it.date), it.who && `beslist door ${it.who}`].filter(Boolean).join(', ');
-    if (meta) out.push(`*${meta}*`, '');
-    if (it.why) out.push(`**Waarom:** ${it.why}`, '');
-    if (it.alt) out.push(`**Afgevallen:** ${it.alt}`, '');
-    if (it.note) out.push(`**${it.status === 'ingetrokken' ? 'Ingetrokken' : 'Herzien'}:** ${it.note}`, '');
-    const by = it.replacedBy && l.items.find(x => x.id === it.replacedBy);
-    if (by) out.push(`**Vervangen door:** ${by.what}`, '');
-    if (out[out.length - 1] !== '') out.push('');
-  }
+    if (meta) out.push(`   ${meta}`);
+    if (it.why) out.push(`   Waarom: ${it.why.replace(/\s*\n\s*/g, ' ')}`);
+    if (it.alt) out.push(`   Afgevallen: ${it.alt.replace(/\s*\n\s*/g, ' ')}`);
+    if (it.note && it.status !== 'genomen') out.push(`   ${it.status === 'ingetrokken' ? 'Ingetrokken' : 'Herzien'}: ${it.note.replace(/\s*\n\s*/g, ' ')}`);
+    const acts = (it.actions || []).filter(a => a.text.trim());
+    if (acts.length) {
+      out.push('   Acties:');
+      acts.forEach(a => out.push(`   • ${a.text}${actMeta(a) ? ` (${actMeta(a)})` : ''}${a.done ? ', klaar' : ''}`));
+    }
+    out.push('');
+  });
   return out.join('\n').trim() + '\n';
 }
+function htmlText(l) {
+  const items = forMail(l).map(it => {
+    const tag = it.status !== 'genomen' ? ` <span style="color:#64748b">(${STATUS[it.status].toLowerCase()})</span>` : '';
+    const meta = [fmtDate(it.date), it.who && `beslist door ${it.who}`].filter(Boolean).join(', ');
+    const acts = (it.actions || []).filter(a => a.text.trim());
+    return `<li style="margin:0 0 12px"><b>${esc(it.what)}</b>${tag}`
+      + (meta ? `<br><span style="color:#64748b">${esc(meta)}</span>` : '')
+      + (it.why ? `<br>Waarom: ${esc(it.why)}` : '')
+      + (it.alt ? `<br>Afgevallen: ${esc(it.alt)}` : '')
+      + (it.note && it.status !== 'genomen' ? `<br>${it.status === 'ingetrokken' ? 'Ingetrokken' : 'Herzien'}: ${esc(it.note)}` : '')
+      + (acts.length ? `<br>Acties:<ul style="margin:4px 0 0">${acts.map(a => `<li>${esc(a.text)}${actMeta(a) ? ` <span style="color:#64748b">(${esc(actMeta(a))})</span>` : ''}${a.done ? ', klaar' : ''}</li>`).join('')}</ul>` : '')
+      + '</li>';
+  }).join('');
+  return `<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.5;color:#1e293b"><p style="font-size:16px;margin:0 0 8px"><b>${esc(mailSubject(l))}</b></p><ol style="margin:0;padding-left:22px">${items}</ol></div>`;
+}
+async function copyForMail(l) {
+  if (!l.items.length) { toast('De log is nog leeg'); return false; }
+  const plain = plainText(l);
+  try {
+    if (window.ClipboardItem && navigator.clipboard && navigator.clipboard.write) {
+      await navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([htmlText(l)], { type:'text/html' }), 'text/plain': new Blob([plain], { type:'text/plain' }) })]);
+      toast('Gekopieerd. Plak het in je mail.'); return true;
+    }
+  } catch {}
+  if (await copy(plain)) { toast('Gekopieerd. Plak het in je mail.'); return true; }
+  toast('Kopiëren lukt hier niet'); return false;
+}
+// Een mail-link mag niet te lang zijn: veel mailprogramma's knippen af rond 2000 tekens.
+const MAILTO_MAX = 1800;
+async function mailGroup(l) {
+  if (!l.items.length) { toast('De log is nog leeg'); return; }
+  const url = `mailto:?subject=${encodeURIComponent(mailSubject(l))}&body=${encodeURIComponent(plainText(l))}`;
+  if (url.length > MAILTO_MAX) {
+    const ok = await copyForMail(l);
+    toast(ok ? 'Te lang voor een mail-link. De tekst staat klaar: open je mail en plak.' : 'Te lang voor een mail-link. Gebruik Kopieer voor e-mail.');
+    return;
+  }
+  location.href = url;
+}
+$('copy-mail').addEventListener('click', () => copyForMail(cur()));
+$('mail-btn').addEventListener('click', () => mailGroup(cur()));
 function downloadCSV(l) {
   const cell = v => `"${String(v || '').replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`;
-  const rows = [['Datum', 'Beslissing', 'Waarom', 'Beslist door', 'Alternatieven', 'Status', 'Notitie']]
-    .concat(sorted(l.items).map(it => [it.date, it.what, it.why, it.who, it.alt, STATUS[it.status], it.note]));
+  const rows = [['Datum', 'Beslissing', 'Waarom', 'Beslist door', 'Alternatieven', 'Status', 'Notitie', 'Acties']]
+    .concat(sorted(l.items).map(it => [it.date, it.what, it.why, it.who, it.alt, STATUS[it.status], it.note,
+      (it.actions || []).map(a => a.text + (actMeta(a) ? ` (${actMeta(a)})` : '') + (a.done ? ' [klaar]' : '')).join(' | ')]));
   const csv = '﻿' + rows.map(r => r.map(cell).join(';')).join('\r\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv], { type:'text/csv;charset=utf-8' }));
@@ -1069,6 +1276,7 @@ async function copy(text) {
 window.addEventListener('storage', e => { if (e.key === KEY) { state = load(); render(); } });
 
 render();
+try { ocPublish(); } catch {}
 </script>
 <script>
 /* Opnieuw beginnen: zichtbaar zodra er echt iets ingevuld is; start de eigen 'Alles wissen' van de tool.

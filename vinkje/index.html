@@ -211,10 +211,35 @@ button { background:none; border:0; cursor:pointer; }
 .toast button { min-height:44px; }
 .menu button { min-height:44px; }
 .del, .grip { width:44px; }
+.del { color:#64748b; }
+.del:hover { color:#b91c1c; background:#fef2f2; }
+.grip { color:#94a3b8; }
 .done-head .clear { display:inline-flex; align-items:center; justify-content:center; min-height:44px; min-width:44px; margin:-0.5rem 0; }
 .ocw-row .ocw-yes { background:#dc2626; } .ocw-row .ocw-yes:hover { background:#b91c1c; }
 .ocw-row button { min-height:44px; }
 button.oc-import { color:#047857; min-height:44px; }
+
+/* Lege invoer */
+.err { margin:-0.25rem 0.75rem 0.75rem; font-size:0.875rem; font-weight:500; color:#b91c1c; }
+.add-input[aria-invalid="true"] { border-color:#dc2626; background:#fff; }
+/* Wie en tegen wanneer: licht, alleen als je het aanzet */
+.oc-import-row { display:flex; flex-wrap:wrap; gap:0.25rem 0.5rem; align-items:center; }
+.who-toggle { display:inline-flex; align-items:center; gap:0.375rem; min-height:44px; padding:0 0.5rem; margin-left:-0.25rem; border-radius:8px; font-size:0.8125rem; font-weight:600; color:#475569; }
+.who-toggle svg { width:16px; height:16px; flex:none; }
+.who-toggle:hover { background:var(--slate-100); }
+.who-toggle[aria-pressed="true"] { color:var(--accent-dark); background:var(--accent-50); }
+.item .body { min-width:0; display:flex; flex-direction:column; }
+.item .body .text { padding-bottom:0.25rem; }
+.item .body .text:only-child { padding-bottom:0.75rem; }
+.item-meta { font-size:0.8125rem; color:var(--slate-500); padding:0 0.25rem 0.625rem 0; font-variant-numeric:tabular-nums; }
+.item-fields { display:flex; flex-wrap:wrap; gap:0.375rem; padding:0 0.25rem 0.625rem 0; }
+.item-fields label { display:flex; align-items:center; gap:0.25rem; min-height:44px; border:1px solid var(--slate-200); border-radius:8px; padding:0 0.5rem; background:var(--slate-50); font-size:0.8125rem; color:var(--slate-500); }
+.item-fields label:focus-within { border-color:var(--accent); background:#fff; }
+.item-fields svg { width:14px; height:14px; flex:none; }
+.item-fields input { border:0; background:none; outline:none; font-size:0.875rem; color:var(--slate-700); min-width:0; min-height:42px; }
+.item-fields input[type=text] { width:7.5rem; }
+.item-fields input[type=date] { width:8.5rem; }
+.item.done .item-fields { display:none; }
 
 /* Opnieuw beginnen (zelfde knop in elke tool) */
 .oc-restart-row { display:flex; justify-content:center; padding:0.5rem 0 0; }
@@ -226,9 +251,9 @@ button.oc-import { color:#047857; min-height:44px; }
 <body>
 
 <header class="header">
-  <a href="https://onderconstructie.github.io/projectmanagement/" class="back-link" aria-label="Terug naar Projectmanagement">
+  <a href="https://onderconstructie.github.io/projectmanagement/" class="back-link" aria-label="Terug naar Onder Constructie">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-    Projectmanagement
+    Onder Constructie
   </a>
   <div class="logo">
     <svg viewBox="0 0 80 80" fill="none" aria-hidden="true">
@@ -290,12 +315,13 @@ button.oc-import { color:#047857; min-height:44px; }
     </div>
 
     <form class="add-row" id="add-form" autocomplete="off">
-      <input class="add-input" id="add-input" placeholder="Nieuw item, of plak een hele lijst" aria-label="Nieuw item" enterkeyhint="done">
+      <input class="add-input" id="add-input" placeholder="Nieuw item, of plak een hele lijst" aria-label="Nieuw item" enterkeyhint="done" aria-describedby="add-err">
       <button class="add-btn" type="submit" aria-label="Toevoegen">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
       </button>
     </form>
-    <div class="oc-import-row" style="padding:0 0.75rem 0.75rem;margin-top:-0.25rem"><button type="button" class="oc-import" data-oc-types="taak,actie" id="oc-imp" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11M7.5 9.5L12 14l4.5-4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>Overnemen uit…</button></div>
+    <p class="err" id="add-err" hidden>Typ eerst wat je wil afvinken.</p>
+    <div class="oc-import-row" style="padding:0 0.75rem 0.75rem;margin-top:-0.25rem"><button type="button" class="who-toggle" id="who-toggle" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M3 20a6 6 0 0 1 12 0"/><rect x="15" y="12" width="7" height="7" rx="1.5"/><path d="M15 14.5h7"/></svg>Wie en tegen wanneer</button><button type="button" class="oc-import" data-oc-types="taak,actie" id="oc-imp" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11M7.5 9.5L12 14l4.5-4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>Overnemen uit…</button></div>
 
     <ul class="items" id="open-items"></ul>
     <div class="empty" id="empty" hidden></div>
@@ -515,7 +541,7 @@ function ocUndoable(restore) {
 }
 
 function ocPublish() {
-  ocShare.publish(OC_ID, OC_TOOL, state.lists.filter(l => !l.voorbeeld).map(l => ({ name:l.name, items:l.items.filter(i => !i.done).map(i => ({ type:'taak', text:i.text })) })));
+  ocShare.publish(OC_ID, OC_TOOL, state.lists.filter(l => !l.voorbeeld).map(l => ({ name:l.name, items:l.items.filter(i => !i.done).map(i => (i.who || i.when) ? ({ type:'actie', text:i.text, who:i.who || undefined, when:i.when || undefined }) : ({ type:'taak', text:i.text })) })));
 }
 
 async function ocWipeAll() {
@@ -535,10 +561,13 @@ document.addEventListener('click', async e => {
   const l = cur(), have = new Set(l.items.map(i => i.text.toLowerCase())), restore = snapshot();
   let n = 0;
   picked.forEach(p => {
-    const extra = [p.who, p.when].filter(Boolean).join(', ');
-    const text = (p.text + (extra ? ` (${extra})` : '')).slice(0, 500);
+    const text = String(p.text).slice(0, 500);
     if (have.has(text.toLowerCase())) return; have.add(text.toLowerCase());
-    l.items.push({ id:uid(), text, done:false }); n++;
+    const it = { id:uid(), text, done:false };
+    if (p.who) it.who = String(p.who).slice(0, 80);
+    if (p.when && /^\d{4}-\d{2}-\d{2}$/.test(p.when)) it.when = p.when;
+    if (it.who || it.when) l.fields = true;
+    l.items.push(it); n++;
   });
   save(); render();
   toast(n ? `${n} ${n === 1 ? 'item' : 'items'} overgenomen` : 'Alles stond al in je lijst', n ? restore : undefined);
@@ -678,10 +707,24 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
 const ICON_DEL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_GRIP = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>';
 
+const ICON_USER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>';
+const ICON_CAL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>';
+function fmtWhen(iso) {
+  if (!iso) return '';
+  const d = new Date(iso + 'T12:00:00');
+  return isNaN(d) ? iso : d.toLocaleDateString('nl-BE', { day:'numeric', month:'short' });
+}
+function metaText(it) { return [it.who, it.when ? 'tegen ' + fmtWhen(it.when) : ''].filter(Boolean).join(' · '); }
 function itemHTML(it) {
+  const fields = cur().fields && !it.done;
+  const meta = !fields && (it.who || it.when) ? `<div class="item-meta">${esc(metaText(it))}</div>` : '';
+  const edit = fields ? `<div class="item-fields">
+      <label title="Wie">${ICON_USER}<input type="text" data-f="who" value="${esc(it.who || '')}" placeholder="wie" aria-label="Wie" maxlength="80"></label>
+      <label title="Tegen wanneer">${ICON_CAL}<input type="date" data-f="when" value="${esc(it.when || '')}" aria-label="Tegen wanneer"></label>
+    </div>` : '';
   return `<li class="item${it.done ? ' done' : ''}" data-id="${it.id}">
     <button class="check" aria-label="${it.done ? 'Niet meer afgevinkt' : 'Afvinken'}"><span class="box">${ICON_CHECK}</span></button>
-    <div class="text" contenteditable="plaintext-only" spellcheck="false" enterkeyhint="done">${esc(it.text)}</div>
+    <div class="body"><div class="text" contenteditable="plaintext-only" spellcheck="false" enterkeyhint="done">${esc(it.text)}</div>${meta}${edit}</div>
     <div class="item-actions">
       <button class="del" aria-label="Verwijder">${ICON_DEL}</button>
       ${it.done ? '' : `<span class="grip" aria-hidden="true">${ICON_GRIP}</span>`}
@@ -721,6 +764,7 @@ function render() {
   $('empty').innerHTML = '<strong>Nog leeg</strong>Typ een item, of plak een lijst uit een mail of document.'
     + (state.lists.some(x => x.voorbeeld) ? '' : '<br><button type="button" class="ex-btn" id="vb-show">Voorbeeld bekijken</button>');
   $('vb-bar').hidden = !l.voorbeeld;
+  $('who-toggle').setAttribute('aria-pressed', String(!!l.fields));
   $('export-row').hidden = total === 0;
   $('hint') && ($('hint').hidden = total > 0);
   renderTabs();
@@ -752,11 +796,31 @@ function addFrom(text) {
   save(); render();
   return items.length;
 }
+function showErr(on) {
+  $('add-err').hidden = !on;
+  if (on) $('add-input').setAttribute('aria-invalid', 'true'); else $('add-input').removeAttribute('aria-invalid');
+}
 $('add-form').addEventListener('submit', e => {
   e.preventDefault();
   const v = $('add-input').value;
+  if (!v.trim()) { showErr(true); $('add-input').focus(); return; }
+  showErr(false);
   if (addFrom(v)) $('add-input').value = '';
   $('add-input').focus();
+});
+$('add-input').addEventListener('input', () => { if (!$('add-err').hidden) showErr(false); });
+/* Wie en tegen wanneer aan- of uitzetten voor deze lijst */
+$('who-toggle').addEventListener('click', () => {
+  const l = cur(); l.fields = !l.fields; if (!l.fields) delete l.fields;
+  save(); render();
+  if (l.fields) { const f = document.querySelector('#open-items .item-fields input'); f && f.focus(); }
+});
+document.addEventListener('change', e => {
+  const inp = e.target.closest && e.target.closest('.item [data-f]'); if (!inp) return;
+  const { it } = findItem(inp); if (!it) return;
+  const v = inp.value.trim().slice(0, 80);
+  if (v) it[inp.dataset.f] = v; else delete it[inp.dataset.f];
+  save(); renderTabs();
 });
 $('add-input').addEventListener('paste', e => {
   const text = (e.clipboardData || window.clipboardData).getData('text');
@@ -923,12 +987,13 @@ $('menu').addEventListener('click', async e => {
     return;
   }
   if (act === 'copy') {
-    const txt = `${l.name}\n\n` + l.items.map(i => `- [${i.done ? 'x' : ' '}] ${i.text}`).join('\n');
+    const txt = `${l.name}\n\n` + l.items.map(i => `- [${i.done ? 'x' : ' '}] ${i.text}${metaText(i) ? ` (${metaText(i)})` : ''}`).join('\n');
     await copy(txt) ? toast('Gekopieerd als tekst') : toast('Kopiëren lukt hier niet');
   }
   if (act === 'share') shareList(l);
   if (act === 'duplicate') {
-    newList(l.name + ' (kopie)', l.items.map(i => ({ id:uid(), text:i.text, done:false })));
+    const copyL = newList(l.name + ' (kopie)', l.items.map(i => Object.assign({ id:uid(), text:i.text, done:false }, i.who ? { who:i.who } : {}, i.when ? { when:i.when } : {})));
+    if (l.fields) { copyL.fields = true; save(); render(); }
     toast('Kopie gemaakt, alle vinkjes open');
   }
   if (act === 'delete') deleteList(l);
@@ -992,6 +1057,8 @@ function buildExport(l) {
     if (isDone) box.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
     const t = document.createElement('div');
     t.textContent = it.text;
+    const m = metaText(it);
+    if (m) { const sm = document.createElement('div'); sm.textContent = m; sm.style.cssText = 'font-size:13px;color:#64748b;text-decoration:none;margin-top:1px;'; t.appendChild(sm); }
     t.style.cssText = isDone
       ? 'font-size:16px;line-height:1.5;color:#94a3b8;text-decoration:line-through;text-decoration-color:#cbd5e1;word-break:break-word;'
       : 'font-size:16px;line-height:1.5;color:#1e293b;word-break:break-word;';
@@ -1022,7 +1089,7 @@ async function copy(text) {
 
 /* ---------- Delen via link: de lijst zit in de URL, er gaat niets naar een server ---------- */
 function encode(l) {
-  const data = JSON.stringify({ n:l.name, i:l.items.map(i => i.done ? [i.text, 1] : [i.text]) });
+  const data = JSON.stringify({ n:l.name, i:l.items.map(i => (i.who || i.when) ? [i.text, i.done ? 1 : 0, i.who || '', i.when || ''] : i.done ? [i.text, 1] : [i.text]) });
   const bytes = new TextEncoder().encode(data);
   let bin = ''; bytes.forEach(b => bin += String.fromCharCode(b));
   return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -1033,7 +1100,8 @@ function decode(s) {
     const d = JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0))));
     if (!d || !Array.isArray(d.i)) return null;
     return { name:String(d.n || 'Gedeelde lijst').slice(0, 60),
-             items:d.i.slice(0, 500).map(x => ({ id:uid(), text:String(x[0] || '').slice(0, 500), done:!!x[1] })).filter(x => x.text) };
+             items:d.i.slice(0, 500).map(x => { const it = { id:uid(), text:String(x[0] || '').slice(0, 500), done:!!x[1] };
+               if (x[2]) it.who = String(x[2]).slice(0, 80); if (x[3] && /^\d{4}-\d{2}-\d{2}$/.test(x[3])) it.when = String(x[3]); return it; }).filter(x => x.text) };
   } catch { return null; }
 }
 async function shareList(l) {

@@ -253,10 +253,13 @@ button { background:none; border:0; cursor:pointer; }
   position:fixed; top:0.75rem; right:0.75rem; z-index:40; display:none;
   background:var(--wit); border:1px solid var(--slate-200); box-shadow:0 4px 14px rgba(15,23,42,0.1);
 }
-body.present .header, body.present .footer, body.present .lists, body.present .add-row, body.present .col-hint,
+body.present .header, body.present .footer, body.present .lists, body.present .col-hint, body.present .oc-restart-row,
 body.present .del, body.present .mini, body.present .vote-btn, body.present .presets, body.present .top-actions,
-body.present .carried-tools, body.present .action-fields input:placeholder-shown, body.present .board-bar .sort-btn,
-body.present #action-add { display:none !important; }
+body.present .carried-tools, body.present .action-fields input:placeholder-shown, body.present .board-bar .sort-btn { display:none !important; }
+body.present .add-input { font-size:1.125rem; }
+body.present .add-row[data-col] { padding-top:0.5rem; }
+body.present .retro-name { text-overflow:ellipsis; }
+@media (max-width:640px) { body.present .main { padding-top:4rem; } body.present .retro-name { font-size:1.375rem; } }
 body.present .exit-present { display:inline-flex; }
 body.present .main { max-width:none; padding:1.25rem 2rem 2rem; }
 body.present .retro-name { font-size:1.75rem; pointer-events:none; }
@@ -354,9 +357,9 @@ body.present .vb-bar { display:none; }
 <body>
 
 <header class="header">
-  <a href="https://onderconstructie.github.io/projectmanagement/" class="back-link" aria-label="Terug naar Projectmanagement">
+  <a href="https://onderconstructie.github.io/projectmanagement/" class="back-link" aria-label="Terug naar Onder Constructie">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-    Projectmanagement
+    Onder Constructie
   </a>
   <div class="logo">
     <svg viewBox="0 0 80 80" fill="none" aria-hidden="true">
@@ -392,8 +395,8 @@ body.present .vb-bar { display:none; }
       </button>
     </div>
     <div class="top-actions">
-      <button class="btn btn-soft" id="present-btn" title="Presenteermodus (voor projectie)" aria-label="Presenteer">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M12 16v4M8 20h8"/></svg><span class="lbl-txt">Presenteer</span>
+      <button class="btn btn-soft" id="present-btn" title="Toon op groot scherm (voor projectie)" aria-label="Toon op groot scherm">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M12 16v4M8 20h8"/></svg><span class="lbl-txt">Toon op groot scherm</span>
       </button>
       <button class="icon-btn icon-del" id="del-btn" type="button" aria-label="Verwijder retro" title="Verwijder retro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg></button>
       <div class="menu-wrap">
@@ -456,7 +459,7 @@ body.present .vb-bar { display:none; }
 </main>
 
 <button class="btn exit-present" id="exit-present">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>Stop presenteren
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>Sluit groot scherm
 </button>
 
 <footer class="footer">
@@ -776,9 +779,9 @@ const ocExport = (() => {
 
 /* ---------- Formaten ---------- */
 const FORMATS = {
-  ssd: { name:'Start / Stop / Doorgaan', cols:[
-    { t:'Start', h:'Waar beginnen we mee?', c:'#10b981' },
-    { t:'Stop', h:'Wat laten we vallen?', c:'#64748b' },
+  ssd: { name:'Beginnen met / Stoppen met / Doorgaan', cols:[
+    { t:'Beginnen met', h:'Wat gaan we nieuw doen?', c:'#10b981' },
+    { t:'Stoppen met', h:'Wat laten we vallen?', c:'#64748b' },
     { t:'Doorgaan', h:'Wat werkt en houden we?', c:'#047857' } ] },
   gba: { name:'Goed / Beter / Acties', cols:[
     { t:'Goed', h:'Wat ging goed?', c:'#10b981' },
@@ -795,8 +798,11 @@ const KEY = 'retro.v1';
 const uid = () => Math.random().toString(36).slice(2, 10);
 const today = () => new Date().toISOString().slice(0, 10);
 const fmtDate = iso => { if (!iso) return ''; const [y, m, d] = iso.split('-'); return `${+d}/${+m}/${y}`; };
+function ocProject(fb) { try { const p = JSON.parse(localStorage.getItem('oc.project')); return p && typeof p.name === 'string' && p.name.trim() ? p.name.trim().slice(0, 80) : fb; } catch { return fb; } }
+// Standaardnaam: de projectnaam uit de app (oc.project), anders 'Retro'; met de datum erbij.
+const defaultName = iso => `${ocProject('Retro').slice(0, 48)} ${fmtDate(iso || today())}`;
 function newRetro(opts = {}) {
-  return { id:uid(), name:opts.name || `Retro ${fmtDate(today())}`, date:today(), format:opts.format || 'ssd',
+  return { id:uid(), name:opts.name || defaultName(), date:today(), format:opts.format || 'ssd',
            cards:[], actions:[], carried:opts.carried || [] };
 }
 function load() {
@@ -1107,7 +1113,7 @@ $('sort-btn').addEventListener('click', () => { state.sortVotes = !state.sortVot
 /* ---------- Naam ---------- */
 $('retro-name').addEventListener('input', () => { cur().name = $('retro-name').value.slice(0, 60); save(); renderTabs(); });
 $('retro-name').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('retro-name').blur(); } });
-$('retro-name').addEventListener('blur', () => { if (!cur().name.trim()) { cur().name = `Retro ${fmtDate(cur().date)}`; save(); render(); } });
+$('retro-name').addEventListener('blur', () => { if (!cur().name.trim()) { cur().name = defaultName(cur().date); save(); render(); } });
 
 /* ---------- Nieuwe retro ---------- */
 function openActionsOf(r) { return [...r.carried, ...r.actions].filter(a => !a.done); }
@@ -1119,7 +1125,7 @@ function openNewDialog() {
   back.innerHTML = `<div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dlg-t">
     <h2 id="dlg-t">Nieuwe retro</h2>
     <label class="lbl" for="dlg-name">Naam</label>
-    <input class="text-in" id="dlg-name" maxlength="60" value="${esc(`Retro ${fmtDate(today())}`)}">
+    <input class="text-in" id="dlg-name" maxlength="60" value="${esc(defaultName())}">
     <span class="lbl">Formaat</span>
     <div class="formats">
       ${Object.entries(FORMATS).map(([k, f]) => `<label class="fmt"><input type="radio" name="fmt" value="${k}" ${k === (prev.format || 'ssd') ? 'checked' : ''}><div><strong>${esc(f.name)}</strong><br><span>${esc(f.cols.map(c => c.h).join(' · '))}</span></div></label>`).join('')}
@@ -1199,7 +1205,6 @@ function exportView(r) {
   const own = String(r.name || '').replace(/\b\d{1,2}\/\d{1,2}\/\d{4}\b/g, '').replace(/\s+/g, ' ').trim();
   return { node, title:'Retro', subtitle: own && own.toLowerCase() !== 'retro' ? `${own} · ${F.name}` : F.name };
 }
-function ocProject(fb) { try { const p = JSON.parse(localStorage.getItem('oc.project')); return p && typeof p.name === 'string' && p.name.trim() ? p.name.trim().slice(0, 80) : fb; } catch { return fb; } }
 /* Bestandsnaam: tool-project-datum (JJJJ-MM-DD), zonder dubbele datum of dubbele toolnaam */
 function ocFileName(tool, project) {
   const d = new Date(), iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -1316,7 +1321,8 @@ function showClock() {
   const go = $('timer-go');
   go.querySelector('span').textContent = timer.running ? 'Pauze' : (timer.left < timer.total && timer.left > 0 ? 'Verder' : 'Start');
   go.querySelector('svg').innerHTML = timer.running ? '<path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/>' : '<path d="M8 5.5v13l10.5-6.5z"/>';
-  document.querySelectorAll('#presets [data-min]').forEach(b => b.classList.toggle('on', b.dataset.min !== 'custom' && +b.dataset.min * 60 === timer.total));
+  const preset = [3, 5, 10].some(m => m * 60 === timer.total);
+  document.querySelectorAll('#presets [data-min]').forEach(b => { const on = b.dataset.min === 'custom' ? !preset : +b.dataset.min * 60 === timer.total; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
   if (timer.running) document.title = `${$('clock').textContent} · Retro`;
 }
 async function wake(on) {
