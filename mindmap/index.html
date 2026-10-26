@@ -546,17 +546,9 @@ const LV = [
   { fill:'#ffffff', line:'#94a3b8', ink:'#334155', w:1.5 },
   { fill:'#ecfdf5', line:'#6ee7b7', ink:'#065f46', w:1.3 }
 ];
-// Om de andere hoofdtak start met grijs in plaats van groen, zodat ook buren goed verschillen.
-const LVB = [
-  LV[0],
-  { fill:'#ffffff', line:'#64748b', ink:'#334155', w:2.6 },
-  { fill:'#d1fae5', line:'#34d399', ink:'#064e3b', w:2 },
-  { fill:'#e2e8f0', line:'#94a3b8', ink:'#1e293b', w:1.8 },
-  { fill:'#ffffff', line:'#10b981', ink:'#065f46', w:1.5 },
-  { fill:'#f1f5f9', line:'#cbd5e1', ink:'#334155', w:1.3 }
-];
-const lv = (d, br = 0) => (br % 2 ? LVB : LV)[Math.min(d, LV.length - 1)];
-const col = b => lv(b.depth, b.br || 0);
+// Binnen eenzelfde niveau altijd dezelfde kleur.
+const lv = d => LV[Math.min(d, LV.length - 1)];
+const col = b => lv(b.depth);
 const ICON = {
   left:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>',
   right:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>',
@@ -656,7 +648,7 @@ function layout(m) {
   const right = [], left = [];
   main.forEach((k, i) => { (acc < total / 2 || i === 0 ? right : left).push(k); acc += k.span; });
   const place = (t, x, yTop, dir, br) => {
-    t.br = br; t.color = lv(t.depth, br).line; t.y = yTop + t.span / 2 - t.h / 2; t.x = dir > 0 ? x : x - t.w; t.dir = dir;
+    t.color = lv(t.depth).line; t.y = yTop + t.span / 2 - t.h / 2; t.x = dir > 0 ? x : x - t.w; t.dir = dir;
     let y = yTop + (t.span - visKids(t).reduce((s, k) => s + k.span, 0)) / 2;
     visKids(t).forEach(k => { place(k, dir > 0 ? t.x + t.w + GAPX : t.x - GAPX, y, dir, br); y += k.span; });
   };
@@ -727,8 +719,7 @@ function sizeSvg(el, center = true) {
   if (!fit && c && center) { const r = el.querySelector('[data-node] rect'); if (r) c.scrollLeft = Math.max(0, +r.getAttribute('x') + +r.getAttribute('width') / 2 - c.clientWidth / 2); }
 }
 function branchColor(m, i) {
-  let br = -1; for (let j = 1; j <= i; j++) if (m.nodes[j].level === 1) br++;
-  return lv(m.nodes[i].level, Math.max(0, br)).line;
+  return lv(m.nodes[i].level).line;
 }
 function render() {
   const m = cur();
@@ -1118,35 +1109,34 @@ const TEMPLATES = {
 4. Wat houdt het vandaag tegen?
 5. Wie moet wat doen om het op te lossen?
 6. Wie volgt op of het werkt?` },
-  businesscase: { name:'Voorstel onderbouwen', desc:'Wat stel je voor, en waarom? Drie mogelijkheden naast elkaar, op dezelfde punten vergeleken.', root: p => p ? 'Voorstel onderbouwen: ' + p : 'Voorstel onderbouwen', lines:`
-Wat stel je precies voor, en waarom nu?
-A. Niets veranderen
-  Wat het oplevert
-  Wat het moeilijk maakt
-  Hoe lang het duurt
-  Wat het kost
-    Mensen
-    Aankopen
+  businesscase: { name:'Business case', desc:'Wat wil je precies rechtvaardigen? Drie mogelijkheden naast elkaar, op dezelfde punten vergeleken.', root: p => p ? 'Wat wil je precies rechtvaardigen? (' + p + ')' : 'Wat wil je precies rechtvaardigen?', lines:`
+A. Niets doen
+  Verwachte voordelen
+  Verwachte nadelen
+  Tijdschema
+  Kosten
+    Personeel
+    Investering
     Onderhoud
-  Risico's en waar het van afhangt
+  Risico's en afhankelijkheden
 B. Het minimum doen
-  Wat het oplevert
-  Wat het moeilijk maakt
-  Hoe lang het duurt
-  Wat het kost
-    Mensen
-    Aankopen
+  Verwachte voordelen
+  Verwachte nadelen
+  Tijdschema
+  Kosten
+    Personeel
+    Investering
     Onderhoud
-  Risico's en waar het van afhangt
-C. Het volledig aanpakken
-  Wat het oplevert
-  Wat het moeilijk maakt
-  Hoe lang het duurt
-  Wat het kost
-    Mensen
-    Aankopen
+  Risico's en afhankelijkheden
+C. Iets doen
+  Verwachte voordelen
+  Verwachte nadelen
+  Tijdschema
+  Kosten
+    Personeel
+    Investering
     Onderhoud
-  Risico's en waar het van afhangt` },
+  Risico's en afhankelijkheden` },
   projectaanpak: { name:'Projectaanpak', desc:'Tien takken om een project voor te bereiden, van doel tot gebouw en informatica.', lines:`
 Doel
   Probleemanalyse: waarom dit project?
