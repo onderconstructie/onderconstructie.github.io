@@ -535,18 +535,28 @@ const OC_ID = 'mindmap', OC_TOOL = 'Ideeënkaart', KEY = 'mindmap.v1';
 const $ = id => document.getElementById(id);
 const esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
 const uid = () => Math.random().toString(36).slice(2, 10);
-// Takkleuren: alleen groen- en blauwgroentinten, in de sfeer van de app.
-// Elk niveau een eigen tint, van donkergroen in het midden naar licht en grijs aan de rand.
+// Takkleuren: groen en grijs, om beurten, zodat twee niveaus naast elkaar altijd duidelijk verschillen.
+// Vol groen in het midden, dan wit met groene rand, grijs, lichtgroen, wit met grijze rand, lichtgrijs.
 // fill = vak, line = rand en verbindingslijn, ink = tekst (contrast ≥ 4.5:1 op het vak)
 const LV = [
-  { fill:'#064e3b', line:'#064e3b', ink:'#ffffff', w:3 },
   { fill:'#047857', line:'#047857', ink:'#ffffff', w:3 },
-  { fill:'#a7f3d0', line:'#10b981', ink:'#064e3b', w:2.2 },
-  { fill:'#d1fae5', line:'#34d399', ink:'#1e293b', w:1.8 },
-  { fill:'#f0fdf4', line:'#6ee7b7', ink:'#1e293b', w:1.5 },
-  { fill:'#ffffff', line:'#94a3b8', ink:'#1e293b', w:1.3 }
+  { fill:'#ffffff', line:'#10b981', ink:'#065f46', w:2.6 },
+  { fill:'#e2e8f0', line:'#94a3b8', ink:'#1e293b', w:2 },
+  { fill:'#d1fae5', line:'#34d399', ink:'#064e3b', w:1.8 },
+  { fill:'#ffffff', line:'#94a3b8', ink:'#334155', w:1.5 },
+  { fill:'#ecfdf5', line:'#6ee7b7', ink:'#065f46', w:1.3 }
 ];
-const lv = d => LV[Math.min(d, LV.length - 1)];
+// Om de andere hoofdtak start met grijs in plaats van groen, zodat ook buren goed verschillen.
+const LVB = [
+  LV[0],
+  { fill:'#ffffff', line:'#64748b', ink:'#334155', w:2.6 },
+  { fill:'#d1fae5', line:'#34d399', ink:'#064e3b', w:2 },
+  { fill:'#e2e8f0', line:'#94a3b8', ink:'#1e293b', w:1.8 },
+  { fill:'#ffffff', line:'#10b981', ink:'#065f46', w:1.5 },
+  { fill:'#f1f5f9', line:'#cbd5e1', ink:'#334155', w:1.3 }
+];
+const lv = (d, br = 0) => (br % 2 ? LVB : LV)[Math.min(d, LV.length - 1)];
+const col = b => lv(b.depth, b.br || 0);
 const ICON = {
   left:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>',
   right:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>',
@@ -645,16 +655,16 @@ function layout(m) {
   const main = visKids(root), total = main.reduce((s, k) => s + k.span, 0); let acc = 0;
   const right = [], left = [];
   main.forEach((k, i) => { (acc < total / 2 || i === 0 ? right : left).push(k); acc += k.span; });
-  const place = (t, x, yTop, dir, color) => {
-    t.color = lv(t.depth).line; t.y = yTop + t.span / 2 - t.h / 2; t.x = dir > 0 ? x : x - t.w; t.dir = dir;
+  const place = (t, x, yTop, dir, br) => {
+    t.br = br; t.color = lv(t.depth, br).line; t.y = yTop + t.span / 2 - t.h / 2; t.x = dir > 0 ? x : x - t.w; t.dir = dir;
     let y = yTop + (t.span - visKids(t).reduce((s, k) => s + k.span, 0)) / 2;
-    visKids(t).forEach(k => { place(k, dir > 0 ? t.x + t.w + GAPX : t.x - GAPX, y, dir, color); y += k.span; });
+    visKids(t).forEach(k => { place(k, dir > 0 ? t.x + t.w + GAPX : t.x - GAPX, y, dir, br); y += k.span; });
   };
   const sideH = list => list.reduce((s, k) => s + k.span, 0);
   const H = Math.max(sideH(right), sideH(left), root.h + GAPY);
   root.x = -root.w / 2; root.y = H / 2 - root.h / 2; root.color = lv(0).line;
-  let y = (H - sideH(right)) / 2; right.forEach(k => { place(k, root.w / 2 + GAPX + 10, y, 1, null); y += k.span; });
-  y = (H - sideH(left)) / 2; left.forEach(k => { place(k, -root.w / 2 - GAPX - 10, y, -1, null); y += k.span; });
+  let y = (H - sideH(right)) / 2; right.forEach(k => { place(k, root.w / 2 + GAPX + 10, y, 1, main.indexOf(k)); y += k.span; });
+  y = (H - sideH(left)) / 2; left.forEach(k => { place(k, -root.w / 2 - GAPX - 10, y, -1, main.indexOf(k)); y += k.span; });
   const walk = (t, parent) => { boxes.push(t); if (parent) links.push({ a:parent, b:t }); visKids(t).forEach(k => walk(k, t)); };
   walk(root, null);
   const minX = Math.min(...boxes.map(b => b.x)), maxX = Math.max(...boxes.map(b => b.x + b.w + (b.n.collapsed && b.kids.length ? 26 : 0))), minX2 = Math.min(minX, ...boxes.filter(b => b.n.collapsed && b.kids.length && b.dir < 0).map(b => b.x - 26));
@@ -669,15 +679,15 @@ function svgOf(m, opts = {}) {
   out.push(`<rect width="${L.width}" height="${L.height}" fill="#ffffff"/>`);
   L.links.forEach(({ a, b }) => {
     const ax = b.dir > 0 ? a.x + a.w : a.x, ay = a.y + a.h / 2, bx = b.dir > 0 ? b.x : b.x + b.w, by = b.y + b.h / 2, mx = (ax + bx) / 2;
-    out.push(`<path d="M${ax} ${ay}C${mx} ${ay} ${mx} ${by} ${bx} ${by}" fill="none" stroke="${lv(b.depth).line}" stroke-width="${lv(b.depth).w}" stroke-linecap="round"/>`);
+    out.push(`<path d="M${ax} ${ay}C${mx} ${ay} ${mx} ${by} ${bx} ${by}" fill="none" stroke="${col(b).line}" stroke-width="${col(b).w}" stroke-linecap="round"/>`);
   });
   L.boxes.forEach(b => {
     const root = b.depth === 0, lvl1 = b.depth === 1, on = ui && opts.sel === b.n.id;
     out.push(ui ? `<g data-node="${b.n.id}" class="${on ? 'sel' : ''}">` : '<g>');
     if (b.cut) out.push(`<title>${esc(b.full)}</title>`);
     if (on) out.push(`<rect x="${b.x - 4}" y="${b.y - 4}" width="${b.w + 8}" height="${b.h + 8}" rx="${root ? 19 : 13}" fill="none" stroke="#1e293b" stroke-width="2"/>`);
-    const c = lv(b.depth);
-    out.push(`<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="${root ? 16 : lvl1 ? 11 : 9}" fill="${c.fill}" stroke="${c.line}" stroke-width="${b.depth < 2 ? 0 : 1.3}"/>`);
+    const c = col(b);
+    out.push(`<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="${root ? 16 : lvl1 ? 11 : 9}" fill="${c.fill}" stroke="${c.line}" stroke-width="${root ? 0 : lvl1 ? 2 : 1.3}"/>`);
     const ty = b.y + b.h / 2 - (b.lines.length - 1) * (b.fs + 4) / 2 + b.fs * 0.35, cx = b.x + b.w / 2;
     out.push(`<text x="${cx}" text-anchor="middle" font-size="${b.fs}" font-weight="${root ? 700 : lvl1 ? 600 : 500}" fill="${c.ink}" opacity="${!b.n.text ? 0.7 : b.n.hint && !b.kids.length ? 0.78 : 1}"${b.n.hint && !b.kids.length ? ' font-style="italic"' : ''}>${b.lines.map((l, i) => `<tspan x="${cx}" y="${ty + i * (b.fs + 4)}">${esc(l)}</tspan>`).join('')}</text>`);
     out.push('</g>');
@@ -716,7 +726,10 @@ function sizeSvg(el, center = true) {
   if (c) c.classList.toggle('pan', !fit);
   if (!fit && c && center) { const r = el.querySelector('[data-node] rect'); if (r) c.scrollLeft = Math.max(0, +r.getAttribute('x') + +r.getAttribute('width') / 2 - c.clientWidth / 2); }
 }
-function branchColor(m, i) { return lv(m.nodes[i].level).line; }
+function branchColor(m, i) {
+  let br = -1; for (let j = 1; j <= i; j++) if (m.nodes[j].level === 1) br++;
+  return lv(m.nodes[i].level, Math.max(0, br)).line;
+}
 function render() {
   const m = cur();
   if (m && state.current !== m.id) state.current = m.id;
