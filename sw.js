@@ -4,14 +4,16 @@
   maar hij bemoeit zich alleen met de paden hieronder. Al de rest van de site gaat ongemoeid naar het netwerk.
   Wordt enkel geregistreerd wie /app/ opent.
 */
-const VERSION = 'oc-app-v32';
+const VERSION = 'oc-app-v33';
 
 const SHELL = [
-  '/app/', '/tools.json', '/app/manifest.webmanifest', '/app/icon.svg',
+  '/app/', '/tools.json', '/privacy/', '/app/manifest.webmanifest', '/app/icon.svg',
   '/app/icon-180.png', '/app/icon-192.png', '/app/icon-512.png', '/app/icon-maskable.png',
   // eigen lettertypes: geen verkeer naar externe lettertypediensten, en altijd offline beschikbaar
   '/fonts/fonts.css', '/fonts/dm-sans-latin-400-normal.woff2', '/fonts/dm-sans-latin-ext-400-normal.woff2', '/fonts/dm-sans-latin-500-normal.woff2', '/fonts/dm-sans-latin-ext-500-normal.woff2', '/fonts/dm-sans-latin-600-normal.woff2', '/fonts/dm-sans-latin-ext-600-normal.woff2', '/fonts/dm-sans-latin-700-normal.woff2', '/fonts/dm-sans-latin-ext-700-normal.woff2', '/fonts/jetbrains-mono-latin-400-normal.woff2', '/fonts/jetbrains-mono-latin-500-normal.woff2', '/fonts/jetbrains-mono-latin-600-normal.woff2', '/fonts/jetbrains-mono-latin-700-normal.woff2'
 ];
+// Losse pagina's die ook offline moeten werken (de app linkt ernaar).
+const PAGES = ['/privacy/'];
 // Welke tools offline bewaard worden, staat in /tools.json (gebouwd uit de metatags in de tools).
 let TOOLS = [];
 async function toolPaths(cache) {
@@ -86,7 +88,7 @@ self.addEventListener('message', e => {
 // Een nieuwe toollijst: ontbrekende tools meteen offline bewaren, verdwenen tools uit de bewaarde versie halen.
 async function syncTools(cache) {
   const paths = await toolPaths(cache), have = (await cache.keys()).map(r => new URL(r.url));
-  const ownTool = u => u.origin === location.origin && !u.pathname.startsWith('/app/') && u.pathname !== '/tools.json';
+  const ownTool = u => u.origin === location.origin && !u.pathname.startsWith('/app/') && u.pathname !== '/tools.json' && !PAGES.includes(norm(u.pathname));
   await Promise.allSettled([
     ...paths.map(async u => {
       if (await cache.match(u)) return;
@@ -138,7 +140,7 @@ self.addEventListener('fetch', e => {
   if (url.origin === location.origin) {
     const path = url.pathname === '/tools.json' ? '/tools.json' : norm(url.pathname);
     if (url.pathname.startsWith('/fonts/') || url.pathname.startsWith('/lib/')) { e.respondWith(cacheFirst(e)); return; }
-    if (path.startsWith('/app/') || path === '/tools.json') { e.respondWith(networkFirst(e, path)); return; }
+    if (path.startsWith('/app/') || path === '/tools.json' || PAGES.includes(path)) { e.respondWith(networkFirst(e, path)); return; }
     if (TOOLS.length) {
       if (!isOurs(path, TOOLS)) return;   // de rest van de site: niet aankomen
       e.respondWith(networkFirst(e, path));
