@@ -205,7 +205,8 @@ input[type=range]:focus-visible::-webkit-slider-thumb { box-shadow:0 0 0 4px var
   transition:transform 0.25s ease, visibility 0s 0.25s; max-width:calc(100% - 2rem);
 }
 .toast.show { transform:translate(-50%, 0); visibility:visible; transition:transform 0.25s ease; }
-.toast button { color:#6ee7b7; font-weight:600; padding:0.25rem 0.5rem; border-radius:6px; }
+.toast button { color:#6ee7b7; font-weight:600; padding:0.25rem 0.5rem; border-radius:6px; min-height:44px; flex-shrink:0; white-space:nowrap; }
+#toast-text { min-width:0; overflow-wrap:normal; word-break:normal; }
 .toast button:hover { background:rgba(255,255,255,0.08); }
 
 .footer { text-align:center; padding:2rem 2rem calc(var(--bottom) + 2rem); border-top:1px solid var(--slate-200); background:var(--wit); }
@@ -589,11 +590,24 @@ document.addEventListener('click', async e => {
   const picked = await ocShare.pick({ types:['taak','actie','risico'], self:OC_ID, title:'Overnemen om te prioriteren', intro:'Kies taken, acties of risico\'s uit andere tools. Daarna schat je ze snel in.' });
   if (!picked.length) return;
   const l = cur(), have = new Set(l.items.map(i => i.name.toLowerCase())), restore = snapshot();
-  let n = 0;
+  let n = 0, fromGap = 0;
+  // Een inschatting uit de Gap-analyse ("impact 3/4 · haalbaarheid 2/4") gaat mee: makkelijk haalbaar = weinig inspanning.
+  const estimate = note => {
+    const m = /impact\s*(\d)\s*\/\s*4\s*·\s*haalbaarheid\s*(\d)\s*\/\s*4/i.exec(String(note || ''));
+    if (!m) return null;
+    const imp = Math.min(4, Math.max(1, +m[1])), feas = Math.min(4, Math.max(1, +m[2]));
+    return { impact:imp, effort:5 - feas };
+  };
   picked.forEach(p => { const name = p.text.slice(0, 120); if (have.has(name.toLowerCase())) return; have.add(name.toLowerCase());
-    l.items.push({ id:uid(), name, impact:3, effort:3, done:false, nieuw:true }); n++; });
+    const est = estimate(p.note);
+    if (est) { l.items.push({ id:uid(), name, impact:est.impact, effort:est.effort, done:false }); fromGap++; }
+    else l.items.push({ id:uid(), name, impact:3, effort:3, done:false, nieuw:true });
+    n++; });
   save(); render();
-  toast(n ? `${n} overgenomen. Schat ze bovenaan het overzicht in.` : 'Alles stond al in de lijst', n ? restore : undefined);
+  const rest = n - fromGap;
+  toast(!n ? 'Alles stond al in de lijst'
+    : rest ? `${n} overgenomen${fromGap ? `, ${fromGap} al ingeschat` : ''}. Schat de rest bovenaan het overzicht in.`
+    : `${n} overgenomen, met de inschatting uit de Gap-analyse.`, n ? restore : undefined);
   if (n) setTimeout(() => { const t = document.querySelector('.items.todo'); t && t.previousElementSibling.scrollIntoView({ block:'start', behavior:'smooth' }); }, 50);
 });
 
@@ -878,7 +892,7 @@ function renderList() {
         <li class="item${it.done ? ' done' : ''}${it.id === editing ? ' selected' : ''}" data-id="${it.id}" tabindex="0">
           <button class="check" aria-label="${it.done ? 'Niet meer gedaan' : 'Markeer als gedaan'}"><span class="box">${ICON_CHECK}</span></button>
           <span class="item-name"><span class="nr" style="--c:${q.ink}" aria-hidden="true">${nr[it.id]}</span>${esc(it.name)}</span>
-          <span class="scores" title="Impact · inspanning">imp <b>${it.impact}</b> · insp <b>${it.effort}</b></span>
+          <span class="scores" title="Effect · werk">effect <b>${it.impact}</b> · werk <b>${it.effort}</b></span>
           <button class="del" aria-label="Verwijder">${ICON_DEL}</button>
         </li>`).join('')}</ul>`;
   }).join('');
@@ -1319,6 +1333,29 @@ render();
   }, true);
   document.getElementById('oc-restart-btn').addEventListener('click', () => { const w = document.querySelector('[data-act="wipe"]'); w && w.click(); });
   sync();
+})();
+</script>
+<script>
+/* oc-sync: reageert op "Afsluiten" in de app (ook in andere tabbladen) en geeft Esc door aan de app */
+(function () {
+  if (window.__ocSync) return; window.__ocSync = true;
+  var gewist = false;
+  function wis() {
+    if (gewist) return; gewist = true;
+    try { var orig = Storage.prototype.setItem; Storage.prototype.setItem = function (k, v) { if (k === 'oc.wis') return orig.call(this, k, v); }; } catch (e) {}
+    try { document.body.innerHTML = '<p role="status" style="font-family:\'DM Sans\',system-ui,sans-serif;padding:3rem 1.5rem;text-align:center;color:#475569;font-size:1.0625rem">Alles is gewist op dit toestel. Deze pagina laadt opnieuw…</p>'; } catch (e) {}
+    setTimeout(function () { location.reload(); }, 400);
+  }
+  try { var bc = new BroadcastChannel('oc-sync'); bc.onmessage = function (e) { if (e.data && e.data.type === 'wis') wis(); }; } catch (e) {}
+  addEventListener('storage', function (e) { if (e.key === 'oc.wis' || e.key === null) wis(); });
+  if (window.parent === window) return;
+  addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape' || e.defaultPrevented) return;
+    var a = document.activeElement;
+    if (a && (a.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) return;
+    if (document.querySelector('dialog[open], [role="dialog"]:not([hidden]):not([aria-hidden="true"]), [aria-modal="true"]:not([hidden]), [aria-expanded="true"], .open, .show, .active.modal, .is-open')) return;
+    try { parent.postMessage({ type: 'oc-esc' }, location.origin); } catch (err) {}
+  }, true);
 })();
 </script>
 </body>

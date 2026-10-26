@@ -928,7 +928,7 @@ function headInner(g) {
   return `${ICON.chev}
     <span>
       <span class="gap-title${g.theme.trim() ? '' : ' empty'}">${esc(g.theme.trim() || 'Thema zonder naam')}</span>
-      <span class="gap-sum">${gt ? `<span class="num">${esc(gt.line)}</span><span>${esc(gt.delta)}</span>` : '<span>kwalitatief</span>'}${evDots(g)}${aanname}</span>
+      <span class="gap-sum">${gt ? `<span class="num">${esc(gt.line)}</span><span>${esc(gt.delta)}</span>` : '<span>nog zonder cijfers</span>'}${evDots(g)}${aanname}</span>
     </span>
     <span class="gap-right"><span class="qpill ${q.cls}">${q.name}</span></span>`;
 }
@@ -1136,7 +1136,7 @@ function kloofkaart(a, big) {
         <span style="font-size:12px;font-weight:700;color:#1e293b;font-variant-numeric:tabular-nums;white-space:nowrap;min-width:3.25em;text-align:right">${e(pct)}</span></div>
         <div style="font-size:11px;color:#64748b;font-variant-numeric:tabular-nums">${e(gt.line)}</div>`;
     } else {
-      bar = `<div style="font-size:12px;color:#64748b;padding:2px 0">kwalitatief: geen cijfer voor nu of doel</div>`;
+      bar = `<div style="font-size:12px;color:#64748b;padding:2px 0">nog zonder cijfers</div>`;
     }
     return `<div data-oc-keep style="padding:7px 0;border-top:1px solid #f1f5f9">
       <div style="display:flex;align-items:baseline;gap:6px;font-size:${fs}px;line-height:1.35;color:#1e293b;margin-bottom:3px">
@@ -1267,7 +1267,7 @@ document.addEventListener('click', e => {
   const g = gapById(card.dataset.gap); if (!g) return;
 
   if (t.closest('[data-toggle]')) {
-    g.open = !g.open; save(); renderGap(g.id);
+    g.open = !g.open; save(); renderGap(g.id); renderSignals();
     if (!g.open) { const el = document.querySelector(`[data-gap="${g.id}"]`); if (el.getBoundingClientRect().top < 0) el.scrollIntoView({ block:'start' }); }
     return;
   }
@@ -1606,6 +1606,29 @@ render();
   }, true);
   document.getElementById('oc-restart-btn').addEventListener('click', () => { const w = document.querySelector('[data-act="wipe"]'); w && w.click(); });
   sync();
+})();
+</script>
+<script>
+/* oc-sync: reageert op "Afsluiten" in de app (ook in andere tabbladen) en geeft Esc door aan de app */
+(function () {
+  if (window.__ocSync) return; window.__ocSync = true;
+  var gewist = false;
+  function wis() {
+    if (gewist) return; gewist = true;
+    try { var orig = Storage.prototype.setItem; Storage.prototype.setItem = function (k, v) { if (k === 'oc.wis') return orig.call(this, k, v); }; } catch (e) {}
+    try { document.body.innerHTML = '<p role="status" style="font-family:\'DM Sans\',system-ui,sans-serif;padding:3rem 1.5rem;text-align:center;color:#475569;font-size:1.0625rem">Alles is gewist op dit toestel. Deze pagina laadt opnieuw…</p>'; } catch (e) {}
+    setTimeout(function () { location.reload(); }, 400);
+  }
+  try { var bc = new BroadcastChannel('oc-sync'); bc.onmessage = function (e) { if (e.data && e.data.type === 'wis') wis(); }; } catch (e) {}
+  addEventListener('storage', function (e) { if (e.key === 'oc.wis' || e.key === null) wis(); });
+  if (window.parent === window) return;
+  addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape' || e.defaultPrevented) return;
+    var a = document.activeElement;
+    if (a && (a.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) return;
+    if (document.querySelector('dialog[open], [role="dialog"]:not([hidden]):not([aria-hidden="true"]), [aria-modal="true"]:not([hidden]), [aria-expanded="true"], .open, .show, .active.modal, .is-open')) return;
+    try { parent.postMessage({ type: 'oc-esc' }, location.origin); } catch (err) {}
+  }, true);
 })();
 </script>
 </body>
