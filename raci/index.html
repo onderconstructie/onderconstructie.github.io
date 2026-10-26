@@ -149,8 +149,8 @@ td.c { text-align:center; padding:0.25rem; }
 tfoot td, tfoot th { background:var(--slate-50); border-bottom:0; font-size:0.75rem; color:var(--slate-500); padding:0.5rem 0.25rem; text-align:center; font-variant-numeric:tabular-nums; }
 tfoot th { text-align:left; padding-left:1.125rem; font-size:0.6875rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--slate-500); font-weight:600; }
 tfoot .sticky { background:var(--slate-50); }
-.load.over { color:#c2410c; font-weight:600; }
-.load .warn { display:block; font-size:0.6875rem; }
+.load.sig { color:#b45309; font-weight:600; }
+.load .warn { display:block; font-size:0.6875rem; line-height:1.25; margin-top:0.125rem; }
 
 .empty { padding:2rem 1.25rem 2.25rem; text-align:center; color:var(--slate-500); font-size:0.9375rem; border-top:1px solid var(--slate-100); }
 .empty strong { display:block; color:var(--slate-600); font-weight:600; margin-bottom:0.25rem; }
@@ -269,11 +269,12 @@ thead .name { display:block; }
   .toast { left:auto; right:1.25rem; max-width:360px; transform:translateY(calc(100% + 3rem)); }
   .toast.show { transform:none; }
 }
-/* Smal scherm: aanwijzing dat er nog rollen rechts staan, en uitleg bij overbelast */
+/* Smal scherm: aanwijzing dat er nog rollen rechts staan, en uitleg bij de aandachtspunten */
 .scroll-hint { display:flex; align-items:center; justify-content:flex-end; gap:0.375rem; margin:0; padding:0.375rem 0.875rem; font-size:0.8125rem; font-weight:600; color:#047857; background:#ecfdf5; border-top:1px solid var(--slate-100); }
 .scroll-hint[hidden] { display:none !important; }
 .scroll-hint svg { width:16px; height:16px; flex:none; }
-.load-note { margin:0; padding:0.625rem 1.125rem; font-size:0.8125rem; color:#9a3412; background:#fff7ed; border-top:1px solid #fed7aa; border-radius:0 0 15px 15px; }
+.load-note { margin:0; padding:0.625rem 1.125rem; font-size:0.8125rem; line-height:1.5; color:var(--slate-600); background:var(--slate-50); border-top:1px solid var(--slate-100); border-radius:0 0 15px 15px; }
+.load-note b { color:#b45309; font-weight:600; }
 .load-note[hidden] { display:none !important; }
 @media (max-width:420px) {
   tbody th { min-width:104px; max-width:150px; }
@@ -585,9 +586,9 @@ document.addEventListener('click', async e => {
   const picked = await ocShare.pick({ types: roles ? ['betrokkene'] : ['taak','actie'], self:OC_ID,
     title: roles ? 'Rollen overnemen' : 'Taken overnemen', intro: roles ? 'Kies personen, rollen of doelgroepen uit andere tools. Ze worden kolommen.' : 'Kies taken of acties uit andere tools. Ze worden rijen.' });
   if (!picked.length) return;
-  const m = cur(), list = roles ? m.roles : m.tasks, have = new Set(list.map(x => x.name.toLowerCase())), restore = snapshot();
+  const m = cur(), list = roles ? m.roles : m.tasks, have = new Set(list.map(x => (roles ? x.name : ocGapText(x.name)).toLowerCase())), restore = snapshot();
   let n = 0;
-  picked.forEach(p => { const name = p.text.slice(0, 120); if (have.has(name.toLowerCase())) return; have.add(name.toLowerCase());
+  picked.forEach(p => { const name = (roles ? p.text : ocGapText(p.text)).slice(0, 120); if (have.has(name.toLowerCase())) return; have.add(name.toLowerCase());
     list.push(roles ? { id:uid(), name } : { id:uid(), name, cells:{} }); n++; });
   save(); render();
   toast(n ? `${n} ${roles ? (n === 1 ? 'rol' : 'rollen') : (n === 1 ? 'taak' : 'taken')} overgenomen` : 'Alles stond al in de matrix', n ? restore : undefined);
@@ -701,8 +702,18 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
 
 function blank(name) { return { id:uid(), name:name || ocProject('Mijn project'), roles:[], tasks:[] }; }
+// De Gap-analyse noemde een thema vroeger "Kloof dichten: …", nu "Verschil wegwerken: …". Beide tellen als dezelfde taak.
+const OC_GAP_OLD = /^\s*Kloof dichten:\s*/i;
+const ocGapText = s => String(s || '').replace(OC_GAP_OLD, 'Verschil wegwerken: ');
+// Zet oude namen om, maar nooit als de nieuwe naam er al staat: dan zou er een dubbel ontstaan.
+function ocGapMigrate(items) {
+  if (!Array.isArray(items)) return;
+  const have = new Set(items.map(x => String(x && x.name || '').toLowerCase()));
+  items.forEach(x => { if (!x || !OC_GAP_OLD.test(x.name || '')) return;
+    const n = ocGapText(x.name).slice(0, 120); if (have.has(n.toLowerCase())) return; have.add(n.toLowerCase()); x.name = n; });
+}
 function load() {
-  try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && Array.isArray(d.mats) && d.mats.length) return d; } catch {}
+  try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && Array.isArray(d.mats) && d.mats.length) { d.mats.forEach(m => ocGapMigrate(m && m.tasks)); return d; } } catch {}
   const m = blank();
   return { mats:[m], current:m.id };
 }
@@ -731,19 +742,35 @@ function rowFlags(m, t) {
   if (r === 0) f.push('geen R');
   return f;
 }
-// Overbelast: vanaf 6 taken, met minstens 2 rollen, voert iemand uit of beslist bij meer dan 6 op de 10 taken.
-const OVER_MIN = 6, OVER_SHARE = 0.6;
-const OVER_TEXT = 'Overbelast: iemand voert uit of beslist bij meer dan 6 op de 10 taken. Dat tellen we vanaf 6 taken.';
-function roleLoad(m, role) {
-  let r = 0, a = 0, c = 0, i = 0, ra = 0;
-  m.tasks.forEach(t => { const v = t.cells[role.id]; if (v === 'R') r++; else if (v === 'A') a++; else if (v === 'C') c++; else if (v === 'I') i++; if (v === 'R' || v === 'A') ra++; });
-  const over = m.tasks.length >= OVER_MIN && m.roles.length >= 2 && ra > m.tasks.length * OVER_SHARE;
-  return { r, a, c, i, over };
+// Aandachtspunten per rol. Er bestaat geen vaste grens voor 'te veel'. We tonen alleen twee signalen om te bespreken:
+// veel werk: minstens 4 keer R of A, en minstens dubbel zoveel als de andere rollen gemiddeld;
+// bijna alles: een letter bij minstens 8 op de 10 taken (vanaf 5 taken). Beide pas vanaf 3 rollen: met 2 rollen valt er weinig te vergelijken.
+const BUSY_MIN = 4, WIDE_MIN = 5, WIDE_SHARE = 0.8;
+const SIG_LONG = { busy:'Let op: veel werk bij één rol', wide:'Betrokken bij bijna alles' };
+const SIG_SHORT = { busy:'veel werk', wide:'bij bijna alles' };
+const SIG_NOTE = 'Dit is een signaal om te bespreken, geen vaste regel.';
+function counts(m, role) {
+  let r = 0, a = 0, c = 0, i = 0;
+  m.tasks.forEach(t => { const v = t.cells[role.id]; if (v === 'R') r++; else if (v === 'A') a++; else if (v === 'C') c++; else if (v === 'I') i++; });
+  return { r, a, c, i, ra:r + a, any:r + a + c + i };
 }
+function roleLoad(m, role) {
+  const l = counts(m, role), others = m.roles.filter(x => x.id !== role.id);
+  const avg = others.length ? others.reduce((s, x) => s + counts(m, x).ra, 0) / others.length : 0;
+  const busy = others.length >= 2 && l.ra >= BUSY_MIN && l.ra >= 2 * avg;
+  const wide = others.length >= 2 && m.tasks.length >= WIDE_MIN && l.any >= WIDE_SHARE * m.tasks.length;
+  return { ...l, busy, wide, sig:[busy && 'busy', wide && 'wide'].filter(Boolean) };
+}
+// Problemen zijn fouten in een rij (geen A, geen R, meer dan één A). De signalen per rol tellen hier niet mee.
 function problems(m) {
-  const rows = m.tasks.filter(t => rowFlags(m, t).length).map(t => ({ kind:'task', id:t.id }));
-  const cols = m.roles.filter(r => roleLoad(m, r).over).map(r => ({ kind:'role', id:r.id }));
-  return [...rows, ...cols];
+  return m.tasks.filter(t => rowFlags(m, t).length).map(t => ({ kind:'task', id:t.id }));
+}
+// Per signaal één regel, bv. "Let op: veel werk bij één rol: Jan (5 keer uitvoeren of beslissen)".
+function signalLines(m) {
+  const all = m.roles.map(r => ({ r, l:roleLoad(m, r) }));
+  const busy = all.filter(x => x.l.busy).map(x => `${x.r.name} (${x.l.ra} keer uitvoeren of beslissen)`);
+  const wide = all.filter(x => x.l.wide).map(x => `${x.r.name} (${x.l.any} van de ${m.tasks.length} taken)`);
+  return [busy.length && { label:SIG_LONG.busy, text:busy.join(', ') }, wide.length && { label:SIG_LONG.wide, text:wide.join(', ') }].filter(Boolean);
 }
 
 /* ---------- Tekenen ---------- */
@@ -802,12 +829,13 @@ function render() {
     }).join('')}${m.tasks.length ? '' : `<tr><th class="sticky" style="color:var(--slate-500);font-weight:500">Voeg een taak toe</th>${m.roles.map(() => '<td></td>').join('')}</tr>`}</tbody>`;
   const foot = m.tasks.length && m.roles.length ? `<tfoot><tr><th class="sticky" scope="row">Belasting</th>${m.roles.map(r => {
       const l = roleLoad(m, r);
-      return `<td class="load${l.over ? ' over' : ''}" data-load="${r.id}" title="R ${l.r} · A ${l.a} · C ${l.c} · I ${l.i}">${l.r} R · ${l.a} A${l.over ? `<span class="warn" title="${OVER_TEXT}">overbelast</span>` : ''}</td>`;
+      return `<td class="load${l.sig.length ? ' sig' : ''}" data-load="${r.id}" title="R ${l.r} · A ${l.a} · C ${l.c} · I ${l.i}${l.sig.length ? ' · ' + l.sig.map(s => SIG_LONG[s]).join(' · ') : ''}">${l.r} R · ${l.a} A${l.sig.map(s => `<span class="warn">${SIG_SHORT[s]}</span>`).join('')}</td>`;
     }).join('')}</tr></tfoot>` : '';
   const sl = $('table-wrap').scrollLeft;
-  const anyOver = m.tasks.length && m.roles.some(r => roleLoad(m, r).over);
+  const sigs = m.tasks.length ? signalLines(m) : [];
   $('table-wrap').innerHTML = `<table>${head}${body}${foot}</table>`;
-  $('load-note').hidden = !anyOver; $('load-note').textContent = OVER_TEXT;
+  $('load-note').hidden = !sigs.length;
+  $('load-note').innerHTML = sigs.length ? `${sigs.map(t => `<b>${esc(t.label)}:</b> ${esc(t.text)}`).join('<br>')}<br>${SIG_NOTE}` : '';
   $('table-wrap').scrollLeft = sl;
   scrollHint();
 }
@@ -854,7 +882,7 @@ function buildExport() {
   }).join('');
   const foot = `<tr><td style="padding:12px 12px 4px;font-size:12px;font-weight:600;color:#64748b;border-top:2px solid #e2e8f0;">Belasting</td>${
     m.roles.map(r => { const l = roleLoad(m, r);
-      return `<td style="padding:12px 8px 4px;text-align:center;font-size:12px;border-top:2px solid #e2e8f0;color:${l.over ? '#c2410c' : '#64748b'};font-weight:${l.over ? 700 : 500};">${l.r} R · ${l.a} A${l.over ? '<div style="font-size:11px;margin-top:2px;">overbelast</div>' : ''}</td>`; }).join('')}</tr>`;
+      return `<td style="padding:12px 8px 4px;text-align:center;font-size:12px;border-top:2px solid #e2e8f0;color:${l.sig.length ? '#b45309' : '#64748b'};font-weight:${l.sig.length ? 700 : 500};">${l.r} R · ${l.a} A${l.sig.map(s => `<div style="font-size:11px;margin-top:2px;">${SIG_SHORT[s]}</div>`).join('')}</td>`; }).join('')}</tr>`;
   const p = problems(m).length;
   const plist = problemTexts(m);
   const status = p
@@ -864,7 +892,11 @@ function buildExport() {
     : `<div style="margin-bottom:14px;font-size:13px;font-weight:600;color:#059669;">Alles klopt: elke taak heeft één A en minstens één R</div>`;
   const legend = `<div style="display:flex;flex-wrap:wrap;gap:22px;margin-top:18px;font-size:12.5px;color:#475569;">${
     ['R', 'A', 'C', 'I'].map(v => `<span style="display:inline-flex;align-items:center;gap:8px;">${xbox(v, 24)}<span><strong style="color:#1e293b">${v}</strong> ${LABEL[v]}</span></span>`).join('')}</div>`;
-  node.innerHTML = `${status}<table style="width:100%;border-collapse:collapse;table-layout:fixed;font-family:inherit;">${head}${body}${foot}</table>${legend}`;
+  const sl = signalLines(m);
+  const sig = sl.length ? `<div data-oc-keep style="margin-top:14px;padding:10px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;color:#475569;font-size:13px;line-height:1.5;">
+      <div style="font-weight:700;color:#b45309;margin-bottom:2px;">${sl.length === 1 ? 'Aandachtspunt' : 'Aandachtspunten'}</div>
+      ${sl.map(t => `<div>· <strong style="color:#334155;">${esc(t.label)}:</strong> ${esc(t.text)}</div>`).join('')}<div style="margin-top:4px;">${SIG_NOTE}</div></div>` : '';
+  node.innerHTML = `${status}<table style="width:100%;border-collapse:collapse;table-layout:fixed;font-family:inherit;">${head}${body}${foot}</table>${sig}${legend}`;
   return { node, title:'RACI-matrix', subtitle:m.name || 'Naamloos' };
 }
 // Wat er mis is, in gewone zinnen (voor de export).
@@ -878,7 +910,6 @@ function problemTexts(m) {
     if (f.includes('meer dan één A')) bits.push('meer dan één beslist');
     out.push(`${t.name}: ${bits.join(', ')}`);
   });
-  m.roles.forEach(r => { const l = roleLoad(m, r); if (l.over) out.push(`${r.name}: overbelast (${l.r} keer uitvoeren, ${l.a} keer beslissen)`); });
   return out;
 }
 function exportName(m) {

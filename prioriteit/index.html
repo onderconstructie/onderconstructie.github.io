@@ -589,7 +589,7 @@ document.addEventListener('click', async e => {
   e.preventDefault();
   const picked = await ocShare.pick({ types:['taak','actie','risico'], self:OC_ID, title:'Overnemen om te prioriteren', intro:'Kies taken, acties of risico\'s uit andere tools. Daarna schat je ze snel in.' });
   if (!picked.length) return;
-  const l = cur(), have = new Set(l.items.map(i => i.name.toLowerCase())), restore = snapshot();
+  const l = cur(), have = new Set(l.items.map(i => ocGapText(i.name).toLowerCase())), restore = snapshot();
   let n = 0, fromGap = 0;
   // Een inschatting uit de Gap-analyse ("impact 3/4 · haalbaarheid 2/4") gaat mee: makkelijk haalbaar = weinig inspanning.
   const estimate = note => {
@@ -598,7 +598,7 @@ document.addEventListener('click', async e => {
     const imp = Math.min(4, Math.max(1, +m[1])), feas = Math.min(4, Math.max(1, +m[2]));
     return { impact:imp, effort:5 - feas };
   };
-  picked.forEach(p => { const name = p.text.slice(0, 120); if (have.has(name.toLowerCase())) return; have.add(name.toLowerCase());
+  picked.forEach(p => { const name = ocGapText(p.text).slice(0, 120); if (have.has(name.toLowerCase())) return; have.add(name.toLowerCase());
     const est = estimate(p.note);
     if (est) { l.items.push({ id:uid(), name, impact:est.impact, effort:est.effort, done:false }); fromGap++; }
     else l.items.push({ id:uid(), name, impact:3, effort:3, done:false, nieuw:true });
@@ -728,6 +728,16 @@ const PRESET = { quick:{ impact:3, effort:2 }, groot:{ impact:3, effort:3 }, vul
 const KEY = 'prioriteit.v1';
 const uid = () => Math.random().toString(36).slice(2, 10);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+// De Gap-analyse noemde een thema vroeger "Kloof dichten: …", nu "Verschil wegwerken: …". Beide tellen als dezelfde taak.
+const OC_GAP_OLD = /^\s*Kloof dichten:\s*/i;
+const ocGapText = s => String(s || '').replace(OC_GAP_OLD, 'Verschil wegwerken: ');
+// Zet oude namen om, maar nooit als de nieuwe naam er al staat: dan zou er een dubbel ontstaan.
+function ocGapMigrate(items) {
+  if (!Array.isArray(items)) return;
+  const have = new Set(items.map(x => String(x && x.name || '').toLowerCase()));
+  items.forEach(x => { if (!x || !OC_GAP_OLD.test(x.name || '')) return;
+    const n = ocGapText(x.name).slice(0, 120); if (have.has(n.toLowerCase())) return; have.add(n.toLowerCase()); x.name = n; });
+}
 function load() {
   try {
     const d = JSON.parse(localStorage.getItem(KEY));
@@ -737,6 +747,7 @@ function load() {
         d.lists.forEach(l => (l.items || []).forEach(it => { it.impact = Math.min(it.impact, N); it.effort = Math.min(it.effort, N); }));
         d.scale = N;
       }
+      d.lists.forEach(l => ocGapMigrate(l.items));
       return d;
     }
   } catch {}
