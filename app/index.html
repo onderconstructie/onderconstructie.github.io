@@ -362,27 +362,55 @@ body.filtering #groups, body.filtering #list-tools { display:none; }
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
 .tb-actions { display:flex; }
-/* Stappenplanbalk */
-.pathbar { display:flex; align-items:center; gap:0.75rem; padding:0.25rem 0.5rem 0.25rem 1rem; background:#f6fefb; border-bottom:1px solid #d9efe6; min-height:48px; }
+/* Stappenplan: zit mee in de bovenbalk (v38), één compacte balk in plaats van twee */
+.topbar { position:relative; }
+.topbar.has-path .tb-title { display:none; }
+.pathbar { display:flex; align-items:center; gap:0.5rem; min-width:0; height:100%; }
 .pathbar[hidden] { display:none; }
-.pb-where { display:flex; align-items:baseline; gap:0.5rem; min-width:0; font-size:0.8125rem; color:var(--slate-600); white-space:nowrap; }
-.pb-where b { color:var(--slate-800); font-weight:700; overflow:hidden; text-overflow:ellipsis; }
-.pb-dots { display:flex; gap:3px; flex:1; max-width:180px; }
+.pb-where { flex:1 1 auto; min-width:0; display:flex; flex-direction:column; justify-content:center; line-height:1.25; overflow:hidden; }
+.pb-tool { font-weight:600; font-size:0.9375rem; color:var(--slate-800); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.pb-sub { font-size:0.75rem; color:var(--slate-500); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-variant-numeric:tabular-nums; }
+.pb-plan { color:var(--slate-600); font-weight:600; }
+.pb-dots { display:none; gap:3px; flex:0 1 140px; }
 .pb-dots span { flex:1; height:4px; border-radius:2px; background:var(--slate-200); }
 .pb-dots span.done { background:#6ee7b7; }
 .pb-dots span.here { background:var(--accent-dark); }
 .pb-nav { display:flex; align-items:center; gap:0.25rem; margin-left:auto; flex-shrink:0; }
 .pb-prev { width:44px; height:44px; border-radius:10px; display:flex; align-items:center; justify-content:center; color:var(--slate-600); }
 .pb-prev:hover { background:#e2f5ec; }
-.pb-prev svg, .pb-next svg { width:18px; height:18px; }
-.pb-next { display:inline-flex; align-items:center; gap:0.25rem; min-height:40px; padding:0 0.5rem 0 0.875rem; border-radius:10px; background:var(--accent-dark); color:var(--wit); font-size:0.8125rem; font-weight:600; max-width:15rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.pb-prev svg, .pb-next svg { width:20px; height:20px; flex-shrink:0; }
+.pb-next { display:inline-flex; align-items:center; justify-content:center; gap:0.25rem; width:44px; height:44px; border-radius:10px; background:var(--accent-dark); color:var(--wit); font-size:0.8125rem; font-weight:600; white-space:nowrap; overflow:hidden; }
 .pb-next:hover { background:#065f46; }
-.pb-end { font-size:0.8125rem; color:var(--slate-500); padding-right:0.5rem; }
-@media (max-width:560px) {
-  .pb-dots { display:none; }
-  .pb-where { flex-direction:column; gap:0; line-height:1.25; }
-  .pb-lbl { display:none; }
-  .pb-next { max-width:11rem; }
+.pb-lbl, .pb-nm { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+.pb-end { display:none; font-size:0.8125rem; color:var(--slate-500); padding:0 0.5rem; white-space:nowrap; }
+/* gsm: terug zonder woord (het pijltje en de naam voor schermlezers blijven), voortgang als dunne lijn onderaan */
+.topbar.has-path .back { width:44px; padding:0; justify-content:center; }
+.topbar.has-path .back-lbl { display:none; }
+/* op gsm een ander teken dan het pijltje van "vorige stap": vier vakjes = alle tools */
+.back-grid { display:none; }
+.topbar.has-path .back-arrow { display:none; }
+.topbar.has-path .back-grid { display:block; width:22px; height:22px; }
+.topbar.has-path::after { content:''; position:absolute; left:0; bottom:-1px; height:2px; width:var(--pb, 0%); background:var(--accent); border-radius:0 2px 2px 0; transition:width 0.2s ease; }
+@media (prefers-reduced-motion: reduce) { .topbar.has-path::after { transition:none; } }
+.pb-plan { display:none; }
+/* breder scherm: iets ruimer, met de naam van het stappenplan en een knop met tekst */
+@media (min-width:700px) {
+  .topbar.has-path { height:calc(var(--top) + 56px); }
+  .topbar.has-path .back { width:auto; padding:0.5rem 0.625rem 0.5rem 0.25rem; }
+  .topbar.has-path .back-lbl { display:inline; }
+  .topbar.has-path .back-arrow { display:block; }
+  .topbar.has-path .back-grid { display:none; }
+  .pathbar { gap:0.75rem; padding-left:0.5rem; }
+  .pb-plan { display:inline; }
+  .pb-next { width:auto; max-width:20rem; padding:0 0.5rem 0 0.875rem; }
+  .pb-next .pb-lbl, .pb-next .pb-nm { position:static; width:auto; height:auto; clip-path:none; }
+  .pb-next .pb-lbl { flex-shrink:0; }
+  .pb-next .pb-nm { min-width:0; overflow:hidden; text-overflow:ellipsis; }
+  .pb-end { display:inline; }
+}
+@media (min-width:1000px) {
+  .pb-dots { display:flex; }
+  .topbar.has-path::after { display:none; }
 }
 .tb-btn { width:44px; height:44px; display:flex; align-items:center; justify-content:center; color:var(--slate-500); border-radius:8px; }
 .tb-btn:hover { background:var(--slate-100); }
@@ -614,20 +642,6 @@ body.filtering .list-tools { visibility:hidden; }
 .start .start-head .section-label { flex:1; margin-bottom:0; }
 .start-hide { min-height:44px; padding:0 0.625rem; border-radius:10px; font-size:0.8125rem; font-weight:600; color:var(--slate-600); }
 .start-hide:hover { background:var(--slate-100); color:var(--slate-800); }
-.pb-where { flex-direction:column; gap:0; line-height:1.25; min-width:0; flex:1 1 auto; overflow:hidden; }
-.pb-dots { flex:0 1 180px; }
-.pb-top { display:flex; align-items:baseline; gap:0.5rem; min-width:0; }
-.pb-top b { min-width:0; }
-.pb-q { font-size:0.75rem; color:var(--slate-500); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%; }
-.pb-q2 { display:none; }
-.pb-n { flex-shrink:0; }
-@media (max-width:560px) {
-  .pb-top { flex-direction:column; align-items:stretch; gap:0; }
-  .pb-top b { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .pb-q { display:none; }
-  .pb-n { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex-shrink:1; }
-  .pb-n .pb-q2 { display:inline; }
-}
 .mproj { display:grid; gap:0.5rem; margin-bottom:0.75rem; }
 .mproj[hidden] { display:none; }
 .mp-card { border:1px solid var(--slate-200); border-radius:14px; padding:0.625rem 0.75rem 0.5rem; background:var(--wit); }
@@ -675,7 +689,6 @@ html.in-tool, html.sheet-open { overflow:hidden; }
 .header, .main, .footer { padding-left:max(1.25rem, var(--left)); padding-right:max(1.25rem, var(--right)); }
 @media (max-width:480px) { .header { padding-left:max(1rem, var(--left)); padding-right:max(1rem, var(--right)); } }
 .topbar { padding-left:calc(var(--left) + 0.375rem); padding-right:calc(var(--right) + 0.375rem); }
-.pathbar { padding-left:calc(var(--left) + 1rem); padding-right:calc(var(--right) + 0.5rem); }
 /* Een tool in een kader kent de veilige zones niet: de app houdt de randen vrij, zodat knoppen onderaan niet onder de veegbalk zitten */
 .frames { background:var(--wit); }
 .frames iframe { left:var(--left); top:0; width:calc(100% - var(--left) - var(--right)); height:calc(100% - var(--bottom)); }
@@ -795,7 +808,7 @@ body:not(.ready) .main, body:not(.ready) .footer { visibility:hidden; }
     <span class="sep" aria-hidden="true">·</span>
     <button class="footer-link" id="data-open" type="button">je gegevens en reservekopie</button>
     <span class="sep" aria-hidden="true">·</span>
-    <span class="app-version" title="Versie van de app">v37</span>
+    <span class="app-version" title="Versie van de app">v38</span>
   </footer>
 </div>
 
@@ -849,12 +862,14 @@ body:not(.ready) .main, body:not(.ready) .footer { visibility:hidden; }
 </div>
 
 <div class="viewer" id="viewer" aria-hidden="true">
-  <div class="topbar">
+  <div class="topbar" id="topbar">
     <button class="back" id="back" aria-label="Terug naar alle tools">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-      Tools
+      <svg class="back-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+      <svg class="back-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></svg>
+      <span class="back-lbl">Tools</span>
     </button>
     <div class="tb-title" id="tb-title"></div>
+    <nav class="pathbar" id="pathbar" aria-label="Stappenplan" hidden></nav>
     <div class="tb-actions">
       <button class="tb-btn" id="ext" aria-label="Open in de browser" title="Open in de browser">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/></svg>
@@ -867,7 +882,6 @@ body:not(.ready) .main, body:not(.ready) .footer { visibility:hidden; }
       </button>
     </div>
   </div>
-  <nav class="pathbar" id="pathbar" aria-label="Stappenplan" hidden></nav>
   <div class="frames" id="frames"><div class="loading" id="loading" role="status" aria-live="polite"><span class="bar" aria-hidden="true"></span><span>Laden…</span></div></div>
 </div>
 
@@ -1724,20 +1738,26 @@ document.addEventListener('click', e => {
 }, true);
 function renderPathbar(id) {
   const t = byId[id], bar = $('pathbar'), plans = (t && t.traject || []).map(x => x.naam).filter(n => TRAJECTEN.some(tr => tr.id === n));
-  if (!plans.length) { bar.hidden = true; bar.innerHTML = ''; return; }
+  // Zichtbaar = #pathbar zonder hidden (tools zoals Communicatieplan kijken daarnaar om hun eigen teller te verbergen)
+  const show = on => { bar.hidden = !on; if (!on) bar.innerHTML = ''; $('topbar').classList.toggle('has-path', on); };
+  if (!plans.length) { show(false); return; }
   const st = startedPaths(), trId = plans.includes(pathCtx) ? pathCtx : plans.find(n => st.includes(n)) || plans[0], tr = TRAJECTEN.find(x => x.id === trId);
   const steps = stepsOf(trId), i = steps.findIndex(s => s.t.id === id);
-  if (steps.length < 2 || i < 0) { bar.hidden = true; return; }
-  const prev = steps[i - 1], next = steps[i + 1];
-  bar.dataset.path = trId; bar.hidden = false;
+  if (steps.length < 2 || i < 0) { show(false); return; }
+  const prev = steps[i - 1], next = steps[i + 1], q = tr.q[id] || t.sub || '', n = `stap ${i + 1} van ${steps.length}`;
+  const arrow = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
+  bar.dataset.path = trId;
+  bar.setAttribute('aria-label', `Stappenplan: ${tr.title}`);
+  $('topbar').style.setProperty('--pb', `${Math.round((i + 1) / steps.length * 100)}%`);
   bar.innerHTML = `
-    <span class="pb-where"><span class="pb-top"><b>${esc(tr.title)}</b><span class="pb-n">stap ${i + 1} van ${steps.length}<span class="pb-q2"> · ${esc(tr.q[id] || t.sub)}</span></span></span><span class="pb-q">${esc(tr.q[id] || t.sub)}</span></span>
+    <span class="pb-where" title="${esc(`${tr.title} · ${n}${q ? ' · ' + q : ''}`)}"><span class="pb-tool">${esc(t.title)}</span><span class="pb-sub"><span class="pb-plan">${esc(tr.title)} · </span>${n}${q ? ` · ${esc(q)}` : ''}</span></span>
     <span class="pb-dots" aria-hidden="true">${steps.map((s, k) => `<span class="${k === i ? 'here' : s.done ? 'done' : ''}"></span>`).join('')}</span>
     <span class="pb-nav">
-      ${prev ? `<button type="button" class="pb-prev" data-id="${esc(prev.t.id)}" aria-label="Vorige stap: ${esc(prev.t.title)}" title="Vorige: ${esc(prev.t.title)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>` : ''}
-      ${next ? `<button type="button" class="pb-next" data-id="${esc(next.t.id)}"><span class="pb-lbl">Volgende:</span> ${esc(next.t.title)}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>`
+      ${prev ? `<button type="button" class="pb-prev" data-id="${esc(prev.t.id)}" aria-label="Vorige stap: ${esc(prev.t.title)}" title="Vorige: ${esc(prev.t.title)}">${arrow('M15 18l-6-6 6-6')}</button>` : ''}
+      ${next ? `<button type="button" class="pb-next" data-id="${esc(next.t.id)}" title="Volgende stap: ${esc(next.t.title)}"><span class="pb-lbl">Volgende:</span> <span class="pb-nm">${esc(next.t.title)}</span>${arrow('M9 6l6 6-6 6')}</button>`
         : `<span class="pb-end">Laatste stap</span>`}
     </span>`;
+  show(true);
 }
 /* Waar begin je? Vier ingangen in gewone taal, zolang er geen stappenplan loopt */
 const STARTS = [
