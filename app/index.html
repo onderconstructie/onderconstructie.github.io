@@ -5,7 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Onder Constructie</title>
 <meta name="description" content="Projecttools, zakmes en reset van Onder Constructie, in één app.">
-<meta name="theme-color" content="#ffffff">
+<!-- De app heeft geen donkere weergave: ook in donkere modus een witte balk, zodat de statusbalk naadloos aansluit -->
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Constructie">
@@ -13,6 +15,9 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-180.png">
+<!-- De toollijst meteen mee ophalen: bij een eerste bezoek staat het startscherm zo sneller klaar.
+     (Lettertypes vooraf laden maakte de eerste lading op een trage lijn niet sneller: gemeten, dus niet gedaan.) -->
+<link rel="preload" href="/tools.json" as="fetch" crossorigin>
 <link rel="stylesheet" href="/fonts/fonts.css">
 <style>
 :root {
@@ -305,7 +310,7 @@ body.filtering #groups, body.filtering #list-tools { display:none; }
 .sheet-back[hidden] { display:none !important; }
 .sheet-back { position:fixed; inset:0; z-index:30; background:rgba(15,23,42,0.45); display:flex; align-items:flex-end; justify-content:center; }
 @media (min-width:640px) { .sheet-back { align-items:center; padding:1rem; } }
-.sheet { width:100%; max-width:560px; max-height:min(90vh, 760px); overflow:auto; background:var(--wit); border-radius:20px 20px 0 0;
+.sheet { width:100%; max-width:560px; max-height:min(90vh, 760px); max-height:min(90dvh, 760px); overflow:auto; overscroll-behavior:contain; background:var(--wit); border-radius:20px 20px 0 0;
   padding:1rem 1.25rem calc(var(--bottom) + 1.25rem); box-shadow:0 20px 50px rgba(15,23,42,0.25); }
 @media (min-width:640px) { .sheet { border-radius:20px; } }
 .sheet-head { display:flex; align-items:center; justify-content:space-between; }
@@ -386,7 +391,16 @@ body.filtering #groups, body.filtering #list-tools { display:none; }
 .frames { flex:1; position:relative; background:var(--slate-50); }
 .frames iframe { position:absolute; inset:0; width:100%; height:100%; border:0; background:var(--wit); visibility:hidden; pointer-events:none; }
 .frames iframe.active { visibility:visible; pointer-events:auto; z-index:1; }
-.loading { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--slate-500); font-size:0.875rem; pointer-events:none; }
+/* Laden: een dun balkje bovenaan en een woord in het midden, pas na 150 ms (snelle tools tonen niets). Niets verspringt. */
+.loading { position:absolute; inset:0; z-index:2; display:flex; align-items:center; justify-content:center; color:var(--slate-500); font-size:0.875rem; pointer-events:none;
+  opacity:0; visibility:hidden; transition:opacity 0.2s ease, visibility 0s 0.2s; }
+.loading.on { opacity:1; visibility:visible; transition:opacity 0.2s ease 0.15s, visibility 0s 0.15s; }
+.loading .bar { position:absolute; top:0; left:0; right:0; height:3px; overflow:hidden; background:var(--accent-light); }
+.loading .bar::after { content:''; position:absolute; top:0; bottom:0; left:0; width:40%; background:var(--accent); transform:translateX(-100%); animation:oc-laden 1.1s ease-in-out infinite; }
+@keyframes oc-laden { to { transform:translateX(250%); } }
+@media (prefers-reduced-motion: reduce) { .loading .bar::after { animation:none; transform:none; width:100%; opacity:0.6; } }
+.frames iframe.loading-frame { opacity:0; }
+.frames iframe.active { transition:opacity 0.12s ease; }
 
 :focus-visible { outline:2px solid #047857; outline-offset:2px; }
 @media (prefers-reduced-motion: reduce) { .viewer { transition:none; } }
@@ -641,6 +655,39 @@ body.filtering .list-tools { visibility:hidden; }
 .dbtn.go { color:#fff; background:var(--accent-dark); }
 .dbtn.go:hover { background:#065f46; }
 .dbtn:disabled { opacity:0.5; cursor:default; }
+
+/* ---------- v36: soepel op gsm ---------- */
+:root { --left: env(safe-area-inset-left, 0px); --right: env(safe-area-inset-right, 0px); }
+/* geen wachttijd na een tik, eigen feedback in plaats van de blauwe flits */
+button, a, label, summary, input, select, textarea, [data-id] { touch-action:manipulation; }
+.ccard:active, .stile:active, .path-next:active, .step-btn:active, .hit:active, .mp-chip:active, .group-head:active, .path-head:active, .fchip:active, .drow-wipe:active { background:var(--slate-100); }
+.back:active, .tb-btn:active, .pb-prev:active, .hs-open:active, .hs-close:active, .manage:active, .exit-btn:active, .start-hide:active, .filter-toggle:active, .proj-edit:active, .nudge-later:active { background:var(--slate-200); }
+.pb-next:active, .install .btn:active, .nudge .btn:active, .proj-save:active, .dbtn.go:active { background:#065f46; }
+.dbtn:active { background:var(--slate-200); }
+.dbtn.danger:active { background:#fee2e2; }
+.dbtn.danger.solid:active { background:#b91c1c; }
+@media (hover:none) { .ccard:hover, .stile:hover, .phase:hover { box-shadow:none; } }
+/* trekken om te vernieuwen: niet in een tool of venster, daar zou je werk kunnen verliezen */
+html { overscroll-behavior-y:none; }
+html.in-tool, html.sheet-open { overflow:hidden; }
+.viewer, .frames { overscroll-behavior:contain; }
+/* veilige zones: notch opzij (liggend) en de balk onderaan */
+.header, .main, .footer { padding-left:max(1.25rem, var(--left)); padding-right:max(1.25rem, var(--right)); }
+@media (max-width:480px) { .header { padding-left:max(1rem, var(--left)); padding-right:max(1rem, var(--right)); } }
+.topbar { padding-left:calc(var(--left) + 0.375rem); padding-right:calc(var(--right) + 0.375rem); }
+.pathbar { padding-left:calc(var(--left) + 1rem); padding-right:calc(var(--right) + 0.5rem); }
+/* Een tool in een kader kent de veilige zones niet: de app houdt de randen vrij, zodat knoppen onderaan niet onder de veegbalk zitten */
+.frames { background:var(--wit); }
+.frames iframe { left:var(--left); top:0; width:calc(100% - var(--left) - var(--right)); height:calc(100% - var(--bottom)); }
+.app-toast { bottom:calc(var(--bottom) + 1.25rem); }
+.sheet { padding-left:max(1.25rem, var(--left)); padding-right:max(1.25rem, var(--right)); }
+/* zoekveld: op een aanraakscherm altijd 16px, anders zoomt iOS in */
+@media (min-width:700px) and (hover:none) { .hs-field input { font-size:16px; } }
+/* nieuwe versie klaar */
+.update { display:flex; }
+.update[hidden] { display:none; }
+/* eerste bezoek: niets tonen dat daarna verspringt, tot de lijst er is (de kop staat er meteen) */
+body:not(.ready) .main, body:not(.ready) .footer { visibility:hidden; }
 </style>
 </head>
 <body>
@@ -673,6 +720,10 @@ body.filtering .list-tools { visibility:hidden; }
   </header>
 
   <main class="main">
+    <div class="install update" id="update" hidden role="status">
+      <p><strong>Nieuwe versie klaar.</strong> Vernieuw om ze te gebruiken.</p>
+      <button type="button" class="btn" id="update-btn">Vernieuwen</button>
+    </div>
     <div class="install" id="install">
       <p id="install-text"></p>
       <button class="btn" id="install-btn" hidden>Installeer</button>
@@ -744,7 +795,7 @@ body.filtering .list-tools { visibility:hidden; }
     <span class="sep" aria-hidden="true">·</span>
     <button class="footer-link" id="data-open" type="button">je gegevens en reservekopie</button>
     <span class="sep" aria-hidden="true">·</span>
-    <span class="app-version" title="Versie van de app">v35</span>
+    <span class="app-version" title="Versie van de app">v36</span>
   </footer>
 </div>
 
@@ -817,7 +868,7 @@ body.filtering .list-tools { visibility:hidden; }
     </div>
   </div>
   <nav class="pathbar" id="pathbar" aria-label="Stappenplan" hidden></nav>
-  <div class="frames" id="frames"><div class="loading" id="loading">Laden…</div></div>
+  <div class="frames" id="frames"><div class="loading" id="loading" role="status" aria-live="polite"><span class="bar" aria-hidden="true"></span><span>Laden…</span></div></div>
 </div>
 
 <div class="app-toast" id="app-toast" role="status" aria-live="polite"><span id="app-toast-text"></span><button type="button" id="app-toast-btn" hidden>Ongedaan</button></div>
@@ -853,7 +904,8 @@ function subGroup(t) {
 const ALSO_IN = { beslissingen:['vergaderen'], vinkje:['vergaderen'], focus:['reset'] };
 const inGroup = (t, gid) => t.g === gid || (ALSO_IN[t.id] || []).includes(gid);
 const HUBS = ['/', '/projectmanagement/', '/zakmes/', '/reset/', '/app/'];
-const MAX_LIVE = 4;
+// Hoeveel tools tegelijk open blijven (snel wisselen). Op een toestel met weinig geheugen minder.
+const MAX_LIVE = navigator.deviceMemory && navigator.deviceMemory <= 2 ? 2 : 4;
 const KEY = 'oc-app.';
 const store = {
   get(k, d) { try { const v = localStorage.getItem(KEY + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
@@ -908,15 +960,17 @@ function renderGroups() {
         ${toggleIcon}
       </button>
       <div class="group-body" id="body-${g.id}">
-      <div class="list">
-        ${tools.map(t => rowHTML(t)).join('')}
-      </div>
+      <div class="list">${isClosed ? '' : groupRows(g.id)}</div>
       </div>
     </section>`; }).join('');
   syncListTools();
 }
+// Een dichtgeklapte groep krijgt haar rijen pas bij het openklappen: het startscherm staat sneller op het scherm.
+const groupRows = gid => byOrder(TOOLS.filter(t => inGroup(t, gid))).map(t => rowHTML(t)).join('');
 function setCollapsed(id, closed) {
   const el = document.querySelector(`.group[data-group="${id}"]`); if (!el) return;
+  const list = el.querySelector('.list');
+  if (!closed && !list.childElementCount) { list.innerHTML = groupRows(id); markLive(); }
   el.classList.toggle('collapsed', closed);
   el.querySelector('.group-head').setAttribute('aria-expanded', String(!closed));
   el.querySelectorAll('.row').forEach(r => r.tabIndex = closed ? -1 : 0);
@@ -1059,7 +1113,7 @@ function renderProject() {
   if (projEdit) {
     box.innerHTML = `<form class="proj-form" id="proj-form">
       <label for="proj-name">Aan welk project werk je?</label>
-      <div class="proj-row"><input id="proj-name" list="proj-list" maxlength="80" autocomplete="off" placeholder="Bv. Digitaal premieloket" value="${esc(p ? p.name : '')}">
+      <div class="proj-row"><input id="proj-name" list="proj-list" maxlength="80" autocomplete="off" enterkeyhint="done" autocapitalize="sentences" placeholder="Bv. Digitaal premieloket" value="${esc(p ? p.name : '')}">
         <datalist id="proj-list">${hist.map(n => `<option value="${esc(n)}">`).join('')}</datalist>
         <button type="submit" class="proj-save">Bewaar</button><button type="button" class="proj-cancel" id="proj-cancel">Annuleer</button></div>
       <p class="proj-hint">Nieuwe projecten, analyses en lijsten in de tools krijgen deze naam. Wat al bestaat, blijft zoals het is.${p ? ' <button type="button" class="proj-clear" id="proj-clear">Geen project</button>' : ''}</p>
@@ -1082,6 +1136,7 @@ document.addEventListener('submit', e => {
   const name = $('proj-name').value.trim().slice(0, 80), was = (getProject() || {}).name;
   try { name ? localStorage.setItem(PROJ_KEY, JSON.stringify({ name, since: Date.now() })) : localStorage.removeItem(PROJ_KEY); } catch {}
   if (name) store.set('projects', [name, ...store.get('projects', []).filter(n => n !== name)].slice(0, 8));
+  if (name !== was) dropPre();   // een vooraf geladen tool kent het nieuwe project nog niet
   projEdit = false; renderProject();
   if (name && was && was !== name) appToast(`Project: ${name}. Tools openen dit project als het er al is; anders maak je het met + aan.`);
   else if (name) appToast(`Project: ${name}`);
@@ -1139,7 +1194,7 @@ function markLive() {
     if (l) l.textContent = b ? 'loopt' : r.classList.contains('ccard') ? 'geopend' : 'open';
   });
   document.querySelectorAll('.group[data-group]').forEach(g => {
-    const n = g.querySelectorAll('.row.is-live').length;
+    const n = TOOLS.filter(t => frames.has(t.id) && inGroup(t, g.dataset.group)).length;
     g.classList.toggle('has-live', n > 0);
     g.querySelector('.count-live').textContent = n + ' geopend';
   });
@@ -1153,31 +1208,61 @@ document.addEventListener('click', e => {
 const frames = new Map();   // id -> iframe, in volgorde van gebruik
 let lastOpener = null;
 // Esc in de balk van de app (niet in de tool zelf, die gebruikt Esc voor eigen menu's) = terug naar het startscherm
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('viewer').classList.contains('open') && $('viewer').contains(document.activeElement) && document.activeElement.tagName !== 'IFRAME' && $('app-dlg').hidden) { e.preventDefault(); showHome(); } });
+// Ook als de focus nergens staat (na een tik op de balk); niet als je in de tool zelf zit of een vraag open staat.
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !e.defaultPrevented && $('viewer').classList.contains('open') && document.activeElement.tagName !== 'IFRAME' && $('app-dlg').hidden) { e.preventDefault(); showHome(); } });
 let current = null;
-let pendingReload = false;
+
+// Een kader voor een tool. Onzichtbaar tot de tool geladen is: geen witte flits, geen half getekende tool.
+function makeFrame(id) {
+  const t = byId[id], f = document.createElement('iframe');
+  f.title = t.title;
+  f.allow = 'camera; microphone; fullscreen; screen-wake-lock; web-share; clipboard-write; autoplay';
+  f.allowFullscreen = true;
+  f.className = 'loading-frame';
+  f.addEventListener('load', () => {
+    f.classList.remove('loading-frame'); f.dataset.loaded = '1';
+    wire(f, id);
+    if (frames.get(current) === f) { setLoading(false); prefetchNext(id); }
+  });
+  f.src = t.path;
+  $('frames').appendChild(f);
+  return f;
+}
+function setLoading(on) { $('loading').classList.toggle('on', on); }
+
+/* De volgende stap van een stappenplan stil vooraf laden, zodat "Volgende" meteen klaar is.
+   Met mate: één tool tegelijk, pas als het toestel even niets te doen heeft, niet bij spaarstand of een trage verbinding. */
+let pre = null;   // { id, f }
+function dropPre() { if (pre) { pre.f.remove(); pre = null; } }
+function prefetchNext(id) {
+  const c = navigator.connection;
+  if (c && (c.saveData || /(^|-)2g$/.test(c.effectiveType || ''))) return;
+  if (navigator.deviceMemory && navigator.deviceMemory <= 1) return;
+  const n = !$('pathbar').hidden && $('pathbar').querySelector('.pb-next'), next = n && n.dataset.id;
+  if (!next || frames.has(next) || !byId[next] || (pre && pre.id === next)) return;
+  const run = () => {
+    if (current !== id || frames.has(next) || (pre && pre.id === next)) return;
+    dropPre();
+    const f = makeFrame(next);
+    f.inert = true;   // kan de focus niet wegnemen uit de tool waarin je werkt
+    pre = { id: next, f };
+  };
+  'requestIdleCallback' in window ? requestIdleCallback(run, { timeout: 3000 }) : setTimeout(run, 1200);
+}
 
 function openTool(id, fromHistory) {
   const t = byId[id]; if (!t) return;
   let f = frames.get(id);
-  if (!f) {
-    f = document.createElement('iframe');
-    f.title = t.title;
-    f.allow = 'camera; microphone; fullscreen; screen-wake-lock; web-share; clipboard-write; autoplay';
-    f.allowFullscreen = true;
-    $('loading').hidden = false;
-    f.addEventListener('load', () => { $('loading').hidden = true; wire(f, id); });
-    f.src = t.path;
-    $('frames').appendChild(f);
-  } else {
-    $('loading').hidden = true;
-    frames.delete(id);   // opnieuw achteraan zetten
-  }
+  if (!f && pre && pre.id === id) { f = pre.f; pre = null; f.inert = false; }
+  if (!f) f = makeFrame(id);
+  else frames.delete(id);   // opnieuw achteraan zetten
+  setLoading(!f.dataset.loaded);
   frames.set(id, f);
   if (current && current !== id && byId[current] && !byId[current].keep) autoDrop(current);
   trimFrames(id);
-  current = id; setTimeout(syncWipeBtn, 0);
+  current = id;
   for (const [k, el] of frames) el.classList.toggle('active', k === id);
+  document.documentElement.classList.add('in-tool');
   $('tb-title').textContent = t.title;
   renderPathbar(id);
   $('viewer').classList.add('open');
@@ -1186,7 +1271,7 @@ function openTool(id, fromHistory) {
   $('home').inert = true; $('viewer').inert = false;
   // de focus naar de tool: met Tab ga je meteen door de tool, niet door het verborgen startscherm
   const focusTool = () => { try { f.contentWindow.focus(); } catch {} $('back').focus({ preventScroll:true }); };
-  if (f.contentDocument && f.contentDocument.readyState === 'complete') setTimeout(focusTool, 0); else f.addEventListener('load', focusTool, { once:true });
+  if (f.dataset.loaded) { setTimeout(focusTool, 0); prefetchNext(id); } else f.addEventListener('load', focusTool, { once:true });
   syncTitle();
   // van tool naar tool (stappenplan, link): de geschiedenis vervangen, zodat "terug" altijd naar het startscherm gaat
   if (!fromHistory) { (history.state && history.state.tool ? history.replaceState : history.pushState).call(history, { tool:id }, '', '#' + id); logUse(id); }
@@ -1202,6 +1287,7 @@ function trimFrames(keepId) {
   }
 }
 function dropFrame(id) {
+  if (pre && pre.id === id) dropPre();
   const f = frames.get(id); if (!f) return;
   f.remove(); frames.delete(id);
   if (busy.delete(id)) syncTitle();
@@ -1242,17 +1328,24 @@ function showHome(fromHistory) {
   const was = current;
   if (current && byId[current] && !byId[current].keep) autoDrop(current);
   current = null;
+  dropPre();
+  setLoading(false);
+  // eerst het beeld (het startscherm schuift meteen terug), daarna het startscherm bijwerken
   $('viewer').classList.remove('open');
   $('viewer').setAttribute('aria-hidden', 'true');
   $('viewer').inert = true; $('home').inert = false;
+  document.documentElement.classList.remove('in-tool');
   syncTitle();
-  renderRecent(); renderPaths(); syncBackupNudge(); markLive();
-  // focus terug waar je vertrok (of op de kaart/rij van die tool)
-  const vis = id => id && [...document.querySelectorAll(`#home [data-id="${CSS.escape(id)}"]`)].find(x => x.offsetParent);
-  const back = vis(lastOpener) || vis(was);
-  if (back) back.focus({ preventScroll:true });
-  if (pendingReload) { location.reload(); return; }
   if (!fromHistory && history.state && history.state.tool) history.back();
+  const opener = lastOpener;
+  requestAnimationFrame(() => setTimeout(() => {
+    if (current) return;   // intussen alweer een tool geopend
+    renderRecent(); renderPaths(); syncBackupNudge(); markLive(); syncUpdate();
+    // focus terug waar je vertrok (of op de kaart/rij van die tool)
+    const vis = id => id && [...document.querySelectorAll(`#home [data-id="${CSS.escape(id)}"]`)].find(x => x.offsetParent);
+    const back = vis(opener) || vis(was);
+    if (back) back.focus({ preventScroll:true });
+  }, 0));
 }
 
 /* Links binnen een tool: terug naar een overzicht = terug naar de app, andere tool = in de app openen */
@@ -1292,9 +1385,13 @@ $('ext').addEventListener('click', () => {
   try { if (f) href = f.contentWindow.location.href; } catch {}
   window.open(href, '_blank', 'noopener');
 });
+// Terugknop (ook die van Android) en vooruit: tool, venster Gegevens of startscherm, altijd hetzelfde gedrag als de knoppen.
 window.addEventListener('popstate', e => {
-  const id = (e.state && e.state.tool) || location.hash.slice(1);
-  if (byId[id]) openTool(id, true); else showHome(true);
+  const s = e.state || {};
+  if (!$('data-sheet').hidden && !s.sheet) { closeData(true); return; }
+  const id = s.tool || location.hash.slice(1);
+  if (byId[id]) openTool(id, true);
+  else if ($('viewer').classList.contains('open')) showHome(true);
 });
 
 /* ---------- Installeren ---------- */
@@ -1327,21 +1424,39 @@ function setStatus(cached, total) {
   $('status').classList.toggle('ok', ok);
   $('status-text').textContent = ok ? 'Werkt ook offline' : (cached > 0 ? `Offline: ${cached} van ${total} tools klaar` : 'Alleen online');
 }
+/* Nieuwe versie: nooit stil wisselen terwijl je werkt. Op het startscherm verschijnt een rustige melding met Vernieuwen. */
+let updateReady = false, wantReload = false;
+function offerUpdate() { updateReady = true; syncUpdate(); }
+function syncUpdate() { $('update').hidden = !updateReady || !!current; }
+$('update-btn').addEventListener('click', async () => {
+  const run = [...busy.keys()].map(id => byId[id] && byId[id].title).filter(Boolean);
+  if (run.length && !await appConfirm(`${run.join(', ')} loopt nog`, 'Vernieuwen stopt wat er loopt. Wat je invulde, blijft bewaard.', 'Toch vernieuwen')) return;
+  $('update-btn').disabled = true;
+  let reg = null; try { reg = await navigator.serviceWorker.getRegistration(); } catch {}
+  if (reg && reg.waiting) { wantReload = true; reg.waiting.postMessage({ type:'skip' }); setTimeout(() => location.reload(), 4000); }
+  else location.reload();
+});
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('message', e => {
-    if (e.data && e.data.type === 'status') setStatus(e.data.cached, e.data.total);
+    if (!e.data) return;
+    if (e.data.type === 'status') setStatus(e.data.cached, e.data.total);
+    else if (e.data.type === 'tools') refreshTools();   // de toollijst is veranderd op de site
+    else if (e.data.type === 'update') offerUpdate();   // de app zelf is veranderd op de site
   });
-  let hadController = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (!hadController) { hadController = true; return; }
-    if (!current) location.reload(); else pendingReload = true;
-  });
-  navigator.serviceWorker.register('/sw.js', { scope:'/' }).then(reg => {
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (wantReload) { wantReload = false; location.reload(); } });
+  const register = () => navigator.serviceWorker.register('/sw.js', { scope:'/' }).then(reg => {
+    const watch = w => w && w.addEventListener('statechange', () => { if (w.state === 'installed' && navigator.serviceWorker.controller) offerUpdate(); });
+    if (reg.waiting && navigator.serviceWorker.controller) offerUpdate();
+    watch(reg.installing);
+    reg.addEventListener('updatefound', () => watch(reg.installing));
     document.addEventListener('visibilitychange', () => { if (!document.hidden) reg.update().catch(() => {}); });
     return navigator.serviceWorker.ready;
   })
     .then(reg => reg.active && reg.active.postMessage({ type:'status' }))
     .catch(() => {});
+  // Pas na het laden en als het toestel even vrij is: de eerste lading krijgt de volle verbinding.
+  const later = () => 'requestIdleCallback' in window ? requestIdleCallback(register, { timeout: 4000 }) : setTimeout(register, 1000);
+  if (document.readyState === 'complete') later(); else addEventListener('load', later, { once:true });
 }
 
 /* ---------- Gegevens: zien, bewaren, wissen ----------
@@ -1376,8 +1491,17 @@ function renderData() {
   last.textContent += ' Een reservekopie is een leesbaar bestand met alles wat je invulde: bewaar het zoals een vertrouwelijk document.';
 }
 let dataOpener = null;
-function openData() { dataOpener = document.activeElement; renderData(); $('data-confirm').hidden = true; $('restore').hidden = true; pendingRestore = null; $('data-sheet').hidden = false; $('home').inert = true; $('data-close').focus(); }
-function closeData() { $('data-sheet').hidden = true; $('home').inert = false; pendingWipe = null; renderRecent(); renderPaths(); if (dataOpener && dataOpener.isConnected) dataOpener.focus(); }
+function openData() {
+  dataOpener = document.activeElement; renderData(); $('data-confirm').hidden = true; $('restore').hidden = true; pendingRestore = null;
+  $('data-sheet').hidden = false; $('home').inert = true; document.documentElement.classList.add('sheet-open'); $('data-close').focus();
+  history.pushState({ sheet:1 }, '');   // de terugknop sluit het venster
+}
+function closeData(fromHistory) {
+  if ($('data-sheet').hidden) return;
+  $('data-sheet').hidden = true; $('home').inert = false; document.documentElement.classList.remove('sheet-open'); pendingWipe = null;
+  if (fromHistory !== true && history.state && history.state.sheet) history.back();
+  renderRecent(); renderPaths(); if (dataOpener && dataOpener.isConnected) dataOpener.focus();
+}
 // Tab blijft in het venster
 $('data-sheet').addEventListener('keydown', e => {
   if (e.key !== 'Tab') return;
@@ -1397,7 +1521,7 @@ let exiting = false;
 async function sharedExit() {
   if (!await appConfirm('Alles wissen en afsluiten?', 'Alles wat je in deze browser invulde, in alle tools, verdwijnt van dit toestel. Dit kan je niet ongedaan maken. Staan er nog andere tabbladen van deze site open, sluit die daarna ook. Bestanden die je downloadde (PDF, afbeelding, reservekopie) blijven in je map Downloads.', 'Wis en sluit af')) return;
   exiting = true;   // ons eigen seintje niet opvangen
-  [...frames.keys()].forEach(id => dropFrame(id));
+  [...frames.keys()].forEach(id => dropFrame(id)); dropPre();
   try { localStorage.clear(); sessionStorage.clear(); } catch {}
   try { localStorage.setItem('oc.wis', String(Date.now())); } catch {}
   try { const ch = new BroadcastChannel('oc-sync'); ch.postMessage({ type:'wis' }); ch.close(); } catch {}
@@ -1451,6 +1575,7 @@ $('data-confirm-yes').addEventListener('click', () => {
   const keys = [...new Set(pendingWipe.flatMap(e => e.keys).concat(all ? keysFor(['oc.share.*', 'oc.leeg.*', 'oc-app.leeg.*']) : []))];
   if ($('data-confirm-backup').checked) backup(keys);
   const restore = wipeKeys(keys), wiped = pendingWipe.map(e => e.t.id);
+  dropPre();
   // open tools sluiten, zodat ze bij het volgende openen leeg starten
   pendingWipe.forEach(e => dropFrame(e.t.id));
   const wipedApp = pendingWipe.some(e => e.t.id === '__app');
@@ -1523,7 +1648,7 @@ $('restore-yes').addEventListener('click', () => {
   const before = Object.fromEntries(put.map(([k]) => [k, cur(k)]));
   put.forEach(([k, v]) => { try { localStorage.setItem(k, v); } catch {} });
   pendingRestore = null; $('restore').hidden = true;
-  const refresh = () => { [...frames.keys()].forEach(id => dropFrame(id)); renderGroups(); renderRecent(); renderFilter(); renderPaths(); markLive(); renderData(); };
+  const refresh = () => { [...frames.keys()].forEach(id => dropFrame(id)); dropPre(); renderGroups(); renderRecent(); renderFilter(); renderPaths(); markLive(); renderData(); };
   refresh();
   dataMsg(`Reservekopie van ${when} teruggezet in ${ch.length} ${ch.length === 1 ? 'onderdeel' : 'onderdelen'}.`, false);
   appToast('Reservekopie teruggezet', () => {
@@ -1728,7 +1853,6 @@ const toolKeys = t => keysFor((t.storage || []).concat(t.id ? ['oc.share.' + t.i
 // Wissen gebeurt in de tool zelf (vuilbak per onderdeel, "Alles wissen" in het menu, "Opnieuw beginnen" onderaan)
 // of via Beheren op het startscherm. Een extra vuilbak in de balk van de app was dubbel en verwarrend.
 function syncWipeBtn() { $('wipe-tool').hidden = true; }
-setInterval(() => { if (current) syncWipeBtn(); }, 1500);
 $('wipe-tool').addEventListener('click', async () => {
   const id = current, t = byId[id]; if (!t) return;
   if (!await appConfirm(`Gegevens van ${t.title} wissen?`, 'Alles wat je in deze tool bewaarde, verdwijnt. Je kan het meteen daarna nog ongedaan maken.', 'Wis')) return;
@@ -1833,7 +1957,7 @@ document.addEventListener('click', e => {
     try { localStorage.setItem(PROJ_KEY, JSON.stringify({ name, since: Date.now() })); } catch {}
     store.set('projects', [name, ...store.get('projects', []).filter(n => n !== name)].slice(0, 8));
     // een open tool kent het nieuwe project nog niet: die opnieuw laden
-    autoDrop(c.dataset.ptool);
+    autoDrop(c.dataset.ptool); dropPre();
     appToast(`Project: ${name}`);
   }
   openTool(c.dataset.ptool);
@@ -1903,34 +2027,80 @@ $('backup-now').addEventListener('click', () => { backup(userEntries().flatMap(e
 $('backup-later').addEventListener('click', () => { store.set('backup-snooze', Date.now() + SNOOZE); syncBackupNudge(); });
 
 /* Is er in een ander tabblad afgesloten (alles gewist)? Dan ook hier alles dicht en opnieuw laden. */
-function wipedElsewhere() { if (exiting) return; [...frames.keys()].forEach(id => dropFrame(id)); location.replace(location.pathname); }
+function wipedElsewhere() { if (exiting) return; [...frames.keys()].forEach(id => dropFrame(id)); dropPre(); location.replace(location.pathname); }
 try { const ch = new BroadcastChannel('oc-sync'); ch.onmessage = e => { if (e.data && e.data.type === 'wis') wipedElsewhere(); }; } catch {}
 window.addEventListener('storage', e => { if (e.storageArea === localStorage && (e.key === 'oc.wis' && e.newValue)) wipedElsewhere(); });
 
 /* ---------- Start ---------- */
+/* Het startscherm verschijnt meteen, met de toollijst van het vorige bezoek. De nieuwste lijst komt
+   daarna stil op de achtergrond; is ze anders, dan wordt het startscherm bijgewerkt. Alleen bij het
+   allereerste bezoek wacht de app op de lijst (die al vanuit de kop vooraf geladen wordt). */
 async function loadTools() {
-  // Eerst het netwerk (nieuwste lijst); zonder verbinding geeft de service worker de bewaarde lijst.
-  const res = await fetch('/tools.json', { cache: 'no-cache' });
+  const res = await fetch('/tools.json');   // zelfde verzoek als de preload in de kop
   if (!res.ok) throw new Error(res.status);
-  const list = await res.json();
+  const raw = await res.text(), list = JSON.parse(raw);
   if (!Array.isArray(list) || !list.length) throw new Error('leeg');
-  return list;
+  return { raw, list };
 }
-function start() {
+let toolsRaw = null;
+function useTools(list, raw) {
+  toolsRaw = raw; TOOLS = list;
   TOOLS.forEach(t => { t.g = subGroup(t); });
   byId = Object.fromEntries(TOOLS.map(t => [t.id, t]));
-  renderGroups(); renderProject(); renderRecent(); renderFilter(); renderPaths(); syncBackupNudge(); syncSearchHint();
-  $('results-clear').addEventListener('click', () => setFilter(null));
-  const cl = closedGroups(); GROUPS.forEach(g => setCollapsed(g.id, cl.includes(g.id)));
-  const first = location.hash.slice(1) || new URLSearchParams(location.search).get('tool');
-  if (byId[first]) { history.replaceState(null, '', location.pathname); openTool(first); }
 }
-loadTools().then(list => { TOOLS = list; store.set('tools-cache', list); start(); })
-  .catch(() => {
-    const cached = store.get('tools-cache', null);
-    if (cached) { TOOLS = cached; start(); return; }
-    $('groups').innerHTML = '<p class="load-msg">De lijst met tools kon niet geladen worden. Controleer je verbinding en probeer opnieuw.</p>';
-  });
+function renderHome() {
+  renderGroups(); renderProject(); renderRecent(); renderFilter(); renderPaths(); syncBackupNudge(); syncSearchHint();
+  const cl = closedGroups(); GROUPS.forEach(g => setCollapsed(g.id, cl.includes(g.id)));
+  markLive();
+}
+let refreshing = null;
+function refreshTools() {
+  if (refreshing) return refreshing;
+  return refreshing = loadTools().then(({ raw, list }) => {
+    if (raw === toolsRaw) return;
+    try { localStorage.setItem(KEY + 'tools-cache', raw); } catch {}
+    useTools(list, raw); renderHome();
+    if (current) renderPathbar(current);
+  }).catch(() => {}).finally(() => { refreshing = null; });
+}
+// Snelkoppelingen op het beginscherm (manifest): /app/?start=project, verandering, vergaderen of reset
+function openStart(key) {
+  const st = STARTS.find(s => (s.path || s.group) === key); if (!st) return;
+  const u = store.get('start-used', []); if (!u.includes(key)) store.set('start-used', [...u, key]);
+  if (st.path) {
+    const steps = stepsOf(st.path); if (!steps.length) return;
+    const go = (startedPaths().includes(st.path) && steps.find(x => !x.done)) || steps[0];
+    pathCtx = st.path; store.set('path-ctx', pathCtx); markStarted(st.path);
+    renderStart(); openTool(go.t.id);
+  } else {
+    setCollapsed(st.group, false); saveCollapsed(); renderStart();
+    const g = document.querySelector(`.group[data-group="${st.group}"]`);
+    if (g) requestAnimationFrame(() => { g.scrollIntoView({ block:'start' }); g.querySelector('.group-head').focus({ preventScroll:true }); });
+  }
+}
+function start() {
+  renderHome();
+  document.body.classList.add('ready');
+  const q = new URLSearchParams(location.search), first = location.hash.slice(1) || q.get('tool'), st = q.get('start');
+  if (byId[first]) { history.replaceState(null, '', location.pathname); openTool(first); }
+  else if (st) { history.replaceState(null, '', location.pathname); openStart(st); }
+}
+$('results-clear').addEventListener('click', () => setFilter(null));
+(() => {
+  let raw = null, list = null;
+  try { raw = localStorage.getItem(KEY + 'tools-cache'); list = JSON.parse(raw); } catch {}
+  if (Array.isArray(list) && list.length) {
+    useTools(list, raw); start();
+    // stil verversen zodra het startscherm getekend is
+    setTimeout(refreshTools, 0);
+    return;
+  }
+  loadTools().then(r => { try { localStorage.setItem(KEY + 'tools-cache', r.raw); } catch {} useTools(r.list, r.raw); start(); })
+    .catch(() => {
+      document.body.classList.add('ready');
+      $('groups').innerHTML = '<p class="load-msg">De lijst met tools kon niet geladen worden. Controleer je verbinding en probeer opnieuw.</p>';
+    });
+})();
 </script>
 </body>
 </html>
