@@ -353,6 +353,8 @@ button.oc-import { color:#047857; min-height:44px; }
 .q-plannen { color:#334155; background:#e2e8f0; }
 .q-snel { color:#475569; background:#f1f5f9; }
 .q-liggen { color:#64748b; background:#fff; border:1px dashed #cbd5e1; }
+.q-nog { color:#64748b; background:#f8fafc; border:1px solid #e2e8f0; font-weight:500; }
+.gap:not(.open) .gap-head .label-aanname { display:none; }
 .ov-kaart { margin-top:0.875rem; }
 .exp-btns { display:flex; gap:0.375rem; margin-top:0.875rem; }
 .btn-s { flex:1; min-height:44px; padding:0 0.875rem; border-radius:10px; border:1.5px solid var(--slate-200); background:var(--wit); font-size:0.875rem; font-weight:600; color:#047857; white-space:nowrap; }
@@ -441,9 +443,9 @@ button.oc-import { color:#047857; min-height:44px; }
         <div class="how-body">
           <ol>
             <li>Beschrijf per thema waar je nu staat en waar je naartoe wil, liefst meetbaar.</li>
-            <li>Onderbouw de huidige situatie met bewijs. Zonder bewijs is het een aanname.</li>
+            <li>Onderbouw de huidige situatie met bewijs. Zonder bewijs is het nog niet bewezen.</li>
             <li>Vraag door naar de oorzaak voor je acties kiest.</li>
-            <li>Bepaal wat nodig is, wie het doet en tegen wanneer, en rangschik op impact en haalbaarheid.</li>
+            <li>Bepaal wat nodig is, wie het doet en tegen wanneer. Wat veel oplevert en makkelijk is, komt eerst.</li>
           </ol>
           <div class="how-types" id="how-types"></div>
         </div>
@@ -454,18 +456,18 @@ button.oc-import { color:#047857; min-height:44px; }
 
       <div class="gaps" id="gaps"></div>
       <div class="card empty" id="empty" hidden>
-        <strong>Nog geen kloven</strong>
-        Een kloof is één thema: waar je nu staat tegenover waar je wil staan.
+        <strong>Nog geen verschillen</strong>
+        Per thema beschrijf je het verschil tussen waar je nu staat en waar je wil staan.
         <br><button class="btn btn-primary" id="example">Voorbeeld bekijken</button>
       </div>
 
       <form class="add-gap" id="add-gap" autocomplete="off">
-        <input id="new-gap" placeholder="Nieuwe kloof, bv. Doorlooptijd aanvragen" aria-label="Thema van een nieuwe kloof" maxlength="80">
-        <button class="add-btn" type="submit" aria-label="Kloof toevoegen">
+        <input id="new-gap" placeholder="Nieuw thema, bv. Doorlooptijd aanvragen" aria-label="Thema van een nieuw verschil" maxlength="80">
+        <button class="add-btn" type="submit" aria-label="Thema toevoegen">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
         </button>
       </form>
-      <div style="margin:0.5rem 0 0"><button type="button" class="oc-import" data-oc-types="taak,risico" id="oc-imp" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11M7.5 9.5L12 14l4.5-4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>Kloven overnemen uit…</button></div>
+      <div style="margin:0.5rem 0 0"><button type="button" class="oc-import" data-oc-types="taak,risico" id="oc-imp" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11M7.5 9.5L12 14l4.5-4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>Thema's overnemen uit…</button></div>
     </div>
   </div>
 <div class="oc-restart-row" id="oc-restart-row" hidden><button type="button" class="oc-restart" id="oc-restart-btn">Opnieuw beginnen</button></div>
@@ -677,7 +679,7 @@ function ocUndoable(restore) {
 function ocPublish() {
   ocShare.publish(OC_ID, OC_TOOL, state.analyses.filter(a => !a.voorbeeld).map(a => ({ name:a.name, items:[
     ...a.gaps.flatMap(g => g.actions.filter(x => !x.done && x.text && x.text.trim()).map(x => ({ type:'actie', text:x.text, who:x.who, when:x.by }))),
-    ...a.gaps.filter(g => g.theme && g.theme.trim()).map(g => ({ type:'taak', text:'Kloof dichten: ' + g.theme.trim() })) ] })));
+    ...a.gaps.filter(g => g.theme && g.theme.trim()).map(g => ({ type:'taak', text:'Kloof dichten: ' + g.theme.trim(), note: rated(g) ? `impact ${g.impact}/4 · haalbaarheid ${g.feas}/4` : undefined })) ] })));
 }
 
 async function ocWipeAll() {
@@ -693,14 +695,14 @@ document.addEventListener('click', e => { if (e.target.closest('[data-act="wipe"
 document.addEventListener('click', async e => {
   if (!e.target.closest('#oc-imp')) return;
   e.preventDefault();
-  const picked = await ocShare.pick({ types:['taak','risico'], self:OC_ID, title:'Kloven overnemen', intro:'Kies taken of risico\'s uit andere tools. Elk wordt een nieuwe kloof om uit te werken.' });
+  const picked = await ocShare.pick({ types:['taak','risico'], self:OC_ID, title:'Thema\'s overnemen', intro:'Kies taken of risico\'s uit andere tools. Elk wordt een nieuw thema om uit te werken.' });
   if (!picked.length) return;
   const a = cur(), have = new Set(a.gaps.map(g => (g.theme || '').toLowerCase())), restore = snapshot();
   let n = 0;
   picked.forEach(p => { const t = p.text.replace(/^Kloof dichten:\s*/i, '').slice(0, 80); if (have.has(t.toLowerCase())) return; have.add(t.toLowerCase());
     const g = newGap(t); g.open = false; a.gaps.push(g); n++; });
   save(); render();
-  toast(n ? `${n} ${n === 1 ? 'kloof' : 'kloven'} overgenomen` : 'Die kloven stonden er al', n ? restore : undefined);
+  toast(n ? `${n} ${n === 1 ? 'thema' : 'thema\'s'} overgenomen` : 'Die thema\'s stonden er al', n ? restore : undefined);
 });
 
 /* ---------- Download als afbeelding of PDF (gedeeld door de Onder Constructie-tools, v2) ----------
@@ -808,7 +810,7 @@ const TYPES = [
   { id:'onderzoek',    name:'Onderzoek',        color:'#334155', help:'Wetenschappelijk onderzoek: studies, evaluaties, literatuur.' },
   { id:'data',         name:'Organisatiedata',  color:'#047857', help:'Cijfers en feiten uit je eigen organisatie: dashboards, registraties, audits.' },
   { id:'ervaring',     name:'Praktijkervaring', color:'#94a3b8', help:'Wat professionals uit ervaring weten: experts, collega\'s, eigen oordeel.' },
-  { id:'stakeholders', name:'Stakeholders',     color:'#6ee7b7', help:'Wie de gevolgen draagt: burgers, klanten, medewerkers, partners.' },
+  { id:'stakeholders', name:'Betrokkenen',     color:'#6ee7b7', help:'Wie de gevolgen draagt: burgers, klanten, medewerkers, partners.' },
 ];
 const STRENGTHS = [ { id:'sterk', name:'Sterk' }, { id:'redelijk', name:'Redelijk' }, { id:'zwak', name:'Zwak' } ];
 const typeOf = id => TYPES.find(t => t.id === id) || TYPES[1];
@@ -818,8 +820,11 @@ const QUADS = {
   plannen: { name:'Plannen',         cls:'q-plannen', order:1 },
   snel:    { name:'Snel meenemen',   cls:'q-snel',    order:2 },
   liggen:  { name:'Laten liggen',    cls:'q-liggen',  order:3 },
+  nog:     { name:'Nog niet ingeschat', cls:'q-nog',  order:4 },
 };
-const quadOf = g => g.impact >= 3 ? (g.feas >= 3 ? 'eerst' : 'plannen') : (g.feas >= 3 ? 'snel' : 'liggen');
+// 0 = nog niet ingeschat (nieuwe verschillen). Oude analyses met 1–4 blijven zoals ze waren.
+const rated = g => g.impact >= 1 && g.feas >= 1;
+const quadOf = g => !rated(g) ? 'nog' : g.impact >= 3 ? (g.feas >= 3 ? 'eerst' : 'plannen') : (g.feas >= 3 ? 'snel' : 'liggen');
 const MAX_WHY = 5;
 
 /* ---------- Opslag ---------- */
@@ -828,7 +833,7 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
 const newGap = theme => ({ id:uid(), theme:theme || '', asis:{ text:'', indicator:'', value:'', unit:'' },
-  tobe:{ text:'', value:'', by:'' }, evidence:[], whys:[''], actions:[], impact:3, feas:3, open:true });
+  tobe:{ text:'', value:'', by:'' }, evidence:[], whys:[''], actions:[], impact:0, feas:0, open:true });
 function load() {
   try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && Array.isArray(d.analyses) && d.analyses.length) return d; } catch {}
   const first = { id:uid(), name:ocProject('Mijn analyse'), question:'', gaps:[] };
@@ -869,7 +874,7 @@ function gapText(g) {
 function gapSignals(g) {
   const s = [];
   const ev = g.evidence;
-  if (!ev.length) s.push({ id:'aanname', text:'Aanname: toets eerst of dit klopt' });
+  if (!ev.length) s.push({ id:'aanname', text:'Nog niet bewezen: toets eerst of dit klopt' });
   else {
     const kinds = new Set(ev.map(e => e.type));
     if (ev.every(e => e.strength === 'zwak')) s.push({ id:'zwak', text:'Alleen zwak bewijs: zoek sterker bewijs' });
@@ -878,7 +883,7 @@ function gapSignals(g) {
   const measurable = !isNaN(num(g.tobe.value)) && (g.asis.indicator.trim() || g.asis.unit.trim());
   const concrete = /\d/.test(g.tobe.text) && g.tobe.text.trim().length >= 12;
   if (!measurable && !concrete) s.push({ id:'meetbaar', text:'Hoe weet je dat je er bent?' });
-  if (!g.whys.some(w => w.trim())) s.push({ id:'oorzaak', text:'Zonder oorzaak riskeer je symptoombestrijding' });
+  if (!g.whys.some(w => w.trim())) s.push({ id:'oorzaak', text:'Zoek de oorzaak, anders pak je alleen de gevolgen aan' });
   const acts = g.actions.filter(a => a.text.trim());
   if (!acts.length || acts.some(a => !a.who.trim())) s.push({ id:'acties', text:'Wie doet wat?' });
   return s;
@@ -919,13 +924,13 @@ function evDots(g) {
 
 function headInner(g) {
   const gt = gapText(g), sig = gapSignals(g), q = QUADS[quadOf(g)];
-  const aanname = !g.evidence.length ? '<span class="label-aanname">aanname</span>' : '';
+  const aanname = !g.evidence.length ? '<span class="label-aanname">nog niet bewezen</span>' : '';
   return `${ICON.chev}
     <span>
       <span class="gap-title${g.theme.trim() ? '' : ' empty'}">${esc(g.theme.trim() || 'Thema zonder naam')}</span>
       <span class="gap-sum">${gt ? `<span class="num">${esc(gt.line)}</span><span>${esc(gt.delta)}</span>` : '<span>kwalitatief</span>'}${evDots(g)}${aanname}</span>
     </span>
-    <span class="gap-right"><span class="qpill ${q.cls}">${q.name}</span>${sig.length ? `<span class="sigcount">${sig.length} ${sig.length === 1 ? 'signaal' : 'signalen'}</span>` : ''}</span>`;
+    <span class="gap-right"><span class="qpill ${q.cls}">${q.name}</span></span>`;
 }
 
 function chipsHTML(g) {
@@ -935,7 +940,7 @@ function chipsHTML(g) {
 
 function gapBoxHTML(g) {
   const gt = gapText(g);
-  if (!gt) return `<div class="qual">Kwalitatieve kloof. Geef een huidige waarde en een doelwaarde om het verschil te meten.</div>`;
+  if (!gt) return `<div class="qual">Nog zonder cijfers. Geef wat je nu meet en wat je wil halen, dan zie je het verschil.</div>`;
   const { a, b } = gt.c, max = Math.max(Math.abs(a), Math.abs(b)) * 1.15 || 1;
   const pa = Math.max(0, Math.min(100, a / max * 100)), pb = Math.max(0, Math.min(100, b / max * 100));
   const u = g.asis.unit ? ' ' + esc(g.asis.unit) : '';
@@ -957,7 +962,7 @@ function evHTML(g, e, i = 0) {
       <select class="field sm" data-ef="strength" aria-label="Sterkte van het bewijs">${STRENGTHS.map(x => `<option value="${x.id}"${x.id === e.strength ? ' selected' : ''}>${x.name}</option>`).join('')}</select>
     </div>
     <button class="x" data-del-ev="${e.id}" aria-label="Bron verwijderen">${ICON.x}</button>
-    <input class="field sm note" data-ef="note" aria-label="Bron ${n}: welke bron?" value="${esc(e.note)}" placeholder="Welke bron? Bv. Dashboard Q3 2026, n=1.240" maxlength="160">
+    <input class="field sm note" data-ef="note" aria-label="Bron ${n}: welke bron?" value="${esc(e.note)}" placeholder="Welke bron? Bv. cijfers van onze dienst, 2026" maxlength="160">
     <div class="ev-help">${esc(t.help)}</div>
   </div>`;
 }
@@ -965,10 +970,10 @@ function evHTML(g, e, i = 0) {
 function whyHTML(g, w, i) {
   const filled = g.whys.filter(x => x.trim()).length;
   const isRoot = i === g.whys.length - 1 && g.whys.length > 1 && w.trim();
-  const label = i === 0 ? 'Waarom?' : isRoot ? 'Grondoorzaak?' : `Waarom ${i + 1}?`;
+  const label = i === 0 ? 'Waarom?' : isRoot ? 'Echte oorzaak?' : `Waarom ${i + 1}?`;
   return `<div class="why${isRoot ? ' root' : ''}">
     <span class="why-n">${label}</span>
-    <textarea class="field sm grow" rows="1" data-why="${i}" aria-label="${label}" placeholder="${i === 0 ? 'Waarom bestaat deze kloof?' : 'En waarom is dat zo?'}" maxlength="200">${esc(w)}</textarea>
+    <textarea class="field sm grow" rows="1" data-why="${i}" aria-label="${label}" placeholder="${i === 0 ? 'Waarom bestaat dit verschil?' : 'En waarom is dat zo?'}" maxlength="200">${esc(w)}</textarea>
     ${i > 0 ? `<button class="x" data-del-why="${i}" aria-label="Verwijder ${label.replace('?', '').toLowerCase()}">${ICON.x}</button>` : '<span class="x-ph"></span>'}
   </div>`;
 }
@@ -990,7 +995,7 @@ function actHTML(a, i = 0) {
 }
 
 function segHTML(key, val, lo, hi, title) {
-  return `<div><div class="seg-label"><span>${title}</span><b>${val}</b></div>
+  return `<div><div class="seg-label"><span>${title}</span><b>${val || '–'}</b></div>
     <div class="seg" role="radiogroup" aria-label="${title}">${[1, 2, 3, 4].map(v => `<button role="radio" aria-checked="${v === val}" class="${v === val ? 'on' : ''}" data-prio="${key}" data-v="${v}">${v}</button>`).join('')}</div>
     <div class="seg-ends"><span>${lo}</span><span>${hi}</span></div></div>`;
 }
@@ -1004,13 +1009,13 @@ function gapHTML(g) {
         <input class="field" data-f="theme" aria-label="Thema" value="${esc(g.theme)}" placeholder="Bv. Doorlooptijd aanvragen" maxlength="80"></div>
       <div class="sec two">
         <div class="state-box">
-          <div class="state-title">Huidige situatie <span data-aanname>${g.evidence.length ? '' : '<span class="label-aanname">aanname</span>'}</span></div>
+          <div class="state-title">Huidige situatie <span data-aanname>${g.evidence.length ? '' : '<span class="label-aanname">nog niet bewezen</span>'}</span></div>
           <textarea class="field" data-f="asis.text" aria-label="Huidige situatie" rows="2" placeholder="Waar staan we nu? Zo feitelijk mogelijk." maxlength="600">${esc(g.asis.text)}</textarea>
           <span class="mini">Meetbaar maken (optioneel)</span>
           <div class="row3">
-            <input class="field sm ind" data-f="asis.indicator" aria-label="Indicator" value="${esc(g.asis.indicator)}" placeholder="Indicator" maxlength="80">
+            <input class="field sm ind" data-f="asis.indicator" aria-label="Wat meet je?" value="${esc(g.asis.indicator)}" placeholder="Wat meet je?" maxlength="80">
             <input class="field sm" data-f="asis.value" aria-label="Huidige waarde" value="${esc(g.asis.value)}" placeholder="Nu" inputmode="decimal" maxlength="20">
-            <input class="field sm" data-f="asis.unit" aria-label="Eenheid" value="${esc(g.asis.unit)}" placeholder="Eenheid" maxlength="30">
+            <input class="field sm" data-f="asis.unit" aria-label="In welke maat?" value="${esc(g.asis.unit)}" placeholder="In welke maat?" maxlength="30">
           </div>
         </div>
         <div class="state-box tobe">
@@ -1018,7 +1023,7 @@ function gapHTML(g) {
           <textarea class="field" data-f="tobe.text" aria-label="Gewenste situatie" rows="2" placeholder="Waar willen we staan? Wat is dan anders?" maxlength="600">${esc(g.tobe.text)}</textarea>
           <span class="mini">Doel (optioneel)</span>
           <div class="row2">
-            <input class="field sm" data-f="tobe.value" aria-label="Doelwaarde" value="${esc(g.tobe.value)}" placeholder="Doelwaarde" inputmode="decimal" maxlength="20">
+            <input class="field sm" data-f="tobe.value" aria-label="Hoeveel wil je halen?" value="${esc(g.tobe.value)}" placeholder="Hoeveel wil je halen?" inputmode="decimal" maxlength="20">
             <input class="field sm" type="date" data-f="tobe.by" value="${esc(g.tobe.by)}" aria-label="Doel tegen wanneer">
           </div>
         </div>
@@ -1027,11 +1032,11 @@ function gapHTML(g) {
 
       <div class="sec"><span class="sec-label">Bewijs voor de huidige situatie <span class="hint">waarop baseer je dit?</span></span>
         ${g.evidence.length ? `<div class="evs">${g.evidence.map((e, i) => evHTML(g, e, i)).join('')}</div>`
-          : `<div class="no-ev"><span class="label-aanname">aanname</span>Nog geen bron. Zonder bewijs is de huidige situatie een aanname.</div>`}
+          : `<div class="no-ev">Nog geen bron. Zonder bewijs is de huidige situatie nog niet bewezen.</div>`}
         <button class="add-link" data-add-ev ${g.evidence.length >= 4 ? 'disabled' : ''}>${ICON.plus}Bron toevoegen</button>
       </div>
 
-      <div class="sec"><span class="sec-label">Waarom bestaat deze kloof? <span class="hint">vraag door tot de oorzaak</span></span>
+      <div class="sec"><span class="sec-label">Waarom bestaat dit verschil? <span class="hint">vraag door tot de oorzaak</span></span>
         <div class="whys">${g.whys.map((w, i) => whyHTML(g, w, i)).join('')}</div>
         <button class="add-link" data-add-why ${g.whys.length >= MAX_WHY ? 'disabled' : ''}>${ICON.plus}Vraag nog eens waarom</button>
       </div>
@@ -1043,15 +1048,15 @@ function gapHTML(g) {
 
       <div class="sec"><span class="sec-label">Prioriteit <span class="hint" data-quad>${QUADS[quadOf(g)].name}</span></span>
         <div class="prio">
-          ${segHTML('impact', g.impact, 'klein', 'groot', 'Impact als de kloof dicht is')}
-          ${segHTML('feas', g.feas, 'moeilijk', 'makkelijk', 'Haalbaarheid')}
+          ${segHTML('impact', g.impact, 'klein', 'groot', 'Wat levert het op?')}
+          ${segHTML('feas', g.feas, 'moeilijk', 'makkelijk', 'Hoe haalbaar?')}
         </div>
         <p class="prio-note">Schaal 1 tot 4: er is geen neutraal midden, dus je moet kiezen.</p>
       </div>
 
       <div class="gap-foot">
         <button class="fold-gap" data-toggle>Inklappen</button>
-        <button class="del-gap" data-del-gap>Kloof verwijderen</button>
+        <button class="del-gap" data-del-gap>Thema verwijderen</button>
       </div>
     </div>` : ''}
   </article>`;
@@ -1079,7 +1084,7 @@ function refreshGap(id) {
   const c = el.querySelector('[data-chips]'); if (c) c.innerHTML = chipsHTML(g);
   const b = el.querySelector('[data-gapbox]'); if (b) b.innerHTML = gapBoxHTML(g);
   const q = el.querySelector('[data-quad]'); if (q) q.textContent = QUADS[quadOf(g)].name;
-  const an = el.querySelector('[data-aanname]'); if (an) an.innerHTML = g.evidence.length ? '' : '<span class="label-aanname">aanname</span>';
+  const an = el.querySelector('[data-aanname]'); if (an) an.innerHTML = g.evidence.length ? '' : '<span class="label-aanname">nog niet bewezen</span>';
   el.querySelectorAll('[data-act-id]').forEach(row => {
     const a = g.actions.find(x => x.id === row.dataset.actId); if (!a) return;
     row.querySelector('[data-af="who"]').classList.toggle('missing', !!(a.text.trim() && !a.who.trim()));
@@ -1098,15 +1103,16 @@ let sigCursor = 0;
 function renderSignals() {
   const a = cur();
   const n = a.gaps.reduce((s, g) => s + gapSignals(g).length, 0);
-  if (!a.gaps.length) { $('sigbar').innerHTML = ''; $('sig-analysis').innerHTML = ''; return; }
+  // Aandachtspunten pas tonen als je een verschil openklapt: eerst rustig invullen.
+  if (!a.gaps.length || !a.gaps.some(g => g.open)) { $('sigbar').innerHTML = ''; $('sig-analysis').innerHTML = ''; return; }
   $('sigbar').innerHTML = n
-    ? `<button class="sig-summary" id="sig-jump" title="Spring naar de volgende kloof met een signaal">${ICON.warn}${n} ${n === 1 ? 'signaal' : 'signalen'}</button>`
-    : `<span class="sig-summary ok">${ICON.ok}Geen signalen per kloof</span>`;
+    ? `<button class="sig-summary" id="sig-jump" title="Spring naar het volgende thema met een aandachtspunt">${ICON.warn}${n} ${n === 1 ? 'aandachtspunt' : 'aandachtspunten'}</button>`
+    : `<span class="sig-summary ok">${ICON.ok}Geen aandachtspunten</span>`;
   $('sig-analysis').innerHTML = analysisSignals(a).map(s => `<div class="sig-analysis${s.soft ? ' soft' : ''}"><span class="dot"></span>${esc(s.text)}</div>`).join('');
 }
 
 /* Kloofkaart: per kloof een balk van nu naar doel, kleur volgt de prioriteit, een stipje per soort bewijs. */
-const QBAR = { eerst:'#10b981', plannen:'#64748b', snel:'#cbd5e1', liggen:'#e2e8f0' };
+const QBAR = { eerst:'#10b981', plannen:'#64748b', snel:'#cbd5e1', liggen:'#e2e8f0', nog:'#e2e8f0' };
 function kloofkaart(a, big) {
   const fs = big ? 13 : 13, e = esc;
   const rows = ranked(a).map((g, i) => {
@@ -1154,23 +1160,23 @@ function renderAside() {
   $('aside').innerHTML = `<div class="card">
     <div class="ov-title">Overzicht</div>
     <div class="ov-stats">
-      <div class="ov-stat"><b>${n}</b><span>${n === 1 ? 'kloof' : 'kloven'}</span></div>
-      <div class="ov-stat${sig ? ' warn' : ''}"><b>${sig}</b><span>signalen</span></div>
-      <div class="ov-stat${assumptions ? ' warn' : ''}"><b>${assumptions}</b><span>${assumptions === 1 ? 'aanname' : 'aannames'}</span></div>
+      <div class="ov-stat"><b>${n}</b><span>${n === 1 ? 'verschil' : 'verschillen'}</span></div>
+      <div class="ov-stat"><b>${n - assumptions}</b><span>met bewijs</span></div>
+      <div class="ov-stat"><b>${rank.filter(rated).length}</b><span>ingeschat</span></div>
     </div>
-    ${n ? `<div class="ov-sec ov-kaart"><div class="ov-sub">Kloofkaart</div>${kloofkaart(a)}</div>` : ''}
+    ${n ? `<div class="ov-sec ov-kaart"><div class="ov-sub">Overzicht van verschillen</div>${kloofkaart(a)}</div>` : ''}
     <div class="exp-btns"><button type="button" class="btn-s" data-exp="png"${n ? '' : ' disabled'}>Afbeelding</button><button type="button" class="btn-s" data-exp="pdf"${n ? '' : ' disabled'}>PDF</button></div>
     <details class="ov-more" ${window.matchMedia('(min-width:1000px)').matches || asideOpen ? 'open' : ''} id="ov-more">
-      <summary>${asideOpen ? 'Minder tonen' : 'Bewijs en rangschikking tonen'}</summary>
-      <div class="ov-sec"><div class="ov-sub">Bewijsdekking</div>
+      <summary>${asideOpen ? 'Minder tonen' : 'Bewijs en volgorde tonen'}</summary>
+      <div class="ov-sec"><div class="ov-sub">Hoeveel bewijs heb je?</div>
         ${n ? `<div class="cov">${cov.map(({ t, k }) => `<div class="cov-row" title="${esc(t.help)}">
           <span class="lbl"><span class="sw" style="background:${t.color}"></span>${t.name}</span>
           <span class="cov-bar"><span style="width:${n ? k / n * 100 : 0}%;background:${t.color}"></span></span>
-          <span class="v">${k}/${n}</span></div>`).join('')}</div>` : '<p class="ov-empty">Nog geen kloven.</p>'}
+          <span class="v">${k}/${n}</span></div>`).join('')}</div>` : '<p class="ov-empty">Nog geen verschillen.</p>'}
       </div>
-      <div class="ov-sec"><div class="ov-sub">Rangschikking</div>
+      <div class="ov-sec"><div class="ov-sub">Volgorde</div>
         ${n ? `<ol class="rank">${rank.map((g, i) => `<li><button data-goto="${g.id}" aria-label="${i + 1}. ${esc(g.theme || 'Thema zonder naam')}, ${QUADS[quadOf(g)].name}"><span class="r">${i + 1}</span><span class="t">${esc(g.theme || 'Thema zonder naam')}</span><span class="qpill ${QUADS[quadOf(g)].cls}">${QUADS[quadOf(g)].name}</span></button></li>`).join('')}</ol>`
-          : '<p class="ov-empty">Impact maal haalbaarheid bepaalt de volgorde.</p>'}
+          : '<p class="ov-empty">Wat veel oplevert en makkelijk is, komt eerst.</p>'}
       </div>
     </details>
   </div>`;
@@ -1226,7 +1232,7 @@ function updateWhyLabels(card, g) {
   card.querySelectorAll('.why').forEach((row, i) => {
     const w = g.whys[i] || '', isRoot = i === g.whys.length - 1 && g.whys.length > 1 && w.trim();
     row.classList.toggle('root', !!isRoot);
-    row.querySelector('.why-n').textContent = i === 0 ? 'Waarom?' : isRoot ? 'Grondoorzaak?' : `Waarom ${i + 1}?`;
+    row.querySelector('.why-n').textContent = i === 0 ? 'Waarom?' : isRoot ? 'Echte oorzaak?' : `Waarom ${i + 1}?`;
   });
 }
 document.addEventListener('keydown', e => {
@@ -1300,7 +1306,7 @@ document.addEventListener('click', e => {
   const pr = t.closest('[data-prio]');
   if (pr) { g[pr.dataset.prio] = +pr.dataset.v; save(); renderGap(g.id); refreshDerived(); return; }
   if (t.closest('[data-del-gap]')) {
-    const restore = snapshot(), name = g.theme || 'Kloof';
+    const restore = snapshot(), name = g.theme || 'Thema';
     cur().gaps = cur().gaps.filter(x => x.id !== g.id); save(); render();
     toast(`'${name.length > 30 ? name.slice(0, 30) + '…' : name}' verwijderd`, restore); return;
   }
@@ -1375,7 +1381,7 @@ $('example').addEventListener('click', () => {
     tobe:{ text:'Medewerkers werken vlot met het systeem.', value:'', by:'' },
     evidence:[], whys:[''], actions:[], impact:2, feas:3, open:false });
   a.gaps.push(g1, g2, g3); save(); render();
-  toast('Voorbeeld geladen. Kijk naar de signalen.');
+  toast('Voorbeeld geladen. Klap een thema open voor de aandachtspunten.');
 });
 
 /* ---------- Voorbeeld wissen of houden, één analyse verwijderen ---------- */
@@ -1410,7 +1416,7 @@ $('menu-btn').addEventListener('click', e => {
 });
 document.addEventListener('click', e => { if (!e.target.closest('.menu-wrap')) closeMenu(); });
 document.addEventListener('toggle', e => {
-  if (e.target.id === 'ov-more') { asideOpen = e.target.open; const s = e.target.querySelector('summary'); if (s) s.textContent = asideOpen ? 'Minder tonen' : 'Bewijs en rangschikking tonen'; }
+  if (e.target.id === 'ov-more') { asideOpen = e.target.open; const s = e.target.querySelector('summary'); if (s) s.textContent = asideOpen ? 'Minder tonen' : 'Bewijs en volgorde tonen'; }
 }, true);
 
 const slug = s => (s || 'analyse').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'analyse';
@@ -1433,30 +1439,30 @@ function asMarkdown() {
   ranked(a).forEach((g, i) => {
     const gt = gapText(g);
     md += `## ${i + 1}. ${g.theme || 'Thema zonder naam'} (${QUADS[quadOf(g)].name})\n\n`;
-    md += `**Huidige situatie**${g.evidence.length ? '' : ' _(aanname)_'}: ${g.asis.text || '—'}`;
+    md += `**Huidige situatie**${g.evidence.length ? '' : ' _(nog niet bewezen)_'}: ${g.asis.text || '—'}`;
     if (g.asis.indicator || g.asis.value) md += ` (${[g.asis.indicator, [g.asis.value, g.asis.unit].filter(Boolean).join(' ')].filter(Boolean).join(': ')})`;
     md += `\n\n**Gewenste situatie**: ${g.tobe.text || '—'}`;
     if (g.tobe.value) md += ` (doel ${g.tobe.value}${g.asis.unit ? ' ' + g.asis.unit : ''}${g.tobe.by ? ', tegen ' + fmtDate(g.tobe.by) : ''})`;
-    md += `\n\n**Kloof**: ${gt ? `${gt.line}, ${gt.delta} (${gt.dir})` : 'kwalitatief'}\n\n`;
-    md += `**Bewijs**:\n${g.evidence.length ? g.evidence.map(e => `- ${evLine(e)}`).join('\n') : '- Geen: dit is een aanname'}\n\n`;
+    md += `\n\n**Verschil**: ${gt ? `${gt.line}, ${gt.delta} (${gt.dir})` : 'kwalitatief'}\n\n`;
+    md += `**Bewijs**:\n${g.evidence.length ? g.evidence.map(e => `- ${evLine(e)}`).join('\n') : '- Geen: dit is nog niet bewezen'}\n\n`;
     const whys = g.whys.filter(w => w.trim());
     md += `**Waarom**:\n${whys.length ? whys.map((w, k) => `${k + 1}. ${w}`).join('\n') : '- Nog niet onderzocht'}\n\n`;
     md += `**Wat is nodig**:\n${g.actions.length ? g.actions.map(x => `- [${x.done ? 'x' : ' '}] ${x.text || '—'}${x.who ? ` (${x.who}` : ' (wie?'}${x.by ? `, tegen ${fmtDate(x.by)})` : ')'}`).join('\n') : '- Nog geen acties'}\n\n`;
-    md += `**Prioriteit**: impact ${g.impact}/4, haalbaarheid ${g.feas}/4\n`;
-    const s = gapSignals(g); if (s.length) md += `\n**Signalen**: ${s.map(x => x.text).join('; ')}\n`;
+    md += rated(g) ? `**Prioriteit**: impact ${g.impact}/4, haalbaarheid ${g.feas}/4\n` : '**Prioriteit**: nog niet ingeschat\n';
+    const s = gapSignals(g); if (s.length) md += `\n**Aandachtspunten**: ${s.map(x => x.text).join('; ')}\n`;
     md += '\n';
   });
   return md;
 }
 function asCSV() {
   const cell = v => { const s = String(v == null ? '' : v); return /[;"\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
-  const head = ['Rang','Thema','Huidige situatie','Indicator','Huidige waarde','Eenheid','Gewenste situatie','Doelwaarde','Tegen','Kloof','Bewijs','Aantal bronnen','Aanname','Grondoorzaak','Waarom-keten','Acties','Impact','Haalbaarheid','Prioriteit','Signalen'];
+  const head = ['Rang','Thema','Huidige situatie','Wat meet je','Huidige waarde','Maat','Gewenste situatie','Doel','Tegen','Verschil','Bewijs','Aantal bronnen','Nog niet bewezen','Echte oorzaak','Waarom-keten','Acties','Impact','Haalbaarheid','Prioriteit','Signalen'];
   const rows = ranked(cur()).map((g, i) => {
     const gt = gapText(g), whys = g.whys.filter(w => w.trim());
     return [i + 1, g.theme, g.asis.text, g.asis.indicator, g.asis.value, g.asis.unit, g.tobe.text, g.tobe.value, g.tobe.by,
       gt ? gt.delta : 'kwalitatief', g.evidence.map(evLine).join(' | '), g.evidence.length, g.evidence.length ? 'nee' : 'ja',
       whys[whys.length - 1] || '', whys.join(' > '), g.actions.map(a => `${a.done ? '[x] ' : ''}${a.text}${a.who ? ' (' + a.who + ')' : ''}${a.by ? ' tegen ' + a.by : ''}`).join(' | '),
-      g.impact, g.feas, QUADS[quadOf(g)].name, gapSignals(g).map(s => s.text).join(' | ')];
+      g.impact || '', g.feas || '', QUADS[quadOf(g)].name, gapSignals(g).map(s => s.text).join(' | ')];
   });
   return '﻿' + [head, ...rows].map(r => r.map(cell).join(';')).join('\r\n');
 }
@@ -1470,17 +1476,17 @@ function buildExport() {
     p:'font-size:13px;line-height:1.5;color:#334155;margin:0',
     pill:(bg, fg) => `display:inline-block;font-size:11px;font-weight:600;padding:1px 8px;border-radius:999px;background:${bg};color:${fg}`,
   };
-  const qc = { eerst:['#d1fae5','#047857'], plannen:['#e2e8f0','#334155'], snel:['#f1f5f9','#475569'], liggen:['#ffffff','#64748b'] };
+  const qc = { eerst:['#d1fae5','#047857'], plannen:['#e2e8f0','#334155'], snel:['#f1f5f9','#475569'], liggen:['#ffffff','#64748b'], nog:['#f8fafc','#64748b'] };
   const n = a.gaps.length, sig = a.gaps.reduce((s, g) => s + gapSignals(g).length, 0), assum = a.gaps.filter(g => !g.evidence.length).length;
   let html = '';
   if (a.question) html += `<div data-oc-keep style="font-size:16px;line-height:1.45;color:#1e293b;border-left:3px solid #10b981;padding:2px 0 2px 12px;margin-bottom:18px">${e(a.question)}</div>`;
   // kloofkaart
-  if (n) html += `<div data-oc-keep style="margin-bottom:20px"><div style="font-size:18px;font-weight:700;color:#1e293b;margin-bottom:6px">Kloofkaart</div>${kloofkaart(a, true)}</div>`;
+  if (n) html += `<div data-oc-keep style="margin-bottom:20px"><div style="font-size:18px;font-weight:700;color:#1e293b;margin-bottom:6px">Overzicht van verschillen</div>${kloofkaart(a, true)}</div>`;
   // overzicht
   html += `<div data-oc-keep style="display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:14px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:22px">
     <div><div style="${S.h}">Overzicht</div>
-      <div style="font-size:13px;color:#334155;line-height:1.7">${n} ${n === 1 ? 'kloof' : 'kloven'} · <b style="color:${sig ? '#d97706' : '#059669'}">${sig} signalen</b> · ${assum} ${assum === 1 ? 'aanname' : 'aannames'}</div>
-      <div style="${S.h};margin-top:10px">Bewijsdekking</div>
+      <div style="font-size:13px;color:#334155;line-height:1.7">${n} ${n === 1 ? 'verschil' : 'verschillen'} · ${sig} ${sig === 1 ? 'aandachtspunt' : 'aandachtspunten'} · ${assum} nog niet bewezen</div>
+      <div style="${S.h};margin-top:10px">Hoeveel bewijs heb je?</div>
       ${TYPES.map(t => { const k = a.gaps.filter(g => g.evidence.some(x => x.type === t.id)).length;
         return `<div style="display:grid;grid-template-columns:110px 1fr 34px;gap:8px;align-items:center;font-size:12px;color:#475569;margin:3px 0">
           <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${t.color};margin-right:6px"></span>${t.name}</span>
@@ -1488,7 +1494,7 @@ function buildExport() {
           <span style="text-align:right">${k}/${n}</span></div>`; }).join('')}
       ${analysisSignals(a).map(s => `<div style="font-size:12px;color:${s.soft ? '#64748b' : '#b45309'};margin-top:6px">⚠ ${e(s.text)}</div>`).join('')}
     </div>
-    <div><div style="${S.h}">Rangschikking</div>
+    <div><div style="${S.h}">Volgorde</div>
       ${ranked(a).map((g, i) => `<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;font-size:13px;color:#1e293b;padding:4px 0;border-bottom:1px solid #eef2f6">
         <span><span style="color:#94a3b8;margin-right:6px">${i + 1}</span>${e(g.theme || 'Thema zonder naam')}</span><span style="${S.pill(...qc[quadOf(g)])};white-space:nowrap">${QUADS[quadOf(g)].name}</span></div>`).join('')}
     </div></div>`;
@@ -1497,11 +1503,11 @@ function buildExport() {
     html += `<div data-oc-keep style="padding:16px 0 18px;border-top:1px solid #e2e8f0">
       <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:10px">
         <div style="font-size:17px;font-weight:700;color:#1e293b">${i + 1}. ${e(g.theme || 'Thema zonder naam')}</div>
-        <div style="white-space:nowrap"><span style="${S.pill(...qc[quadOf(g)])}">${QUADS[quadOf(g)].name}</span> <span style="font-size:12px;color:#64748b;margin-left:6px">impact ${g.impact}/4 · haalbaarheid ${g.feas}/4</span></div>
+        <div style="white-space:nowrap"><span style="${S.pill(...qc[quadOf(g)])}">${QUADS[quadOf(g)].name}</span> <span style="font-size:12px;color:#64748b;margin-left:6px">${rated(g) ? `impact ${g.impact}/4 · haalbaarheid ${g.feas}/4` : ''}</span></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
         <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px">
-          <div style="${S.h}">Huidige situatie ${g.evidence.length ? '' : '<span style="color:#d97706;border:1px dashed #f59e0b;border-radius:4px;padding:0 5px;margin-left:4px">aanname</span>'}</div>
+          <div style="${S.h}">Huidige situatie ${g.evidence.length ? '' : '<span style="color:#d97706;border:1px dashed #f59e0b;border-radius:4px;padding:0 5px;margin-left:4px">nog niet bewezen</span>'}</div>
           <p style="${S.p}">${e(g.asis.text || '—')}</p>
           ${g.asis.indicator || g.asis.value ? `<p style="${S.p};color:#64748b;font-size:12px;margin-top:4px">${e(g.asis.indicator)}${g.asis.value ? `: <b style="color:#1e293b">${e(g.asis.value)} ${e(g.asis.unit)}</b>` : ''}</p>` : ''}
         </div>
@@ -1511,11 +1517,11 @@ function buildExport() {
           ${g.tobe.value ? `<p style="${S.p};color:#64748b;font-size:12px;margin-top:4px">Doel: <b style="color:#1e293b">${e(g.tobe.value)} ${e(g.asis.unit)}</b>${g.tobe.by ? ` · tegen ${e(fmtDate(g.tobe.by))}` : ''}</p>` : ''}
         </div>
       </div>
-      <p style="${S.p};margin-top:10px"><b>Kloof:</b> ${gt ? `${e(gt.line)} · ${e(gt.delta)} <span style="color:#64748b">(${e(gt.dir)})</span>` : '<span style="color:#64748b">kwalitatief</span>'}</p>
+      <p style="${S.p};margin-top:10px"><b>Verschil:</b> ${gt ? `${e(gt.line)} · ${e(gt.delta)} <span style="color:#64748b">(${e(gt.dir)})</span>` : '<span style="color:#64748b">kwalitatief</span>'}</p>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:12px">
         <div><div style="${S.h}">Bewijs</div>
           ${g.evidence.length ? g.evidence.map(x => { const t = typeOf(x.type); return `<div style="font-size:12px;line-height:1.45;color:#334155;margin-bottom:5px;padding-left:8px;border-left:3px solid ${t.color}"><b>${t.name}</b> <span style="color:#64748b">(${x.strength})</span>${x.note ? `<br>${e(x.note)}` : ''}</div>`; }).join('')
-            : '<div style="font-size:12px;color:#b45309">Geen bron: dit is een aanname</div>'}
+            : '<div style="font-size:12px;color:#b45309">Geen bron: dit is nog niet bewezen</div>'}
         </div>
         <div><div style="${S.h}">Waarom</div>
           ${whys.length ? whys.map((w, k) => `<div style="font-size:12px;line-height:1.45;color:${k === whys.length - 1 && whys.length > 1 ? '#059669' : '#334155'};margin-bottom:4px;padding-left:${k * 8}px">${k + 1}. ${e(w)}</div>`).join('') : '<div style="font-size:12px;color:#94a3b8">Nog niet onderzocht</div>'}
@@ -1532,7 +1538,7 @@ function buildExport() {
   });
   html += `<div data-oc-keep style="font-size:11px;color:#94a3b8;margin-top:8px">Vier soorten bewijs: onderzoek, cijfers van de organisatie, praktijkervaring en wat betrokkenen zeggen.</div>`;
   node.innerHTML = html;
-  return { node, title:'Gap-analyse', subtitle:`${a.name} · ${n} ${n === 1 ? 'kloof' : 'kloven'}` };
+  return { node, title:'Gap-analyse', subtitle:`${a.name} · ${n} ${n === 1 ? 'verschil' : 'verschillen'}` };
 }
 
 async function doExport(act) {

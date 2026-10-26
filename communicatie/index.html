@@ -130,6 +130,7 @@ input[type=date].inp { min-height:44px; }
 .seg button small { font-size:0.6875rem; font-weight:500; color:var(--slate-500); }
 .seg button:hover { border-color:var(--slate-300); }
 .seg button.sugg { border-style:dashed; border-color:#6ee7b7; }
+.seg button.sugg small::after { content:' · voorstel'; font-weight:600; color:var(--accent-dark); }
 .seg button[aria-pressed="true"] { background:var(--slate-800); border-color:var(--slate-800); color:var(--wit); border-style:solid; }
 .seg button[aria-pressed="true"] small { color:var(--slate-300); }
 .why { font-size:0.75rem; color:var(--slate-500); margin-top:0.375rem; }
@@ -181,8 +182,11 @@ input[type=date].inp { min-height:44px; }
 .titem input { width:20px; height:20px; accent-color:var(--accent); margin-top:0.0625rem; }
 .titem b { display:block; font-size:0.9375rem; color:var(--slate-800); font-weight:600; }
 .titem span { font-size:0.8125rem; color:var(--slate-500); }
-.titem .ttip { display:block; margin-top:0.25rem; color:#92400e; font-size:0.8125rem; }
+.titem .ttip { display:block; margin-top:0.25rem; color:var(--slate-600); font-size:0.8125rem; }
+.titem .ttip::before { content:'Tip: '; font-weight:600; color:var(--slate-700); }
 .titem.on .ttip { display:none; }
+.titem .found { display:inline-block; margin-top:0.25rem; font-size:0.75rem; font-weight:600; color:var(--accent-dark); background:var(--accent-50); border-radius:6px; padding:0 0.375rem; }
+.toets-sub { font-size:0.8125rem; color:var(--slate-600); padding:0.5rem 0.875rem 0; }
 
 /* Momenten */
 .quick { display:flex; flex-wrap:wrap; gap:0.375rem; }
@@ -320,7 +324,12 @@ input[type=date].inp { min-height:44px; }
 
 .toast { position:fixed; left:50%; bottom:calc(var(--bottom) + 1.25rem); transform:translate(-50%, 200%); visibility:hidden; z-index:100; display:flex; align-items:center; gap:0.75rem; background:var(--slate-800); color:var(--wit); padding:0.625rem 0.75rem 0.625rem 1rem; border-radius:12px; font-size:0.875rem; box-shadow:0 10px 30px rgba(15,23,42,0.25); max-width:calc(100% - 2rem); transition:transform 0.25s ease, visibility 0s 0.25s; }
 .toast.show { transform:translate(-50%, 0); visibility:visible; transition:transform 0.25s ease; }
-.toast button { color:#6ee7b7; font-weight:600; padding:0.25rem 0.75rem; border-radius:8px; min-height:44px; min-width:44px; }
+.toast button { color:#6ee7b7; font-weight:600; padding:0.25rem 0.75rem; border-radius:8px; min-height:44px; min-width:44px; flex-shrink:0; white-space:nowrap; }
+.toast > span { min-width:0; }
+.err { font-size:0.8125rem; color:#b91c1c; font-weight:600; margin-top:0.25rem; flex-basis:100%; }
+.tag.prop { background:var(--slate-100); color:var(--slate-600); text-transform:none; letter-spacing:0; font-weight:600; }
+/* In de app staat de stappenteller van het stappenplan al bovenaan: hier geen tweede teller. */
+.in-app .stepnow { display:none !important; }
 
 .footer { text-align:center; padding:2rem 2rem calc(var(--bottom) + 2rem); border-top:1px solid var(--slate-200); background:var(--wit); }
 .quote { font-size:0.8125rem; color:var(--accent-dark); }
@@ -440,8 +449,9 @@ button.oc-import { color:#047857; min-height:44px; }
         <div class="menu" id="menu" role="menu">
           <button data-act="pdf" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 15h6M9 18h4"/></svg>Download als PDF</button>
           <button data-act="png" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>Download als afbeelding</button>
-          <button data-act="copy" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Kopieer als tekst</button>
+          <button data-act="copy" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Kopieer (met opmaak)</button>
           <button data-act="csv" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 4v16"/></svg>Momenten als CSV</button>
+          <button data-act="ics" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Momenten in je agenda (.ics)</button>
           <div class="sep"></div>
           <button data-act="wipe" class="danger" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>Alles wissen</button>
         </div>
@@ -472,8 +482,8 @@ button.oc-import { color:#047857; min-height:44px; }
       <ul>
         <li><b>Doelgroepen</b> neem je over uit andere tools, zoals de Stakeholder Radar, de Impactanalyse of de Weerstand-scan, als je die op dit toestel gebruikte.</li>
         <li><b>Het Veranderprofiel</b> stuurt mee: bij een zware verandering stelt de tool meer momenten en meer persoonlijk contact voor.</li>
-        <li><b>De toets voor je boodschap</b> stelt vijf vragen die elke lezer zich stelt: wat verandert er voor mij, wat moet ik doen en tegen wanneer, waarom, is het in gewone taal, en bij wie kan ik terecht. Elk ontbrekend punt is een kans om het beter te zeggen.</li>
-        <li><b>Je momenten</b> komen als acties klaar te staan voor het Takenbord en Vinkje, met afzender en datum.</li>
+        <li><b>Check je boodschap</b>: vijf vragen die elke lezer zich stelt. Wat de tool herkent, zoals een mailadres, staat al aangevinkt. De rest vink je zelf aan.</li>
+        <li><b>Je momenten</b> komen als acties klaar te staan voor het Takenbord en Vinkje, met afzender en datum. Via het menu (⋮) zet je ze ook in je agenda.</li>
       </ul>
       <p>Twee vuistregels lopen door het hele plan. Wie leiding geeft, hoort het vóór zijn team, zodat niemand het nieuws eerst op de gang opvangt. En hoe groter de verandering, hoe meer je zegt in gesprek in plaats van op papier.</p>
     </div>
@@ -766,6 +776,7 @@ const SENDERS = [
   { id:'leiding', label:'Directe leidinggevende', sub:'wat het voor jou betekent' },
   { id:'team', label:'Projectteam', sub:'praktisch en inhoudelijk' },
   { id:'ambassadeur', label:'Collega-ambassadeur', sub:'iemand van de werkvloer' },
+  { id:'dienst', label:'Dienst of organisatie', sub:'voor burgers en klanten' },
   { id:'ander', label:'Iemand anders', sub:'vul zelf in' }
 ];
 const CHANNEL_GROUPS = [
@@ -788,6 +799,22 @@ const TOETS = [
   { id:'taal', label:'Gewone taal', sub:'Korte zinnen, geen vakjargon of afkortingen.', tip:'Lees de zin hardop. Zou je het zo zeggen aan het loket of aan de telefoon? Vervang elk woord dat je moet uitleggen.' },
   { id:'contact', label:'Bij wie kan ik terecht?', sub:'Een contactpersoon, mailadres of vraagpunt.', tip:'Noem één plek voor vragen: een naam, een mailadres of een vast vraagmoment.' }
 ];
+// Wat de tool zelf kan herkennen in de kernboodschap. 'Wat moet ik doen' vinkt de gebruiker altijd zelf aan.
+const DATE_RE = /\b(\d{1,2}[\/.-]\d{1,2}([\/.-]\d{2,4})?|\d{1,2} (jan|feb|maa|apr|mei|jun|jul|aug|sep|okt|nov|dec)[a-z]*|januari|februari|maart|april|mei|juni|juli|augustus|september|oktober|november|december|maandag|dinsdag|woensdag|donderdag|vrijdag|zaterdag|zondag|vandaag|morgen|volgende week|deze week|voor het einde van)\b/i;
+const CONTACT_RE = /[\w.+-]+@[\w-]+\.[\w.]+|(\+32\s?|\b0)\d{1,3}[\s/.]?\d{2,3}([\s.]?\d{2}){2,3}\b|https?:\/\/\S+|\bwww\.\S+|\b(loket|helpdesk|infopunt|vraagpunt|contactpersoon|bel |mail )/i;
+const YOU_RE = /\b(je|jij|jou|jouw|u|uw)\b/i;
+const WHY_RE = /\b(omdat|want|zodat|waardoor|daarom|om .{1,40} te)\b/i;
+function autoCheck(id, t) {
+  t = String(t || ''); if (!t.trim()) return { on:false };
+  if (id === 'mij' && YOU_RE.test(t)) return { on:true, why:'De lezer wordt aangesproken (je, u).' };
+  if (id === 'contact' && CONTACT_RE.test(t)) return { on:true, why:'Er staat een mailadres, telefoonnummer, link of loket in.' };
+  if (id === 'waarom' && WHY_RE.test(t)) return { on:true, why:'Er staat een reden in (omdat, want, zodat).' };
+  if (id === 'taal' && words(t) <= 30 && !jargonIn(t).length) return { on:true, why:'Kort genoeg en zonder vakjargon.' };
+  if (id === 'doen' && DATE_RE.test(t)) return { on:false, why:'Er staat een datum in. Staat er ook wat de lezer moet doen? Vink dan zelf aan.' };
+  return { on:false };
+}
+// true of false = zelf gekozen; niets = wat de tool herkent.
+const chk = id => typeof state.checks[id] === 'boolean' ? state.checks[id] : autoCheck(id, state.core).on;
 const JARGON = ['implementatie', 'implementeren', 'synergie', 'optimalisatie', 'optimaliseren', 'stakeholder', 'roll-out', 'rollout', 'transitie', 'paradigma', 'governance', 'alignment', 'faciliteren', 'operationaliseren', 'efficiëntiewinst', 'leverage', 'change management', 'best practice', 'value', 'kpi', 'scope'];
 const MEAS = [
   { id:'peiling', label:'Korte peiling', ph:'bv. 8 op 10 weet wat er verandert' },
@@ -816,7 +843,7 @@ const words = t => (String(t || '').trim().match(/\S+/g) || []).length;
 
 /* Opslag */
 function fresh() {
-  return { view:'wizard', step:0, name:'', what:'', why:'', sponsor:'', sponsorFrom:'', coreSender:'sponsor', coreSenderOther:'',
+  return { view:'wizard', step:0, name:'', what:'', why:'', sponsor:'', sponsorFrom:'', coreSender:'', coreSenderOther:'',
     groups:[], core:'', checks:{}, start:'', launch:'', moments:[], measures:[], ident:{ slogan:'', color:'', image:'', place:'' } };
 }
 function newGroup(name) {
@@ -827,32 +854,50 @@ function load() {
     const s = JSON.parse(localStorage.getItem(KEY));
     if (s && typeof s === 'object') {
       const f = fresh(), c = s.checks && typeof s.checks === 'object' ? s.checks : {}, checks = {};
-      ['mij', 'doen', 'waarom', 'taal', 'contact'].forEach(k => { if (c[k] === true) checks[k] = true; });
+      ['mij', 'doen', 'waarom', 'taal', 'contact'].forEach(k => { if (typeof c[k] === 'boolean') checks[k] = c[k]; });
       if (c.kort === true && !('taal' in c)) checks.taal = true;   // oude toets: 'kort en eenvoudig' wordt 'gewone taal'
-      return { ...f, ...s, ident:{ ...f.ident, ...(s.ident || {}) }, checks };
+      const st = { ...f, ...s, ident:{ ...f.ident, ...(s.ident || {}) }, checks };
+      if (!('coreSender' in s)) st.coreSender = 'sponsor';   // oudere plannen hadden de sponsor standaard gekozen
+      // Vroeger kapte een voorgesteld moment de kernboodschap af met "…": herstel de volledige tekst.
+      const core = String(st.core || '').trim().replace(/\s+/g, ' ');
+      (Array.isArray(st.moments) ? st.moments : []).forEach(m => {
+        const t = String(m && m.msg || '');
+        if (core && t.endsWith('…') && t.length > 20 && core.startsWith(t.slice(0, -1).trim())) m.msg = core;
+        (st.groups || []).forEach(g => { const gm = String(g.msg || '').trim().replace(/\s+/g, ' '); if (gm && t.endsWith('…') && t.length > 20 && gm.startsWith(t.slice(0, -1).trim())) m.msg = gm; });
+      });
+      return st;
     }
   } catch {}
   return fresh();
 }
-let state = load(), saves = 0, autoSponsor = false;
-// Een sponsor die uit een andere tool voorgesteld wordt, bewaren we pas als de gebruiker zelf iets doet.
-const stored = () => autoSponsor ? { ...state, sponsor:'', sponsorFrom:'' } : state;
+let state = load(), saves = 0, autoSponsor = false, autoName = false, autoWhat = '';
+// Wat uit een andere tool voorgesteld wordt (sponsor, projectnaam, de verandering), bewaren we pas als de gebruiker zelf iets doet.
+const stored = () => { const c = { ...state }; if (autoSponsor) { c.sponsor = ''; c.sponsorFrom = ''; } if (autoName) c.name = ''; if (autoWhat) c.what = ''; return c; };
 function persist() { try { localStorage.setItem(KEY, JSON.stringify(stored())); } catch {} }
 function save() {
-  autoSponsor = false; persist();
+  autoSponsor = false; autoName = false; autoWhat = ''; persist();
   saves++; clearTimeout(save.t); save.t = setTimeout(publish, 300);
   flashSaved(); showRestart();
 }
 // Stap, weergave of tab wisselen: bewaren zonder Ongedaan te laten vervallen.
 function saveUi() { persist(); }
 function hasContent() {
-  const strip = o => { const c = { ...o }; delete c.view; delete c.step; if (o === state && autoSponsor) { c.sponsor = ''; c.sponsorFrom = ''; } return JSON.stringify(c); };
+  const strip = o => { const c = o === state ? stored() : { ...o }; delete c.view; delete c.step; return JSON.stringify(c); };
   return strip(state) !== strip(fresh());
 }
 function showRestart() { const r = $('restart-row'); if (r) r.hidden = !hasContent(); }
 function suggestSponsor() {
   const sp = sponsorFound();
   if (sp && !state.sponsor.trim()) { state.sponsor = sp.name; state.sponsorFrom = sp.tool; autoSponsor = true; }
+  // Projectnaam uit de app, en de verandering uit de Impactanalyse of het Veranderklimaat.
+  if (!state.voorbeeld && !state.name.trim()) { const n = ocProjectName(); if (n) { state.name = n; autoName = true; } }
+  if (!state.voorbeeld && !state.what.trim()) { const w = sharedChange(); if (w) { state.what = w.text; autoWhat = w.tool; } }
+}
+// "De verandering in één zin" die een andere tool klaarlegde (kerncijfer 'verandering'); de recentste eerst.
+function sharedChange() {
+  const src = ocShare.sources(['kerncijfer'], OC_ID).sort((a, b) => (b.updated || 0) - (a.updated || 0));
+  for (const s of src) for (const it of s.items) if (it.text === 'verandering' && String(it.note || '').trim()) return { text:String(it.note).trim(), tool:s.tool };
+  return null;
 }
 const G = id => state.groups.find(g => g.id === id);
 const M = id => state.moments.find(m => m.id === id);
@@ -896,7 +941,9 @@ function suggestIntens(g) {
   return { v:'midden', why: p.effort ? 'volgens het Veranderprofiel' : 'een veilige middenweg' };
 }
 const intens = g => g.intens || suggestIntens(g).v;
-const suggestSender = g => g.lead ? 'sponsor' : 'leiding';
+// Burgers en klanten hebben geen leidinggevende bij ons: zij horen het van de dienst of organisatie.
+const suggestSender = g => g.lead ? 'sponsor' : isExt(g) ? 'dienst' : 'leiding';
+const sendersFor = g => SENDERS.filter(s => g && isExt(g) ? s.id !== 'leiding' || g.sender === 'leiding' : s.id !== 'dienst' || (g && g.sender === 'dienst'));
 const senderOf = g => g.sender || suggestSender(g);
 const sponsorName = () => state.sponsor.trim();
 function senderLabel(id, other) {
@@ -904,7 +951,9 @@ function senderLabel(id, other) {
   if (id === 'sponsor' && sponsorName()) return `${sponsorName()} (sponsor)`;
   const s = SENDERS.find(x => x.id === id); return s ? s.label : '';
 }
-const gSender = g => senderLabel(senderOf(g), g.senderOther);
+// Een voorstel dat nog niet bevestigd is, staat overal als voorstel.
+const gSender = g => senderLabel(senderOf(g), g.senderOther) + (g.sender ? '' : ' (voorstel)');
+const coreSenderText = () => { const id = state.coreSender || 'sponsor', t = id === 'ander' ? (state.coreSenderOther || 'iemand anders') : senderLabel(id); return state.coreSender ? t : t + ' (voorstel)'; };
 const chanLabel = (id, g) => id === 'ander' ? ((g && g.channelOther || '').trim() || 'Iets anders') : (CHANNELS[id] ? CHANNELS[id].label : id);
 const heavy = g => g.goals.includes('willen') || intens(g) === 'sterk';
 const channelWarn = g => heavy(g) && g.channels.length > 0 && !g.channels.some(c => PERSONAL.has(c));
@@ -925,7 +974,7 @@ function signals(t) {
   return out;
 }
 const sigHTML = t => signals(t).map(s => `<span class="sig ${s.ok ? 'ok' : ''}">${esc(s.t)}</span>`).join('');
-const toetsScore = () => TOETS.filter(x => state.checks[x.id]).length;
+const toetsScore = () => TOETS.filter(x => chk(x.id)).length;
 
 function timingIssues() {
   const out = [], ms = sortedMoments().filter(m => m.date);
@@ -979,10 +1028,11 @@ function issues() {
   else {
     if (words(state.core) > 30) add(2, 'De kernboodschap is langer dan 30 woorden.', true);
     if (jargonIn(state.core).length) add(2, 'De kernboodschap bevat vakjargon.', true);
-    if (toetsScore() < 4) add(2, `De boodschap scoort ${toetsScore()} op ${TOETS.length} in de toets. Kijk welke punten je nog kan versterken.`, true);
+    if (toetsScore() < 4) add(2, `Check je boodschap: ${toetsScore()} van ${TOETS.length} punten aangevinkt. Kijk wat je nog kan toevoegen.`, true);
   }
   state.groups.forEach(g => { if (!g.msg.trim()) add(2, `${g.name}: wat betekent het voor hen?`); });
   state.groups.forEach(g => { if (!g.sender) add(3, `${g.name}: bevestig wie het brengt (nu een voorstel).`, true); });
+  if (!state.coreSender) add(3, 'Kernboodschap: bevestig wie ze brengt (nu een voorstel).', true);
   state.groups.forEach(g => {
     if (!g.channels.length) add(4, `${g.name}: kies minstens één kanaal.`);
     else if (channelWarn(g)) add(4, `${g.name}: alleen geschreven of digitale kanalen, terwijl je veel van hen vraagt.`, true);
@@ -1000,8 +1050,13 @@ function issues() {
 /* ---------- Weergave ---------- */
 let pendingRender = false, pendingFlash = null, pointerDown = false, dateFocus = null;
 const whoOpen = new Set();
+// Draait de tool in de app met een stappenplanbalk? Dan tonen we geen tweede teller.
+function inApp() {
+  try { const b = window.frameElement && window.parent.document.getElementById('pathbar'); return !!(b && !b.hidden); } catch { return false; }
+}
 function render() {
   pendingRender = false;
+  document.documentElement.classList.toggle('in-app', inApp());
   syncFields();
   ['wizard', 'plan', 'kal'].forEach(v => $('tab-' + v).setAttribute('aria-selected', state.view === v));
   const n = state.moments.filter(m => !m.done).length;
@@ -1072,7 +1127,7 @@ function wizardHTML() {
     : `<button class="btn primary" type="button" data-view="plan"><span>Bekijk het plan</span>${ICON.right}</button>`;
   return `<div class="layout">
     <section class="card step" aria-labelledby="step-h">
-      <div class="eyebrow">Stap ${i + 1} · ${s.name}</div>
+      <div class="eyebrow">${inApp() ? 'Onderdeel' : 'Stap'} ${i + 1} · ${s.name}</div>
       <h2 id="step-h" tabindex="-1">${s.q}</h2>
       <p class="intro">${s.intro}</p>
       <div class="blocks">${body}</div>
@@ -1086,7 +1141,7 @@ function asideHTML() {
   const doneN = STEPS.slice(0, 8).filter((s, i) => stepDone(i)).length;
   const up = sortedMoments().find(m => !m.done && m.date && m.date >= todayIso());
   return `<div class="aside-h"><span>Je plan, live</span><button class="lnk" type="button" data-view="plan" style="text-transform:none;letter-spacing:0;font-size:0.75rem">Bekijk</button></div>
-    <div class="aside-name">${esc(state.name.trim() || 'Naamloos project')}</div>
+    <div class="aside-name">${esc(state.name.trim() || 'Nog geen projectnaam')}</div>
     ${state.what.trim() ? `<div class="aside-what">${esc(state.what.trim())}</div>` : ''}
     <div class="aside-core ${state.core.trim() ? '' : 'none'}">${state.core.trim() ? '“' + esc(state.core.trim()) + '”' : 'Nog geen kernboodschap'}</div>
     <div class="aside-gs">${state.groups.length ? state.groups.map(g => {
@@ -1118,8 +1173,8 @@ function stepVertrek() {
   const known = bits.length ? `<div class="known"><div class="known-h">Al bekend uit andere tools</div>${bits.join('')}</div>`
     : `<div class="known"><div class="known-h">Tip</div><div class="muted">Vulde je het <a href="https://onderconstructie.github.io/veranderprofiel/">Veranderprofiel</a> of de Stakeholder Radar al in op dit toestel? Dan verschijnt hier wat ze weten, en stemt deze tool zijn voorstellen erop af.</div></div>`;
   return `${known}
-    ${state.name.trim() ? '' : `<p class="namehint">Geef je project eerst een naam, <button type="button" class="lnk" data-focus-name>bovenaan</button>.</p>`}
-    <label class="field"><span class="lbl">Wat verandert er, in één zin?</span>
+    ${state.name.trim() ? (autoName ? `<p class="namehint">De projectnaam komt uit de app. <button type="button" class="lnk" data-focus-name>Wijzig</button></p>` : '') : `<p class="namehint">Geef je project eerst een naam, <button type="button" class="lnk" data-focus-name>bovenaan</button>.</p>`}
+    <label class="field"><span class="lbl">Wat verandert er, in één zin? ${autoWhat ? `<span class="tag auto">uit ${esc(autoWhat)}</span>` : ''}</span>
       <textarea class="inp" data-f="what" maxlength="300" rows="2" placeholder="bv. Vanaf maart behandelen we alle aanvragen digitaal, niet meer op papier.">${esc(state.what)}</textarea></label>
     <label class="field"><span class="lbl">Waarom? <small>Het verhaal achter de verandering</small></span>
       <textarea class="inp" data-f="why" maxlength="1200" rows="4" placeholder="Wat loopt er nu mis? Wat wordt er beter, en voor wie? Wat gebeurt er als we niets doen?">${esc(state.why)}</textarea></label>`;
@@ -1129,9 +1184,10 @@ function stepVertrek() {
 function stepGroepen() {
   const sugg = ['Medewerkers', 'Leidinggevenden', 'Directie', 'Klanten of burgers', 'Partners', 'Vakbond'].filter(n => !state.groups.some(g => g.name.toLowerCase() === n.toLowerCase()));
   const add = `<form class="addrow" id="add-group" autocomplete="off">
-      <input class="inp" id="new-group" maxlength="80" placeholder="Naam van een doelgroep" aria-label="Nieuwe doelgroep">
+      <input class="inp" id="new-group" maxlength="80" placeholder="Naam van een doelgroep" aria-label="Nieuwe doelgroep" aria-describedby="new-group-err">
       <button class="btn dark" type="submit">Voeg toe</button>
       <button class="btn" type="button" data-import data-oc-types="betrokkene" hidden>${ICON.import}Overnemen uit…</button>
+      <p class="err" id="new-group-err" aria-live="polite"></p>
     </form>
     ${sugg.length ? `<div class="chips">${sugg.map(n => `<button type="button" class="chip add" data-addgroup="${esc(n)}">+ ${esc(n)}</button>`).join('')}</div>` : ''}`;
   const cards = state.groups.length ? state.groups.map(g => {
@@ -1159,11 +1215,7 @@ function stepBoodschap() {
   return `<label class="field"><span class="lbl">De kernboodschap, voor iedereen</span>
       <textarea class="inp" data-f="core" maxlength="400" rows="3" placeholder="bv. Geen papieren dossiers meer: vanaf maart vind je elke aanvraag op één plek terug, ook thuis.">${esc(state.core)}</textarea>
       <div class="sigs" data-sig="core">${sigHTML(state.core)}</div></label>
-    <div class="toets" id="toets">
-      <div class="toets-h"><b>Komt de boodschap aan?</b><span class="score" id="toets-score"><span class="dots">${TOETS.map((x, i) => `<i class="${i < sc ? 'on' : ''}"></i>`).join('')}</span>${sc} van ${TOETS.length}</span></div>
-      ${TOETS.map(x => `<label class="titem ${state.checks[x.id] ? 'on' : ''}"><input type="checkbox" data-check="${x.id}" ${state.checks[x.id] ? 'checked' : ''}>
-        <div><b>${x.label}</b><span>${x.sub}</span>${x.id === 'taal' && state.checks.taal && (w > 30 || jargonIn(state.core).length) ? `<span class="ttip" style="display:block">Aangevinkt, maar ${w > 30 ? 'de boodschap telt meer dan 30 woorden' : 'er staat nog vakjargon in'}.</span>` : ''}<span class="ttip">${x.tip}</span></div></label>`).join('')}
-    </div>
+    <div class="toets" id="toets">${toetsHTML()}</div>
     ${state.groups.length ? `<div><span class="lbl" style="margin-bottom:0.5rem">Per doelgroep: wat betekent het voor jou?</span>
       <div class="blocks" style="margin-top:0">${state.groups.map(g => `<div class="gcard">
         <div class="gcard-h"><i class="gdot ${g.lead ? 'lead' : ''}"></i><span class="gtitle">${esc(g.name)}</span></div>
@@ -1173,22 +1225,32 @@ function stepBoodschap() {
       </div>`).join('')}</div></div>` : `<div class="warn">Voeg eerst <button type="button" class="lnk" data-go="1">doelgroepen</button> toe om per groep een boodschap te schrijven.</div>`}`;
 }
 
+function toetsHTML() {
+  const sc = toetsScore(), w = words(state.core);
+  return `<div class="toets-h"><b>Check je boodschap</b><span class="score" id="toets-score"><span class="dots" aria-hidden="true">${TOETS.map((x, i) => `<i class="${i < sc ? 'on' : ''}"></i>`).join('')}</span>${sc} van ${TOETS.length}</span></div>
+      <p class="toets-sub">Vink zelf aan wat klopt. Wat de tool herkent, staat al aangevinkt.</p>
+      ${TOETS.map(x => { const on = chk(x.id), a = autoCheck(x.id, state.core), own = typeof state.checks[x.id] === 'boolean';
+        return `<label class="titem ${on ? 'on' : ''}"><input type="checkbox" data-check="${x.id}" ${on ? 'checked' : ''}>
+        <div><b>${x.label}</b><span>${x.sub}</span>${a.why && (!own || a.on === on || !a.on) ? `<span class="found">${a.on && !own ? 'Herkend: ' : ''}${esc(a.why)}</span>` : ''}${x.id === 'taal' && on && (w > 30 || jargonIn(state.core).length) ? `<span class="ttip" style="display:block">Aangevinkt, maar ${w > 30 ? 'de boodschap telt meer dan 30 woorden' : 'er staat nog vakjargon in'}.</span>` : ''}<span class="ttip">${x.tip}</span></div></label>`; }).join('')}`;
+}
+
 /* Stap 4 */
 function stepAfzender() {
   const sp = sponsorFound();
-  const segFor = (key, cur, sugg) => `<div class="seg wide" role="group">${SENDERS.map(s => `<button type="button" data-sender="${key}:${s.id}" aria-pressed="${cur === s.id}" class="${sugg === s.id && cur !== s.id ? 'sugg' : ''}">${s.id === 'sponsor' && sponsorName() ? esc(sponsorName()) : s.label}<small>${s.id === 'sponsor' && sponsorName() ? 'sponsor' : s.sub}</small></button>`).join('')}</div>`;
-  return `<div class="tip">${ICON.bulb}<span>Het <b>waarom</b> komt het best van de sponsor of de top: zij staan voor de richting. Wat het voor iemands <b>eigen werk</b> betekent, hoort men het liefst van de directe leidinggevende, de persoon die ze vertrouwen en aan wie ze vragen kunnen stellen.</span></div>
+  const segFor = (key, cur, sugg, g) => `<div class="seg wide" role="group" aria-label="Afzender">${sendersFor(g).map(s => `<button type="button" data-sender="${key}:${s.id}" aria-pressed="${cur === s.id}" class="${sugg === s.id && cur !== s.id ? 'sugg' : ''}">${s.id === 'sponsor' && sponsorName() ? esc(sponsorName()) : s.label}<small>${s.id === 'sponsor' && sponsorName() ? 'sponsor' : s.sub}</small></button>`).join('')}</div>`;
+  return `<div class="tip">${ICON.bulb}<span>Het <b>waarom</b> komt het best van de sponsor of de top: zij staan voor de richting. Wat het voor iemands <b>eigen werk</b> betekent, hoort men het liefst van de directe leidinggevende. Burgers en klanten horen het van de dienst of organisatie.</span></div>
     <label class="field"><span class="lbl">Wie is de sponsor? ${state.sponsorFrom && sp && state.sponsor === sp.name ? `<span class="tag auto">uit ${esc(state.sponsorFrom)}</span>` : ''}</span>
       <input class="inp" data-f="sponsor" maxlength="80" value="${esc(state.sponsor)}" placeholder="Naam van de opdrachtgever of sponsor"></label>
     <div class="gcard"><div class="gcard-h"><span class="gtitle">De kernboodschap, het waarom</span></div>
       ${segFor('core', state.coreSender, 'sponsor')}
-      ${state.coreSender === 'ander' ? `<input class="inp" data-f="coreSenderOther" maxlength="80" value="${esc(state.coreSenderOther || '')}" placeholder="Wie?">` : ''}</div>
+      ${state.coreSender === 'ander' ? `<input class="inp" data-f="coreSenderOther" maxlength="80" value="${esc(state.coreSenderOther || '')}" placeholder="Wie?">` : ''}
+      <p class="why" style="margin-top:0">${state.coreSender ? (state.coreSender === 'sponsor' ? 'Bevestigd.' : 'Eigen keuze. Voorstel: sponsor.') : 'Voorstel: sponsor, want die staat voor het waarom. Kies het om te bevestigen.'}</p></div>
     ${state.groups.map(g => {
       const sugg = suggestSender(g);
       return `<div class="gcard"><div class="gcard-h"><i class="gdot ${g.lead ? 'lead' : ''}"></i><span class="gtitle">${esc(g.name)}</span></div>
-        ${segFor(g.id, senderOf(g), sugg)}
+        ${segFor(g.id, g.sender, sugg, g)}
         ${senderOf(g) === 'ander' ? `<input class="inp" data-g="${g.id}" data-gf="senderOther" maxlength="80" value="${esc(g.senderOther)}" placeholder="Wie brengt het?">` : ''}
-        <p class="why" style="margin-top:0">${g.sender ? (g.sender === sugg ? 'Bevestigd.' : `Eigen keuze. Voorstel: ${SENDERS.find(s => s.id === sugg).label.toLowerCase()}.`) : `Voorstel: ${SENDERS.find(s => s.id === sugg).label.toLowerCase()}, ${g.lead ? 'want leidinggevenden horen het waarom best van hogerop' : 'want zij vertalen het naar het werk van elke dag'}. Kies het om te bevestigen.`}</p></div>`;
+        <p class="why" style="margin-top:0">${g.sender ? (g.sender === sugg ? 'Bevestigd.' : `Eigen keuze. Voorstel: ${SENDERS.find(s => s.id === sugg).label.toLowerCase()}.`) : `Voorstel: ${SENDERS.find(s => s.id === sugg).label.toLowerCase()}, ${g.lead ? 'want leidinggevenden horen het waarom best van hogerop' : sugg === 'dienst' ? 'want burgers en klanten kennen de dienst, niet de mensen erachter' : 'want zij vertalen het naar het werk van elke dag'}. Nog niet gekozen: kies het om te bevestigen.`}</p></div>`;
     }).join('') || `<div class="warn">Voeg eerst <button type="button" class="lnk" data-go="1">doelgroepen</button> toe.</div>`}`;
 }
 
@@ -1235,7 +1297,7 @@ function stepTiming() {
           <select class="inp" data-m="${m.id}" data-mf="channel" aria-label="Kanaal">${chanOpts(m.channel)}</select>
           <select class="inp" data-m="${m.id}" data-mf="sender" aria-label="Afzender">${opts.map(([v, l]) => `<option value="${v}" ${m.sender === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>
         </div>
-        <input class="inp" data-m="${m.id}" data-mf="msg" maxlength="160" value="${esc(m.msg)}" placeholder="Wat zeg je, in een paar woorden?" aria-label="Korte boodschap">
+        <input class="inp" data-m="${m.id}" data-mf="msg" maxlength="400" value="${esc(m.msg)}" placeholder="Wat zeg je, in een paar woorden?" aria-label="Korte boodschap">
       </div>`).join('') : `<div class="empty"><b>Nog geen momenten</b>Laat een reeks voorstellen en pas ze aan, of voeg ze een voor een toe.</div>`}</div>`;
 }
 function whoHTML(m) {
@@ -1267,7 +1329,7 @@ function bestChannel(g, prefer) {
 }
 const mk = (date, groups, channel, sender, msg) => ({ id:uid(), date: date ? workday(date) : date, groups, channel, sender, msg, done:false });
 function quickMoments(kind) {
-  const L = baseDate(), gs = state.groups, out = [], short = t => { const x = String(t || '').trim().replace(/\s+/g, ' '); return x.length > 90 ? x.slice(0, 89).replace(/\s+\S*$/, '') + '…' : x; };
+  const L = baseDate(), gs = state.groups, out = [], short = t => String(t || '').trim().replace(/\s+/g, ' ');   // nooit afkappen
   const leads = gs.filter(g => g.lead), teams = gs.filter(g => !g.lead);
   if (kind === 'aankondiging') {
     if (leads.length) out.push(mk(addDays(L, -35), leads.map(g => g.id), 'gesprek', 'sponsor', 'Vooraf: wat komt er, en jullie rol erin'));
@@ -1364,7 +1426,7 @@ function planHTML() {
     <div class="plan-top" style="padding-top:0.5rem">
       <div><div class="r-lbl">Kernboodschap</div>
         <div class="core-big">${state.core.trim() ? '“' + esc(state.core.trim()) + '”' : '<span style="color:var(--slate-500);font-weight:400;font-size:1rem">Nog geen kernboodschap</span>'}</div>
-        <div class="core-by">Gebracht door ${esc(state.coreSender === 'ander' ? (state.coreSenderOther || 'iemand anders') : senderLabel(state.coreSender))}${state.what.trim() ? ' · ' + esc(state.what.trim()) : ''}</div></div>
+        <div class="core-by">Gebracht door ${esc(coreSenderText())}${state.what.trim() ? ' · ' + esc(state.what.trim()) : ''}</div></div>
       <div class="ident"><div class="r-lbl">Herkenbaarheid</div>${identHTML()}
         ${state.start || state.launch ? `<div>${state.start ? 'Start ' + nice(state.start, { day:'numeric', month:'long', year:'numeric' }) : ''}${state.start && state.launch ? ' · ' : ''}${state.launch ? 'Lancering <b>' + nice(state.launch, { day:'numeric', month:'long', year:'numeric' }) + '</b>' : ''}</div>` : ''}</div>
     </div></section>
@@ -1433,6 +1495,7 @@ function live() {
       el.innerHTML = sigHTML(t);
     });
     const ip = $('ident-prev'); if (ip) ip.innerHTML = identHTML();
+    const to = $('toets'); if (to) to.innerHTML = toetsHTML();
   }
 }
 function flashSaved() { const s = $('saved'); if (!s) return; s.textContent = 'Bewaard'; clearTimeout(flashSaved.t); flashSaved.t = setTimeout(() => { const x = $('saved'); if (x) x.textContent = 'Alles wordt meteen bewaard'; }, 1200); }
@@ -1452,13 +1515,15 @@ function publish() {
   const ms = sortedMoments().filter(m => !m.done);
   ocShare.publish(OC_ID, OC_TOOL, [
     { name:'Momenten', items: ms.map(m => ({ type:'actie', text:`${chanLabel(m.channel)}: ${groupNames(m)} – ${(m.msg || 'moment').trim()}`, who: momentSender(m) || undefined, when: dmy(m.date) || undefined })) },
-    { name:'Doelgroepen', items: state.groups.map(g => ({ type:'betrokkene', text:g.name })) }
+    { name:'Doelgroepen', items: state.groups.map(g => ({ type:'betrokkene', text:g.name })) },
+    { name:'Kerncijfers', items: state.what.trim() && !autoWhat ? [{ type:'kerncijfer', text:'verandering', note: state.what.trim() }] : [] }
   ]);
 }
 
 /* ---------- Interactie ---------- */
 document.addEventListener('input', e => {
   const t = e.target, d = t.dataset;
+  if (t.id === 'new-group' && t.getAttribute('aria-invalid')) { t.removeAttribute('aria-invalid'); $('new-group-err').textContent = ''; }
   if (t.type === 'date' || t.tagName === 'SELECT' || t.type === 'checkbox') return;   // via change
   if (d.f) {
     setPath(d.f, t.value); save(); live();
@@ -1472,7 +1537,7 @@ document.addEventListener('input', e => {
 document.addEventListener('change', e => {
   const t = e.target, d = t.dataset;
   if (d.lead) { const g = G(d.lead); g.lead = t.checked; save(); render(); return; }
-  if (d.check) { state.checks[d.check] = t.checked; save(); render(); return; }
+  if (d.check) { state.checks[d.check] = t.checked; save(); render(); return; }   // zelf gekozen gaat voor wat de tool herkent
   if (d.done) { const m = M(d.done); m.done = t.checked; save(); render(); toast(t.checked ? 'Gedaan' : 'Weer open'); return; }
   if (!(t.type === 'date' || t.tagName === 'SELECT')) return;
   if (t.type === 'date') {
@@ -1496,7 +1561,8 @@ document.addEventListener('change', e => {
 document.addEventListener('submit', e => {
   if (e.target.id !== 'add-group') return;
   e.preventDefault();
-  const inp = $('new-group'), n = inp.value.trim(); if (!n) { inp.focus(); return; }
+  const inp = $('new-group'), n = inp.value.trim();
+  if (!n) { inp.setAttribute('aria-invalid', 'true'); $('new-group-err').textContent = 'Typ eerst de naam van een doelgroep.'; inp.focus(); return; }
   if (addGroup(n)) { render(); const ni = $('new-group'); ni && ni.focus(); }
 });
 function addGroup(n, extra) {
@@ -1523,7 +1589,7 @@ document.addEventListener('click', async e => {
   if (d.intens) { const [gid, k] = d.intens.split(':'), g = G(gid); g.intens = g.intens === k ? null : k; save(); render(); return; }
   if (d.sender) {
     const [key, k] = d.sender.split(':');
-    if (key === 'core') state.coreSender = k;
+    if (key === 'core') state.coreSender = state.coreSender === k ? '' : k;
     else { const g = G(key); g.sender = g.sender === k ? null : k; }
     save(); render(); return;
   }
@@ -1563,7 +1629,7 @@ function refreshImports() { document.querySelectorAll('[data-oc-types]').forEach
 window.addEventListener('storage', e => {
   if (e.key === KEY || e.key === null) {
     const { view, step } = state;
-    state = load(); state.view = view; state.step = step; autoSponsor = false; suggestSponsor();
+    state = load(); state.view = view; state.step = step; autoSponsor = false; autoName = false; autoWhat = ''; suggestSponsor();
     saves++;                                           // Ongedaan uit dit tabblad zou de nieuwe toestand overschrijven
     renderKeepFocus(); return;
   }
@@ -1591,7 +1657,7 @@ function undoable(copy) {
   const mark = saves;
   return () => {
     if (saves !== mark) { setTimeout(() => toast('Ongedaan maken kan niet meer: er is intussen iets veranderd'), 60); return; }
-    state = copy; autoSponsor = false; save(); render(); toast('Teruggezet');
+    state = copy; autoSponsor = false; autoName = false; autoWhat = ''; save(); render(); toast('Teruggezet');
   };
 }
 
@@ -1622,29 +1688,90 @@ function ocConfirm(title, text, okText) {
   });
 }
 
-/* ---------- Exports ---------- */
-function asText() {
-  const L = [`Communicatieplan${state.name.trim() ? ': ' + state.name.trim() : ''}`];
-  if (state.what.trim()) L.push(state.what.trim());
-  if (state.why.trim()) L.push('', 'Waarom:', state.why.trim());
-  L.push('', `Kernboodschap: ${state.core.trim() || '(nog niet ingevuld)'}`);
-  const mis = TOETS.filter(x => !state.checks[x.id]).map(x => x.label.replace(/\?$/, '').toLowerCase());
-  if (state.core.trim()) L.push(`Boodschaptoets: ${toetsScore()} van ${TOETS.length}${mis.length ? ' (nog te bekijken: ' + mis.join('; ') + ')' : ''}`);
-  L.push(`Gebracht door: ${state.coreSender === 'ander' ? (state.coreSenderOther || 'iemand anders') : senderLabel(state.coreSender)}`);
-  const id = state.ident;
-  if (id.slogan.trim() || id.place.trim()) L.push(`Herkenbaar aan: ${[id.slogan.trim(), id.image.trim(), id.place.trim() ? 'alle info op ' + id.place.trim() : ''].filter(Boolean).join(' · ')}`);
-  if (state.start || state.launch) L.push([state.start && 'Start: ' + kort(state.start), state.launch && 'Lancering: ' + kort(state.launch)].filter(Boolean).join(' · '));
+/* ---------- Exports ----------
+   Eén opbouw voor de platte tekst én de opgemaakte versie (Word, Outlook): koppen, regels en een tabel.
+   Nooit iets afkappen. Geen opmaaktekens zoals ** of == in de platte tekst. */
+function exportDoc() {
+  const B = [], id = state.ident;
+  B.push({ h1: `Communicatieplan${state.name.trim() ? ': ' + state.name.trim() : ''}` });
+  if (state.what.trim()) B.push({ p: state.what.trim() });
+  if (state.why.trim()) B.push({ kv: [['Waarom', state.why.trim()]] });
+  B.push({ h2: 'Kernboodschap' }, { p: state.core.trim() || '(nog niet ingevuld)' });
+  const kv = [];
+  if (state.core.trim()) {
+    const mis = TOETS.filter(x => !chk(x.id)).map(x => x.label.replace(/\?$/, '').toLowerCase());
+    kv.push(['Check je boodschap', `${toetsScore()} van ${TOETS.length}${mis.length ? ' (nog te bekijken: ' + mis.join('; ') + ')' : ''}`]);
+  }
+  kv.push(['Gebracht door', coreSenderText()]);
+  if (id.slogan.trim() || id.place.trim()) kv.push(['Herkenbaar aan', [id.slogan.trim(), id.image.trim(), id.place.trim() ? 'alle info op ' + id.place.trim() : ''].filter(Boolean).join(' · ')]);
+  if (state.start) kv.push(['Start', kort(state.start)]);
+  if (state.launch) kv.push(['Lancering', kort(state.launch)]);
+  B.push({ kv });
   state.groups.forEach(g => {
-    L.push('', `== ${g.name} ==`);
-    if (g.change.trim()) L.push(`Wat verandert: ${g.change.trim()}`);
-    L.push(`Doel: ${g.goals.map(x => GOALS.find(y => y.id === x).label.toLowerCase()).join(', ') || '-'} · intensiteit: ${INTENS[intens(g)].label.toLowerCase()}`);
-    if (g.msg.trim()) L.push(`Boodschap: ${g.msg.trim()}`);
-    L.push(`Afzender: ${gSender(g)}`, `Kanalen: ${g.channels.map(c => chanLabel(c, g)).join(', ') || '-'}`);
+    B.push({ h2: `Doelgroep: ${g.name}` });
+    const r = [];
+    if (g.change.trim()) r.push(['Wat verandert', g.change.trim()]);
+    r.push(['Doel', g.goals.map(x => GOALS.find(y => y.id === x).label.toLowerCase()).join(', ') || '-'], ['Intensiteit', INTENS[intens(g)].label.toLowerCase()]);
+    if (g.msg.trim()) r.push(['Boodschap', g.msg.trim()]);
+    r.push(['Afzender', gSender(g)], ['Kanalen', g.channels.map(c => chanLabel(c, g)).join(', ') || '-']);
+    B.push({ kv: r });
   });
   const ms = sortedMoments();
-  if (ms.length) { L.push('', 'Tijdlijn:'); ms.forEach(m => L.push(`${m.done ? '[x]' : '[ ]'} ${kort(m.date) || 'zonder datum'} · ${chanLabel(m.channel)} · ${groupNames(m)} · ${momentSender(m) || '-'}${m.msg ? ' · ' + m.msg : ''}`)); }
-  if (state.measures.length) { L.push('', 'Meten:'); state.measures.forEach(x => L.push(`- ${measLabel(x)} (${x.group && G(x.group) ? G(x.group).name : 'iedereen'})${x.date ? ' op ' + kort(x.date) : ''}${x.target ? ': ' + x.target : ''}`)); }
+  if (ms.length) B.push({ h2: 'Tijdlijn' }, { table: [['Datum', 'Voor wie', 'Kanaal', 'Afzender', 'Boodschap', 'Gedaan'],
+    ...ms.map(m => [kort(m.date) || 'zonder datum', groupNames(m), chanLabel(m.channel), momentSender(m) || '-', m.msg || '', m.done ? 'ja' : 'nee'])] });
+  if (state.measures.length) B.push({ h2: 'Hoe we weten dat het aankwam' }, { ul: state.measures.map(x => `${measLabel(x)} (${x.group && G(x.group) ? G(x.group).name : 'iedereen'})${x.date ? ' op ' + kort(x.date) : ''}${x.target ? ': ' + x.target : ''}`) });
+  return B;
+}
+function asText() {
+  const L = [];
+  exportDoc().forEach(b => {
+    if (b.h1) L.push(b.h1);
+    else if (b.h2) L.push('', b.h2.toUpperCase());
+    else if (b.p) L.push(b.p);
+    else if (b.kv) b.kv.forEach(([k, v]) => L.push(`${k}: ${v}`));
+    else if (b.ul) b.ul.forEach(x => L.push('- ' + x));
+    else if (b.table) b.table.slice(1).forEach(r => L.push(`- ${r[0]} · ${r[1]} · ${r[2]} · ${r[3]}${r[4] ? ' · ' + r[4] : ''}${r[5] === 'ja' ? ' (gedaan)' : ''}`));
+  });
   return L.join('\n');
+}
+function asHTML() {
+  const td = 'border:1px solid #cbd5e1;padding:4px 8px;text-align:left;vertical-align:top';
+  return `<div style="font-family:'DM Sans',Calibri,Arial,sans-serif;font-size:11pt;color:#1e293b">` + exportDoc().map(b =>
+    b.h1 ? `<h1 style="font-size:18pt">${esc(b.h1)}</h1>` :
+    b.h2 ? `<h2 style="font-size:14pt;margin-top:14pt">${esc(b.h2)}</h2>` :
+    b.p ? `<p>${esc(b.p)}</p>` :
+    b.kv ? `<p>${b.kv.map(([k, v]) => `<b>${esc(k)}:</b> ${esc(v)}`).join('<br>')}</p>` :
+    b.ul ? `<ul>${b.ul.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` :
+    b.table ? `<table style="border-collapse:collapse"><thead><tr>${b.table[0].map(h => `<th style="${td};background:#f1f5f9">${esc(h)}</th>`).join('')}</tr></thead><tbody>${b.table.slice(1).map(r => `<tr>${r.map(c => `<td style="${td}">${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>` : ''
+  ).join('') + '</div>';
+}
+// Kopiëren met opmaak (text/html) én als nette platte tekst; lukt opmaak niet, dan alleen tekst.
+async function copyRich(html, text) {
+  try {
+    if (window.ClipboardItem && navigator.clipboard.write) {
+      await navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([html], { type:'text/html' }), 'text/plain': new Blob([text], { type:'text/plain' }) })]);
+      return true;
+    }
+  } catch {}
+  await navigator.clipboard.writeText(text); return true;
+}
+// Agendabestand (.ics) met alle momenten met een datum, als hele-dag-afspraken. Alles lokaal gemaakt.
+function ics() {
+  const esc2 = v => String(v == null ? '' : v).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+  const fold = l => { const out = []; let cur = ''; for (const ch of l) { if (new TextEncoder().encode(cur + ch).length > 74) { out.push(cur); cur = ' ' + ch; } else cur += ch; } out.push(cur); return out.join('\r\n'); };
+  const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z');
+  const proj = state.name.trim();
+  const L = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Onder Constructie//Communicatieplan//NL', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', 'X-WR-CALNAME:' + esc2('Communicatieplan' + (proj ? ' ' + proj : ''))];
+  sortedMoments().filter(m => m.date && D(m.date)).forEach(m => {
+    const d = m.date.replace(/-/g, ''), e = addDays(m.date, 1).replace(/-/g, '');
+    const what = m.msg || chanLabel(m.channel);
+    L.push('BEGIN:VEVENT', 'UID:' + m.id + '-' + d + '@communicatie.onderconstructie', 'DTSTAMP:' + stamp, 'DTSTART;VALUE=DATE:' + d, 'DTEND;VALUE=DATE:' + e,
+      'SUMMARY:' + esc2(`${chanLabel(m.channel)}: ${what}`),
+      'DESCRIPTION:' + esc2([proj && 'Project: ' + proj, 'Voor wie: ' + groupNames(m), 'Kanaal: ' + chanLabel(m.channel), momentSender(m) && 'Afzender: ' + momentSender(m), m.msg && 'Boodschap: ' + m.msg].filter(Boolean).join('\n')),
+      'TRANSP:TRANSPARENT', 'STATUS:' + (m.done ? 'CONFIRMED' : 'TENTATIVE'), 'END:VEVENT');
+  });
+  L.push('END:VCALENDAR');
+  return L.map(fold).join('\r\n') + '\r\n';
 }
 function csv() {
   const q = v => { const s = String(v == null ? '' : v); return /[;"\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
@@ -1662,8 +1789,8 @@ function buildExport() {
     <div data-oc-keep style="display:grid;grid-template-columns:1.7fr 1fr;gap:12px;margin-bottom:14px">
       <div style="${box}background:#ecfdf5;border-color:#a7f3d0"><div style="${lbl};color:#059669">Kernboodschap</div>
         <div style="font-size:20px;font-weight:700;color:#1e293b;margin-top:4px;line-height:1.3">${state.core.trim() ? '“' + esc(state.core.trim()) + '”' : '–'}</div>
-        ${state.core.trim() ? `<div style="font-size:12px;color:#047857;font-weight:600;margin-top:6px">Boodschaptoets: ${toetsScore()} van ${TOETS.length} · ${TOETS.map(x => (state.checks[x.id] ? '✓ ' : '○ ') + esc(x.label.replace(/\?$/, ''))).join(' · ')}</div>` : ''}
-        <div style="font-size:12px;color:#475569;margin-top:6px">Gebracht door ${esc(state.coreSender === 'ander' ? (state.coreSenderOther || 'iemand anders') : senderLabel(state.coreSender))}${state.why.trim() ? ' · ' + esc(state.why.trim().slice(0, 220)) + (state.why.trim().length > 220 ? '…' : '') : ''}</div></div>
+        ${state.core.trim() ? `<div style="font-size:12px;color:#047857;font-weight:600;margin-top:6px">Check je boodschap: ${toetsScore()} van ${TOETS.length} · ${TOETS.map(x => (chk(x.id) ? '✓ ' : '○ ') + esc(x.label.replace(/\?$/, ''))).join(' · ')}</div>` : ''}
+        <div style="font-size:12px;color:#475569;margin-top:6px">Gebracht door ${esc(coreSenderText())}${state.why.trim() ? ' · ' + esc(state.why.trim()) : ''}</div></div>
       <div style="${box}"><div style="${lbl}">Herkenbaarheid</div>
         <div style="display:flex;align-items:center;gap:10px;margin-top:6px"><span style="width:34px;height:34px;border-radius:9px;background:${esc(col)};color:${inkOn(col)};font-weight:700;font-size:16px;display:flex;align-items:center;justify-content:center">${esc((id.slogan.trim() || state.name.trim() || '?').charAt(0).toUpperCase())}</span>
           <span style="font-size:15px;font-weight:700;color:#1e293b">${esc(id.slogan.trim() || state.name.trim() || '–')}</span></div>
@@ -1740,7 +1867,7 @@ function loadExample() {
     why:'Papieren aanvragen raken zoek tussen post, mail en dossierkasten. Aanvragers wachten weken op een antwoord en bellen het loket plat. Online zie je meteen wat ontbreekt en volg je je aanvraag zelf op.',
     sponsor:'Afdelingshoofd', coreSender:'sponsor', start:addDays(todayIso(), -14), launch:L,
     core:'Geen papieren dossiers meer: je vraagt je premie online aan en ziet altijd hoe ver ze staat.',
-    checks:{ mij:true, waarom:true, taal:true, contact:true },
+    checks:{ mij:true, waarom:true, taal:true, contact:true, doen:false },
     ident:{ slogan:'Premie online', color:'#10b981', image:'een huisje met een vinkje', place:'intranet › Projecten › Premieloket' } });
   const tl = newGroup('Teamleiders loket'), lo = newGroup('Loketmedewerkers'), aa = newGroup('Aanvragers (burgers)');
   Object.assign(tl, { lead:true, change:'ze plannen de opleiding en vangen vragen van hun team op', goals:['weten', 'willen'], sender:'sponsor', channels:['gesprek'],
@@ -1757,12 +1884,12 @@ function loadExample() {
   s.moments.push(mk(addDays(todayIso(), -10), [tl.id], 'gesprek', 'sponsor', 'Kennismaking met het project en jullie rol'));
   s.moments[s.moments.length - 1].done = true;
   state = cur0;
-  const copy = snapshot(); state = s; autoSponsor = false; save(); render();
+  const copy = snapshot(); state = s; autoSponsor = false; autoName = false; autoWhat = ''; save(); render();
   toast('Voorbeeld geladen', undoable(copy));
 }
 document.addEventListener('click', e => {
   if (e.target.closest('#example')) { loadExample(); return; }
-  if (e.target.closest('#vb-wis')) { const copy = snapshot(); state = fresh(); autoSponsor = false; suggestSponsor(); save(); render(); toast('Voorbeeld gewist', undoable(copy)); return; }
+  if (e.target.closest('#vb-wis')) { const copy = snapshot(); state = fresh(); autoSponsor = false; autoName = false; autoWhat = ''; suggestSponsor(); save(); render(); toast('Voorbeeld gewist', undoable(copy)); return; }
   if (e.target.closest('#vb-eigen')) { delete state.voorbeeld; save(); render(); toast('Het voorbeeld is nu van jou'); }
 });
 
@@ -1781,7 +1908,13 @@ document.addEventListener('click', async e => {
     try { await (act === 'png' ? ocExport.png(buildExport, base, { landscape:true }) : ocExport.pdf(buildExport, base, { landscape:true })); toast(act === 'png' ? 'Afbeelding gedownload' : 'PDF gedownload'); }
     catch { toast('Downloaden lukte niet. Ben je online?'); }
   } else if (act === 'copy') {
-    try { await navigator.clipboard.writeText(asText()); toast('Gekopieerd'); } catch { toast('Kopiëren lukte niet'); }
+    if (!hasPlan()) { toast('Er is nog niets om te kopiëren'); return; }
+    try { await copyRich(asHTML(), asText()); toast('Gekopieerd, met opmaak'); } catch { toast('Kopiëren lukte niet'); }
+  } else if (act === 'ics') {
+    const n = state.moments.filter(m => m.date).length, zonder = state.moments.length - n;
+    if (!n) { toast(state.moments.length ? 'Geef de momenten eerst een datum' : 'Er zijn nog geen momenten'); return; }
+    download(ics(), base + '-momenten.ics', 'text/calendar;charset=utf-8');
+    toast(`Agendabestand met ${n} ${n === 1 ? 'moment' : 'momenten'} gedownload${zonder ? `. ${zonder} zonder datum niet mee` : ''}. Open het om ze in je agenda te zetten.`);
   } else if (act === 'csv') {
     if (!state.moments.length) { toast('Er zijn nog geen momenten'); return; }
     download(csv(), base + '-momenten.csv', 'text/csv;charset=utf-8'); toast('CSV gedownload');
@@ -1789,7 +1922,7 @@ document.addEventListener('click', async e => {
     if (!await ocConfirm('Alles wissen in het Communicatieplan?', 'Je doelgroepen, boodschappen en alle momenten verdwijnen. De andere tools blijven zoals ze zijn.', 'Alles wissen')) return;
     const copy = snapshot();
     try { localStorage.removeItem(KEY); } catch {}
-    state = load(); suggestSponsor(); ocShare.clear(OC_ID); saves++; clearTimeout(save.t); render();
+    state = load(); autoName = false; autoWhat = ''; suggestSponsor(); ocShare.clear(OC_ID); saves++; clearTimeout(save.t); render();
     toast('Alles gewist', undoable(copy));
   }
 });

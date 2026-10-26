@@ -388,7 +388,7 @@ button.oc-import { color:#047857; min-height:44px; }
               <button data-act="png" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>Download als afbeelding</button>
               <button data-act="guide-pdf" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5"/></svg>Gespreksleidraad als PDF</button>
               <div class="sep"></div>
-              <button data-act="copy" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Kopieer als tekst</button>
+              <button data-act="copy" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Kopieer (met opmaak)</button>
               <button data-act="csv" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h8"/></svg>Download CSV</button>
               <div class="sep"></div>
               <div class="sep"></div>
@@ -651,7 +651,10 @@ function ocPublish() {
     ...a.units.flatMap(u => u.plan.filter(p => p.text.trim()).map(p => ({ type:'actie', text:p.text, who:p.who, when:p.when }))) ] }));
   const kern = cur().voorbeeld ? echt.find(a => kerncijfers(a)) : cur();
   const k = kern ? kerncijfers(kern) : null;
-  if (k) lists.push({ name:'Kerncijfers', items:Object.entries(k).map(([key, v]) => ({ type:'kerncijfer', text:key, note:v })) });
+  const items = k ? Object.entries(k).map(([key, v]) => ({ type:'kerncijfer', text:key, note:v })) : [];
+  const ch = kern && typeof kern.change === 'string' ? kern.change.trim() : '';
+  if (ch) items.push({ type:'kerncijfer', text:'verandering', note:ch });   // "de verandering in één zin" voor de andere tools
+  if (items.length) lists.push({ name:'Kerncijfers', items });
   ocShare.publish(OC_ID, OC_TOOL, lists);
 }
 
@@ -786,12 +789,76 @@ const DEFAULT_UNIT = 'Hele organisatie';
 const uid = () => Math.random().toString(36).slice(2, 10);
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+/* Kopiëren met opmaak: dezelfde inhoud als nette platte tekst én als opgemaakte tekst (Word, Outlook).
+   Zet de interne opbouw (koppen, lijsten, tabellen) om; de platte tekst bevat geen #, ** of ==. */
+const ocRich = (() => {
+  const e = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+  const inl = s => e(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/(^|[\s(])_(.+?)_(?=[\s).,:;!?]|$)/g, '$1<i>$2</i>');
+  const bare = s => String(s).replace(/\*\*(.+?)\*\*/g, '$1').replace(/(^|[\s(])_(.+?)_(?=[\s).,:;!?]|$)/g, '$1$2');
+  const TD = 'border:1px solid #cbd5e1;padding:4px 8px;text-align:left;vertical-align:top';
+  const tableHTML = rows => `<table style="border-collapse:collapse;margin:4pt 0">${rows.map((r, i) => `<tr>${r.map(c => i ? `<td style="${TD}">${inl(c)}</td>` : `<th style="${TD};background:#f1f5f9">${inl(c)}</th>`).join('')}</tr>`).join('')}</table>`;
+  function convert(src) {
+    const T = [], H = []; let list = false, table = null;
+    const flush = () => { if (list) { H.push('</ul>'); list = false; } if (table) { H.push(tableHTML(table)); table = null; } };
+    const gap = () => { if (T.length && T[T.length - 1] !== '') T.push(''); };
+    String(src || '').replace(/\r/g, '').split('\n').forEach(raw => {
+      const l = raw.replace(/\s+$/, ''); let m;
+      if (/^\s*\|/.test(l)) {
+        const cells = l.trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+        if (cells.every(c => /^:?-{2,}:?$/.test(c))) return;
+        if (list) { H.push('</ul>'); list = false; }
+        (table = table || []).push(cells); T.push(cells.map(bare).join(' · ')); return;
+      }
+      if (table) { H.push(tableHTML(table)); table = null; }
+      if (!l.trim()) { flush(); gap(); return; }
+      if ((m = l.match(/^(#{1,4})\s+(.*)$/)) || (m = l.match(/^(==)\s*(.*?)\s*==$/))) {
+        flush(); const lv = m[1] === '==' ? 2 : m[1].length, t = bare(m[2]);
+        if (lv === 1) { T.push(t); H.push(`<h1 style="font-size:18pt;margin:0 0 6pt">${inl(m[2])}</h1>`); }
+        else if (lv === 2) { gap(); T.push(t.toUpperCase()); H.push(`<h2 style="font-size:14pt;margin:12pt 0 4pt">${inl(m[2])}</h2>`); }
+        else { gap(); T.push(t); H.push(`<h3 style="font-size:12pt;margin:8pt 0 2pt">${inl(m[2])}</h3>`); }
+        return;
+      }
+      if ((m = l.match(/^(\s*)[-*•]\s+(?:\[( |x|X)\]\s+)?(.*)$/))) {
+        const sub = m[1].length >= 2, txt = m[3] + (m[2] && m[2].toLowerCase() === 'x' ? ' (gedaan)' : '');
+        if (!list) { H.push('<ul>'); list = true; }
+        T.push((sub ? '   - ' : '- ') + bare(txt)); H.push(`<li${sub ? ' style="margin-left:18pt"' : ''}>${inl(txt)}</li>`); return;
+      }
+      if ((m = l.match(/^>\s?(.*)$/))) { flush(); T.push(bare(m[1])); H.push(`<p style="margin:0 0 4pt"><i>${inl(m[1])}</i></p>`); return; }
+      flush(); T.push(bare(l)); H.push(`<p style="margin:0 0 4pt">${inl(l)}</p>`);
+    });
+    flush();
+    return { text: T.join('\n').replace(/\n{3,}/g, '\n\n').trim() + '\n',
+      html: `<div style="font-family:'DM Sans',Calibri,Arial,sans-serif;font-size:11pt;color:#1e293b">${H.join('')}</div>` };
+  }
+  async function copy(src) {
+    const { text, html } = convert(src);
+    try {
+      if (window.ClipboardItem && navigator.clipboard && navigator.clipboard.write) {
+        await navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([html], { type:'text/html' }), 'text/plain': new Blob([text], { type:'text/plain' }) })]);
+        return true;
+      }
+    } catch {}
+    try { await navigator.clipboard.writeText(text); return true; } catch {}
+    try { const t = document.createElement('textarea'); t.value = text; t.style.position = 'fixed'; t.style.opacity = '0'; document.body.appendChild(t); t.select(); const ok = document.execCommand('copy'); t.remove(); return ok; } catch { return false; }
+  }
+  return { copy, convert };
+})();
+// "De verandering in één zin" die een andere tool klaarlegde (kerncijfer 'verandering'); de recentste eerst.
+function ocSharedChange(self) {
+  try {
+    const src = ocShare.sources(['kerncijfer'], self).sort((a, b) => (b.updated || 0) - (a.updated || 0));
+    for (const s of src) for (const it of s.items) if (it.text === 'verandering' && String(it.note || '').trim()) return { text:String(it.note).trim(), tool:s.tool };
+  } catch {}
+  return null;
+}
 const newProject = name => ({ id:uid(), name:name || '', month:'', year:'', goal:'', support:'', time:'', budget:'', weight:null, lesson:'', open:true });
 const newUnit = name => ({ id:uid(), name:name || DEFAULT_UNIT, workload:null, projects:[], manual:null, reason:'', plan:[], notes:{}, open:true, guide:false });
-const newAnalysis = name => ({ id:uid(), name:name || ocProject('Mijn analyse'), change:'', units:[newUnit()] });
+const newAnalysis = (name, change) => ({ id:uid(), name:name || ocProject('Mijn analyse'), change:change || '', units:[newUnit()] });
+// Een nieuwe analyse neemt "de verandering in één zin" over uit een andere tool, als die er is.
+const sharedChangeText = () => { const c = ocSharedChange(OC_ID); return c ? c.text : ''; };
 function load() {
   try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && Array.isArray(d.analyses) && d.analyses.length) return d; } catch {}
-  const first = newAnalysis();
+  const first = newAnalysis('', sharedChangeText());
   return { analyses:[first], current:first.id };
 }
 let state = load();
@@ -1133,14 +1200,14 @@ function guideHTML(u) {
     <ol>${QUESTIONS.map(q => `<li><span class="q">${esc(q.text)}</span>
       <textarea class="field" data-f="note" data-q="${q.id}" data-key="nt-${u.id}-${q.id}" rows="1" maxlength="1000" placeholder="Notities" aria-label="Notities bij vraag">${esc(u.notes[q.id] || '')}</textarea></li>`).join('')}</ol>
     <div class="guide-acts">
-      <button type="button" class="btn btn-ghost" data-act="guide-copy">Kopieer als tekst</button>
+      <button type="button" class="btn btn-ghost" data-act="guide-copy">Kopieer (met opmaak)</button>
       <button type="button" class="btn btn-ghost" data-act="guide-pdf-unit">Download als PDF</button>
     </div>
   </div>`;
 }
 
 function renderTabs() {
-  $('lists').innerHTML = state.analyses.map(a => `<button class="tab${a.id === cur().id ? ' active' : ''}" data-tab="${esc(a.id)}">${esc(a.name || 'Analyse')}${a.voorbeeld ? '<span class="vb-tag">voorbeeld</span>' : ''}<span class="n">${a.units.length}</span></button>`).join('')
+  $('lists').innerHTML = state.analyses.map(a => `<button class="tab${a.id === cur().id ? ' active' : ''}" aria-current="${a.id === cur().id}" data-tab="${esc(a.id)}">${esc(a.name || 'Analyse')}${a.voorbeeld ? '<span class="vb-tag">voorbeeld</span>' : ''}<span class="n">${a.units.length}</span></button>`).join('')
     + `<button class="tab add" data-tab="new" aria-label="Nieuwe analyse">+ Analyse</button>`;
 }
 function grow(t) { t.style.height = 'auto'; t.style.height = t.scrollHeight + 'px'; }
@@ -1258,14 +1325,14 @@ document.addEventListener('click', e => {
     const restore = snapshot(); u.manual = null; save(); render(); toast('Terug naar de berekening', restore);
   }
   else if (act === 'guide' && u) { u.guide = !u.guide; save(); render(); }
-  else if (act === 'guide-copy' && u) { copy(guideText([u])).then(ok => toast(ok ? 'Leidraad gekopieerd' : 'Kopiëren lukt hier niet')); }
+  else if (act === 'guide-copy' && u) { ocRich.copy(guideText([u])).then(ok => toast(ok ? 'Leidraad gekopieerd' : 'Kopiëren lukt hier niet')); }
   else if (act === 'guide-pdf-unit' && u) exportGuide([u]);
 });
 
 $('lists').addEventListener('click', e => {
   const t = e.target.closest('[data-tab]'); if (!t) return;
   if (t.dataset.tab === 'new') {
-    const a = newAnalysis('Analyse ' + (state.analyses.length + 1)); state.analyses.push(a); state.current = a.id;
+    const a = newAnalysis('Analyse ' + (state.analyses.length + 1), sharedChangeText()); state.analyses.push(a); state.current = a.id;
     save(); render(); $('name').focus(); $('name').select();
   } else { state.current = t.dataset.tab; save(); render(); }
 });
@@ -1335,7 +1402,7 @@ $('example').addEventListener('click', () => {
   if (bestaand) { state.current = bestaand.id; save(); render(); toast('Dit is het voorbeeld'); return; }
   // Een lege, onaangeroerde analyse wordt het voorbeeld; anders komt het voorbeeld in een eigen analyse.
   let a = cur();
-  if (a.change.trim() || !/^(Mijn analyse|Nieuwe analyse|Analyse( \d+)?|)$/.test(a.name) || a.units.length > 1 || a.units.some(u => u.name !== DEFAULT_UNIT)) {
+  if ((a.change.trim() && a.change !== sharedChangeText()) || !/^(Mijn analyse|Nieuwe analyse|Analyse( \d+)?|)$/.test(a.name) || a.units.length > 1 || a.units.some(u => u.name !== DEFAULT_UNIT)) {
     a = newAnalysis(); state.analyses.push(a); state.current = a.id;
   }
   const y = new Date().getFullYear(), m = new Date().getMonth() + 1;
@@ -1503,7 +1570,7 @@ $('menu').addEventListener('click', async e => {
   const a = cur(), act = b.dataset.act, base = `veranderklimaat-${slug(a.name)}-${today()}`;
   const empty = a.units.every(isBlank);
   if (['copy', 'csv', 'png', 'pdf'].includes(act) && empty) { toast('Er is nog niets ingevuld'); return; }
-  if (act === 'copy') { (await copy(asMarkdown())) ? toast('Gekopieerd als tekst') : toast('Kopiëren lukt hier niet'); }
+  if (act === 'copy') { (await ocRich.copy(asMarkdown())) ? toast('Gekopieerd, met opmaak') : toast('Kopiëren lukt hier niet'); }
   if (act === 'csv') { download(new Blob([asCSV()], { type:'text/csv;charset=utf-8' }), base + '.csv'); toast('CSV gedownload'); }
   if (act === 'png' || act === 'pdf') {
     toast('Bezig…');
