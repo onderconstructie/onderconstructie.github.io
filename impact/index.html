@@ -349,6 +349,16 @@ button.oc-import { color:#047857; min-height:44px; }
 .oc-restart-row[hidden] { display:none !important; }
 .oc-restart { min-height:44px; padding:0.5rem 1rem; font:inherit; font-size:0.875rem; font-weight:500; color:#64748b; background:none; border:0; border-radius:10px; cursor:pointer; text-decoration:underline; text-decoration-color:#cbd5e1; text-underline-offset:3px; }
 .oc-restart:hover { color:#b91c1c; background:#fef2f2; text-decoration-color:currentColor; }
+/* ---------- Soepel op gsm: tikken zonder vertraging, zichtbare druk, geen inzoomen, vensters die de pagina niet meeslepen ---------- */
+button, a, summary, label, select, input, textarea, [role="button"], [role="tab"], [role="radio"] { touch-action:manipulation; }
+button, a, summary, label, [role="button"], [role="tab"], [role="radio"] { -webkit-tap-highlight-color:transparent; }
+button:not(:disabled):active, a:active, summary:active, [role="button"]:active { filter:brightness(0.93); }
+@supports (min-height:100dvh) { body { min-height:100dvh; } }
+.ocs, .ocs-body, .ocw, .menu { overscroll-behavior:contain; }
+body:has(.ocs-back), body:has(.ocw-back) { overflow:hidden; }
+@media (prefers-reduced-motion:reduce) { *, *::before, *::after { animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important; } }
+@media (pointer:coarse), (max-width:760px) { input.field, textarea.field { font-size:16px; } }
+.ocs-back .ocs { max-height:min(86dvh, 720px); }
 </style>
 </head>
 <body>
@@ -377,7 +387,7 @@ button.oc-import { color:#047857; min-height:44px; }
       <span class="vb-btns"><button type="button" class="vb-btn vb-wis" id="vb-wis">Wis voorbeeld</button><button type="button" class="vb-btn vb-eigen" id="vb-eigen">Maak er mijn eigen van</button></span>
     </div>
     <div class="card-head">
-      <input class="list-name" id="a-name" aria-label="Naam van de analyse" maxlength="70" spellcheck="false">
+      <input class="list-name" id="a-name" autocomplete="off" enterkeyhint="done" aria-label="Naam van de analyse" maxlength="70" spellcheck="false">
       <button class="icon-btn del-unit" id="del-unit" type="button" aria-label="Verwijder analyse" title="Verwijder analyse"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg></button>
       <div class="menu-wrap">
         <button class="icon-btn" id="menu-btn" aria-label="Meer acties" aria-haspopup="true" aria-expanded="false">
@@ -998,7 +1008,7 @@ function dimHTML(p, d, i) {
         <textarea class="field a-text" rows="1" maxlength="300" data-af="text" data-aid="${x.id}" data-dim="${d.id}" placeholder="Wat ga je doen?" aria-label="Maatregel ${n + 1} bij ${esc(d.name.toLowerCase())}">${esc(x.text)}</textarea>
         <button class="del" type="button" data-adel="${x.id}" data-dim="${d.id}" aria-label="Verwijder maatregel ${n + 1}">${ICON_DEL}</button>
         <div class="act-meta">
-          <input class="field" maxlength="60" data-af="who" data-aid="${x.id}" data-dim="${d.id}" placeholder="Wie?" aria-label="Wie, maatregel ${n + 1}" value="${esc(x.who)}">
+          <input class="field" maxlength="60" autocomplete="off" enterkeyhint="done" data-af="who" data-aid="${x.id}" data-dim="${d.id}" placeholder="Wie?" aria-label="Wie, maatregel ${n + 1}" value="${esc(x.who)}">
           <input class="field" type="date" data-af="by" data-aid="${x.id}" data-dim="${d.id}" value="${esc(x.by)}" aria-label="Tegen wanneer, maatregel ${n + 1}">
         </div>
       </div>`).join('')}</div>
@@ -1011,7 +1021,7 @@ function renderProfileArea() {
   $('profile-area').innerHTML = `<div class="pgrid">
     <section class="card shape-card" data-oc-keep>
       <div class="p-head">
-        <input class="p-name" id="p-name" value="${esc(p.name)}" maxlength="60" aria-label="Naam van de doelgroep" spellcheck="false">
+        <input class="p-name" id="p-name" autocomplete="off" enterkeyhint="done" value="${esc(p.name)}" maxlength="60" aria-label="Naam van de doelgroep" spellcheck="false">
         <button class="icon-btn" id="p-del" type="button" aria-label="Verwijder deze doelgroep" title="Verwijder deze doelgroep">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button>
       </div>
@@ -1094,7 +1104,12 @@ function render() {
   ocRefreshImports();
 }
 function autosize(t) { if (!t) return; t.style.height = 'auto'; t.style.height = t.scrollHeight + 2 + 'px'; }
-function autosizeAll() { document.querySelectorAll('textarea.field, #a-change').forEach(autosize); }
+function autosizeAll(root) {
+  const ts = [...(root || document).querySelectorAll(root ? 'textarea.field' : 'textarea.field, #a-change')];
+  ts.forEach(t => { t.style.height = 'auto'; });
+  const hs = ts.map(t => t.scrollHeight);
+  ts.forEach((t, i) => { t.style.height = hs[i] + 2 + 'px'; });
+}
 $('how-dims').innerHTML = DIMS.map(d => `<div><b>${esc(d.name)}</b>: ${esc(d.sub.charAt(0).toLowerCase() + d.sub.slice(1))}.</div>`).join('');
 
 /* ---------- Melding met Ongedaan ---------- */
@@ -1114,6 +1129,17 @@ $('toast-btn').addEventListener('click', () => {
 });
 function snapshot() { const copy = JSON.parse(JSON.stringify(state)); return () => { state = copy; }; }
 
+
+/* Soepel op gsm: tijdens het typen schuift geen knoppenbalk mee boven het toetsenbord (html.typing) */
+(function () {
+  const tekstveld = el => !!el && (el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || (el.tagName === 'INPUT' && !/^(checkbox|radio|button|submit|range|color|file)$/.test(el.type)) || el.isContentEditable);
+  const zet = () => document.documentElement.classList.toggle('typing', tekstveld(document.activeElement));
+  document.addEventListener('focusin', zet); document.addEventListener('focusout', () => setTimeout(zet, 0));
+})();
+
+// Enter in een naamveld of "Wie?": klaar (toetsenbord dicht)
+document.addEventListener('keydown', e => { const t = e.target; if (e.key === 'Enter' && !e.isComposing && t.matches && t.matches('#a-name, #p-name, input[data-af="who"]')) { e.preventDefault(); t.blur(); } });
+
 /* ---------- Invoer ---------- */
 const findAct = (p, dim, id) => p.dims[dim].actions.find(x => x.id === id);
 document.addEventListener('input', e => {
@@ -1126,7 +1152,7 @@ document.addEventListener('input', e => {
   if (t.dataset.af) {
     const x = findAct(p, t.dataset.dim, t.dataset.aid); if (!x) return;
     x[t.dataset.af] = t.value; if (t.tagName === 'TEXTAREA') autosize(t);
-    save(); if (t.dataset.af === 'text') refreshLight();
+    save(); if (t.dataset.af === 'text') { clearTimeout(refreshLight.t); refreshLight.t = setTimeout(refreshLight, 180); }
   }
 });
 document.addEventListener('change', e => {
@@ -1170,7 +1196,9 @@ document.addEventListener('click', e => {
   if (s) {
     const p = curProfile(a), dv = p.dims[s.dataset.dim]; dv.score = dv.score === +s.dataset.score ? 0 : +s.dataset.score; save();
     const dim = s.dataset.dim, val = s.dataset.score;
-    renderProfileArea(); renderProfiles(); renderTabs(); renderEmpty();
+    const card = document.querySelector(`[data-dimcard="${dim}"]`), di = DIMS.findIndex(x => x.id === dim);
+    if (card && di >= 0) { card.outerHTML = dimHTML(p, DIMS[di], di); autosizeAll(document.querySelector(`[data-dimcard="${dim}"]`)); refreshLight(); }
+    else { renderProfileArea(); renderProfiles(); renderTabs(); renderEmpty(); }
     const back = document.querySelector(`[data-score="${val}"][data-dim="${dim}"]`); back && back.focus({ preventScroll:true });
     return;
   }
@@ -1497,7 +1525,8 @@ document.addEventListener('click', e => { if (e.target.closest('[data-act="wipe"
 
 /* ---------- Andere tabbladen gelijk houden ---------- */
 window.addEventListener('storage', e => { if (e.key === KEY) { state = load(); render(); } });
-window.addEventListener('resize', () => { autosizeAll(); fitShapes(); });
+let lastW = innerWidth;
+window.addEventListener('resize', () => { if (innerWidth === lastW) return; lastW = innerWidth; autosizeAll(); fitShapes(); });
 
 render();
 setTimeout(() => { try { ocPublish(); } catch {} ocRefreshImports(); }, 0);

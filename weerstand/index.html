@@ -363,6 +363,23 @@ button.oc-import { color:#047857; min-height:44px; }
   .toast { left:auto; right:1.25rem; max-width:360px; transform:translateY(calc(100% + 3rem)); }
   .toast.show { transform:none; }
 }
+/* ---------- Soepel op gsm: tikken zonder vertraging, zichtbare druk, geen inzoomen, vensters die de pagina niet meeslepen ---------- */
+button, a, summary, label, select, input, textarea, [role="button"], [role="tab"], [role="radio"] { touch-action:manipulation; }
+button, a, summary, label, [role="button"], [role="tab"], [role="radio"] { -webkit-tap-highlight-color:transparent; }
+button:not(:disabled):active, a:active, summary:active, [role="button"]:active { filter:brightness(0.93); }
+@supports (min-height:100dvh) { body { min-height:100dvh; } }
+.ocs, .ocs-body, .ocw, .menu { overscroll-behavior:contain; }
+body:has(.ocs-back), body:has(.ocw-back) { overflow:hidden; }
+@media (prefers-reduced-motion:reduce) { *, *::before, *::after { animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important; } }
+@media (pointer:coarse), (max-width:760px) { input.field, textarea.field, .p-fields .field { font-size:16px; } }
+.ocs-back .ocs { max-height:min(86dvh, 720px); }
+/* Op gsm: Vorige en Volgende van de scan blijven onderaan binnen duimbereik (niet tijdens het typen) */
+@media (max-width:819px) {
+  .step-nav { position:sticky; bottom:0; z-index:15; margin:1rem -1rem -1.25rem; padding:0.625rem 1rem calc(0.625rem + var(--bottom)); background:rgba(255,255,255,0.97); border-top:1px solid var(--slate-200); border-radius:0 0 16px 16px; }
+  html.typing .step-nav { position:static; }
+  html:has(.step-nav):not(.typing) .toast { bottom:calc(var(--bottom) + 5.25rem); }
+  html { scroll-padding-bottom:5.5rem; }
+}
 </style>
 </head>
 <body>
@@ -392,7 +409,7 @@ button.oc-import { color:#047857; min-height:44px; }
       <span class="vb-btns"><button type="button" class="vb-btn vb-wis" id="vb-wis">Wis voorbeeld</button><button type="button" class="vb-btn vb-eigen" id="vb-eigen">Maak er mijn eigen van</button></span>
     </div>
     <div class="card-head">
-      <input class="list-name" id="group-name" aria-label="Naam van de doelgroep" maxlength="60" spellcheck="false">
+      <input class="list-name" id="group-name" autocomplete="off" enterkeyhint="done" aria-label="Naam van de doelgroep" maxlength="60" spellcheck="false">
       <button class="icon-btn del-unit" id="del-unit" type="button" aria-label="Verwijder doelgroep" title="Verwijder doelgroep"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg></button>
       <div class="menu-wrap">
         <button class="icon-btn" id="menu-btn" aria-label="Meer acties" aria-haspopup="true" aria-expanded="false">
@@ -412,9 +429,9 @@ button.oc-import { color:#047857; min-height:44px; }
     </div>
 
     <div class="meta" id="meta">
-      <label><span class="lbl">Aantal personen</span><input class="field" id="group-size" type="number" min="0" inputmode="numeric" placeholder="bv. 14"></label>
-      <label><span class="lbl">De verandering, in één zin</span><input class="field" id="group-change" maxlength="200" placeholder="Wat verandert er voor deze groep?"></label>
-      <label class="full"><span class="lbl">Project</span><input class="field" id="group-project" maxlength="80" placeholder="Bij welk project hoort deze groep?"></label>
+      <label><span class="lbl">Aantal personen</span><input class="field" id="group-size" type="number" min="0" inputmode="numeric" autocomplete="off" enterkeyhint="done" placeholder="bv. 14"></label>
+      <label><span class="lbl">De verandering, in één zin</span><input class="field" id="group-change" autocomplete="off" enterkeyhint="done" maxlength="200" placeholder="Wat verandert er voor deze groep?"></label>
+      <label class="full"><span class="lbl">Project</span><input class="field" id="group-project" autocomplete="off" enterkeyhint="done" maxlength="80" placeholder="Bij welk project hoort deze groep?"></label>
     </div>
 
     <div class="views-top" id="views-top" hidden><button type="button" class="all-link" id="all-link" aria-pressed="false">Alle groepen vergelijken<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button></div>
@@ -1163,7 +1180,7 @@ function renderBronnen(g) {
       <div class="lvl-head"><span class="lvl-stem">${esc(B.name)}</span><span class="voice">“${esc(B.voice)}”</span></div>
       <p class="lvl-sub">${esc(B.vraag)}</p>
       ${B.q.map((q, i) => { const k = 'b' + B.id + i;
-        if (LINK[k]) { const v = bronVal(s, k); return `<div class="q"><p class="q-text">${esc(q)}</p><p class="q-linked">Al gevraagd in de scan: <b>${v === undefined ? 'nog niet beantwoord' : v === '?' ? 'weet ik niet' : esc(SCALE[v].toLowerCase())}</b><button type="button" class="lnk" data-do="to-scan">Wijzig in de scan</button></p></div>`; }
+        if (LINK[k]) { const v = bronVal(s, k); return `<div class="q"><p class="q-text">${esc(q)}</p><p class="q-linked">Al gevraagd in de scan: <b>${v === undefined ? 'nog niet beantwoord' : v === '?' ? 'weet ik niet' : esc(SCALE[v].toLowerCase())}</b><button type="button" class="lnk" data-do="to-scan" data-step="${+LINK[k][1] - 1}">Wijzig in de scan</button></p></div>`; }
         return `<div class="q"><p class="q-text">${esc(q)}</p>${scaleHTML(k, s.a[k], SCALE)}</div>`; }).join('')}
     </div>`).join('');
   h += `<div class="step-nav" style="display:flex"><button class="btn btn-ghost" data-do="to-scan">Terug naar de scan</button><button class="btn btn-primary" data-do="to-res">Bekijk het resultaat</button></div>`;
@@ -1262,7 +1279,7 @@ function planItemHTML(p) {
     <button class="chk" data-do="toggle" aria-label="${p.done ? 'Niet meer afgevinkt' : 'Afvinken'}">${ICON.check}</button>
     <div><div class="p-text">${esc(p.text)}</div>${src ? `<div class="p-src">${esc(src)}</div>` : ''}
       ${isBronSrc(p) ? `<div class="when">${Object.entries(WHEN).map(([k, t]) => `<button data-do="when" data-when="${k}" aria-pressed="${p.when === k}">${t}</button>`).join('')}</div>` : ''}
-      <div class="p-fields"><input class="field" data-f="who" value="${esc(p.who)}" placeholder="Wie?" aria-label="Wie: ${esc(p.text)}" maxlength="80"><input class="field" data-f="due" value="${esc(p.due)}" placeholder="Tegen wanneer?" aria-label="Tegen wanneer: ${esc(p.text)}" maxlength="40"></div>
+      <div class="p-fields"><input class="field" data-f="who" autocomplete="off" enterkeyhint="next" value="${esc(p.who)}" placeholder="Wie?" aria-label="Wie: ${esc(p.text)}" maxlength="80"><input class="field" data-f="due" autocomplete="off" enterkeyhint="done" value="${esc(p.due)}" placeholder="Tegen wanneer?" aria-label="Tegen wanneer: ${esc(p.text)}" maxlength="40"></div>
     </div>
     <button class="del" data-do="del" aria-label="Verwijder: ${esc(p.text)}">${ICON.del}</button></div>`;
 }
@@ -1273,7 +1290,7 @@ function renderPlan(g) {
   let h = `<p class="hint">${g.plan.length ? `${done} van ${g.plan.length} acties afgevinkt.` : 'Nog leeg. Neem acties op vanuit het resultaat, of voeg ze hier toe.'}</p>`;
   h += `<h3 class="sec-title">Aanpak van de weerstand</h3>`;
   h += gen.length ? gen.map(planItemHTML).join('') : '<p class="hint">Nog geen acties. Kies ze in het resultaat bij “Wat speelt er”.</p>';
-  h += `<form class="add-row" data-form="plan"><input class="field" name="t" placeholder="Eigen actie toevoegen" aria-label="Eigen actie toevoegen" maxlength="200"><button class="btn btn-primary">Voeg toe</button></form>`;
+  h += `<form class="add-row" data-form="plan"><input class="field" name="t" autocomplete="off" enterkeyhint="done" placeholder="Eigen actie toevoegen" aria-label="Eigen actie toevoegen" maxlength="200"><button class="btn btn-primary">Voeg toe</button></form>`;
 
   h += `<h3 class="sec-title">Acties per bron van weerstand</h3>`;
   h += br.sorted.map(e => {
@@ -1281,7 +1298,7 @@ function renderPlan(g) {
     return `<div class="bron-plan${top ? ' top' : ''}" data-oc-keep>
       <div class="bron-plan-h"><b>${esc(B.name)}</b><span>${esc(B.vraag)}</span>${top ? '<span class="tagb">knelpunt</span>' : ''}</div>
       ${items.map(planItemHTML).join('')}
-      ${items.length < 3 ? `<form class="add-row" data-form="bron" data-el="${B.id}"><input class="field" name="t" placeholder="Actie tegen ${esc(lc(B.name))} (max. 3)" aria-label="Actie tegen ${esc(lc(B.name))}" maxlength="200"><button class="btn btn-ghost">Voeg toe</button></form>` : ''}
+      ${items.length < 3 ? `<form class="add-row" data-form="bron" data-el="${B.id}"><input class="field" name="t" autocomplete="off" enterkeyhint="done" placeholder="Actie tegen ${esc(lc(B.name))} (max. 3)" aria-label="Actie tegen ${esc(lc(B.name))}" maxlength="200"><button class="btn btn-ghost">Voeg toe</button></form>` : ''}
     </div>`;
   }).join('');
 
@@ -1307,6 +1324,24 @@ function renderAll() {
       <span class="cmp-bar"><i style="width:${r.max}%;background:${r.max >= 60 ? '#c2410c' : r.max >= 25 ? '#f59e0b' : '#cbd5e1'}"></i></span>
     </button>`).join('');
 }
+
+
+/* Soepel op gsm: tijdens het typen schuift geen knoppenbalk mee boven het toetsenbord (html.typing) */
+(function () {
+  const tekstveld = el => !!el && (el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || (el.tagName === 'INPUT' && !/^(checkbox|radio|button|submit|range|color|file)$/.test(el.type)) || el.isContentEditable);
+  const zet = () => document.documentElement.classList.toggle('typing', tekstveld(document.activeElement));
+  document.addEventListener('focusin', zet); document.addEventListener('focusout', () => setTimeout(zet, 0));
+})();
+
+// Enter in een meta- of plan-veld: klaar (toetsenbord dicht), bij "Wie?" eerst naar "Tegen wanneer?"
+document.addEventListener('keydown', e => {
+  const t = e.target;
+  if (e.key !== 'Enter' || e.isComposing || t.tagName !== 'INPUT' || t.form) return;
+  if (!(t.matches('#meta input, #group-name, .p-fields input'))) return;
+  e.preventDefault();
+  if (t.dataset.f === 'who') { const n = t.parentElement.querySelector('[data-f="due"]'); if (n) { n.focus(); return; } }
+  t.blur();
+});
 
 /* ---------- Interactie ---------- */
 $('lists').addEventListener('click', e => {
@@ -1339,6 +1374,12 @@ document.addEventListener('click', e => {
     if (s.a[k] === v) delete s.a[k]; else s.a[k] = v;   // nog eens tikken = wissen
     if (LINKED_BY[k]) delete s.a[LINKED_BY[k]];         // hetzelfde signaal bij de bronnen volgt de scan
     save();
+    const q = ans.closest('.q'), top = document.querySelector('.scan-top');
+    if (state.view === 'scan' && q && top) {
+      q.querySelectorAll('[data-key]').forEach(b => { const on = String(s.a[k]) === b.dataset.v; b.setAttribute('aria-pressed', on); if (b.getAttribute('role') === 'radio') b.setAttribute('aria-checked', on); });
+      top.outerHTML = scanTop(g, 'w', 15); renderTabs();
+      return;
+    }
     const y = window.scrollY; render(); window.scrollTo(0, y);
     return;
   }
@@ -1352,7 +1393,7 @@ document.addEventListener('click', e => {
   if (act === 'next') go('scan', (state.step || 0) + 1);
   if (act === 'prev') go('scan', Math.max(0, (state.step || 0) - 1));
   if (act === 'to-bron') go('bron');
-  if (act === 'to-scan') go('scan', 0);
+  if (act === 'to-scan') go('scan', d.dataset.step != null ? +d.dataset.step : (state.step || 0));
   if (act === 'to-res') go('res');
   if (act === 'new-scan') {
     if (!Object.keys(lastScan(g).a).length) { toast('De huidige meting is nog leeg'); return; }

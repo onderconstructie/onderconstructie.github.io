@@ -15,6 +15,8 @@
 <meta name="theme-color" content="#ffffff">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox=&quot;0 0 40 40&quot; fill=&quot;none&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;%3E%3Ccircle cx=&quot;20&quot; cy=&quot;20&quot; r=&quot;18&quot; fill=&quot;%23f8fafc&quot; stroke=&quot;%23e2e8f0&quot; stroke-width=&quot;1.5&quot;/%3E%3Crect x=&quot;10&quot; y=&quot;23&quot; width=&quot;6&quot; height=&quot;7&quot; rx=&quot;1.3&quot; fill=&quot;%2364748b&quot;/%3E%3Crect x=&quot;24&quot; y=&quot;15&quot; width=&quot;6&quot; height=&quot;15&quot; rx=&quot;1.3&quot; fill=&quot;%2310b981&quot;/%3E %3Cpath d=&quot;M13 21c0-6 6-9 11-7.5&quot; stroke=&quot;%23047857&quot; stroke-width=&quot;1.7&quot; stroke-dasharray=&quot;2 2.2&quot; stroke-linecap=&quot;round&quot; fill=&quot;none&quot;/%3E%3Cpath d=&quot;M27 15V9.5l3.5 1.6-3.5 1.6&quot; fill=&quot;%23047857&quot; stroke=&quot;%23047857&quot; stroke-width=&quot;1.2&quot; stroke-linejoin=&quot;round&quot;/%3E%3C/svg%3E">
 <link rel="stylesheet" href="/fonts/fonts.css">
+<link rel="preload" href="/fonts/dm-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/dm-sans-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
 <style>
 :root {
   --slate-900:#0f172a; --slate-800:#1e293b; --slate-700:#334155; --slate-600:#475569;
@@ -382,6 +384,17 @@ button.oc-import { color:#047857; min-height:44px; }
 .oc-restart-row[hidden] { display:none !important; }
 .oc-restart { min-height:44px; padding:0.5rem 1rem; font:inherit; font-size:0.875rem; font-weight:500; color:#64748b; background:none; border:0; border-radius:10px; cursor:pointer; text-decoration:underline; text-decoration-color:#cbd5e1; text-underline-offset:3px; }
 .oc-restart:hover { color:#b91c1c; background:#fef2f2; text-decoration-color:currentColor; }
+
+/* ---------- Soepel op gsm (oktober 2026): tikken, typen, schuiven ---------- */
+html { -webkit-text-size-adjust:100%; text-size-adjust:100%; }
+button, a, summary, label, select, [role="button"], [role="tab"], [data-act], input[type="range"], input[type="checkbox"], input[type="radio"] { touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+@media (hover:none) { button:not(:disabled):active, a:active, summary:active, [role="button"]:active, [role="tab"]:active { filter:brightness(0.93); } }
+@media (pointer:coarse) { .field, #new-gap { font-size:16px !important; } }
+/* venster open: de pagina erachter schuift niet mee, en scrollen binnen het venster loopt niet door naar de pagina */
+html:has(.ocs-back, .ocw-back, .gal-back, .oc-dialog-backdrop) { overflow:hidden; }
+.ocs-back *, .ocw-back *, .gal-back * { overscroll-behavior:contain; }
+
+body { min-height:100dvh; }
 </style>
 </head>
 <body>
@@ -1223,11 +1236,18 @@ document.addEventListener('input', e => {
   else return;
   if (t.tagName === 'TEXTAREA') autosize(t);
   save();
-  if (t.dataset.ef === 'type') { renderGap(g.id); }   // kleur en uitleg van de bron veranderen
-  else if (t.dataset.why != null) { refreshGap(g.id); updateWhyLabels(card, g); }
-  else refreshGap(g.id);
-  refreshDerived();
+  if (t.dataset.ef === 'type') { renderGap(g.id); refreshDerived(); return; }   // kleur en uitleg van de bron veranderen
+  if (t.dataset.why != null) updateWhyLabels(card, g);
+  refreshSoon(g.id);
 });
+// Bij elke toets alles rond het veld opnieuw tekenen kost op een gsm merkbaar tijd: wacht tot je even stopt met typen.
+const refreshSoon = (() => {
+  const ids = new Set(); let timer = 0;
+  return id => {
+    ids.add(id); clearTimeout(timer);
+    timer = setTimeout(() => { ids.forEach(refreshGap); ids.clear(); refreshDerived(); }, 180);
+  };
+})();
 function updateWhyLabels(card, g) {
   card.querySelectorAll('.why').forEach((row, i) => {
     const w = g.whys[i] || '', isRoot = i === g.whys.length - 1 && g.whys.length > 1 && w.trim();
@@ -1606,6 +1626,22 @@ render();
   }, true);
   document.getElementById('oc-restart-btn').addEventListener('click', () => { const w = document.querySelector('[data-act="wipe"]'); w && w.click(); });
   sync();
+})();
+</script>
+<script>
+/* Soepel: de hulpbibliotheken voor Afbeelding en PDF alvast ophalen zodra iemand naar een downloadknop gaat (niet bij het laden). */
+(() => {
+  let warm = false;
+  const go = () => {
+    warm = true;
+    ['/lib/html2canvas-1.4.1.min.js', '/lib/jspdf-2.5.1.umd.min.js'].forEach(h => {
+      const l = document.createElement('link');
+      if (l.relList && l.relList.supports && l.relList.supports('prefetch')) { l.rel = 'prefetch'; l.as = 'script'; l.href = h; document.head.appendChild(l); }
+      else try { fetch(h).catch(() => {}); } catch (e) {}
+    });
+  };
+  const SEL = '[data-exp]';
+  ['pointerdown', 'focusin', 'mouseover'].forEach(t => document.addEventListener(t, e => { if (!warm && e.target.closest && e.target.closest(SEL)) go(); }, { passive:true, capture:true }));
 })();
 </script>
 <script>

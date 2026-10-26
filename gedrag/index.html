@@ -261,6 +261,17 @@ button.act-tag { min-height:44px; }
 .add-act { display:inline-flex; align-items:center; gap:0.375rem; min-height:44px; padding:0 0.875rem; border-radius:10px; border:1px dashed #a7f3d0; color:var(--accent-dark); font-weight:600; font-size:0.875rem; margin-bottom:1rem; }
 .add-act svg { width:16px; height:16px; }
 .add-act:hover { background:var(--accent-50); }
+/* ---------- Soepel op gsm: tikken zonder vertraging, zichtbare druk, geen inzoomen, vensters die de pagina niet meeslepen ---------- */
+button, a, summary, label, select, input, textarea, [role="button"], [role="tab"], [role="radio"] { touch-action:manipulation; }
+button, a, summary, label, [role="button"], [role="tab"], [role="radio"] { -webkit-tap-highlight-color:transparent; }
+button:not(:disabled):active, a:active, summary:active, [role="button"]:active { filter:brightness(0.93); }
+@supports (min-height:100dvh) { body { min-height:100dvh; } }
+.ocs, .ocs-body, .ocw, .menu { overscroll-behavior:contain; }
+body:has(.ocs-back), body:has(.ocw-back) { overflow:hidden; }
+@media (prefers-reduced-motion:reduce) { *, *::before, *::after { animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important; } }
+html { scroll-padding-top:64px; }
+@media (pointer:coarse) { .stepnav { background:rgba(248,250,252,0.97); -webkit-backdrop-filter:none; backdrop-filter:none; } }
+.help, .seg-btn, .sn, .tab { transition:none; }
 
 </style>
 </head>
@@ -731,24 +742,55 @@ const pillarCls = s => s == null ? 'none' : s < 1 ? 'bad' : s < 2 ? 'mid' : 'ok'
 // drempels, zwaarste eerst
 const blockers = u => PARTS.filter(p => u.scores[p.id] === 0).concat(PARTS.filter(p => u.scores[p.id] === 1));
 
+/* Bijwerken in plaats van alles opnieuw tekenen: alleen wat echt verandert, wordt aangepast.
+   Zo blijven focus, cursor, scrollpositie en open notities staan, en blijft tikken vlot op een gsm. */
+function morph(root, html) {
+  const t = document.createElement('template'); t.innerHTML = html; morphKids(root, t.content);
+}
+const sameNode = (a, b) => a.nodeType === b.nodeType && a.nodeName === b.nodeName && (a.nodeType !== 1 || (a.id === b.id && a.getAttribute('data-id') === b.getAttribute('data-id') && a.getAttribute('data-unit') === b.getAttribute('data-unit')));
+function morphKids(a, b) {
+  let x = a.firstChild, y = b.firstChild;
+  while (y) {
+    const ny = y.nextSibling;
+    if (!x) a.appendChild(y);
+    else if (sameNode(x, y)) { morphNode(x, y); x = x.nextSibling; }
+    else { const nx = x.nextSibling; a.replaceChild(y, x); x = nx; }
+    y = ny;
+  }
+  while (x) { const nx = x.nextSibling; a.removeChild(x); x = nx; }
+}
+function morphNode(x, y) {
+  if (x.nodeType !== 1) { if (x.nodeValue !== y.nodeValue) x.nodeValue = y.nodeValue; return; }
+  for (const at of [...x.attributes]) if (!y.hasAttribute(at.name) && at.name !== 'style' && !(at.name === 'open' && x.tagName === 'DETAILS')) x.removeAttribute(at.name);
+  for (const at of y.attributes) if (x.getAttribute(at.name) !== at.value) x.setAttribute(at.name, at.value);
+  if (x.tagName === 'TEXTAREA' || x.tagName === 'INPUT') {
+    const v = x.tagName === 'TEXTAREA' ? y.textContent : (y.getAttribute('value') || '');
+    if (x !== document.activeElement && x.value !== v) x.value = v;
+    return;
+  }
+  if (y.hasAttribute('data-morph-skip')) return;
+  morphKids(x, y);
+}
+
 /* Weergave */
 function render() {
   const u = cur();
   if (u && state.current !== u.id) state.current = u.id;
-  $('tabs').innerHTML = state.units.map(x => `<button type="button" class="tab" data-unit="${x.id}" aria-pressed="${x.id === (u && u.id)}"><span class="nm">${esc(title(x))}</span>${x.voorbeeld ? '<span class="vb-tag">voorbeeld</span>' : ''}</button>`).join('')
-    + `<button type="button" class="tab add" data-act="new" aria-label="Nog een gedrag">+ Gedrag</button>`;
+  morph($('tabs'), state.units.map(x => `<button type="button" class="tab" data-unit="${x.id}" aria-pressed="${x.id === (u && u.id)}"><span class="nm">${esc(title(x))}</span>${x.voorbeeld ? '<span class="vb-tag">voorbeeld</span>' : ''}</button>`).join('')
+    + `<button type="button" class="tab add" data-act="new" aria-label="Nog een gedrag">+ Gedrag</button>`);
   $('oc-restart').parentElement.hidden = !state.units.some(x => !x.voorbeeld);
   if (!u) {
-    $('app').innerHTML = `<section class="card start-card">
+    morph($('app'), `<section class="card start-card">
       <p class="start-lead">Kies één gedrag dat moet veranderen, kijk wat het tegenhoudt, en maak een plan dat daar echt op inspeelt.</p>
-      <div class="btns"><button type="button" class="btn btn-primary" data-act="new">Begin met een gedrag</button><button type="button" class="btn btn-ghost" data-act="example">Voorbeeld bekijken</button></div></section>`;
+      <div class="btns"><button type="button" class="btn btn-primary" data-act="new">Begin met een gedrag</button><button type="button" class="btn btn-ghost" data-act="example">Voorbeeld bekijken</button></div></section>`);
     return;
   }
+  if (render.unit !== u.id) { $('app').textContent = ''; render.unit = u.id; }   // ander gedrag: vers opbouwen
   const a = document.activeElement, keep = a && a.dataset && (a.dataset.f || a.dataset.af) ? { f:a.dataset.f, af:a.dataset.af, id:a.dataset.id, ss:a.selectionStart } : null;
   const nScored = PARTS.filter(p => u.scores[p.id] != null).length, bl = blockers(u);
   const sent = sentence(u);
   const done = { s1: !!(u.wie.trim() && u.wat.trim()), s2: nScored === PARTS.length, s3: u.acts.some(a => a.part), s4: !!(u.acts.length && u.meet.trim()) };
-  $('app').innerHTML = `
+  morph($('app'), `
   <nav class="stepnav" aria-label="Stappen">${[['s1', '1', 'Gedrag'], ['s2', '2', 'Drempels'], ['s3', '3', 'Hulp'], ['s4', '4', 'Plan'], ['s5', '', 'Kaart']].map(([id, n, l]) => `<a href="#${id}" class="sn${done[id] ? ' done' : ''}">${n ? `<span class="sn-n">${done[id] ? ICON.check : n}</span>` : `<span class="sn-n sn-k">${ICON.map}</span>`}<span class="sn-l">${l}</span></a>`).join('')}</nav>
   ${u.voorbeeld ? `<div class="vb-bar"><div class="vb-text">${ICON.info}<span>Dit is een voorbeeld om de tool te verkennen. Het telt niet mee in andere tools.</span></div>
     <div class="vb-btns"><button type="button" class="vb-btn vb-wis" data-act="vb-wis">Wis voorbeeld</button><button type="button" class="vb-btn vb-eigen" data-act="vb-eigen">Maak er mijn eigen van</button></div></div>` : ''}
@@ -771,21 +813,21 @@ function render() {
     <div class="body">
       <div class="field">
         <label for="f-wie">Wie?</label>
-        <div class="field-row"><input id="f-wie" data-f="wie" value="${esc(u.wie)}" maxlength="120" placeholder="Bv. loketmedewerkers, teamleiders, nieuwe collega's">
+        <div class="field-row"><input id="f-wie" data-f="wie" autocomplete="off" enterkeyhint="next" value="${esc(u.wie)}" maxlength="120" placeholder="Bv. loketmedewerkers, teamleiders, nieuwe collega's">
           <button type="button" class="oc-import" data-oc-types="betrokkene" data-act="imp" hidden>${ICON.imp}Overnemen uit…</button></div>
       </div>
       <div class="field">
         <label for="f-wat">Wat moeten ze anders doen?</label>
-        <input id="f-wat" data-f="wat" value="${esc(u.wat)}" maxlength="240" placeholder="Bv. registreren elke aanvraag meteen in het nieuwe systeem">
+        <input id="f-wat" data-f="wat" autocomplete="off" enterkeyhint="next" value="${esc(u.wat)}" maxlength="240" placeholder="Bv. registreren elke aanvraag meteen in het nieuwe systeem">
         <p class="fhelp">Begin met een werkwoord en maak het zichtbaar: iets wat je kan zien of tellen.</p>
       </div>
       <div class="field">
         <label for="f-waar">Wanneer of waar? <span class="opt">(liefst)</span></label>
-        <input id="f-waar" data-f="waar" value="${esc(u.waar)}" maxlength="160" placeholder="Bv. tijdens het eerste gesprek aan het loket">
+        <input id="f-waar" data-f="waar" autocomplete="off" enterkeyhint="next" value="${esc(u.waar)}" maxlength="160" placeholder="Bv. tijdens het eerste gesprek aan het loket">
       </div>
       <div class="field">
         <label for="f-project">Project <span class="opt">(komt uit de app, als je er een koos)</span></label>
-        <input id="f-project" data-f="project" value="${esc(u.project || '')}" maxlength="80" placeholder="Bij welk project hoort dit gedrag?">
+        <input id="f-project" data-f="project" autocomplete="off" enterkeyhint="done" value="${esc(u.project || '')}" maxlength="80" placeholder="Bij welk project hoort dit gedrag?">
       </div>
       ${sent ? `<p class="sentence" aria-live="polite">${esc(sent)}</p>` : ''}
       ${sent ? concreetHints(u) : ''}
@@ -824,7 +866,7 @@ function render() {
         ${part ? `<button type="button" class="act-tag" data-goto="hb-${part.id}" title="Naar ${esc(part.name)} bij stap 3">${esc(part.name)}</button>` : '<span class="act-tag own">eigen actie</span>'}
         <button type="button" class="icon-btn act-del" data-act="del-act" data-id="${x.id}" aria-label="Verwijder deze actie">${ICON.x}</button>
         <textarea class="act-text grow" data-af="text" data-id="${x.id}" rows="1" maxlength="240" aria-label="Actie" placeholder="Wat ga je doen?">${esc(x.text)}</textarea>
-        <div class="act-meta"><input data-af="who" data-id="${x.id}" value="${esc(x.who)}" maxlength="80" placeholder="Wie?" aria-label="Wie doet het?"><input data-af="when" data-id="${x.id}" value="${esc(x.when)}" maxlength="40" placeholder="Wanneer? Bv. maart" aria-label="Wanneer?"></div>
+        <div class="act-meta"><input data-af="who" data-id="${x.id}" autocomplete="off" enterkeyhint="next" value="${esc(x.who)}" maxlength="80" placeholder="Wie?" aria-label="Wie doet het?"><input data-af="when" data-id="${x.id}" autocomplete="off" enterkeyhint="done" value="${esc(x.when)}" maxlength="40" placeholder="Wanneer? Bv. maart" aria-label="Wanneer?"></div>
       </li>`; }).join('')}</ul>` : `<p class="empty">Nog geen acties. Kies ze bij stap 3, of voeg er zelf een toe.</p>`}
       <button type="button" class="add-act" data-act="add-act">${ICON.plus}Eigen actie</button>
       <div class="field">
@@ -833,7 +875,7 @@ function render() {
       </div>
       <div class="field small">
         <label for="f-terug">Wanneer kijk je opnieuw?</label>
-        <input id="f-terug" data-f="terug" value="${esc(u.terug)}" maxlength="40" placeholder="Bv. 15 juni, of na drie maanden">
+        <input id="f-terug" data-f="terug" autocomplete="off" enterkeyhint="done" value="${esc(u.terug)}" maxlength="40" placeholder="Bv. 15 juni, of na drie maanden">
       </div>
     </div>
   </section>
@@ -843,10 +885,11 @@ function render() {
       <div class="kaart-btns"><button type="button" class="btn-s" data-exp="png">Afbeelding</button><button type="button" class="btn-s" data-exp="pdf">PDF</button></div></div>
     <div class="body">
       <p class="lead">Alles op één blad, om te delen of op te hangen. Tik op een drempel om hem aan te passen.</p>
-      <div class="kaart" id="kaart"></div>
+      <div class="kaart" id="kaart" data-morph-skip></div>
     </div>
-  </section>`;
-  drawKaart();
+  </section>`);
+  // De kaart staat onderaan: eerst het scherm laten bijwerken, dan pas de kaart tekenen.
+  if (render.first) { clearTimeout(drawKaart.t); drawKaart.t = setTimeout(drawKaart, 60); } else { render.first = true; drawKaart(); }
   growAll();
   refreshImports();
   if (keep) { const el = keep.f ? document.querySelector(`[data-f="${keep.f}"]${keep.id ? `[data-id="${keep.id}"]` : ''}`) : document.querySelector(`[data-af="${keep.af}"][data-id="${keep.id}"]`); if (el) { el.focus({ preventScroll:true }); try { el.setSelectionRange(keep.ss, keep.ss); } catch {} } }
@@ -988,7 +1031,9 @@ function goTo(id) {
   el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
   const f = el.querySelector('[aria-checked="true"]') || el.querySelector('button, input, textarea'); if (f) setTimeout(() => f.focus({ preventScroll:true }), 350);
 }
-window.addEventListener('resize', () => { clearTimeout(goTo.r); goTo.r = setTimeout(() => { drawKaart(); growAll(); }, 150); });
+// Alleen bij een andere breedte: op gsm verandert de hoogte bij elk scrollen (adresbalk).
+let lastW = innerWidth;
+window.addEventListener('resize', () => { if (innerWidth === lastW) return; lastW = innerWidth; clearTimeout(goTo.r); goTo.r = setTimeout(() => { drawKaart(); growAll(); }, 150); });
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawKaart);
 
 /* Bewerken */
@@ -1000,7 +1045,7 @@ document.addEventListener('input', e => {
     const f = el.dataset.f;
     if (f === 'note') { u.notes[el.dataset.id] = el.value; save(); return; }
     u[f] = el.value; save();
-    if (['wie', 'wat', 'waar'].includes(f)) { clearTimeout(render.t); render.t = setTimeout(render, 450); const tb = document.querySelector(`[data-unit="${u.id}"] .nm`); if (tb) tb.textContent = title(u); }
+    if (['wie', 'wat', 'waar'].includes(f)) { clearTimeout(render.t); render.t = setTimeout(render, 250); const tb = document.querySelector(`[data-unit="${u.id}"] .nm`); if (tb) tb.textContent = title(u); }
     return;
   }
   if (el.dataset.af) { const a = u.acts.find(x => x.id === el.dataset.id); if (a) { a[el.dataset.af] = el.value; save(); } }
@@ -1039,6 +1084,15 @@ document.addEventListener('click', async e => {
       picked.slice(1).forEach(p => state.units.push(newUnit(p.text.slice(0, 120))));
       save(); render(); toast(picked.length > 1 ? `${picked.length} doelgroepen: elk een eigen tabblad` : 'Doelgroep overgenomen'); return; }
   }
+});
+
+// Enter in een kort veld: naar het volgende veld, of klaar (toetsenbord dicht).
+document.addEventListener('keydown', e => {
+  const t = e.target;
+  if (e.key !== 'Enter' || e.isComposing || t.tagName !== 'INPUT' || !(t.dataset.f || t.dataset.af)) return;
+  e.preventDefault();
+  if (t.enterKeyHint === 'next') { const all = [...document.querySelectorAll('#app input[data-f], #app input[data-af]')], n = all[all.indexOf(t) + 1]; if (n) { n.focus(); return; } }
+  t.blur();
 });
 
 /* Klaarleggen: de doelgroep en de acties (voorbeelden niet) */

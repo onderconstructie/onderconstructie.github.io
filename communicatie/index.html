@@ -419,6 +419,30 @@ button.oc-import { color:#047857; min-height:44px; }
   .toast { left:auto; right:1.25rem; max-width:360px; transform:translateY(200%); }
   .toast.show { transform:none; }
 }
+/* ---------- Soepel op gsm: tikken zonder vertraging, zichtbare druk, geen inzoomen, vensters die de pagina niet meeslepen ---------- */
+button, a, summary, label, select, input, textarea, [role="button"], [role="tab"], [role="radio"] { touch-action:manipulation; }
+button, a, summary, label, [role="button"], [role="tab"], [role="radio"] { -webkit-tap-highlight-color:transparent; }
+button:not(:disabled):active, a:active, summary:active, [role="button"]:active { filter:brightness(0.93); }
+@supports (min-height:100dvh) { body { min-height:100dvh; } }
+@media (pointer:coarse), (max-width:760px) { .inp, .mrow .inp { font-size:16px; } }
+.ocs, .ocs-body, .ocw, .menu { overscroll-behavior:contain; }
+body:has(.ocs-back), body:has(.ocw-back) { overflow:hidden; }
+@media (prefers-reduced-motion:reduce) { *, *::before, *::after { animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important; } }
+#view:empty { min-height:100vh; }
+@supports (height:100dvh) { .aside { max-height:calc(100dvh - 2rem); } }
+.ocs-back .ocs { max-height:min(86dvh, 720px); }
+/* Op gsm blijven Vorige en Volgende onderaan binnen duimbereik; tijdens het typen gaan ze gewoon mee met de pagina */
+@media (max-width:719px) {
+  .navrow { position:sticky; bottom:0; z-index:15; margin:1.25rem -1.5rem -1.25rem; padding:0.625rem 1.5rem calc(0.625rem + var(--bottom)); background:rgba(255,255,255,0.97); border-top:1px solid var(--slate-200); border-radius:0 0 16px 16px; }
+  html.typing .navrow { position:static; }
+  html:has(.navrow):not(.typing) .toast { bottom:calc(var(--bottom) + 5.25rem); }
+  html { scroll-padding-bottom:5.5rem; }
+  .navrow .btn.prev span { display:none; }
+  .navrow .btn.prev { width:44px; padding:0; flex:0 0 44px; }
+  .navrow .btn.primary { flex:1 1 auto; }
+}
+@media (max-width:599px) { .navrow { margin:1.25rem -1.125rem -1.125rem; padding-left:1.125rem; padding-right:1.125rem; } }
+@media (max-width:480px) { .navrow { margin:1.25rem -0.875rem -1rem; padding-left:0.875rem; padding-right:0.875rem; } .nx-name { display:none; } }
 </style>
 </head>
 <body>
@@ -462,6 +486,7 @@ button.oc-import { color:#047857; min-height:44px; }
       <span class="vb-btns"><button type="button" class="vb-btn vb-wis" id="vb-wis">Wis voorbeeld</button><button type="button" class="vb-btn vb-eigen" id="vb-eigen">Maak er mijn eigen van</button></span>
     </div>
     <div class="startrow" id="startrow" hidden><span>Liever eerst zien hoe een afgewerkt plan eruitziet?</span><button type="button" class="btn" id="example">Voorbeeld bekijken</button></div>
+    <script>try { var oc0 = JSON.parse(localStorage.getItem('communicatie.v1') || 'null'); document.getElementById('startrow').hidden = !!oc0; document.getElementById('vb-bar').hidden = !(oc0 && oc0.voorbeeld); } catch (e) {}</script>
     <div class="tabs" role="tablist" aria-label="Weergave">
       <button role="tab" data-view="wizard" id="tab-wizard">Stappen</button>
       <button role="tab" data-view="plan" id="tab-plan">Plan</button>
@@ -1122,8 +1147,8 @@ function stepperHTML() {
 function wizardHTML() {
   const i = state.step, s = STEPS[i];
   const body = [stepVertrek, stepGroepen, stepBoodschap, stepAfzender, stepKanalen, stepTiming, stepMeten, stepHerkenbaar, stepKlaar][i]();
-  const prev = i > 0 ? `<button class="btn" type="button" data-go="${i - 1}">${ICON.left}<span>Vorige</span></button>` : '<span></span>';
-  const next = i < 8 ? `<button class="btn primary" type="button" data-go="${i + 1}"><span>${i === 7 ? 'Afronden' : 'Volgende: ' + STEPS[i + 1].name}</span>${ICON.right}</button>`
+  const prev = i > 0 ? `<button class="btn prev" type="button" data-go="${i - 1}" aria-label="Vorige: ${STEPS[i - 1].name}">${ICON.left}<span>Vorige</span></button>` : '<span></span>';
+  const next = i < 8 ? `<button class="btn primary" type="button" data-go="${i + 1}"><span>${i === 7 ? 'Afronden' : `Volgende<span class="nx-name">: ${STEPS[i + 1].name}</span>`}</span>${ICON.right}</button>`
     : `<button class="btn primary" type="button" data-view="plan"><span>Bekijk het plan</span>${ICON.right}</button>`;
   return `<div class="layout">
     <section class="card step" aria-labelledby="step-h">
@@ -1486,7 +1511,11 @@ const monthName = k => { const [y, m] = k.split('-').map(Number); return new Dat
 
 /* Live bijwerken tijdens het typen, zonder de stap opnieuw op te bouwen */
 function live() {
-  syncFields(); showRestart();
+  syncFields();
+  clearTimeout(live.t); live.t = setTimeout(liveNow, 150);
+}
+function liveNow() {
+  clearTimeout(live.t); showRestart();
   const a = $('aside'); if (a) a.innerHTML = asideHTML();
   if (state.view === 'wizard') {
     const sw = $('stepper-wrap'); if (sw) sw.innerHTML = stepperHTML();
@@ -1519,6 +1548,14 @@ function publish() {
     { name:'Kerncijfers', items: state.what.trim() && !autoWhat ? [{ type:'kerncijfer', text:'verandering', note: state.what.trim() }] : [] }
   ]);
 }
+
+
+/* Soepel op gsm: tijdens het typen schuift geen knoppenbalk mee boven het toetsenbord (html.typing) */
+(function () {
+  const tekstveld = el => !!el && (el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || (el.tagName === 'INPUT' && !/^(checkbox|radio|button|submit|range|color|file)$/.test(el.type)) || el.isContentEditable);
+  const zet = () => document.documentElement.classList.toggle('typing', tekstveld(document.activeElement));
+  document.addEventListener('focusin', zet); document.addEventListener('focusout', () => setTimeout(zet, 0));
+})();
 
 /* ---------- Interactie ---------- */
 document.addEventListener('input', e => {

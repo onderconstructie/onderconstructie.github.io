@@ -27,7 +27,7 @@
 * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 body {
   font-family:'DM Sans', system-ui, sans-serif; background:var(--slate-50); color:var(--slate-700);
-  line-height:1.5; min-height:100vh; -webkit-font-smoothing:antialiased;
+  line-height:1.5; min-height:100vh;min-height:100dvh; -webkit-font-smoothing:antialiased;
   display:flex; flex-direction:column;
 }
 button, input { font:inherit; color:inherit; }
@@ -123,7 +123,7 @@ button { background:none; border:0; cursor:pointer; }
 .over-badge::before { content:''; width:7px; height:7px; border-radius:50%; background:var(--amber); animation:pulse 2s ease-in-out infinite; }
 @keyframes pulse { 50% { opacity:0.35; } }
 .bar { height:6px; background:var(--slate-100); border-radius:99px; overflow:hidden; margin:1rem auto 0; max-width:360px; }
-.bar span { display:block; height:100%; width:0; background:var(--accent); border-radius:99px; transition:width 0.6s linear, background 0.4s; }
+.bar span { display:block; height:100%; width:100%; background:var(--accent); border-radius:99px; transform:scaleX(0); transform-origin:left center; transition:transform 0.6s linear, background 0.4s; }
 .meter.over .bar span { background:var(--amber); }
 
 .cost { margin-top:1.375rem; padding-top:1.25rem; border-top:1px solid var(--slate-100); }
@@ -247,6 +247,18 @@ button.oc-import { color:#047857; min-height:44px; }
 @media (max-width:420px) { .summary .controls { display:grid; grid-template-columns:1fr 1fr 1fr; } .summary .controls .btn { padding-left:0.375rem; padding-right:0.375rem; min-width:0; gap:0.375rem; font-size:0.875rem; } .summary .controls .btn svg { width:16px; height:16px; } .summary #again { grid-column:1 / -1; } }
 
 .oc-groot{width:44px;height:44px;min-width:44px;padding:0!important;display:inline-flex!important;align-items:center;justify-content:center;gap:0!important;flex:0 0 auto}.oc-groot svg{width:20px;height:20px;margin:0!important}
+/* Soepel op gsm: startknop meteen onder de klok (in de duimzone, zonder scrollen), velden van 16px (geen inzoomen) */
+a, button, summary, label, select { touch-action:manipulation; }
+button:not(:disabled):active, summary:active { filter:brightness(0.93); }
+@media (max-width:640px) {
+  .meter { display:flex; flex-direction:column; }
+  .meter > .over-badge { align-self:center; }
+  .meter > .bar { width:100%; }
+  .meter > .controls { order:1; margin-top:1.125rem; }
+  .meter > .cost { order:2; }
+  #start { min-height:52px; min-width:min(100%, 11rem); font-size:1rem; }
+}
+@media (pointer:coarse) { .num { font-size:1rem; } }
 </style>
 </head>
 <body>
@@ -293,7 +305,7 @@ button.oc-import { color:#047857; min-height:44px; }
         <button class="chip" data-min="45" aria-pressed="false">45 min</button>
         <button class="chip" data-min="60" aria-pressed="false">1 u</button>
         <button class="chip" data-min="90" aria-pressed="false">1,5 u</button>
-        <label class="own">of <input class="num" id="own-min" type="number" inputmode="numeric" min="1" max="600" placeholder="…" aria-label="Eigen duur in minuten"> min</label>
+        <label class="own">of <input class="num" id="own-min" type="number" inputmode="numeric" enterkeyhint="done" min="1" max="600" placeholder="…" aria-label="Eigen duur in minuten"> min</label>
       </div>
     </div>
 
@@ -302,7 +314,7 @@ button.oc-import { color:#047857; min-height:44px; }
       <div class="more-body">
         <div class="opt">
           <div>Voorbereiding per persoon<small>Lezen, reizen, je klaarmaken. Telt mee bij de deelnemers van de start.</small></div>
-          <label class="own"><input class="num" id="prep" type="number" inputmode="numeric" min="0" max="480" value="0" aria-label="Voorbereiding per persoon in minuten"> min</label>
+          <label class="own"><input class="num" id="prep" type="number" inputmode="numeric" enterkeyhint="done" min="0" max="480" value="0" aria-label="Voorbereiding per persoon in minuten"> min</label>
         </div>
         <div class="opt">
           <div>Ook in euro's tonen<small>Standaard uit. Jij kiest het uurtarief.</small></div>
@@ -310,7 +322,7 @@ button.oc-import { color:#047857; min-height:44px; }
         </div>
         <div class="opt" id="rate-row" hidden>
           <div>Uurtarief per persoon<small>Een gemiddelde, jouw schatting.</small></div>
-          <label class="own">€ <input class="num" id="rate" type="number" inputmode="decimal" min="0" step="1" placeholder="…" aria-label="Uurtarief in euro"></label>
+          <label class="own">€ <input class="num" id="rate" type="number" inputmode="decimal" enterkeyhint="done" min="0" step="1" placeholder="…" aria-label="Uurtarief in euro"></label>
         </div>
       </div>
     </details>
@@ -670,6 +682,8 @@ function plannedText(min) {
 
 /* ---------- Tekenen ---------- */
 let lastWhole = -1;
+// innerHTML alleen vervangen als het echt anders is (de teller tekent vier keer per seconde)
+function setH(el, html) { if (el.__h !== html) { el.innerHTML = html; el.__h = html; } }
 function render() {
   const now = Date.now(), T = totals(now);
   const running = st.phase === 'running', paused = st.phase === 'paused', done = st.phase === 'done';
@@ -678,9 +692,9 @@ function render() {
   $('count').textContent = st.people;
   $('minus').disabled = st.people <= 1;
   $('plus').disabled = st.people >= 500;
-  $('people-text').innerHTML = live
+  setH($('people-text'), live
     ? `<strong>Nu aanwezig</strong><span>Komt er iemand bij of gaat er iemand weg? Pas het meteen aan, de teller rekent per periode.</span>`
-    : `<strong>Rond de tafel</strong><span>Komt er iemand bij of gaat er iemand weg? Pas het aan.</span>`;
+    : `<strong>Rond de tafel</strong><span>Komt er iemand bij of gaat er iemand weg? Pas het aan.</span>`);
 
   document.querySelectorAll('.chip').forEach(c => { const on = +c.dataset.min === st.planned; c.classList.toggle('active', on); c.setAttribute('aria-pressed', String(on)); });
   $('euro-link').hidden = st.euroOn;
@@ -699,10 +713,11 @@ function render() {
   $('planned').textContent = paused ? `gepauzeerd · ${plannedText(st.planned)} gepland` : `van ${plannedText(st.planned)} gepland`;
   $('over').hidden = !over;
   if (over) $('over').textContent = `+${overMin(T.ms - plannedMs)} min over tijd`;
-  $('bar').style.width = Math.min(100, plannedMs ? T.ms / plannedMs * 100 : 0) + '%';
+  // De balk groeit met transform: geen herschikking van de pagina, ook niet vier keer per seconde
+  $('bar').style.transform = `scaleX(${Math.min(1, plannedMs ? T.ms / plannedMs : 0).toFixed(4)})`;
 
   const started = st.segments.length > 0;
-  $('cost').innerHTML = `${started ? personTime(T.personMs) : '0 min'}<small>van iedereen samen</small>`;
+  setH($('cost'), `${started ? personTime(T.personMs) : '0 min'}<small>van iedereen samen</small>`);
   $('compare').textContent = started ? (compareText(T.allMs) || 'nog geen minuut van één persoon') : 'Druk op start als de vergadering begint.';
   const eur = started ? euroText(T.allMs) : '';
   $('euro').hidden = !eur;
@@ -711,9 +726,9 @@ function render() {
   $('prep-note').textContent = T.prepMs > 0 ? `plus ${personTime(T.prepMs, false)} voorbereiding, samen ${personTime(T.allMs, false)}` : '';
 
   $('start').querySelector('span').textContent = running ? 'Pauze' : paused ? 'Hervat' : 'Start';
-  $('start').querySelector('svg').innerHTML = running
+  setH($('start').querySelector('svg'), running
     ? '<rect x="6.5" y="5" width="4" height="14" rx="1.2"/><rect x="13.5" y="5" width="4" height="14" rx="1.2"/>'
-    : '<path d="M8 5.5v13a1 1 0 0 0 1.5.9l10.2-6.5a1 1 0 0 0 0-1.7L9.5 4.6A1 1 0 0 0 8 5.5z"/>';
+    : '<path d="M8 5.5v13a1 1 0 0 0 1.5.9l10.2-6.5a1 1 0 0 0 0-1.7L9.5 4.6A1 1 0 0 0 8 5.5z"/>');
   $('start').hidden = done;
   $('stop').hidden = !live;
   $('present-btn').hidden = !live;
@@ -724,7 +739,7 @@ function render() {
     $('p-paused').hidden = !paused;
     $('p-clock').textContent = clock(T.ms);
     $('p-sub').textContent = over ? `+${overMin(T.ms - plannedMs)} min over tijd · ${plannedText(st.planned)} gepland` : `van ${plannedText(st.planned)} gepland`;
-    $('p-cost').innerHTML = `${personTime(T.allMs)}<small>van iedereen samen</small>`;
+    setH($('p-cost'), `${personTime(T.allMs)}<small>van iedereen samen</small>`);
     $('p-compare').textContent = (compareText(T.allMs) || '') + (eur ? ` · ${eur}` : '');
     $('p-people').textContent = st.people === 1 ? '1 persoon aanwezig' : `${st.people} mensen aanwezig`;
   }
@@ -879,6 +894,8 @@ $('chips').addEventListener('click', e => {
   const c = e.target.closest('.chip'); if (!c) return;
   st.planned = +c.dataset.min; save(); render();
 });
+// Enter in een getalveld: klaar, het toetsenbord gaat dicht (de waarde telt al mee tijdens het typen)
+['own-min', 'prep', 'rate'].forEach(id => $(id).addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $(id).blur(); } }));
 $('own-min').addEventListener('input', () => {
   const v = parseInt($('own-min').value, 10);
   if (v >= 1 && v <= 600) { st.planned = v; save(); render(); }

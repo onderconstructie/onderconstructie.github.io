@@ -14,6 +14,8 @@
 <meta name="theme-color" content="#ffffff">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox=&quot;0 0 40 40&quot; fill=&quot;none&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;%3E%3Ccircle cx=&quot;20&quot; cy=&quot;20&quot; r=&quot;18&quot; fill=&quot;%23f8fafc&quot; stroke=&quot;%23e2e8f0&quot; stroke-width=&quot;1.5&quot;/%3E%3Cpath d=&quot;M7 20h19&quot; stroke=&quot;%2364748b&quot; stroke-width=&quot;2.2&quot; stroke-linecap=&quot;round&quot;/%3E%3Cpath d=&quot;M11 12l4 8M18 12l4 8M11 28l4-8M18 28l4-8&quot; stroke=&quot;%2364748b&quot; stroke-width=&quot;1.8&quot; stroke-linecap=&quot;round&quot;/%3E%3Crect x=&quot;25&quot; y=&quot;15&quot; width=&quot;9&quot; height=&quot;10&quot; rx=&quot;3&quot; fill=&quot;%2310b981&quot;/%3E%3C/svg%3E">
 <link rel="stylesheet" href="/fonts/fonts.css">
+<link rel="preload" href="/fonts/dm-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/dm-sans-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
 <style>
 :root {
   --slate-900:#0f172a; --slate-800:#1e293b; --slate-700:#334155; --slate-600:#475569;
@@ -208,6 +210,21 @@ button.oc-import { color:#047857; min-height:44px; }
 @media (max-width:480px) { .draw-head .stat { order:3; flex-basis:100%; margin-left:2.125rem; } }
 .zoom:disabled { opacity:0.45; cursor:default; }
 .explain .inner a { padding:12px 4px; margin:0 -4px; }
+
+/* ---------- Soepel op gsm (oktober 2026): tikken, typen, schuiven ---------- */
+html { -webkit-text-size-adjust:100%; text-size-adjust:100%; }
+button, a, summary, label, select, [role="button"], [role="tab"], [data-act], input[type="range"], input[type="checkbox"], input[type="radio"] { touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+@media (hover:none) { button:not(:disabled):active, a:active, summary:active, [role="button"]:active, [role="tab"]:active { filter:brightness(0.93); } }
+@media (pointer:coarse) { .cz input, .cz-add, .cat-name, .big, .toets input { font-size:16px !important; } }
+/* venster open: de pagina erachter schuift niet mee, en scrollen binnen het venster loopt niet door naar de pagina */
+html:has(.ocs-back, .ocw-back, .gal-back, .oc-dialog-backdrop) { overflow:hidden; }
+.ocs-back *, .ocw-back *, .gal-back * { overscroll-behavior:contain; }
+
+/* tekening: knijpen zoomt in de tekening zelf, niet de hele pagina */
+#canvas { touch-action:pan-x pan-y; overscroll-behavior-x:contain; }
+#canvas.pinching .mm-ui { visibility:hidden; }
+.pinch-hint { display:none; margin:0 1.125rem 0.875rem; font-size:0.8125rem; color:var(--slate-600); }
+@media (hover:none) { .pinch-hint { display:block; } }
 
 </style>
 </head>
@@ -615,9 +632,16 @@ function svgOf(u) {
 }
 
 /* ---------- Weergave ---------- */
-let fitShown = true, fitPref = null;
+let fitShown = true, fitPref = null, zoomZ = null;   // zoomZ: na knijpen of Ctrl + scrollwiel
 function sizeSvg() {
   const c = $('canvas'), s = c && c.querySelector('svg'); if (!s) return;
+  if (zoomZ != null) {
+    const w = +s.getAttribute('width'), fz = Math.min(1, (c.clientWidth - 16) / w), b = $('fit-btn');
+    fitShown = zoomZ <= fz + 0.01;
+    s.style.width = Math.round(w * Math.max(zoomZ, fz)) + 'px'; s.style.maxWidth = 'none'; s.style.height = 'auto';
+    if (b) b.textContent = fitShown ? 'Ware grootte' : 'Hele diagram';
+    return;
+  }
   const w = +s.getAttribute('width'), fit = fitShown = fitPref != null ? fitPref : (c.clientWidth - 16) / w >= 0.72;
   s.style.width = fit ? '100%' : w + 'px'; s.style.maxWidth = fit ? w + 'px' : 'none'; s.style.height = 'auto';
   const b = $('fit-btn'); if (b) b.textContent = fit ? 'Ware grootte' : 'Hele diagram';
@@ -666,6 +690,7 @@ function render() {
       <button type="button" class="zoom" id="fit-btn" data-act="fit">Hele diagram</button>
       <button type="button" class="zoom" data-act="png" aria-label="Download als afbeelding"${n ? '' : ' disabled'}>Afbeelding</button><button type="button" class="zoom" data-act="pdf" aria-label="Download als PDF"${n ? '' : ' disabled'}>PDF</button></div>
     <div class="canvas" id="canvas">${svgOf(u)}</div>
+    <p class="pinch-hint">Knijp met twee vingers om in of uit te zoomen.</p>
   </section>
 
   <section class="card">
@@ -708,10 +733,12 @@ const focusSel = sel => { const el = document.querySelector(sel); if (el) el.foc
 /* ---------- Bewerken ---------- */
 document.addEventListener('input', e => {
   const el = e.target, u = cur(); if (!u) return;
-  if (el.dataset.f === 'probleem') { u.probleem = el.value; save(); renderDiagram(); const tb = document.querySelector(`[data-unit="${u.id}"] .nm`); if (tb) tb.textContent = title(u); return; }
-  if (el.dataset.catname) { const c = u.cats.find(x => x.id === el.dataset.catname); if (c) { c.name = el.value; save(); renderDiagram(); } return; }
-  if (el.dataset.cid) { const c = u.causes.find(x => x.id === el.dataset.cid); if (!c) return; if (el.dataset.k === 'toets') c.toets = el.value; else c.text = el.value; save(); if (!el.dataset.k) renderDiagram(); }
+  if (el.dataset.f === 'probleem') { u.probleem = el.value; save(); drawSoon(); const tb = document.querySelector(`[data-unit="${u.id}"] .nm`); if (tb) tb.textContent = title(u); return; }
+  if (el.dataset.catname) { const c = u.cats.find(x => x.id === el.dataset.catname); if (c) { c.name = el.value; save(); drawSoon(); } return; }
+  if (el.dataset.cid) { const c = u.causes.find(x => x.id === el.dataset.cid); if (!c) return; if (el.dataset.k === 'toets') c.toets = el.value; else c.text = el.value; save(); if (!el.dataset.k) drawSoon(); }
 });
+// Bij elke toets het hele diagram opnieuw tekenen kost op een gsm merkbaar tijd: pas tekenen als je even stopt met typen.
+function drawSoon() { clearTimeout(drawSoon.t); drawSoon.t = setTimeout(renderDiagram, 200); }
 function addLines(u, catId, lines, parent) {
   const made = lines.map(t => cause(catId, t.slice(0, 160), parent));
   // na de laatste suboorzaak van de ouder, of achteraan
@@ -743,12 +770,12 @@ document.addEventListener('paste', e => {
 });
 document.addEventListener('click', e => {
   const t = e.target.closest('[data-act],[data-unit]'); if (!t || t.closest('#menu')) return;
-  if (t.dataset.unit) { state.current = t.dataset.unit; save(); render(); return; }
+  if (t.dataset.unit) { state.current = t.dataset.unit; zoomZ = null; save(); render(); return; }
   const u = cur(), id = t.dataset.id;
   switch (t.dataset.act) {
     case 'new': { const x = newUnit(); state.units.push(x); state.current = x.id; save(); render(); focusSel('[data-f="probleem"]'); return; }
     case 'example': example(); return;
-    case 'fit': fitPref = !fitShown; sizeSvg(); return;
+    case 'fit': zoomZ = null; fitPref = !fitShown; sizeSvg(); return;
     case 'add-sub': { const p = u.causes.find(x => x.id === id), subs = u.causes.filter(x => x.parent === id), last = subs[subs.length - 1] || p, x = cause(p.cat, '', id); u.causes.splice(u.causes.indexOf(last) + 1, 0, x); save(); render(); focusSel(`[data-cid="${x.id}"]:not([data-k])`); return; }
     case 'del': { const undo = snapshot(), c = u.causes.find(x => x.id === id), gone = u.causes.filter(x => x.id === id || x.parent === id).length; u.causes = u.causes.filter(x => x.id !== id && x.parent !== id); save(); render(); toast(gone > 1 ? `Oorzaak en ${gone - 1} ${gone === 2 ? 'suboorzaak' : 'suboorzaken'} verwijderd` : `${(c && c.text) || 'Oorzaak'} verwijderd`, undo); return; }
     case 'likely': { const c = u.causes.find(x => x.id === id); c.likely = !c.likely; save(); render(); const b = document.querySelector(`[data-act="likely"][data-id="${id}"]`); if (b) b.focus({ preventScroll:true }); return; }
@@ -876,6 +903,77 @@ document.addEventListener('click', async e => {
 });
 $('oc-restart').addEventListener('click', () => { const b = document.querySelector('#menu [data-act="wipe"]'); if (b) b.click(); });
 window.addEventListener('resize', () => { clearTimeout(sizeSvg.t); sizeSvg.t = setTimeout(sizeSvg, 120); });
+
+/* ---------- Zoomen in de tekening: knijpen met twee vingers (gsm, tablet) of Ctrl + scrollwiel (computer) ----------
+   Eén vinger schuift zoals altijd. Tijdens het knijpen schaalt alleen het beeld (vlot); bij het loslaten wordt de
+   tekening op die grootte gezet en blijft het punt tussen je vingers op zijn plaats. */
+function ocPinch({ canvas, min, max, apply }) {
+  let p = null;
+  const svgIn = c => c && c.querySelector(':scope > svg');
+  const dist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+  const mid = t => ({ x:(t[0].clientX + t[1].clientX) / 2, y:(t[0].clientY + t[1].clientY) / 2 });
+  const clampZ = z => Math.min(max, Math.max(min(p.c, p.w), z));
+  function begin(c, s, m, d0) {
+    const r = s.getBoundingClientRect(), w = +s.getAttribute('width');
+    p = { c, s, w, d0, m0:m, m, z0:r.width / w, z:r.width / w, lx:m.x - r.left, ly:m.y - r.top, raf:0 };
+    s.style.transformOrigin = `${p.lx}px ${p.ly}px`; s.style.willChange = 'transform';
+    c.classList.add('pinching');
+  }
+  function frame() { if (!p) return; p.raf = 0; p.s.style.transform = `translate(${p.m.x - p.m0.x}px, ${p.m.y - p.m0.y}px) scale(${p.z / p.z0})`; }
+  function move(e) {
+    if (!p || e.touches.length < 2) return;
+    if (e.cancelable) e.preventDefault();
+    p.z = clampZ(p.z0 * dist(e.touches) / p.d0); p.m = mid(e.touches);
+    if (!p.raf) p.raf = requestAnimationFrame(frame);
+  }
+  function finish() {
+    const q = p; p = null; if (!q) return;
+    document.removeEventListener('touchmove', move, { passive:false });
+    cancelAnimationFrame(q.raf);
+    q.s.style.transform = ''; q.s.style.transformOrigin = ''; q.s.style.willChange = '';
+    q.c.classList.remove('pinching');
+    if (Math.abs(q.z - q.z0) < 0.01) return;
+    apply(q.z);
+    const s = svgIn(q.c); if (!s) return;
+    const r = s.getBoundingClientRect(), f = r.width / q.w / q.z0;
+    q.c.scrollLeft += r.left + q.lx * f - q.m.x;
+    const dy = r.top + q.ly * f - q.m.y; if (Math.abs(dy) > 1) window.scrollBy(0, dy);
+  }
+  document.addEventListener('touchstart', e => {
+    if (e.touches.length !== 2 || p) return;
+    const c = e.target.closest && e.target.closest(canvas), s = svgIn(c); if (!s) return;
+    begin(c, s, mid(e.touches), dist(e.touches) || 1);
+    document.addEventListener('touchmove', move, { passive:false });
+  }, { passive:true });
+  const end = e => { if (p && e.touches.length < 2) finish(); };
+  document.addEventListener('touchend', end); document.addEventListener('touchcancel', end);
+  document.addEventListener('wheel', e => {
+    if (!e.ctrlKey || p) return;
+    const c = e.target.closest && e.target.closest(canvas), s = svgIn(c); if (!s) return;
+    e.preventDefault();
+    begin(c, s, { x:e.clientX, y:e.clientY }, 1);
+    p.z = clampZ(p.z0 * Math.exp(-e.deltaY * 0.01));
+    finish();
+  }, { passive:false });
+}
+ocPinch({ canvas:'#canvas', max:2.5,
+  min:(c, w) => Math.min(1, (c.clientWidth - 16) / w),
+  apply:z => { zoomZ = z; sizeSvg(); } });
+
+/* Soepel: de hulpbibliotheken voor Afbeelding en PDF alvast ophalen zodra iemand naar een downloadknop gaat (niet bij het laden). */
+(() => {
+  let warm = false;
+  const go = () => {
+    warm = true;
+    ['/lib/html2canvas-1.4.1.min.js', '/lib/jspdf-2.5.1.umd.min.js'].forEach(h => {
+      const l = document.createElement('link');
+      if (l.relList && l.relList.supports && l.relList.supports('prefetch')) { l.rel = 'prefetch'; l.as = 'script'; l.href = h; document.head.appendChild(l); }
+      else try { fetch(h).catch(() => {}); } catch (e) {}
+    });
+  };
+  const SEL = '.draw-head [data-act="png"], .draw-head [data-act="pdf"], #menu-btn';
+  ['pointerdown', 'focusin', 'mouseover'].forEach(t => document.addEventListener(t, e => { if (!warm && e.target.closest && e.target.closest(SEL)) go(); }, { passive:true, capture:true }));
+})();
 
 render();
 setTimeout(publish, 0);

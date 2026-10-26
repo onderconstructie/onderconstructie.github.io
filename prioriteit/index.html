@@ -15,6 +15,8 @@
 <meta name="theme-color" content="#ffffff">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox='0 0 40 40' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='20' cy='20' r='18' fill='%23f8fafc' stroke='%23e2e8f0' stroke-width='1.5'/%3E%3Crect x='10' y='10' width='9' height='9' rx='2' fill='%2310b981'/%3E%3Crect x='21' y='10' width='9' height='9' rx='2' stroke='%2364748b' stroke-width='1.5'/%3E%3Crect x='10' y='21' width='9' height='9' rx='2' stroke='%2364748b' stroke-width='1.5'/%3E%3Crect x='21' y='21' width='9' height='9' rx='2' stroke='%23cbd5e1' stroke-width='1.5' stroke-dasharray='2 2'/%3E%3Cpath d='M12.6 14.6l1.6 1.6 3-3.2' stroke='%23fff' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="/fonts/fonts.css">
+<link rel="preload" href="/fonts/dm-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/dm-sans-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
 <style>
 :root {
   --slate-900:#0f172a; --slate-800:#1e293b; --slate-700:#334155; --slate-600:#475569;
@@ -273,6 +275,21 @@ button.oc-import { color:#047857; min-height:44px; }
 .oc-restart-row[hidden] { display:none !important; }
 .oc-restart { min-height:44px; padding:0.5rem 1rem; font:inherit; font-size:0.875rem; font-weight:500; color:#64748b; background:none; border:0; border-radius:10px; cursor:pointer; text-decoration:underline; text-decoration-color:#cbd5e1; text-underline-offset:3px; }
 .oc-restart:hover { color:#b91c1c; background:#fef2f2; text-decoration-color:currentColor; }
+
+/* ---------- Soepel op gsm (oktober 2026): tikken, typen, schuiven ---------- */
+html { -webkit-text-size-adjust:100%; text-size-adjust:100%; }
+button, a, summary, label, select, [role="button"], [role="tab"], [data-act], input[type="range"], input[type="checkbox"], input[type="radio"] { touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+@media (hover:none) { button:not(:disabled):active, a:active, summary:active, [role="button"]:active, [role="tab"]:active { filter:brightness(0.93); } }
+@media (pointer:coarse) { .input, .list-name { font-size:16px !important; } }
+/* venster open: de pagina erachter schuift niet mee, en scrollen binnen het venster loopt niet door naar de pagina */
+html:has(.ocs-back, .ocw-back, .gal-back, .oc-dialog-backdrop) { overflow:hidden; }
+.ocs-back *, .ocw-back *, .gal-back * { overscroll-behavior:contain; }
+
+body { min-height:100dvh; }
+.matrix-wrap { max-width:max(300px, calc(100dvh - 230px)); }
+/* De matrix laat de pagina gewoon scrollen; alleen wie een punt vastneemt, sleept (zonder dat de pagina meeschuift). */
+#matrix { touch-action:pan-y; }
+#matrix .pt { touch-action:none; -webkit-touch-callout:none; }
 </style>
 </head>
 <body>
@@ -296,7 +313,7 @@ button.oc-import { color:#047857; min-height:44px; }
   <nav class="lists" id="lists" aria-label="Lijsten"></nav>
 
   <div class="bar">
-    <input class="list-name" id="list-name" aria-label="Naam van de lijst" maxlength="60" spellcheck="false">
+    <input class="list-name" id="list-name" aria-label="Naam van de lijst" maxlength="60" spellcheck="false" autocomplete="off" enterkeyhint="next">
     <button class="icon-btn del-unit" id="del-unit" type="button" aria-label="Verwijder lijst" title="Verwijder lijst"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg></button>
     <div class="menu-wrap">
       <button class="icon-btn" id="menu-btn" aria-label="Meer acties" aria-haspopup="true" aria-expanded="false">
@@ -324,7 +341,7 @@ button.oc-import { color:#047857; min-height:44px; }
     <section class="card form-card" id="form-card" aria-label="Item toevoegen">
       <div class="label"><span id="form-title">Item toevoegen</span></div>
       <form id="form" autocomplete="off">
-        <input class="input" id="name" placeholder="Bijv. Agenda vooraf delen" aria-label="Naam van het item" maxlength="120" enterkeyhint="done">
+        <input class="input" id="name" placeholder="Bijv. Agenda vooraf delen" aria-label="Naam van het item" maxlength="120" enterkeyhint="done" autocomplete="off">
         <div class="slider">
           <div class="slider-top"><span class="slider-name">Impact</span><span class="slider-val" id="impact-val">3</span></div>
           <input type="range" id="impact" min="1" max="4" step="1" value="3" aria-label="Impact">
@@ -1112,6 +1129,9 @@ function endDrag(e) {
 }
 svg.addEventListener('pointerup', endDrag);
 svg.addEventListener('pointercancel', endDrag);
+// Met de vinger: een punt vastnemen houdt de pagina stil; ernaast vegen scrolt gewoon verder.
+svg.addEventListener('touchstart', e => { if (e.target.closest && e.target.closest('.pt') && e.cancelable) e.preventDefault(); }, { passive:false });
+svg.addEventListener('touchmove', e => { if (drag && e.cancelable) e.preventDefault(); }, { passive:false });
 // Met het toetsenbord: pijltjes verplaatsen het gekozen punt
 svg.addEventListener('keydown', e => {
   const g = e.target.closest('.pt'); if (!g) return;
@@ -1344,6 +1364,22 @@ render();
   }, true);
   document.getElementById('oc-restart-btn').addEventListener('click', () => { const w = document.querySelector('[data-act="wipe"]'); w && w.click(); });
   sync();
+})();
+</script>
+<script>
+/* Soepel: de hulpbibliotheken voor Afbeelding en PDF alvast ophalen zodra iemand naar een downloadknop gaat (niet bij het laden). */
+(() => {
+  let warm = false;
+  const go = () => {
+    warm = true;
+    ['/lib/html2canvas-1.4.1.min.js', '/lib/jspdf-2.5.1.umd.min.js'].forEach(h => {
+      const l = document.createElement('link');
+      if (l.relList && l.relList.supports && l.relList.supports('prefetch')) { l.rel = 'prefetch'; l.as = 'script'; l.href = h; document.head.appendChild(l); }
+      else try { fetch(h).catch(() => {}); } catch (e) {}
+    });
+  };
+  const SEL = '[data-exp], #menu-btn';
+  ['pointerdown', 'focusin', 'mouseover'].forEach(t => document.addEventListener(t, e => { if (!warm && e.target.closest && e.target.closest(SEL)) go(); }, { passive:true, capture:true }));
 })();
 </script>
 <script>

@@ -205,6 +205,22 @@ button.oc-import { color:#047857; min-height:44px; }
 textarea.project { resize:none; overflow:hidden; line-height:1.3; font-family:inherit; display:block; min-height:44px; padding:0.5rem 0; }
 .explain .inner a { padding:12px 4px; margin:0 -4px; }
 @media (max-width:520px) { .row-acts { margin-right:-4px; } }
+
+/* ---------- Soepel op gsm (oktober 2026): tikken, typen, schuiven ---------- */
+html { -webkit-text-size-adjust:100%; text-size-adjust:100%; }
+button, a, summary, label, select, [role="button"], [role="tab"], [data-act], input[type="range"], input[type="checkbox"], input[type="radio"] { touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+@media (hover:none) { button:not(:disabled):active, a:active, summary:active, [role="button"]:active, [role="tab"]:active { filter:brightness(0.93); } }
+@media (pointer:coarse) { .txt, .lab, .sel, .lane-chip input { font-size:16px !important; } }
+/* venster open: de pagina erachter schuift niet mee, en scrollen binnen het venster loopt niet door naar de pagina */
+html:has(.ocs-back, .ocw-back, .gal-back, .oc-dialog-backdrop) { overflow:hidden; }
+.ocs-back *, .ocw-back *, .gal-back * { overscroll-behavior:contain; }
+
+/* tekening: knijpen zoomt in de tekening zelf, niet de hele pagina */
+#canvas { touch-action:pan-x pan-y; overscroll-behavior-x:contain; }
+#canvas.pinching .mm-ui { visibility:hidden; }
+.pinch-hint { display:none; margin:0 1.125rem 0.5rem; font-size:0.8125rem; color:var(--slate-600); }
+@media (hover:none) { .pinch-hint { display:block; } }
+body { min-height:100dvh; }
 </style>
 </head>
 <body>
@@ -702,7 +718,15 @@ function hintsHTML(f) {
 }
 // Passend: zo breed als de kaart, maar op een breed scherm nooit kleiner dan 85%, zodat de tekst leesbaar blijft.
 const fitNow = () => state.fit == null ? window.innerWidth >= 700 : state.fit;
+let zoomZ = null, zoomFit = false;   // na knijpen of Ctrl + scrollwiel: de gekozen grootte
 function sizeSvg(el) {
+  if (zoomZ != null && el.parentElement) {
+    const c = el.parentElement, w = +el.getAttribute('width'), fz = Math.min(1, (c.clientWidth - 16) / w);
+    zoomFit = zoomZ <= fz + 0.01;
+    el.style.height = 'auto'; el.style.width = Math.round(w * Math.max(zoomZ, fz)) + 'px'; el.style.maxWidth = 'none'; el.style.minWidth = '0';
+    const b = document.querySelector('.draw-head [data-act="fit"]'); if (b) b.textContent = zoomFit ? 'Leesbaar' : 'Hele stroom';
+    return;
+  }
   const w = +el.getAttribute('width'), fit = fitNow();
   el.style.height = 'auto';
   el.style.width = fit ? '100%' : w + 'px';
@@ -794,7 +818,7 @@ function render() {
       <section class="card draw-card" ${view === 'draw' ? '' : 'hidden'}>
         <div class="draw-head"><h2 class="card-title"><span class="stepno" aria-hidden="true">3</span>Tekening</h2>${svg ? `<button type="button" class="zoom" data-act="fit">${fitNow() ? 'Leesbaar' : 'Hele stroom'}</button>
           <button type="button" class="zoom" data-export="png" aria-label="Download als afbeelding">Afbeelding</button><button type="button" class="zoom" data-export="pdf" aria-label="Download als PDF">PDF</button>` : ''}</div>
-        ${svg ? `<div class="canvas" id="canvas">${svg}</div>` : '<p class="empty-draw">Voeg een stap toe; de tekening verschijnt hier.</p>'}
+        ${svg ? `<div class="canvas" id="canvas">${svg}</div><p class="pinch-hint">Knijp met twee vingers om in of uit te zoomen.</p>` : '<p class="empty-draw">Voeg een stap toe; de tekening verschijnt hier.</p>'}
         <ul class="hints" id="hints">${hintsHTML(f)}</ul>
       </section>
     </div>`;
@@ -867,7 +891,7 @@ function removeNode(f, n) {
 }
 document.addEventListener('click', async e => {
   const t = e.target.closest('[data-act],[data-flow],[data-view]'); if (!t) return;
-  if (t.dataset.flow) { state.current = t.dataset.flow; saveUi(); render(); return; }
+  if (t.dataset.flow) { state.current = t.dataset.flow; zoomZ = null; saveUi(); render(); return; }
   if (t.dataset.view) { state.view = t.dataset.view; saveUi(); render(); return; }
   const f = cur(), act = t.dataset.act, id = t.dataset.id;
   const n = f && f.nodes.find(x => x.id === id);
@@ -885,7 +909,7 @@ document.addEventListener('click', async e => {
     case 'del-flow': { const undo = snapshot(), i = state.flows.indexOf(f); state.flows.splice(i, 1); state.current = (state.flows[i - 1] || state.flows[0] || {}).id || null; save(); render(); toast(`${f.name || 'Stroom'} verwijderd`, undo); return; }
     case 'vb-wis': { const undo = snapshot(); state.flows = state.flows.filter(x => !x.voorbeeld); state.current = (state.flows[0] || {}).id || null; save(); render(); toast('Voorbeeld gewist', undo); return; }
     case 'vb-eigen': f.voorbeeld = false; save(); render(); toast('Het voorbeeld is nu van jou'); return;
-    case 'fit': state.fit = !fitNow(); saveUi(); render(); return;
+    case 'fit': if (zoomZ != null) { state.fit = !zoomFit; zoomZ = null; } else state.fit = !fitNow(); saveUi(); render(); return;
     case 'goto': { state.view = 'edit'; save(); render(); const el = document.querySelector(`[data-f="text"][data-id="${id}"]`); if (el) { el.scrollIntoView({ block:'center', behavior:'smooth' }); el.focus({ preventScroll:true }); } return; }
     case 'imp-lanes': {
       const picked = await ocShare.pick({ types:['betrokkene'], self:OC_ID, title:'Rollen overnemen', intro:'Kies rollen of betrokkenen. Elk wordt een baan in de tekening.' });
@@ -906,10 +930,12 @@ document.addEventListener('input', e => {
   const el = e.target, k = el.dataset && el.dataset.f; if (!k) return;
   const f = cur(); if (!f) return;
   if (k === 'name') { if (/\n/.test(el.value)) el.value = el.value.replace(/\s*\n\s*/g, ' '); f.name = el.value; growName(); save(); const tb = document.querySelector(`[data-flow="${f.id}"] .nm`); tb && (tb.textContent = el.value || 'Stroom'); return; }
-  if (k === 'lane-name') { const l = f.lanes.find(x => x.id === el.dataset.id); if (l) { l.name = el.value; el.size = laneSize(el.value); save(); renderDrawingOnly(); } return; }
+  if (k === 'lane-name') { const l = f.lanes.find(x => x.id === el.dataset.id); if (l) { l.name = el.value; el.size = laneSize(el.value); save(); drawSoon(); } return; }
   const n = f.nodes.find(x => x.id === el.dataset.id); if (!n) return;
-  if (k === 'text' || k === 'yesLabel' || k === 'noLabel') { n[k] = el.value; save(); renderDrawingOnly(); }
+  if (k === 'text' || k === 'yesLabel' || k === 'noLabel') { n[k] = el.value; save(); drawSoon(); }
 });
+// Bij elke toets de hele tekening opnieuw maken kost op een gsm merkbaar tijd: pas tekenen als je even stopt met typen.
+function drawSoon() { clearTimeout(drawSoon.t); drawSoon.t = setTimeout(renderDrawingOnly, 200); }
 document.addEventListener('change', e => {
   const el = e.target, k = el.dataset && el.dataset.f; if (!k || !['type', 'lane', 'to', 'no'].includes(k)) return;
   const f = cur(), n = f.nodes.find(x => x.id === el.dataset.id); if (!n) return;
@@ -1045,6 +1071,78 @@ document.addEventListener('click', async e => {
   }
 });
 $('oc-restart').addEventListener('click', () => { const b = document.querySelector('#menu [data-act="wipe"]'); if (b) b.click(); });
+
+
+/* ---------- Zoomen in de tekening: knijpen met twee vingers (gsm, tablet) of Ctrl + scrollwiel (computer) ----------
+   Eén vinger schuift zoals altijd. Tijdens het knijpen schaalt alleen het beeld (vlot); bij het loslaten wordt de
+   tekening op die grootte gezet en blijft het punt tussen je vingers op zijn plaats. */
+function ocPinch({ canvas, min, max, apply }) {
+  let p = null;
+  const svgIn = c => c && c.querySelector(':scope > svg');
+  const dist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+  const mid = t => ({ x:(t[0].clientX + t[1].clientX) / 2, y:(t[0].clientY + t[1].clientY) / 2 });
+  const clampZ = z => Math.min(max, Math.max(min(p.c, p.w), z));
+  function begin(c, s, m, d0) {
+    const r = s.getBoundingClientRect(), w = +s.getAttribute('width');
+    p = { c, s, w, d0, m0:m, m, z0:r.width / w, z:r.width / w, lx:m.x - r.left, ly:m.y - r.top, raf:0 };
+    s.style.transformOrigin = `${p.lx}px ${p.ly}px`; s.style.willChange = 'transform';
+    c.classList.add('pinching');
+  }
+  function frame() { if (!p) return; p.raf = 0; p.s.style.transform = `translate(${p.m.x - p.m0.x}px, ${p.m.y - p.m0.y}px) scale(${p.z / p.z0})`; }
+  function move(e) {
+    if (!p || e.touches.length < 2) return;
+    if (e.cancelable) e.preventDefault();
+    p.z = clampZ(p.z0 * dist(e.touches) / p.d0); p.m = mid(e.touches);
+    if (!p.raf) p.raf = requestAnimationFrame(frame);
+  }
+  function finish() {
+    const q = p; p = null; if (!q) return;
+    document.removeEventListener('touchmove', move, { passive:false });
+    cancelAnimationFrame(q.raf);
+    q.s.style.transform = ''; q.s.style.transformOrigin = ''; q.s.style.willChange = '';
+    q.c.classList.remove('pinching');
+    if (Math.abs(q.z - q.z0) < 0.01) return;
+    apply(q.z);
+    const s = svgIn(q.c); if (!s) return;
+    const r = s.getBoundingClientRect(), f = r.width / q.w / q.z0;
+    q.c.scrollLeft += r.left + q.lx * f - q.m.x;
+    const dy = r.top + q.ly * f - q.m.y; if (Math.abs(dy) > 1) window.scrollBy(0, dy);
+  }
+  document.addEventListener('touchstart', e => {
+    if (e.touches.length !== 2 || p) return;
+    const c = e.target.closest && e.target.closest(canvas), s = svgIn(c); if (!s) return;
+    begin(c, s, mid(e.touches), dist(e.touches) || 1);
+    document.addEventListener('touchmove', move, { passive:false });
+  }, { passive:true });
+  const end = e => { if (p && e.touches.length < 2) finish(); };
+  document.addEventListener('touchend', end); document.addEventListener('touchcancel', end);
+  document.addEventListener('wheel', e => {
+    if (!e.ctrlKey || p) return;
+    const c = e.target.closest && e.target.closest(canvas), s = svgIn(c); if (!s) return;
+    e.preventDefault();
+    begin(c, s, { x:e.clientX, y:e.clientY }, 1);
+    p.z = clampZ(p.z0 * Math.exp(-e.deltaY * 0.01));
+    finish();
+  }, { passive:false });
+}
+ocPinch({ canvas:'#canvas', max:2.5,
+  min:(c, w) => Math.min(1, (c.clientWidth - 16) / w),
+  apply:z => { zoomZ = z; const s = document.querySelector('#canvas > svg'); if (s) sizeSvg(s); } });
+
+/* Soepel: de hulpbibliotheken voor Afbeelding en PDF alvast ophalen zodra iemand naar een downloadknop gaat (niet bij het laden). */
+(() => {
+  let warm = false;
+  const go = () => {
+    warm = true;
+    ['/lib/html2canvas-1.4.1.min.js', '/lib/jspdf-2.5.1.umd.min.js'].forEach(h => {
+      const l = document.createElement('link');
+      if (l.relList && l.relList.supports && l.relList.supports('prefetch')) { l.rel = 'prefetch'; l.as = 'script'; l.href = h; document.head.appendChild(l); }
+      else try { fetch(h).catch(() => {}); } catch (e) {}
+    });
+  };
+  const SEL = '[data-export], #menu-btn';
+  ['pointerdown', 'focusin', 'mouseover'].forEach(t => document.addEventListener(t, e => { if (!warm && e.target.closest && e.target.closest(SEL)) go(); }, { passive:true, capture:true }));
+})();
 
 render();
 setTimeout(publish, 0);

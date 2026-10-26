@@ -14,6 +14,10 @@
 <meta name="theme-color" content="#ffffff">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox=&quot;0 0 40 40&quot; fill=&quot;none&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;%3E%3Ccircle cx=&quot;20&quot; cy=&quot;20&quot; r=&quot;18&quot; fill=&quot;%23f8fafc&quot; stroke=&quot;%23e2e8f0&quot; stroke-width=&quot;1.5&quot;/%3E%3Cpath d=&quot;M20 20C14 20 13 11 8 11M20 20C14 20 13 29 8 29M20 20C26 20 27 11 32 11M20 20C26 20 27 29 32 29&quot; stroke=&quot;%2364748b&quot; stroke-width=&quot;1.6&quot; fill=&quot;none&quot; stroke-linecap=&quot;round&quot;/%3E%3Crect x=&quot;13&quot; y=&quot;16&quot; width=&quot;14&quot; height=&quot;8&quot; rx=&quot;4&quot; fill=&quot;%2310b981&quot;/%3E%3Ccircle cx=&quot;8&quot; cy=&quot;11&quot; r=&quot;3&quot; fill=&quot;%23ffffff&quot; stroke=&quot;%2364748b&quot; stroke-width=&quot;1.6&quot;/%3E%3Ccircle cx=&quot;8&quot; cy=&quot;29&quot; r=&quot;3&quot; fill=&quot;%23ffffff&quot; stroke=&quot;%2364748b&quot; stroke-width=&quot;1.6&quot;/%3E%3Ccircle cx=&quot;32&quot; cy=&quot;11&quot; r=&quot;3&quot; fill=&quot;%23ecfdf5&quot; stroke=&quot;%23047857&quot; stroke-width=&quot;1.6&quot;/%3E%3Ccircle cx=&quot;32&quot; cy=&quot;29&quot; r=&quot;3&quot; fill=&quot;%23ffffff&quot; stroke=&quot;%2364748b&quot; stroke-width=&quot;1.6&quot;/%3E%3C/svg%3E">
 <link rel="stylesheet" href="/fonts/fonts.css">
+<link rel="preload" href="/fonts/dm-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/dm-sans-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
+<style>html.oc-wacht body > .main, html.oc-wacht body > .footer { visibility:hidden; animation:oc-toon 0s 2.5s forwards; } @keyframes oc-toon { to { visibility:visible; } }</style>
+<script>document.documentElement.classList.add('oc-wacht');</script>
 <style>
 :root {
   --slate-900:#0f172a; --slate-800:#1e293b; --slate-700:#334155; --slate-600:#475569;
@@ -235,6 +239,20 @@ button.more { border:0; cursor:pointer; min-height:28px; }
 .draw-head { flex-wrap:wrap; }
 @media (max-width:520px) { .draw-head .card-title { flex-basis:100%; } }
 .explain .inner a { padding:12px 4px; margin:0 -4px; }
+
+/* ---------- Soepel op gsm (oktober 2026): tikken, typen, schuiven ---------- */
+html { -webkit-text-size-adjust:100%; text-size-adjust:100%; }
+button, a, summary, label, select, [role="button"], [role="tab"], [data-act], input[type="range"], input[type="checkbox"], input[type="radio"] { touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+@media (hover:none) { button:not(:disabled):active, a:active, summary:active, [role="button"]:active, [role="tab"]:active { filter:brightness(0.93); } }
+@media (pointer:coarse) { .mtxt, .mm-edit { font-size:16px !important; } }
+/* venster open: de pagina erachter schuift niet mee, en scrollen binnen het venster loopt niet door naar de pagina */
+html:has(.ocs-back, .ocw-back, .gal-back, .oc-dialog-backdrop) { overflow:hidden; }
+.ocs-back *, .ocw-back *, .gal-back * { overscroll-behavior:contain; }
+.gal-sheet { max-height:92dvh; overscroll-behavior:contain; }
+
+/* tekening: knijpen zoomt in de tekening zelf, niet de hele pagina */
+#canvas { touch-action:pan-x pan-y; overscroll-behavior-x:contain; }
+#canvas.pinching .mm-ui { visibility:hidden; }
 
 </style>
 </head>
@@ -710,7 +728,16 @@ function fitNow() {
   const c = $('canvas'), s = c && c.querySelector('svg');
   return !c || !s || (c.clientWidth - 24) / +s.getAttribute('width') >= (window.innerWidth >= 1000 ? 0.7 : 0.8);
 }
+let zoomZ = null;   // na knijpen of Ctrl + scrollwiel: de gekozen grootte (tot je op Hele kaart of Ware grootte tikt)
 function sizeSvg(el, center = true) {
+  if (zoomZ != null && el.parentElement) {
+    const c = el.parentElement, w = +el.getAttribute('width'), fz = Math.min(1, (c.clientWidth - 16) / w), b = $('fit-btn');
+    shownFit = zoomZ <= fz + 0.01;
+    el.style.height = 'auto'; el.style.width = Math.round(w * Math.max(zoomZ, fz)) + 'px'; el.style.maxWidth = 'none';
+    if (b) b.textContent = shownFit ? 'Ware grootte' : 'Hele kaart';
+    c.classList.toggle('pan', !shownFit);
+    return;
+  }
   const w = +el.getAttribute('width'), fit = shownFit = fitNow();
   el.style.height = 'auto'; el.style.width = fit ? '100%' : w + 'px'; el.style.maxWidth = fit ? w + 'px' : 'none';
   const c = el.parentElement, b = $('fit-btn');
@@ -734,7 +761,7 @@ function render() {
   const a = document.activeElement, keep = a && a.classList && a.classList.contains('mtxt') ? { id:a.dataset.id, ss:a.selectionStart } : null;
   const oldC = $('canvas'), mapFocus = !!(oldC && oldC.contains(a) && !a.classList.contains('mm-edit'));
   const scroll = oldC && lastMap === m.id ? { l:oldC.scrollLeft, t:oldC.scrollTop } : null;
-  if (lastMap !== m.id) { sel = { id:null, bar:false, edit:null }; lastMap = m.id; }
+  if (lastMap !== m.id) { sel = { id:null, bar:false, edit:null }; lastMap = m.id; zoomZ = null; }
   if (sel.id && !m.nodes.some(n => n.id === sel.id)) sel = { id:null, bar:false, edit:null };
   // ideeën onder een ingeklapte tak tonen we in de lijst ook niet
   const hidden = new Set(); m.nodes.forEach((n, i) => { if (n.collapsed && !hidden.has(n.id)) for (let j = i + 1; j < end(m.nodes, i); j++) hidden.add(m.nodes[j].id); });
@@ -768,7 +795,7 @@ function render() {
         <div class="canvas" id="canvas" tabindex="0" aria-label="Kaart. Druk Enter om een idee te kiezen, dan pijltjes. Enter voegt een idee toe, Tab een subidee, F2 wijzigt, Esc stopt.">${svgOf(m, { ui:true, sel:sel.id })}</div>
         <p class="hint-s">${!COARSE
           ? 'Klik op een idee om het te kiezen. Enter voegt een idee ernaast toe, Tab een subidee. Dubbelklik of begin te typen om de tekst te wijzigen.'
-          : 'Tik op een idee om het te kiezen; tik nog eens om te wijzigen.'}</p>
+          : 'Tik op een idee om het te kiezen; tik nog eens om te wijzigen. Knijp met twee vingers om in of uit te zoomen.'}</p>
       </section>
       <section class="card" ${view === 'edit' ? '' : 'hidden'}>
         <div class="card-head">
@@ -1027,16 +1054,18 @@ document.addEventListener('input', e => {
   const el = e.target, m = cur(); if (!m) return;
   if (el.classList.contains('mm-edit')) {
     const n = m.nodes.find(x => x.id === el.dataset.id); if (!n) return;
-    n.text = el.value; delete n.hint; save(); renderMapOnly();
+    n.text = el.value; delete n.hint; save(); drawSoon();
     const li = document.querySelector(`.mtxt[data-id="${n.id}"]`); if (li) li.value = el.value;
     if (n.level === 0) { const tb = document.querySelector(`[data-map="${m.id}"] .nm`); if (tb) tb.textContent = title(m); }
     return;
   }
   if (!el.classList.contains('mtxt')) return;
   const n = m.nodes.find(x => x.id === el.dataset.id); if (!n) return;
-  n.text = el.value; delete n.hint; save(); renderMapOnly();
+  n.text = el.value; delete n.hint; save(); drawSoon();
   if (n.level === 0) { const tb = document.querySelector(`[data-map="${m.id}"] .nm`); if (tb) tb.textContent = title(m); }
 });
+// Bij elke toets de hele kaart opnieuw schikken kost op een gsm merkbaar tijd: pas tekenen als je even stopt met typen.
+function drawSoon() { clearTimeout(drawSoon.t); drawSoon.t = setTimeout(renderMapOnly, 200); }
 document.addEventListener('click', async e => {
   if (e.target.closest('#canvas')) {
     if (e.target.closest('.mm-edit')) return;
@@ -1073,7 +1102,7 @@ document.addEventListener('click', async e => {
     case 'del-map': { const undo = snapshot(), k = state.maps.indexOf(m); state.maps.splice(k, 1); state.current = (state.maps[k - 1] || state.maps[0] || {}).id || null; save(); render(); toast(`${title(m)} verwijderd`, undo); return; }
     case 'vb-wis': { const undo = snapshot(); state.maps = state.maps.filter(x => !x.voorbeeld); state.current = (state.maps[0] || {}).id || null; save(); render(); toast('Voorbeeld gewist', undo); return; }
     case 'vb-eigen': m.voorbeeld = false; save(); render(); toast('Het voorbeeld is nu van jou'); return;
-    case 'fit': state.fit = !shownFit; saveUi(); render(); return;
+    case 'fit': zoomZ = null; state.fit = !shownFit; saveUi(); render(); return;
     case 'imp': {
       const picked = await ocShare.pick({ types:['taak', 'actie', 'betrokkene', 'risico'], self:OC_ID, title:'Ideeën overnemen', intro:'Kies items uit andere tools. Ze komen als nieuwe hoofdtakken in de ideeënkaart.' });
       if (!picked.length) return;
@@ -1369,7 +1398,79 @@ document.addEventListener('pointerdown', e => { if (e.target.closest('.macts but
     if (d.moved) { const stop = ev => { ev.stopPropagation(); ev.preventDefault(); }; document.addEventListener('click', stop, { capture:true, once:true }); setTimeout(() => document.removeEventListener('click', stop, true), 0); } });
 })();
 
+/* ---------- Zoomen in de tekening: knijpen met twee vingers (gsm, tablet) of Ctrl + scrollwiel (computer) ----------
+   Eén vinger schuift zoals altijd. Tijdens het knijpen schaalt alleen het beeld (vlot); bij het loslaten wordt de
+   tekening op die grootte gezet en blijft het punt tussen je vingers op zijn plaats. */
+function ocPinch({ canvas, min, max, apply }) {
+  let p = null;
+  const svgIn = c => c && c.querySelector(':scope > svg');
+  const dist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+  const mid = t => ({ x:(t[0].clientX + t[1].clientX) / 2, y:(t[0].clientY + t[1].clientY) / 2 });
+  const clampZ = z => Math.min(max, Math.max(min(p.c, p.w), z));
+  function begin(c, s, m, d0) {
+    const r = s.getBoundingClientRect(), w = +s.getAttribute('width');
+    p = { c, s, w, d0, m0:m, m, z0:r.width / w, z:r.width / w, lx:m.x - r.left, ly:m.y - r.top, raf:0 };
+    s.style.transformOrigin = `${p.lx}px ${p.ly}px`; s.style.willChange = 'transform';
+    c.classList.add('pinching');
+  }
+  function frame() { if (!p) return; p.raf = 0; p.s.style.transform = `translate(${p.m.x - p.m0.x}px, ${p.m.y - p.m0.y}px) scale(${p.z / p.z0})`; }
+  function move(e) {
+    if (!p || e.touches.length < 2) return;
+    if (e.cancelable) e.preventDefault();
+    p.z = clampZ(p.z0 * dist(e.touches) / p.d0); p.m = mid(e.touches);
+    if (!p.raf) p.raf = requestAnimationFrame(frame);
+  }
+  function finish() {
+    const q = p; p = null; if (!q) return;
+    document.removeEventListener('touchmove', move, { passive:false });
+    cancelAnimationFrame(q.raf);
+    q.s.style.transform = ''; q.s.style.transformOrigin = ''; q.s.style.willChange = '';
+    q.c.classList.remove('pinching');
+    if (Math.abs(q.z - q.z0) < 0.01) return;
+    apply(q.z);
+    const s = svgIn(q.c); if (!s) return;
+    const r = s.getBoundingClientRect(), f = r.width / q.w / q.z0;
+    q.c.scrollLeft += r.left + q.lx * f - q.m.x;
+    const dy = r.top + q.ly * f - q.m.y; if (Math.abs(dy) > 1) window.scrollBy(0, dy);
+  }
+  document.addEventListener('touchstart', e => {
+    if (e.touches.length !== 2 || p) return;
+    const c = e.target.closest && e.target.closest(canvas), s = svgIn(c); if (!s) return;
+    begin(c, s, mid(e.touches), dist(e.touches) || 1);
+    document.addEventListener('touchmove', move, { passive:false });
+  }, { passive:true });
+  const end = e => { if (p && e.touches.length < 2) finish(); };
+  document.addEventListener('touchend', end); document.addEventListener('touchcancel', end);
+  document.addEventListener('wheel', e => {
+    if (!e.ctrlKey || p) return;
+    const c = e.target.closest && e.target.closest(canvas), s = svgIn(c); if (!s) return;
+    e.preventDefault();
+    begin(c, s, { x:e.clientX, y:e.clientY }, 1);
+    p.z = clampZ(p.z0 * Math.exp(-e.deltaY * 0.01));
+    finish();
+  }, { passive:false });
+}
+ocPinch({ canvas:'#canvas', max:2.5,
+  min:(c, w) => Math.min(1, (c.clientWidth - 16) / w),
+  apply:z => { zoomZ = z; const s = document.querySelector('#canvas > svg'); if (s) { sizeSvg(s, false); overlay(); } } });
+
+/* Soepel: de hulpbibliotheken voor Afbeelding en PDF alvast ophalen zodra iemand naar een downloadknop gaat (niet bij het laden). */
+(() => {
+  let warm = false;
+  const go = () => {
+    warm = true;
+    ['/lib/html2canvas-1.4.1.min.js', '/lib/jspdf-2.5.1.umd.min.js'].forEach(h => {
+      const l = document.createElement('link');
+      if (l.relList && l.relList.supports && l.relList.supports('prefetch')) { l.rel = 'prefetch'; l.as = 'script'; l.href = h; document.head.appendChild(l); }
+      else try { fetch(h).catch(() => {}); } catch (e) {}
+    });
+  };
+  const SEL = '[data-export], #menu-btn';
+  ['pointerdown', 'focusin', 'mouseover'].forEach(t => document.addEventListener(t, e => { if (!warm && e.target.closest && e.target.closest(SEL)) go(); }, { passive:true, capture:true }));
+})();
+
 render();
+document.documentElement.classList.remove('oc-wacht');
 setTimeout(publish, 0);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { const a = document.activeElement; if (!a || a === document.body) render(); else if (cur()) renderMapOnly(); });
 

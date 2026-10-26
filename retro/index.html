@@ -27,7 +27,7 @@
 * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 body {
   font-family:'DM Sans', system-ui, sans-serif; background:var(--slate-50); color:var(--slate-700);
-  line-height:1.5; min-height:100vh; -webkit-font-smoothing:antialiased;
+  line-height:1.5; min-height:100vh;min-height:100dvh; -webkit-font-smoothing:antialiased;
   display:flex; flex-direction:column;
 }
 button, input, select { font:inherit; color:inherit; }
@@ -354,6 +354,12 @@ body.present .vb-bar { display:none; }
 .oc-restart:hover { color:#b91c1c; background:#fef2f2; text-decoration-color:currentColor; }
 
 .oc-groot{width:44px;height:44px;min-width:44px;padding:0!important;display:inline-flex!important;align-items:center;justify-content:center;gap:0!important;flex:0 0 auto}.oc-groot svg{width:20px;height:20px;margin:0!important}
+
+/* Soepel op gsm: geen tikvertraging, zichtbare tikfeedback, vensters scrollen de pagina niet mee */
+a, button, summary, select, label, [role="button"], [role="tab"] { touch-action: manipulation; }
+button:not(:disabled):active, summary:active, [role="button"]:active { filter: brightness(0.93); }
+dialog, [role="dialog"], [role="alertdialog"], .modal, .modal-backdrop { overscroll-behavior: contain; }
+@media (pointer: coarse) { input[data-f] { font-size: 1rem; } }
 </style>
 </head>
 <body>
@@ -447,7 +453,7 @@ body.present .vb-bar { display:none; }
     <ul class="action-list" id="action-list"></ul>
     <p class="actions-empty" id="actions-empty">Maak van een kaartje een actie met <strong>Actie</strong>, of typ er hieronder een.</p>
     <form class="add-row" id="action-add" autocomplete="off">
-      <input class="add-input" id="action-input" placeholder="Nieuwe actie" aria-label="Nieuwe actie" enterkeyhint="done">
+      <input class="add-input" id="action-input" placeholder="Nieuwe actie" aria-label="Nieuwe actie" enterkeyhint="enter" autocomplete="off" autocapitalize="sentences">
       <button class="add-btn" type="submit" aria-label="Actie toevoegen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
     </form>
   </section>
@@ -896,7 +902,7 @@ function render() {
       <div class="col-head"><span class="col-dot" style="background:${c.c}"></span><h2 class="col-title">${esc(c.t)}</h2><span class="col-count">${cards.length}</span></div>
       <p class="col-hint">${esc(c.h)}</p>
       <form class="add-row" data-col="${i}" autocomplete="off">
-        <input class="add-input" placeholder="Typ en druk Enter, of plak een lijst" aria-label="Nieuw kaartje bij ${esc(c.t)}" enterkeyhint="done">
+        <input class="add-input" placeholder="Typ en druk Enter, of plak een lijst" aria-label="Nieuw kaartje bij ${esc(c.t)}" enterkeyhint="enter" autocomplete="off" autocapitalize="sentences">
         <button class="add-btn" type="submit" aria-label="Toevoegen">${I.plus}</button>
       </form>
       <ul class="notes">${cards.map(n => noteHTML(n, c)).join('')}</ul>

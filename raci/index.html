@@ -15,6 +15,8 @@
 <meta name="theme-color" content="#ffffff">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox=%220 0 40 40%22 fill=%22none%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Ccircle cx=%2220%22 cy=%2220%22 r=%2218%22 fill=%22%23f8fafc%22 stroke=%22%23e2e8f0%22 stroke-width=%221.5%22/%3E%3Crect x=%229.5%22 y=%229.5%22 width=%2221%22 height=%224.5%22 rx=%221.4%22 fill=%22%2364748b%22/%3E%3Cg fill=%22%23cbd5e1%22%3E%3Crect x=%229.5%22 y=%2216.5%22 width=%226%22 height=%226%22 rx=%221.5%22/%3E%3Crect x=%2224.5%22 y=%2216.5%22 width=%226%22 height=%226%22 rx=%221.5%22/%3E%3Crect x=%229.5%22 y=%2224.5%22 width=%226%22 height=%226%22 rx=%221.5%22/%3E%3Crect x=%2217%22 y=%2224.5%22 width=%226%22 height=%226%22 rx=%221.5%22/%3E%3C/g%3E%3Crect x=%2217%22 y=%2216.5%22 width=%226%22 height=%226%22 rx=%221.5%22 fill=%22%2310b981%22/%3E%3Crect x=%2224.5%22 y=%2224.5%22 width=%226%22 height=%226%22 rx=%221.5%22 fill=%22%23047857%22/%3E%3C/svg%3E">
 <link rel="stylesheet" href="/fonts/fonts.css">
+<link rel="preload" href="/fonts/dm-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/dm-sans-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
 <style>
 :root {
   --slate-900:#0f172a; --slate-800:#1e293b; --slate-700:#334155; --slate-600:#475569;
@@ -280,6 +282,18 @@ thead .name { display:block; }
   tbody th { min-width:104px; max-width:150px; }
   thead th { min-width:58px; }
 }
+
+/* ---------- Soepel op gsm (oktober 2026): tikken, typen, schuiven ---------- */
+html { -webkit-text-size-adjust:100%; text-size-adjust:100%; }
+button, a, summary, label, select, [role="button"], [role="tab"], [data-act], input[type="range"], input[type="checkbox"], input[type="radio"] { touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+@media (hover:none) { button:not(:disabled):active, a:active, summary:active, [role="button"]:active, [role="tab"]:active { filter:brightness(0.93); } }
+@media (pointer:coarse) { .add-input, .list-name { font-size:16px !important; } }
+/* venster open: de pagina erachter schuift niet mee, en scrollen binnen het venster loopt niet door naar de pagina */
+html:has(.ocs-back, .ocw-back, .gal-back, .oc-dialog-backdrop) { overflow:hidden; }
+.ocs-back *, .ocw-back *, .gal-back * { overscroll-behavior:contain; }
+
+body { min-height:100dvh; }
+.ocs { max-height:min(86dvh, 720px) !important; overscroll-behavior:contain; }
 </style>
 </head>
 <body>
@@ -330,7 +344,7 @@ thead .name { display:block; }
       <form class="add-form" id="add-task" autocomplete="off">
         <label class="add-label" for="task-input">Taak of resultaat</label>
         <div class="add-row">
-          <input class="add-input" id="task-input" placeholder="Bv. Budget goedkeuren" enterkeyhint="done">
+          <input class="add-input" id="task-input" autocomplete="off" placeholder="Bv. Budget goedkeuren" enterkeyhint="done">
           <button class="add-btn" type="submit" aria-label="Taak toevoegen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
         </div>
         <div style="margin-top:0.5rem"><button type="button" class="oc-import" data-oc-types="taak,actie" data-oc-target="tasks" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11M7.5 9.5L12 14l4.5-4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>Taken overnemen uit…</button></div>
@@ -338,7 +352,7 @@ thead .name { display:block; }
       <form class="add-form" id="add-role" autocomplete="off">
         <label class="add-label" for="role-input">Persoon of rol</label>
         <div class="add-row">
-          <input class="add-input" id="role-input" placeholder="Bv. Projectleider" enterkeyhint="done">
+          <input class="add-input" id="role-input" autocomplete="off" placeholder="Bv. Projectleider" enterkeyhint="done">
           <button class="add-btn" type="submit" aria-label="Rol toevoegen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
         </div>
         <div style="margin-top:0.5rem"><button type="button" class="oc-import" data-oc-types="betrokkene" data-oc-target="roles" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11M7.5 9.5L12 14l4.5-4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>Rollen overnemen uit…</button></div>
@@ -1219,6 +1233,22 @@ render();
   }, true);
   document.getElementById('oc-restart-btn').addEventListener('click', () => { const w = document.querySelector('[data-act="wipe"]'); w && w.click(); });
   sync();
+})();
+</script>
+<script>
+/* Soepel: de hulpbibliotheken voor Afbeelding en PDF alvast ophalen zodra iemand naar een downloadknop gaat (niet bij het laden). */
+(() => {
+  let warm = false;
+  const go = () => {
+    warm = true;
+    ['/lib/html2canvas-1.4.1.min.js', '/lib/jspdf-2.5.1.umd.min.js'].forEach(h => {
+      const l = document.createElement('link');
+      if (l.relList && l.relList.supports && l.relList.supports('prefetch')) { l.rel = 'prefetch'; l.as = 'script'; l.href = h; document.head.appendChild(l); }
+      else try { fetch(h).catch(() => {}); } catch (e) {}
+    });
+  };
+  const SEL = '[data-exp], #menu-btn';
+  ['pointerdown', 'focusin', 'mouseover'].forEach(t => document.addEventListener(t, e => { if (!warm && e.target.closest && e.target.closest(SEL)) go(); }, { passive:true, capture:true }));
 })();
 </script>
 <script>
