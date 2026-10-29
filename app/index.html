@@ -852,10 +852,10 @@ body.returning .install .btn:hover, body.returning .nudge .btn:hover, body.retur
     <section class="alltools" id="alltools" aria-labelledby="alltools-h">
       <div class="all-head" id="all-head">
         <h2 class="section-label" id="alltools-h">Alle tools</h2>
-        <button type="button" class="filter-toggle" id="filter-toggle" aria-expanded="false" aria-controls="filter">Per fase</button>
+        <button type="button" class="filter-toggle" id="filter-toggle" aria-expanded="true" aria-controls="filter">Per fase</button>
         <div class="list-tools" id="list-tools"><button id="all-open">Alles open</button><button id="all-closed">Alles dicht</button></div>
       </div>
-      <div class="filter" id="filter" hidden>
+      <div class="filter" id="filter">
         <div class="pdca" id="pdca" role="toolbar" aria-label="Toon tools per fase: plannen, doen, checken, bijsturen"></div>
         <div class="filter-chips" id="filter-chips" role="toolbar" aria-label="Filter op thema"></div>
         <p class="pdca-caption" id="pdca-caption"><span id="filter-hint">Toon tools per fase</span></p>
@@ -1110,10 +1110,11 @@ const PHASES = [
   { id:'act',   name:'Bijsturen',   sub:'bijsturen',    long:'Bijsturen en vastleggen wat we anders doen' }
 ];
 const LABEL_ORDER = ['mensen', 'vergaderen', 'inzicht'];
-let filterOpen = false;
+// Fasen staan standaard open; wie ze dichtklapt, vinden we de volgende keer zo terug.
+let filterOpen = store.get('filter-open', true) !== false;
 document.addEventListener('click', e => {
   if (!e.target.closest('#filter-toggle')) return;
-  filterOpen = !filterOpen; $('filter-toggle').setAttribute('aria-expanded', filterOpen);
+  filterOpen = !filterOpen; store.set('filter-open', filterOpen); $('filter-toggle').setAttribute('aria-expanded', filterOpen);
   if (!filterOpen && active && active.kind === 'pdca') setFilter(null);
   renderFilter();
 });
@@ -1137,7 +1138,7 @@ function renderFilter() {
     if (ia !== -1 || ib !== -1) return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
     return a.localeCompare(b, 'nl');
   });
-  $('filter-toggle').hidden = !hasPdca;
+  $('filter-toggle').hidden = !hasPdca; $('filter-toggle').setAttribute('aria-expanded', filterOpen);
   $('filter').hidden = !hasPdca || !filterOpen;
   // thema's niet meer als aparte knoppen: de groepen en het zoeken dekken ze (dezelfde woorden vinden dezelfde tools)
   $('filter-chips').innerHTML = '';
