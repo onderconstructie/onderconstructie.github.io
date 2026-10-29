@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Onder Constructie</title>
 <meta name="description" content="Projecttools, zakmes en reset van Onder Constructie, in één app.">
-<!-- De app heeft geen donkere weergave: ook in donkere modus een witte balk, zodat de statusbalk naadloos aansluit -->
+<!-- v42: donkere weergave in donker slate; de statusbalk sluit aan op de kop -->
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#1e293b" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Constructie">
@@ -768,22 +768,282 @@ body:not(.ready) .main, body:not(.ready) .footer { visibility:hidden; }
 body.returning .install .btn, body.returning .nudge .btn { background:#d1fae5; color:#047857; }
 body.returning .install .btn:hover, body.returning .nudge .btn:hover, body.returning .install .btn:active, body.returning .nudge .btn:active { background:#a7f3d0; color:#065f46; }
 @media (max-width:640px) { #list-tools { display:none !important; } }
+
+/* ---------- v42: verfijnde vormgeving ----------
+   Eén signatuur: het netwerk uit het logo, zacht gelaagd in de kop, met één groene route erdoor.
+   Daaronder rust: duidelijke koppen, iconen in gelijke tegels, zachte kaarten, korte overgangen.
+   Donkere modus: dezelfde schaal omgekeerd, in donker slate met groene accenten. */
+:root {
+  --r-xl:20px; --r-lg:16px; --r-md:12px;
+  --line:var(--slate-200);
+  --surface:var(--wit);
+  --sh-1:0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.03);
+  --sh-2:0 1px 2px rgba(15,23,42,0.04), 0 10px 24px -12px rgba(15,23,42,0.16);
+  --mint:#ecfdf5; --mint-2:#d1fae5; --mint-3:#a7f3d0; --mint-line:#cfe9dd;
+  --tile:linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%); --tile-ring:#e2e8f0;
+  --ring:#047857; --ring-halo:rgba(16,185,129,0.22);
+  --hero:linear-gradient(135deg, #ecfdf5 0%, #ffffff 58%);
+  --scrim:rgba(15,23,42,0.45);
+  --signal-red:#b91c1c; --signal-red-bg:#fef2f2;
+  --ease-out:cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ease-sheet:cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Kop: logo, titel en het netwerkmotief in zachte lagen */
+.header { position:relative; overflow:hidden; isolation:isolate; }
+.header .hd-net { position:absolute; z-index:-1; top:0; right:max(0px, calc((100% - 760px) / 2 - 3rem)); height:100%; width:min(46%, 440px); pointer-events:none;
+  -webkit-mask-image:linear-gradient(to right, transparent 0%, #000 55%); mask-image:linear-gradient(to right, transparent 0%, #000 55%); }
+.hd-net path { fill:none; stroke-linecap:round; stroke-linejoin:round; }
+.n-far path { stroke:#e2e8f0; stroke-width:1.25; }
+.n-far circle { fill:#e2e8f0; }
+.n-near path { stroke:#a7f3d0; stroke-width:1.75; }
+.n-near circle { fill:#10b981; opacity:0.55; }
+.n-near .n-halo { fill:#d1fae5; opacity:0.7; }
+@media (max-width:699px) { .header .hd-net { width:36%; right:-0.5rem; -webkit-mask-image:linear-gradient(to right, transparent 0%, #000 70%); mask-image:linear-gradient(to right, transparent 0%, #000 70%); } .n-near circle { opacity:0.45; } }
+.site-title { font-size:1.75rem; letter-spacing:-0.035em; line-height:1.15; color:var(--slate-800); }
+.site-subtitle { color:var(--slate-500); margin-top:0.125rem; }
+@media (max-width:480px) { .site-title { font-size:1.4375rem; } }
+.hd-logo { filter:drop-shadow(0 1px 2px rgba(15,23,42,0.06)); }
+
+/* Typografische schaal: koppen in gewone schrijfwijze, duidelijk boven de tekst */
+.section-label { font-size:1.0625rem; font-weight:700; text-transform:none; letter-spacing:-0.015em; color:var(--slate-800); line-height:1.3; }
+.filter-hint { color:var(--slate-500); }
+.cont-h { font-size:0.8125rem; font-weight:600; color:var(--slate-600); margin:1.125rem 0.25rem 0.5rem; }
+.proj-k { text-transform:none; letter-spacing:0; font-size:0.8125rem; font-weight:600; color:var(--slate-500); }
+.res-h { text-transform:none; letter-spacing:0; font-size:0.8125rem; color:var(--slate-600); }
+.path-next small { text-transform:none; letter-spacing:0; font-size:0.8125rem; }
+.main { padding-top:1.75rem; }
+.mywork, .myproj, .start { margin-bottom:2rem; }
+.mywork > .mw-h { padding:0 0.25rem; }
+
+/* Iconen: overal dezelfde tegel */
+.icon { border-radius:var(--r-md); background:var(--tile); box-shadow:inset 0 0 0 1px var(--tile-ring); }
+:is(#home, #data-sheet) .icon > :is(img, svg) { width:100%; height:100%; }
+.path-next .icon, .chip .icon { border-radius:10px; }
+.step .icon, .drow .icon, .cont .ccard .icon { border-radius:10px; }
+.group-logo { width:44px; height:44px; border-radius:var(--r-md); background:var(--tile); box-shadow:inset 0 0 0 1px var(--tile-ring); overflow:hidden; }
+.group-logo svg { width:44px; height:44px; }
+.group-head { grid-template-columns:44px 1fr auto auto; }
+.mp-chip img { border-radius:8px; background:var(--tile); box-shadow:inset 0 0 0 1px var(--tile-ring); }
+
+/* Kaarten: zachte randen, gelaagde schaduw, ruimere binnenmarge */
+.group, .path, .stile, .cont, .mp-card, .proj-line, .proj-form, .qsearch { border-color:var(--line); box-shadow:var(--sh-1); }
+.group { border-radius:var(--r-xl); }
+.group-head::before { display:none; }
+.group-head { padding:1rem 1rem 1rem 1rem; transition:background-color .15s; }
+.group:not(.collapsed) { border-color:var(--mint-line); }
+.group:not(.collapsed) .group-head { background:linear-gradient(180deg, var(--mint) 0%, transparent 100%); }
+.group-title { font-size:1.0625rem; }
+.count { background:var(--slate-100); color:var(--slate-600); }
+.row { padding:0.875rem 1rem; transition:background-color .15s; }
+.row .chev, .stile > svg, .path-next .chev, .ccard .chev, .hit .chev { transition:transform .18s var(--ease-out), color .15s; }
+@media (hover:hover) {
+  .row:hover .chev, .stile:hover > svg, .path-next:hover .chev, .ccard:hover .chev, .hit:hover .chev { transform:translateX(2px); color:var(--accent-dark); }
+  .stile:hover, .ccard:hover, .path:hover, .mp-card:hover { border-color:var(--mint-3); box-shadow:var(--sh-2); }
+  .cont .ccard:hover { box-shadow:none; }
+}
+.stile { border-radius:var(--r-lg); padding:1rem 0.875rem 1rem 1rem; transition:border-color .15s, box-shadow .2s, transform .12s var(--ease-out); }
+.path { border-radius:var(--r-lg); transition:border-color .15s, box-shadow .2s; }
+.path.open { border-color:var(--mint-line); }
+.path-head { padding:1rem 1rem; }
+.path-bar { gap:4px; }
+.path-bar span { height:5px; }
+.path-next { border-radius:var(--r-md); background:var(--mint); border-color:var(--mint-3); }
+.cont { border-radius:var(--r-lg); }
+.mp-card { border-radius:var(--r-lg); padding:0.75rem 0.875rem 0.625rem; }
+.mp-card.on { background:var(--mint); border-color:var(--mint-3); }
+.proj-line { border-radius:var(--r-md); }
+.qsearch { border-width:1px; border-radius:var(--r-lg); }
+
+/* Blikvanger: Verder waar je was */
+.resume { border-radius:var(--r-xl); padding:1.125rem 1rem 1.125rem 1.125rem; grid-template-columns:56px minmax(0,1fr) auto; gap:1rem;
+  background:var(--hero); border:1px solid var(--mint-3);
+  box-shadow:0 1px 2px rgba(4,120,87,0.06), 0 12px 28px -14px rgba(4,120,87,0.28); overflow:hidden; isolation:isolate;
+  transition:border-color .15s, box-shadow .2s, transform .12s var(--ease-out); }
+.resume::after { content:''; position:absolute; z-index:-1; right:-18px; top:-22px; width:116px; height:64px; pointer-events:none; opacity:0.75;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 132 72' fill='none'%3E%3Cpath d='M14 46L52 22L80 44L118 18M52 22L64 6M80 44L96 66' stroke='%23a7f3d0' stroke-width='1.5' stroke-linecap='round'/%3E%3Ccircle cx='14' cy='46' r='3' fill='%23d1fae5'/%3E%3Ccircle cx='52' cy='22' r='3.5' fill='%23a7f3d0'/%3E%3Ccircle cx='80' cy='44' r='3' fill='%23d1fae5'/%3E%3Ccircle cx='118' cy='18' r='3' fill='%23a7f3d0'/%3E%3Ccircle cx='64' cy='6' r='2.5' fill='%23d1fae5'/%3E%3Ccircle cx='96' cy='66' r='2.5' fill='%23d1fae5'/%3E%3C/svg%3E") no-repeat center / contain; }
+.resume .live { z-index:1; }
+.resume .icon { width:56px; height:56px; border-radius:14px; background:var(--surface); box-shadow:inset 0 0 0 1px var(--mint-3), 0 2px 6px -2px rgba(4,120,87,0.18); }
+.rs-body b { font-size:1.25rem; letter-spacing:-0.025em; line-height:1.2; }
+.rs-body small { font-size:0.8125rem; }
+.rs-go { padding:0 0.625rem 0 1rem; box-shadow:0 4px 12px -4px rgba(4,120,87,0.45); transition:background-color .15s, transform .12s var(--ease-out); }
+@media (hover:hover) { .resume:hover { border-color:var(--accent); box-shadow:0 1px 2px rgba(4,120,87,0.06), 0 16px 32px -14px rgba(4,120,87,0.34); } .resume:hover .rs-go .chev { transform:translateX(2px); } }
+.rs-go .chev { transition:transform .18s var(--ease-out); }
+@media (max-width:480px) { .resume { grid-template-columns:48px minmax(0,1fr) auto; gap:0.875rem; padding:1rem 0.875rem 1rem 1rem; } .resume .icon { width:48px; height:48px; border-radius:12px; } .rs-go { padding:0 0.5rem 0 0.875rem; } .resume::after { opacity:0.5; } .resume { gap:0.75rem; padding-right:0.75rem; } .rs-body small { font-size:0.75rem; } }
+@media (max-width:380px) { .resume { grid-template-columns:44px minmax(0,1fr); } .resume .icon { width:44px; height:44px; } }
+
+/* Fasen en thema's: geselecteerd = zacht groen, niet zwaar */
+.phase { border-radius:var(--r-md) !important; box-shadow:var(--sh-1); transition:border-color .15s, background-color .15s, transform .12s var(--ease-out); }
+.phase[aria-pressed="true"] { background:var(--mint); border-color:var(--accent); box-shadow:inset 0 0 0 1px var(--accent); }
+.phase[aria-pressed="true"] .ph-name { color:var(--accent-dark); }
+.phase[aria-pressed="true"] .ph-n { color:var(--accent-dark); }
+.fchip[aria-pressed="true"] { background:var(--mint); border-color:var(--accent); color:var(--accent-dark); box-shadow:inset 0 0 0 1px var(--accent); }
+.fchip[aria-pressed="true"] .n { color:var(--accent-dark); }
+.filter-toggle[aria-expanded="true"] { background:var(--mint); }
+
+/* Staten: hover, druk, focus */
+:focus-visible { outline:2px solid var(--ring); outline-offset:2px; }
+.resume:focus-visible, .stile:focus-visible, .ccard:focus-visible, .row:focus-visible, .group-head:focus-visible, .path-head:focus-visible, .phase:focus-visible, .fchip:focus-visible { box-shadow:0 0 0 4px var(--ring-halo); }
+.row:focus-visible, .group-head:focus-visible, .step-btn:focus-visible, .hit:focus-visible, .cont .ccard:focus-visible { outline-offset:-2px; border-radius:var(--r-md); }
+.resume:active, .stile:active, .phase:active { transform:scale(0.985); }
+.rs-go:active { transform:scale(0.97); }
+@media (hover:none) { .resume:hover { box-shadow:0 1px 2px rgba(4,120,87,0.06), 0 12px 28px -14px rgba(4,120,87,0.28); } }
+
+/* Toolbalk boven een geopende tool */
+.topbar { background:var(--surface); box-shadow:0 1px 0 var(--line), 0 6px 16px -14px rgba(15,23,42,0.35); border-bottom-color:transparent; }
+.pb-next { box-shadow:0 4px 10px -4px rgba(4,120,87,0.45); }
+.frames iframe { background:#ffffff; }
+.tb-btn, .back, .pb-prev { transition:background-color .15s; }
+
+/* Overgangen: kort en rustig, alleen transform en opacity */
+.viewer { transition:transform .3s var(--ease-sheet), visibility 0s .3s; box-shadow:-12px 0 32px -16px rgba(15,23,42,0.28); }
+.viewer.open { transition:transform .3s var(--ease-sheet); }
+.group-body { transition:none; }
+@keyframes oc-in { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+@keyframes oc-drop { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:none; } }
+@keyframes oc-fade { from { opacity:0; } to { opacity:1; } }
+@keyframes oc-sheet { from { transform:translateY(32px); opacity:0; } to { transform:none; opacity:1; } }
+@keyframes oc-pop { from { transform:scale(0.97); opacity:0; } to { transform:none; opacity:1; } }
+body.ready .main > :is(.mywork, .paths-wrap, .myproj, .start, .alltools) { animation:oc-in .34s var(--ease-out) both; }
+body.ready .main > .paths-wrap { animation-delay:.04s; }
+body.ready .main > .myproj { animation-delay:.07s; }
+body.ready .main > .start { animation-delay:.07s; }
+body.ready .main > .alltools { animation-delay:.1s; }
+.group:not(.collapsed) .list > .row { animation:oc-drop .22s var(--ease-out) both; }
+.group:not(.collapsed) .list > .row:nth-child(2) { animation-delay:.02s; }
+.group:not(.collapsed) .list > .row:nth-child(3) { animation-delay:.04s; }
+.group:not(.collapsed) .list > .row:nth-child(4) { animation-delay:.06s; }
+.group:not(.collapsed) .list > .row:nth-child(n+5) { animation-delay:.08s; }
+.path.open .steps { animation:oc-drop .22s var(--ease-out) both; }
+.sheet-back:not([hidden]) { animation:oc-fade .2s ease both; }
+.sheet-back:not([hidden]) .sheet { animation:oc-sheet .3s var(--ease-sheet) both; }
+.app-dlg-back:not([hidden]) { animation:oc-fade .16s ease both; }
+.app-dlg-back:not([hidden]) .app-dlg { animation:oc-pop .2s var(--ease-out) both; }
+.results:not([hidden]) { animation:oc-fade .18s ease both; }
+@media (prefers-reduced-motion: reduce) {
+  .viewer, .viewer.open { transition:none; }
+  body.ready .main > *, .group .list > .row, .path.open .steps, .sheet-back, .sheet-back .sheet, .app-dlg-back, .app-dlg-back .app-dlg, .results { animation:none !important; }
+  .resume, .stile, .phase, .rs-go, .row .chev, .stile > svg, .path-next .chev, .ccard .chev, .hit .chev, .rs-go .chev { transition:none; }
+  .resume:active, .stile:active, .phase:active, .rs-go:active { transform:none; }
+}
+
+/* Vensters */
+.sheet { border-radius:24px 24px 0 0; box-shadow:0 -8px 40px -12px rgba(15,23,42,0.3); }
+@media (min-width:640px) { .sheet { border-radius:24px; } }
+.data-list { border-radius:var(--r-lg); box-shadow:var(--sh-1); }
+.dbtn { border-radius:var(--r-md); min-height:44px; transition:background-color .15s; }
+.app-dlg { border-radius:var(--r-xl); }
+.app-toast { background:#334155; border-radius:14px; }
+
+/* Lege staten en laden: een klein netwerk in plaats van een kale zin */
+.data-empty, .load-msg, .results-empty { display:flex; flex-direction:column; align-items:center; gap:0.625rem; text-align:center; }
+.data-empty::before, .load-msg::before, .results-empty::before { content:''; width:72px; height:44px; flex-shrink:0;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 72 44' fill='none'%3E%3Cpath d='M8 30L26 14L44 26L64 10M26 14L34 38' stroke='%23cbd5e1' stroke-width='1.5' stroke-linecap='round'/%3E%3Ccircle cx='8' cy='30' r='3' fill='%23cbd5e1'/%3E%3Ccircle cx='26' cy='14' r='4' fill='%2310b981'/%3E%3Ccircle cx='44' cy='26' r='3' fill='%23a7f3d0'/%3E%3Ccircle cx='64' cy='10' r='3' fill='%23cbd5e1'/%3E%3Ccircle cx='34' cy='38' r='2.5' fill='%23cbd5e1'/%3E%3C/svg%3E") no-repeat center / contain; }
+.data-empty { padding:1.75rem 1.25rem; }
+.results-empty { padding:1.5rem 1rem 1rem; }
+.loading { flex-direction:column; gap:0.5rem; color:#64748b; }
+/* een tool is altijd licht: ook het laadvlak eronder, zodat er niets donker-licht flitst */
+.frames { background:#f8fafc; }
+.resume:active { background:var(--hero); }
+.results-card { border-color:var(--mint-line); }
+
+/* ---------- v42: donkere modus ---------- */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme:dark;
+    --slate-900:#f8fafc; --slate-800:#f1f5f9; --slate-700:#e2e8f0; --slate-600:#cbd5e1; --slate-500:#94a3b8;
+    --slate-400:#94a3b8; --slate-300:#64748b; --slate-200:#334155; --slate-100:#273449; --slate-50:#0f172a;
+    --wit:#1e293b; --surface:#1e293b;
+    --accent-dark:#a7f3d0; --accent-light:rgba(16,185,129,0.16);
+    --mint:rgba(16,185,129,0.12); --mint-2:rgba(16,185,129,0.18); --mint-3:rgba(16,185,129,0.4); --mint-line:rgba(16,185,129,0.32);
+    --tile:linear-gradient(180deg, #273449 0%, #1e293b 100%); --tile-ring:#334155;
+    --ring:#a7f3d0; --ring-halo:rgba(167,243,208,0.22);
+    --hero:linear-gradient(135deg, rgba(16,185,129,0.16) 0%, #1e293b 62%);
+    --scrim:rgba(2,6,23,0.6);
+    --sh-1:0 1px 2px rgba(2,6,23,0.3);
+    --sh-2:0 1px 2px rgba(2,6,23,0.3), 0 12px 28px -12px rgba(2,6,23,0.6);
+    --signal-red:#fca5a5; --signal-red-bg:rgba(220,38,38,0.14);
+  }
+  body { background:var(--slate-50); }
+  .header { background:var(--wit); border-bottom-color:#334155; }
+  .n-far path { stroke:#334155; } .n-far circle { fill:#334155; }
+  .n-near path { stroke:rgba(16,185,129,0.45); } .n-near circle { fill:#10b981; opacity:0.7; } .n-near .n-halo { fill:rgba(16,185,129,0.18); opacity:1; }
+  .hd-logo .lg-bg { fill:#273449; stroke:#334155; } .hd-logo .lg-line { stroke:#475569; } .hd-logo .lg-dot { fill:#64748b; }
+  /* groene vlakken met lichte tekst: de knop wordt licht mintgroen met donkere tekst */
+  .rs-go, .pb-next, .install .btn, .nudge .btn, .proj-save, .dbtn.go { background:#a7f3d0; color:#0f172a; }
+  .rs-go .chev { color:#0f172a; }
+  .rs-go:hover, .pb-next:hover, .install .btn:hover, .nudge .btn:hover, .proj-save:hover, .dbtn.go:hover,
+  .rs-go:active, .pb-next:active, .install .btn:active, .nudge .btn:active, .proj-save:active, .dbtn.go:active { background:#d1fae5; color:#0f172a; }
+  body.returning .install .btn, body.returning .nudge .btn { background:rgba(16,185,129,0.18); color:#a7f3d0; }
+  body.returning .install .btn:hover, body.returning .nudge .btn:hover { background:rgba(16,185,129,0.28); color:#d1fae5; }
+  .resume { border-color:rgba(16,185,129,0.4); box-shadow:0 12px 28px -14px rgba(2,6,23,0.7); }
+  .resume::after { opacity:0.35; }
+  .resume .icon { background:#273449; box-shadow:inset 0 0 0 1px rgba(16,185,129,0.4); }
+  .resume.is-busy .live, .live.busy, .row.is-busy .live, .ccard.is-busy .live { background:#a7f3d0; color:#0f172a; }
+  .install, .nudge, .restore, .proj-form, .proj-line { border-color:rgba(16,185,129,0.32); }
+  .nudge, .restore { background:rgba(16,185,129,0.1); }
+  .nudge svg { color:#a7f3d0; }
+  .nudge-later:hover { background:rgba(16,185,129,0.18); }
+  .mywork .proj-line { background:rgba(16,185,129,0.1); }
+  .mp-card.on { background:rgba(16,185,129,0.1); }
+  .hit-snip mark { background:rgba(16,185,129,0.25); color:#d1fae5; }
+  .pb-prev:hover { background:#273449; }
+  .pb-dots span.done { background:rgba(16,185,129,0.55); } .pb-dots span.here { background:#a7f3d0; }
+  .step.done::before { background:rgba(16,185,129,0.45); }
+  .step.done .step-dot { background:#10b981; border-color:#10b981; color:#0f172a; }
+  .step.next .step-dot { border-color:#10b981; box-shadow:0 0 0 4px rgba(16,185,129,0.2); }
+  .path-bar span.done { background:#10b981; }
+  .tag.pd { background:transparent; box-shadow:inset 0 0 0 1px rgba(16,185,129,0.45); }
+  .tag.pd.on, .tag.on { background:rgba(16,185,129,0.18); }
+  .count-live, .live { background:rgba(16,185,129,0.18); color:#a7f3d0; }
+  .pdca, .pdca-hub { border-color:#334155; }
+  .ph-letter { background:rgba(16,185,129,0.18); }
+  /* signaalkleuren blijven signaal, leesbaar op donker */
+  .drow-wipe, .exit-btn:hover, #wipe-tool:hover { color:#fca5a5; }
+  .drow-wipe:hover, .exit-btn:hover { background:rgba(220,38,38,0.14); }
+  .dbtn.danger { color:#fca5a5; background:rgba(220,38,38,0.14); }
+  .dbtn.danger:hover, .dbtn.danger:active { background:rgba(220,38,38,0.22); }
+  .dbtn.danger.solid { color:#fff; background:#b91c1c; }
+  .dbtn.danger.solid:hover, .dbtn.danger.solid:active { background:#991b1b; }
+  .confirm { background:rgba(220,38,38,0.08); border-color:rgba(248,113,113,0.4); }
+  .rs-item small.rep { color:#fcd34d; }
+  .status .dot { background:#fb923c; }
+  .sheet-back, .app-dlg-back { background:var(--scrim); }
+  .app-dlg { background:#1e293b; box-shadow:0 20px 50px rgba(2,6,23,0.6); }
+  .app-dlg b { color:#f1f5f9; } .app-dlg p { color:#cbd5e1; }
+  .app-toast { background:#334155; box-shadow:0 10px 30px rgba(2,6,23,0.5); }
+  .app-toast button { color:#a7f3d0; }
+  .topbar { box-shadow:0 1px 0 #334155; }
+  .viewer { box-shadow:-12px 0 32px -16px rgba(2,6,23,0.8); }
+  .loading .bar { background:rgba(16,185,129,0.18); }
+  .data-empty::before, .load-msg::before, .results-empty::before { opacity:0.8; }
+  input, select, textarea { color-scheme:dark; }
+  .hs-field input, .proj-row input, .search-box input { background:#0f172a; color:#f1f5f9; }
+  .hs-field input:focus, .proj-row input:focus, .search-box input:focus { background:#0f172a; box-shadow:0 0 0 3px rgba(16,185,129,0.25); }
+  .hsearch.open { background:var(--wit); }
+  .group:not(.collapsed) .group-head { background:linear-gradient(180deg, rgba(16,185,129,0.08) 0%, transparent 100%); }
+}
 </style>
 </head>
 <body>
 
 <div class="home" id="home">
   <header class="header">
+    <svg class="hd-net" viewBox="0 0 420 140" preserveAspectRatio="xMaxYMid slice" aria-hidden="true" focusable="false">
+      <g class="n-far"><path d="M40 30L95 70L150 22L180 60L205 95L270 80L300 110M95 70L120 120L205 95M180 60L250 40M340 58L395 25M340 58L385 100M150 22L250 40M300 110L385 100"/>
+        <circle cx="40" cy="30" r="2.5"/><circle cx="95" cy="70" r="3"/><circle cx="150" cy="22" r="2.5"/><circle cx="120" cy="120" r="2.5"/><circle cx="205" cy="95" r="3"/><circle cx="300" cy="110" r="2.5"/><circle cx="395" cy="25" r="2.5"/><circle cx="385" cy="100" r="3"/></g>
+      <g class="n-near"><path d="M180 60L250 40L270 80L340 58"/><circle class="n-halo" cx="250" cy="40" r="9"/><circle cx="180" cy="60" r="3.5"/><circle cx="250" cy="40" r="4.5"/><circle cx="270" cy="80" r="3.5"/><circle cx="340" cy="58" r="4"/></g>
+    </svg>
     <div class="header-inner">
-      <svg viewBox="0 0 80 80" fill="none" aria-hidden="true">
-        <circle cx="40" cy="40" r="36" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2"/>
-        <g stroke="#e2e8f0" stroke-width="1.5">
+      <svg class="hd-logo" viewBox="0 0 80 80" fill="none" aria-hidden="true">
+        <circle class="lg-bg" cx="40" cy="40" r="36" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2"/>
+        <g class="lg-line" stroke="#e2e8f0" stroke-width="1.5">
           <line x1="20" y1="28" x2="32" y2="40"/><line x1="32" y1="40" x2="28" y2="56"/><line x1="32" y1="40" x2="48" y2="32"/>
           <line x1="48" y1="32" x2="60" y2="24"/><line x1="48" y1="32" x2="56" y2="44"/><line x1="56" y1="44" x2="52" y2="58"/>
           <line x1="56" y1="44" x2="64" y2="52"/><line x1="32" y1="40" x2="40" y2="52"/><line x1="40" y1="52" x2="52" y2="58"/>
           <line x1="20" y1="48" x2="28" y2="56"/><line x1="48" y1="32" x2="44" y2="20"/><line x1="28" y1="56" x2="40" y2="52"/>
         </g>
-        <g fill="#cbd5e1"><circle cx="20" cy="28" r="3"/><circle cx="60" cy="24" r="3"/><circle cx="20" cy="48" r="3"/><circle cx="64" cy="52" r="3"/><circle cx="44" cy="20" r="3"/><circle cx="28" cy="56" r="3"/><circle cx="52" cy="58" r="3"/></g>
+        <g class="lg-dot" fill="#cbd5e1"><circle cx="20" cy="28" r="3"/><circle cx="60" cy="24" r="3"/><circle cx="20" cy="48" r="3"/><circle cx="64" cy="52" r="3"/><circle cx="44" cy="20" r="3"/><circle cx="28" cy="56" r="3"/><circle cx="52" cy="58" r="3"/></g>
         <g fill="#10b981"><circle cx="32" cy="40" r="4"/><circle cx="48" cy="32" r="4"/><circle cx="56" cy="44" r="3"/><circle cx="40" cy="52" r="3"/></g>
       </svg>
       <div class="brand">
@@ -884,7 +1144,7 @@ body.returning .install .btn:hover, body.returning .nudge .btn:hover, body.retur
     <span class="sep" aria-hidden="true">·</span>
     <button class="footer-link" id="data-open" type="button">je gegevens en reservekopie</button>
     <span class="sep" aria-hidden="true">·</span>
-    <span class="app-version" title="Versie van de app">v41</span>
+    <span class="app-version" title="Versie van de app">v42</span>
   </footer>
 </div>
 
@@ -969,8 +1229,10 @@ body.returning .install .btn:hover, body.returning .nudge .btn:hover, body.retur
 let TOOLS = [];
 let byId = {};
 // Iconen komen als afbeelding in de pagina, nooit als code: zo kan een vervalste toollijst niets uitvoeren.
+// v42: de lichte cirkel achter elk icoon valt weg; de tegel (CSS) geeft alle iconen dezelfde vorm
+const bare = svg => String(svg).replace(/<circle cx=(['"])(20|40)\1 cy=\1\2\1 r=\1(18|36)\1 fill=\1#f8fafc\1 stroke=\1#e2e8f0\1 stroke-width=\1[\d.]+\1\s*\/>/, '');
 const iconHTML = svg => typeof svg === 'string' && /^\s*<svg[\s>]/i.test(svg)
-  ? `<img alt="" src="data:image/svg+xml,${encodeURIComponent(svg)}">` : '';
+  ? `<img alt="" src="data:image/svg+xml,${encodeURIComponent(bare(svg))}">` : '';
 const esc = v => String(v).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
 const GROUPS = [
   { id:'projecten', label:'Projecten', note:'Plannen, taken en overzicht', logo:"<svg viewBox=\"0 0 80 80\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"> <circle cx=\"40\" cy=\"40\" r=\"36\" fill=\"#f8fafc\" stroke=\"#e2e8f0\" stroke-width=\"2\"/> <rect x=\"16\" y=\"18\" width=\"12\" height=\"44\" rx=\"2\" fill=\"#cbd5e1\"/> <rect x=\"34\" y=\"18\" width=\"12\" height=\"44\" rx=\"2\" fill=\"#cbd5e1\"/> <rect x=\"52\" y=\"18\" width=\"12\" height=\"44\" rx=\"2\" fill=\"#cbd5e1\"/> <rect x=\"18\" y=\"22\" width=\"8\" height=\"8\" rx=\"1\" fill=\"#10b981\"/> </svg>" },
@@ -1044,7 +1306,7 @@ function renderGroups() {
     return `
     <section class="group${isClosed ? ' collapsed' : ''}" data-group="${g.id}">
       <button class="group-head" aria-expanded="${!isClosed}" aria-controls="body-${g.id}">
-        <span class="group-logo" aria-hidden="true">${g.logo}</span>
+        <span class="group-logo" aria-hidden="true">${bare(g.logo)}</span>
         <span><span class="group-title" role="heading" aria-level="2">${g.label}</span><br><span class="group-note">${g.note}</span></span>
         <span class="group-meta"><span class="count count-live"></span><span class="count">${tools.length}</span></span>
         ${toggleIcon}
@@ -1656,14 +1918,14 @@ async function sharedExit() {
   try { const ch = new BroadcastChannel('oc-sync'); ch.postMessage({ type:'wis' }); ch.close(); } catch {}
   history.replaceState(null, '', location.pathname);
   document.title = "Gewist · Onder Constructie";
-  document.body.innerHTML = '<main style="font-family:\'DM Sans\',system-ui,sans-serif;max-width:30rem;margin:22vh auto 0;padding:0 1.25rem;text-align:center;color:#334155">'
-    + '<h1 style="font-size:1.375rem;margin-bottom:0.5rem;color:#1e293b">Je werk in Onder Constructie is gewist</h1>'
+  document.body.innerHTML = '<main style="font-family:\'DM Sans\',system-ui,sans-serif;max-width:30rem;margin:22vh auto 0;padding:0 1.25rem;text-align:center;color:var(--slate-700, #334155)">'
+    + '<h1 style="font-size:1.375rem;margin-bottom:0.5rem;color:var(--slate-800, #1e293b)">Je werk in Onder Constructie is gewist</h1>'
     + '<p style="line-height:1.5">Wat je in de tools van Onder Constructie invulde, staat niet meer in deze browser. Andere apps op dit webadres zijn niet aangeraakt.</p>'
     + '<ul style="text-align:left;line-height:1.5;margin:1rem 0 0 1.25rem;display:grid;gap:0.375rem">'
     + '<li>Staan er nog andere tabbladen van Onder Constructie open? Sluit ze. Wat daar op het scherm staat, kan anders terugkomen.</li>'
     + '<li>Bestanden die je downloadde (PDF, afbeelding, reservekopie) staan nog in je map Downloads. Wis ze daar zelf.</li></ul>'
     + '<p style="line-height:1.5;margin-top:1rem">Daarna kan je dit venster sluiten.</p>'
-    + '<p style="margin-top:1.5rem"><a href="/app/" style="display:inline-flex;align-items:center;min-height:44px;color:#047857;font-weight:600">Opnieuw beginnen</a></p></main>';
+    + '<p style="margin-top:1.5rem"><a href="/app/" style="display:inline-flex;align-items:center;min-height:44px;color:var(--accent-dark, #047857);font-weight:600">Opnieuw beginnen</a></p></main>';
 }
 $('shared-exit').addEventListener('click', sharedExit);
 $('exit-mw').addEventListener('click', sharedExit);
@@ -1718,7 +1980,7 @@ $('data-backup').addEventListener('click', () => backup(dataEntries().flatMap(e 
 function dataMsg(text, bad) {
   let m = document.getElementById('data-msg');
   if (!m) { m = document.createElement('p'); m.id = 'data-msg'; m.className = 'sheet-intro'; m.setAttribute('role', 'status'); $('data-list').before(m); }
-  m.textContent = text; m.style.color = bad ? '#b91c1c' : '#047857';
+  m.textContent = text; m.style.color = bad ? 'var(--signal-red, #b91c1c)' : 'var(--accent-dark)';
 }
 /* Reservekopie terugzetten: per tool kiezen. Terugzetten VERVANGT wat er nu in die tool staat; het voegt niet samen. */
 let pendingRestore = null;
@@ -1887,9 +2149,9 @@ function startTileHTML(st, all) {
     const steps = stepsOf(st.path, all), first = steps[0]; if (!first) return '';
     const begun = startedPaths().includes(st.path), next = begun && (steps.find(x => !x.done) || first);
     const go = next || first;
-    return `<button type="button" class="stile" data-id="${esc(go.t.id)}" data-ctx="${st.path}" data-start="${st.path}"><span class="icon">${st.logo || iconHTML(first.t.icon)}</span><span class="st-body"><b>${esc(st.title)}</b><span>${esc(st.sub)}</span><small>${begun ? `Verder met ${esc(go.t.title)}` : `Begint met ${esc(first.t.title)}`}</small></span>${chevron}</button>`; }
+    return `<button type="button" class="stile" data-id="${esc(go.t.id)}" data-ctx="${st.path}" data-start="${st.path}"><span class="icon">${st.logo ? bare(st.logo) : iconHTML(first.t.icon)}</span><span class="st-body"><b>${esc(st.title)}</b><span>${esc(st.sub)}</span><small>${begun ? `Verder met ${esc(go.t.title)}` : `Begint met ${esc(first.t.title)}`}</small></span>${chevron}</button>`; }
   const g = GROUPS.find(x => x.id === st.group); if (!g) return '';
-  return `<button type="button" class="stile" data-group-open="${g.id}" data-start="${g.id}"><span class="icon g">${g.logo}</span><span class="st-body"><b>${esc(st.title)}</b><span>${esc(st.sub)}</span><small>Naar ${esc(g.label)}</small></span>${chevron}</button>`;
+  return `<button type="button" class="stile" data-group-open="${g.id}" data-start="${g.id}"><span class="icon g">${bare(g.logo)}</span><span class="st-body"><b>${esc(st.title)}</b><span>${esc(st.sub)}</span><small>Naar ${esc(g.label)}</small></span>${chevron}</button>`;
 }
 // De tegels blijven staan tot je ze zelf verbergt, of tot je alle vier al eens gebruikte.
 function renderStart() {
