@@ -381,6 +381,21 @@ body.filtering #groups, body.filtering #list-tools { display:none; }
 .xs-note { font-size:0.75rem; color:var(--slate-500); text-align:center; margin-top:0.5rem; line-height:1.4; }
 .xs-empty { padding:1.25rem 0.5rem; text-align:center; color:var(--slate-600); font-size:0.9375rem; }
 @media (max-width:480px) { .xs-meta .xs-size { display:none; } }
+/* Eerst een reservekopie (Wissen), downloaden en terugzetten per app (Reservekopie): dezelfde keuzetegels en vinkjeslijst */
+.xs-pre { display:flex; align-items:center; gap:0.625rem; min-height:44px; margin-bottom:0.375rem; font-size:0.9375rem; color:var(--slate-700); cursor:pointer; }
+.xs-pre[hidden] { display:none; }
+.xs-pre input { width:20px; height:20px; margin:0; flex-shrink:0; accent-color:#047857; cursor:pointer; }
+.dl[hidden], .data-actions[hidden] { display:none; }
+.dl { display:grid; gap:0.5rem; }
+.dl-h { font-size:1rem; font-weight:700; color:var(--slate-800); }
+.dl .xs-modes { margin-bottom:0; }
+.dl .dbtn, .restore .dbtn { min-height:48px; }
+.dl-restore { margin-top:0.5rem; }
+.restore .xs-modes { margin-bottom:0.5rem; }
+.restore .xs-list { background:var(--wit); }
+.rs-st { color:var(--slate-500); }
+.rs-st.rep { color:#b45309; font-weight:600; }
+.restore > p.rs-warn { font-size:0.875rem; color:var(--slate-700); line-height:1.45; margin:0.75rem 0; }
 /* "Verder waar je was" op één regel naast Reservekopie en Wissen, ook op een smalle gsm */
 @media (max-width:420px) {
   .mw-btns { gap:0; }
@@ -1118,7 +1133,7 @@ body.ready .main > .alltools { animation-delay:.1s; }
     <span class="sep" aria-hidden="true">·</span>
     <button class="footer-link" id="data-open" type="button">reservekopie</button>
     <span class="sep" aria-hidden="true">·</span>
-    <span class="app-version" title="Versie van de app">v45</span>
+    <span class="app-version" title="Versie van de app">v46</span>
   </footer>
 </div>
 
@@ -1132,10 +1147,14 @@ body.ready .main > .alltools { animation-delay:.1s; }
     </div>
     <p class="sheet-intro">Alles wat je in de apps invult, blijft op dit toestel, in deze browser. Niets gaat naar een server. Met een reservekopie bewaar je het in een bestand. Zo zet je het later of op een ander toestel terug.</p>
     <p class="data-sum" id="data-list"></p>
-    <div class="data-actions">
-      <button class="dbtn" id="data-backup" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m-5-5 5 5 5-5M5 21h14"/></svg>Reservekopie downloaden</button>
-      <label class="dbtn" for="data-restore-file">
+    <div class="data-actions" id="data-actions">
+      <div class="dl" id="dl">
+        <h3 class="dl-h">Reservekopie downloaden</h3>
+        <div id="dl-body"></div>
+        <button class="dbtn go" id="data-backup" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M5 21h14"/></svg><span id="data-backup-t">Download alles</span></button>
+      </div>
+      <label class="dbtn dl-restore" for="data-restore-file">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V9m-5 5 5-5 5 5M5 3h14"/></svg>Reservekopie terugzetten</label>
       <input type="file" id="data-restore-file" accept="application/json,.json" hidden>
       <p class="data-wipe-p"><button type="button" class="data-wipe-link" id="shared-exit" aria-haspopup="dialog">Iets wissen?</button></p>
@@ -1143,8 +1162,9 @@ body.ready .main > .alltools { animation-delay:.1s; }
     <div class="restore" id="restore" hidden role="group" aria-labelledby="restore-h">
       <h3 id="restore-h">Reservekopie terugzetten</h3>
       <p id="restore-text"></p>
-      <div class="rs-list" id="restore-list"></div>
-      <div class="confirm-btns"><button class="dbtn" id="restore-no" type="button">Annuleer</button><button class="dbtn go" id="restore-yes" type="button">Terugzetten</button></div>
+      <div id="restore-list"></div>
+      <p class="rs-warn" id="restore-warn"></p>
+      <div class="confirm-btns"><button class="dbtn" id="restore-no" type="button">Annuleer</button><button class="dbtn go" id="restore-yes" type="button">Zet alles terug</button></div>
     </div>
     <details class="privacy" id="privacy">
       <summary>Privacy en gedeelde toestellen</summary>
@@ -1174,6 +1194,7 @@ body.ready .main > .alltools { animation-delay:.1s; }
     <p class="sheet-intro" id="exit-intro">Kies wat je van dit toestel wist.</p>
     <div class="xs-body" id="exit-body"></div>
     <div class="xs-foot">
+      <label class="xs-pre" id="exit-pre-l"><input type="checkbox" id="exit-pre"><span>Eerst een reservekopie downloaden</span></label>
       <button type="button" class="dbtn danger solid" id="exit-go">Alles wissen</button>
       <p class="xs-note" id="exit-note">Bestanden in je map Downloads blijven staan. Andere apps op dit webadres blijven ongemoeid.</p>
     </div>
@@ -1853,12 +1874,13 @@ function renderData() {
   const b = store.get('backup-at', 0), last = document.getElementById('data-last') || Object.assign(document.createElement('p'), { id:'data-last', className:'data-last' });
   last.textContent = b ? `Laatste reservekopie: ${new Date(b).toLocaleDateString('nl-BE', { day:'numeric', month:'long', year:'numeric' })}.` : 'Nog geen reservekopie gemaakt op dit toestel.';
   if (!last.parentNode) $('data-backup').after(last);
-  $('data-backup').hidden = !entries.length;
+  const sig = exitEntries().map(e => e.t.id).join();
+  if (sig !== dlSig) { dlSig = sig; renderDownload(); }   // de keuze blijft staan zolang dezelfde apps er zijn
   last.textContent += ' Een reservekopie is een leesbaar bestand met alles wat je invulde: bewaar het zoals een vertrouwelijk document.';
 }
-let dataOpener = null;
+let dataOpener = null, dlSig = null;
 function openData() {
-  dataOpener = document.activeElement; renderData(); $('restore').hidden = true; pendingRestore = null;
+  dataOpener = document.activeElement; dlSig = null; showRestore(false); dataMsg('', false); renderData();
   $('data-sheet').hidden = false; $('home').inert = true; document.documentElement.classList.add('sheet-open'); $('data-close').focus();
   history.pushState({ sheet:1 }, '');   // de terugknop sluit het venster
 }
@@ -1927,42 +1949,64 @@ function renderExit() {
     $('exit-body').innerHTML = '<p class="xs-empty">Er staat niets van Onder Constructie op dit toestel.</p>';
     syncExit(); return;
   }
-  const row = ({ t, keys }, i) => {
-    const at = t.id === '__app' ? 0 : (usage[t.id] || {}).t || 0, when = ago(at);
-    return `<label class="xs-row${t.id === '__app' ? ' xs-app' : ''}"><input type="checkbox" data-x="${i}">
-      <span class="icon">${iconHTML(t.icon)}</span>
-      <span class="xs-name"><span class="xs-t">${esc(t.title)}</span>${busy.has(t.id) ? '<span class="xs-busy">loopt</span>' : ''}</span>
-      <span class="xs-meta">${when ? esc(when) + '<span class="xs-size"> · ' : '<span>'}${kb(sizeOf(keys))}</span></span></label>`;
-  };
   const n = exitList.filter(e => e.t.id !== '__app').length;
-  $('exit-body').innerHTML = `<div class="xs-modes" role="radiogroup" aria-label="Wat sluit je af?">
-      <label class="xs-mode"><input type="radio" name="exit-mode" value="all" checked>
-        <span><b>Alles wissen</b><small>${n ? `Wist ${n} ${n === 1 ? 'app' : 'apps'}${exitList.length > n ? ' en de instellingen' : ''}` : 'Wist de instellingen van de app'}</small></span></label>
-      <label class="xs-mode"><input type="radio" name="exit-mode" value="some">
-        <span><b>Eén of enkele apps wissen</b><small>Jij kiest welke</small></span></label>
-    </div>
-    <div class="xs-list" id="exit-list" role="group" aria-label="Kies de apps die je wist" hidden>${exitList.map(row).join('')}</div>`;
+  $('exit-pre').checked = false; $('exit-pre-l').hidden = false;
+  $('exit-body').innerHTML = chooserHTML('exit', exitList, {
+    label:'Wat wis je?', all:'Alles wissen', allSmall: n ? `Wist ${n} ${n === 1 ? 'app' : 'apps'}${exitList.length > n ? ' en de instellingen' : ''}` : 'Wist de instellingen van de app',
+    some:'Eén of enkele apps wissen', listLabel:'Kies de apps die je wist', meta: e => usageMeta(e, usage) });
   syncExit();
 }
-function exitChosen() { return exitList.filter((e, i) => { const c = $('exit-body').querySelector(`[data-x="${i}"]`); return c && c.checked; }); }
-function syncExit() {
-  const b = $('exit-go');
-  if (!exitList.length) { b.className = 'dbtn'; b.disabled = false; b.textContent = 'Sluit'; return; }
-  b.className = 'dbtn danger solid';
-  $('exit-list').hidden = exitMode !== 'some';
-  if (exitMode === 'all') { b.disabled = false; b.textContent = 'Alles wissen'; return; }
-  const ch = exitChosen(), app = ch.some(e => e.t.id === '__app'), n = ch.length - app, apps = `${n} ${n === 1 ? 'app' : 'apps'}`;
-  b.disabled = !ch.length;
-  b.textContent = !ch.length ? 'Kies eerst een app' : n && app ? `Wis ${apps} en de instellingen` : n ? `Wis ${apps}` : 'Wis de instellingen';
+/* Gedeeld door Wissen, Reservekopie downloaden en terugzetten: twee keuzetegels (alles / jij kiest) en een vinkjeslijst per app.
+   Het vakje van rij i heeft data-x="i" (Wissen) of data-pick="i" (de andere). */
+function usageMeta({ t, keys }, usage) {
+  const at = t.id === '__app' ? 0 : (usage[t.id] || {}).t || 0, when = ago(at);
+  return `${when ? esc(when) + '<span class="xs-size"> · ' : '<span>'}${kb(sizeOf(keys))}</span>`;
 }
-$('exit-body').addEventListener('change', e => {
-  if (e.target.name === 'exit-mode') {
-    exitMode = e.target.value; syncExit();
-    if (exitMode === 'some') requestAnimationFrame(() => $('exit-list').scrollIntoView({ block:'nearest', behavior:'smooth' }));
+function chooserHTML(id, list, o) {
+  const attr = id === 'exit' ? 'data-x' : 'data-pick';
+  const row = (e, i) => `<label class="xs-row${e.t.id === '__app' ? ' xs-app' : ''}"><input type="checkbox" ${attr}="${i}">
+      <span class="icon">${iconHTML(e.t.icon || APP_ENTRY.icon)}</span>
+      <span class="xs-name"><span class="xs-t">${esc(e.t.title)}</span>${busy.has(e.t.id) ? '<span class="xs-busy">loopt</span>' : ''}</span>
+      <span class="xs-meta">${o.meta(e)}</span></label>`;
+  return `<div class="xs-modes" role="radiogroup" aria-label="${esc(o.label)}">
+      <label class="xs-mode"><input type="radio" name="${id}-mode" value="all" checked>
+        <span><b>${esc(o.all)}</b><small>${esc(o.allSmall)}</small></span></label>
+      <label class="xs-mode"><input type="radio" name="${id}-mode" value="some">
+        <span><b>${esc(o.some)}</b><small>Jij kiest welke</small></span></label>
+    </div>
+    <div class="xs-list" id="${id}-list" role="group" aria-label="${esc(o.listLabel)}" hidden>${list.map(row).join('')}</div>`;
+}
+function chooserMode(id) { const r = document.querySelector(`input[name="${id}-mode"]:checked`); return r ? r.value : 'all'; }
+function chooserPicked(id, list) {
+  const box = $(id + '-list'); if (!box) return [];
+  return list.filter((e, i) => { const c = box.querySelector(`[${id === 'exit' ? 'data-x' : 'data-pick'}="${i}"]`); return c && c.checked; });
+}
+// Knoptekst: "2 apps", "1 app en de instellingen", "de instellingen"
+function appsWord(ch) {
+  const app = ch.some(e => e.t.id === '__app'), n = ch.length - app, apps = `${n} ${n === 1 ? 'app' : 'apps'}`;
+  return n && app ? `${apps} en de instellingen` : n ? apps : 'de instellingen';
+}
+function chooserToggle(id, e, sync) {
+  if (e.target.name === id + '-mode') {
+    sync();
+    if (e.target.value === 'some') requestAnimationFrame(() => $(id + '-list').scrollIntoView({ block:'nearest', behavior:'smooth' }));
     return;
   }
-  syncExit();
-});
+  sync();
+}
+function exitChosen() { return chooserPicked('exit', exitList); }
+function syncExit() {
+  const b = $('exit-go');
+  if (!exitList.length) { b.className = 'dbtn'; b.disabled = false; b.textContent = 'Sluit'; $('exit-pre-l').hidden = true; return; }
+  b.className = 'dbtn danger solid';
+  exitMode = chooserMode('exit');
+  $('exit-list').hidden = exitMode !== 'some';
+  if (exitMode === 'all') { b.disabled = false; b.textContent = 'Alles wissen'; return; }
+  const ch = exitChosen();
+  b.disabled = !ch.length;
+  b.textContent = !ch.length ? 'Kies eerst een app' : `Wis ${appsWord(ch)}`;
+}
+$('exit-body').addEventListener('change', e => chooserToggle('exit', e, syncExit));
 function openExit() {
   if (!$('exit-sheet').hidden) return;
   exitOpener = document.activeElement; renderExit();
@@ -1980,7 +2024,7 @@ function closeExit(fromHistory) {
   if (exitOpener && exitOpener.isConnected && exitOpener.offsetParent) exitOpener.focus();
 }
 // Een deel wissen: met Ongedaan. Open tools in de app sluiten; lopende tools (timer) die je niet koos, blijven open.
-function wipeChosen(ch) {
+function wipeChosen(ch, saved) {
   const ids = ch.map(e => e.t.id), restore = wipeKeys([...new Set(ch.flatMap(e => e.keys))]);
   dropPre();
   [...frames.keys()].filter(id => ids.includes(id) || !busy.has(id)).forEach(dropFrame);
@@ -1988,14 +2032,20 @@ function wipeChosen(ch) {
   const again = () => { renderHome(); if (ids.includes('__app')) GROUPS.forEach(g => setCollapsed(g.id, false)); syncData(); };
   again();
   const n = ids.filter(id => id !== '__app').length;
-  appToast(ch.length === 1 ? `${ch[0].t.title} gewist` : n === ch.length ? `${n} apps gewist` : `${n} ${n === 1 ? 'app' : 'apps'} en de instellingen gewist`,
+  appToast((saved ? 'Reservekopie gedownload. ' : '') + (ch.length === 1 ? `${ch[0].t.title} gewist` : n === ch.length ? `${n} apps gewist` : `${n} ${n === 1 ? 'app' : 'apps'} en de instellingen gewist`),
     async () => { if (!await restore()) return; ids.forEach(dropFrame); signalWipe(); renderHome(); syncData(); appToast('Teruggezet'); });
 }
 $('exit-go').addEventListener('click', () => {
   if (!exitList.length) { closeExit(); return; }
-  if (exitMode === 'all') { $('exit-sheet').hidden = true; fullExit(); return; }
+  const pre = $('exit-pre').checked;
+  if (exitMode === 'all') {
+    // eerst een kopie van precies wat er gewist wordt, dan pas wissen
+    if (pre) backup(allBackupKeys());
+    $('exit-sheet').hidden = true; fullExit(); return;
+  }
   const ch = exitChosen(); if (!ch.length) return;
-  closeExit(); wipeChosen(ch);
+  if (pre) backup(ch.flatMap(e => e.keys), partName(ch));
+  closeExit(); wipeChosen(ch, pre);
 });
 $('exit-close').addEventListener('click', closeExit);
 $('exit-sheet').addEventListener('click', e => { if (e.target === $('exit-sheet')) closeExit(); });
@@ -2017,24 +2067,59 @@ document.addEventListener('keydown', e => {
   if (!$('exit-sheet').hidden) closeExit(); else if (!$('data-sheet').hidden) closeData();
 });
 
-function backup(keys) {
-  keys = keys.filter(k => k !== 'oc-app.tools-cache');   // de toollijst komt altijd van de site
-  const data = {}; keys.forEach(k => { try { data[k] = localStorage.getItem(k); } catch {} });
+/* Een reservekopie is altijd hetzelfde formaat: { app, version:1, created, data:{ sleutel: tekst } }.
+   Een kopie van één of enkele apps is gewoon een reservekopie met minder sleutels. Zo blijft elke oude kopie terugzetbaar.
+   part = stukje voor de bestandsnaam bij een deelkopie (bv. "raci" of "3-apps"); zonder part is het een volledige kopie. */
+function backup(keys, part) {
+  keys = [...new Set(keys)].filter(k => k !== 'oc-app.tools-cache');   // de toollijst komt altijd van de site
+  const data = {}; keys.forEach(k => { try { const v = localStorage.getItem(k); if (v != null) data[k] = v; } catch {} });
   const blob = new Blob([JSON.stringify({ app:'Onder Constructie', version:1, created:new Date().toISOString(), data }, null, 1)], { type:'application/json' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-  a.download = `onderconstructie-reservekopie-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = `onderconstructie-reservekopie-${new Date().toISOString().slice(0, 10)}${part ? '-' + part : ''}.json`;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-  store.set('backup-at', Date.now()); store.set('backup-snooze', 0);
+  if (!part) { store.set('backup-at', Date.now()); store.set('backup-snooze', 0); }   // alleen een volledige kopie telt als "laatste reservekopie"
   if (!$('data-sheet').hidden) renderData();
 }
-// Wissen gebeurt alleen nog in het venster Wissen (knop op het startscherm, of "Iets wissen?" in Reservekopie).
-$('data-backup').addEventListener('click', () => backup(dataEntries().flatMap(e => e.keys)));
+// Alles van Onder Constructie dat de moeite is om te bewaren (ook klaargelegde gegevens van tools die er niet meer zijn)
+function allBackupKeys() { return dataEntries().flatMap(e => e.keys).concat(keysFor(['oc.share.*'])); }
+function partName(ch) {
+  const apps = ch.filter(e => e.t.id !== '__app');
+  return ch.length === 1 ? (ch[0].t.id === '__app' ? 'instellingen' : ch[0].t.id) : `${apps.length || ch.length}-${apps.length === 1 ? 'app' : 'apps'}`;
+}
+// Venster Reservekopie: downloaden, alles of jij kiest welke apps
+let dlList = [];
+function renderDownload() {
+  dlList = exitEntries();
+  $('dl').hidden = !dlList.length;
+  if (!dlList.length) { $('dl-body').innerHTML = ''; return; }
+  const n = dlList.filter(e => e.t.id !== '__app').length;
+  $('dl-body').innerHTML = chooserHTML('dl', dlList, {
+    label:'Wat download je?', all:'Alles', allSmall: n ? `${n} ${n === 1 ? 'app' : 'apps'}${dlList.length > n ? ' en de instellingen' : ''}` : 'De instellingen van de app',
+    some:'Eén of enkele apps', listLabel:'Kies de apps die je downloadt', meta: e => usageMeta(e, store.get('usage', {})) });
+  syncDownload();
+}
+function syncDownload() {
+  if (!dlList.length) return;
+  const all = chooserMode('dl') === 'all', ch = chooserPicked('dl', dlList), b = $('data-backup');
+  $('dl-list').hidden = all;
+  b.disabled = !all && !ch.length;
+  $('data-backup-t').textContent = all ? 'Download alles' : !ch.length ? 'Kies eerst een app' : `Download ${appsWord(ch)}`;
+}
+$('dl-body').addEventListener('change', e => chooserToggle('dl', e, syncDownload));
+$('data-backup').addEventListener('click', () => {
+  if (chooserMode('dl') === 'all') { backup(allBackupKeys()); dataMsg('Reservekopie gedownload. Bewaar ze op een veilige plek.', false); return; }
+  const ch = chooserPicked('dl', dlList); if (!ch.length) return;
+  backup(ch.flatMap(e => e.keys), partName(ch));
+  dataMsg(`Reservekopie van ${appsWord(ch)} gedownload.`, false);
+});
 function dataMsg(text, bad) {
   let m = document.getElementById('data-msg');
   if (!m) { m = document.createElement('p'); m.id = 'data-msg'; m.className = 'sheet-intro'; m.setAttribute('role', 'status'); $('data-list').before(m); }
-  m.textContent = text; m.style.color = bad ? 'var(--signal-red, #b91c1c)' : 'var(--accent-dark)';
+  m.hidden = !text; m.textContent = text; m.style.color = bad ? 'var(--signal-red, #b91c1c)' : 'var(--accent-dark)';
 }
-/* Reservekopie terugzetten: per tool kiezen. Terugzetten VERVANGT wat er nu in die tool staat; het voegt niet samen. */
+/* Reservekopie terugzetten: na het kiezen van een bestand zie je welke apps erin zitten. Alles (standaard) of jij kiest welke.
+   Terugzetten VERVANGT wat er nu in die apps staat; het voegt niet samen. Apps die niet in het bestand zitten, blijven ongemoeid.
+   Sleutels die niet van Onder Constructie zijn (bv. een budgetapp op hetzelfde adres), worden nooit geschreven. */
 let pendingRestore = null;
 function ownerOf(k) {
   const t = TOOLS.find(t => keysFor((t.storage || []).concat('oc.share.' + t.id), [k]).length);
@@ -2042,61 +2127,73 @@ function ownerOf(k) {
   if (keysFor(APP_ENTRY.storage, [k]).length) return APP_ENTRY;
   return { id:'__other', title:'Overige gegevens', sub:'klaargelegde lijsten van tools die er niet meer zijn' };
 }
+function showRestore(on) {
+  $('restore').hidden = !on; $('data-actions').hidden = on;
+  if (!on) pendingRestore = null;
+}
 $('data-restore-file').addEventListener('change', async e => {
   const file = e.target.files && e.target.files[0]; e.target.value = '';
   if (!file) return;
+  dataMsg('', false);
   try {
     const d = JSON.parse(await file.text());
-    if (!d || d.app !== 'Onder Constructie' || typeof d.data !== 'object') throw new Error('vorm');
+    if (!d || d.app !== 'Onder Constructie' || !d.data || typeof d.data !== 'object') throw new Error('vorm');
     const allowed = [...TOOLS, APP_ENTRY].flatMap(t => t.storage || []).concat(['oc.share.*']);
     const never = ['oc-app.tools-cache'];   // de toollijst komt altijd van de site zelf, nooit uit een bestand
     const put = Object.entries(d.data).filter(([k, v]) => typeof v === 'string' && !never.includes(k) && keysFor(allowed, [k]).length);
     if (!put.length) throw new Error('leeg');
     const cur = k => { try { return localStorage.getItem(k); } catch { return null; } };
-    // per tool: welke sleutels, en staat er nu iets anders (dan wordt het vervangen)? De instellingen van de app tellen daar niet bij.
+    // per app: welke sleutels, en staat er nu iets anders (dan wordt het vervangen)? De instellingen van de app tellen daar niet bij.
     const groups = new Map();
     put.forEach(([k, v]) => { const t = ownerOf(k); if (!groups.has(t.id)) groups.set(t.id, { t, put: [] }); groups.get(t.id).put.push([k, v]); });
-    groups.forEach(g => { g.replaces = g.t.id !== '__app' && g.put.some(([k, v]) => cur(k) != null && cur(k) !== v); g.same = g.put.every(([k, v]) => cur(k) === v); });
+    groups.forEach(g => {
+      g.replaces = g.t.id !== '__app' && g.put.some(([k, v]) => cur(k) != null && cur(k) !== v);
+      g.same = g.put.every(([k, v]) => cur(k) === v);
+    });
     const order = [...groups.values()].sort((a, b) => (a.t.id === '__app') - (b.t.id === '__app') || (b.replaces - a.replaces));
-    const when = d.created ? new Date(d.created).toLocaleDateString('nl-BE', { day:'numeric', month:'long', year:'numeric' }) : 'een eerder moment';
+    const when = d.created && !isNaN(new Date(d.created)) ? new Date(d.created).toLocaleDateString('nl-BE', { day:'numeric', month:'long', year:'numeric' }) : 'een eerder moment';
     pendingRestore = { order, when };
-    const nRep = order.filter(g => g.replaces).length;
-    $('restore-text').textContent = `Kopie van ${when}. Kies wat je terugzet. ` + (nRep
-      ? 'Terugzetten vervangt wat er nu in die tool staat. Het voegt niet samen. Je kan het meteen daarna ongedaan maken.'
-      : 'Op dit toestel staat nog niets in deze tools, dus er gaat niets verloren.');
-    $('restore-list').innerHTML = order.map((g, i) => `<label class="rs-item"><input type="checkbox" checked data-rs="${i}">
-      <span>${esc(g.t.title)}<small class="${g.replaces ? 'rep' : ''}">${g.t.id === '__app' ? 'actief project, volgorde, ingeklapte blokken' : g.replaces ? 'vervangt wat er nu staat' : g.same ? 'staat al zo op dit toestel' : 'nieuw op dit toestel'}</small></span></label>`).join('');
-    $('restore').hidden = false; syncRestoreBtn();
+    $('restore-text').textContent = `Kopie van ${when}. Er ${order.length === 1 ? 'zit' : 'zitten'} ${appsWord(order)} in.`;
+    $('restore-list').innerHTML = chooserHTML('rs', order, {
+      label:'Wat zet je terug?', all:'Alles terugzetten', allSmall: `Alles uit dit bestand`,
+      some:'Eén of enkele apps', listLabel:'Kies de apps die je terugzet',
+      meta: g => g.t.id === '__app' ? '<span class="rs-st">instellingen</span>' : g.replaces ? '<span class="rs-st rep">vervangt je werk</span>' : g.same ? '<span class="rs-st">al gelijk</span>' : '<span class="rs-st">nieuw</span>' });
+    $('restore-warn').textContent = (order.some(g => g.replaces)
+      ? 'Terugzetten vervangt wat er nu in die apps staat. '
+      : 'In deze apps staat nu niets anders. Er gaat niets verloren. ')
+      + 'Apps die niet in het bestand zitten, blijven zoals ze zijn.';
+    showRestore(true); syncRestoreBtn();
     $('restore').scrollIntoView({ block:'nearest', behavior:'smooth' });
     $('restore-list').querySelector('input').focus();
   } catch {
-    dataMsg('Dit bestand is geen reservekopie van Onder Constructie.', true);
+    showRestore(false);
+    dataMsg('Dit bestand is geen reservekopie van Onder Constructie. Kies een bestand met een naam die begint met "onderconstructie-reservekopie".', true);
   }
 });
-function chosenRestore() { return pendingRestore ? pendingRestore.order.filter((g, i) => { const c = $('restore-list').querySelector(`[data-rs="${i}"]`); return c && c.checked; }) : []; }
+function chosenRestore() { return !pendingRestore ? [] : chooserMode('rs') === 'all' ? pendingRestore.order : chooserPicked('rs', pendingRestore.order); }
 function syncRestoreBtn() {
-  const ch = chosenRestore(), b = $('restore-yes');
+  if (!pendingRestore) return;
+  const all = chooserMode('rs') === 'all', ch = chosenRestore(), b = $('restore-yes');
+  $('rs-list').hidden = all;
   b.disabled = !ch.length;
-  // rood alleen als er echt iets vervangen wordt; op een leeg toestel een gewone knop
-  const rep = ch.some(g => g.replaces);
-  b.className = 'dbtn ' + (rep ? 'danger solid' : 'go');
-  b.textContent = 'Terugzetten';
+  b.textContent = all ? 'Zet alles terug' : !ch.length ? 'Kies eerst een app' : `Zet ${appsWord(ch)} terug`;
 }
-$('restore-list').addEventListener('change', syncRestoreBtn);
-$('restore-no').addEventListener('click', () => { pendingRestore = null; $('restore').hidden = true; });
+$('restore-list').addEventListener('change', e => chooserToggle('rs', e, syncRestoreBtn));
+$('restore-no').addEventListener('click', () => { showRestore(false); $('data-backup').offsetParent ? $('data-backup').focus() : $('data-close').focus(); });
 $('restore-yes').addEventListener('click', () => {
   const ch = chosenRestore(); if (!ch.length || !pendingRestore) return;
   const when = pendingRestore.when, put = ch.flatMap(g => g.put);
   const cur = k => { try { return localStorage.getItem(k); } catch { return null; } };
   const before = Object.fromEntries(put.map(([k]) => [k, cur(k)]));
   put.forEach(([k, v]) => { try { localStorage.setItem(k, v); } catch {} });
-  pendingRestore = null; $('restore').hidden = true;
+  showRestore(false);
   const refresh = () => { [...frames.keys()].forEach(id => dropFrame(id)); dropPre(); renderGroups(); renderRecent(); renderFilter(); renderPaths(); markLive(); renderData(); };
-  refresh();
-  dataMsg(`Reservekopie van ${when} teruggezet in ${ch.length} ${ch.length === 1 ? 'onderdeel' : 'onderdelen'}.`, false);
+  refresh(); signalWipe();   // open tools in andere tabbladen laden opnieuw
+  dataMsg(`Reservekopie van ${when} teruggezet: ${ch.length === 1 ? ch[0].t.title : appsWord(ch)}.`, false);
+  $('data-close').focus();
   appToast('Reservekopie teruggezet', () => {
     Object.entries(before).forEach(([k, v]) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} });
-    refresh(); dataMsg('Terugzetten ongedaan gemaakt.', false); appToast('Zoals voordien');
+    refresh(); signalWipe(); dataMsg('Terugzetten ongedaan gemaakt.', false); appToast('Zoals voordien');
   });
 });
 
@@ -2190,7 +2287,7 @@ function renderPathbar(id) {
 }
 /* Waar begin je? Vier ingangen in gewone taal, zolang er geen stappenplan loopt */
 const STARTS = [
-  { path:'project', title:'Een project opzetten', sub:'Stap voor stap, van vertrekpunt tot terugblik', logo:"<svg viewBox='0 0 40 40' fill='none' xmlns='http://www.w3.org/2000/svg'><circle cx='20' cy='20' r='18' fill='#f8fafc' stroke='#e2e8f0' stroke-width='1.5'/><rect x='-1.6' y='-5.5' width='3.2' height='11' rx='0.8' fill='#e2e8f0' stroke='#94a3b8' stroke-width='1' transform='translate(11.94 25.6) rotate(22)'/><rect x='-1.6' y='-5.5' width='3.2' height='11' rx='0.8' fill='#e2e8f0' stroke='#94a3b8' stroke-width='1' transform='translate(16.06 25.6) rotate(-22)'/><rect x='-1.6' y='-5.5' width='3.2' height='11' rx='0.8' fill='#e2e8f0' stroke='#94a3b8' stroke-width='1' transform='translate(23.94 25.6) rotate(22)'/><rect x='-1.6' y='-5.5' width='3.2' height='11' rx='0.8' fill='#e2e8f0' stroke='#94a3b8' stroke-width='1' transform='translate(28.06 25.6) rotate(-22)'/><rect x='9' y='18.6' width='22' height='2.4' rx='0.8' fill='#e2e8f0' stroke='#94a3b8' stroke-width='1'/><rect x='-1.6' y='-5.5' width='3.2' height='11' rx='0.8' fill='#d1fae5' stroke='#10b981' stroke-width='1' transform='translate(17.94 12.6) rotate(22)'/><rect x='-1.6' y='-5.5' width='3.2' height='11' rx='0.8' fill='#d1fae5' stroke='#10b981' stroke-width='1' transform='translate(22.06 12.6) rotate(-22)'/></svg>" },
+  { path:'project', title:'Een project opzetten', sub:'Stap voor stap, van vertrekpunt tot terugblik', logo:"<svg viewBox='0 0 40 40' fill='none' xmlns='http://www.w3.org/2000/svg'><circle cx='20' cy='20' r='18' fill='#f8fafc' stroke='#e2e8f0' stroke-width='1.5'/><path d='M9.399999999999999 29.5L14.6 20.5L14.6 23.62L11.799999999999999 29.5Z' fill='#94a3b8'/><path d='M19.8 29.5L14.6 20.5L14.6 23.62L17.400000000000002 29.5Z' fill='#94a3b8'/><path d='M20.2 29.5L25.4 20.5L25.4 23.62L22.599999999999998 29.5Z' fill='#94a3b8'/><path d='M30.599999999999998 29.5L25.4 20.5L25.4 23.62L28.2 29.5Z' fill='#94a3b8'/><rect x='9.4' y='18.6' width='21.2' height='2.2' fill='#94a3b8'/><path d='M14.8 17.4L20 8.399999999999999L20 11.52L17.2 17.4Z' fill='#10b981'/><path d='M25.2 17.4L20 8.399999999999999L20 11.52L22.8 17.4Z' fill='#10b981'/></svg>" },
   { path:'verandering', title:'Mensen meekrijgen in een verandering', sub:'Wie moet mee, en hoe pak je het aan?' },
   { group:'vergaderen', title:'Een vergadering vlot laten lopen', sub:'Wie begint, groepjes, een rondje' },
   { group:'reset', title:'Even tot rust komen', sub:'Ademen, aarden, vriendelijk zijn voor jezelf' }
