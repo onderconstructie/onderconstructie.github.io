@@ -504,6 +504,8 @@ document.addEventListener('keydown', e => {
 /* ---------- Tijd per persoon ---------- */
 let klokT = null, eindOp = 0;
 const mmss = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+/* De klok volgt de opdracht: bij "Halve minuut" loopt hij nooit langer dan 30 seconden */
+const duur = () => huidig[2] != null && VORMEN[huidig[2]].id === 'minuut' ? Math.min(inst.tijd, 30) : inst.tijd;
 function toonKlok() {
   const t = $('timer');
   t.hidden = !inst.tijd || huidig[0] == null;
@@ -514,7 +516,7 @@ function stopKlok(terug) {
   clearInterval(klokT); klokT = null;
   $('timer').classList.remove('klaar');
   if (terug) {
-    $('tval').textContent = mmss(inst.tijd || 30);
+    $('tval').textContent = mmss(duur() || 30);
     $('tbar').style.transform = 'scaleX(1)';
     $('tgo').textContent = 'Start';
   }
@@ -522,7 +524,7 @@ function stopKlok(terug) {
 function tik() {
   const rest = Math.max(0, eindOp - Date.now()), sec = Math.ceil(rest / 1000);
   $('tval').textContent = mmss(sec);
-  $('tbar').style.transform = `scaleX(${rest / (inst.tijd * 1000)})`;
+  $('tbar').style.transform = `scaleX(${rest / (duur() * 1000)})`;
   if (rest <= 0) {
     clearInterval(klokT); klokT = null;
     $('timer').classList.add('klaar');
@@ -534,7 +536,7 @@ function tik() {
 $('tgo').addEventListener('click', () => {
   if (klokT) { stopKlok(true); return; }
   stopKlok(false);
-  eindOp = Date.now() + inst.tijd * 1000;
+  eindOp = Date.now() + duur() * 1000;
   $('tgo').textContent = 'Stop';
   tik(); klokT = setInterval(tik, 200);
 });

@@ -330,6 +330,8 @@ input[type=date].inp { min-height:44px; }
 .tag.prop { background:var(--slate-100); color:var(--slate-600); text-transform:none; letter-spacing:0; font-weight:600; }
 /* In de app staat de stappenteller van het stappenplan al bovenaan: hier geen tweede teller. */
 .in-app .stepnow { display:none !important; }
+/* Op gsm staat de stap al onder de bolletjes: geen tweede teller boven de vraag */
+@media (max-width:719px) { html:not(.in-app) .eyebrow { display:none; } }
 
 .footer { text-align:center; padding:2rem 2rem calc(var(--bottom) + 2rem); border-top:1px solid var(--slate-200); background:var(--wit); }
 .quote { font-size:0.8125rem; color:var(--accent-dark); }
@@ -966,9 +968,10 @@ function sponsorFound() {
 /* Afgeleide waarden */
 function suggestIntens(g) {
   const n = (g.hint || '').toLowerCase(), from = g.source ? `volgens ${g.source}` : 'volgens de bron';
-  if (/manag|nauw|anticip|sleutel|tegen|weerstand|verzet|ontkenning|boos/.test(n)) return { v:'sterk', why:`${from}: ${g.hint}` };
-  if (/tevreden|informe/.test(n)) return { v:'midden', why:`${from}: ${g.hint}` };
-  if (/monitor|opvolgen|volgen/.test(n)) return { v:'licht', why:`${from}: ${g.hint}` };
+  // Ook de namen die de Stakeholder Radar nu gebruikt: nauw betrekken, vroeg opzoeken, op de hoogte houden, in het oog houden.
+  if (/manag|nauw|anticip|opzoeken|sleutel|tegen|weerstand|verzet|ontkenning|boos/.test(n)) return { v:'sterk', why:`${from}: ${g.hint}` };
+  if (/tevreden|informe|hoogte houden/.test(n)) return { v:'midden', why:`${from}: ${g.hint}` };
+  if (/monitor|opvolgen|volgen|oog houden/.test(n)) return { v:'licht', why:`${from}: ${g.hint}` };
   const p = profile();
   if (heavyProfile(p)) return { v:'sterk', why:'het Veranderprofiel schat deze verandering zwaar in' };
   if (g.goals.includes('willen')) return { v:'midden', why:'je wil dat ze erachter staan' };
@@ -1953,7 +1956,7 @@ document.addEventListener('click', async e => {
   if (act === 'png' || act === 'pdf') {
     toast('Bezig met downloaden…');
     try { await (act === 'png' ? ocExport.png(buildExport, base, { landscape:true }) : ocExport.pdf(buildExport, base, { landscape:true })); toast(act === 'png' ? 'Afbeelding gedownload' : 'PDF gedownload'); }
-    catch { toast('Downloaden lukte niet. Ben je online?'); }
+    catch { toast('Downloaden lukte niet. Probeer opnieuw.'); }
   } else if (act === 'copy') {
     if (!hasPlan()) { toast('Er is nog niets om te kopiëren'); return; }
     try { await copyRich(asHTML(), asText()); toast('Gekopieerd, met opmaak'); } catch { toast('Kopiëren lukte niet'); }

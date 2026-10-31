@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Visgraatdiagram – Onder Constructie</title>
-<meta name="description" content="Zet alle mogelijke oorzaken van een probleem op een rij in een visgraatdiagram, per soort (mens, machine, methode, materiaal, milieu, metingen), en kies de waarschijnlijkste.">
+<meta name="description" content="Zet alle mogelijke oorzaken van een probleem op een rij in een visgraatdiagram, per soort. Kies de waarschijnlijkste en schrijf op hoe je ze nagaat.">
     <meta name="oc:groep" content="projecten">
     <meta name="oc:labels" content="inzicht">
     <meta name="oc:pdca" content="plan, check">
@@ -270,12 +270,12 @@ html:has(.ocs-back, .ocw-back, .gal-back, .oc-dialog-backdrop) { overflow:hidden
       <p>Een visgraatdiagram zet alle mogelijke oorzaken van één probleem overzichtelijk bij elkaar. Het probleem staat rechts, als de kop van de vis. De graten zijn de soorten oorzaken.</p>
       <ul>
         <li><b>Beschrijf het probleem</b> zo concreet mogelijk: wat gaat er mis, waar, sinds wanneer, en hoe vaak of hoeveel?</li>
-        <li><b>Kies de soorten oorzaken.</b> Je start met zes: mens, machine, methode, materiaal, milieu en metingen. Hernoem ze, haal er weg of voeg er toe, zodat ze passen bij jouw werk.</li>
+        <li><b>Kies de soorten oorzaken.</b> Je start met zes vragen: wie doet het, hoe loopt het, wat komt binnen, waarmee werken we, wie beslist en volgt op, en wat speelt van buitenaf. Hernoem ze, haal er weg of voeg er toe, zodat ze passen bij jouw werk.</li>
         <li><b>Verzamel oorzaken</b> per soort, liefst met de mensen die het werk doen. Vraag bij elke oorzaak "en waarom gebeurt dat?": het antwoord wordt een suboorzaak.</li>
         <li><b>Kies de waarschijnlijkste oorzaken.</b> Vraag bij elke: als we dit wegnemen, is het probleem dan grotendeels weg? Kies er liefst niet meer dan drie, en schrijf op hoe je ze nagaat voor je ze aanpakt.</li>
       </ul>
       <p>Tip: Enter geeft meteen een nieuwe oorzaak, en een lijst plakken in een veld zet elke regel als aparte oorzaak.</p>
-      <p>De oorzaken die je kiest, liggen klaar voor andere tools, bijvoorbeeld om er in <a href="https://onderconstructie.github.io/prioriteit/">Prioriteren</a> of <a href="https://onderconstructie.github.io/kanban/">Takenbord</a> mee verder te gaan.</p>
+      <p>Wat je kiest, ligt klaar voor andere tools als taak: hoe je de oorzaak nagaat, of anders "nagaan of dit klopt". Zo kan je er bijvoorbeeld in <a href="https://onderconstructie.github.io/prioriteit/">Prioriteren</a> of <a href="https://onderconstructie.github.io/kanban/">Takenbord</a> mee verder gaan.</p>
     </div>
   </details>
 </main>
@@ -542,13 +542,14 @@ const ICON = {
   star:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.8 6.8 19.6l1-5.8L3.5 9.7l5.9-.8z"/></svg>',
   starOn:'<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.8 6.8 19.6l1-5.8L3.5 9.7l5.9-.8z"/></svg>'
 };
+// Eigen indeling: zes vragen die je over elk werkproces kan stellen. Oude analyses houden hun eigen soorten.
 const DEFAULT_CATS = [
-  ['Mens', 'Mensen: opleiding, ervaring, bezetting, afspraken'],
-  ['Machine', 'Apparatuur, gereedschap en technologie'],
-  ['Methode', 'Processen, procedures en werkwijzen'],
-  ['Materiaal', 'Grondstoffen, onderdelen, formulieren en gegevens'],
-  ['Milieu', 'Omgeving: locatie, werkplek, temperatuur, drukte'],
-  ['Metingen', 'Controle, ijking en hoe gegevens verzameld worden']
+  ['Wie doet het?', 'Kennis, ervaring, tijd en bezetting'],
+  ['Hoe loopt het?', 'Stappen, overdrachten, wachttijd en dubbel werk'],
+  ['Wat komt binnen?', 'Aanvragen, gegevens en stukken die je van anderen krijgt'],
+  ['Waarmee werken we?', 'Systemen, toestellen, formulieren en sjablonen'],
+  ['Wie beslist en volgt op?', 'Doelen, voorrang, afspraken en opvolging'],
+  ['Wat speelt van buitenaf?', 'Regels, piekmomenten, partners en de plek zelf']
 ];
 const cat = (name, hint = '') => ({ id:uid(), name, hint });
 const cause = (catId, text = '', parent = null) => ({ id:uid(), cat:catId, text, parent, likely:false, toets:'' });
@@ -690,7 +691,7 @@ function render() {
           <button data-act="png" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>Download als afbeelding</button>
           <button data-act="svg" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Download als SVG (bewerkbaar)</button>
           <button data-act="copy" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Kopieer als lijst</button>
-          <p class="oc-note" role="none">Een afbeelding, PDF of CSV kan je niet terug openen.</p>
+          <p class="oc-note" role="none">Een afbeelding, PDF of SVG kan je niet terug openen.</p>
           <div class="sep"></div>
           <button data-act="wipe" class="danger" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>Alles wissen</button>
         </div>
@@ -782,8 +783,9 @@ document.addEventListener('paste', e => {
   e.preventDefault();
   const lines = txt.split(/\r?\n/).map(l => l.trim().replace(/^([-*•·–]|\d+[.)])\s+/, '')).filter(Boolean);
   if (el.dataset.add) addLines(u, el.dataset.add, lines, null);
-  else { const c = u.causes.find(x => x.id === el.dataset.cid); if (!c.text.trim()) { c.text = lines.shift() || ''; } const made = lines.map(t => cause(c.cat, t.slice(0, 160), c.parent)); u.causes.splice(u.causes.indexOf(c) + 1, 0, ...made); }
-  save(); render(); toast(`${lines.length} oorzaken toegevoegd`);
+  const total = lines.length;
+  if (!el.dataset.add) { const c = u.causes.find(x => x.id === el.dataset.cid); if (!c.text.trim()) { c.text = (lines.shift() || '').slice(0, 160); } const made = lines.map(t => cause(c.cat, t.slice(0, 160), c.parent)); u.causes.splice(u.causes.indexOf(c) + 1, 0, ...made); }
+  save(); render(); toast(`${total} oorzaken toegevoegd`);
 });
 document.addEventListener('click', e => {
   const t = e.target.closest('[data-act],[data-unit]'); if (!t || t.closest('#menu')) return;
@@ -808,7 +810,8 @@ document.addEventListener('click', e => {
 function publish() {
   const lists = state.units.filter(u => !u.voorbeeld && u.causes.some(c => c.likely && c.text.trim())).map(u => ({
     name: title(u).slice(0, 80),
-    items: u.causes.filter(c => c.likely && c.text.trim()).map(c => ({ type:'taak', text:c.text.trim(), note: c.toets.trim() ? 'nagaan: ' + c.toets.trim() : 'waarschijnlijke oorzaak' }))
+    // Een oorzaak is geen taak: wat je wel kan doen, is nagaan of ze klopt.
+    items: u.causes.filter(c => c.likely && c.text.trim()).map(c => ({ type:'taak', text: c.toets.trim() || 'Nagaan of dit klopt: ' + c.text.trim(), note: c.toets.trim() ? 'oorzaak: ' + c.text.trim() : 'waarschijnlijke oorzaak' }))
   }));
   ocShare.publish(OC_ID, OC_TOOL, lists);
 }
@@ -818,16 +821,16 @@ function example() {
   const ex = state.units.find(x => x.voorbeeld);
   if (ex) { state.current = ex.id; save(); render(); return; }
   const u = newUnit(); u.voorbeeld = true; u.probleem = '30% van de premieaanvragen is onvolledig bij indiening';
-  const [mens, machine, methode, materiaal, milieu, metingen] = u.cats.map(c => c.id);
+  const [wie, hoe, binnen, waarmee, sturing, buiten] = u.cats.map(c => c.id);
   const add = (c, t, likely, subs = []) => { const x = cause(c, t); x.likely = !!likely; u.causes.push(x); subs.forEach(s => u.causes.push(cause(c, s, x.id))); return x; };
-  add(mens, 'Burgers weten niet welke bewijsstukken nodig zijn', true, ['Uitleg staat pas onderaan de pagina']);
-  add(mens, 'Nieuwe loketmedewerkers kennen de regels nog niet');
-  add(machine, 'Uploaden van bijlagen loopt vast op de gsm', true, ['Bestanden boven 5 MB worden geweigerd']);
-  add(methode, 'Volledigheid wordt pas na indienen gecontroleerd', true);
-  add(methode, 'Geen vaste checklist voor het loket');
-  add(materiaal, 'Aanvraagformulier vraagt dubbele gegevens');
-  add(milieu, 'Piek aan aanvragen vlak voor de deadline');
-  add(metingen, 'Er wordt niet bijgehouden welk stuk het vaakst ontbreekt');
+  add(wie, 'Nieuwe loketmedewerkers kennen de regels nog niet');
+  add(hoe, 'Volledigheid wordt pas na indienen gecontroleerd', true);
+  add(hoe, 'Geen vaste checklist voor het loket');
+  add(binnen, 'Burgers weten niet welke bewijsstukken nodig zijn', true, ['Uitleg staat pas onderaan de pagina']);
+  add(waarmee, 'Uploaden van bijlagen loopt vast op de gsm', true, ['Bestanden boven 5 MB worden geweigerd']);
+  add(waarmee, 'Aanvraagformulier vraagt dubbele gegevens');
+  add(sturing, 'Er wordt niet bijgehouden welk stuk het vaakst ontbreekt');
+  add(buiten, 'Piek aan aanvragen vlak voor de deadline');
   u.causes.find(c => c.text.startsWith('Burgers weten')).toets = '20 onvolledige dossiers nakijken: welk stuk ontbreekt?';
   state.units.push(u); state.current = u.id; save(); render();
 }
@@ -890,7 +893,8 @@ function buildExport() {
   const lk = u.causes.filter(c => c.likely && c.text.trim());
   node.innerHTML = `<div style="display:flex;justify-content:center">${svgOf(u)}</div>${lk.length ? `<div style="font-family:'DM Sans',system-ui,sans-serif;margin-top:22px"><div style="font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b;margin-bottom:8px">Waarschijnlijke oorzaken</div>${lk.map(c => `<div style="padding:7px 0;border-bottom:1px solid #f1f5f9;font-size:14px;color:#1e293b"><b>${esc(c.text)}</b>${c.toets ? `<span style="color:#475569"> · nagaan: ${esc(c.toets)}</span>` : ''}</div>`).join('')}</div>` : ''}`;
   const s = node.querySelector('svg'); s.style.maxWidth = '100%'; s.style.height = 'auto';
-  return { node, title:'Visgraatdiagram', subtitle: title(u) };
+  const p = u.voorbeeld ? '' : ocProject('');
+  return { node, title:'Visgraatdiagram', subtitle: p && p !== title(u) ? `${p} · ${title(u)}` : title(u) };
 }
 // Bestandsnaam: visgraat-probleem-JJJJ-MM-DD (een datum die al in de titel staat, komt er niet twee keer in).
 function fileBase(u) {
@@ -1073,7 +1077,7 @@ window.ocBestand = (function () {
       return { data: uit, aantal: n, created: d.created || null };
     });
   }
-  /* zetTerug(gelezen): vervangt het huidige werk van deze tool door wat in het bestand staat, en laat andere tabbladen herladen. */
+  /* zetTerug(gelezen): vervangt het huidige werk van deze tool door wat in het bestand staat. De tool herlaadt daarna zelf. */
   function zetTerug(g) {
     sleutels().forEach(function (k) { try { localStorage.removeItem(k); } catch (e) {} });
     Object.keys(g.data).forEach(function (k) { try { localStorage.setItem(k, g.data[k]); } catch (e) {} });

@@ -148,6 +148,7 @@ button { background:none; border:0; cursor:pointer; }
 .weight.licht { color:var(--accent-dark); background:var(--accent-50); }
 .weight.middelzwaar { color:#b45309; background:var(--oranje-50); }
 .weight.zwaar { color:#c2410c; background:#fff1e6; }
+.weight-why { font-size:0.8125rem; color:var(--slate-600); margin-top:0.25rem; line-height:1.45; }
 .hotspots { font-size:0.875rem; color:var(--slate-600); margin-top:0.375rem; }
 .hotspots b { color:var(--slate-800); }
 .signals { display:grid; gap:0.375rem; margin-top:0.75rem; }
@@ -410,7 +411,6 @@ body:has(.ocs-back), body:has(.ocw-back) { overflow:hidden; }
           <button data-act="csv" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h8"/></svg>Download CSV</button>
           <p class="ocb-note">Een afbeelding, PDF of CSV kan je niet terug openen.</p>
           <div class="sep"></div>
-          <div class="sep"></div>
           <button data-act="wipe" class="danger" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>Alles wissen</button>
         </div>
       </div>
@@ -440,7 +440,7 @@ body:has(.ocs-back), body:has(.ocw-back) { overflow:hidden; }
   </details>
 
   <div class="empty" id="empty" hidden>
-    <p><strong>Nog niets gescoord.</strong> Probeer het voorbeeld: een dienst die overstapt naar een nieuw dossiersysteem, met drie groepen die het elk anders voelen.</p>
+    <p><strong>Nog niets gescoord.</strong> Probeer het voorbeeld: een premieloket dat volledig digitaal wordt, met drie groepen die het elk anders voelen.</p>
     <button class="btn btn-primary" id="example-btn" type="button">Voorbeeld bekijken</button>
   </div>
 
@@ -887,10 +887,17 @@ const colorOf = (a, p) => COLORS[a.profiles.indexOf(p) % COLORS.length];
 const scores = p => DIMS.map(d => p.dims[d.id].score || 0);
 const avgOf = p => { const v = scores(p).filter(Boolean); return v.length ? v.reduce((s, x) => s + x, 0) / v.length : 0; };
 const fmt = n => n.toFixed(1).replace('.', ',');
-function weightOf(p) {
-  const a = avgOf(p);
-  return a < 2 ? 'licht' : a < 3 ? 'middelzwaar' : 'zwaar';
+// Het gemiddelde, maar één zware dimensie verdwijnt er niet in: een 4 maakt het minstens zwaar, een 3 minstens middelzwaar.
+// Zo rekent ook het Veranderprofiel.
+const WEIGHTS = ['licht', 'middelzwaar', 'zwaar'];
+function weightLevel(p) {
+  const a = avgOf(p), mx = Math.max(...scores(p));
+  let l = a < 2 ? 0 : a < 3 ? 1 : 2;
+  if (mx === 4) l = Math.max(l, 2); else if (mx === 3) l = Math.max(l, 1);
+  return { l, raised: l > (a < 2 ? 0 : a < 3 ? 1 : 2), mx };
 }
+const weightOf = p => WEIGHTS[weightLevel(p).l];
+const weightWhy = p => { const w = weightLevel(p); return w.raised ? (w.mx === 4 ? 'want één dimensie is ingrijpend' : 'want één dimensie heeft een grote impact') : ''; };
 const hotDims = p => DIMS.filter(d => p.dims[d.id].score >= HOT);
 const hasMeasure = (p, d) => p.dims[d.id].actions.some(x => x.text && x.text.trim());
 const touched = p => DIMS.some(d => p.dims[d.id].score > 0);
@@ -976,6 +983,7 @@ function summaryHTML(p) {
   const hs = hotDims(p), w = weightOf(p);
   const sig = signals(p).map(x => `<div class="sig${x.kind === 'tip' ? ' tip' : x.kind === 'calm' ? ' calm' : ''}">${x.kind === 'tip' ? ICON_TIP : ICON_WARN}<span>${x.html || esc(x.text)}</span></div>`).join('');
   return `<div class="verdict"><span class="big">${touched(p) ? fmt(avgOf(p)) : '–'}</span><span class="of">gemiddeld op 4</span>${touched(p) ? `<span class="weight ${w}">${w}</span>` : ''}</div>
+    ${touched(p) && weightWhy(p) ? `<p class="weight-why">Zwaarder dan het gemiddelde, ${weightWhy(p)}.</p>` : ''}
     <p class="hotspots">${hs.length ? `Zwaartepunten: <b>${hs.map(d => esc(d.name)).join(', ')}</b>` : touched(p) ? 'Geen zwaartepunten: niets scoort 3 of meer.' : 'Scoor de vijf dimensies om de vorm te zien.'}</p>
     ${touched(p) ? `<p class="redesign r-${redesignOf(hs.length).lvl}"><b>Organisatie</b> ${esc(redesignOf(hs.length).text)}</p>` : ''}
     <div class="signals">${sig}</div>`;
@@ -1061,11 +1069,11 @@ function fitShapes() {
 }
 function renderCompare() {
   const a = cur();
-  $('cmp-title').textContent = a.profiles.length > 1 ? `${a.profiles.length} profielen vergelijken` : 'Voeg een tweede profiel toe om te vergelijken';
+  $('cmp-title').textContent = a.profiles.length > 1 ? `${a.profiles.length} doelgroepen vergelijken` : 'Voeg een tweede doelgroep toe om te vergelijken';
   document.querySelectorAll('[data-cmp]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.cmp === a.cmp)));
   if (a.cmp === 'over') {
     $('cmp-body').innerHTML = `<div class="overlay-wrap"><div id="overlay-shape">${pentagon(a.profiles.map(p => ({ scores:scores(p), color:colorOf(a, p), fillOpacity:0.12 })), { px:overlayPx })}</div>
-      <div class="legend">${a.profiles.map(p => `<div><span class="sw" style="background:${colorOf(a, p)}"></span>${esc(p.name)}<span class="avg">${fmt(avgOf(p))}</span></div>`).join('')}</div></div>`;
+      <div class="legend">${a.profiles.map(p => `<div><span class="sw" style="background:${colorOf(a, p)}"></span>${esc(p.name)}<span class="avg">${touched(p) ? fmt(avgOf(p)) : '–'}</span></div>`).join('')}</div></div>`;
   } else {
     $('cmp-body').innerHTML = `<div class="series">${a.profiles.map(p => `
       <div class="mini" data-goto="${p.id}" role="button" tabindex="0" aria-label="Open doelgroep ${esc(p.name)}">
@@ -1253,9 +1261,9 @@ function loadExample() {
   const bestaand = state.analyses.find(x => x.voorbeeld);
   if (bestaand) { state.current = bestaand.id; save(); render(); toast('Dit is het voorbeeld'); return; }
   const restore = snapshot();
-  const a = newAnalysis('Nieuw dossiersysteem');
+  const a = newAnalysis('Digitaal premieloket');
   a.voorbeeld = true;   // telt niet mee in andere tools tot je het voorbeeld van jou maakt
-  a.change = 'Alle subsidiedossiers verhuizen van het oude beheerprogramma naar één nieuw digitaal dossiersysteem.';
+  a.change = 'Vanaf de lancering vraag je een renovatiepremie alleen nog online aan, niet meer op papier.';
   const mk = (name, sc, what, acts) => {
     const p = newProfile(name);
     DIMS.forEach((d, i) => { p.dims[d.id].score = sc[i]; p.dims[d.id].what = what[i] || ''; });
@@ -1264,22 +1272,22 @@ function loadExample() {
   };
   const y = new Date().getFullYear() + 1;
   a.profiles = [
-    mk('Dossierbeheerders', [4, 2, 3, 4, 1], [
-      'Elk dossier wordt van begin tot einde in het nieuwe systeem afgehandeld; de papieren map verdwijnt.',
+    mk('Loketmedewerkers', [4, 2, 3, 4, 1], [
+      'Elke aanvraag wordt van begin tot einde in het nieuwe systeem afgehandeld; de papieren map verdwijnt.',
       'Een deel van de controle op volledigheid schuift naar het onthaal.',
       'Wie gewend is aan een eigen map met notities, moet nu alles in het gedeelde dossier zetten.',
       'Nieuw scherm, nieuwe zoekfunctie, andere manier om stukken op te laden.',
       'Weinig verschil: dezelfde termijnen en dezelfde handtekeningen.'],
-      { proc:[['Werkinstructies per type dossier herschrijven', 'Kernteam', `${y}-02-15`]],
+      { proc:[['Werkinstructies per type premie herschrijven', 'Projectteam', `${y}-02-15`]],
         tech:[['Oefenomgeving twee weken voor de overstap openzetten', 'ICT', `${y}-03-01`], ['Vaste aanspreekpunten per team tijdens de eerste maand', 'Teamleiders', '']] }),
-    mk('Leidinggevenden', [1, 3, 2, 1, 4], [
+    mk('Teamleiders loket', [1, 3, 2, 1, 4], [
       'Ze volgen het werk niet meer per map maar via overzichten.',
       'Taken tussen onthaal en dossierbeheer worden anders verdeeld.',
       'Meer sturen op cijfers, minder op wat ze zelf zien passeren.',
       'Ze gebruiken vooral de overzichtsschermen.',
       'Nieuwe opvolgingscijfers en een ander moment om knelpunten te bespreken.'],
-      { stur:[['Afspreken welke drie cijfers het team wekelijks bespreekt', 'Diensthoofd', `${y}-02-01`]] }),
-    mk('Aanvragers', [2, 1, 1, 3, 1], [
+      { stur:[['Afspreken welke drie cijfers het team wekelijks bespreekt', 'Afdelingshoofd', `${y}-02-01`]] }),
+    mk('Aanvragers (burgers)', [2, 1, 1, 3, 1], [
       'Ze krijgen sneller een ontvangstbevestiging en kunnen de stand van hun dossier volgen.',
       '', 'Minder telefonisch contact, meer berichten via het loket.',
       'Indienen kan alleen nog digitaal, met een aanmelding.', ''],
@@ -1432,7 +1440,7 @@ function asMarkdown(a) {
   if (a.change.trim()) md += `_${a.change.trim()}_\n\n`;
   a.profiles.forEach(p => {
     const hs = hotDims(p);
-    md += `## ${p.name}\n\nGemiddelde impact ${fmt(avgOf(p))} op 4 (${touched(p) ? weightOf(p) : 'niet gescoord'})${hs.length ? `. Zwaartepunten: ${hs.map(d => d.name).join(', ')}` : ''}.\n\n`;
+    md += `## ${p.name}\n\nGemiddelde impact ${fmt(avgOf(p))} op 4 (${touched(p) ? weightOf(p) + (weightWhy(p) ? ', ' + weightWhy(p) : '') : 'niet gescoord'})${hs.length ? `. Zwaartepunten: ${hs.map(d => d.name).join(', ')}` : ''}.\n\n`;
     DIMS.forEach(d => {
       const v = p.dims[d.id];
       md += `- **${d.name}**: ${v.score ? `${v.score} (${LEVELS[v.score]})` : 'niet gescoord'}${v.what.trim() ? `. ${v.what.trim()}` : ''}\n`;
@@ -1466,13 +1474,13 @@ function buildExport() {
   const badge = (v, mark) => `<span style="display:inline-block;min-width:26px;text-align:center;border-radius:6px;padding:0 5px;font-weight:700;border:2px solid ${mark ? '#f97316' : 'transparent'};${cellStyle(v)}">${sv(v)}</span>`;
   // 1. Impactkaart: vorm, heatmap en zwaartepunten op één blad
   const heat = `<table style="border-collapse:collapse;width:100%;font-size:13px">
-      <tr><th style="text-align:left;padding:6px 8px 6px 0;color:#64748b;font-weight:600">Dimensie</th>${a.profiles.map(p => `<th style="padding:6px 4px;color:#64748b;font-weight:600;font-size:12px;line-height:1.3;vertical-align:bottom"><div style="display:flex;flex-direction:column;align-items:center;gap:4px">${swatch(p)}<span style="overflow-wrap:anywhere">${esc(p.name)}</span></div></th>`).join('')}</tr>
+      <tr><th style="text-align:left;padding:6px 8px 6px 0;color:#64748b;font-weight:600">Dimensie</th>${a.profiles.map(p => `<th style="padding:6px 4px;color:#64748b;font-weight:600;font-size:12px;line-height:1.3;vertical-align:bottom"><div style="display:flex;flex-direction:column;align-items:center;gap:4px">${swatch(p)}<span style="overflow-wrap:${a.profiles.length > 3 ? 'anywhere' : 'normal'}">${esc(p.name)}</span></div></th>`).join('')}</tr>
       ${DIMS.map(d => { const vals = a.profiles.map(p => p.dims[d.id].score), max = Math.max(...vals);
         return `<tr><td style="padding:6px 8px 6px 0;border-top:1px solid #f1f5f9">${esc(d.name)}</td>${vals.map(v => `<td style="text-align:center;padding:6px 8px;border-top:1px solid #f1f5f9">${badge(v, multi && v === max && v > 0)}</td>`).join('')}</tr>`; }).join('')}
       <tr><td style="padding:6px 8px 6px 0;border-top:2px solid #e2e8f0;font-weight:700">Gemiddeld</td>${a.profiles.map(p => `<td style="text-align:center;padding:6px 8px;border-top:2px solid #e2e8f0;font-weight:700">${touched(p) ? fmt(avgOf(p)) : '–'}</td>`).join('')}</tr></table>`;
   const weights = a.profiles.map(p => { const hs = hotDims(p);
     return `<div style="display:flex;align-items:baseline;gap:8px;font-size:13px;margin:5px 0;line-height:1.45">${swatch(p)}<span><b style="color:#1e293b">${esc(p.name)}</b>
-      <span style="color:#64748b">· gemiddeld ${touched(p) ? fmt(avgOf(p)) : '–'} op 4${touched(p) ? ` · ${weightOf(p)}` : ''}</span><br>
+      <span style="color:#64748b">· gemiddeld ${touched(p) ? fmt(avgOf(p)) : '–'} op 4${touched(p) ? ` · ${weightOf(p)}${weightWhy(p) ? ` (${weightWhy(p)})` : ''}` : ''}</span><br>
       ${hs.length ? `<span style="color:#475569">Zwaartepunten: <b style="color:#9a3412">${hs.map(d => esc(d.name)).join(', ')}</b></span>` : '<span style="color:#64748b">Geen zwaartepunten</span>'}</span></div>`; }).join('');
   const shapes = a.profiles.map(p => ({ scores:scores(p), color:colorOf(a, p), fillOpacity:multi ? 0.12 : undefined }));
   let html = `<div data-oc-keep style="padding:0 0 10px">
@@ -1501,7 +1509,7 @@ function buildExport() {
         ${multi ? `<div style="width:170px">${pentagon([{ scores:sc, color:colorOf(a, p) }], { size:'mini', highlight:sc, px:170 })}</div>` : ''}
         <table style="border-collapse:collapse;width:100%;font-size:13px">${rows}</table></div>`);
   });
-  html += `<div data-oc-keep style="font-size:11px;color:#94a3b8;margin-top:12px">Schaal: 1 beperkt, 2 merkbaar, 3 groot, 4 ingrijpend; – is nog niet gescoord. Vanaf 3 is een dimensie een zwaartepunt.</div>`;
+  html += `<div data-oc-keep style="font-size:11px;color:#94a3b8;margin-top:12px">Schaal: 1 beperkt, 2 merkbaar, 3 groot, 4 ingrijpend; – is nog niet gescoord. Vanaf 3 is een dimensie een zwaartepunt. Een 4 maakt de impact voor die groep minstens zwaar, een 3 minstens middelzwaar.</div>`;
   node.innerHTML = html;
   const n = a.profiles.length;
   return { node, title:'Impactanalyse', subtitle:`${a.name} · ${n} ${n === 1 ? 'doelgroep' : 'doelgroepen'}` };
@@ -1515,7 +1523,7 @@ async function doExport(act) {
   try {
     await (act === 'pdf' ? ocExport.pdf(buildExport, base, { width:900 }) : ocExport.png(buildExport, base, { width:900 }));
     toast(act === 'pdf' ? 'PDF gedownload' : 'Afbeelding gedownload');
-  } catch { toast('Downloaden lukt nu niet: geen verbinding?'); }
+  } catch { toast('Downloaden lukt nu niet. Probeer opnieuw.'); }
 }
 document.addEventListener('click', e => { const b = e.target.closest('[data-exp]'); if (b && !b.disabled) doExport(b.dataset.exp); });
 

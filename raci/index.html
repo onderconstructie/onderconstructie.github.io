@@ -337,7 +337,7 @@ body { min-height:100dvh; }
           <div class="sep"></div>
           <button data-act="png" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>Download als afbeelding</button>
           <button data-act="pdf" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M9 14h6M9 17h4"/></svg>Download als PDF</button>
-          <button data-act="md" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Kopieer als tabel</button>
+          <button data-act="md" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Kopieer als tabel (met opmaak)</button>
           <button data-act="csv" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m-5-5 5 5 5-5M5 21h14"/></svg>Download CSV</button>
           <p class="ocb-note">Een afbeelding, PDF of CSV kan je niet terug openen.</p>
           <div class="sep"></div>
@@ -588,9 +588,18 @@ function ocUndoable(restore) {
   };
 }
 
+// Rollen gaan mee met wat ze doen, zodat bv. het Communicatieplan ziet wie vooral achteraf moet horen.
+function roleNote(m, r) {
+  const l = counts(m, r), bits = [];
+  if (l.r) bits.push(`voert ${l.r} ${l.r === 1 ? 'taak' : 'taken'} uit`);
+  if (l.a) bits.push(`beslist over ${l.a}`);
+  if (l.c) bits.push(`denkt mee bij ${l.c}`);
+  if (l.i) bits.push(`hoort ${l.i} achteraf`);
+  return bits.length ? bits.join(', ') : undefined;
+}
 function ocPublish() {
   ocShare.publish(OC_ID, OC_TOOL, state.mats.filter(m => !m.voorbeeld).map(m => ({ name:m.name, items:[
-    ...m.roles.map(r => ({ type:'betrokkene', text:r.name })), ...m.tasks.map(t => ({ type:'taak', text:t.name })) ] })));
+    ...m.roles.map(r => ({ type:'betrokkene', text:r.name, note:roleNote(m, r) })), ...m.tasks.map(t => ({ type:'taak', text:t.name })) ] })));
 }
 
 async function ocWipeAll() {
@@ -959,16 +968,23 @@ $('toast-btn').addEventListener('click', () => {
 function snapshot() { const copy = JSON.parse(JSON.stringify(state)); return () => { state = copy; }; }
 
 /* ---------- Toevoegen ---------- */
+// Geeft het aantal nieuwe terug; wat er al stond, wordt niet nog eens toegevoegd (-1: alles stond er al).
+function addUnique(list, items, make) {
+  const have = new Set(list.map(x => x.name.toLowerCase())); let n = 0;
+  items.forEach(t => { if (have.has(t.toLowerCase())) return; have.add(t.toLowerCase()); list.push(make(t)); n++; });
+  return n;
+}
 function addTasks(text) {
   const items = lines(text); if (!items.length) return 0;
-  cur().tasks.push(...items.map(n => ({ id:uid(), name:n, cells:{} })));
-  save(); render(); return items.length;
+  const n = addUnique(cur().tasks, items, t => ({ id:uid(), name:t, cells:{} }));
+  if (!n) { toast(items.length === 1 ? 'Die taak staat er al' : 'Die taken staan er al'); return -1; }
+  save(); render(); return n;
 }
 function addRoles(text) {
   const items = lines(text); if (!items.length) return 0;
-  const m = cur();
-  items.forEach(n => { if (!m.roles.some(r => r.name.toLowerCase() === n.toLowerCase())) m.roles.push({ id:uid(), name:n }); });
-  save(); render(); return items.length;
+  const n = addUnique(cur().roles, items, t => ({ id:uid(), name:t }));
+  if (!n) { toast(items.length === 1 ? 'Die rol staat er al' : 'Die rollen staan er al'); return -1; }
+  save(); render(); return n;
 }
 function wireAdd(formId, inputId, fn, word) {
   $(formId).addEventListener('submit', e => {
@@ -982,7 +998,7 @@ function wireAdd(formId, inputId, fn, word) {
     e.preventDefault();
     const restore = snapshot();
     const n = fn(text);
-    if (n) toast(`${n} ${word} toegevoegd`, restore);
+    if (n > 0) toast(`${n} ${word} toegevoegd`, restore);
   });
 }
 wireAdd('add-task', 'task-input', addTasks, 'taken');
@@ -1151,7 +1167,6 @@ document.addEventListener('click', e => { if (!e.target.closest('.menu-wrap')) c
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
 
 const csvCell = v => /[";\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
-const mdCell = v => String(v).replace(/\|/g, '\\|');
 $('menu').addEventListener('click', async e => {
   const b = e.target.closest('[data-act]'); if (!b) return;
   closeMenu();
@@ -1163,25 +1178,27 @@ $('menu').addEventListener('click', async e => {
       const opts = { landscape:true, width:exportWidth(m) };
       if (act === 'png') { await ocExport.png(buildExport, exportName(m), opts); toast('Afbeelding gedownload'); }
       else { await ocExport.pdf(buildExport, exportName(m), opts); toast('PDF gedownload'); }
-    } catch (err) { toast('Downloaden lukt nu niet: geen verbinding?'); }
+    } catch (err) { toast('Downloaden lukt nu niet. Probeer opnieuw.'); }
     return;
   }
   if ((act === 'md' || act === 'csv') && (!m.tasks.length || !m.roles.length)) { toast('Voeg eerst taken en rollen toe'); return; }
   if (act === 'md') {
-    const rows = [
-      `| Taak | ${m.roles.map(r => mdCell(r.name)).join(' | ')} |`,
-      `|---|${m.roles.map(() => ':---:').join('|')}|`,
-      ...m.tasks.map(t => `| ${mdCell(t.name)} | ${m.roles.map(r => t.cells[r.id] || '').join(' | ')} |`)
-    ];
-    const txt = `${m.name}\n\n${rows.join('\n')}\n\nR = voert uit · A = beslist en is verantwoordelijk · C = denkt vooraf mee · I = hoort het achteraf`;
-    await copy(txt) ? toast('Gekopieerd als tabel') : toast('Kopiëren lukt hier niet');
+    // Opgemaakte tabel voor Word en Outlook, tabs voor Excel en platte tekst.
+    const legend = 'R = voert uit · A = beslist en is verantwoordelijk · C = denkt vooraf mee · I = hoort het achteraf';
+    const txt = `${m.name}\n\n${[['Taak', ...m.roles.map(r => r.name)], ...m.tasks.map(t => [t.name, ...m.roles.map(r => t.cells[r.id] || '')])].map(r => r.join('\t')).join('\n')}\n\n${legend}`;
+    const TD = 'border:1px solid #cbd5e1;padding:4px 8px;vertical-align:top';
+    const html = `<div style="font-family:'DM Sans',Calibri,Arial,sans-serif;font-size:11pt;color:#1e293b"><p style="font-size:14pt;font-weight:bold;margin:0 0 6pt">${esc(m.name)}</p>
+      <table style="border-collapse:collapse"><tr><th style="${TD};text-align:left;background:#f1f5f9">Taak</th>${m.roles.map(r => `<th style="${TD};background:#f1f5f9">${esc(r.name)}</th>`).join('')}</tr>
+      ${m.tasks.map(t => `<tr><td style="${TD}">${esc(t.name)}</td>${m.roles.map(r => `<td style="${TD};text-align:center;font-weight:bold">${t.cells[r.id] || ''}</td>`).join('')}</tr>`).join('')}</table>
+      <p style="margin:6pt 0 0;font-size:9pt;color:#475569">${legend}</p></div>`;
+    await copyRich(html, txt) ? toast('Gekopieerd, met opmaak') : toast('Kopiëren lukt hier niet');
   }
   if (act === 'csv') {
     const rows = [['Taak', ...m.roles.map(r => r.name)], ...m.tasks.map(t => [t.name, ...m.roles.map(r => t.cells[r.id] || '')])];
     const csv = '﻿' + rows.map(r => r.map(csvCell).join(';')).join('\r\n');
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([csv], { type:'text/csv;charset=utf-8' }));
-    a.download = (m.name || 'raci').replace(/[^\w\-]+/g, '-').replace(/^-+|-+$/g, '').toLowerCase() + '-raci.csv';
+    a.download = exportName(m) + '.csv';
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
     toast('CSV gedownload');
@@ -1195,6 +1212,15 @@ $('menu').addEventListener('click', async e => {
   }
   if (act === 'delete') deleteMat(m);
 });
+async function copyRich(html, text) {
+  try {
+    if (window.ClipboardItem && navigator.clipboard && navigator.clipboard.write) {
+      await navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([html], { type:'text/html' }), 'text/plain': new Blob([text], { type:'text/plain' }) })]);
+      return true;
+    }
+  } catch {}
+  return copy(text);
+}
 async function copy(text) {
   try { await navigator.clipboard.writeText(text); return true; } catch {}
   try {

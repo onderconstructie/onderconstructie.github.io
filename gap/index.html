@@ -457,7 +457,7 @@ body { min-height:100dvh; }
         </div>
         <div class="question-wrap">
           <label class="q-label" for="question">Welk probleem of doel?</label>
-          <textarea class="question" id="question" rows="1" maxlength="300" placeholder="Bv. Hoe maken we de subsidieaanvraag sneller en klantvriendelijker?"></textarea>
+          <textarea class="question" id="question" rows="1" maxlength="300" placeholder="Bv. Hoe maken we de premieaanvraag sneller en klantvriendelijker?"></textarea>
         </div>
       </section>
 
@@ -828,12 +828,13 @@ const ocExport = (() => {
 })();
 
 /* ---------- Vaste begrippen ---------- */
-// De vier soorten bewijs.
+// Soorten bewijs: een eigen indeling, van hard naar zacht. De id's blijven die van vroeger, zodat oude analyses blijven kloppen.
 const TYPES = [
-  { id:'onderzoek',    name:'Onderzoek',        color:'#334155', help:'Wetenschappelijk onderzoek: studies, evaluaties, literatuur.' },
-  { id:'data',         name:'Organisatiedata',  color:'#047857', help:'Cijfers en feiten uit je eigen organisatie: dashboards, registraties, audits.' },
-  { id:'ervaring',     name:'Praktijkervaring', color:'#94a3b8', help:'Wat professionals uit ervaring weten: experts, collega\'s, eigen oordeel.' },
-  { id:'stakeholders', name:'Betrokkenen',     color:'#6ee7b7', help:'Wie de gevolgen draagt: burgers, klanten, medewerkers, partners.' },
+  { id:'data',         name:'Cijfers',        color:'#047857', help:'Cijfers: tellingen, registraties en dashboards uit je eigen werking.' },
+  { id:'nagekeken',    name:'Zelf nagekeken', color:'#10b981', help:'Zelf nagekeken: dossiers doorgenomen, een steekproef, een dag meegelopen.' },
+  { id:'stakeholders', name:'Betrokkenen',    color:'#6ee7b7', help:'Betrokkenen: wat burgers, klanten, medewerkers of partners zeggen, uit een bevraging, klachten of gesprekken.' },
+  { id:'onderzoek',    name:'Studies',        color:'#334155', help:'Studies: rapporten, evaluaties, of een ander bestuur dat hetzelfde al aanpakte.' },
+  { id:'ervaring',     name:'Inschatting',    color:'#94a3b8', help:'Inschatting: wat jij of collega\'s denken op basis van ervaring. Nuttig, maar toets het nog.' },
 ];
 const STRENGTHS = [ { id:'sterk', name:'Sterk' }, { id:'redelijk', name:'Redelijk' }, { id:'zwak', name:'Zwak' } ];
 const typeOf = id => TYPES.find(t => t.id === id) || TYPES[1];
@@ -871,9 +872,12 @@ const cur = () => state.analyses.find(a => a.id === state.current) || state.anal
 const gapById = id => cur().gaps.find(g => g.id === id);
 
 /* ---------- Getallen ---------- */
+// Leest getallen zoals je ze in Vlaanderen schrijft: 1.240 (duizendtal), 6,1 (komma), 85%, € 40.
 function num(v) {
   if (v == null) return NaN;
-  const s = String(v).trim().replace(/\s/g, '').replace(',', '.');
+  let s = String(v).trim().replace(/[\s\u00a0%€]/g, '');
+  if (/^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(s)) s = s.replace(/\./g, '');
+  s = s.replace(',', '.');
   return s === '' || !/^-?\d*\.?\d+$/.test(s) ? NaN : parseFloat(s);
 }
 const nf = (n, d = 1) => n.toLocaleString('nl-BE', { maximumFractionDigits:d });
@@ -901,6 +905,7 @@ function gapSignals(g) {
   else {
     const kinds = new Set(ev.map(e => e.type));
     if (ev.every(e => e.strength === 'zwak')) s.push({ id:'zwak', text:'Alleen zwak bewijs: zoek sterker bewijs' });
+    else if (kinds.size === 1 && kinds.has('ervaring')) s.push({ id:'eenbron', text:'Alleen een inschatting: tel het of kijk het na' });
     else if (kinds.size === 1) s.push({ id:'eenbron', text:'Eén bron: vul aan met een tweede soort bewijs' });
   }
   const measurable = !isNaN(num(g.tobe.value)) && (g.asis.indicator.trim() || g.asis.unit.trim());
@@ -916,7 +921,7 @@ function analysisSignals(a) {
   const all = a.gaps.flatMap(g => g.evidence.map(e => e.type));
   const s = [];
   if (!all.includes('stakeholders')) s.push({ id:'stake', text:'Wie de gevolgen draagt, is nog niet gehoord', soft:false });
-  if (!all.includes('onderzoek')) s.push({ id:'onderzoek', text:'Is er onderzoek over dit probleem?', soft:true });
+  if (!all.includes('onderzoek')) s.push({ id:'onderzoek', text:'Pakte iemand anders dit al aan? Zoek een studie of een voorbeeld elders.', soft:true });
   return s;
 }
 const ranked = a => a.gaps.slice().sort((x, y) => (y.impact * y.feas - x.impact * x.feas) || (y.impact - x.impact) || (a.gaps.indexOf(x) - a.gaps.indexOf(y)));
@@ -1056,7 +1061,7 @@ function gapHTML(g) {
       <div class="sec"><span class="sec-label">Bewijs voor de huidige situatie <span class="hint">waarop baseer je dit?</span></span>
         ${g.evidence.length ? `<div class="evs">${g.evidence.map((e, i) => evHTML(g, e, i)).join('')}</div>`
           : `<div class="no-ev">Nog geen bron. Zonder bewijs is de huidige situatie nog niet bewezen.</div>`}
-        <button class="add-link" data-add-ev ${g.evidence.length >= 4 ? 'disabled' : ''}>${ICON.plus}Bron toevoegen</button>
+        <button class="add-link" data-add-ev ${g.evidence.length >= 6 ? 'disabled' : ''}>${ICON.plus}Bron toevoegen</button>
       </div>
 
       <div class="sec"><span class="sec-label">Waarom bestaat dit verschil? <span class="hint">vraag door tot de oorzaak</span></span>
@@ -1288,7 +1293,7 @@ function addWhy(g) {
 document.addEventListener('click', e => {
   const t = e.target;
   const tab = t.closest('[data-list]');
-  if (tab) { state.current = tab.dataset.list; save(); render(); return; }
+  if (tab) { state.current = tab.dataset.list; try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} render(); return; }
   if (t.closest('#new-analysis')) { newAnalysis(); return; }
   if (t.closest('#sig-jump')) { jumpToSignal(); return; }
   const go = t.closest('[data-goto]');
@@ -1302,9 +1307,9 @@ document.addEventListener('click', e => {
     return;
   }
   if (t.closest('[data-add-ev]')) {
-    if (g.evidence.length >= 4) return;
+    if (g.evidence.length >= 6) return;
     const used = new Set(g.evidence.map(x => x.type));
-    const type = ['data', 'ervaring', 'stakeholders', 'onderzoek'].find(x => !used.has(x)) || 'data';
+    const type = ['data', 'nagekeken', 'stakeholders', 'onderzoek', 'ervaring'].find(x => !used.has(x)) || 'data';
     const ev = { id:uid(), type, note:'', strength:'redelijk' };
     g.evidence.push(ev); save(); renderGap(g.id); refreshDerived();
     const el = document.querySelector(`[data-ev="${ev.id}"] [data-ef="note"]`); if (el) el.focus();
@@ -1386,14 +1391,14 @@ $('example').addEventListener('click', () => {
     a = { id:uid(), name:'', question:'', gaps:[] }; state.analyses.push(a); state.current = a.id;
   }
   a.voorbeeld = true;
-  a.question = 'Hoe maken we de digitale subsidieaanvraag tegen eind 2027 sneller en klantvriendelijker?';
-  a.name = 'Digitale aanvraag subsidie';
+  a.question = 'Hoe maken we de digitale premieaanvraag tegen eind 2027 sneller en klantvriendelijker?';
+  a.name = 'Digitale premieaanvraag';
   const g1 = Object.assign(newGap('Doorlooptijd aanvragen'), {
     asis:{ text:'Een aanvraag duurt gemiddeld 21 werkdagen van indiening tot beslissing. Veel dossiers wachten op ontbrekende stukken.', indicator:'Gemiddelde doorlooptijd', value:'21', unit:'werkdagen' },
     tobe:{ text:'Een volledige aanvraag krijgt binnen 10 werkdagen een beslissing.', value:'10', by:'2027-12-31' },
     evidence:[
       { id:uid(), type:'data', strength:'sterk', note:'Dossieropvolging 2025, n=1.240 dossiers' },
-      { id:uid(), type:'ervaring', strength:'redelijk', note:'Dossierbehandelaars: ongeveer 1 op 3 dossiers is onvolledig bij indiening' } ],
+      { id:uid(), type:'nagekeken', strength:'redelijk', note:'40 dossiers van mei nagekeken: 12 waren onvolledig bij indiening' } ],
     whys:['Veel dossiers zijn onvolledig bij indiening', 'Het formulier vraagt niet alle nodige stukken op', 'Het formulier volgt nog de oude papieren versie'],
     actions:[
       { id:uid(), text:'Formulier herwerken met verplichte bijlagen', who:'Team digitaal', by:'2027-03-31', done:false },
@@ -1482,7 +1487,8 @@ function asMarkdown() {
     const s = gapSignals(g); if (s.length) md += `\n**Aandachtspunten**: ${s.map(x => x.text).join('; ')}\n`;
     md += '\n';
   });
-  return md;
+  // Gewone tekst voor een mail of verslag: zonder #, ** of >.
+  return md.replace(/^#{1,6}\s+/gm, '').replace(/^>\s?/gm, '').replace(/\*\*(.+?)\*\*/g, '$1').replace(/_\((.+?)\)_/g, '($1)').replace(/\n{3,}/g, '\n\n');
 }
 function asCSV() {
   const cell = v => { const s = String(v == null ? '' : v); return /[;"\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
@@ -1566,7 +1572,7 @@ function buildExport() {
       ${s.length ? `<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px">${s.map(x => `<span style="font-size:11px;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:2px 7px">${e(x.text)}</span>`).join('')}</div>` : ''}
     </div>`;
   });
-  html += `<div data-oc-keep style="font-size:11px;color:#94a3b8;margin-top:8px">Vier soorten bewijs: onderzoek, cijfers van de organisatie, praktijkervaring en wat betrokkenen zeggen.</div>`;
+  html += `<div data-oc-keep style="font-size:11px;color:#94a3b8;margin-top:8px">Soorten bewijs: ${TYPES.map(t => t.name.toLowerCase()).join(', ')}.</div>`;
   node.innerHTML = html;
   return { node, title:'Gap-analyse', subtitle:`${a.name} · ${n} ${n === 1 ? 'verschil' : 'verschillen'}` };
 }

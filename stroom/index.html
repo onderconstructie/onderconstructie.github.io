@@ -709,6 +709,7 @@ function hints(f) {
   const name = n => `${f.nodes.indexOf(n) + 1}${n.text ? ' (' + n.text.slice(0, 30) + ')' : ''}`;
   f.nodes.forEach((n, i) => {
     if (!n.text.trim() && n.type !== 'start' && n.type !== 'einde') out.push({ text:`Stap ${name(n)} heeft nog geen tekst.`, id:n.id });
+    if (n.type === 'keuze' && !target(f, n, 'to')) out.push({ text:`Keuze ${name(n)}: kies waar "${n.yesLabel || 'ja'}" naartoe gaat.`, id:n.id });
     if (n.type === 'keuze' && (!n.no || n.no === 'none')) out.push({ text:`Keuze ${name(n)}: kies waar "${n.noLabel || 'nee'}" naartoe gaat.`, id:n.id });
     if (i > 0 && n.type !== 'start' && !inc.get(n.id)) out.push({ text:`Stap ${name(n)} is van nergens bereikbaar: geen enkele pijl komt er toe.`, id:n.id });
     if (f.lanes.length && !f.lanes.some(l => l.id === n.lane)) out.push({ text:`Stap ${name(n)} heeft nog geen rol.`, id:n.id });
@@ -809,7 +810,7 @@ function render() {
               <button data-act="svg" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Download als SVG (bewerkbaar)</button>
               <button data-act="copy" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Kopieer als tekst</button>
               <button data-act="mermaid" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg>Kopieer als diagramcode</button>
-              <p class="oc-note" role="none">Een afbeelding, PDF of CSV kan je niet terug openen.</p>
+              <p class="oc-note" role="none">Een afbeelding, PDF of SVG kan je niet terug openen.</p>
               <div class="sep"></div>
               <button data-act="dup" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M4 16V5a1 1 0 0 1 1-1h11"/></svg>Dupliceer (bv. voor straks)</button>
               <div class="sep"></div>
@@ -926,7 +927,7 @@ document.addEventListener('click', async e => {
     case 'vb-wis': { const undo = snapshot(); state.flows = state.flows.filter(x => !x.voorbeeld); state.current = (state.flows[0] || {}).id || null; save(); render(); toast('Voorbeeld gewist', undo); return; }
     case 'vb-eigen': f.voorbeeld = false; save(); render(); toast('Het voorbeeld is nu van jou'); return;
     case 'fit': if (zoomZ != null) { state.fit = !zoomFit; zoomZ = null; } else state.fit = !fitNow(); saveUi(); render(); return;
-    case 'goto': { state.view = 'edit'; save(); render(); const el = document.querySelector(`[data-f="text"][data-id="${id}"]`); if (el) { el.scrollIntoView({ block:'center', behavior:'smooth' }); el.focus({ preventScroll:true }); } return; }
+    case 'goto': { state.view = 'edit'; saveUi(); render(); const el = document.querySelector(`[data-f="text"][data-id="${id}"]`); if (el) { el.scrollIntoView({ block:'center', behavior:'smooth' }); el.focus({ preventScroll:true }); } return; }
     case 'imp-lanes': {
       const picked = await ocShare.pick({ types:['betrokkene'], self:OC_ID, title:'Rollen overnemen', intro:'Kies rollen of betrokkenen. Elk wordt een baan in de tekening.' });
       if (!picked.length) return;
@@ -1048,7 +1049,10 @@ function buildExport() {
   const node = document.createElement('div');
   node.innerHTML = `<div style="display:flex;justify-content:center">${svg}</div>`;
   const s = node.querySelector('svg'); s.style.maxWidth = '100%'; s.style.height = 'auto';
-  return { node, title: f.name || 'Stroom', subtitle: `${f.nodes.length} stappen${f.lanes.length ? ' · ' + f.lanes.length + ' rollen' : ''}` };
+  const k = t => f.nodes.filter(n => n.type === t).length, ns = k('stap'), nk = k('keuze');
+  let project = ''; try { const p = JSON.parse(localStorage.getItem('oc.project')); project = !f.voorbeeld && p && typeof p.name === 'string' ? p.name.trim().slice(0, 80) : ''; } catch {}
+  const parts = [project, `${ns} ${ns === 1 ? 'stap' : 'stappen'}`, nk ? `${nk} ${nk === 1 ? 'keuze' : 'keuzes'}` : '', f.lanes.length ? `${f.lanes.length} ${f.lanes.length === 1 ? 'rol' : 'rollen'}` : ''];
+  return { node, title: f.name || 'Stroom', subtitle: parts.filter(Boolean).join(' · ') };
 }
 // Bestandsnaam: stroom-naam-JJJJ-MM-DD (een datum die al in de naam staat, komt er niet twee keer in).
 function fileBase(f) {

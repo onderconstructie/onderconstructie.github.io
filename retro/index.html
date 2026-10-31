@@ -372,9 +372,9 @@ dialog, [role="dialog"], [role="alertdialog"], .modal, .modal-backdrop { overscr
 <body>
 
 <header class="header">
-  <a href="https://onderconstructie.github.io/projectmanagement/" class="back-link" aria-label="Terug naar Onder Constructie">
+  <a href="https://onderconstructie.github.io/projectmanagement/" class="back-link" aria-label="Terug naar Projectmanagement">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-    Onder Constructie
+    Projectmanagement
   </a>
   <div class="logo">
     <svg viewBox="0 0 80 80" fill="none" aria-hidden="true">
@@ -422,12 +422,11 @@ dialog, [role="dialog"], [role="alertdialog"], .modal, .modal-backdrop { overscr
           <div class="sep"></div>
           <button data-act="png" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>Download als afbeelding</button>
           <button data-act="pdf" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M9 13h6M9 17h4"/></svg>Download als PDF</button>
-          <button data-act="copy" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Kopieer als tekst</button>
-          <button data-act="download" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Download als .md</button>
+          <button data-act="copy" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Kopieer (met opmaak)</button>
+          <button data-act="download" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Download als tekstbestand (.md)</button>
           <p class="ocb-note">Een afbeelding, PDF of CSV kan je niet terug openen.</p>
           <div class="sep"></div>
           <button data-act="clear-votes" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>Stemmen op nul zetten</button>
-          <div class="sep"></div>
           <div class="sep"></div>
           <button data-act="wipe" class="danger" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>Alles wissen</button>
         </div>
@@ -794,16 +793,70 @@ const ocExport = (() => {
   return { png, pdf };
 })();
 
+/* Kopiëren met opmaak: dezelfde inhoud als nette platte tekst én als opgemaakte tekst (Word, Outlook).
+   Zet de interne opbouw (koppen, lijsten, tabellen) om; de platte tekst bevat geen #, ** of ==. */
+const ocRich = (() => {
+  const e = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+  const inl = s => e(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/(^|[\s(])_(.+?)_(?=[\s).,:;!?]|$)/g, '$1<i>$2</i>');
+  const bare = s => String(s).replace(/\*\*(.+?)\*\*/g, '$1').replace(/(^|[\s(])_(.+?)_(?=[\s).,:;!?]|$)/g, '$1$2');
+  const TD = 'border:1px solid #cbd5e1;padding:4px 8px;text-align:left;vertical-align:top';
+  const tableHTML = rows => `<table style="border-collapse:collapse;margin:4pt 0">${rows.map((r, i) => `<tr>${r.map(c => i ? `<td style="${TD}">${inl(c)}</td>` : `<th style="${TD};background:#f1f5f9">${inl(c)}</th>`).join('')}</tr>`).join('')}</table>`;
+  function convert(src) {
+    const T = [], H = []; let list = false, table = null;
+    const flush = () => { if (list) { H.push('</ul>'); list = false; } if (table) { H.push(tableHTML(table)); table = null; } };
+    const gap = () => { if (T.length && T[T.length - 1] !== '') T.push(''); };
+    String(src || '').replace(/\r/g, '').split('\n').forEach(raw => {
+      const l = raw.replace(/\s+$/, ''); let m;
+      if (/^\s*\|/.test(l)) {
+        const cells = l.trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+        if (cells.every(c => /^:?-{2,}:?$/.test(c))) return;
+        if (list) { H.push('</ul>'); list = false; }
+        (table = table || []).push(cells); T.push(cells.map(bare).join(' · ')); return;
+      }
+      if (table) { H.push(tableHTML(table)); table = null; }
+      if (!l.trim()) { flush(); gap(); return; }
+      if ((m = l.match(/^(#{1,4})\s+(.*)$/)) || (m = l.match(/^(==)\s*(.*?)\s*==$/))) {
+        flush(); const lv = m[1] === '==' ? 2 : m[1].length, t = bare(m[2]);
+        if (lv === 1) { T.push(t); H.push(`<h1 style="font-size:18pt;margin:0 0 6pt">${inl(m[2])}</h1>`); }
+        else if (lv === 2) { gap(); T.push(t.toUpperCase()); H.push(`<h2 style="font-size:14pt;margin:12pt 0 4pt">${inl(m[2])}</h2>`); }
+        else { gap(); T.push(t); H.push(`<h3 style="font-size:12pt;margin:8pt 0 2pt">${inl(m[2])}</h3>`); }
+        return;
+      }
+      if ((m = l.match(/^(\s*)[-*•]\s+(?:\[( |x|X)\]\s+)?(.*)$/))) {
+        const sub = m[1].length >= 2, txt = m[3] + (m[2] && m[2].toLowerCase() === 'x' ? ' (gedaan)' : '');
+        if (!list) { H.push('<ul>'); list = true; }
+        T.push((sub ? '   - ' : '- ') + bare(txt)); H.push(`<li${sub ? ' style="margin-left:18pt"' : ''}>${inl(txt)}</li>`); return;
+      }
+      if ((m = l.match(/^>\s?(.*)$/))) { flush(); T.push(bare(m[1])); H.push(`<p style="margin:0 0 4pt"><i>${inl(m[1])}</i></p>`); return; }
+      flush(); T.push(bare(l)); H.push(`<p style="margin:0 0 4pt">${inl(l)}</p>`);
+    });
+    flush();
+    return { text: T.join('\n').replace(/\n{3,}/g, '\n\n').trim() + '\n',
+      html: `<div style="font-family:'DM Sans',Calibri,Arial,sans-serif;font-size:11pt;color:#1e293b">${H.join('')}</div>` };
+  }
+  async function copy(src) {
+    const { text, html } = convert(src);
+    try {
+      if (window.ClipboardItem && navigator.clipboard && navigator.clipboard.write) {
+        await navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([html], { type:'text/html' }), 'text/plain': new Blob([text], { type:'text/plain' }) })]);
+        return true;
+      }
+    } catch {}
+    try { await navigator.clipboard.writeText(text); return true; } catch {}
+    try { const t = document.createElement('textarea'); t.value = text; t.style.position = 'fixed'; t.style.opacity = '0'; document.body.appendChild(t); t.select(); const ok = document.execCommand('copy'); t.remove(); return ok; } catch { return false; }
+  }
+  return { copy, convert };
+})();
 /* ---------- Formaten ---------- */
 const FORMATS = {
   ssd: { name:'Beginnen met / Stoppen met / Doorgaan', cols:[
     { t:'Beginnen met', h:'Wat gaan we nieuw doen?', c:'#10b981' },
     { t:'Stoppen met', h:'Wat laten we vallen?', c:'#64748b' },
     { t:'Doorgaan', h:'Wat werkt en houden we?', c:'#047857' } ] },
-  gba: { name:'Goed / Beter / Acties', cols:[
+  gba: { name:'Goed / Beter / Proberen', cols:[
     { t:'Goed', h:'Wat ging goed?', c:'#10b981' },
     { t:'Beter', h:'Wat kan beter?', c:'#f59e0b' },
-    { t:'Acties', h:'Wat gaan we doen?', c:'#047857' } ] },
+    { t:'Proberen', h:'Wat willen we uitproberen?', c:'#047857' } ] },   // niet "Acties": dat is het blok eronder
   bvb: { name:'Blij / Verdrietig / Boos', cols:[
     { t:'Blij', h:'Waar werd je blij van?', c:'#10b981' },
     { t:'Verdrietig', h:'Wat viel tegen?', c:'#64748b' },
@@ -1266,12 +1319,12 @@ $('menu').addEventListener('click', async e => {
     } catch { toast('Downloaden lukt nu niet: geen verbinding?'); }
     return;
   }
-  if (act === 'copy') { await copy(markdown(r)) ? toast('Gekopieerd als tekst') : toast('Kopiëren lukt hier niet'); }
+  if (act === 'copy') { await ocRich.copy(markdown(r)) ? toast('Gekopieerd, met opmaak') : toast('Kopiëren lukt hier niet'); }
   if (act === 'download') {
     const blob = new Blob([markdown(r)], { type:'text/markdown;charset=utf-8' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = (r.name || 'retro').replace(/[^\w\-. ]+/g, '').trim().replace(/\s+/g, '-').toLowerCase() + '.md';
+    a.download = exportName(r) + '.md';
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
     toast('Gedownload');

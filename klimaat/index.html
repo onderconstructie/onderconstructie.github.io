@@ -412,7 +412,6 @@ body:has(.ocs-back), body:has(.ocw-back) { overflow:hidden; }
               <button data-act="csv" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h8"/></svg>Download CSV</button>
               <p class="ocb-note">Een afbeelding, PDF of CSV kan je niet terug openen.</p>
           <div class="sep"></div>
-              <div class="sep"></div>
               <button data-act="wipe" class="danger" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>Alles wissen</button>
             </div>
           </div>
@@ -973,10 +972,13 @@ function kerncijfers(a) {
   if (!rs.length) return null;
   const mx = rs.reduce((s, r) => s + r.x, 0) / rs.length, my = rs.reduce((s, r) => s + r.y, 0) / rs.length;
   const spread = new Set(rs.map(r => r.cid)).size > 1;
+  // Onzeker: een team met te weinig eerdere veranderingen (en niet bijgesteld), of teams die in een ander klimaat zitten.
+  // Het type van het gemiddelde zou bij uiteenlopende teams een klimaat tonen dat geen enkel team heeft.
+  const unsure = rs.some(r => r.unsure && !r.adjusted);
   return {
-    'klimaat.ervaring': r2(mx), 'klimaat.belasting': r2(my), 'klimaat.type': CLIM[climateOf(mx, my)].name,
+    'klimaat.ervaring': r2(mx), 'klimaat.belasting': r2(my), 'klimaat.type': spread ? 'Verschilt per team' : CLIM[rs[0].cid].name,
     'klimaat.ervaring_min': r2(Math.min(...rs.map(r => r.x))), 'klimaat.belasting_max': r2(Math.max(...rs.map(r => r.y))),
-    'klimaat.onzeker': rs.length < 3 || spread ? '1' : '0', 'klimaat.interviews': String(rs.length),
+    'klimaat.onzeker': unsure || spread ? '1' : '0', 'klimaat.interviews': String(rs.length),
     'klimaat.analyse': a.name || 'Analyse' };
 }
 const nf = (n, d = 2) => n.toLocaleString('nl-BE', { minimumFractionDigits:d, maximumFractionDigits:d }).replace('-', '−');
@@ -1445,22 +1447,22 @@ $('example').addEventListener('click', () => {
   const y = new Date().getFullYear(), m = new Date().getMonth() + 1;
   const ago = n => { let mm = m - n, yy = y; while (mm < 1) { mm += 12; yy--; } return { month:String(mm), year:String(yy) }; };
   a.voorbeeld = true;   // telt niet mee in andere tools tot je het voorbeeld van jou maakt
-  a.change = 'We voeren een nieuw digitaal loket in voor omgevingsvergunningen.';
-  a.name = 'Digitaal loket';
-  const u1 = newUnit('Dienst Omgeving'); u1.workload = 4; u1.open = true;
+  a.change = 'Vanaf de lancering vraag je een renovatiepremie alleen nog online aan, niet meer op papier.';
+  a.name = 'Digitaal premieloket';
+  const u1 = newUnit('Premiedienst'); u1.workload = 4; u1.open = true;
   u1.projects = [
-    { ...newProject('Nieuw vergunningenpakket'), ...ago(7), goal:'nee', support:'slecht', time:'nee', budget:'nee', weight:4, lesson:'Te weinig opleiding voor de start; mensen leerden het systeem tijdens de piek', open:false },
+    { ...newProject('Nieuw pakket voor premiedossiers'), ...ago(7), goal:'nee', support:'slecht', time:'nee', budget:'nee', weight:4, lesson:'Te weinig opleiding voor de start; mensen leerden het systeem tijdens de piek', open:false },
     { ...newProject('Herverdeling dossiers na fusie'), ...ago(13), goal:'deels', support:'deels', time:'nee', budget:'?', weight:3, lesson:'Teamleiders wisten het later dan hun mensen', open:false },
     { ...newProject('Overstap naar flexwerkplekken'), ...ago(21), goal:'nee', support:'slecht', time:'ja', budget:'nee', weight:4, lesson:'Vraag eerst hoe mensen echt werken voor je de ruimte inricht', open:false },
   ];
-  const u2 = newUnit('Dienst Burgerzaken'); u2.workload = 2; u2.open = false;
+  const u2 = newUnit('Loketteam'); u2.workload = 2; u2.open = false;
   u2.projects = [
     { ...newProject('Online afspraken voor identiteitskaarten'), ...ago(41), goal:'ja', support:'goed', time:'ja', budget:'ja', weight:2, lesson:'Een proef aan één loket gaf vertrouwen voor de rest', open:false },
     { ...newProject('Nieuwe openingsuren'), month:'', year:String(y - 5), goal:'deels', support:'goed', time:'ja', budget:'?', weight:2, lesson:'Burgers vroeg informeren scheelde veel vragen aan de balie', open:false },
   ];
   a.units = [u1, u2];
   save(); render();
-  toast('Voorbeeld geladen: twee diensten, twee klimaten');
+  toast('Voorbeeld geladen: twee teams, twee klimaten');
 });
 
 /* ---------- Voorbeeld wissen of houden, één analyse verwijderen ---------- */
@@ -1597,7 +1599,7 @@ function buildGuide(units) {
 async function exportGuide(units) {
   toast('Bezig…');
   try { await ocExport.pdf(buildGuide(units), `gespreksleidraad-${slug(units.length === 1 ? units[0].name : cur().name)}-${today()}`); toast('PDF gedownload'); }
-  catch { toast('Downloaden lukt nu niet: geen verbinding?'); }
+  catch { toast('Downloaden lukt nu niet. Probeer opnieuw.'); }
 }
 
 document.addEventListener('click', e => { const b = e.target.closest('[data-exp]'); if (b && !b.disabled) document.querySelector(`#menu [data-act="${b.dataset.exp}"]`).click(); });
@@ -1614,7 +1616,7 @@ $('menu').addEventListener('click', async e => {
     try {
       await (act === 'png' ? ocExport.png(buildExport(false), base) : ocExport.pdf(buildExport(true), base));
       toast(act === 'png' ? 'Afbeelding gedownload' : 'PDF gedownload');
-    } catch { toast('Downloaden lukt nu niet: geen verbinding?'); }
+    } catch { toast('Downloaden lukt nu niet. Probeer opnieuw.'); }
   }
   if (act === 'guide-pdf') exportGuide(a.units);
   if (act === 'delete') deleteAnalysis(a);

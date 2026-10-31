@@ -932,7 +932,7 @@ function ocConfirm(title, text, okText) {
 function asText() {
   const r = compute(), lines = [`Sponsorschap${state.project ? ': ' + state.project : ''}`];
   if (state.name) lines.push(`Sponsor: ${state.name}${state.role ? ' (' + state.role + ')' : ''}`);
-  if (r.main) lines.push('', `Uitkomst: ${LEVEL[levelOf(r.main.total) - 1].toLowerCase()} (${fmt(r.main.total)} op 4)`, ...THEMES.map(t => `- ${t.title}: ${fmt(r.L.per[t.id] ?? r.S.per[t.id])}${r.L.n && r.S.n ? ' (sponsor zelf: ' + fmt(r.S.per[t.id]) + ')' : ''}`));
+  if (r.main) lines.push('', `Uitkomst${r.main === r.S ? ' (volgens de sponsor zelf)' : ''}${r.main.voorlopig ? ', voorlopig' : ''}: ${LEVEL[levelOf(r.main.total) - 1].toLowerCase()} (${fmt(r.main.total)} op 4)`, ...THEMES.map(t => `- ${t.title}: ${fmt(r.main.per[t.id])}${r.L.n && r.S.n ? (r.main === r.L ? ' (sponsor zelf: ' + fmt(r.S.per[t.id]) + ')' : ' (jouw inschatting: ' + fmt(r.L.per[t.id]) + ')') : ''}`));
   lines.push('', 'Om te bespreken:', ...talkPoints(r).map(p => '- ' + p.text));
   if (state.notes.trim()) lines.push('', 'Afspraken:', state.notes.trim());
   return lines.join('\n');
@@ -943,7 +943,7 @@ function buildExport() {
   const box = 'border:1px solid #e2e8f0;border-radius:12px;padding:14px 16px;';
   const judged = r.main && r.main.n >= MIN_N;
   const lvl = judged ? levelOf(r.main.total) : null, col = ['#ef4444', '#d97706', '#10b981', '#059669'];
-  const prov = r.main && r.main.n < ALL.length ? `<div style="font-size:12px;font-weight:600;color:#92400e;margin-top:6px">voorlopig · ${r.main.n} van ${ALL.length} stellingen</div>` : '';
+  const prov = r.main && r.main.voorlopig ? `<div style="font-size:12px;font-weight:600;color:#92400e;margin-top:6px">voorlopig · ${r.main.n} van ${ALL.length} stellingen</div>` : '';
   node.innerHTML = `
     <div data-oc-keep style="display:grid;grid-template-columns:0.9fr 1.1fr;gap:12px;margin-bottom:16px">
       <div style="${box}"><div style="${lbl}">Sponsorschap</div>
@@ -964,7 +964,7 @@ function buildExport() {
 // Lege lijst om op papier door de sponsor te laten invullen.
 function buildBlank() {
   const node = document.createElement('div');
-  node.innerHTML = `<div style="font-size:13px;color:#475569;margin-bottom:12px">Kruis per stelling aan wat het best past. Er zijn geen goede of foute antwoorden: het gaat om een eerlijk beeld.</div>
+  node.innerHTML = `<div style="font-size:13px;color:#475569;margin-bottom:12px">Elke stelling gaat over jou als sponsor${state.project.trim() ? ' van ' + esc(state.project.trim()) : ''}. Kruis per stelling aan wat het best past. Er zijn geen goede of foute antwoorden: het gaat om een eerlijk beeld.</div>
     ${THEMES.map(t => `<div style="margin-bottom:10px"><div style="font-size:14px;font-weight:700;color:#1e293b;padding:6px 0;border-bottom:2px solid #10b981">${t.title}</div>
       ${t.items.map(i => `<div data-oc-keep style="display:grid;grid-template-columns:1fr 290px;gap:12px;align-items:center;padding:7px 0;border-bottom:1px solid #f1f5f9">
         <span style="font-size:13px;color:#334155">${esc(i.t)}</span>
@@ -980,9 +980,10 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-exp]
 /* Voorbeeld */
 function loadExample() {
   const prev = state.project;
-  const L = { r1:3, r2:2, r3:1, z1:2, z2:1, z3:3, m1:2, m2:3, m3:2, l1:1, l2:1, l3:2, v1:2, v2:1, v3:3 };
+  // Stevig in totaal, maar zwak op andere leidinggevenden meekrijgen en volhouden; op twee stellingen ziet de sponsor het anders.
+  const L = { r1:4, r2:3, r3:3, z1:3, z2:3, z3:3, m1:3, m2:3, m3:3, l1:1, l2:1, l3:2, v1:1, v2:2, v3:3 };
   const S = { r1:4, r2:3, r3:3, z1:4, z2:3, z3:3, m1:3, m2:3, m3:3, l1:2, l2:3, l3:3, v1:3, v2:2, v3:3 };
-  state = { ...fresh(), project:'Eén loket voor woonpremies', name:'Afdelingshoofd Woonpremies', role:'leidinggevende van de afdeling',
+  state = { ...fresh(), project:'Digitaal premieloket', name:'Afdelingshoofd', role:'leidinggevende van de premiedienst',
     clear:'ja', view:'lead', open:['richting'], a:{ lead:L, sponsor:S },
     notes:'Maandelijks een halfuur overleg met het afdelingshoofd. Zij opent zelf de infosessie voor de loketmedewerkers op 3 februari.',
     voorbeeld:true, vorigProject:prev };

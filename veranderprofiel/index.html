@@ -311,7 +311,7 @@ body:has(.ocs-back), body:has(.ocw-back) { overflow:hidden; }
       <p>Vier tools zeggen samen hoe zwaar een verandering is.</p>
       <ul>
         <li><b>Stakeholder Radar</b>: wie moet mee, en wil die dat?</li>
-        <li><b>Sponsorschap</b>: staat de top erachter?</li>
+        <li><b>Sponsorschap</b>: staat de leiding erachter?</li>
         <li><b>Impactanalyse</b>: wat verandert er, en hoe diep?</li>
         <li><b>Veranderklimaat</b>: hoeveel ruimte en vertrouwen is er?</li>
       </ul>
@@ -659,20 +659,20 @@ const STALE_DAYS = 45;
 // Elke bron krijgt een niveau 1–4: hoe zwaar ze weegt op de verandering (1 = licht, 4 = heel zwaar).
 // Sponsorschap toont het omgekeerd, als sterkte, maar rekent op dezelfde manier: 4 = zwak sponsorschap = zwaar.
 const AXES = [
-  { id:'impact', tool:'Impactanalyse', path:'/impact/', q:'Wat verandert er, en hoe diep?', short:'Impact', labels:LEVELS },
-  { id:'stakeholders', tool:'Stakeholder Radar', path:'/stakeholders/', q:'Wie moet mee, en willen ze dat?', short:'Betrokkenen', labels:LEVELS },
-  { id:'klimaat', tool:'Veranderklimaat', path:'/klimaat/', q:'Hoeveel ruimte en vertrouwen is er?', short:'Klimaat', labels:LEVELS },
-  { id:'sponsor', tool:'Sponsorschap', path:'/sponsor/', q:'Staat de top er echt achter?', short:'Sponsor', labels:['Sterk', 'Stevig', 'Wankel', 'Zwak'] }
+  { id:'impact', tool:'Impactanalyse', art:'de', path:'/impact/', q:'Wat verandert er, en hoe diep?', short:'Impact', labels:LEVELS },
+  { id:'stakeholders', tool:'Stakeholder Radar', art:'de', path:'/stakeholders/', q:'Wie moet mee, en willen ze dat?', short:'Betrokkenen', labels:LEVELS },
+  { id:'klimaat', tool:'Veranderklimaat', art:'het', path:'/klimaat/', q:'Hoeveel ruimte en vertrouwen is er?', short:'Klimaat', labels:LEVELS },
+  { id:'sponsor', tool:'Sponsorschap', art:'', path:'/sponsor/', q:'Staat de leiding er echt achter?', short:'Sponsor', labels:['Sterk', 'Stevig', 'Wankel', 'Zwak'] }
 ];
 const lab = (a, l) => a.labels[l - 1];
 // Toonvolgorde = het traject: Stakeholders, Sponsor, Impact, Klimaat.
 const VIEW = ['stakeholders', 'sponsor', 'impact', 'klimaat'].map(id => AXES.find(a => a.id === id));
 // Voorbeeld: verzonnen kerncijfers, alsof de vier analyses al ingevuld zijn.
 const VB_NAME = 'Digitaal premieloket';
-const VB_FIGS = { 'impact.gemiddeld':'2.6', 'impact.max':'4', 'impact.breed':'3', 'impact.profielen':'3', 'impact.gescoord':'5', 'impact.cultuur':'2', 'impact.zwaartepunten':'Werkwijze, Systemen', 'impact.analyse':VB_NAME,
+const VB_FIGS = { 'impact.gemiddeld':'2.6', 'impact.max':'4', 'impact.breed':'3', 'impact.profielen':'3', 'impact.gescoord':'5', 'impact.cultuur':'2', 'impact.zwaartepunten':'Processen, Technologie', 'impact.analyse':VB_NAME,
   'stakeholders.aantal':'7', 'stakeholders.anticiperen':'2', 'stakeholders.managen':'3', 'stakeholders.project':VB_NAME,
   'klimaat.ervaring':'0.2', 'klimaat.belasting':'0.45', 'klimaat.type':'Moe maar welwillend', 'klimaat.interviews':'3', 'klimaat.onzeker':'0', 'klimaat.analyse':VB_NAME,
-  'sponsor.niveau':'Stevig', 'sponsor.score':'0.68', 'sponsor.duidelijk':'ja', 'sponsor.voorlopig':'0', 'sponsor.project':VB_NAME };
+  'sponsor.niveau':'Stevig', 'sponsor.score':'0.51', 'sponsor.thema_zwak':'Andere leidinggevenden meekrijgen, Volhouden', 'sponsor.duidelijk':'ja', 'sponsor.voorlopig':'0', 'sponsor.project':VB_NAME };
 const TYPES = [
   { id:'stap', name:'Stapsgewijze verbetering', short:'Verbetering', base:1, sub:'Het werk blijft in de kern hetzelfde, het wordt beter of anders georganiseerd.' },
   { id:'overgang', name:'Overgang', short:'Overgang', base:2, sub:'Een bestaande manier van werken maakt plaats voor een nieuwe, die je vooraf kan beschrijven.' },
@@ -845,7 +845,7 @@ function compute() {
   if (!ax.impact.manual && num(f, 'impact.gescoord') != null && num(f, 'impact.gescoord') < 5) caveats.push({ text:'niet alle impactdimensies zijn gescoord', a:AXES[0] });
   if (!ax.klimaat.manual && str(f, 'klimaat.onzeker') === '1') caveats.push({ text:'het klimaat is nog onzeker', a:AXES[2] });
   if (!ax.sponsor.manual && str(f, 'sponsor.voorlopig') === '1') caveats.push({ text:'de sponsorlijst is nog niet volledig', a:AXES[3] });
-  VIEW.forEach(a => { if (ax[a.id].stale) caveats.push({ text: `de ${a.tool} is ${daysOld(ax[a.id].updated)} dagen oud`, a, stale:true }); });
+  VIEW.forEach(a => { if (ax[a.id].stale) caveats.push({ text: `${a.art ? a.art + ' ' : ''}${a.tool} is ${daysOld(ax[a.id].updated)} dagen oud`, a, stale:true }); });
 
   const known = AXES.filter(a => ax[a.id].level);
   const fromTools = AXES.filter(a => ax[a.id].autoL != null && !ax[a.id].manual).length, own = AXES.filter(a => ax[a.id].manual).length;
@@ -883,7 +883,7 @@ function render() {
     return `<div class="src ${x.level ? 'ok' : ''}">
       <div class="src-top"><span class="src-num">${i + 1}</span><div class="src-title"><span class="src-name">${a.short}</span>${tag}</div></div>
       <div class="src-q">${a.q}</div>
-      <div class="src-facts">${x.facts || `<span class="muted">Nog niets uit ${a.id === 'sponsor' ? '' : 'de '}${a.tool}. Vul die in, of schat hieronder zelf in.</span>`}</div>
+      <div class="src-facts">${x.facts || `<span class="muted">Nog niets uit ${a.art ? a.art + ' ' : ''}${a.tool}. Vul die in, of schat hieronder zelf in.</span>`}</div>
       <div class="lvls" role="group" aria-label="${a.short}: ${a.id === 'sponsor' ? 'hoe sterk is het sponsorschap?' : 'hoe zwaar weegt dit?'}">${a.labels.map((l, j) =>
         `<button type="button" data-axis="${a.id}" data-l="${j + 1}" aria-pressed="${x.level === j + 1}" class="${x.autoL === j + 1 && x.manual ? 'auto' : ''}">${l}</button>`).join('')}</div>
       <div class="src-foot"><span>${x.manual && x.autoL ? `de tool zegt: ${lab(a, x.autoL).toLowerCase()}` : esc(ago(x.updated))}</span>
@@ -1165,7 +1165,7 @@ document.addEventListener('click', async e => {
     state.manual = {}; state.type = null; state.typeWhy = ''; state.endpoint = null;
     save(); render(); toast('Alles volgt weer de tools', undoable(copy));
   } else if (act === 'wipe') {
-    if (!await ocConfirm('Alles wissen in Veranderprofiel?', 'Je eigen inschattingen en conclusies verdwijnen. De Stakeholder Radar, de Impactanalyse en het Veranderklimaat blijven zoals ze zijn.', 'Alles wissen')) return;
+    if (!await ocConfirm('Alles wissen in Veranderprofiel?', 'Je eigen inschattingen en conclusies verdwijnen. De Stakeholder Radar, Sponsorschap, de Impactanalyse en het Veranderklimaat blijven zoals ze zijn.', 'Alles wissen')) return;
     const copy = JSON.parse(JSON.stringify(state));
     try { localStorage.removeItem(KEY); } catch {}
     state = load(); ocShare.clear(OC_ID); saves++; render();

@@ -262,9 +262,9 @@ dialog, [role="dialog"], [role="alertdialog"], .modal, .modal-backdrop { overscr
 <body>
 
 <header class="header">
-  <a href="https://onderconstructie.github.io/projectmanagement/" class="back-link" aria-label="Terug naar Onder Constructie">
+  <a href="https://onderconstructie.github.io/projectmanagement/" class="back-link" aria-label="Terug naar Projectmanagement">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-    Onder Constructie
+    Projectmanagement
   </a>
   <div class="logo">
     <svg viewBox="0 0 80 80" fill="none" aria-hidden="true">
@@ -312,12 +312,11 @@ dialog, [role="dialog"], [role="alertdialog"], .modal, .modal-backdrop { overscr
           <button data-act="clear" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Afgevinkte wissen</button>
           <div class="sep"></div>
           <button data-act="share" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>Deel als link</button>
-          <button data-act="pdf" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M12 12v6M9 15l3 3 3-3"/></svg>Als PDF</button>
-          <button data-act="png" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>Als afbeelding</button>
+          <button data-act="pdf" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M12 12v6M9 15l3 3 3-3"/></svg>Download als PDF</button>
+          <button data-act="png" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>Download als afbeelding</button>
           <button data-act="copy" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Kopieer als tekst</button>
           <button data-act="duplicate" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="13" height="13" rx="2"/><path d="M8 21h11a2 2 0 0 0 2-2V8"/></svg>Kopie als nieuwe lijst</button>
           <p class="ocb-note">Een afbeelding, PDF of CSV kan je niet terug openen.</p>
-          <div class="sep"></div>
           <div class="sep"></div>
           <button data-act="wipe" class="danger" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>Alles wissen</button>
         </div>
@@ -739,7 +738,7 @@ function itemHTML(it) {
     </div>` : '';
   return `<li class="item${it.done ? ' done' : ''}" data-id="${it.id}">
     <button class="check" aria-label="${it.done ? 'Niet meer afgevinkt' : 'Afvinken'}"><span class="box">${ICON_CHECK}</span></button>
-    <div class="body"><div class="text" contenteditable="plaintext-only" spellcheck="false" enterkeyhint="done">${esc(it.text)}</div>${meta}${edit}</div>
+    <div class="body"><div class="text" contenteditable="plaintext-only" spellcheck="false" enterkeyhint="done" role="textbox" aria-label="Item">${esc(it.text)}</div>${meta}${edit}</div>
     <div class="item-actions">
       <button class="del" aria-label="Verwijder">${ICON_DEL}</button>
       ${it.done ? '' : `<span class="grip" aria-hidden="true">${ICON_GRIP}</span>`}
@@ -1002,7 +1001,7 @@ $('menu').addEventListener('click', async e => {
     return;
   }
   if (act === 'copy') {
-    const txt = `${l.name}\n\n` + l.items.map(i => `- [${i.done ? 'x' : ' '}] ${i.text}${metaText(i) ? ` (${metaText(i)})` : ''}`).join('\n');
+    const txt = `${l.name}\n\n` + l.items.map(i => `${i.done ? '☑' : '☐'} ${i.text}${metaText(i) ? ` (${metaText(i)})` : ''}`).join('\n');
     await copy(txt) ? toast('Gekopieerd als tekst') : toast('Kopiëren lukt hier niet');
   }
   if (act === 'share') shareList(l);
@@ -1048,7 +1047,10 @@ document.addEventListener('click', e => {
   if (!e.target.closest('#vb-show')) return;
   const items = ['Zaal reserveren in het administratief centrum', 'Agenda en premiecijfers rondsturen', 'Verslag van vorige keer nalezen', 'Beamer en verlengkabel testen', 'Actielijst bijwerken na de vergadering']
     .map((text, i) => ({ id:uid(), text, done:i < 2 }));
-  const l = { id:uid(), name:'Teamvergadering', items, voorbeeld:true };
+  // Twee items met wie en tegen wanneer, zodat je ziet wat dat geeft.
+  const over = n => { const d = new Date(); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
+  Object.assign(items[3], { who:'Onthaal', when:over(2) }); Object.assign(items[4], { who:'Projectleider', when:over(7) });
+  const l = { id:uid(), name:'Teamvergadering', items, fields:true, voorbeeld:true };
   state.lists.push(l); state.current = l.id; save(); render(); toast('Voorbeeld geladen');
 });
 $('vb-wis').addEventListener('click', () => {

@@ -825,7 +825,7 @@ function render() {
               <button data-act="svg" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Download als SVG (bewerkbaar)</button>
               <button data-act="copy" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Kopieer als lijst</button>
               <button data-act="mermaid" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg>Kopieer als diagramcode</button>
-              <p class="oc-note" role="none">Een afbeelding, PDF of CSV kan je niet terug openen.</p>
+              <p class="oc-note" role="none">Een afbeelding, PDF of SVG kan je niet terug openen.</p>
               <div class="sep"></div>
               <button data-act="expand" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 9l5 6 5-6"/></svg>Alles openklappen</button>
               <button data-act="collapse" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 7l6 5-6 5"/></svg>Inklappen tot hoofdtakken</button>
@@ -1367,7 +1367,8 @@ function buildExport() {
   const m = cur(), node = document.createElement('div');
   node.innerHTML = `<div style="display:flex;justify-content:center">${svgOf(m)}</div>`;
   const s = node.querySelector('svg'); s.style.maxWidth = '100%'; s.style.height = 'auto';
-  return { node, title: title(m), subtitle: `${m.nodes.length - 1} ideeën` };
+  const p = m.voorbeeld ? '' : ocProject(''), k = m.nodes.length - 1, dicht = m.nodes.some((n, i) => n.collapsed && hasKids(m.nodes, i));
+  return { node, title: title(m), subtitle: [p && p !== title(m) ? p : '', `${k} ${k === 1 ? 'idee' : 'ideeën'}`, dicht ? 'sommige takken ingeklapt' : ''].filter(Boolean).join(' · ') };
 }
 function saveBlob(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
 document.addEventListener('click', async e => {
@@ -1559,7 +1560,7 @@ window.ocBestand = (function () {
       return { data: uit, aantal: n, created: d.created || null };
     });
   }
-  /* zetTerug(gelezen): vervangt het huidige werk van deze tool door wat in het bestand staat, en laat andere tabbladen herladen. */
+  /* zetTerug(gelezen): vervangt het huidige werk van deze tool door wat in het bestand staat. De tool herlaadt daarna zelf. */
   function zetTerug(g) {
     sleutels().forEach(function (k) { try { localStorage.removeItem(k); } catch (e) {} });
     Object.keys(g.data).forEach(function (k) { try { localStorage.setItem(k, g.data[k]); } catch (e) {} });

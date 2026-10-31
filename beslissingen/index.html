@@ -1127,12 +1127,12 @@ document.addEventListener('click', e => {
   const d = n => { const x = new Date(); x.setDate(x.getDate() - n); return new Date(x - x.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
   const mk = (what, why, who, days, alt, extra) => Object.assign({ id:uid(), what, why, who, date:d(days), alt, status:'genomen', note:'', created:Date.now() - days * 864e5 }, extra || {});
   const a = mk('Aanvragen voor de renovatiepremie enkel nog digitaal', 'Papieren dossiers liepen gemiddeld drie weken vertraging op door het overtypen.', 'Stuurgroep', 40, 'Papier en digitaal naast elkaar laten bestaan.');
-  const b = mk('Wie geen computer heeft, kan aan het loket geholpen worden', 'Digitaal mag niemand uitsluiten. Het loket vult de aanvraag samen met de burger in.', 'Diensthoofd', 12, '');
+  const b = mk('Aanvragen voor de renovatiepremie digitaal, met hulp aan het loket voor wie geen computer heeft', 'Digitaal mag niemand uitsluiten. Het loket vult de aanvraag samen met de burger in.', 'Stuurgroep', 12, 'Een aparte papieren procedure blijven aanbieden: dubbel werk voor het loket.');
   const c = mk('Elke vrijdag een korte stand van zaken naar het kabinet', 'Er kwamen te veel losse vragen tussendoor.', 'Teamleider', 3, 'Een maandelijks rapport.');
-  a.status = 'herzien'; a.note = 'Aangevuld: hulp aan het loket blijft mogelijk.'; a.replacedBy = b.id; b.replaces = a.id;
+  a.status = 'herzien'; a.note = 'Na vragen van de seniorenraad: wie geen computer heeft, krijgt hulp aan het loket.'; a.replacedBy = b.id; b.replaces = a.id;
   b.actions = [{ id:uid(), text:'Loketmedewerkers kort opleiden', who:'Diensthoofd', when:d(-14), done:false }, { id:uid(), text:'Affiche aan het loket ophangen', who:'Communicatie', when:d(-7), done:true }];
   c.actions = [{ id:uid(), text:'Vast sjabloon voor de stand van zaken maken', who:'Teamleider', when:d(-4), done:false }];
-  const l = { id:uid(), name:'Renovatiepremie', items:[a, b, c], voorbeeld:true };
+  const l = { id:uid(), name:'Digitaal premieloket renovatie', items:[a, b, c], voorbeeld:true };
   state.logs.push(l); state.current = l.id; openId = null; save(); render(); toast('Voorbeeld geladen');
 });
 $('vb-wis').addEventListener('click', () => {
@@ -1269,14 +1269,14 @@ async function mailGroup(l) {
 $('copy-mail').addEventListener('click', () => copyForMail(cur()));
 $('mail-btn').addEventListener('click', () => mailGroup(cur()));
 function downloadCSV(l) {
-  const cell = v => `"${String(v || '').replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`;
+  const cell = v => { let t = String(v || '').replace(/\r?\n/g, ' '); if (/^[=+\-@\t]/.test(t)) t = "'" + t; return `"${t.replace(/"/g, '""')}"`; };
   const rows = [['Datum', 'Beslissing', 'Waarom', 'Beslist door', 'Alternatieven', 'Status', 'Notitie', 'Acties']]
     .concat(sorted(l.items).map(it => [it.date, it.what, it.why, it.who, it.alt, STATUS[it.status], it.note,
       (it.actions || []).map(a => a.text + (actMeta(a) ? ` (${actMeta(a)})` : '') + (a.done ? ' [klaar]' : '')).join(' | ')]));
   const csv = '﻿' + rows.map(r => r.map(cell).join(';')).join('\r\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv], { type:'text/csv;charset=utf-8' }));
-  a.download = `beslissingen-${(l.name || 'log').toLowerCase().replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || 'log'}.csv`;
+  a.download = exportName(l) + '.csv';
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
