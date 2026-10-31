@@ -1024,6 +1024,14 @@ const F = `font-family="'DM Sans', system-ui, sans-serif"`;
 // Tekst in de matrix nooit kleiner dan 11px op het scherm (bij export rekenen we met de volle 400px).
 let mScale = 1;
 const fs = v => +Math.max(v, 11.3 / mScale).toFixed(1);
+function qLines(k) {
+  const qf = fs(10.5), ls = mScale < 0.85 ? 0 : 0.8, avail = M.W / 2 - 14;
+  const wd = t => t.length * (qf * 0.72 + ls);
+  const out = [];
+  CLIM[k].name.toUpperCase().split(' ').forEach(w => { const last = out[out.length - 1]; if (last != null && wd(last + ' ' + w) <= avail) out[out.length - 1] = last + ' ' + w; else out.push(w); });
+  return out;
+}
+const qNameH = top => { const n = Math.max(...(top ? ['verz', 'moe'] : ['afw', 'vrucht']).map(k => qLines(k).length)); return 6 + fs(10.5) + (n - 1) * fs(10.5) * 1.15 + 9; };
 function matrixStatic() {
   const { L, T, W, H } = M, R = L + W, B = T + H, cx = L + W / 2, cy = T + H / 2;
   const z = [[L, T, 'verz'], [cx, T, 'moe'], [L, cy, 'afw'], [cx, cy, 'vrucht']];
@@ -1038,9 +1046,11 @@ function matrixStatic() {
   s += `<line x1="${cx}" y1="${T}" x2="${cx}" y2="${B}" stroke="#cbd5e1" stroke-width="1.2"/>`;
   s += `<line x1="${L}" y1="${cy}" x2="${R}" y2="${cy}" stroke="#cbd5e1" stroke-width="1.2"/>`;
   s += `<rect x="${L}" y="${T}" width="${W}" height="${H}" fill="none" stroke="#cbd5e1" stroke-width="1.5" rx="2"/>`;
-  const qf = fs(10.5), ls = mScale < 0.85 ? 0 : 0.8;
-  const lab = (x, y, k, anchor) => `<text x="${x}" y="${y}" ${F} font-size="${qf}" font-weight="700" letter-spacing="${ls}" fill="${CLIM[k].color}" text-anchor="${anchor}">${CLIM[k].name.toUpperCase()}</text>`;
-  s += lab(L + 6, T + 6 + qf, 'verz', 'start') + lab(R - 6, T + 6 + qf, 'moe', 'end') + lab(L + 6, B - 8, 'afw', 'start') + lab(R - 6, B - 8, 'vrucht', 'end');
+  const qf = fs(10.5), ls = mScale < 0.85 ? 0 : 0.8, lh = qf * 1.15;
+  // Een naam die niet in zijn kwadrant past, loopt over twee regels in plaats van over de middenlijn.
+  const lab = (x, k, anchor, top) => { const ln = qLines(k); return `<text ${F} font-size="${qf}" font-weight="700" letter-spacing="${ls}" fill="${CLIM[k].color}" text-anchor="${anchor}">${ln.map((l, i) =>
+    `<tspan x="${x}" y="${(top ? T + 6 + qf + i * lh : B - 8 - (ln.length - 1 - i) * lh).toFixed(1)}">${l}</tspan>`).join('')}</text>`; };
+  s += lab(L + 6, 'verz', 'start', true) + lab(R - 6, 'moe', 'end', true) + lab(L + 6, 'afw', 'start', false) + lab(R - 6, 'vrucht', 'end', false);
   const af = fs(10), tf = fs(11);
   s += `<text x="${L}" y="${B + 4 + af}" ${F} font-size="${af}" fill="#64748b">negatief</text>`;
   s += `<text x="${R}" y="${B + 4 + af}" ${F} font-size="${af}" fill="#64748b" text-anchor="end">positief</text>`;
@@ -1062,8 +1072,8 @@ function renderMatrix(svgEl = $('matrix'), forExport = false) {
   $('mx-count').textContent = pts.length ? `${pts.length} van ${a.units.length} ingevuld` : '';
   // Labels boven het punt; botst een label met een eerder label, dan eronder.
   // Punten blijven binnen het vlak (4–96% breed) en onder of boven de kwadrantnamen, zodat ze niet over de rand of een naam vallen.
-  const nameH = 6 + fs(10.5) + 9;
-  const inX = v => clamp(v, M.L + 0.04 * M.W, M.L + 0.96 * M.W), inY = v => clamp(v, M.T + Math.max(0.04 * M.H, nameH), M.T + M.H - Math.max(0.04 * M.H, nameH));
+  const nameT = qNameH(true), nameB = qNameH(false);
+  const inX = v => clamp(v, M.L + 0.04 * M.W, M.L + 0.96 * M.W), inY = v => clamp(v, M.T + Math.max(0.04 * M.H, nameT), M.T + M.H - Math.max(0.04 * M.H, nameB));
   const narrow = mScale < 0.85;
   const placed = [];
   let ghosts = '', dots = '';
@@ -1082,8 +1092,8 @@ function renderMatrix(svgEl = $('matrix'), forExport = false) {
     const above = py - 13 - lf * 0.85 - (lines.length - 1) * lh, below = py + 10 + lf * 0.15;
     let top = above;
     if (py < M.T + 30 || hit(top)) top = below;
-    const minTop = M.T + 6 + fs(10.5) + 4;   // niet over de naam van het kwadrant
-    if (top < minTop) top = minTop;
+    const minTop = M.T + nameT - 5;   // niet over de naam van het kwadrant
+    if (top < minTop) top = below;   // geen plaats boven het punt: dan eronder, niet over het punt
     if (hit(top)) top = py - 15 - h;
     const lx = clamp(px, M.L + w / 2, M.L + M.W - w / 2);
     placed.push({ x:lx, top, w, h });
