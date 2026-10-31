@@ -10,7 +10,7 @@
     <meta name="oc:pdca" content="plan, check">
     <meta name="oc:kort" content="Teken stap voor stap hoe iets verloopt">
     <meta name="oc:volgorde" content="23">
-    <meta name="oc:opslag" content="stroom.v1, oc.share.stroom">
+    <meta name="oc:opslag" content="stroom.v1">
 <meta name="theme-color" content="#ffffff">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox=&quot;0 0 40 40&quot; fill=&quot;none&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;%3E%3Ccircle cx=&quot;20&quot; cy=&quot;20&quot; r=&quot;18&quot; fill=&quot;%23f8fafc&quot; stroke=&quot;%23e2e8f0&quot; stroke-width=&quot;1.5&quot;/%3E%3Crect x=&quot;13&quot; y=&quot;5&quot; width=&quot;14&quot; height=&quot;7&quot; rx=&quot;3.5&quot; fill=&quot;%2310b981&quot;/%3E%3Cpath d=&quot;M20 12v3M20 24v4&quot; stroke=&quot;%2364748b&quot; stroke-width=&quot;1.6&quot;/%3E%3Cpath d=&quot;M20 15l5 4.5-5 4.5-5-4.5z&quot; fill=&quot;%23ecfdf5&quot; stroke=&quot;%23047857&quot; stroke-width=&quot;1.6&quot; stroke-linejoin=&quot;round&quot;/%3E%3Crect x=&quot;13&quot; y=&quot;28&quot; width=&quot;14&quot; height=&quot;7&quot; rx=&quot;2&quot; fill=&quot;%23ffffff&quot; stroke=&quot;%2364748b&quot; stroke-width=&quot;1.6&quot;/%3E%3Cpath d=&quot;M25 19.5h5v12h-3&quot; stroke=&quot;%2364748b&quot; stroke-width=&quot;1.6&quot; fill=&quot;none&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;/%3E%3C/svg%3E">
 <link rel="stylesheet" href="/fonts/fonts.css">
@@ -185,6 +185,18 @@ button.oc-import { color:#047857; min-height:44px; }
 .btn-primary { background:var(--accent-dark); color:var(--wit); }
 .btn-primary:hover { background:var(--accent-hover); }
 .btn-ghost { background:var(--slate-100); color:var(--slate-700); }
+/* Bewaar als bestand / Open bestand */
+.menu { max-width:calc(100vw - 2rem); }
+.menu button { min-height:44px; }
+.menu button.oc-bm { align-items:flex-start; white-space:normal; }
+.menu .oc-bm svg { margin-top:0.1875rem; }
+.oc-bm .oc-bm-t { display:flex; flex-direction:column; min-width:0; }
+.oc-bm small { font-size:0.8125rem; color:var(--slate-500); line-height:1.35; text-wrap:balance; }
+.menu .oc-note { width:0; min-width:100%; font-size:0.75rem; line-height:1.4; color:var(--slate-500); padding:0.125rem 0.625rem 0.375rem 2.25rem; }
+.oc-open-row { display:flex; justify-content:center; margin-top:0.5rem; }
+.oc-open-link { display:inline-flex; align-items:center; gap:0.5rem; min-height:44px; padding:0.5rem 1rem; border-radius:10px; font-size:0.875rem; font-weight:600; color:var(--accent-dark); }
+.oc-open-link:hover { background:var(--accent-50); }
+.oc-open-link svg { width:18px; height:18px; }
 @media (max-width:520px) {
   .row-top { grid-template-columns:auto minmax(0,1fr); }
   .row-top .txt { grid-column:2; grid-row:1; }
@@ -741,7 +753,7 @@ function render() {
   $('oc-restart').parentElement.hidden = !state.flows.some(f => !f.voorbeeld);
   if (!f) {
     $('app').innerHTML = `<section class="card start-card"><p>Nog geen stroom. Begin leeg, of bekijk eerst een voorbeeld.</p>
-      <div class="btns"><button type="button" class="btn btn-primary" data-act="new-flow">Nieuwe stroom</button><button type="button" class="btn btn-ghost" data-act="example">Voorbeeld bekijken</button></div></section>`;
+      <div class="btns"><button type="button" class="btn btn-primary" data-act="new-flow">Nieuwe stroom</button><button type="button" class="btn btn-ghost" data-act="example">Voorbeeld bekijken</button></div><p class="oc-open-row"><button type="button" class="oc-open-link" data-oc-bestand="open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 16v-5M9.5 13.5 12 11l2.5 2.5"/></svg>Open bestand</button></p></section>`;
     return;
   }
   const keep = document.activeElement && document.activeElement.dataset ? { f: document.activeElement.dataset.f, id: document.activeElement.dataset.id, ss: document.activeElement.selectionStart } : null;
@@ -789,11 +801,15 @@ function render() {
           <div class="menu-wrap">
             <button class="icon-btn" id="menu-btn" type="button" aria-label="Meer acties" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg></button>
             <div class="menu" id="menu" role="menu">
+              <button data-oc-bestand="bewaar" class="oc-bm" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M12 11v6M9 14l3 3 3-3"/></svg><span class="oc-bm-t"><span>Bewaar als bestand</span><small>Om later verder te werken, of door te geven</small></span></button>
+              <button data-oc-bestand="open" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 16v-5M9.5 13.5 12 11l2.5 2.5"/></svg>Open bestand</button>
+              <div class="sep"></div>
               <button data-act="pdf" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 15h6M9 18h4"/></svg>Download als PDF</button>
               <button data-act="png" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>Download als afbeelding</button>
               <button data-act="svg" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Download als SVG (bewerkbaar)</button>
               <button data-act="copy" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Kopieer als tekst</button>
               <button data-act="mermaid" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg>Kopieer als diagramcode</button>
+              <p class="oc-note" role="none">Een afbeelding, PDF of CSV kan je niet terug openen.</p>
               <div class="sep"></div>
               <button data-act="dup" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M4 16V5a1 1 0 0 1 1-1h11"/></svg>Dupliceer (bv. voor straks)</button>
               <div class="sep"></div>
@@ -1144,8 +1160,87 @@ ocPinch({ canvas:'#canvas', max:2.5,
   ['pointerdown', 'focusin', 'mouseover'].forEach(t => document.addEventListener(t, e => { if (!warm && e.target.closest && e.target.closest(SEL)) go(); }, { passive:true, capture:true }));
 })();
 
+/* ---------- Bewaar als bestand / Open bestand ----------
+   Bewaart al je werk in deze tool als één bestand (zelfde vorm als de reservekopie in de app) en opent het later weer. */
+const ocFileIn = Object.assign(document.createElement('input'), { type:'file', accept:'.json,application/json', hidden:true, tabIndex:-1 });
+ocFileIn.setAttribute('aria-hidden', 'true'); document.body.appendChild(ocFileIn);
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-oc-bestand]'); if (!b) return;
+  const m = $('menu'); if (m) { m.classList.remove('open'); const mb = $('menu-btn'); mb && mb.setAttribute('aria-expanded', 'false'); }
+  if (b.dataset.ocBestand === 'open') { ocFileIn.value = ''; ocFileIn.click(); return; }
+  if (!state.flows.length) { toast('Er is nog niets om te bewaren.'); return; }
+  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {}
+  toast(ocBestand.bewaar((() => { try { const p = JSON.parse(localStorage.getItem('oc.project')); return p && typeof p.name === 'string' ? p.name.trim().slice(0, 80) : ''; } catch { return ''; } })()) ? 'Bestand gedownload. Open het later hier met "Open bestand".' : 'Er is nog niets om te bewaren.');
+});
+ocFileIn.addEventListener('change', async () => {
+  const file = ocFileIn.files && ocFileIn.files[0]; if (!file) return;
+  let g; try { g = await ocBestand.lees(file); } catch (err) { toast(ocBestand.melding(err)); return; }
+  if (state.flows.some(x => !x.voorbeeld) && !await ocConfirm('Dit vervangt wat nu in Stroom staat. Doorgaan?', 'Wil je je huidige werk houden? Kies dan Annuleer en eerst Bewaar als bestand.', 'Vervang')) return;
+  ocBestand.zetTerug(g);
+  try { sessionStorage.setItem('oc.bestand.terug', '1'); } catch {}
+  location.reload();
+});
+try { if (sessionStorage.getItem('oc.bestand.terug')) { sessionStorage.removeItem('oc.bestand.terug'); setTimeout(() => toast('Bestand geopend. Je werk is terug.'), 50); } } catch {}
+
 render();
 setTimeout(publish, 0);
+</script>
+<script>
+/* oc-bestand: je werk in deze tool bewaren als bestand en later (of op een ander toestel) weer openen.
+   Formaat = dat van de reservekopie in de app: { app:'Onder Constructie', version:1, created, tool, data:{ sleutel: tekst } }.
+   Een reservekopie uit de app kan je hier ook openen: de tool neemt er alleen zijn eigen deel uit. */
+window.ocBestand = (function () {
+  function patronen() {
+    var m = document.querySelector('meta[name="oc:opslag"]');
+    return m ? m.content.split(',').map(function (s) { return s.trim(); }).filter(Boolean) : [];
+  }
+  function past(k, p) { return p.slice(-1) === '*' ? k.indexOf(p.slice(0, -1)) === 0 : k === p; }
+  function eigen(k) { return patronen().some(function (p) { return past(k, p); }); }
+  function sleutels() {
+    var uit = [];
+    try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k && eigen(k)) uit.push(k); } } catch (e) {}
+    return uit;
+  }
+  function naam() {
+    var m = document.querySelector('meta[name="oc:titel"]') || document.querySelector('meta[name="application-name"]');
+    return (m && m.content) || (document.title.split(/\s[–-]\s/)[0] || 'tool').trim();
+  }
+  function slug(s) { return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
+  /* bewaar(): downloadt het bestand. Geeft het aantal bewaarde sleutels terug (0 = niets om te bewaren). */
+  function bewaar(extraNaam) {
+    var keys = sleutels(); if (!keys.length) return 0;
+    var data = {}; keys.forEach(function (k) { try { data[k] = localStorage.getItem(k); } catch (e) {} });
+    var id = location.pathname.replace(/\/index\.html$/, '').split('/').filter(Boolean).pop() || 'tool';
+    var blob = new Blob([JSON.stringify({ app: 'Onder Constructie', version: 1, created: new Date().toISOString(), tool: id, data: data }, null, 1)], { type: 'application/json' });
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    var stuk = slug(naam()) + (extraNaam ? '-' + slug(extraNaam) : '');
+    a.download = stuk + '-' + new Date().toISOString().slice(0, 10) + '.json';
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+    return keys.length;
+  }
+  /* lees(file): Promise met { data: {sleutel: tekst} } van alleen de eigen sleutels.
+     Fout 'vorm' = geen bestand van Onder Constructie; fout 'leeg' = niets van deze tool in het bestand. */
+  function lees(file) {
+    return file.text().then(function (t) {
+      var d; try { d = JSON.parse(t); } catch (e) { throw new Error('vorm'); }
+      if (!d || d.app !== 'Onder Constructie' || typeof d.data !== 'object' || !d.data) throw new Error('vorm');
+      var uit = {}, n = 0;
+      Object.keys(d.data).forEach(function (k) { if (eigen(k) && typeof d.data[k] === 'string') { uit[k] = d.data[k]; n++; } });
+      if (!n) throw new Error('leeg');
+      return { data: uit, aantal: n, created: d.created || null };
+    });
+  }
+  /* zetTerug(gelezen): vervangt het huidige werk van deze tool door wat in het bestand staat, en laat andere tabbladen herladen. */
+  function zetTerug(g) {
+    sleutels().forEach(function (k) { try { localStorage.removeItem(k); } catch (e) {} });
+    Object.keys(g.data).forEach(function (k) { try { localStorage.setItem(k, g.data[k]); } catch (e) {} });
+  }
+  function melding(err) {
+    return err && err.message === 'leeg' ? 'In dit bestand staat niets van ' + naam() + '.'
+      : 'Dit bestand kan ik niet openen. Kies een bestand dat je met "Bewaar als bestand" of als reservekopie maakte.';
+  }
+  return { bewaar: bewaar, lees: lees, zetTerug: zetTerug, melding: melding, sleutels: sleutels, naam: naam };
+})();
 </script>
 <script>
 /* oc-sync: reageert op "Wissen" in de app (ook in andere tabbladen) en geeft Esc door aan de app */
