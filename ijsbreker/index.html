@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#ffffff">
+    <title>IJsbreker – Onder Constructie</title>
+    <meta name="description" content="Draai drie rollen en krijg een korte opdracht om jezelf voor te stellen. Een onderwerp, een moment en een vorm: honderden combinaties, altijd veilig op het werk.">
+    <meta name="oc:groep" content="projecten">
+    <meta name="oc:labels" content="vergaderen">
+    <meta name="oc:kort" content="Draai en stel je voor: een ijsbreker voor elke groep">
+    <meta name="oc:volgorde" content="78">
+    <meta name="oc:opslag" content="ijsbreker.v1">
+    <meta name="oc:titel" content="IJsbreker">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80' fill='none'%3E%3Ccircle cx='40' cy='40' r='36' fill='%23f8fafc' stroke='%23e2e8f0' stroke-width='2'/%3E%3Crect x='14' y='25' width='52' height='30' rx='6' fill='%23fff' stroke='%2394a3b8' stroke-width='2.5'/%3E%3Cpath d='M31.5 26.5v27M48.5 26.5v27' stroke='%23e2e8f0' stroke-width='2.5'/%3E%3Crect x='18.5' y='37.5' width='9' height='5' rx='2.5' fill='%23cbd5e1'/%3E%3Crect x='52.5' y='37.5' width='9' height='5' rx='2.5' fill='%23cbd5e1'/%3E%3Cpath d='M36 32h8a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3h-4l-4 3.5V44a3 3 0 0 1-3-3v-6a3 3 0 0 1 3-3z' fill='%2310b981'/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="/fonts/fonts.css">
+    <style>
+        :root {
+            --slate-50:#f8fafc; --slate-100:#f1f5f9; --slate-200:#e2e8f0; --slate-300:#cbd5e1; --slate-400:#94a3b8;
+            --slate-500:#64748b; --slate-600:#475569; --slate-700:#334155; --slate-800:#1e293b; --wit:#ffffff;
+            --accent:#10b981; --accent-dark:#047857; --accent-hover:#065f46; --accent-light:#d1fae5; --accent-50:#ecfdf5; --mint:#a7f3d0;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        [hidden] { display:none !important; }
+        html { -webkit-text-size-adjust:100%; }
+        body { font-family:'DM Sans', system-ui, sans-serif; background:var(--slate-50); color:var(--slate-700); line-height:1.5; min-height:100vh; min-height:100dvh; -webkit-font-smoothing:antialiased; overflow-x:hidden; }
+        button { font:inherit; color:inherit; background:none; border:0; cursor:pointer; }
+
+        /* Kop (huisstijl, patroon B) */
+        .oc-head { display:block; text-align:center; background:#fff; border-bottom:1px solid #e2e8f0; padding:1.25rem; position:relative; }
+        .oc-head .back-link { position:absolute; top:0.875rem; left:1rem; min-height:44px; display:inline-flex; align-items:center; gap:0.5rem; padding:0 0.5rem; font-size:0.875rem; color:#64748b; text-decoration:none; border-radius:8px; transition:color 0.2s; }
+        .oc-head .back-link:hover { color:#047857; }
+        .oc-head .back-link svg { width:16px; height:16px; flex:none; }
+        .oc-head .logo { display:block; width:48px; height:48px; margin:0 auto; }
+        .oc-head .logo svg { display:block; width:48px; height:48px; }
+        .oc-head .title { font-size:1.5rem; font-weight:700; color:#1e293b; letter-spacing:-0.03em; line-height:1.2; margin:0.375rem 0 0.125rem; }
+        .oc-head .subtitle { font-size:0.9375rem; color:#64748b; max-width:520px; margin:0 auto; }
+        @media (max-width:640px) {
+            .oc-head { padding:0.5rem 1rem 1rem; }
+            .oc-head .back-link { position:static; margin:0 auto 0.25rem; }
+            .oc-head .logo, .oc-head .logo svg { width:40px; height:40px; }
+            .oc-head .title { font-size:1.375rem; }
+        }
+
+        .main { max-width:660px; margin:0 auto; padding:1rem 1rem 2rem; }
+        .card { background:var(--wit); border-radius:16px; padding:1.25rem 1rem 1rem; border:1.5px solid var(--slate-200); text-align:center; }
+
+        /* Rollen */
+        .cols, .reels { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:0.5rem; max-width:480px; margin:0 auto; }
+        .cols span { font-size:0.75rem; font-weight:600; letter-spacing:0.04em; text-transform:uppercase; color:var(--slate-500); padding-bottom:0.375rem; }
+        .reel { position:relative; display:block; width:100%; border-radius:16px; border:2px solid var(--slate-200); background:var(--slate-50); padding:0; overflow:hidden; transition:border-color 0.15s, background 0.15s; }
+        .reel:hover { border-color:var(--slate-300); }
+        .reel[aria-pressed="true"] { border-color:var(--accent); background:var(--accent-50); }
+        .reel[aria-disabled="true"] { cursor:default; }
+        .win { position:relative; display:block; width:100%; aspect-ratio:1 / 1.12; overflow:hidden; }
+        .win::before, .win::after { content:''; position:absolute; left:0; right:0; height:14%; z-index:2; pointer-events:none; }
+        .win::before { top:0; background:linear-gradient(var(--slate-50), rgba(248,250,252,0)); }
+        .win::after { bottom:0; background:linear-gradient(rgba(248,250,252,0), var(--slate-50)); }
+        .reel[aria-pressed="true"] .win::before { background:linear-gradient(var(--accent-50), rgba(236,253,245,0)); }
+        .reel[aria-pressed="true"] .win::after { background:linear-gradient(rgba(236,253,245,0), var(--accent-50)); }
+        .strip { position:absolute; inset:0; display:flex; flex-direction:column; will-change:transform; }
+        .item { flex:0 0 100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.375rem; padding:0.375rem 0.25rem; }
+        .item svg { width:56%; max-width:120px; height:auto; aspect-ratio:1; display:block; }
+        .item b { font-size:0.8125rem; font-weight:600; line-height:1.2; color:var(--slate-700); min-height:2.4em; display:flex; align-items:flex-start; justify-content:center; overflow-wrap:anywhere; }
+        .item.leeg b { color:var(--slate-400); }
+        .lock { position:absolute; top:6px; right:6px; z-index:3; width:26px; height:26px; border-radius:50%; background:var(--accent-dark); display:none; align-items:center; justify-content:center; }
+        .lock svg { width:14px; height:14px; }
+        .reel[aria-pressed="true"] .lock { display:flex; }
+        .lockhint { margin:0.5rem auto 0; font-size:0.8125rem; color:var(--slate-500); min-height:1.25em; }
+
+        /* Opdracht */
+        .result { margin:1rem auto 0; max-width:560px; min-height:7.5rem; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:0 0.25rem; }
+        .eyebrow { font-size:0.75rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--accent-dark); }
+        .intro { margin-top:0.25rem; font-size:1.0625rem; font-weight:600; color:var(--slate-600); }
+        .sentence { margin-top:0.125rem; font-size:1.3125rem; font-weight:600; color:var(--slate-800); letter-spacing:-0.01em; line-height:1.35; text-wrap:balance; overflow-wrap:break-word; }
+        .sentence.wacht { font-size:1.0625rem; font-weight:500; color:var(--slate-600); }
+        .result.nieuw .sentence, .result.nieuw .intro { animation:in 0.35s ease-out; }
+        @keyframes in { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
+
+        /* Knoppen */
+        .controls { display:flex; flex-wrap:wrap; justify-content:center; gap:0.5rem; margin-top:1rem; }
+        .btn { display:inline-flex; align-items:center; justify-content:center; gap:0.5rem; min-height:44px; padding:0 1.125rem; border-radius:12px; font-size:0.9375rem; font-weight:600; white-space:nowrap; transition:background 0.15s; }
+        .btn svg { width:20px; height:20px; flex:none; }
+        .btn-primary { background:var(--accent-dark); color:#fff; min-height:56px; min-width:12rem; padding:0 1.75rem; font-size:1.125rem; }
+        .btn-primary:hover { background:var(--accent-hover); }
+        .btn-primary[aria-disabled="true"] { background:#3f8f74; cursor:default; }
+        .btn-soft { background:var(--slate-100); color:var(--slate-700); }
+        .btn-soft:hover { background:var(--slate-200); }
+        .link-btn { min-height:44px; padding:0 0.75rem; border-radius:10px; font-size:0.9375rem; font-weight:600; color:var(--accent-dark); display:inline-flex; align-items:center; gap:0.375rem; margin-top:0.25rem; }
+        .link-btn:hover { background:var(--accent-50); }
+        .hint { font-size:0.8125rem; color:var(--slate-500); margin-top:0.25rem; }
+        kbd { font:inherit; font-size:0.75rem; font-weight:600; padding:0 0.375rem; border:1px solid var(--slate-300); border-bottom-width:2px; border-radius:5px; background:var(--slate-50); color:var(--slate-700); }
+
+        /* Tijd per persoon */
+        .timer { display:flex; align-items:center; justify-content:center; gap:0.75rem; margin:0.75rem auto 0; max-width:420px; }
+        .bar { flex:1; height:8px; border-radius:99px; background:var(--slate-100); overflow:hidden; }
+        .bar i { display:block; height:100%; width:100%; background:var(--accent); border-radius:99px; transform-origin:left; transform:scaleX(1); }
+        .tval { font-variant-numeric:tabular-nums; font-weight:700; color:var(--slate-700); min-width:3.25rem; text-align:right; }
+        .timer.klaar .tval { color:var(--accent-dark); }
+        .timer .btn { min-width:7.5rem; }
+
+        /* Instellingen */
+        .set { margin-top:0.75rem; border-top:1px solid var(--slate-100); text-align:left; }
+        .set summary { list-style:none; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.375rem; min-height:44px; font-size:0.875rem; font-weight:600; color:var(--accent-dark); border-radius:8px; }
+        .set summary::-webkit-details-marker { display:none; }
+        .set summary svg { width:16px; height:16px; transition:transform 0.2s; }
+        .set[open] summary svg { transform:rotate(180deg); }
+        .set-body { display:flex; flex-direction:column; gap:1rem; padding:0.5rem 0.25rem 0.25rem; max-width:480px; margin:0 auto; }
+        .lbl { display:block; font-size:0.8125rem; font-weight:600; color:var(--slate-600); margin-bottom:0.375rem; }
+        .chips { display:flex; flex-wrap:wrap; gap:0.375rem; }
+        .chip { min-height:44px; padding:0 0.875rem; border-radius:999px; border:1px solid var(--slate-200); background:#fff; font-size:0.875rem; font-weight:600; color:var(--slate-600); font-variant-numeric:tabular-nums; }
+        .chip:hover { border-color:var(--slate-300); }
+        .chip[aria-pressed="true"] { background:var(--accent-dark); border-color:var(--accent-dark); color:#fff; }
+        .switch-row { display:flex; align-items:center; justify-content:space-between; gap:1rem; font-size:0.9375rem; }
+        .switch-row small { display:block; font-size:0.8125rem; color:var(--slate-500); }
+        .switch { position:relative; flex:none; width:52px; height:44px; }
+        .switch::before { content:''; position:absolute; left:4px; top:9px; width:44px; height:26px; border-radius:99px; background:var(--slate-300); transition:background 0.15s; }
+        .switch::after { content:''; position:absolute; left:7px; top:12px; width:20px; height:20px; border-radius:50%; background:#fff; box-shadow:0 1px 2px rgba(15,23,42,0.2); transition:transform 0.15s; }
+        .switch[aria-pressed="true"]::before { background:var(--accent-dark); }
+        .switch[aria-pressed="true"]::after { transform:translateX(18px); }
+
+        .mono { margin:1rem auto 0; text-align:center; font-size:0.9375rem; color:var(--slate-600); }
+        .mono a { display:inline-flex; align-items:center; min-height:44px; padding:0 0.375rem; color:var(--accent-dark); font-weight:600; text-decoration:underline; text-decoration-color:var(--mint); text-underline-offset:3px; border-radius:8px; }
+        .mono a:hover { background:var(--accent-50); }
+
+        /* Groot scherm (beamer) */
+        @media (min-width:1100px) {
+            .main { max-width:1100px; padding-top:1.5rem; }
+            .card { padding:2rem 2rem 1.25rem; }
+            .cols, .reels { max-width:min(820px, 76vh); gap:1rem; }
+            .cols span { font-size:0.9375rem; }
+            .reel { border-radius:22px; }
+            .item b { font-size:clamp(1rem, 1.2vw, 1.375rem); }
+            .lock { width:34px; height:34px; top:10px; right:10px; }
+            .lock svg { width:18px; height:18px; }
+            .result { max-width:960px; min-height:10rem; }
+            .eyebrow { font-size:0.9375rem; }
+            .intro { font-size:clamp(1.25rem, 1.6vw, 1.75rem); }
+            .sentence { font-size:clamp(1.75rem, 2.5vw, 2.75rem); }
+            .sentence.wacht { font-size:clamp(1.125rem, 1.4vw, 1.5rem); }
+            .btn-primary { min-height:64px; font-size:1.25rem; min-width:14rem; }
+        }
+
+        /* Melding */
+        .toast { position:fixed; left:50%; bottom:calc(env(safe-area-inset-bottom, 0px) + 1.25rem); transform:translate(-50%, calc(100% + 3rem)); visibility:hidden; z-index:50;
+          background:var(--slate-800); color:#fff; border-radius:12px; padding:0.625rem 1rem; display:flex; align-items:center; gap:0.75rem; font-size:0.9375rem; min-height:44px;
+          box-shadow:0 10px 30px rgba(15,23,42,0.25); transition:transform 0.25s ease, visibility 0s 0.25s; max-width:calc(100% - 2rem); }
+        .toast.show { transform:translate(-50%, 0); visibility:visible; transition:transform 0.25s ease; }
+
+        footer.oc-footer { text-align:center; padding:1.5rem 1.5rem calc(env(safe-area-inset-bottom, 0px) + 1.5rem); border-top:1px solid #e2e8f0; background:#fff; margin-top:1rem; }
+        footer.oc-footer .oc-quote { font-size:0.8125rem; line-height:1.5; color:#047857; margin:0; }
+
+        :focus-visible { outline:2px solid #047857 !important; outline-offset:2px; }
+        a, button, summary { touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+        .btn:active, .chip:active, .link-btn:active, .reel:active { filter:brightness(0.95); }
+        @media (prefers-reduced-motion: reduce) { * { transition:none !important; animation:none !important; } }
+        @media (hover: none) and (pointer: coarse) { .hint { display:none; } }
+        @media (forced-colors: active) { .reel[aria-pressed="true"], .chip[aria-pressed="true"], .switch[aria-pressed="true"] { border:3px solid Highlight; } }
+    @media (hover:none) and (pointer:coarse) { .toetsenbord { display:none; } }
+</style>
+</head>
+<body>
+    <header class="header oc-head">
+        <a href="https://onderconstructie.github.io/projectmanagement/#vergaderen" class="back-link" aria-label="Terug naar Vergaderen">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            Vergaderen
+        </a>
+        <div class="logo" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" fill="none"><circle cx="40" cy="40" r="36" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2"/><rect x="14" y="25" width="52" height="30" rx="6" fill="#fff" stroke="#94a3b8" stroke-width="2.5"/><path d="M31.5 26.5v27M48.5 26.5v27" stroke="#e2e8f0" stroke-width="2.5"/><rect x="18.5" y="37.5" width="9" height="5" rx="2.5" fill="#cbd5e1"/><rect x="52.5" y="37.5" width="9" height="5" rx="2.5" fill="#cbd5e1"/><path d="M36 32h8a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3h-4l-4 3.5V44a3 3 0 0 1-3-3v-6a3 3 0 0 1 3-3z" fill="#10b981"/></svg>
+        </div>
+        <h1 class="title">IJsbreker</h1>
+        <p class="subtitle">Draai en stel je voor: een ijsbreker voor elke groep</p>
+    </header>
+
+    <main class="main">
+        <section class="card" aria-label="IJsbreker">
+            <div class="cols" aria-hidden="true"><span>Onderwerp</span><span>Moment</span><span>Vorm</span></div>
+            <div class="reels" role="group" aria-label="Drie rollen">
+                <button type="button" class="reel" id="r0" aria-pressed="false" aria-disabled="true"><span class="win"><span class="strip"></span></span><span class="lock" aria-hidden="true"></span></button>
+                <button type="button" class="reel" id="r1" aria-pressed="false" aria-disabled="true"><span class="win"><span class="strip"></span></span><span class="lock" aria-hidden="true"></span></button>
+                <button type="button" class="reel" id="r2" aria-pressed="false" aria-disabled="true"><span class="win"><span class="strip"></span></span><span class="lock" aria-hidden="true"></span></button>
+            </div>
+            <p class="lockhint" id="lockhint">Na het draaien kun je op een rol tikken om die vast te zetten.</p>
+
+            <div class="result" id="result">
+                <p class="eyebrow" id="eyebrow" hidden>Stel je voor</p>
+                <p class="intro" id="intro" hidden>Zeg je naam.</p>
+                <p class="sentence wacht" id="sentence">Druk op Draai. Uit drie prentjes komt een korte opdracht om jezelf voor te stellen.</p>
+            </div>
+            <p class="sr-only" id="live" role="status" aria-live="polite" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap"></p>
+
+            <div class="controls">
+                <button type="button" class="btn btn-primary" id="draai"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v4.5h-4.5"/></svg><span id="draai-tekst">Draai</span></button>
+            </div>
+            <button type="button" class="link-btn" id="liever" hidden>Liever niet? Draai opnieuw</button>
+
+            <div class="timer" id="timer" hidden>
+                <button type="button" class="btn btn-soft" id="tgo">Start</button>
+                <div class="bar" aria-hidden="true"><i id="tbar"></i></div>
+                <span class="tval" id="tval" role="timer" aria-live="off">0:30</span>
+            </div>
+            <p class="hint toetsenbord">Tip: druk op <kbd>Spatie</kbd> om te draaien.</p>
+
+            <details class="set" id="set">
+                <summary><span>Instellingen</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+                <div class="set-body">
+                    <div class="switch-row">
+                        <div>Alleen korte opdrachten<small>Handig voor een grote groep.</small></div>
+                        <button type="button" class="switch" id="kort" aria-pressed="false" aria-label="Alleen korte opdrachten"></button>
+                    </div>
+                    <div>
+                        <span class="lbl" id="tijd-lbl">Tijd per persoon</span>
+                        <div class="chips" role="group" aria-labelledby="tijd-lbl" id="tijd">
+                            <button type="button" class="chip" data-s="0" aria-pressed="true">Geen klok</button>
+                            <button type="button" class="chip" data-s="30" aria-pressed="false">30 s</button>
+                            <button type="button" class="chip" data-s="60" aria-pressed="false">1 min</button>
+                        </div>
+                    </div>
+                </div>
+            </details>
+        </section>
+        <p class="mono">Wil je iedereen om de beurt een minuut geven? <a href="/check-in/">Open De Mono-Minuut</a></p>
+    </main>
+
+    <footer class="footer oc-footer">
+        <p class="quote oc-quote">Een groep begint pas als iedereen één keer iets zei.</p>
+    </footer>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-text"></span></div>
+
+    <script>
+/* ---------- Prentjes (eigen tekeningen, groen en grijs) ---------- */
+const G = '#047857', L = '#a7f3d0', P = '#d1fae5', M = '#10b981', S = '#64748b', S3 = '#cbd5e1';
+const st = (c, w) => `stroke="${c}" stroke-width="${w || 2.5}" stroke-linecap="round" stroke-linejoin="round"`;
+const BUBBEL = `<path d="M10 10h28a4 4 0 0 1 4 4v16a4 4 0 0 1-4 4H22l-8 6v-6h-4a4 4 0 0 1-4-4V14a4 4 0 0 1 4-4z" fill="#fff" ${st(S)}/>`;
+const ICOON = {
+  eten: `<path d="M9 23h30a15 15 0 0 1-30 0z" fill="${L}" ${st(G)}/><path d="M18 17c-2-2.5 2-4.5 0-8M24 17c-2-2.5 2-4.5 0-8M30 17c-2-2.5 2-4.5 0-8" ${st(S)}/><path d="M18 42h12" ${st(G)}/>`,
+  reizen: `<path d="M18 16v-4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v4" ${st(G)}/><rect x="8" y="16" width="32" height="23" rx="4" fill="${L}" ${st(G)}/><path d="M17 17v21M31 17v21" ${st('#fff', 3)}/><path d="M14 42v1.5M34 42v1.5" ${st(S)}/>`,
+  werk: `<rect x="11" y="11" width="26" height="18" rx="2.5" fill="${L}" ${st(G)}/><path d="M6 34h36l-2.5 4h-31z" fill="#fff" ${st(S)}/>`,
+  muziek: `<path d="M19.5 33V13l18-4v20M19.5 18l18-4" ${st(G)}/><circle cx="14" cy="33" r="5.5" fill="${L}" ${st(G)}/><circle cx="32" cy="29" r="5.5" fill="${L}" ${st(G)}/>`,
+  sport: `<circle cx="24" cy="24" r="15" fill="${L}" ${st(G)}/><path d="M14.5 12.8c5 6 5 16.4 0 22.4M33.5 12.8c-5 6-5 16.4 0 22.4" ${st('#fff', 2.5)}/>`,
+  verhalen: `<path d="M24 14c-4-3-10-4-16-3v25c6-1 12 0 16 3 4-3 10-4 16-3V11c-6-1-12 0-16 3z" fill="${L}" ${st(G)}/><path d="M24 14v25" ${st(G)}/>`,
+  thuis: `<path d="M11 22v17h26V22" fill="${L}" ${st(G)}/><path d="M7 24 24 9l17 15" ${st(G)}/><path d="M20 39v-9h8v9" fill="#fff" ${st(G)}/>`,
+  dieren: `<ellipse cx="24" cy="31" rx="9" ry="7.5" fill="${L}" ${st(G)}/><circle cx="12.5" cy="21" r="3.6" fill="${L}" ${st(G, 2.2)}/><circle cx="19.5" cy="13.5" r="3.6" fill="${L}" ${st(G, 2.2)}/><circle cx="28.5" cy="13.5" r="3.6" fill="${L}" ${st(G, 2.2)}/><circle cx="35.5" cy="21" r="3.6" fill="${L}" ${st(G, 2.2)}/>`,
+  natuur: `<path d="M24 28v12M17 41h14" ${st(S, 3)}/><path d="M24 7c-7 0-11 6-9.5 11.5C10 20 10 29 17 29h14c7 0 7-9 2.5-10.5C35 13 31 7 24 7z" fill="${L}" ${st(G)}/>`,
+  gewoontes: `<path d="M12 22a12 12 0 0 1 21.2-7.7M36 26a12 12 0 0 1-21.2 7.7" ${st(G)}/><path d="M34 8.5v6.5h-6.5M14 39.5V33h6.5" ${st(G)}/><circle cx="24" cy="24" r="4" fill="${M}"/>`,
+  leren: `<path d="M24 7a11 11 0 0 0-6.5 19.9c1.3 1 2 2.4 2 4V33h9v-2.1c0-1.6.7-3 2-4A11 11 0 0 0 24 7z" fill="${L}" ${st(G)}/><path d="M19.5 37.5h9M21 41.5h6" ${st(S)}/>`,
+  buurt: `<path d="M24 42s12-11.5 12-21a12 12 0 0 0-24 0c0 9.5 12 21 12 21z" fill="${L}" ${st(G)}/><circle cx="24" cy="21" r="4.5" fill="#fff" ${st(G)}/>`,
+
+  kind: `<ellipse cx="24" cy="19" rx="10" ry="12" fill="${P}" ${st(G)}/><path d="M22 31.5h4l-2 2.5z" fill="${G}" ${st(G, 1.5)}/><path d="M24 34c-3 3 3 5 0 9" ${st(S, 2)}/><path d="M19 14.5a6 6 0 0 1 3.5-3.5" ${st('#fff', 2.5)}/>`,
+  week: `<rect x="9" y="11" width="30" height="28" rx="4" fill="#fff" ${st(S)}/><path d="M9 19h30M17 7v7M31 7v7" ${st(S)}/><rect x="14" y="24" width="20" height="5" rx="2.5" fill="${M}"/><rect x="14" y="32" width="12" height="3.5" rx="1.75" fill="${S3}"/>`,
+  nu: `<circle cx="24" cy="24" r="15" fill="${P}" ${st(G)}/><path d="M24 15v9l6 4" ${st(G)}/>`,
+  later: `<path d="M15 32h19a7.5 7.5 0 0 0 .6-15 10 10 0 0 0-19.2-1.2A8.1 8.1 0 0 0 15 32z" fill="${P}" ${st(G)}/><circle cx="13" cy="38.5" r="2.2" fill="${S}"/><circle cx="8" cy="42.5" r="1.5" fill="${S}"/>`,
+  eerste: `<path d="M13 41V8" ${st(S)}/><path d="M13 10h22l-5 7 5 7H13z" fill="${P}" ${st(G)}/>`,
+  verrast: `<path d="M12 27v12h24V27" fill="${P}" ${st(G)}/><rect x="9" y="19" width="30" height="8" rx="2" fill="${P}" ${st(G)}/><path d="M24 19v20" ${st(G)}/><path d="M24 19c-2-6-10-8-10-3 0 2 3 3 10 3zM24 19c2-6 10-8 10-3 0 2-3 3-10 3z" ${st(G)}/>`,
+  aanrader: `<path d="M24 8l4.9 10 11 1.6-8 7.8 1.9 11L24 33.2l-9.8 5.2 1.9-11-8-7.8 11-1.6z" fill="${P}" ${st(G)}/>`,
+
+  woord: `${BUBBEL}<rect x="19" y="19.5" width="10" height="5" rx="2.5" fill="${M}"/>`,
+  drie: `${BUBBEL}<rect x="12.5" y="19.5" width="6.5" height="5" rx="2.5" fill="${M}"/><rect x="20.75" y="19.5" width="6.5" height="5" rx="2.5" fill="${M}"/><rect x="29" y="19.5" width="6.5" height="5" rx="2.5" fill="${M}"/>`,
+  zin: `${BUBBEL}<rect x="12" y="19.5" width="24" height="5" rx="2.5" fill="${M}"/>`,
+  cijfer: `<path d="M8 41h32" ${st(S)}/><rect x="9" y="31" width="4.5" height="6" rx="1.5" fill="${M}"/><rect x="16" y="27" width="4.5" height="10" rx="1.5" fill="${M}"/><rect x="23" y="22" width="4.5" height="15" rx="1.5" fill="${M}"/><rect x="30" y="17" width="4.5" height="20" rx="1.5" fill="${M}"/><rect x="37" y="11" width="4.5" height="26" rx="1.5" fill="${S3}"/>`,
+  minuut: `<circle cx="24" cy="26" r="14" fill="#fff" ${st(S)}/><path d="M24 26V14a12 12 0 0 1 0 24z" fill="${M}"/><path d="M20 6h8M24 6v6" ${st(S)}/>`,
+  vraag: `${BUBBEL}<path d="M20 18.5a4 4 0 1 1 5.5 3.7c-1 .4-1.5 1.2-1.5 2.3v.5" ${st(G)}/><circle cx="24" cy="29" r="1.7" fill="${G}"/>`,
+  stil: `${BUBBEL}<circle cx="16" cy="22" r="2.2" fill="${S3}"/><circle cx="24" cy="22" r="2.2" fill="${S3}"/><circle cx="32" cy="22" r="2.2" fill="${S3}"/><path d="M9 39 39 7" ${st(M, 3)}/>`,
+
+  leeg: `<circle cx="24" cy="24" r="15" fill="#fff" ${st('#e2e8f0')}/><circle cx="17.5" cy="24" r="2.2" fill="${S3}"/><circle cx="24" cy="24" r="2.2" fill="${S3}"/><circle cx="30.5" cy="24" r="2.2" fill="${S3}"/>`,
+};
+const svg = id => `<svg viewBox="0 0 48 48" fill="none" aria-hidden="true">${ICOON[id]}</svg>`;
+const SLOT = `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>`;
+
+/* ---------- Inhoud ----------
+   Rol 1 = onderwerp, rol 2 = moment, rol 3 = vorm.
+   Per onderwerp en moment één zinsdeel, met kenmerken:
+     w = in één woord te noemen   m = een gebeurtenis (geen ding)   g = zonder woorden te tonen */
+const MOMENTEN = [
+  { id:'kind', label:'Als kind' },
+  { id:'week', label:'Voorbije week' },
+  { id:'nu', label:'Nu' },
+  { id:'later', label:'Ooit' },
+  { id:'eerste', label:'De eerste' },
+  { id:'verrast', label:'Verrassing' },
+  { id:'aanrader', label:'Aanrader' },
+];
+const ONDERWERPEN = [
+  { id:'eten', label:'Eten', x:{
+    kind:['een gerecht uit je kindertijd', 'wg'], week:['iets lekkers dat je de voorbije week at', 'wg'], nu:['je lievelingsgerecht van dit moment', 'wg'],
+    later:['een gerecht dat je ooit nog wil proeven', 'wg'], eerste:['het eerste gerecht dat je zelf maakte', 'wg'], verrast:['een gerecht dat je verraste', 'wg'],
+    aanrader:['een gerecht dat iedereen eens moet proeven', 'wg'] } },
+  { id:'reizen', label:'Uitstappen', x:{
+    kind:['een uitstap die je als kind maakte', ''], week:['een plek waar je de voorbije week was', 'w'], nu:['een plek waar je nu graag naartoe gaat', 'w'],
+    later:['een plek die je ooit nog wil zien', 'w'], eerste:['de eerste reis of uitstap die je nog weet', ''], verrast:['een plek die je verraste', 'w'],
+    aanrader:['een uitstap die je iedereen aanraadt', ''] } },
+  { id:'werk', label:'Werk', x:{
+    kind:['het beroep dat je als kind wou doen', 'wg'], week:['iets wat de voorbije week goed liep op het werk', ''], nu:['een taak die je nu graag doet', 'g'],
+    later:['iets waar je op het werk naar uitkijkt', ''], eerste:['je allereerste job of vakantiejob', 'wg'], verrast:['iets op het werk dat je verraste', ''],
+    aanrader:['een werktruc die je iedereen aanraadt', ''] } },
+  { id:'muziek', label:'Muziek', x:{
+    kind:['een liedje uit je kindertijd', ''], week:['een liedje dat je de voorbije week hoorde', ''], nu:['een liedje dat je nu vaak hoort', ''],
+    later:['een instrument dat je ooit wil leren spelen', 'wg'], eerste:['het eerste liedje dat je uit je hoofd kende', ''], verrast:['een liedje dat je verraste', ''],
+    aanrader:['een liedje dat iedereen eens moet horen', ''] } },
+  { id:'sport', label:'Sport en spel', x:{
+    kind:['een spel dat je als kind speelde', 'wg'], week:['een manier waarop je de voorbije week bewoog', 'wg'], nu:['een sport of spel waar je nu van geniet', 'wg'],
+    later:['een sport die je ooit wil proberen', 'wg'], eerste:['de eerste keer dat je zonder steunwieltjes fietste', 'm'], verrast:['een sport die je verraste', 'wg'],
+    aanrader:['een manier van bewegen die je iedereen aanraadt', 'wg'] } },
+  { id:'verhalen', label:'Boek en film', x:{
+    kind:['een boek of film uit je kindertijd', 'g'], week:['iets wat je de voorbije week las of zag', ''], nu:['een boek, film of reeks waar je nu van geniet', 'g'],
+    later:['een boek of film waar je nog tijd voor wil maken', ''], eerste:['het eerste boek dat je zelf las', ''], verrast:['een verhaal met een verrassend einde', ''],
+    aanrader:['een verhaal dat iedereen zou moeten kennen', ''] } },
+  { id:'thuis', label:'Thuis', x:{
+    kind:['je lievelingsspeelgoed van vroeger', 'wg'], week:['een klusje van de voorbije week', 'wg'], nu:['je lievelingsplek in huis', 'w'],
+    later:['een klus die je nog wil aanpakken', 'wg'], eerste:['het eerste wat je doet als je thuiskomt', 'g'], verrast:['een ding in huis dat handiger is dan je dacht', 'wg'],
+    aanrader:['een huishoudtruc die je iedereen aanraadt', 'g'] } },
+  { id:'dieren', label:'Dieren', x:{
+    kind:['een dier dat je als kind graag zag', 'wg'], week:['een dier dat je de voorbije week zag', 'wg'], nu:['je lievelingsdier', 'wg'],
+    later:['een dier dat je ooit in het echt wil zien', 'wg'], eerste:['het eerste dier dat je ooit aaide', 'wg'], verrast:['een dier dat je verraste', 'wg'],
+    aanrader:['een dier dat iedereen beter zou moeten kennen', 'wg'] } },
+  { id:'natuur', label:'Natuur', x:{
+    kind:['een plek in de natuur uit je kindertijd', 'w'], week:['iets moois wat je de voorbije week buiten zag', 'w'], nu:['je favoriete plek om buiten te zijn', 'w'],
+    later:['een landschap dat je ooit in het echt wil zien', 'w'], eerste:['de eerste keer dat je sneeuw zag', 'm'], verrast:['iets in de natuur dat je verraste', 'w'],
+    aanrader:['een wandeling die je iedereen aanraadt', ''] } },
+  { id:'gewoontes', label:'Gewoontes', x:{
+    kind:['een gewoonte uit je kindertijd', ''], week:['een gewoonte die je de voorbije week volhield', ''], nu:['een gewoonte waar je nu blij mee bent', ''],
+    later:['een gewoonte die je ooit wil aanleren', 'g'], eerste:['het eerste wat je ’s ochtends doet', 'g'], verrast:['een gewoonte uit een ander land die je verraste', ''],
+    aanrader:['een kleine gewoonte die je iedereen aanraadt', 'g'] } },
+  { id:'leren', label:'Leren', x:{
+    kind:['iets wat je als kind leerde', 'g'], week:['iets wat je de voorbije week leerde', ''], nu:['iets wat je nu aan het leren bent', 'g'],
+    later:['iets wat je ooit nog wil leren', 'g'], eerste:['je eerste schooldag', 'm'], verrast:['een weetje dat je verraste', ''],
+    aanrader:['iets wat iedereen eens zou moeten leren', 'g'] } },
+  { id:'buurt', label:'Je buurt', x:{
+    kind:['een plek waar je als kind buiten speelde', 'w'], week:['iets wat je de voorbije week in je buurt opviel', ''], nu:['je favoriete plek in je buurt', 'w'],
+    later:['een plek in je buurt die je nog wil ontdekken', 'w'], eerste:['de eerste plek in je buurt waar je bezoek mee naartoe neemt', 'w'], verrast:['iets in je buurt dat je verraste', ''],
+    aanrader:['een adresje in je buurt dat je iedereen aanraadt', 'w'] } },
+];
+/* Vormen: zin(t, kenmerken) geeft de opdracht na "Zeg je naam." of null als de combinatie niet past. */
+const VORMEN = [
+  { id:'woord', label:'Eén woord', kort:true, zin:(t, k) => k.includes('w') ? `Noem dan ${t}. Eén woord is genoeg.` : `Vat dan in één woord samen: ${t}.` },
+  { id:'drie', label:'Drie woorden', kort:true, zin:t => `Beschrijf dan in drie woorden ${t}.` },
+  { id:'zin', label:'Eén zin', kort:true, zin:t => `Vertel dan in één zin over ${t}.` },
+  { id:'cijfer', label:'Score op 10', kort:true, zin:(t, k, m) => ['nu', 'later', 'aanrader'].includes(m) ? null
+      : k.includes('m') ? `Hoe was ${t}? Geef een score op 10 en zeg kort waarom.` : `Noem dan ${t} en geef een score op 10. Zeg kort waarom.` },
+  { id:'minuut', label:'Halve minuut', kort:false, zin:t => `Vertel dan een halve minuut over ${t}.` },
+  { id:'vraag', label:'Eén vraag', kort:false, zin:t => `Vertel dan kort over ${t}. Daarna mag iemand uit de groep je één vraag stellen.` },
+  { id:'stil', label:'Zonder woorden', kort:false, zin:(t, k) => k.includes('g') ? `Toon dan zonder woorden ${t}. De groep raadt wat het is.` : null },
+];
+const ROLLEN = [ONDERWERPEN, MOMENTEN, VORMEN];
+
+function opdracht(a, b, c) {
+  const o = ONDERWERPEN[a], m = MOMENTEN[b], v = VORMEN[c];
+  const deel = o && m && o.x[m.id];
+  if (!deel || !v) return null;
+  return v.zin(deel[0], deel[1], m.id);
+}
+/* Alle geldige combinaties, één keer berekend */
+const ALLE = [];
+ONDERWERPEN.forEach((_, a) => MOMENTEN.forEach((_, b) => VORMEN.forEach((_, c) => { if (opdracht(a, b, c)) ALLE.push([a, b, c]); })));
+
+/* Zelfcontrole van alle zinnen (ook bruikbaar in tests: window.ijsbreker.controle()) */
+function controle() {
+  const fouten = [], verboden = /\b(geld|euro|loon|ziek\w*|gezond\w*|dokter|relatie|partner|lief|liefje|trouw\w*|scheid\w*|politie\w*|politiek|partij|geloof|god|kerk|religie|gewicht|dieet|kilo|alcohol|bier|wijn|dood|sterf\w*|overleden|ex)\b/i;
+  const gezien = new Set();
+  ALLE.forEach(([a, b, c]) => {
+    const z = 'Zeg je naam. ' + opdracht(a, b, c), sleutel = `${ONDERWERPEN[a].id}/${MOMENTEN[b].id}/${VORMEN[c].id}`;
+    const w = z.toLowerCase().replace(/[.,:?’']/g, ' ').split(/\s+/).filter(Boolean);
+    const zeg = p => fouten.push(sleutel + ': ' + p + ' → ' + z);
+    if (/undefined|null|\{|\}|\$/.test(z)) zeg('lege plek');
+    if (/\s{2}|\s[.,:?]/.test(z)) zeg('spaties');
+    if (!/[.?]$/.test(z)) zeg('geen einde');
+    if (/[.?:]\s+[a-z]/.test(z.replace(/: [a-z]/g, ': X'))) zeg('kleine letter na punt');
+    for (let i = 1; i < w.length; i++) if (w[i] === w[i - 1]) zeg('dubbel woord ' + w[i]);
+    const tel = {}; w.forEach(x => { if (x.length > 3) tel[x] = (tel[x] || 0) + 1; });
+    Object.keys(tel).forEach(x => { if (tel[x] > 1 && !['eerste', 'woord', 'groep'].includes(x)) zeg('herhaling ' + x); });
+    if (z.length > 150) zeg('te lang (' + z.length + ')');
+    if (verboden.test(z)) zeg('gevoelig woord');
+    if (gezien.has(z)) zeg('dubbele zin'); gezien.add(z);
+  });
+  return { aantal: ALLE.length, fouten };
+}
+
+/* ---------- Instellingen (alleen dit toestel) ---------- */
+const KEY = 'ijsbreker.v1';
+let inst = { kort:false, tijd:0 };
+function laad() {
+  try {
+    const d = JSON.parse(localStorage.getItem(KEY) || 'null');
+    if (d && typeof d === 'object') {
+      inst.kort = d.kort === true;
+      inst.tijd = [0, 30, 60].includes(+d.tijd) ? +d.tijd : 0;
+    }
+  } catch {}
+}
+function bewaar() { try { localStorage.setItem(KEY, JSON.stringify(inst)); } catch {} }
+laad();
+
+/* ---------- Rollen ---------- */
+const $ = id => document.getElementById(id);
+const reels = [0, 1, 2].map(i => $('r' + i));
+const NAAM = ['Onderwerp', 'Moment', 'Vorm'];
+const huidig = [null, null, null];
+const vast = [false, false, false];
+const recent = [];
+let draait = false, eerste = true;
+const stil = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function itemHTML(rol, i) {
+  if (i == null) return `<span class="item leeg">${svg('leeg')}<b>${NAAM[rol]}</b></span>`;
+  const d = ROLLEN[rol][i];
+  return `<span class="item">${svg(d.id)}<b>${d.label}</b></span>`;
+}
+function zetRol(rol, i) {
+  const s = reels[rol].querySelector('.strip');
+  s.getAnimations && s.getAnimations().forEach(a => a.cancel());
+  s.style.transform = '';
+  s.innerHTML = itemHTML(rol, i);
+  labelRol(rol);
+}
+function labelRol(rol) {
+  const i = huidig[rol], r = reels[rol];
+  if (i == null) { r.setAttribute('aria-label', `${NAAM[rol]}: nog niet gedraaid`); return; }
+  r.setAttribute('aria-label', `${NAAM[rol]}: ${ROLLEN[rol][i].label}. ${vast[rol] ? 'Staat vast. Tik om los te maken.' : 'Tik om vast te zetten.'}`);
+}
+reels.forEach((r, rol) => { r.querySelector('.lock').innerHTML = SLOT; zetRol(rol, null); });
+
+function past(c) {
+  if (inst.kort && !VORMEN[c[2]].kort) return false;
+  for (let r = 0; r < 3; r++) if (vast[r] && c[r] !== huidig[r]) return false;
+  return true;
+}
+function kies() {
+  let pool = ALLE.filter(past);
+  if (!pool.length) return null;
+  const anders = pool.filter(c => [0, 1, 2].every(r => vast[r] || huidig[r] == null || c[r] !== huidig[r]));
+  if (anders.length) pool = anders;
+  const fris = pool.filter(c => !recent.includes(c.join('.')));
+  if (fris.length) pool = fris;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function draai() {
+  if (draait) return;
+  if (vast.every(Boolean)) { toast('Alle rollen staan vast. Tik op een rol om die los te maken.'); return; }
+  const doel = kies();
+  if (!doel) { toast('Geen opdracht past bij wat vaststaat. Maak een rol los.'); return; }
+  recent.push(doel.join('.')); if (recent.length > 24) recent.shift();
+  stopKlok(true);
+  draait = true;
+  $('draai').setAttribute('aria-disabled', 'true');
+  $('liever').hidden = true;
+  reels.forEach(r => r.setAttribute('aria-disabled', 'true'));
+  $('result').classList.remove('nieuw');
+
+  const beweeg = !stil() && typeof Element.prototype.animate === 'function';
+  const klaar = [];
+  for (let rol = 0; rol < 3; rol++) {
+    const van = huidig[rol], naar = doel[rol];
+    huidig[rol] = naar;
+    if (vast[rol] || !beweeg) { zetRol(rol, naar); continue; }
+    const n = ROLLEN[rol].length, stappen = 7 + rol * 3;
+    let items = [itemHTML(rol, van)], vorige = van;
+    for (let k = 0; k < stappen; k++) {
+      let i; do { i = Math.floor(Math.random() * n); } while (i === vorige || i === naar);
+      items.push(itemHTML(rol, i)); vorige = i;
+    }
+    items.push(itemHTML(rol, naar));
+    const s = reels[rol].querySelector('.strip');
+    s.innerHTML = items.join('');
+    const anim = s.animate([{ transform:'translateY(0)' }, { transform:`translateY(-${(items.length - 1) * 100}%)` }],
+      { duration: 700 + rol * 260, easing:'cubic-bezier(.15,.6,.25,1)', fill:'forwards' });
+    klaar.push(anim.finished.catch(() => {}).then(() => zetRol(rol, naar)));
+  }
+  Promise.all(klaar).then(toon);
+}
+
+function toon() {
+  draait = false;
+  const z = opdracht(huidig[0], huidig[1], huidig[2]);
+  $('eyebrow').hidden = false; $('intro').hidden = false;
+  const s = $('sentence'); s.classList.remove('wacht'); s.textContent = z;
+  void $('result').offsetWidth; $('result').classList.add('nieuw');
+  $('live').textContent = 'Stel je voor. Zeg je naam. ' + z;
+  $('draai').removeAttribute('aria-disabled');
+  $('draai-tekst').textContent = 'Volgende persoon';
+  $('liever').hidden = false;
+  reels.forEach((r, rol) => { r.removeAttribute('aria-disabled'); labelRol(rol); });
+  if (eerste) { eerste = false; $('lockhint').textContent = 'Tik op een rol om die vast te zetten. Dan draaien alleen de andere.'; }
+  toonKlok();
+}
+
+reels.forEach((r, rol) => r.addEventListener('click', () => {
+  if (draait || huidig[rol] == null) return;
+  vast[rol] = !vast[rol];
+  r.setAttribute('aria-pressed', String(vast[rol]));
+  labelRol(rol);
+  $('lockhint').textContent = vast[rol] ? `${ROLLEN[rol][huidig[rol]].label} staat vast. Draai om de rest te veranderen.` : 'Tik op een rol om die vast te zetten. Dan draaien alleen de andere.';
+}));
+$('draai').addEventListener('click', draai);
+$('liever').addEventListener('click', draai);
+document.addEventListener('keydown', e => {
+  if (e.code !== 'Space' && e.key !== ' ') return;
+  const t = e.target;
+  if (t && t !== document.body && t.closest('button, a, input, textarea, select, summary, [contenteditable]')) return;
+  e.preventDefault(); draai();
+});
+
+/* ---------- Tijd per persoon ---------- */
+let klokT = null, eindOp = 0;
+const mmss = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+function toonKlok() {
+  const t = $('timer');
+  t.hidden = !inst.tijd || huidig[0] == null;
+  if (t.hidden) return;
+  stopKlok(true);
+}
+function stopKlok(terug) {
+  clearInterval(klokT); klokT = null;
+  $('timer').classList.remove('klaar');
+  if (terug) {
+    $('tval').textContent = mmss(inst.tijd || 30);
+    $('tbar').style.transform = 'scaleX(1)';
+    $('tgo').textContent = 'Start';
+  }
+}
+function tik() {
+  const rest = Math.max(0, eindOp - Date.now()), sec = Math.ceil(rest / 1000);
+  $('tval').textContent = mmss(sec);
+  $('tbar').style.transform = `scaleX(${rest / (inst.tijd * 1000)})`;
+  if (rest <= 0) {
+    clearInterval(klokT); klokT = null;
+    $('timer').classList.add('klaar');
+    $('tval').textContent = 'Klaar';
+    $('tgo').textContent = 'Opnieuw';
+    $('live').textContent = 'De tijd is om.';
+  }
+}
+$('tgo').addEventListener('click', () => {
+  if (klokT) { stopKlok(true); return; }
+  stopKlok(false);
+  eindOp = Date.now() + inst.tijd * 1000;
+  $('tgo').textContent = 'Stop';
+  tik(); klokT = setInterval(tik, 200);
+});
+
+/* ---------- Instellingen ---------- */
+function toonInst() {
+  $('kort').setAttribute('aria-pressed', String(inst.kort));
+  document.querySelectorAll('#tijd .chip').forEach(c => c.setAttribute('aria-pressed', String(+c.dataset.s === inst.tijd)));
+}
+$('kort').addEventListener('click', () => {
+  inst.kort = !inst.kort; bewaar(); toonInst();
+  if (inst.kort && vast[2] && huidig[2] != null && !VORMEN[huidig[2]].kort) {
+    vast[2] = false; reels[2].setAttribute('aria-pressed', 'false'); labelRol(2);
+    toast('Alleen korte opdrachten. De vorm staat niet meer vast.');
+  } else toast(inst.kort ? 'Alleen korte opdrachten' : 'Alle opdrachten');
+});
+document.querySelectorAll('#tijd .chip').forEach(c => c.addEventListener('click', () => {
+  inst.tijd = +c.dataset.s; bewaar(); toonInst(); toonKlok();
+}));
+toonInst();
+
+/* ---------- Melding ---------- */
+let toastT = null;
+function toast(msg) {
+  $('toast-text').textContent = msg;
+  $('toast').classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(() => $('toast').classList.remove('show'), 2800);
+}
+
+window.ijsbreker = { controle, opdracht, ALLE, ONDERWERPEN, MOMENTEN, VORMEN };
+    </script>
+<script>
+/* oc-sync: reageert op "Wissen" in de app (ook in andere tabbladen) en geeft Esc door aan de app */
+(function () {
+  if (window.__ocSync) return; window.__ocSync = true;
+  var gewist = false;
+  function wis() {
+    if (gewist) return; gewist = true;
+    try { var orig = Storage.prototype.setItem; Storage.prototype.setItem = function (k, v) { if (k === 'oc.wis') return orig.call(this, k, v); }; } catch (e) {}
+    try { document.body.innerHTML = '<p role="status" style="font-family:\'DM Sans\',system-ui,sans-serif;padding:3rem 1.5rem;text-align:center;color:#475569;font-size:1.0625rem">Er is iets veranderd op dit toestel. Deze pagina laadt opnieuw…</p>'; } catch (e) {}
+    setTimeout(function () { location.reload(); }, 400);
+  }
+  try { var bc = new BroadcastChannel('oc-sync'); bc.onmessage = function (e) { if (e.data && e.data.type === 'wis') wis(); }; } catch (e) {}
+  addEventListener('storage', function (e) { if (e.key === 'oc.wis' || e.key === null) wis(); });
+  if (window.parent === window) return;
+  addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape' || e.defaultPrevented) return;
+    var a = document.activeElement;
+    if (a && (a.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) return;
+    if (document.querySelector('dialog[open], [role="dialog"]:not([hidden]):not([aria-hidden="true"]), [aria-modal="true"]:not([hidden]), [aria-expanded="true"], .open, .show, .active.modal, .is-open')) return;
+    try { parent.postMessage({ type: 'oc-esc' }, location.origin); } catch (err) {}
+  }, true);
+})();
+</script>
+</body>
+</html>
