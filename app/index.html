@@ -347,6 +347,23 @@ body.filtering #groups, body.filtering #list-tools { display:none; }
 
 /* ---------- Wissen: alles of per app ---------- */
 .xs-back { z-index:32; }
+/* ---------- Suggestie ---------- */
+.fb-kinds { display:flex; flex-wrap:wrap; gap:0.5rem; margin:0 0 0.875rem; border:0; padding:0; }
+.fb-kinds legend { font-size:0.875rem; font-weight:600; color:var(--slate-700); margin-bottom:0.375rem; padding:0; }
+.fb-kind { display:inline-flex; align-items:center; min-height:44px; padding:0 1rem; border:1.5px solid var(--slate-200); border-radius:999px; font-size:0.9375rem; font-weight:600; color:var(--slate-700); background:var(--wit); cursor:pointer; }
+.fb-kind input { position:absolute; opacity:0; width:1px; height:1px; }
+.fb-kind:has(input:checked) { border-color:var(--accent); background:#ecfdf5; color:var(--accent-dark); }
+.fb-kind:has(input:focus-visible) { outline:2px solid var(--accent-dark); outline-offset:2px; }
+.fb-lab { display:block; font-size:0.875rem; font-weight:600; color:var(--slate-700); margin-bottom:0.375rem; }
+.fb-sel, .fb-txt { width:100%; font:inherit; font-size:1rem; color:var(--slate-800); background:var(--wit); border:1.5px solid var(--slate-200); border-radius:12px; padding:0.625rem 0.75rem; }
+.fb-sel { min-height:46px; margin-bottom:0.875rem; }
+.fb-txt { min-height:140px; resize:vertical; line-height:1.45; }
+.fb-sel:focus-visible, .fb-txt:focus-visible { outline:2px solid var(--accent-dark); outline-offset:1px; border-color:var(--accent); }
+.fb-count { text-align:right; font-size:0.75rem; color:var(--slate-500); margin:0.25rem 0 0.75rem; font-variant-numeric:tabular-nums; }
+.fb-note { font-size:0.8125rem; color:var(--slate-500); margin-top:0.75rem; line-height:1.45; }
+.fb-alt { margin-top:0.5rem; font-size:0.8125rem; color:var(--slate-600); }
+.fb-alt button { font:inherit; font-weight:600; color:var(--accent-dark); text-decoration:underline; text-underline-offset:3px; background:none; border:0; min-height:44px; padding:0 0.25rem; cursor:pointer; }
+.fb-addr { font-weight:600; color:var(--slate-700); user-select:all; }
 .sheet.xs { display:flex; flex-direction:column; overflow:hidden; padding-bottom:0; }
 .sheet.xs .sheet-head { margin-right:-0.5rem; }
 .sheet.xs .sheet-intro { margin-bottom:0.75rem; }
@@ -1133,7 +1150,9 @@ body.ready .main > .alltools { animation-delay:.1s; }
     <span class="sep" aria-hidden="true">·</span>
     <button class="footer-link" id="data-open" type="button">reservekopie</button>
     <span class="sep" aria-hidden="true">·</span>
-    <span class="app-version" title="Versie van de app">v48</span>
+    <button class="footer-link" id="fb-open" type="button" aria-haspopup="dialog">suggestie</button>
+    <span class="sep" aria-hidden="true">·</span>
+    <span class="app-version" title="Versie van de app">v49</span>
   </footer>
 </div>
 
@@ -1179,6 +1198,36 @@ body.ready .main > .alltools { animation-delay:.1s; }
         <label class="priv-toggle"><input type="checkbox" id="priv-hide"><span>Verberg namen op het startscherm<small>Dit is geen beveiliging. Wie een tool opent, ziet nog alles. De namen van je lijsten en projecten staan dan niet op het startscherm, en zoeken in je gegevens staat uit.</small></span></label>
       </div>
     </details>
+  </section>
+</div>
+
+<!-- Suggestie: gaat via de eigen mailapp van de gebruiker. Niets wordt door de app verstuurd of bewaard. -->
+<div class="sheet-back" id="fb-sheet" hidden>
+  <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="fb-title">
+    <div class="sheet-head">
+      <h2 id="fb-title">Suggestie of fout</h2>
+      <button type="button" class="tb-btn" id="fb-close" aria-label="Sluit">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <p class="sheet-intro">Wat kan beter, wat mis je, wat werkt niet? Elke tip helpt.</p>
+    <form id="fb-form" novalidate>
+      <fieldset class="fb-kinds">
+        <legend>Wat wil je melden?</legend>
+        <label class="fb-kind"><input type="radio" name="fb-kind" value="Idee" checked>Een idee</label>
+        <label class="fb-kind"><input type="radio" name="fb-kind" value="Fout">Iets werkt niet</label>
+        <label class="fb-kind"><input type="radio" name="fb-kind" value="Nieuwe tool">Nieuwe tool</label>
+      </fieldset>
+      <label class="fb-lab" for="fb-tool">Over welke tool?</label>
+      <select class="fb-sel" id="fb-tool"></select>
+      <label class="fb-lab" for="fb-txt">Je bericht</label>
+      <textarea class="fb-txt" id="fb-txt" maxlength="1500" placeholder="Bijvoorbeeld: bij het takenbord wil ik een deadline per taak."></textarea>
+      <p class="fb-count" id="fb-count" aria-live="polite">0 / 1500</p>
+      <button class="dbtn go" id="fb-send" type="submit">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16v12H4z"/><path d="m4 7 8 6 8-6"/></svg>Verstuur met je mailapp</button>
+    </form>
+    <p class="fb-note">Je mailapp opent met je bericht klaar. Jij kiest of je het verstuurt. Er gaat alleen mee wat je hier ziet, plus het type toestel en de versie van de app. Niets van je werk in de tools.</p>
+    <p class="fb-alt" id="fb-alt" hidden>Opent er niets? <button type="button" id="fb-copy">Kopieer je bericht</button> en mail het naar <span class="fb-addr" id="fb-addr"></span>.</p>
   </section>
 </div>
 
@@ -1779,6 +1828,7 @@ $('ext').addEventListener('click', () => {
 // Terugknop (ook die van Android) en vooruit: tool, venster Reservekopie of Wissen, of startscherm, altijd hetzelfde gedrag als de knoppen.
 window.addEventListener('popstate', e => {
   const s = e.state || {};
+  if (!$('fb-sheet').hidden && !s.fb) { closeFb(true); return; }
   if (!$('exit-sheet').hidden && !s.exit) { closeExit(true); if (!$('data-sheet').hidden && !s.sheet) closeData(true); return; }
   if (!$('data-sheet').hidden && !s.sheet) { closeData(true); return; }
   const id = s.tool || location.hash.slice(1);
@@ -2057,6 +2107,60 @@ $('exit-sheet').addEventListener('keydown', e => {
   if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
   else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
 });
+/* ---------- Suggestie ---------- */
+const fbAddr = ['volckaba', 'gmail.com'].join('@');   // niet letterlijk in de pagina, tegen spamrobots
+let fbOpener = null;
+function fbText() {
+  const kind = (document.querySelector('input[name="fb-kind"]:checked') || {}).value || 'Idee';
+  const tool = $('fb-tool').value;
+  const ua = navigator.userAgent;
+  const dev = /iPhone|iPad/.test(ua) ? 'iPhone/iPad' : /Android/.test(ua) ? 'Android' : /Mac/.test(ua) ? 'Mac' : /Windows/.test(ua) ? 'Windows' : 'ander toestel';
+  const app = matchMedia('(display-mode: standalone)').matches ? 'geïnstalleerde app' : 'browser';
+  const subject = `Onder Constructie: ${kind}${tool ? ' (' + tool + ')' : ''}`;
+  const body = `${$('fb-txt').value.trim()}\n\n---\nTool: ${tool || 'algemeen'}\nToestel: ${dev}, ${app}, scherm ${innerWidth}px\nVersie: ${($('fb-ver') || {}).textContent || document.querySelector('.app-version').textContent}`;
+  return { subject, body };
+}
+function openFb(toolId) {
+  fbOpener = document.activeElement;
+  const sel = $('fb-tool'), keep = sel.value;
+  sel.innerHTML = '<option value="">Algemeen of de app zelf</option>' + Object.values(byId).map(t => t.title).sort((a, b) => a.localeCompare(b, 'nl')).map(t => `<option>${esc(t)}</option>`).join('');
+  sel.value = toolId && byId[toolId] ? byId[toolId].title : keep;
+  $('fb-alt').hidden = true;
+  $('fb-sheet').hidden = false; $('home').inert = true; document.documentElement.classList.add('sheet-open');
+  history.pushState({ fb:1 }, '');
+  $('fb-txt').focus();
+}
+function closeFb(fromHistory) {
+  if ($('fb-sheet').hidden) return;
+  $('fb-sheet').hidden = true; $('home').inert = false; document.documentElement.classList.remove('sheet-open');
+  if (fromHistory !== true && history.state && history.state.fb) history.back();
+  if (fbOpener && fbOpener.isConnected) fbOpener.focus();
+}
+$('fb-open').addEventListener('click', () => openFb());
+$('fb-close').addEventListener('click', closeFb);
+$('fb-sheet').addEventListener('click', e => { if (e.target === $('fb-sheet')) closeFb(); });
+$('fb-txt').addEventListener('input', () => { $('fb-count').textContent = `${$('fb-txt').value.length} / 1500`; });
+$('fb-form').addEventListener('submit', e => {
+  e.preventDefault();
+  if (!$('fb-txt').value.trim()) { $('fb-txt').focus(); appToast('Schrijf eerst kort wat je wilt melden.'); return; }
+  const { subject, body } = fbText();
+  location.href = `mailto:${fbAddr}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  $('fb-addr').textContent = fbAddr;
+  setTimeout(() => { $('fb-alt').hidden = false; }, 900);   // als er geen mailapp opent, staat het alternatief klaar
+});
+$('fb-copy').addEventListener('click', async () => {
+  const { subject, body } = fbText();
+  try { await navigator.clipboard.writeText(`${subject}\n\n${body}`); appToast('Bericht gekopieerd. Plak het in een mail.'); }
+  catch { appToast('Kopiëren lukte niet. Selecteer de tekst zelf.'); }
+});
+$('fb-sheet').addEventListener('keydown', e => {
+  if (e.key !== 'Tab') return;
+  const f = [...$('fb-sheet').querySelectorAll('button, select, textarea, input:checked')].filter(x => !x.hidden && x.offsetParent && !x.disabled);
+  if (!f.length) return; const first = f[0], last = f[f.length - 1];
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+});
+
 $('shared-exit').addEventListener('click', openExit);
 $('exit-mw').addEventListener('click', openExit);
 $('manage').addEventListener('click', openData);
@@ -2064,7 +2168,7 @@ $('data-close').addEventListener('click', closeData);
 $('data-sheet').addEventListener('click', e => { if (e.target === $('data-sheet')) closeData(); });
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
-  if (!$('exit-sheet').hidden) closeExit(); else if (!$('data-sheet').hidden) closeData();
+  if (!$('fb-sheet').hidden) closeFb(); else if (!$('exit-sheet').hidden) closeExit(); else if (!$('data-sheet').hidden) closeData();
 });
 
 /* Een reservekopie is altijd hetzelfde formaat: { app, version:1, created, data:{ sleutel: tekst } }.
