@@ -11,6 +11,7 @@
 <meta name="oc:kort" content="Wat kost deze vergadering aan werktijd?">
 <meta name="oc:volgorde" content="75">
 <meta name="oc:opslag" content="vergaderkost.v1">
+    <meta name="oc:titel" content="Vergaderkost">
 <meta name="theme-color" content="#ffffff">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80' fill='none'%3E%3Ccircle cx='40' cy='40' r='36' fill='%23f8fafc' stroke='%23e2e8f0' stroke-width='2'/%3E%3Cpath d='M27 20h26M27 60h26' stroke='%2310b981' stroke-width='3.5' stroke-linecap='round'/%3E%3Cpath d='M30 20c0 11 10 13 10 20s-10 9-10 20M50 20c0 11-10 13-10 20s10 9 10 20' stroke='%23cbd5e1' stroke-width='3' stroke-linecap='round'/%3E%3Cpath d='M34 28h12l-6 8z' fill='%2310b981' opacity='0.45'/%3E%3Cpath d='M32.5 58c1.2-5.5 4.4-7.5 7.5-7.5s6.3 2 7.5 7.5z' fill='%2310b981'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="/fonts/fonts.css">
@@ -259,6 +260,14 @@ button:not(:disabled):active, summary:active { filter:brightness(0.93); }
   #start { min-height:52px; min-width:min(100%, 11rem); font-size:1rem; }
 }
 @media (pointer:coarse) { .num { font-size:1rem; } }
+
+/* Bewaar als bestand / Open bestand */
+.ocb-row { display:flex; flex-wrap:wrap; justify-content:center; gap:0.5rem; margin-top:1.25rem; }
+.ocb-btn { display:inline-flex; align-items:center; gap:0.5rem; min-height:44px; padding:0.5rem 1rem; font:inherit; font-size:0.9375rem; font-weight:600; color:var(--accent-dark, #047857); background:var(--wit, #fff); border:1.5px solid var(--slate-200, #e2e8f0); border-radius:10px; cursor:pointer; }
+.ocb-btn:hover { background:var(--accent-bg, #ecfdf5); border-color:var(--accent-light, #a7f3d0); }
+.ocb-btn svg { width:18px; height:18px; flex:none; }
+.ocb-sub { flex-basis:100%; margin:0; text-align:center; font-size:0.8125rem; color:var(--slate-500, #64748b); }
+.ocb-note { margin:0.625rem 0 0; font-size:0.8125rem; color:var(--slate-500, #64748b); }
 </style>
 </head>
 <body>
@@ -360,6 +369,7 @@ button:not(:disabled):active, summary:active { filter:brightness(0.93); }
       <button class="btn btn-soft" id="export-pdf" title="Download als PDF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 15h6M9 18h4"/></svg>PDF</button>
       <button class="btn btn-primary" id="again">Nieuwe vergadering</button>
     </div>
+    <p class="ocb-note">Een afbeelding, PDF of CSV kan je niet terug openen.</p>
   </section>
 
   <!-- Historiek -->
@@ -368,6 +378,11 @@ button:not(:disabled):active, summary:active { filter:brightness(0.93); }
     <ul class="hist" id="hist"></ul>
     <button class="hist-clear" id="hist-clear">Historiek wissen</button>
   </section>
+  <div class="ocb-row">
+    <button type="button" class="ocb-btn" data-bestand="bewaar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M12 11v6M9 14l3 3 3-3"/></svg>Bewaar als bestand</button>
+    <button type="button" class="ocb-btn" data-bestand="open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 10v6M9 13l3-3 3 3"/></svg>Open bestand</button>
+    <p class="ocb-sub">Om later verder te werken, of door te geven</p>
+  </div>
   <div class="restart-row"><button type="button" class="restart-btn" id="oc-wipe" title="Alles wissen en opnieuw beginnen">Opnieuw beginnen</button></div>
 </main>
 
@@ -1022,6 +1037,98 @@ if (st.phase === 'running' || st.phase === 'paused') {
 render(); renderSummary(); syncWakeLock();
 setInterval(() => { if (st.phase === 'running') render(); }, 250);
 </script>
+<input type="file" id="oc-bestand-in" accept=".json,application/json" hidden>
+<script>
+/* oc-bestand: je werk in deze tool bewaren als bestand en later (of op een ander toestel) weer openen.
+   Formaat = dat van de reservekopie in de app: { app:'Onder Constructie', version:1, created, tool, data:{ sleutel: tekst } }.
+   Een reservekopie uit de app kan je hier ook openen: de tool neemt er alleen zijn eigen deel uit. */
+window.ocBestand = (function () {
+  function patronen() {
+    var m = document.querySelector('meta[name="oc:opslag"]');
+    return m ? m.content.split(',').map(function (s) { return s.trim(); }).filter(Boolean) : [];
+  }
+  function past(k, p) { return p.slice(-1) === '*' ? k.indexOf(p.slice(0, -1)) === 0 : k === p; }
+  function eigen(k) { return patronen().some(function (p) { return past(k, p); }); }
+  function sleutels() {
+    var uit = [];
+    try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k && eigen(k)) uit.push(k); } } catch (e) {}
+    return uit;
+  }
+  function naam() {
+    var m = document.querySelector('meta[name="oc:titel"]') || document.querySelector('meta[name="application-name"]');
+    return (m && m.content) || (document.title.split(/\s[–-]\s/)[0] || 'tool').trim();
+  }
+  function slug(s) { return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
+  /* bewaar(): downloadt het bestand. Geeft het aantal bewaarde sleutels terug (0 = niets om te bewaren). */
+  function bewaar(extraNaam) {
+    var keys = sleutels(); if (!keys.length) return 0;
+    var data = {}; keys.forEach(function (k) { try { data[k] = localStorage.getItem(k); } catch (e) {} });
+    var id = location.pathname.replace(/\/index\.html$/, '').split('/').filter(Boolean).pop() || 'tool';
+    var blob = new Blob([JSON.stringify({ app: 'Onder Constructie', version: 1, created: new Date().toISOString(), tool: id, data: data }, null, 1)], { type: 'application/json' });
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    var stuk = slug(naam()) + (extraNaam ? '-' + slug(extraNaam) : '');
+    a.download = stuk + '-' + new Date().toISOString().slice(0, 10) + '.json';
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+    return keys.length;
+  }
+  /* lees(file): Promise met { data: {sleutel: tekst} } van alleen de eigen sleutels.
+     Fout 'vorm' = geen bestand van Onder Constructie; fout 'leeg' = niets van deze tool in het bestand. */
+  function lees(file) {
+    return file.text().then(function (t) {
+      var d; try { d = JSON.parse(t); } catch (e) { throw new Error('vorm'); }
+      if (!d || d.app !== 'Onder Constructie' || typeof d.data !== 'object' || !d.data) throw new Error('vorm');
+      var uit = {}, n = 0;
+      Object.keys(d.data).forEach(function (k) { if (eigen(k) && typeof d.data[k] === 'string') { uit[k] = d.data[k]; n++; } });
+      if (!n) throw new Error('leeg');
+      return { data: uit, aantal: n, created: d.created || null };
+    });
+  }
+  /* zetTerug(gelezen): vervangt het huidige werk van deze tool door wat in het bestand staat, en laat andere tabbladen herladen. */
+  function zetTerug(g) {
+    sleutels().forEach(function (k) { try { localStorage.removeItem(k); } catch (e) {} });
+    Object.keys(g.data).forEach(function (k) { try { localStorage.setItem(k, g.data[k]); } catch (e) {} });
+  }
+  function melding(err) {
+    return err && err.message === 'leeg' ? 'In dit bestand staat niets van ' + naam() + '.'
+      : 'Dit bestand kan ik niet openen. Kies een bestand dat je met "Bewaar als bestand" of als reservekopie maakte.';
+  }
+  return { bewaar: bewaar, lees: lees, zetTerug: zetTerug, melding: melding, sleutels: sleutels, naam: naam };
+})();
+</script>
+<script>
+/* Bewaar als bestand / Open bestand */
+(() => {
+  const heeftWerk = () => { try { return !!(st.history.length || st.segments.length); } catch (e) { return true; } };
+  const extraNaam = () => { try { return String('' || '').trim(); } catch (e) { return ''; } };
+  const inp = document.getElementById('oc-bestand-in');
+  // Een lange melding blijft langer staan (minstens 4,5 s): toon ze opnieuw voor ze verdwijnt.
+  const lang = msg => { toast(msg); setTimeout(() => { const t = document.getElementById('toast-text'); if (t && t.textContent === msg) toast(msg); }, 2300); };
+  const sluit = () => { const m = document.getElementById('menu'), b = document.getElementById('menu-btn'); if (m) m.classList.remove('open'); if (b) b.setAttribute('aria-expanded', 'false'); };
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-bestand]'); if (!b) return;
+    sluit();
+    if (b.dataset.bestand === 'bewaar') {
+      if (!heeftWerk() || !ocBestand.bewaar(extraNaam())) { toast('Er is nog niets om te bewaren.'); return; }
+      toast('Bestand gedownload');
+    } else { inp.value = ''; inp.click(); }
+  });
+  inp.addEventListener('change', async () => {
+    const f = inp.files && inp.files[0]; if (!f) return;
+    let g; try { g = await ocBestand.lees(f); } catch (err) { lang(ocBestand.melding(err)); return; }
+    if (heeftWerk() && !await ocConfirm('Bestand openen?', 'Dit vervangt wat nu in ' + ocBestand.naam() + ' staat. Doorgaan?', 'Vervang')) return;
+    // Tot de herlaadbeurt mag niets het teruggezette werk nog overschrijven (uitgestelde bewaring, pagehide, ander tabblad).
+    const pat = (document.querySelector('meta[name="oc:opslag"]') || {}).content || '';
+    const eigen = k => pat.split(',').map(s => s.trim()).filter(Boolean).some(p => p.slice(-1) === '*' ? String(k).indexOf(p.slice(0, -1)) === 0 : k === p);
+    ocBestand.zetTerug(g);
+    try {
+      const set = Storage.prototype.setItem, rem = Storage.prototype.removeItem;
+      Storage.prototype.setItem = function (k, v) { if (this === localStorage && eigen(k)) return; return set.call(this, k, v); };
+      Storage.prototype.removeItem = function (k) { if (this === localStorage && eigen(k)) return; return rem.call(this, k); };
+    } catch (e) {}
+    location.reload();
+  });
+})();
+</script>
 <script>
 /* oc-sync: reageert op "Wissen" in de app (ook in andere tabbladen) en geeft Esc door aan de app */
 (function () {
@@ -1030,7 +1137,7 @@ setInterval(() => { if (st.phase === 'running') render(); }, 250);
   function wis() {
     if (gewist) return; gewist = true;
     try { var orig = Storage.prototype.setItem; Storage.prototype.setItem = function (k, v) { if (k === 'oc.wis') return orig.call(this, k, v); }; } catch (e) {}
-    try { document.body.innerHTML = '<p role="status" style="font-family:\'DM Sans\',system-ui,sans-serif;padding:3rem 1.5rem;text-align:center;color:#475569;font-size:1.0625rem">Er is iets gewist op dit toestel. Deze pagina laadt opnieuw…</p>'; } catch (e) {}
+    try { document.body.innerHTML = '<p role="status" style="font-family:\'DM Sans\',system-ui,sans-serif;padding:3rem 1.5rem;text-align:center;color:#475569;font-size:1.0625rem">Er is iets veranderd op dit toestel. Deze pagina laadt opnieuw…</p>'; } catch (e) {}
     setTimeout(function () { location.reload(); }, 400);
   }
   try { var bc = new BroadcastChannel('oc-sync'); bc.onmessage = function (e) { if (e.data && e.data.type === 'wis') wis(); }; } catch (e) {}
