@@ -1169,7 +1169,7 @@ body.ready .main > .alltools { animation-delay:.1s; }
     <span class="sep" aria-hidden="true">·</span>
     <button class="footer-link" id="fb-open" type="button" aria-haspopup="dialog">suggestie</button>
     <span class="sep" aria-hidden="true">·</span>
-    <span class="app-version" title="Versie van de app">v51</span>
+    <span class="app-version" title="Versie van de app">v52</span>
   </footer>
 </div>
 
@@ -1295,6 +1295,24 @@ body.ready .main > .alltools { animation-delay:.1s; }
 <div class="app-dlg-back" id="app-dlg" hidden><div class="app-dlg" role="alertdialog" aria-modal="true" aria-labelledby="app-dlg-t"><b id="app-dlg-t"></b><p id="app-dlg-p"></p>
   <div class="app-dlg-row"><button type="button" class="dbtn" id="app-dlg-no">Annuleer</button><button type="button" class="dbtn danger solid" id="app-dlg-yes">Wis</button></div></div></div>
 <script>
+/* Risicomatrix: kans en impact gingen van 1-10 naar 1-5. Wat de Risicomatrix vroeger klaarlegde voor andere tools
+   (oc.share.risico, notitie "kans 7 · impact 8") zetten we hier om, ook als de Risicomatrix zelf nog niet open was.
+   Nieuwe notities hebben "/5" en blijven ongemoeid. De Risicomatrix zet zijn eigen opslag zelf om bij het laden. */
+function ocRisicoSchaal5() {
+  try {
+    const raw = localStorage.getItem('oc.share.risico'); if (!raw) return;
+    const d = JSON.parse(raw); if (!d || !Array.isArray(d.lists)) return;
+    const half = v => Math.max(1, Math.min(5, Math.ceil(Math.max(1, Math.min(10, +v || 1)) / 2)));
+    let changed = false;
+    d.lists.forEach(l => (l && Array.isArray(l.items) ? l.items : []).forEach(it => {
+      if (!it || typeof it.note !== 'string') return;
+      const n = it.note.replace(/^kans (\d{1,2}) · impact (\d{1,2})(?=\s·|$)/, (m, k, i) => `kans ${half(k)}/5 · impact ${half(i)}/5`);
+      if (n !== it.note) { it.note = n; changed = true; }
+    }));
+    if (changed) localStorage.setItem('oc.share.risico', JSON.stringify(d));
+  } catch {}
+}
+ocRisicoSchaal5();
 /* De lijst van tools komt uit /tools.json. Die wordt gebouwd uit de metatags in de tools zelf (scripts/bouw-tools.py). */
 let TOOLS = [];
 let byId = {};
@@ -2326,6 +2344,7 @@ $('restore-yes').addEventListener('click', () => {
   const cur = k => { try { return localStorage.getItem(k); } catch { return null; } };
   const before = Object.fromEntries(put.map(([k]) => [k, cur(k)]));
   put.forEach(([k, v]) => { try { localStorage.setItem(k, v); } catch {} });
+  ocRisicoSchaal5();   // een oude reservekopie kan risico's op de schaal 1-10 bevatten
   showRestore(false);
   const refresh = () => { [...frames.keys()].forEach(id => dropFrame(id)); dropPre(); renderGroups(); renderRecent(); renderFilter(); renderPaths(); markLive(); renderData(); };
   refresh(); signalWipe();   // open tools in andere tabbladen laden opnieuw
@@ -2342,7 +2361,7 @@ $('restore-yes').addEventListener('click', () => {
    De app toont per plan de stappen, welke al gegevens hebben, en wat de volgende stap is. */
 const TRAJECTEN = [
   { id:'verandering', title:'Mensen meekrijgen in een verandering', note:'Van wie er mee moet tot hoe mensen meegaan',
-    foot:'Stakeholders, sponsor, impact en klimaat voeden samen het Veranderprofiel.',
+    foot:'Betrokkenen, sponsor, impact en klimaat voeden samen het Veranderprofiel.',
     q:{} },   // geen aparte vragen: de stappen tonen de ondertitel van de tool zelf, zo staat er overal hetzelfde
   { id:'project', title:'Een project opzetten', note:'Van vertrekpunt tot terugblik',
     q:{ gap:'Waar staan we, waar willen we heen?', prioriteit:'Wat eerst?', raci:'Wie doet wat?', 'project-realisme':'Is het haalbaar?',
@@ -2553,7 +2572,7 @@ const SYNONIEMEN = {
   communicatie:'communicatie boodschap mail nieuwsbrief aankondigen mailen reorganisatie herstructurering nieuwe structuur aanspreken', memomiles:'mail notitie inbox mailen e-mail', focus:'timer concentratie blokken',
   fortuna:'loting willekeurig naam trekken wie begint beurt kiezen rad team vergadering', mixer:'teams verdelen groepen groepjes indelen samenstellen team vergadering',
   'project-realisme':'schatting planning tijd duur mijlpalen budget projectplan deadline',
-  stakeholders:'draagvlak betrokkenen invloed reorganisatie herstructurering nieuwe structuur aanspreken stuurgroep', sponsor:'draagvlak leiding top opdrachtgever reorganisatie aanspreken stuurgroep budget', weerstand:'draagvlak weerstand verzet onduidelijk verlies wantrouwen onvermogen ruimte reorganisatie herstructurering aanspreken',
+  stakeholders:'stakeholder stakeholders radar draagvlak betrokkenen invloed reorganisatie herstructurering nieuwe structuur aanspreken stuurgroep', sponsor:'draagvlak leiding top opdrachtgever reorganisatie aanspreken stuurgroep budget', weerstand:'draagvlak weerstand verzet onduidelijk verlies wantrouwen onvermogen ruimte reorganisatie herstructurering aanspreken',
   impact:'verandering gevolgen reorganisatie herstructurering nieuwe structuur', klimaat:'verandering cultuur vertrouwen', veranderprofiel:'verandering samenvatting inspanning reorganisatie herstructurering',
   gap:'kloof verschil huidige gewenste situatie projectplan budget doelen', prioriteit:'prioriteren belangrijk dringend snelle winst quick wins projectplan planning', risico:'risico kans gevolg projectplan stuurgroep budget rapport',
   'project-radar':'status gezondheid project rapport rapportering stuurgroep budget planning mijlpalen', retro:'terugblik evaluatie lessen overleg team vergadering verslag actiepunten', paradox:'afstemming overleg groepsgrootte',

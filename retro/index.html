@@ -849,19 +849,37 @@ const ocRich = (() => {
 })();
 /* ---------- Formaten ---------- */
 const FORMATS = {
-  ssd: { name:'Beginnen met / Stoppen met / Doorgaan', cols:[
-    { t:'Beginnen met', h:'Wat gaan we nieuw doen?', c:'#10b981' },
-    { t:'Stoppen met', h:'Wat laten we vallen?', c:'#64748b' },
-    { t:'Doorgaan', h:'Wat werkt en houden we?', c:'#047857' } ] },
+  hrp: { name:'Wat hielp / Wat remde / Wat proberen we', cols:[
+    { t:'Wat hielp', k:'Hielp', h:'Wat bracht ons vooruit?', c:'#10b981' },
+    { t:'Wat remde', k:'Remde', h:'Wat hield ons tegen?', c:'#64748b' },
+    { t:'Wat proberen we', k:'Proberen', h:'Wat doen we volgende keer anders?', c:'#047857' } ] },
   gba: { name:'Goed / Beter / Proberen', cols:[
     { t:'Goed', h:'Wat ging goed?', c:'#10b981' },
     { t:'Beter', h:'Wat kan beter?', c:'#f59e0b' },
     { t:'Proberen', h:'Wat willen we uitproberen?', c:'#047857' } ] },   // niet "Acties": dat is het blok eronder
-  bvb: { name:'Blij / Verdrietig / Boos', cols:[
-    { t:'Blij', h:'Waar werd je blij van?', c:'#10b981' },
-    { t:'Verdrietig', h:'Wat viel tegen?', c:'#64748b' },
-    { t:'Boos', h:'Wat stoorde je?', c:'#ef4444' } ] }
+  nrg: { name:'Energie / Moeite / Wat helpt', cols:[
+    { t:'Energie', h:'Waar kreeg je energie van?', c:'#10b981' },
+    { t:'Moeite', h:'Wat kostte je moeite of liep stroef?', c:'#64748b' },
+    { t:'Wat helpt', h:'Wat maakt het werk volgende keer lichter?', c:'#047857' } ] }
 };
+// k = korte naam voor de kolomtabs op de gsm.
+// Oude formaten (tot oktober 2026) gaan over naar de nieuwe, met behoud van elk kaartje.
+// ssd: kolom 0 (nieuw beginnen) -> 2, 1 (stoppen) -> 1, 2 (houden) -> 0.  bvb: 0 -> 0, 1 en 2 -> 1.
+const OUD = { ssd:{ to:'hrp', map:[2, 1, 0] }, bvb:{ to:'nrg', map:[0, 1, 1] } };
+function migreer(r) {
+  if (!r || typeof r !== 'object') return r;
+  const m = OUD[r.format];
+  if (m) {
+    r.format = m.to;
+    (r.cards || []).forEach(c => { if (Number.isInteger(c.col) && m.map[c.col] !== undefined) c.col = m.map[c.col]; });
+  }
+  if (!FORMATS[r.format]) r.format = 'hrp';
+  if (!Array.isArray(r.cards)) r.cards = [];
+  r.cards.forEach(c => { if (!Number.isInteger(c.col) || c.col < 0 || c.col > 2) c.col = 0; });
+  if (!Array.isArray(r.actions)) r.actions = [];
+  if (!Array.isArray(r.carried)) r.carried = [];
+  return r;
+}
 
 /* ---------- Opslag ---------- */
 const KEY = 'retro.v1';
@@ -872,11 +890,11 @@ function ocProject(fb) { try { const p = JSON.parse(localStorage.getItem('oc.pro
 // Standaardnaam: de projectnaam uit de app (oc.project), anders 'Retro'; met de datum erbij.
 const defaultName = iso => `${ocProject('Retro').slice(0, 48)} ${fmtDate(iso || today())}`;
 function newRetro(opts = {}) {
-  return { id:uid(), name:opts.name || defaultName(), date:today(), format:opts.format || 'ssd',
+  return { id:uid(), name:opts.name || defaultName(), date:today(), format:opts.format || 'hrp',
            cards:[], actions:[], carried:opts.carried || [] };
 }
 function load() {
-  try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && Array.isArray(d.retros) && d.retros.length) return d; } catch {}
+  try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && Array.isArray(d.retros) && d.retros.length) { d.retros = d.retros.filter(r => r && typeof r === 'object').map(migreer); if (d.retros.length) return d; } } catch {}
   const r = newRetro();
   return { retros:[r], current:r.id, sortVotes:false, col:0, minutes:5 };
 }
@@ -948,7 +966,7 @@ function renderTabs() {
 }
 
 function render() {
-  const r = cur(), F = FORMATS[r.format] || FORMATS.ssd;
+  const r = cur(), F = FORMATS[r.format] || FORMATS.hrp;
   if (document.activeElement !== $('retro-name')) $('retro-name').value = r.name;
   const delLabel = `Verwijder ${r.name || 'Naamloos'}`;
   $('del-btn').setAttribute('aria-label', delLabel); $('del-btn').title = delLabel;
@@ -957,7 +975,7 @@ function render() {
   // kolomtabs (gsm)
   state.col = Math.min(state.col || 0, 2);
   $('col-tabs').innerHTML = F.cols.map((c, i) =>
-    `<button role="tab" aria-selected="${i === state.col}" class="${i === state.col ? 'on' : ''}" data-col="${i}">${esc(c.t)}<span class="n">${r.cards.filter(x => x.col === i).length}</span></button>`).join('');
+    `<button role="tab" aria-selected="${i === state.col}" class="${i === state.col ? 'on' : ''}" data-col="${i}"${c.k ? ` title="${esc(c.t)}"` : ''}>${esc(c.k || c.t)}<span class="n">${r.cards.filter(x => x.col === i).length}</span></button>`).join('');
 
   $('board').innerHTML = F.cols.map((c, i) => {
     let cards = r.cards.filter(x => x.col === i);
@@ -1198,7 +1216,7 @@ function openNewDialog() {
     <input class="text-in" id="dlg-name" maxlength="60" value="${esc(defaultName())}">
     <span class="lbl">Formaat</span>
     <div class="formats">
-      ${Object.entries(FORMATS).map(([k, f]) => `<label class="fmt"><input type="radio" name="fmt" value="${k}" ${k === (prev.format || 'ssd') ? 'checked' : ''}><div><strong>${esc(f.name)}</strong><br><span>${esc(f.cols.map(c => c.h).join(' · '))}</span></div></label>`).join('')}
+      ${Object.entries(FORMATS).map(([k, f]) => `<label class="fmt"><input type="radio" name="fmt" value="${k}" ${k === (FORMATS[prev.format] ? prev.format : 'hrp') ? 'checked' : ''}><div><strong>${esc(f.name)}</strong><br><span>${esc(f.cols.map(c => c.h).join(' · '))}</span></div></label>`).join('')}
     </div>
     ${carry.length ? `<label class="carry-opt"><input type="checkbox" id="dlg-carry" checked><span>Neem de <strong>${carry.length} open ${carry.length === 1 ? 'actie' : 'acties'}</strong> van '${esc(prev.name)}' mee, om op te volgen</span></label>` : ''}
     <div class="dlg-actions"><button class="btn btn-soft" data-x>Annuleer</button><button class="btn btn-primary" data-ok>Maak retro</button></div>
@@ -1239,7 +1257,7 @@ document.addEventListener('click', e => { if (!e.target.closest('.menu-wrap')) c
 
 /* ---------- Export: schone weergave voor afbeelding en PDF ---------- */
 function exportView(r) {
-  const F = FORMATS[r.format] || FORMATS.ssd;
+  const F = FORMATS[r.format] || FORMATS.hrp;
   const e = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
   const dots = n => n ? `<span style="display:inline-flex;align-items:center;gap:3px;flex-shrink:0;margin-left:10px;font-size:12px;font-weight:700;color:#059669;background:#ecfdf5;border-radius:999px;padding:1px 8px 1px 6px">● ${n}</span>` : '';
   const cols = F.cols.map((c, i) => {
@@ -1288,7 +1306,7 @@ function ocFileName(tool, project) {
 function exportName(r) { return ocFileName('retro', r.name || ocProject('')); }
 
 function markdown(r) {
-  const F = FORMATS[r.format] || FORMATS.ssd;
+  const F = FORMATS[r.format] || FORMATS.hrp;
   const act = a => `- [${a.done ? 'x' : ' '}] ${a.text}${a.who ? ` (${a.who})` : ''}${a.when ? `, tegen ${fmtDate(a.when)}` : ''}`;
   let md = `# ${r.name}\n\n${F.name} · ${fmtDate(r.date)}\n`;
   if (r.carried.length) md += `\n## Acties van vorige keer\n\n${r.carried.map(act).join('\n')}\n`;
@@ -1342,16 +1360,16 @@ document.addEventListener('click', e => {
 });
 /* Voorbeeld: een eigen tabblad, gemarkeerd, telt niet mee in andere tools */
 function exampleRetro() {
-  const r = newRetro({ name:'Retro premieloket', format:'ssd' });
+  const r = newRetro({ name:'Retro premieloket', format:'hrp' });
   r.voorbeeld = true;
   const card = (col, text, votes) => ({ id:uid(), col, text, votes });
   r.cards = [
-    card(0, 'Elke maandag tien minuten de wachtlijst samen overlopen', 3),
-    card(0, 'Een vaste collega per week voor de moeilijke dossiers', 1),
+    card(0, 'De nieuwe checklist aan het loket', 2),
+    card(0, 'Korte terugkoppeling van de premiedienst op vrijdag', 1),
     card(1, 'Aanvragen per mail én per post dubbel registreren', 4),
     card(1, 'Overleg zonder agenda', 2),
-    card(2, 'De nieuwe checklist aan het loket', 2),
-    card(2, 'Korte terugkoppeling van de premiedienst op vrijdag', 1)
+    card(2, 'Elke maandag tien minuten de wachtlijst samen overlopen', 3),
+    card(2, 'Een vaste collega per week voor de moeilijke dossiers', 1)
   ];
   const a = { id:uid(), text:'Eén registratiekanaal afspreken voor alle aanvragen', who:'Teamleider', when:'', done:false, fromCard:r.cards[2].id };
   r.actions = [a, { id:uid(), text:'Agenda meesturen bij elke uitnodiging', who:'', when:'', done:false }];
