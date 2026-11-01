@@ -1375,11 +1375,12 @@ $('to-board').addEventListener('click', () => {
     v:1, from:OC_ID, fromTitle:OC_TOOL, at:new Date().toISOString(),
     sprint:{ name:s.name, days:s.days },
     team:s.team.filter(m => m.name.trim()).map(m => ({ name:m.name.trim(), days:opHalf(Math.min(m.days, s.days) * m.pct / 100) })),
-    tasks:f.inSprint.map(x => ({ text:x.title, note:x.note || '', estimate:x.est / 2, halfDays:x.est }))
+    tasks:f.inSprint.map(x => ({ id:x.id, text:x.title, note:x.note || '', estimate:x.est / 2, halfDays:x.est }))   // id: zo herkent Takenbord een hernoemde story
   };
   try { localStorage.setItem('oc.naar.kanban', JSON.stringify(pakket)); }
   catch { toast('Doorgeven lukt hier niet. Kies in Takenbord "Overnemen uit…".'); return; }
-  location.href = '../kanban/?van=sprint';
+  // Via een link: in de app opent Takenbord dan als eigen tool (met zijn eigen titel en terugknop), los gewoon als volgende pagina.
+  const a = document.createElement('a'); a.href = '../kanban/?van=sprint'; document.body.appendChild(a); a.click(); a.remove();
 });
 function nextName(n) {
   const step = v => { const m = /(\d+)(?!.*\d)/.exec(v || ''); return m ? v.slice(0, m.index) + (+m[1] + 1) + v.slice(m.index + m[1].length) : (v ? v + ' 2' : 'Sprint 2'); };
