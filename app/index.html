@@ -1186,7 +1186,7 @@ body.searching #cycle, body.searching #vs-note { display:none !important; }
     <span class="sep" aria-hidden="true">·</span>
     <button class="footer-link fb-link" id="fb-open" type="button" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/></svg>Suggestie of fout?</button>
     <span class="sep" aria-hidden="true">·</span>
-    <span class="app-version" title="Versie van de app">v58</span>
+    <span class="app-version" title="Versie van de app">v59</span>
   </footer>
 </div>
 
@@ -1972,9 +1972,19 @@ function syncUpdate() { $('update').hidden = !updateReady || !!current; }
 $('update-btn').addEventListener('click', async () => {
   const run = [...busy.keys()].map(id => byId[id] && byId[id].title).filter(Boolean);
   if (run.length && !await appConfirm(`${run.join(', ')} loopt nog`, 'Vernieuwen stopt wat er loopt. Wat je invulde, blijft bewaard.', 'Toch vernieuwen')) return;
-  $('update-btn').disabled = true;
+  const btn = $('update-btn'); btn.disabled = true; btn.textContent = 'Even geduld…';
   let reg = null; try { reg = await navigator.serviceWorker.getRegistration(); } catch {}
-  if (reg && reg.waiting) { wantReload = true; reg.waiting.postMessage({ type:'skip' }); setTimeout(() => location.reload(), 4000); }
+  // Op een iPad duurt het klaarzetten van de nieuwe versie (alle tools offline) soms langer. Toen herlaadde de knop
+  // te vroeg, kreeg je de oude versie terug en leek er niets te gebeuren. Nu wacht hij tot de nieuwe versie echt klaar staat.
+  const ready = () => new Promise(res => {
+    const w = reg && (reg.waiting || reg.installing); if (!w) return res(null);
+    if (w.state === 'installed') return res(w);
+    const t = setTimeout(() => res(reg.waiting || null), 30000);
+    w.addEventListener('statechange', () => { if (w.state === 'installed' || w.state === 'redundant') { clearTimeout(t); res(reg.waiting || null); } });
+  });
+  if (reg && !reg.waiting && !reg.installing) { try { await reg.update(); } catch {} }
+  const w = await ready();
+  if (w) { wantReload = true; w.postMessage({ type:'skip' }); setTimeout(() => location.reload(), 10000); }
   else location.reload();
 });
 if ('serviceWorker' in navigator) {
