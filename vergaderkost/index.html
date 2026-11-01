@@ -53,7 +53,7 @@ button { background:none; border:0; cursor:pointer; }
 .card { background:var(--wit); border:1px solid var(--slate-200); border-radius:16px; box-shadow:0 1px 2px rgba(15,23,42,0.04); }
 .card-pad { padding:1.125rem 1.125rem 1.25rem; }
 .label {
-  font-size:0.6875rem; font-weight:600; text-transform:uppercase; letter-spacing:0.12em; color:var(--slate-500);
+  font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.12em; color:var(--slate-500);
   margin-bottom:0.625rem; display:block;
 }
 
@@ -946,6 +946,8 @@ $('start').addEventListener('click', () => {
   else if (st.phase === 'running') { const cur = st.segments[st.segments.length - 1]; if (cur) cur.e = now; st.phase = 'paused'; }
   else if (st.phase === 'paused') { st.segments.push({ s: now, e: null, n: st.people }); st.phase = 'running'; }
   save(); render(); syncWakeLock();
+  // Bij de start de teller helemaal in beeld brengen (op gsm staat hij onder de instellingen)
+  if (st.phase === 'running') { const m = $('meter').getBoundingClientRect(); if (m.top < 0 || m.bottom > innerHeight) $('meter').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: m.height > innerHeight ? 'start' : 'end' }); }
 });
 
 $('stop').addEventListener('click', () => {
