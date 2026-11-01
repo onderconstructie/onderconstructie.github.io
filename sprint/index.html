@@ -1,0 +1,1708 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sprintplanning – Onder Constructie</title>
+<meta name="description" content="Schat samen in hoeveel werk elke story is, en zie wat in je sprint past. Alles in halve dagen, met ruimte voor onvoorzien.">
+<meta name="oc:groep" content="projecten">
+<meta name="oc:labels" content="">
+    <meta name="oc:pdca" content="plan, do">
+<meta name="oc:kort" content="Wat past er in deze sprint?">
+<meta name="oc:volgorde" content="19">
+<meta name="oc:traject" content="project:5">
+<meta name="oc:opslag" content="sprint.v1, oc.share.sprint">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox='0 0 40 40' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='20' cy='20' r='18' fill='%23f8fafc' stroke='%23e2e8f0' stroke-width='1.5'/%3E%3Crect x='10' y='9.5' width='20' height='5' rx='2' fill='%2310b981'/%3E%3Crect x='10' y='16.5' width='13' height='5' rx='2' fill='%2310b981'/%3E%3Cpath d='M8 24.5h24' stroke='%23047857' stroke-width='1.6' stroke-linecap='round' stroke-dasharray='2.5 2.5'/%3E%3Crect x='10.75' y='27.25' width='16.5' height='3.5' rx='1.75' stroke='%2394a3b8' stroke-width='1.5'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/fonts/fonts.css">
+<link rel="preload" href="/fonts/dm-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/dm-sans-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
+<script>try { if (new URLSearchParams(location.search).has('kaart')) document.documentElement.classList.add('kaart'); } catch (e) {}</script>
+<style>
+:root {
+  --slate-900:#0f172a; --slate-800:#1e293b; --slate-700:#334155; --slate-600:#475569;
+  --slate-500:#64748b; --slate-400:#94a3b8; --slate-300:#cbd5e1; --slate-200:#e2e8f0;
+  --slate-100:#f1f5f9; --slate-50:#f8fafc; --wit:#ffffff;
+  --accent:#10b981; --accent-dark:#047857; --accent-hover:#065f46; --accent-light:#d1fae5; --accent-50:#ecfdf5; --accent-200:#a7f3d0;
+  --rood:#ef4444; --amber:#d97706; --amber-ink:#92400e; --amber-50:#fffbeb; --amber-200:#fde68a;
+  --bottom: env(safe-area-inset-bottom, 0px);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body {
+  font-family:'DM Sans', system-ui, sans-serif; background:var(--slate-50); color:var(--slate-700);
+  line-height:1.5; min-height:100vh; -webkit-font-smoothing:antialiased;
+  display:flex; flex-direction:column;
+}
+button, input, textarea, select { font:inherit; color:inherit; }
+button { background:none; border:0; cursor:pointer; }
+a { color:var(--accent-dark); }
+[hidden] { display:none !important; }
+
+/* Kop */
+.header { background:var(--wit); border-bottom:1px solid var(--slate-200); padding:1.5rem 1.25rem 1.75rem; position:relative; text-align:center; }
+.back-link {
+  position:absolute; top:1.25rem; left:1.25rem; display:inline-flex; align-items:center; gap:0.5rem;
+  font-size:0.875rem; color:var(--slate-500); text-decoration:none; transition:color 0.2s;
+}
+.back-link:hover { color:var(--accent-dark); }
+.back-link svg { width:16px; height:16px; }
+.logo svg { width:56px; height:56px; }
+.title { font-size:1.625rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.03em; line-height:1.2; margin-top:0.5rem; }
+.subtitle { font-size:0.9375rem; color:var(--slate-500); max-width:34rem; margin:0.125rem auto 0; }
+
+.main { flex:1; width:100%; max-width:1180px; margin:0 auto; padding:1.25rem clamp(1rem, 2.5vw, 2.5rem) 3rem; display:flex; flex-direction:column; gap:1rem; }
+.card { background:var(--wit); border:1px solid var(--slate-200); border-radius:16px; box-shadow:0 1px 2px rgba(15,23,42,0.04); min-width:0; }
+.card-head { display:flex; align-items:center; gap:0.5rem; padding:1rem 0.75rem 0.5rem 1.125rem; }
+.card-title { flex:1; min-width:0; font-size:1.0625rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.01em; }
+.card-title small { font-size:0.8125rem; font-weight:500; color:var(--slate-500); letter-spacing:0; margin-left:0.25rem; }
+.project { flex:1; min-width:0; min-height:44px; font-size:1.25rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.02em; border:0; background:none; outline:none; padding:0.125rem 0; border-bottom:1.5px solid transparent; }
+.project:focus { border-bottom-color:var(--accent); }
+.project::placeholder { color:var(--slate-400); }
+.lbl { display:block; font-size:0.75rem; font-weight:600; color:var(--slate-500); margin-bottom:0.3125rem; }
+.label { font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.12em; color:var(--slate-500); }
+.field { width:100%; min-width:0; min-height:44px; padding:0.5625rem 0.75rem; border:1.5px solid var(--slate-200); border-radius:10px; background:var(--slate-50); outline:none; font-size:0.9375rem; transition:border-color 0.15s, background 0.15s; }
+.field:focus { border-color:var(--accent); background:var(--wit); }
+.field::placeholder { color:var(--slate-400); }
+.num { text-align:right; font-variant-numeric:tabular-nums; }
+.hint { font-size:0.8125rem; color:var(--slate-500); line-height:1.45; }
+
+/* Raster: links sprint en team, rechts de stories */
+.grid { display:grid; gap:1rem; align-items:start; grid-template-columns:minmax(0,1fr); grid-template-areas:"sprint" "stories" "team"; }
+.sprint-card { grid-area:sprint; }
+.team-card { grid-area:team; }
+.stories-card { grid-area:stories; }
+@media (min-width:900px) {
+  .grid { grid-template-columns:minmax(320px, 380px) minmax(0,1fr); grid-template-areas:"sprint stories" "team stories"; grid-template-rows:auto 1fr; }
+  .team-card { align-self:start; }
+}
+
+/* Sprint en capaciteit */
+.set-row { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:0.625rem; padding:0 1.125rem 0.875rem; }
+.unit-wrap { position:relative; display:block; }
+.unit-wrap .field { padding-right:3.75rem; }
+.unit-wrap .u { position:absolute; right:0.75rem; top:50%; transform:translateY(-50%); font-size:0.8125rem; color:var(--slate-500); pointer-events:none; }
+.cap { margin:0 0.75rem 0.75rem; padding:1rem 0.875rem 0.875rem; border-radius:12px; background:var(--slate-50); border:1px solid var(--slate-100); }
+.cap-top { display:flex; align-items:flex-end; gap:0.75rem; margin-top:0.25rem; }
+.cap-big { font-size:3.25rem; line-height:0.95; font-weight:700; letter-spacing:-0.04em; color:var(--accent-dark); font-variant-numeric:tabular-nums; }
+.cap-unit { font-size:0.875rem; color:var(--slate-600); line-height:1.3; padding-bottom:0.125rem; }
+.cap-unit b { display:block; font-weight:700; color:var(--slate-800); font-size:1rem; }
+.cap-why { font-size:0.875rem; color:var(--slate-600); margin-top:0.625rem; line-height:1.45; }
+.meter { position:relative; height:12px; border-radius:99px; background:var(--slate-200); margin-top:0.875rem; overflow:hidden; display:flex; }
+.meter i { display:block; height:100%; }
+.meter .m-in { background:var(--accent); }
+.meter .m-free { background:transparent; }
+.meter .m-over { background:repeating-linear-gradient(135deg, var(--amber) 0 5px, #f59e0b 5px 10px); }
+.meter .m-cap { position:absolute; top:-2px; bottom:-2px; width:2px; background:var(--slate-800); border-radius:2px; }
+.meter-txt { display:flex; flex-wrap:wrap; justify-content:space-between; gap:0.125rem 0.75rem; font-size:0.8125rem; color:var(--slate-600); margin-top:0.375rem; font-variant-numeric:tabular-nums; }
+.meter-txt b { color:var(--slate-800); }
+.meter-txt .over { color:var(--amber-ink); font-weight:600; display:inline-flex; align-items:center; gap:0.375rem; }
+.meter-txt .over::before { content:''; width:10px; height:10px; border-radius:3px; background:repeating-linear-gradient(135deg, var(--amber) 0 3px, #f59e0b 3px 6px); }
+
+/* Team */
+.team-cols, .tm { display:grid; grid-template-columns:minmax(0,1fr) 4.75rem 4.75rem 44px; gap:0.375rem; align-items:center; }
+.team-cols { padding:0 1.125rem 0.25rem; font-size:0.75rem; font-weight:600; color:var(--slate-500); }
+.team-cols span:nth-child(2), .team-cols span:nth-child(3) { text-align:right; padding-right:0.75rem; }
+.team { list-style:none; padding:0 1.125rem; display:grid; gap:0.375rem; }
+.tm .unit-wrap .field { padding-right:1.625rem; padding-left:0.5rem; }
+.tm .unit-wrap .u { right:0.5rem; }
+.del { width:44px; height:44px; display:flex; align-items:center; justify-content:center; color:var(--slate-400); border-radius:10px; }
+.del:hover { color:#b91c1c; background:#fef2f2; }
+.del svg { width:17px; height:17px; }
+.add-btn { display:inline-flex; align-items:center; gap:0.375rem; min-height:44px; margin:0.5rem 1.125rem 0; padding:0.375rem 0.875rem; border-radius:10px; border:1.5px dashed var(--accent-200); color:var(--accent-dark); font-size:0.875rem; font-weight:600; }
+.add-btn:hover { background:var(--accent-50); border-color:var(--accent); }
+.add-btn svg { width:16px; height:16px; }
+.team-card .hint { padding:0.625rem 1.125rem 1.125rem; }
+.team-empty { padding:0 1.125rem; font-size:0.875rem; color:var(--slate-500); }
+
+/* Stories */
+.st-tools { display:flex; flex-wrap:wrap; gap:0.5rem; align-items:center; padding:0 1.125rem 0.75rem; }
+.st-tools .sum { margin-left:auto; font-size:0.8125rem; color:var(--slate-600); font-variant-numeric:tabular-nums; }
+.btn-s { display:inline-flex; align-items:center; justify-content:center; gap:0.375rem; min-height:44px; padding:0 0.875rem; border-radius:10px; border:1.5px solid var(--slate-200); background:var(--wit); font-size:0.875rem; font-weight:600; color:var(--accent-dark); white-space:nowrap; }
+.btn-s:hover:not(:disabled) { border-color:var(--accent-200); background:var(--accent-50); }
+.btn-s svg { width:16px; height:16px; flex:none; }
+.stories { list-style:none; border-top:1px solid var(--slate-100); position:relative; }
+.st { display:grid; grid-template-columns:44px minmax(0,1fr) auto; align-items:center; gap:0 0.25rem; padding:0.375rem 0.75rem 0.375rem 0.25rem; border-bottom:1px solid var(--slate-100); background:var(--wit); position:relative; }
+.st.uit { background:var(--slate-50); }
+.st.uit .st-title { color:var(--slate-500); }
+.st.dragging { z-index:5; box-shadow:0 12px 30px rgba(15,23,42,0.16); border-radius:10px; border-bottom-color:transparent; }
+.stories.is-dragging .st:not(.dragging), .stories.is-dragging .line { transition:transform 0.15s ease; }
+.handle { width:44px; height:44px; display:flex; align-items:center; justify-content:center; color:var(--slate-400); border-radius:10px; cursor:grab; touch-action:none; -webkit-user-select:none; user-select:none; }
+.handle:hover { color:var(--slate-600); background:var(--slate-100); }
+.st.dragging .handle { cursor:grabbing; color:var(--accent-dark); }
+.handle svg { width:18px; height:18px; }
+.st-main { min-width:0; padding:0.25rem 0; }
+.st-title { display:block; width:100%; text-align:left; font-size:0.9375rem; font-weight:600; color:var(--slate-800); line-height:1.35; padding:0.375rem 0.25rem; border-radius:8px; overflow-wrap:anywhere; min-height:44px; }
+.st-title:hover { background:var(--slate-50); }
+.st-note { display:block; font-weight:400; font-size:0.8125rem; color:var(--slate-500); margin-top:0.125rem; }
+.st-meta { display:flex; flex-wrap:wrap; gap:0.25rem 0.375rem; align-items:center; padding:0 0.25rem; }
+.st-meta:empty { display:none; }
+.pill { display:inline-flex; align-items:center; gap:0.3125rem; font-size:0.75rem; font-weight:600; color:var(--slate-600); background:var(--slate-100); border-radius:999px; padding:0.0625rem 0.5rem; }
+.pill.vaag { color:var(--amber-ink); background:var(--amber-50); border:1px solid var(--amber-200); }
+.pill.rondes { font-weight:500; background:transparent; color:var(--slate-500); padding-left:0; }
+.past-btn { display:inline-flex; align-items:center; gap:0.25rem; min-height:44px; padding:0 0.625rem; border-radius:999px; border:1px solid var(--accent-200); background:var(--wit); color:var(--accent-dark); font-size:0.8125rem; font-weight:600; }
+.past-btn:hover { background:var(--accent-50); border-color:var(--accent); }
+.past-btn svg { width:14px; height:14px; }
+.est-btn { width:5.5rem; min-height:52px; padding:0.25rem 0.5rem; border-radius:12px; border:1.5px solid var(--slate-200); background:var(--wit); display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.1; font-variant-numeric:tabular-nums; }
+.est-btn b { font-size:1.125rem; font-weight:700; color:var(--slate-800); }
+.est-btn small { font-size:0.75rem; color:var(--slate-500); margin-top:0.125rem; white-space:nowrap; }
+.est-btn:hover { border-color:var(--accent-200); background:var(--accent-50); }
+.est-btn.todo { border-style:dashed; border-color:var(--accent-200); color:var(--accent-dark); font-size:0.8125rem; font-weight:600; }
+.est-btn.vaag b { color:var(--amber-ink); }
+.st.uit .est-btn b { color:var(--slate-500); }
+.line { list-style:none; display:flex; flex-wrap:wrap; align-items:center; gap:0.125rem 0.75rem; padding:0.75rem 1.125rem 0.625rem; background:var(--wit); border-bottom:1px solid var(--slate-100); position:relative; }
+.line::before { content:''; position:absolute; left:0.75rem; right:0.75rem; top:0; border-top:2px dashed var(--accent-dark); }
+.line b { font-size:0.875rem; font-weight:700; color:var(--accent-dark); display:inline-flex; align-items:center; gap:0.375rem; }
+.line b svg { width:16px; height:16px; }
+.line span { font-size:0.8125rem; color:var(--slate-600); font-variant-numeric:tabular-nums; }
+.line small { flex-basis:100%; font-size:0.75rem; color:var(--slate-500); text-transform:uppercase; letter-spacing:0.08em; font-weight:600; }
+.line.ok::before { border-top-style:solid; border-color:var(--accent-200); }
+.stories-empty { padding:1.25rem 1.125rem; font-size:0.9375rem; color:var(--slate-500); }
+.ed { grid-column:1 / -1; display:grid; gap:0.5rem; padding:0.25rem 0.5rem 0.75rem 44px; }
+.ed textarea.field { min-height:3.5rem; resize:vertical; line-height:1.45; }
+.ed-btns { display:flex; flex-wrap:wrap; gap:0.375rem; }
+.ed-btns button { min-height:44px; padding:0 0.75rem; border-radius:10px; font-size:0.875rem; font-weight:600; color:var(--slate-600); background:var(--slate-100); display:inline-flex; align-items:center; gap:0.25rem; }
+.ed-btns button:hover:not(:disabled) { background:var(--slate-200); }
+.ed-btns button:disabled { opacity:0.45; cursor:default; }
+.ed-btns svg { width:16px; height:16px; }
+.ed-btns .ed-del { color:#b91c1c; background:#fef2f2; }
+.ed-btns .ed-ok { margin-left:auto; background:var(--accent-dark); color:var(--wit); }
+.ed-btns .ed-ok:hover { background:var(--accent-hover); }
+.add-row { display:flex; gap:0.5rem; padding:0.875rem 1.125rem 0.375rem; }
+.add-row .field { flex:1; }
+.btn-add { min-height:44px; padding:0 1rem; border-radius:10px; background:var(--accent-dark); color:var(--wit); font-weight:600; font-size:0.9375rem; display:inline-flex; align-items:center; gap:0.375rem; white-space:nowrap; }
+.btn-add:hover { background:var(--accent-hover); }
+.btn-add svg { width:16px; height:16px; }
+.stories-card > .hint { padding:0 1.125rem 0.875rem; }
+.finish { display:flex; flex-wrap:wrap; gap:0.5rem; padding:0.875rem 1.125rem 1.125rem; border-top:1px solid var(--slate-100); align-items:center; }
+.finish .lbl { flex-basis:100%; margin:0; }
+.sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+
+/* Tabbladen (sprints) */
+.tabs { display:flex; gap:0.375rem; flex-wrap:wrap; align-items:center; }
+.tab { min-height:44px; padding:0.375rem 0.875rem; border-radius:999px; border:1px solid var(--slate-200); background:var(--wit); font-size:0.875rem; font-weight:600; color:var(--slate-600); display:inline-flex; align-items:center; gap:0.375rem; max-width:16rem; }
+.tab span.nm { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tab[aria-pressed="true"] { background:var(--slate-800); border-color:var(--slate-800); color:var(--wit); }
+.vb-tag { font-size:0.75rem; font-weight:600; padding:0 0.375rem; border-radius:999px; background:#fef3c7; color:#92400e; }
+
+/* Menu */
+.icon-btn { width:44px; height:44px; display:flex; align-items:center; justify-content:center; border-radius:10px; color:var(--slate-500); flex-shrink:0; }
+.icon-btn:hover { background:var(--slate-100); color:var(--slate-700); }
+.icon-btn svg { width:20px; height:20px; }
+.menu-wrap { position:relative; }
+.menu { display:none; position:absolute; right:0; top:calc(100% + 4px); z-index:50; min-width:250px; background:var(--wit); border:1px solid var(--slate-200); border-radius:12px; box-shadow:0 12px 32px rgba(15,23,42,0.14); padding:0.375rem; }
+.menu.open { display:block; }
+.menu button { width:100%; display:flex; align-items:center; gap:0.625rem; min-height:44px; padding:0.5625rem 0.625rem; border-radius:8px; font-size:0.9375rem; text-align:left; color:var(--slate-700); white-space:nowrap; }
+.menu button:hover { background:var(--slate-100); }
+.menu button svg { width:18px; height:18px; color:var(--slate-500); flex-shrink:0; }
+.menu .sep { height:1px; background:var(--slate-100); margin:0.25rem 0.375rem; }
+.menu .danger, .menu .danger svg { color:#dc2626; }
+.menu [data-bestand] { min-height:44px; }
+.menu .ocb-t { display:flex; flex-direction:column; min-width:0; white-space:normal; line-height:1.3; }
+.menu .ocb-t small { font-size:0.8125rem; color:var(--slate-500, #64748b); margin-top:0.125rem; }
+.menu .ocb-note { margin:0; padding:0.25rem 0.625rem 0.375rem; font-size:0.8125rem; line-height:1.35; color:var(--slate-500, #64748b); white-space:normal; }
+
+/* Melding */
+.toast {
+  position:fixed; left:50%; bottom:calc(var(--bottom) + 1.25rem); transform:translate(-50%, calc(100% + 3rem)); visibility:hidden; z-index:20000;
+  background:var(--slate-800); color:var(--wit); border-radius:12px; padding:0.625rem 0.625rem 0.625rem 1rem;
+  display:flex; align-items:center; gap:0.875rem; font-size:0.9375rem; box-shadow:0 10px 30px rgba(15,23,42,0.25);
+  transition:transform 0.25s ease, visibility 0s 0.25s; max-width:calc(100% - 2rem);
+}
+.toast.show { transform:translate(-50%, 0); visibility:visible; transition:transform 0.25s ease; }
+.toast button { color:#6ee7b7; font-weight:600; padding:0.25rem 0.5rem; border-radius:6px; min-height:44px; flex-shrink:0; white-space:nowrap; }
+#toast-text { min-width:0; overflow-wrap:normal; word-break:normal; }
+.toast button:hover { background:rgba(255,255,255,0.08); }
+
+.footer { text-align:center; padding:2rem 2rem calc(var(--bottom) + 2rem); border-top:1px solid var(--slate-200); background:var(--wit); }
+.quote { font-size:0.8125rem; color:var(--accent-dark); }
+
+/* Uitleg */
+.explain { background:var(--wit); border:1px solid var(--slate-200); border-radius:16px; }
+.explain summary { min-height:44px; padding:0.875rem 1.125rem; font-weight:600; color:var(--slate-700); cursor:pointer; list-style:none; display:flex; align-items:center; justify-content:space-between; }
+.explain summary::-webkit-details-marker { display:none; }
+.explain summary::after { content:'+'; color:var(--slate-500); font-size:1.25rem; font-weight:400; }
+.explain[open] summary::after { content:'−'; }
+.explain .inner { padding:0 1.125rem 1.125rem; font-size:0.9375rem; color:var(--slate-600); }
+.explain .inner p + p, .explain .inner ul { margin-top:0.5rem; }
+.explain .inner ul { padding-left:1.125rem; }
+
+/* Voorbeeld, startscherm, opnieuw beginnen */
+.vb-bar { display:flex; flex-wrap:wrap; align-items:center; gap:0.5rem 0.75rem; padding:0.5rem 0.5rem 0.5rem 0.75rem; background:#fffbeb; border:1px solid #fde68a; border-radius:12px; font-size:0.875rem; line-height:1.4; color:#78350f; }
+.vb-bar svg { width:18px; height:18px; flex-shrink:0; color:#b45309; }
+.vb-text { flex:1 1 14rem; min-width:0; display:flex; gap:0.5rem; align-items:flex-start; }
+.vb-btns { display:flex; flex-wrap:wrap; gap:0.375rem; }
+.vb-btn { min-height:44px; padding:0.375rem 0.625rem; border-radius:10px; font-size:0.875rem; font-weight:600; background:#fff; border:1px solid #e2e8f0; }
+.vb-wis { color:#b91c1c; border-color:#fecaca; }
+.vb-wis:hover { background:#fef2f2; }
+.vb-eigen { color:#047857; border-color:#a7f3d0; }
+.vb-eigen:hover { background:var(--accent-50); }
+@media (max-width:420px) { .vb-btn { font-size:0.8125rem; padding:0.375rem 0.5rem; } }
+.vb-start.oc-start { display:block; text-align:center; padding:0.25rem 0 0; font-size:0.9375rem; color:var(--slate-600); }
+.vb-start.oc-start > span { display:block; max-width:36rem; margin:0 auto; }
+.oc-start-btns { display:flex; gap:0.5rem; justify-content:center; flex-wrap:wrap; margin-top:0.875rem; }
+.oc-start-btns .oc-begin, .oc-start-btns .oc-vb { display:inline-flex; align-items:center; justify-content:center; min-height:44px; padding:0.5rem 1rem; border:0; border-radius:10px; font:inherit; font-weight:600; font-size:0.9375rem; line-height:1.3; cursor:pointer; text-align:center; }
+.oc-start-btns .oc-begin { background:#047857; color:#fff; }
+.oc-start-btns .oc-begin:hover { background:#065f46; }
+.oc-start-btns .oc-vb { background:#f1f5f9; color:#334155; }
+.oc-start-btns .oc-vb:hover { background:#e2e8f0; }
+.oc-start-btns [hidden] { display:none !important; }
+.oc-open-row { display:flex; justify-content:center; margin:0.5rem 0 0; }
+.oc-open-row .oc-open-link { display:inline-flex; align-items:center; gap:0.5rem; min-height:44px; padding:0.5rem 1rem; border:0; background:none; border-radius:10px; font:inherit; font-size:0.875rem; font-weight:600; color:#047857; cursor:pointer; text-decoration:none; }
+.oc-open-row .oc-open-link:hover { background:#ecfdf5; }
+.oc-open-row .oc-open-link svg { width:18px; height:18px; flex:none; }
+.oc-restart-row { display:flex; justify-content:center; padding:0.5rem 0 0; }
+.oc-restart-row[hidden] { display:none !important; }
+.oc-restart { min-height:44px; padding:0.5rem 1rem; font:inherit; font-size:0.875rem; font-weight:500; color:#64748b; background:none; border:0; border-radius:10px; cursor:pointer; text-decoration:underline; text-decoration-color:#cbd5e1; text-underline-offset:3px; }
+.oc-restart:hover { color:#b91c1c; background:#fef2f2; text-decoration-color:currentColor; }
+.ocw-row .ocw-yes { background:#dc2626; } .ocw-row .ocw-yes:hover { background:#b91c1c; }
+.ocw-row button { min-height:44px; }
+button.oc-import { color:#047857; min-height:44px; }
+
+/* Venster: schatten en kaarten op je gsm */
+.sh-back { position:fixed; inset:0; z-index:10000; display:flex; align-items:flex-end; justify-content:center; background:rgba(15,23,42,.45); backdrop-filter:blur(3px); }
+@media (min-width:640px) { .sh-back { align-items:center; padding:1rem; } }
+.sh { width:100%; max-width:560px; max-height:min(92dvh, 820px); display:flex; flex-direction:column; background:var(--wit); border-radius:18px 18px 0 0; box-shadow:0 20px 50px rgba(15,23,42,.25); color:var(--slate-800); overscroll-behavior:contain; }
+@media (min-width:640px) { .sh { border-radius:18px; } }
+.sh-head { display:flex; align-items:flex-start; gap:0.5rem; padding:1rem 0.75rem 0.75rem 1.25rem; border-bottom:1px solid var(--slate-200); }
+.sh-head > div { flex:1; min-width:0; }
+.sh-kick { font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.1em; color:var(--slate-500); }
+.sh-title { font-size:1.125rem; font-weight:700; letter-spacing:-0.02em; line-height:1.3; overflow-wrap:anywhere; }
+.sh-body { overflow:auto; padding:0.875rem 1.25rem 1rem; flex:1; overscroll-behavior:contain; }
+.sh-step { font-size:0.875rem; color:var(--slate-600); margin:0.25rem 0 0.625rem; line-height:1.45; }
+.sh-step b { color:var(--slate-800); }
+.sh-foot { display:flex; flex-wrap:wrap; gap:0.5rem; justify-content:flex-end; padding:0.75rem 1.25rem calc(0.75rem + var(--bottom)); border-top:1px solid var(--slate-200); }
+.sh-btn { min-height:44px; padding:0.5rem 1rem; border-radius:10px; font-size:0.9375rem; font-weight:600; }
+.sh-sec { background:var(--slate-100); color:var(--slate-600); }
+.sh-sec:hover { background:var(--slate-200); }
+.sh-ok { background:var(--accent-dark); color:var(--wit); }
+.sh-ok:hover:not(:disabled) { background:var(--accent-hover); }
+.sh-ok:disabled { background:var(--slate-300); color:var(--slate-700); cursor:default; }
+.cnt-grid { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:0.5rem; }
+.cnt { border:1.5px solid var(--slate-200); border-radius:12px; overflow:hidden; background:var(--wit); }
+.cnt.has { border-color:var(--accent); background:var(--accent-50); }
+.cnt-plus { width:100%; min-height:60px; display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.1; padding:0.375rem 0.25rem; font-variant-numeric:tabular-nums; }
+.cnt-plus b { font-size:1.375rem; font-weight:700; color:var(--slate-800); }
+.cnt-plus small { font-size:0.75rem; color:var(--slate-500); margin-top:0.125rem; white-space:nowrap; }
+.cnt-row { display:flex; align-items:center; border-top:1px solid var(--slate-100); }
+.cnt.has .cnt-row { border-top-color:var(--accent-200); }
+.cnt-min { width:44px; height:40px; min-height:40px; display:flex; align-items:center; justify-content:center; color:var(--slate-500); font-size:1.25rem; font-weight:600; }
+.cnt-min:disabled { color:var(--slate-300); cursor:default; }
+.cnt-n { flex:1; text-align:center; font-weight:700; color:var(--slate-700); font-variant-numeric:tabular-nums; padding-right:44px; }
+.cnt.has .cnt-n { color:var(--accent-dark); }
+.cnt-tools { display:flex; flex-wrap:wrap; align-items:center; gap:0.5rem; margin-top:0.625rem; font-size:0.8125rem; color:var(--slate-600); }
+.cnt-tools .sh-btn { font-size:0.875rem; padding:0.375rem 0.875rem; }
+.cnt-tools span { margin-right:auto; font-variant-numeric:tabular-nums; }
+.spread { margin-top:0.75rem; padding:0.625rem 0.75rem; border-radius:10px; background:var(--slate-50); font-size:0.875rem; color:var(--slate-700); line-height:1.45; }
+.spread:empty { display:none; }
+.spread .warn { display:flex; gap:0.5rem; align-items:flex-start; margin-top:0.375rem; color:var(--amber-ink); font-weight:600; }
+.spread .warn::before { content:''; flex:none; width:8px; height:8px; margin-top:0.4375rem; border-radius:50%; background:var(--amber); }
+.dots { display:flex; align-items:flex-end; gap:0.25rem; height:46px; margin:0.25rem 0 0.375rem; }
+.dots span { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; font-size:0.75rem; color:var(--slate-500); }
+.dots i { display:block; width:70%; max-width:26px; border-radius:4px 4px 0 0; background:var(--slate-200); }
+.dots span.on i { background:var(--accent); }
+.dots span.on { color:var(--slate-800); font-weight:700; }
+.pick-grid { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:0.375rem; }
+.pick-grid button { position:relative; min-height:52px; border-radius:10px; border:1.5px solid var(--slate-200); background:var(--wit); display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.1; font-variant-numeric:tabular-nums; padding:0.25rem; }
+.pick-grid button b { font-size:1.0625rem; font-weight:700; color:var(--slate-800); }
+.pick-grid button small { font-size:0.75rem; color:var(--slate-500); white-space:nowrap; }
+.pick-grid button[aria-checked="true"] { background:var(--accent-dark); border-color:var(--accent-dark); }
+.pick-grid button[aria-checked="true"] b, .pick-grid button[aria-checked="true"] small { color:var(--wit); }
+.pick-grid button .vs { position:absolute; top:-8px; left:50%; transform:translateX(-50%); font-size:0.75rem; font-weight:700; color:var(--accent-dark); background:var(--accent-light); border-radius:999px; padding:0 0.375rem; white-space:nowrap; }
+.tip { margin-top:0.75rem; font-size:0.8125rem; color:var(--slate-500); }
+.clear-est { margin-top:0.25rem; min-height:44px; padding:0 0.25rem; font-size:0.8125rem; color:var(--slate-500); text-decoration:underline; text-decoration-color:var(--slate-300); text-underline-offset:3px; }
+.share-link { display:flex; gap:0.5rem; margin-top:0.5rem; }
+.share-link .field { font-size:0.875rem; color:var(--slate-700); }
+.qr { display:flex; justify-content:center; margin-top:1rem; }
+.qr svg { width:200px; height:200px; display:block; }
+.qr-cap { text-align:center; font-size:0.8125rem; color:var(--slate-500); margin-top:0.25rem; }
+
+/* Kaartmodus (?kaart): één kaart op je eigen gsm */
+#kaart { display:none; }
+html.kaart body { background:var(--wit); }
+html.kaart .header, html.kaart .main, html.kaart .footer { display:none !important; }
+html.kaart #kaart:not([hidden]) { display:flex; }
+.kt { min-height:100dvh; flex-direction:column; padding:calc(0.75rem + env(safe-area-inset-top, 0px)) 1rem calc(1rem + var(--bottom)); max-width:560px; margin:0 auto; width:100%; }
+.kt-top { display:flex; align-items:center; justify-content:space-between; gap:0.5rem; }
+.kt-brand { font-size:0.875rem; font-weight:700; color:var(--slate-500); letter-spacing:-0.01em; }
+.kt-exit { display:inline-flex; align-items:center; min-height:44px; padding:0 0.75rem; border-radius:10px; font-size:0.875rem; font-weight:600; color:var(--slate-600); text-decoration:none; }
+.kt-exit:hover { background:var(--slate-100); }
+.kt-step { flex:1; display:flex; flex-direction:column; justify-content:center; gap:1rem; padding:0.5rem 0; }
+.kt-q { font-size:1.0625rem; font-weight:600; color:var(--slate-800); text-align:center; line-height:1.4; }
+.kt-grid { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:0.625rem; }
+@media (min-width:480px) { .kt-grid { grid-template-columns:repeat(4, minmax(0,1fr)); } }
+.kt-grid button { min-height:84px; border-radius:16px; border:2px solid var(--slate-200); background:var(--wit); display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.05; font-variant-numeric:tabular-nums; }
+.kt-grid button b { font-size:2.25rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.03em; }
+.kt-grid button small { font-size:0.8125rem; color:var(--slate-500); margin-top:0.25rem; }
+.kt-grid button:active { border-color:var(--accent); background:var(--accent-50); }
+.kt-tip { text-align:center; font-size:0.875rem; color:var(--slate-500); }
+.kt-card { align-self:center; width:min(62vw, 46dvh, 300px); aspect-ratio:2 / 3; border-radius:22px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+.kt-card.back { background:
+  radial-gradient(circle at 50% 50%, rgba(255,255,255,0.16) 0 18%, transparent 19%),
+  repeating-linear-gradient(45deg, rgba(255,255,255,0.09) 0 10px, transparent 10px 20px),
+  repeating-linear-gradient(-45deg, rgba(255,255,255,0.09) 0 10px, transparent 10px 20px), #047857;
+  border:8px solid #fff; box-shadow:0 0 0 2px #10b981, 0 18px 40px rgba(4,120,87,0.25); }
+.kt-card.face { background:var(--wit); border:3px solid var(--accent); box-shadow:0 18px 40px rgba(15,23,42,0.12); }
+.kt-card.face b { font-size:clamp(5rem, 26vw, 9rem); line-height:1; font-weight:700; letter-spacing:-0.05em; color:var(--accent-dark); font-variant-numeric:tabular-nums; }
+.kt-card.face span { font-size:1.25rem; font-weight:600; color:var(--slate-600); margin-top:0.5rem; padding:0 0.75rem; }
+.kt-msg { text-align:center; font-size:1rem; color:var(--slate-600); line-height:1.45; }
+.kt-main { min-height:60px; border-radius:14px; background:var(--accent-dark); color:var(--wit); font-size:1.125rem; font-weight:700; }
+.kt-main:hover { background:var(--accent-hover); }
+.kt-sec { min-height:48px; border-radius:12px; background:var(--slate-100); color:var(--slate-600); font-weight:600; }
+.kt-flip { animation:kt-flip 0.35s ease; }
+@keyframes kt-flip { from { transform:rotateY(90deg); } to { transform:none; } }
+
+/* Gsm */
+@media (max-width:640px) {
+  .header .back-link { position:static; display:flex; justify-content:center; margin:0 auto 0.75rem; width:max-content; }
+}
+@media (max-width:420px) {
+  .team-cols, .tm { grid-template-columns:minmax(0,1fr) 4.25rem 4.25rem 44px; gap:0.25rem; }
+  .team, .team-cols { padding-left:0.875rem; padding-right:0.625rem; }
+  .cap-big { font-size:2.75rem; }
+  .project { font-size:1.125rem; }
+  .st { padding-right:0.5rem; }
+  .ed { padding-left:0.75rem; }
+  .cnt-grid { gap:0.375rem; }
+  .btn-add span { display:none; }
+}
+
+/* Toegankelijkheid en soepel op gsm */
+:focus-visible { outline:2px solid #047857 !important; outline-offset:2px; }
+.back-link { min-height:44px; min-width:44px; }
+html { -webkit-text-size-adjust:100%; text-size-adjust:100%; }
+button, a, summary, label, select, [role="button"], [role="tab"], [data-act] { touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+.handle { touch-action:none; }
+@media (hover:none) { button:not(:disabled):active, a:active, summary:active, [role="button"]:active { filter:brightness(0.93); } }
+@media (pointer:coarse) { .field, .project { font-size:16px !important; } }
+html:has(.ocs-back, .ocw-back, .sh-back) { overflow:hidden; }
+html:has(.sh-back) .toast { bottom:calc(var(--bottom) + 5.25rem); }
+.ocs-back *, .ocw-back *, .sh-back * { overscroll-behavior:contain; }
+body { min-height:100dvh; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important; } }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <a href="https://onderconstructie.github.io/projectmanagement/" class="back-link" aria-label="Terug naar Projectmanagement">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    <span>Projectmanagement</span>
+  </a>
+  <div class="logo">
+    <svg viewBox="0 0 80 80" fill="none" aria-hidden="true">
+      <circle cx="40" cy="40" r="36" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2"/>
+      <g transform="scale(2)"><rect x="10" y="9.5" width="20" height="5" rx="2" fill="#10b981"/><rect x="10" y="16.5" width="13" height="5" rx="2" fill="#10b981"/><path d="M8 24.5h24" stroke="#047857" stroke-width="1.6" stroke-linecap="round" stroke-dasharray="2.5 2.5"/><rect x="10.75" y="27.25" width="16.5" height="3.5" rx="1.75" stroke="#94a3b8" stroke-width="1.5"/></g>
+    </svg>
+  </div>
+  <h1 class="title">Sprintplanning</h1>
+  <p class="subtitle">Schat samen in hoeveel werk elke story is, en zie wat in je sprint past.</p>
+</header>
+
+<main class="main">
+  <div class="vb-start oc-start" id="vb-start" hidden><span>Nog niets ingevuld. Zet je team en je stories klaar, of bekijk eerst een ingevuld voorbeeld.</span><div class="oc-start-btns"><button type="button" class="oc-begin" data-oc-begin="#sp-name">Begin met je sprint</button><button type="button" class="oc-vb" id="vb-load">Voorbeeld bekijken</button></div><p class="oc-open-row"><button type="button" class="oc-open-link" data-bestand="open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 16v-5M9.5 13.5 12 11l2.5 2.5"/></svg>Open bestand</button></p></div>
+
+  <div class="tabs" id="tabs" role="toolbar" aria-label="Sprints" hidden></div>
+
+  <div class="vb-bar" id="vb-bar" role="note" hidden>
+    <span class="vb-text"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg><span>Dit is een voorbeeld om de tool te verkennen. Het telt niet mee in andere tools.</span></span>
+    <span class="vb-btns"><button type="button" class="vb-btn vb-wis" id="vb-wis">Wis voorbeeld</button><button type="button" class="vb-btn vb-eigen" id="vb-eigen">Maak er mijn eigen van</button></span>
+  </div>
+
+  <div class="grid">
+    <section class="card sprint-card" aria-label="Sprint en capaciteit">
+      <div class="card-head">
+        <input class="project" id="sp-name" autocomplete="off" enterkeyhint="next" maxlength="80" placeholder="Naam van de sprint" aria-label="Naam van de sprint" spellcheck="false">
+        <div class="menu-wrap">
+          <button class="icon-btn" id="menu-btn" aria-label="Meer acties" aria-haspopup="true" aria-expanded="false">
+            <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
+          </button>
+          <div class="menu" id="menu" role="menu">
+            <button type="button" data-bestand="bewaar" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M12 11v6M9 14l3 3 3-3"/></svg><span class="ocb-t">Bewaar als bestand<small>Om later verder te werken, of door te geven</small></span></button>
+            <button type="button" data-bestand="open" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 10v6M9 13l3-3 3 3"/></svg>Open bestand</button>
+            <div class="sep"></div>
+            <button data-act="pdf" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 15h6M9 18h4"/></svg>Download als PDF</button>
+            <button data-act="png" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>Download als afbeelding</button>
+            <button data-act="copy" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Kopieer als tekst</button>
+            <p class="ocb-note">Een afbeelding, PDF of tekst kan je niet terug openen.</p>
+            <div class="sep"></div>
+            <button data-act="delsprint" role="menuitem" id="m-delsprint" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg>Verwijder deze sprint</button>
+            <button data-act="wipe" class="danger" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>Alles wissen</button>
+          </div>
+        </div>
+      </div>
+      <div class="set-row">
+        <label><span class="lbl">Werkdagen in de sprint</span><span class="unit-wrap"><input class="field num" id="sp-days" inputmode="decimal" autocomplete="off" enterkeyhint="next" maxlength="5"><span class="u">dagen</span></span></label>
+        <label><span class="lbl">Ruimte voor onvoorzien</span><span class="unit-wrap"><input class="field num" id="sp-buf" inputmode="numeric" autocomplete="off" enterkeyhint="next" maxlength="3"><span class="u">%</span></span></label>
+      </div>
+      <div class="cap" aria-live="polite">
+        <div class="label">Wat past er in deze sprint</div>
+        <div class="cap-top"><span class="cap-big" id="cap-big">0</span><span class="cap-unit">halve dagen<b id="cap-days">= 0 dagen</b></span></div>
+        <p class="cap-why" id="cap-why"></p>
+        <div class="meter" id="meter" role="img" aria-label=""><i class="m-in" id="m-in"></i><i class="m-free" id="m-free"></i><i class="m-over" id="m-over"></i><span class="m-cap" id="m-cap" hidden></span></div>
+        <p class="meter-txt" id="meter-txt"></p>
+      </div>
+    </section>
+
+    <section class="card team-card" aria-label="Team">
+      <div class="card-head"><h2 class="card-title">Team <small id="team-n"></small></h2></div>
+      <div class="team-cols" id="team-cols" aria-hidden="true"><span>Naam</span><span>Dagen</span><span>Deel</span><span></span></div>
+      <ul class="team" id="team"></ul>
+      <p class="team-empty" id="team-empty">Nog niemand. Voeg de mensen toe die aan deze sprint werken.</p>
+      <button type="button" class="add-btn" id="tm-add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Teamlid</button>
+      <p class="hint"><b>Dagen</b>: hoeveel dagen iemand er deze sprint is. Verlof gaat eraf. <b>Deel</b>: welk deel van die tijd naar sprintwerk gaat.</p>
+    </section>
+
+    <section class="card stories-card" aria-label="Stories">
+      <div class="card-head"><h2 class="card-title">Stories <small>in volgorde van belang</small></h2></div>
+      <div class="st-tools">
+        <button type="button" class="oc-import" data-oc-types="taak,actie" id="oc-imp" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11M7.5 9.5L12 14l4.5-4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>Overnemen uit…</button>
+        <button type="button" class="btn-s" id="kaart-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg>Kaarten op je gsm</button>
+        <span class="sum" id="sum"></span>
+      </div>
+      <ol class="stories" id="stories" aria-label="Stories in volgorde"></ol>
+      <form class="add-row" id="add-form" autocomplete="off">
+        <input class="field" id="add-title" placeholder="Nieuwe story, bv. Formulier in eenvoudige taal" aria-label="Nieuwe story" maxlength="160" enterkeyhint="next">
+        <button class="btn-add" type="submit" aria-label="Voeg story toe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Voeg toe</span></button>
+      </form>
+      <p class="hint">Enter voegt toe en zet je klaar voor de volgende. Plak je een lijst, dan wordt elke regel een story. Versleep een story aan het greepje, of gebruik de pijltjes.</p>
+      <div class="finish">
+        <span class="lbl">Sprint klaar?</span>
+        <button type="button" class="btn-s" id="to-board"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="11" rx="1.5"/><rect x="17" y="4" width="4" height="7" rx="1.5"/></svg>Zet in Takenbord</button>
+        <button type="button" class="btn-s" id="next-sprint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>Volgende sprint</button>
+      </div>
+    </section>
+  </div>
+  <div class="sr" id="live" aria-live="polite"></div>
+<div class="oc-restart-row" id="oc-restart-row" hidden><button type="button" class="oc-restart" id="oc-restart-btn">Opnieuw beginnen</button></div>
+
+  <details class="explain">
+    <summary>Hoe werkt dit?</summary>
+    <div class="inner">
+      <p>Alles telt in <b>halve dagen</b>: een halve dag werk van één persoon. Een kaart 3 is dus anderhalve dag werk.</p>
+      <ul>
+        <li><b>Wat past</b>: per teamlid de dagen die er zijn, maal het deel voor sprintwerk. Daar gaat de ruimte voor onvoorzien nog af.</li>
+        <li><b>Stories</b>: zet ze in volgorde van belang. De tool vult de sprint van boven naar onder, tot hij vol is. Wat eronder staat, is voor de volgende sprint.</li>
+        <li><b>Schatten</b>: iedereen kiest gedekt een kaart, op tafel of op de eigen gsm. Draai samen om. Liggen de kaarten ver uiteen, laat dan de laagste en de hoogste uitleggen waarom, en doe nog een ronde.</li>
+        <li><b>?</b> betekent: te onduidelijk om te schatten. Maak de story eerst duidelijker of kleiner.</li>
+      </ul>
+      <p>Is de sprint klaar, kies dan "Zet in Takenbord". In <a href="https://onderconstructie.github.io/kanban/">Takenbord</a> haal je de stories op met "Overnemen uit…".</p>
+    </div>
+  </details>
+</main>
+
+<footer class="footer">
+  <p class="quote">Plan wat past, niet wat moet.</p>
+</footer>
+
+<div id="kaart" class="kt" hidden>
+  <div class="kt-top"><span class="kt-brand">Sprintplanning · jouw kaart</span><a class="kt-exit" href="./">Sluit</a></div>
+  <div class="kt-step" id="kt-pick">
+    <p class="kt-q">Kies je kaart. Niemand ziet hem tot jullie samen omdraaien.</p>
+    <div class="kt-grid" id="kt-grid" role="group" aria-label="Kaarten"></div>
+    <p class="kt-tip">In halve dagen. Groter dan 13? Splits de story.</p>
+  </div>
+  <div class="kt-step" id="kt-hold" hidden>
+    <div class="kt-card back" role="img" aria-label="Je kaart ligt gedekt"></div>
+    <p class="kt-msg">Je kaart ligt gedekt. Draai om als het team samen omdraait.</p>
+    <button type="button" class="kt-main" id="kt-flip">Omdraaien</button>
+    <button type="button" class="kt-sec" id="kt-other">Andere kaart kiezen</button>
+  </div>
+  <div class="kt-step" id="kt-show" hidden>
+    <div class="kt-card face" id="kt-face" role="img"><b id="kt-val"></b><span id="kt-days"></span></div>
+    <button type="button" class="kt-main" id="kt-new">Nieuwe ronde</button>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-text"></span><button id="toast-btn" hidden>Ongedaan</button></div>
+
+<script>
+window.OC_KAART = document.documentElement.classList.contains('kaart');
+/* ---------- Overnemen tussen tools (gedeeld door de Onder Constructie-tools, v2) ----------
+   Alle tools draaien op hetzelfde domein en delen dus localStorage. Elke tool legt wat hij te bieden
+   heeft klaar onder 'oc.share.<tool-id>', in een vaste vorm, zodat andere tools het kunnen overnemen
+   zonder elkaars binnenkant te kennen.
+
+   Soorten (type):
+     'betrokkene'  persoon, rol, stakeholder, doelgroep of team   { text, note? }
+     'taak'        iets dat gedaan moet worden                     { text, note? }
+     'actie'       taak met eigenaar en/of termijn                 { text, who?, when? }
+     'risico'      risico met kans en impact                       { text, note? }
+
+   Gebruik:
+     ocShare.publish('raci', 'RACI-matrix', [
+       { name:'Heraanleg stadspark', items:[ { type:'betrokkene', text:'Projectleider' }, { type:'taak', text:'Budget goedkeuren' } ] }
+     ]);                                   // aanroepen na elke bewaring
+     ocShare.clear('raci');                // bij "Alles wissen"
+     const gekozen = await ocShare.pick({ types:['betrokkene'], self:'weerstand', title:'Doelgroepen overnemen' });
+     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source en .list erbij)
+*/
+const ocShare = (() => {
+  const PREFIX = 'oc.share.';
+  const LABEL = { betrokkene:'betrokkenen', taak:'taken', actie:'acties', risico:"risico's" };
+  const esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+
+  function publish(id, tool, lists) {
+    try {
+      const clean = (lists || []).map(l => ({
+        name: String(l.name || '').slice(0, 80),
+        items: (l.items || []).filter(i => i && i.type && String(i.text || '').trim())
+          .slice(0, 300).map(i => ({ type:i.type, text:String(i.text).trim().slice(0, 300),
+            note: i.note ? String(i.note).slice(0, 200) : undefined, who: i.who || undefined, when: i.when || undefined }))
+      })).filter(l => l.items.length);
+      if (!clean.length) { localStorage.removeItem(PREFIX + id); return; }
+      localStorage.setItem(PREFIX + id, JSON.stringify({ id, tool, updated: Date.now(), lists: clean }));
+    } catch {}
+  }
+  function clear(id) { try { localStorage.removeItem(PREFIX + id); } catch {} }
+
+  // Elke bron apart: één kapotte sleutel mag de andere niet verbergen.
+  function sources(types, self) {
+    const out = [];
+    let keys = [];
+    try { for (let i = 0; i < localStorage.length; i++) keys.push(localStorage.key(i)); } catch { return out; }
+    keys.forEach(k => {
+      if (!k || !k.startsWith(PREFIX) || k === PREFIX + self) return;
+      try {
+        const d = JSON.parse(localStorage.getItem(k));
+        if (!d || !Array.isArray(d.lists)) return;
+        d.lists.forEach(l => {
+          if (!l || !Array.isArray(l.items)) return;
+          const items = l.items.filter(it => it && types.includes(it.type) && typeof it.text === 'string');
+          if (items.length) out.push({ tool: String(d.tool || d.id || k.slice(PREFIX.length)), id: d.id, updated: +d.updated || 0, list: String(l.name || ''), items });
+        });
+      } catch {}
+    });
+    return out.sort((a, b) => (b.updated || 0) - (a.updated || 0));
+  }
+
+  let styled = false;
+  function style() {
+    if (styled) return; styled = true;
+    const s = document.createElement('style');
+    s.textContent = `
+      .ocs-back{position:fixed;inset:0;z-index:10000;display:flex;align-items:flex-end;justify-content:center;background:rgba(15,23,42,.45);
+        backdrop-filter:blur(3px);opacity:0;transition:opacity .15s;font-family:'DM Sans',system-ui,sans-serif}
+      @media(min-width:640px){.ocs-back{align-items:center;padding:1rem}}
+      .ocs-back.open{opacity:1}
+      .ocs{width:100%;max-width:520px;max-height:min(86vh,720px);display:flex;flex-direction:column;background:#fff;border-radius:18px 18px 0 0;
+        box-shadow:0 20px 50px rgba(15,23,42,.25);transform:translateY(12px);transition:transform .15s;color:#1e293b}
+      @media(min-width:640px){.ocs{border-radius:18px}}
+      .ocs-back.open .ocs{transform:none}
+      .ocs-head{padding:1.125rem 1.25rem .75rem;border-bottom:1px solid #e2e8f0}
+      .ocs-title{font-size:1.125rem;font-weight:700;letter-spacing:-.02em}
+      .ocs-sub{font-size:.8125rem;color:#64748b;margin-top:.125rem}
+      .ocs-body{overflow:auto;padding:.5rem 1.25rem 1rem;flex:1}
+      .ocs-src{margin-top:.875rem}
+      .ocs-src-head{display:flex;align-items:center;gap:.5rem;padding:.375rem 0}
+      .ocs-src-head b{font-size:.9375rem}
+      .ocs-src-head span{font-size:.75rem;color:#64748b}
+      .ocs-all{margin-left:auto;font:inherit;font-size:.8125rem;color:#047857;background:none;border:0;cursor:pointer;padding:.25rem .5rem;min-height:44px;border-radius:6px}
+      .ocs-all:hover{background:#d1fae5}
+      .ocs-item{display:flex;align-items:flex-start;gap:.625rem;padding:.625rem .25rem;min-height:44px;box-sizing:border-box;border-top:1px solid #f1f5f9;cursor:pointer;font-size:.9375rem;line-height:1.4}
+      .ocs-item input{width:18px;height:18px;margin-top:.125rem;accent-color:#10b981;flex:none}
+      .ocs-item small{display:block;font-size:.75rem;color:#64748b}
+      .ocs-empty{padding:1.5rem .25rem;color:#64748b;font-size:.9375rem;line-height:1.5}
+      .ocs-foot{display:flex;gap:.5rem;justify-content:flex-end;padding:.875rem 1.25rem calc(.875rem + env(safe-area-inset-bottom,0px));border-top:1px solid #e2e8f0}
+      .ocs-btn{font:inherit;font-size:.9375rem;font-weight:600;padding:.625rem 1rem;min-height:44px;border-radius:10px;border:0;cursor:pointer}
+      .ocs-cancel{background:#f1f5f9;color:#475569}
+      .ocs-ok{background:#047857;color:#fff}.ocs-ok:hover{background:#065f46}
+      .ocs-ok:disabled{background:#cbd5e1;color:#334155;cursor:default}
+      .ocs-back :focus-visible{outline:2px solid #047857;outline-offset:2px}`;
+    document.head.appendChild(s);
+  }
+
+  function pick({ types, self, title, intro }) {
+    style();
+    return new Promise(resolve => {
+      const src = sources(types, self);
+      const back = document.createElement('div');
+      back.className = 'ocs-back';
+      const what = types.map(t => LABEL[t] || t).join(' of ');
+      back.innerHTML = `<div class="ocs" role="dialog" aria-modal="true" aria-label="${esc(title || 'Overnemen')}">
+        <div class="ocs-head"><div class="ocs-title">${esc(title || 'Overnemen uit een andere tool')}</div>
+          <div class="ocs-sub">${esc(intro || `Kies welke ${what} je wil overnemen.`)}</div></div>
+        <div class="ocs-body">${src.length ? src.map((s, si) => `
+          <div class="ocs-src"><div class="ocs-src-head"><b>${esc(s.tool)}</b><span>${esc(s.list)} · ${s.items.length}</span>
+            <button class="ocs-all" type="button" data-all="${si}">alles</button></div>
+            ${s.items.map((it, ii) => `<label class="ocs-item"><input type="checkbox" data-s="${si}" data-i="${ii}">
+              <span>${esc(it.text)}${it.who || it.when || it.note ? `<small>${esc([it.who, it.when, it.note].filter(Boolean).join(' · '))}</small>` : ''}</span></label>`).join('')}
+          </div>`).join('') : `<p class="ocs-empty">Er zijn nog geen ${esc(what)} om over te nemen. Vul ze eerst in een andere tool van Onder Constructie in, dan verschijnen ze hier.</p>`}
+        </div>
+        <div class="ocs-foot"><button class="ocs-btn ocs-cancel" type="button">Annuleer</button>
+          <button class="ocs-btn ocs-ok" type="button" disabled>Neem over</button></div></div>`;
+      document.body.appendChild(back);
+      requestAnimationFrame(() => back.classList.add('open'));
+      const ok = back.querySelector('.ocs-ok');
+      const boxes = () => [...back.querySelectorAll('input[type=checkbox]')];
+      const sync = () => { const n = boxes().filter(b => b.checked).length; ok.disabled = !n; ok.textContent = n ? `Neem ${n} over` : 'Neem over'; };
+      back.addEventListener('change', sync);
+      back.addEventListener('click', e => {
+        const a = e.target.closest('[data-all]');
+        if (a) { const bs = boxes().filter(b => b.dataset.s === a.dataset.all); const all = bs.every(b => b.checked); bs.forEach(b => b.checked = !all); sync(); }
+        if (e.target === back) close([]);
+      });
+      function close(v) { document.removeEventListener('keydown', onKey, true); back.remove(); resolve(v); }
+      function onKey(e) { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close([]); } }
+      document.addEventListener('keydown', onKey, true);
+      back.querySelector('.ocs-cancel').addEventListener('click', () => close([]));
+      ok.addEventListener('click', () => close(boxes().filter(b => b.checked).map(b => {
+        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, list: s.list };
+      })));
+      const first = back.querySelector('input,.ocs-cancel'); first && first.focus();
+    });
+  }
+
+  // Hoeveel er klaarligt voor deze soorten (om een knop te tonen of een teller te zetten).
+  const count = (types, self) => sources(types, self).reduce((n, s) => n + s.items.length, 0);
+  return { publish, clear, pick, count, sources, esc };
+})();
+
+/* ---------- Alles wissen, klaarleggen en overnemen ---------- */
+const OC_ID = 'sprint', OC_TOOL = 'Sprintplanning';
+let ocSaves = 0, ocPubT = null;
+// Wordt bij elke bewaring aangeroepen: telt (voor 'Ongedaan') en legt na een korte pauze klaar voor andere tools.
+function ocAfterSave() { ocSaves++; clearTimeout(ocPubT); ocPubT = setTimeout(() => { try { ocPublish(); } catch {} ocRefreshImports(); }, 300); }
+function ocRefreshImports() {
+  document.querySelectorAll('[data-oc-types]').forEach(b => { b.hidden = !ocShare.count(b.dataset.ocTypes.split(','), OC_ID); });
+}
+if (!window.OC_KAART) {
+  ['focus', 'storage'].forEach(ev => window.addEventListener(ev, () => setTimeout(ocRefreshImports, 50)));
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) ocRefreshImports(); });
+  setTimeout(() => { try { ocPublish(); } catch {} ocRefreshImports(); }, 0);
+}
+// Bevestiging in de pagina (geen pop-up van de browser).
+// Stijl van de bevestiging en de knoppen 'Overnemen uit…': meteen laden.
+function ocStyle() {
+  if (!document.getElementById('ocw-style')) {
+    const s = document.createElement('style'); s.id = 'ocw-style';
+    s.textContent = `.ocw-back{position:fixed;inset:0;z-index:10001;display:flex;align-items:center;justify-content:center;padding:1rem;background:rgba(15,23,42,.45);backdrop-filter:blur(3px);font-family:'DM Sans',system-ui,sans-serif}
+      .ocw{width:100%;max-width:400px;background:#fff;border-radius:16px;padding:1.375rem 1.375rem 1.125rem;box-shadow:0 20px 50px rgba(15,23,42,.25);color:#1e293b}
+      .ocw b{display:block;font-size:1.0625rem;letter-spacing:-.01em;margin-bottom:.375rem}
+      .ocw p{font-size:.9375rem;line-height:1.5;color:#475569}
+      .ocw-row{display:flex;justify-content:flex-end;gap:.5rem;margin-top:1.25rem}
+      .ocw-row button{font:inherit;font-size:.9375rem;font-weight:600;padding:.625rem 1rem;border-radius:10px;border:0;cursor:pointer}
+      .ocw-no{background:#f1f5f9;color:#475569} .ocw-yes{background:#ef4444;color:#fff} .ocw-yes:hover{background:#dc2626}
+      .oc-import{display:inline-flex;align-items:center;gap:.375rem;font:inherit;font-size:.8125rem;font-weight:600;color:#059669;background:#fff;border:1px dashed #a7f3d0;border-radius:999px;padding:.3125rem .75rem;cursor:pointer;white-space:nowrap}
+      .oc-import:hover{background:#ecfdf5;border-color:#10b981} .oc-import svg{width:15px;height:15px} .oc-import[hidden]{display:none}`;
+    document.head.appendChild(s);
+  }
+}
+ocStyle();
+function ocConfirm(title, text, okText) {
+  return new Promise(resolve => {
+    const back = document.createElement('div'); back.className = 'ocw-back';
+    back.innerHTML = '<div class="ocw" role="alertdialog" aria-modal="true"><b></b><p></p><div class="ocw-row"><button class="ocw-no" type="button">Annuleer</button><button class="ocw-yes" type="button"></button></div></div>';
+    back.querySelector('b').textContent = title; back.querySelector('p').textContent = text; back.querySelector('.ocw-yes').textContent = okText;
+    document.body.appendChild(back);
+    const done = v => { document.removeEventListener('keydown', key, true); back.remove(); resolve(v); };
+    const key = e => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); done(false); } };
+    document.addEventListener('keydown', key, true);
+    back.querySelector('.ocw-no').onclick = () => done(false);
+    back.querySelector('.ocw-yes').onclick = () => done(true);
+    back.addEventListener('click', e => { if (e.target === back) done(false); });
+    back.querySelector('.ocw-no').focus();
+  });
+}
+// Ongedaan maken van een wisbeurt kan alleen zolang er sindsdien niets anders bewaard werd.
+function ocUndoable(restore) {
+  const mark = ocSaves;
+  return () => {
+    if (ocSaves !== mark) { setTimeout(() => toast('Ongedaan maken kan niet meer: er is intussen iets veranderd'), 60); return; }
+    restore();
+  };
+}
+
+/* ---------- Download als afbeelding of PDF (gedeeld door de Onder Constructie-tools, v2) ----------
+   Gebruik:
+     ocExport.png(bouwFn, 'bestandsnaam', { landscape:true })
+     ocExport.pdf(bouwFn, 'bestandsnaam', { landscape:true })
+   bouwFn() geeft { node, title, subtitle } terug: een DOM-knoop met inline styles, zonder knoppen of invoervelden.
+   Die komt buiten beeld op een witte pagina met kop (titel, ondertitel, datum) en voet.
+   Zet data-oc-keep op blokken die in een PDF niet over twee pagina's gesplitst mogen worden
+   (een beslissing, een kaartje, een rij); ze schuiven dan door naar de volgende pagina.
+   html2canvas en jsPDF worden pas geladen bij de eerste download, van dezelfde adressen als de
+   andere tools, zodat de app ze offline kan bewaren. */
+const ocExport = (() => {
+  const LIBS = {
+    h2c: '/lib/html2canvas-1.4.1.min.js',
+    pdf: '/lib/jspdf-2.5.1.umd.min.js'
+  };
+  const A4 = { w: 210, h: 297 }, MARGIN = 10;   // mm
+  const loaded = {};
+  function load(url) {
+    if (!loaded[url]) loaded[url] = new Promise((ok, fail) => {
+      const s = document.createElement('script');
+      s.src = url; s.onload = ok; s.onerror = () => { delete loaded[url]; fail(new Error('laden mislukt')); };
+      document.head.appendChild(s);
+    });
+    return loaded[url];
+  }
+  const today = () => new Date().toLocaleDateString('nl-BE', { day: 'numeric', month: 'long', year: 'numeric' });
+  function page(content, { title, subtitle, width }) {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = `position:fixed;left:-20000px;top:0;width:${width}px;background:#fff;padding:36px 40px 28px;
+      font-family:'DM Sans',system-ui,-apple-system,sans-serif;color:#1e293b;-webkit-font-smoothing:antialiased;box-sizing:border-box;`;
+    const head = document.createElement('div');
+    head.style.cssText = 'display:flex;align-items:flex-end;justify-content:space-between;gap:24px;border-bottom:2px solid #10b981;padding-bottom:12px;margin-bottom:20px;';
+    head.innerHTML = `<div><div style="font-size:22px;font-weight:700;letter-spacing:-0.02em;color:#1e293b"></div>
+      <div style="font-size:14px;color:#64748b;margin-top:2px"></div></div>
+      <div style="font-size:12px;color:#94a3b8;white-space:nowrap">${today()}</div>`;
+    head.children[0].children[0].textContent = title || '';
+    head.children[0].children[1].textContent = subtitle || '';
+    const foot = document.createElement('div');
+    foot.style.cssText = 'margin-top:22px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;display:flex;justify-content:space-between;';
+    foot.innerHTML = '<span>Onder Constructie</span><span>onderconstructie.github.io</span>';
+    wrap.append(head, content, foot);
+    document.body.appendChild(wrap);
+    return wrap;
+  }
+  // Schuift blokken met data-oc-keep die over een paginagrens zouden vallen naar de volgende pagina.
+  function keepTogether(wrap, pageH) {
+    const top0 = () => wrap.getBoundingClientRect().top;
+    for (const el of wrap.querySelectorAll('[data-oc-keep]')) {
+      const r = el.getBoundingClientRect(), t = r.top - top0(), b = t + r.height;
+      if (r.height > pageH * 0.85) continue;            // te groot om heel te houden
+      const boundary = Math.ceil(t / pageH) * pageH;     // eerstvolgende grens na de bovenkant
+      if (t % pageH !== 0 && b > boundary && t < boundary) {
+        const gap = document.createElement('div');
+        gap.style.cssText = `height:${boundary - t + 6}px;`;
+        el.parentNode.insertBefore(gap, el);
+      }
+    }
+  }
+  async function canvasOf(build, opts) {
+    await load(LIBS.h2c);
+    const built = build();
+    const node = page(built.node, { title: built.title, subtitle: built.subtitle, width: opts.width });
+    try {
+      if (document.fonts && document.fonts.ready) await document.fonts.ready;
+      if (opts.pageH) keepTogether(node, opts.pageH);
+      return await window.html2canvas(node, { scale: 2, backgroundColor: '#ffffff', logging: false, useCORS: true });
+    } finally { node.remove(); }
+  }
+  function save(blob, name) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }
+  const widthFor = opts => opts.width || (opts.landscape ? 1120 : 800);
+  async function png(build, name, opts = {}) {
+    const c = await canvasOf(build, { width: widthFor(opts) });
+    await new Promise(ok => c.toBlob(b => { save(b, name + '.png'); ok(); }, 'image/png'));
+  }
+  async function pdf(build, name, opts = {}) {
+    const landscape = !!opts.landscape, width = widthFor(opts);
+    const pw = landscape ? A4.h : A4.w, ph = landscape ? A4.w : A4.h, w = pw - 2 * MARGIN;
+    const pageCss = (ph - 2 * MARGIN) / w * width;       // paginahoogte in CSS-pixels van de exportknoop
+    const [c] = await Promise.all([canvasOf(build, { width, pageH: pageCss }), load(LIBS.pdf)]);
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: landscape ? 'landscape' : 'portrait', unit: 'mm', format: 'a4' });
+    const scale = w / c.width, pageH = (ph - 2 * MARGIN) / scale;   // paginahoogte in canvaspixels
+    for (let y = 0, i = 0; y < c.height - 2; y += pageH, i++) {
+      const h = Math.min(pageH, c.height - y);
+      const part = document.createElement('canvas'); part.width = c.width; part.height = h;
+      part.getContext('2d').drawImage(c, 0, y, c.width, h, 0, 0, c.width, h);
+      if (i) doc.addPage();
+      doc.addImage(part.toDataURL('image/jpeg', 0.92), 'JPEG', MARGIN, MARGIN, w, h * scale);
+    }
+    save(doc.output('blob'), name + '.pdf');
+  }
+  return { png, pdf };
+})();
+
+/* ---------- Eenheid: halve dagen ---------- */
+const CARDS = [0.5, 1, 2, 3, 5, 8, 13, '?'];
+const FR = { 0.25:'¼', 0.5:'½', 0.75:'¾' };
+// 3 → "3", 0.5 → "½", 37.5 → "37½"
+function fmtU(u) { const w = Math.floor(u + 1e-9), f = Math.round((u - w) * 4) / 4; return (w || !FR[f] ? String(w) : '') + (FR[f] || ''); }
+// in dagen: 3 → "1½ dag", 13 → "6½ dagen", 0.5 → "¼ dag"
+function dagen(u) { const d = u / 2; if (!d) return '0 dagen'; return fmtU(d) + (d < 2 ? ' dag' : ' dagen'); }
+const hd = u => `${fmtU(u)} ${u === 1 ? 'halve dag' : 'halve dagen'}`;
+const cardLabel = v => v === '?' ? '?' : fmtU(v);
+const cardDays = v => v === '?' ? 'te onduidelijk' : dagen(v);
+const numIn = v => { const n = parseFloat(String(v).replace(',', '.')); return isFinite(n) ? n : NaN; };
+const nl = n => String(Math.round(n * 100) / 100).replace('.', ',');
+
+/* ---------- Opslag ---------- */
+const KEY = 'sprint.v1';
+const uid = () => Math.random().toString(36).slice(2, 10);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const num = (v, fb, lo, hi) => { const n = +v; return isFinite(n) && v !== '' && v !== null ? clamp(n, lo, hi) : fb; };
+const estOk = v => { if (v === '?') return '?'; const n = typeof v === 'string' && v.trim() ? +v.replace(',', '.') : v; return typeof n === 'number' && n > 0 && n < 1000 ? n : null; };
+function blankSprint(name, days = 10) { return { id:uid(), name:name || 'Sprint 1', days, buffer:20, team:[], stories:[] }; }
+function norm(s) {
+  s.id = s.id || uid();
+  s.name = typeof s.name === 'string' ? s.name.slice(0, 80) : 'Sprint';
+  s.days = num(s.days, 10, 0, 60);
+  s.buffer = num(s.buffer, 20, 0, 90);
+  s.team = Array.isArray(s.team) ? s.team.filter(m => m && typeof m === 'object').map(m => ({ id:m.id || uid(), name:String(m.name || '').slice(0, 60), days:num(m.days, s.days, 0, 60), pct:num(m.pct, 100, 0, 100) })) : [];
+  s.stories = Array.isArray(s.stories) ? s.stories.filter(x => x && typeof x.title === 'string').map(x => ({ id:x.id || uid(), title:x.title.slice(0, 160), note:String(x.note || '').slice(0, 300), est:estOk(x.est), rounds:+x.rounds || 0, ...(x.src ? { src:String(x.src).slice(0, 120) } : {}) })) : [];
+  s.voorbeeld = !!s.voorbeeld || undefined;
+  return s;
+}
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem(KEY));
+    if (d && Array.isArray(d.sprints) && d.sprints.length) {
+      d.sprints = d.sprints.filter(s => s && typeof s === 'object').map(norm);
+      if (d.sprints.length) {
+        if (!d.sprints.some(s => s.id === d.current)) d.current = d.sprints[0].id;
+        return { v:1, sprints:d.sprints, current:d.current };
+      }
+    }
+  } catch {}
+  const s = blankSprint();
+  return { v:1, sprints:[s], current:s.id };
+}
+let state = load();
+function save() { ocAfterSave(); try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
+const cur = () => state.sprints.find(s => s.id === state.current) || state.sprints[0];
+const snapshot = () => { const c = JSON.parse(JSON.stringify(state)); return () => { state = c; }; };
+
+/* ---------- Rekenen: wat past ---------- */
+function capacity(s) {
+  const persondays = s.team.reduce((n, m) => n + (m.days || 0) * (m.pct || 0) / 100, 0);
+  const raw = persondays * 2;
+  const cap = Math.max(0, Math.floor(raw * (1 - s.buffer / 100) + 1e-9));
+  return { persondays, raw, cap };
+}
+// Van boven naar onder vullen tot de sprint vol is. Stories zonder schatting of met '?' tellen niet mee.
+function fill(s) {
+  const { cap } = capacity(s);
+  let used = 0, line = -1, over = 0;
+  const st = {};
+  s.stories.forEach((x, i) => {
+    if (x.est === null) { st[x.id] = line < 0 ? 'open' : 'open-uit'; return; }
+    if (x.est === '?') { st[x.id] = line < 0 ? 'vaag' : 'vaag-uit'; return; }
+    if (line < 0 && used + x.est <= cap + 1e-9) { used += x.est; st[x.id] = 'in'; return; }
+    if (line < 0) line = i;
+    st[x.id] = 'uit'; over += x.est;
+  });
+  const rest = cap - used, past = {};
+  if (line >= 0) s.stories.forEach(x => { if (st[x.id] === 'uit' && x.est <= rest + 1e-9) past[x.id] = true; });
+  const inSprint = s.stories.filter(x => st[x.id] === 'in');
+  return { cap, used, rest, line, over, st, past, inSprint };
+}
+
+/* ---------- Tekenen ---------- */
+const ICON = {
+  grip:'<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>',
+  x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  up:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg>',
+  down:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>',
+  flag:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg>',
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'
+};
+let editing = null;     // id van de story die open staat om aan te passen
+
+function isEmpty() { return state.sprints.every(s => !s.stories.length && !s.team.length); }
+
+function renderTabs() {
+  const t = $('tabs');
+  t.hidden = state.sprints.length < 2;
+  t.innerHTML = state.sprints.map(s => `<button type="button" class="tab" data-sprint="${esc(s.id)}" aria-pressed="${s.id === state.current}"><span class="nm">${esc(s.name || 'Naamloos')}</span>${s.voorbeeld ? '<span class="vb-tag">voorbeeld</span>' : ''}</button>`).join('');
+  $('m-delsprint').hidden = state.sprints.length < 2;
+}
+
+function renderCap() {
+  const s = cur(), { persondays } = capacity(s), f = fill(s);
+  $('cap-big').textContent = fmtU(f.cap);
+  $('cap-days').textContent = '= ' + dagen(f.cap);
+  $('cap-why').textContent = !s.team.length
+    ? 'Voeg teamleden toe. Dan zie je hier hoeveel werk er in deze sprint past.'
+    : `Het team heeft samen ${nl(persondays)} ${persondays === 1 ? 'dag' : 'dagen'} voor sprintwerk. ${s.buffer ? `Daarvan hou je ${s.buffer}% vrij voor onvoorzien, naar beneden afgerond.` : 'Je houdt niets vrij voor onvoorzien.'}`;
+  const total = Math.max(f.cap, f.used + f.over) || 1;
+  $('m-in').style.width = (f.used / total * 100) + '%';
+  $('m-free').style.width = (Math.max(0, f.cap - f.used) / total * 100) + '%';
+  $('m-over').style.width = (f.over / total * 100) + '%';
+  const capMark = $('m-cap'); capMark.hidden = !f.over; capMark.style.left = `calc(${f.cap / total * 100}% - 1px)`;
+  $('meter').setAttribute('aria-label', `${fmtU(f.used)} van ${fmtU(f.cap)} halve dagen gevuld` + (f.over ? `, ${fmtU(f.over)} passen niet meer` : ''));
+  $('meter-txt').innerHTML = `<span><b>${fmtU(f.used)}</b> van ${fmtU(f.cap)} gevuld${f.rest > 0 && f.cap ? ` · nog ${esc(hd(f.rest))} vrij` : ''}</span>` + (f.over ? `<span class="over">${esc(fmtU(f.over))} past niet</span>` : '');
+  $('sum').textContent = s.stories.length ? `${f.inSprint.length} in de sprint · ${fmtU(f.used)}/${fmtU(f.cap)}` : '';
+  return f;
+}
+
+function renderTeam() {
+  const s = cur();
+  $('team-n').textContent = s.team.length ? `${s.team.length} ${s.team.length === 1 ? 'persoon' : 'personen'}` : '';
+  $('team-empty').hidden = !!s.team.length; $('team-cols').hidden = !s.team.length;
+  $('team').innerHTML = s.team.map(m => `<li class="tm" data-id="${esc(m.id)}">
+    <input class="field tm-name" value="${esc(m.name)}" placeholder="Naam" aria-label="Naam teamlid" maxlength="60" autocomplete="off" enterkeyhint="next">
+    <span class="unit-wrap"><input class="field num tm-days" value="${esc(nl(m.days))}" inputmode="decimal" maxlength="5" aria-label="Dagen aanwezig${m.name ? ' voor ' + esc(m.name) : ''}" autocomplete="off" enterkeyhint="next"><span class="u">d</span></span>
+    <span class="unit-wrap"><input class="field num tm-pct" value="${esc(nl(m.pct))}" inputmode="numeric" maxlength="3" aria-label="Deel voor sprintwerk in procent${m.name ? ' voor ' + esc(m.name) : ''}" autocomplete="off" enterkeyhint="done"><span class="u">%</span></span>
+    <button type="button" class="del tm-del" aria-label="Verwijder ${esc(m.name || 'teamlid')}">${ICON.x}</button>
+  </li>`).join('');
+}
+
+function storyRow(x, f, i) {
+  const st = f.st[x.id], uit = st === 'uit' || st === 'open-uit' || st === 'vaag-uit';
+  const open = st === 'open' || st === 'open-uit', vaag = st === 'vaag' || st === 'vaag-uit';
+  const meta = [];
+  if (open) meta.push('<span class="pill">nog in te schatten</span>');
+  if (vaag) meta.push('<span class="pill vaag">te onduidelijk, telt niet mee</span>');
+  if (f.past[x.id]) meta.push(`<button type="button" class="past-btn" data-past="${esc(x.id)}" aria-label="Past nog: haal ${esc(x.title)} in de sprint">${ICON.up}Past nog</button>`);
+  if (x.rounds > 1) meta.push(`<span class="pill rondes">${x.rounds} rondes</span>`);
+  const est = x.est === null
+    ? `<button type="button" class="est-btn todo" data-est="${esc(x.id)}" aria-label="Schat in: ${esc(x.title)}">Schat in</button>`
+    : `<button type="button" class="est-btn${vaag ? ' vaag' : ''}" data-est="${esc(x.id)}" aria-label="Schatting ${x.est === '?' ? 'te onduidelijk' : esc(hd(x.est)) + ', ' + esc(dagen(x.est))}. Schat opnieuw in: ${esc(x.title)}"><b>${esc(cardLabel(x.est))}</b><small>${esc(x.est === '?' ? 'onduidelijk' : dagen(x.est))}</small></button>`;
+  const ed = editing === x.id ? `<div class="ed">
+      <label><span class="lbl">Story</span><input class="field ed-title" value="${esc(x.title)}" maxlength="160" autocomplete="off" enterkeyhint="done"></label>
+      <label><span class="lbl">Korte uitleg (mag leeg)</span><textarea class="field ed-note" maxlength="300" rows="2">${esc(x.note)}</textarea></label>
+      <div class="ed-btns"><button type="button" data-mv="-1"${i === 0 ? ' disabled' : ''}>${ICON.up}Omhoog</button><button type="button" data-mv="1"${i === cur().stories.length - 1 ? ' disabled' : ''}>${ICON.down}Omlaag</button><button type="button" class="ed-del">Verwijder</button><button type="button" class="ed-ok">Klaar</button></div>
+    </div>` : '';
+  return `<li class="st ${uit ? 'uit' : 'in'}" data-id="${esc(x.id)}">
+    <button type="button" class="handle" aria-label="Verplaats ${esc(x.title)}, plaats ${i + 1} van ${cur().stories.length}. Gebruik pijltje omhoog of omlaag." aria-roledescription="greepje">${ICON.grip}</button>
+    <div class="st-main"><button type="button" class="st-title" aria-expanded="${editing === x.id}">${esc(x.title)}${x.note ? `<span class="st-note">${esc(x.note)}</span>` : ''}</button><div class="st-meta">${meta.join('')}</div></div>
+    ${est}${ed}
+  </li>`;
+}
+
+function renderStories(f) {
+  const s = cur();
+  if (!s.stories.length) { $('stories').innerHTML = '<li class="stories-empty">Nog geen stories. Typ hieronder je eerste story, in volgorde van belang.</li>'; return; }
+  let html = '';
+  s.stories.forEach((x, i) => {
+    if (i === f.line) html += `<li class="line" role="separator" aria-label="Hier is de sprint vol"><b>${ICON.flag}Hier is de sprint vol</b><span>${fmtU(f.used)} van ${fmtU(f.cap)} halve dagen${f.rest > 0 ? ` · nog ${esc(hd(f.rest))} vrij` : ''}</span><small>Hieronder: volgende sprint</small></li>`;
+    html += storyRow(x, f, i);
+  });
+  if (f.line < 0) html += `<li class="line ok" role="separator"><b>${ICON.check}Alles past</b><span>${fmtU(f.used)} van ${fmtU(f.cap)} halve dagen${f.rest > 0 ? ` · nog ${esc(hd(f.rest))} vrij (${esc(dagen(f.rest))})` : ''}</span></li>`;
+  $('stories').innerHTML = html;
+}
+
+function render() {
+  const s = cur();
+  $('vb-start').hidden = !isEmpty();
+  $('vb-bar').hidden = !s.voorbeeld;
+  if (document.activeElement !== $('sp-name')) $('sp-name').value = s.name;
+  if (document.activeElement !== $('sp-days')) $('sp-days').value = nl(s.days);
+  if (document.activeElement !== $('sp-buf')) $('sp-buf').value = nl(s.buffer);
+  renderTabs(); renderTeam();
+  const f = renderCap(); renderStories(f);
+}
+// Na een wijziging in een invoerveld: alleen cijfers en lijst opnieuw, de velden zelf blijven staan (focus).
+function refresh() { renderTabs(); const f = renderCap(); if (!drag) renderStories(f); $('vb-start').hidden = !isEmpty(); }
+
+/* ---------- Melding met ongedaan maken ---------- */
+let undoFn = null, toastTimer = null, toastAct = false;
+function toast(msg, undo, label) {
+  undoFn = undo || null; toastAct = !!label;
+  $('toast-text').textContent = msg;
+  $('toast-btn').hidden = !undo;
+  $('toast-btn').textContent = label || 'Ongedaan';
+  $('toast').classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { $('toast').classList.remove('show'); undoFn = null; }, undo ? 6000 : 2800);
+}
+$('toast-btn').addEventListener('click', () => {
+  const fn = undoFn, act = toastAct; undoFn = null;
+  $('toast').classList.remove('show');
+  if (!fn) return;
+  fn(); if (!act) { editing = null; save(); render(); }
+});
+const say = t => { const l = $('live'); l.textContent = ''; setTimeout(() => { l.textContent = t; }, 30); };
+
+/* ---------- Sprint ---------- */
+$('sp-name').addEventListener('input', () => { cur().name = $('sp-name').value.slice(0, 80); save(); renderTabs(); });
+$('sp-name').addEventListener('blur', () => { if (!cur().name.trim()) { cur().name = 'Sprint'; save(); render(); } });
+$('sp-name').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('sp-days').focus(); $('sp-days').select(); } });
+$('sp-days').addEventListener('input', () => {
+  const s = cur(), v = numIn($('sp-days').value); if (!isFinite(v)) return;
+  const old = s.days, nw = clamp(Math.round(v * 2) / 2, 0, 60);
+  // wie er de hele sprint is, volgt het nieuwe aantal werkdagen
+  s.team.forEach(m => { if (m.days === old) { m.days = nw; const el = document.querySelector(`.tm[data-id="${CSS.escape(m.id)}"] .tm-days`); if (el) el.value = nl(nw); } });
+  s.days = nw; save(); refresh();
+});
+$('sp-buf').addEventListener('input', () => { const v = numIn($('sp-buf').value); if (!isFinite(v)) return; cur().buffer = clamp(Math.round(v), 0, 90); save(); refresh(); });
+['sp-days', 'sp-buf'].forEach(id => {
+  $(id).addEventListener('blur', () => { const s = cur(); $(id).value = nl(id === 'sp-days' ? s.days : s.buffer); });
+  $(id).addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); if (id === 'sp-days') { $('sp-buf').focus(); $('sp-buf').select(); } else { const n = document.querySelector('.tm-name'); n ? n.focus() : $('tm-add').focus(); } } });
+});
+
+/* ---------- Team ---------- */
+function addMember(focus = true) {
+  const s = cur(); s.team.push({ id:uid(), name:'', days:s.days, pct:100 }); save(); render();
+  if (focus) { const all = document.querySelectorAll('.tm-name'); all[all.length - 1].focus(); }
+}
+$('tm-add').addEventListener('click', () => addMember());
+$('team').addEventListener('input', e => {
+  const li = e.target.closest('.tm'); if (!li) return;
+  const m = cur().team.find(x => x.id === li.dataset.id); if (!m) return;
+  if (e.target.classList.contains('tm-name')) { m.name = e.target.value.slice(0, 60); li.querySelector('.tm-del').setAttribute('aria-label', 'Verwijder ' + (m.name || 'teamlid')); }
+  else { const v = numIn(e.target.value); if (!isFinite(v)) return;
+    if (e.target.classList.contains('tm-days')) m.days = clamp(Math.round(v * 2) / 2, 0, 60);
+    else m.pct = clamp(Math.round(v), 0, 100); }
+  save(); refresh();
+});
+$('team').addEventListener('focusout', e => {
+  const li = e.target.closest('.tm'); if (!li) return;
+  const m = cur().team.find(x => x.id === li.dataset.id); if (!m) return;
+  if (e.target.classList.contains('tm-days')) e.target.value = nl(m.days);
+  if (e.target.classList.contains('tm-pct')) e.target.value = nl(m.pct);
+});
+$('team').addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  const li = e.target.closest('.tm'); if (!li) return;
+  e.preventDefault();
+  const order = ['tm-name', 'tm-days', 'tm-pct'], k = order.findIndex(c => e.target.classList.contains(c));
+  if (k < 2) { const n = li.querySelector('.' + order[k + 1]); n.focus(); n.select(); return; }
+  const next = li.nextElementSibling;
+  if (next) next.querySelector('.tm-name').focus(); else addMember();
+});
+$('team').addEventListener('click', e => {
+  const b = e.target.closest('.tm-del'); if (!b) return;
+  const s = cur(), i = s.team.findIndex(x => x.id === b.closest('.tm').dataset.id); if (i < 0) return;
+  const restore = snapshot(), m = s.team[i];
+  s.team.splice(i, 1); save(); render();
+  toast(`${m.name || 'Teamlid'} verwijderd`, restore);
+});
+
+/* ---------- Stories toevoegen ---------- */
+function parseLines(text) {
+  return text.split(/\r?\n/).map(t => t.trim().replace(/^([-*+•·▪◦–]|\d+[.)]|\[( |x|X)\])\s+/, '').trim()).filter(Boolean).map(t => t.slice(0, 160));
+}
+$('add-form').addEventListener('submit', e => {
+  e.preventDefault();
+  const t = $('add-title').value.trim(); if (!t) { $('add-title').focus(); return; }
+  cur().stories.push({ id:uid(), title:t.slice(0, 160), note:'', est:null, rounds:0 });
+  $('add-title').value = ''; save(); render(); $('add-title').focus();
+  say(`${t} toegevoegd, nog in te schatten`);
+});
+$('add-title').addEventListener('paste', e => {
+  const text = (e.clipboardData || window.clipboardData).getData('text');
+  if (!/\n/.test(text.trim())) return;
+  e.preventDefault();
+  const names = parseLines(text); if (!names.length) return;
+  const restore = snapshot();
+  names.forEach(n => cur().stories.push({ id:uid(), title:n, note:'', est:null, rounds:0 }));
+  save(); render();
+  toast(`${names.length} stories toegevoegd. Schat ze nu in.`, restore);
+});
+
+/* ---------- Stories: openen, aanpassen, verplaatsen ---------- */
+function move(id, to) {
+  const a = cur().stories, i = a.findIndex(x => x.id === id); if (i < 0) return;
+  to = clamp(to, 0, a.length - 1); if (to === i) return;
+  const [x] = a.splice(i, 1); a.splice(to, 0, x); save(); render();
+  say(`${x.title}: nu plaats ${to + 1} van ${a.length}`);
+}
+$('stories').addEventListener('click', e => {
+  const past = e.target.closest('[data-past]');
+  if (past) {
+    const s = cur(), f = fill(s), id = past.dataset.past, x = s.stories.find(y => y.id === id);
+    move(id, f.line);
+    toast(`${x.title.slice(0, 40)} staat nu in de sprint`);
+    return;
+  }
+  const est = e.target.closest('[data-est]'); if (est) { openEstimate(est.dataset.est); return; }
+  const li = e.target.closest('.st'); if (!li) return;
+  const id = li.dataset.id, s = cur(), x = s.stories.find(y => y.id === id); if (!x) return;
+  if (e.target.closest('.st-title')) {
+    editing = editing === id ? null : id; render();
+    if (editing) { const t = document.querySelector(`.st[data-id="${CSS.escape(id)}"] .ed-title`); t && t.focus(); }
+    else { const b = document.querySelector(`.st[data-id="${CSS.escape(id)}"] .st-title`); b && b.focus(); }
+    return;
+  }
+  const mv = e.target.closest('[data-mv]');
+  if (mv) { const i = s.stories.indexOf(x); move(id, i + +mv.dataset.mv); const b = document.querySelector(`.st[data-id="${CSS.escape(id)}"] [data-mv="${mv.dataset.mv}"]`); (b && !b.disabled ? b : document.querySelector(`.st[data-id="${CSS.escape(id)}"] .ed-ok`)).focus(); return; }
+  if (e.target.closest('.ed-del')) {
+    const restore = snapshot(); s.stories.splice(s.stories.indexOf(x), 1); editing = null; save(); render();
+    toast(`${x.title.slice(0, 40)} verwijderd`, restore); return;
+  }
+  if (e.target.closest('.ed-ok')) { editing = null; render(); const b = document.querySelector(`.st[data-id="${CSS.escape(id)}"] .st-title`); b && b.focus(); }
+});
+$('stories').addEventListener('input', e => {
+  const li = e.target.closest('.st'); if (!li) return;
+  const x = cur().stories.find(y => y.id === li.dataset.id); if (!x) return;
+  if (e.target.classList.contains('ed-title')) { const v = e.target.value.trim(); if (v) x.title = v.slice(0, 160); }
+  if (e.target.classList.contains('ed-note')) x.note = e.target.value.slice(0, 300);
+  save();
+});
+$('stories').addEventListener('keydown', e => {
+  if (e.target.classList.contains('ed-title') && e.key === 'Enter') { e.preventDefault(); e.target.closest('.st').querySelector('.ed-ok').click(); return; }
+  const h = e.target.closest('.handle'); if (!h) return;
+  const id = h.closest('.st').dataset.id, i = cur().stories.findIndex(x => x.id === id);
+  const to = { ArrowUp:i - 1, ArrowDown:i + 1, Home:0, End:cur().stories.length - 1 }[e.key];
+  if (to === undefined) return;
+  e.preventDefault(); move(id, to);
+  const again = document.querySelector(`.st[data-id="${CSS.escape(id)}"] .handle`); again && again.focus();
+});
+
+/* ---------- Slepen (muis en vinger) ---------- */
+let drag = null;
+$('stories').addEventListener('pointerdown', e => {
+  const h = e.target.closest('.handle'); if (!h || (e.pointerType === 'mouse' && e.button !== 0)) return;
+  e.preventDefault();
+  const li = h.closest('.st'), list = $('stories');
+  const els = [...list.children].filter(el => el !== li && (el.classList.contains('st') || el.classList.contains('line')));
+  const sy = window.scrollY, r = li.getBoundingClientRect();
+  drag = { id:li.dataset.id, li, pid:e.pointerId, y0:e.clientY + sy, h:r.height, top0:r.top + sy, moved:false,
+    els:els.map(el => { const q = el.getBoundingClientRect(); return { el, mid:q.top + sy + q.height / 2, before:q.top < r.top, story:el.classList.contains('st'), shift:0 }; }) };
+  try { h.setPointerCapture(e.pointerId); } catch {}
+});
+function dragMove(clientY) {
+  const d = drag, y = clientY + window.scrollY, dy = y - d.y0;
+  if (!d.moved && Math.abs(dy) < 4) return;
+  if (!d.moved) { d.moved = true; d.li.classList.add('dragging'); $('stories').classList.add('is-dragging'); }
+  d.li.style.transform = `translateY(${dy}px)`;
+  const center = d.top0 + d.h / 2 + dy;
+  d.els.forEach(o => {
+    o.shift = o.before && o.mid > center ? d.h : (!o.before && o.mid < center ? -d.h : 0);
+    o.el.style.transform = o.shift ? `translateY(${o.shift}px)` : '';
+  });
+}
+document.addEventListener('pointermove', e => {
+  if (!drag || e.pointerId !== drag.pid) return;
+  drag.lastY = e.clientY; dragMove(e.clientY);
+  // automatisch scrollen aan de rand van het scherm
+  const edge = 70, v = e.clientY < edge ? -12 : (e.clientY > innerHeight - edge ? 12 : 0);
+  drag.scroll = v;
+  if (v && !drag.raf) { const step = () => { if (!drag || !drag.scroll) { if (drag) drag.raf = 0; return; } window.scrollBy(0, drag.scroll); dragMove(drag.lastY); drag.raf = requestAnimationFrame(step); }; drag.raf = requestAnimationFrame(step); }
+});
+function endDrag(e) {
+  if (!drag || (e && e.pointerId !== drag.pid)) return;
+  const d = drag; drag = null;
+  cancelAnimationFrame(d.raf);
+  $('stories').classList.remove('is-dragging');
+  d.li.classList.remove('dragging'); d.li.style.transform = '';
+  d.els.forEach(o => o.el.style.transform = '');
+  if (!d.moved) return;
+  // nieuwe plaats: het aantal stories dat er nu boven staat
+  const above = d.els.filter(o => o.story && ((o.before && !o.shift) || (!o.before && o.shift))).length;
+  move(d.id, above);
+  const h = document.querySelector(`.st[data-id="${CSS.escape(d.id)}"] .handle`); h && h.focus({ preventScroll:true });
+}
+document.addEventListener('pointerup', endDrag);
+document.addEventListener('pointercancel', endDrag);
+$('stories').addEventListener('touchmove', e => { if (drag && e.cancelable) e.preventDefault(); }, { passive:false });
+
+/* ---------- Venster (schatten, kaarten op je gsm) ---------- */
+let sheet = null;
+function openSheet(html, label, onKey) {
+  closeSheet();
+  const back = document.createElement('div'); back.className = 'sh-back';
+  back.innerHTML = `<div class="sh" role="dialog" aria-modal="true" aria-label="${esc(label)}">${html}</div>`;
+  document.body.appendChild(back);
+  const ret = document.activeElement;
+  sheet = { back, ret, onKey };
+  back.addEventListener('click', e => { if (e.target === back || e.target.closest('[data-close]')) closeSheet(); });
+  return back;
+}
+function closeSheet() {
+  if (!sheet) return;
+  const { back, ret } = sheet; sheet = null; back.remove();
+  if (ret && document.contains(ret)) ret.focus({ preventScroll:true });
+}
+document.addEventListener('keydown', e => {
+  if (!sheet) return;
+  if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeSheet(); return; }
+  if (e.key === 'Tab') {   // focus blijft in het venster
+    const f = [...sheet.back.querySelectorAll('button:not(:disabled), input, textarea, a[href]')].filter(x => x.offsetParent !== null);
+    if (!f.length) return;
+    if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
+    else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+  }
+}, true);
+
+/* ---------- Schatronde op het toestel van de begeleider ---------- */
+const CLOSE_BTN = `<button type="button" class="icon-btn" data-close aria-label="Sluit">${ICON.x}</button>`;
+function suggestion(counts) {
+  const nums = []; CARDS.forEach((v, k) => { if (v !== '?') for (let n = 0; n < counts[k]; n++) nums.push(k); });
+  const q = counts[CARDS.length - 1];
+  if (!nums.length) return q ? CARDS.length - 1 : -1;
+  if (q > nums.length) return CARDS.length - 1;
+  const max = Math.max(...counts.slice(0, -1)), modes = counts.slice(0, -1).map((c, k) => c === max ? k : -1).filter(k => k >= 0);
+  if (modes.length === 1) return modes[0];
+  return nums[Math.floor((nums.length - 1) / 2)];   // gelijkstand: de middelste kaart
+}
+function openEstimate(id) {
+  const s = cur(), x = s.stories.find(y => y.id === id); if (!x) return;
+  const S = { counts:CARDS.map(() => 0), round:1, used:false, pick:x.est === null ? -1 : CARDS.indexOf(x.est), manual:x.est !== null };
+  const nextOpen = () => { const i = s.stories.indexOf(x); return s.stories.slice(i + 1).find(y => y.est === null) || s.stories.slice(0, i).find(y => y.est === null); };
+  const back = openSheet(`
+    <div class="sh-head"><div><div class="sh-kick" id="e-kick"></div><div class="sh-title">${esc(x.title)}</div></div>${CLOSE_BTN}</div>
+    <div class="sh-body">
+      <p class="sh-step"><b>1. Draai samen om.</b> Tik per kaart op tafel één keer op die kaart.</p>
+      <div class="cnt-grid" id="e-cnt"></div>
+      <div class="cnt-tools"><span id="e-total"></span><button type="button" class="sh-btn sh-sec" id="e-round">Nieuwe ronde</button></div>
+      <div class="spread" id="e-spread" aria-live="polite"></div>
+      <p class="sh-step" style="margin-top:1rem"><b>2. Wat spreken jullie af?</b></p>
+      <div class="pick-grid" role="radiogroup" aria-label="Afgesproken schatting" id="e-pick"></div>
+      ${x.est !== null ? '<button type="button" class="clear-est" id="e-clear">Schatting wissen</button>' : ''}
+      <p class="tip">Kaarten in halve dagen. Groter dan 13? Splits de story.</p>
+    </div>
+    <div class="sh-foot"><button type="button" class="sh-btn sh-sec" data-close>Annuleer</button><button type="button" class="sh-btn sh-sec" id="e-next" hidden>Bewaar en volgende</button><button type="button" class="sh-btn sh-ok" id="e-save">Bewaar</button></div>`, 'Schat in: ' + x.title);
+  const q = sel => back.querySelector(sel);
+  function paint() {
+    const total = S.counts.reduce((a, b) => a + b, 0);
+    q('#e-kick').textContent = `Schatronde · ronde ${S.round}`;
+    q('#e-cnt').innerHTML = CARDS.map((v, k) => `<div class="cnt${S.counts[k] ? ' has' : ''}">
+      <button type="button" class="cnt-plus" data-plus="${k}" aria-label="Kaart ${v === '?' ? 'vraagteken' : cardLabel(v)}: één erbij, nu ${S.counts[k]}"><b>${cardLabel(v)}</b><small>${v === '?' ? 'onduidelijk' : dagen(v)}</small></button>
+      <div class="cnt-row"><button type="button" class="cnt-min" data-min="${k}" aria-label="Kaart ${v === '?' ? 'vraagteken' : cardLabel(v)}: één eraf"${S.counts[k] ? '' : ' disabled'}>−</button><span class="cnt-n">${S.counts[k]}</span></div></div>`).join('');
+    q('#e-total').textContent = total ? `${total} ${total === 1 ? 'kaart' : 'kaarten'} geteld` : 'Nog geen kaarten geteld';
+    // spreiding
+    const ks = S.counts.map((c, k) => c && CARDS[k] !== '?' ? k : -1).filter(k => k >= 0), qn = S.counts[CARDS.length - 1];
+    let sp = '';
+    if (total) {
+      const max = Math.max(...S.counts);
+      sp += `<div class="dots" aria-hidden="true">${CARDS.map((v, k) => `<span class="${S.counts[k] ? 'on' : ''}"><i style="height:${S.counts[k] ? Math.max(12, S.counts[k] / max * 30) : 3}px"></i>${cardLabel(v)}</span>`).join('')}</div>`;
+      if (ks.length) sp += ks.length > 1 ? `Laagste <b>${cardLabel(CARDS[ks[0]])}</b>, hoogste <b>${cardLabel(CARDS[ks[ks.length - 1]])}</b>.` : `Iedereen koos <b>${cardLabel(CARDS[ks[0]])}</b>.`;
+      if (qn) sp += ` ${qn === 1 ? 'Eén iemand vindt' : qn + ' mensen vinden'} de story te onduidelijk.`;
+      if (ks.length && ks[ks.length - 1] - ks[0] >= 2) sp += '<div class="warn">Laat de laagste en de hoogste kort uitleggen en doe nog een ronde.</div>';
+    }
+    q('#e-spread').innerHTML = sp;
+    const sug = total ? suggestion(S.counts) : -1;
+    if (!S.manual && sug >= 0) S.pick = sug;
+    q('#e-pick').innerHTML = CARDS.map((v, k) => `<button type="button" role="radio" aria-checked="${S.pick === k}" data-pick="${k}" aria-label="${v === '?' ? 'Te onduidelijk' : esc(hd(v)) + ', ' + esc(dagen(v))}${sug === k ? ', voorstel' : ''}">${sug === k ? '<span class="vs" aria-hidden="true">voorstel</span>' : ''}<b>${cardLabel(v)}</b><small>${v === '?' ? 'onduidelijk' : dagen(v)}</small></button>`).join('');
+    q('#e-save').disabled = S.pick < 0;
+    const nx = nextOpen(); q('#e-next').hidden = !nx || S.pick < 0;
+  }
+  function commit() {
+    if (S.pick < 0) return false;
+    x.est = CARDS[S.pick];
+    if (S.used) x.rounds = S.round;
+    save(); render(); return true;
+  }
+  back.addEventListener('click', e => {
+    const p = e.target.closest('[data-plus]'), m = e.target.closest('[data-min]'), k = e.target.closest('[data-pick]');
+    if (p) { S.counts[+p.dataset.plus]++; S.used = true; S.manual = false; paint(); q(`[data-plus="${p.dataset.plus}"]`).focus(); }
+    else if (m) { const i = +m.dataset.min; S.counts[i] = Math.max(0, S.counts[i] - 1); S.manual = false; paint(); const b = q(`[data-min="${i}"]`); (b.disabled ? q(`[data-plus="${i}"]`) : b).focus(); }
+    else if (k) { S.pick = +k.dataset.pick; S.manual = true; paint(); q(`[data-pick="${k.dataset.pick}"]`).focus(); }
+    else if (e.target.closest('#e-round')) { S.counts = CARDS.map(() => 0); S.round++; S.manual = false; S.pick = x.est === null ? -1 : CARDS.indexOf(x.est); paint(); say(`Ronde ${S.round}. Iedereen kiest opnieuw een kaart.`); q('[data-plus="0"]').focus(); }
+    else if (e.target.closest('#e-save')) { if (commit()) { closeSheet(); toast(x.est === '?' ? `${x.title.slice(0, 40)}: te onduidelijk` : `${x.title.slice(0, 40)}: ${hd(x.est)} (${dagen(x.est)})`); } }
+    else if (e.target.closest('#e-next')) { const nx = nextOpen(); if (commit() && nx) openEstimate(nx.id); }
+    else if (e.target.closest('#e-clear')) { x.est = null; x.rounds = 0; save(); render(); closeSheet(); toast(`Schatting gewist`); }
+  });
+  paint();
+  q('[data-plus="0"]').focus();
+}
+
+/* ---------- Kaarten op je gsm ---------- */
+const kaartUrl = () => location.href.split('#')[0].split('?')[0] + '?kaart';
+let qrLib = null;
+function loadQr() {
+  if (!qrLib) qrLib = new Promise((ok, fail) => { if (window.qrcode) return ok(); const s = document.createElement('script'); s.src = '/lib/qrcode-generator-1.4.4.js'; s.onload = ok; s.onerror = () => { qrLib = null; fail(); }; document.head.appendChild(s); });
+  return qrLib;
+}
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch {}
+  try { const t = document.createElement('textarea'); t.value = text; t.style.position = 'fixed'; t.style.opacity = '0'; document.body.appendChild(t); t.select(); const ok = document.execCommand('copy'); t.remove(); return ok; } catch { return false; }
+}
+$('kaart-btn').addEventListener('click', () => {
+  const url = kaartUrl();
+  const back = openSheet(`
+    <div class="sh-head"><div><div class="sh-kick">Schatronde</div><div class="sh-title">Kaarten op je gsm</div></div>${CLOSE_BTN}</div>
+    <div class="sh-body">
+      <p class="sh-step">Geen kaarten op tafel? Laat iedereen deze link openen op de eigen gsm. Elk toestel toont één kaart. Er wordt niets doorgestuurd of bewaard.</p>
+      <div class="share-link"><input class="field" id="k-url" readonly value="${esc(url)}" aria-label="Link naar de kaarten"><button type="button" class="btn-s" id="k-copy">Kopieer</button></div>
+      <div class="qr" id="k-qr" aria-hidden="true"></div><p class="qr-cap" id="k-qrcap" hidden>Of scan deze code met de camera.</p>
+      <p class="sh-step" style="margin-top:1rem">Daarna tel jij hier de omgedraaide kaarten: tik bij een story op <b>Schat in</b>.</p>
+    </div>
+    <div class="sh-foot"><a class="sh-btn sh-sec" href="${esc(url)}" target="_blank" rel="noopener" style="text-decoration:none;display:inline-flex;align-items:center">Probeer zelf</a><button type="button" class="sh-btn sh-ok" data-close>Klaar</button></div>`, 'Kaarten op je gsm');
+  back.querySelector('#k-copy').addEventListener('click', async () => { toast((await copyText(url)) ? 'Link gekopieerd' : 'Kopiëren lukt hier niet. Selecteer de link en kopieer hem zelf.'); });
+  back.querySelector('#k-url').addEventListener('focus', e => e.target.select());
+  loadQr().then(() => {
+    if (!document.contains(back)) return;
+    const qr = qrcode(0, 'M'); qr.addData(url); qr.make();
+    back.querySelector('#k-qr').innerHTML = qr.createSvgTag({ cellSize:5, margin:2, scalable:true }).replace(/fill="black"/g, 'fill="#1e293b"');
+    back.querySelector('#k-qrcap').hidden = false;
+  }).catch(() => {});
+  back.querySelector('#k-copy').focus();
+});
+
+/* ---------- Overnemen uit andere tools ---------- */
+document.addEventListener('click', async e => {
+  if (!e.target.closest('#oc-imp')) return;
+  e.preventDefault();
+  const picked = await ocShare.pick({ types:['taak', 'actie'], self:OC_ID, title:'Stories overnemen', intro:'Kies taken uit andere tools, bijvoorbeeld uit Prioriteren. Ze komen onderaan je lijst, nog in te schatten.' });
+  if (!picked.length) return;
+  // uit Prioriteren: snelle winst eerst, dan de grote klussen, de opvullers en de tijdverspillers
+  const QO = ['Snelle winst', 'Grote klussen', 'Opvullers', 'Tijdverspillers'], rank = p => { const k = QO.indexOf(p.note); return k < 0 ? 9 : k; };
+  picked.sort((a, b) => rank(a) - rank(b));
+  const s = cur(), have = new Set(s.stories.map(x => x.title.toLowerCase())), restore = snapshot();
+  let n = 0;
+  picked.forEach(p => { const t = String(p.text || '').trim().slice(0, 160); if (!t || have.has(t.toLowerCase())) return; have.add(t.toLowerCase());
+    s.stories.push({ id:uid(), title:t, note:'', est:null, rounds:0, src:[p.source, p.list].filter(Boolean).join(' · ').slice(0, 120) }); n++; });
+  save(); render();
+  toast(n ? `${n} ${n === 1 ? 'story' : 'stories'} overgenomen. Schat ze nu in.` : 'Die staan al in de lijst', n ? restore : undefined);
+});
+
+/* ---------- Afronden: Takenbord en volgende sprint ---------- */
+const estNote = x => `Schatting: ${hd(x.est)} (${dagen(x.est)})` + (x.note ? ` · ${x.note}` : '');
+function ocPublish() {
+  const s = cur();
+  if (!s || s.voorbeeld) { ocShare.clear(OC_ID); return; }
+  ocShare.publish(OC_ID, OC_TOOL, [{ name:s.name, items:fill(s).inSprint.map(x => ({ type:'taak', text:x.title, note:estNote(x) })) }]);
+}
+$('to-board').addEventListener('click', () => {
+  const s = cur(), f = fill(s);
+  if (s.voorbeeld) { toast('Een voorbeeld gaat niet naar Takenbord. Kies eerst "Maak er mijn eigen van".'); return; }
+  if (!f.inSprint.length) { toast('Er staat nog niets in de sprint. Schat eerst de stories in.'); return; }
+  clearTimeout(ocPubT); ocPublish(); ocRefreshImports();
+  toast(`${f.inSprint.length} stories klaar. Kies in Takenbord "Overnemen uit…".`, () => { location.href = '/kanban/'; }, 'Open Takenbord');
+});
+function nextName(n) {
+  const m = /(\d+)(?!.*\d)/.exec(n || '');
+  return m ? n.slice(0, m.index) + (+m[1] + 1) + n.slice(m.index + m[1].length) : (n ? n + ' 2' : 'Sprint 2');
+}
+$('next-sprint').addEventListener('click', () => {
+  const s = cur(), f = fill(s);
+  const rest = s.stories.filter(x => f.st[x.id] !== 'in');
+  const restore = snapshot();
+  const nw = { id:uid(), name:nextName(s.name), days:s.days, buffer:s.buffer, team:s.team.map(m => ({ id:uid(), name:m.name, days:s.days, pct:m.pct })), stories:rest.map(x => ({ ...x })), ...(s.voorbeeld ? { voorbeeld:true } : {}) };
+  s.stories = s.stories.filter(x => f.st[x.id] === 'in');
+  state.sprints.push(nw); state.current = nw.id; editing = null; save(); render();
+  toast(rest.length ? `${nw.name}: ${rest.length} ${rest.length === 1 ? 'story schuift' : 'stories schuiven'} door. Pas het verlof aan.` : `${nw.name} staat klaar`, restore);
+  window.scrollTo({ top:0, behavior:matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+});
+$('tabs').addEventListener('click', e => {
+  const t = e.target.closest('[data-sprint]'); if (!t) return;
+  state.current = t.dataset.sprint; editing = null; save(); render();
+});
+function deleteSprint() {
+  if (state.sprints.length < 2) return;
+  const s = cur(), restore = snapshot(), idx = state.sprints.indexOf(s);
+  state.sprints.splice(idx, 1); state.current = state.sprints[Math.max(0, idx - 1)].id; editing = null; save(); render();
+  toast(`${s.name || 'Sprint'} verwijderd`, restore);
+}
+
+/* ---------- Voorbeeld ---------- */
+function loadExample() {
+  const bestaand = state.sprints.find(x => x.voorbeeld);
+  if (bestaand) { state.current = bestaand.id; editing = null; save(); render(); toast('Dit is het voorbeeld'); return; }
+  let s = cur();
+  if (s.stories.length || s.team.length) { s = blankSprint(); state.sprints.push(s); state.current = s.id; }
+  Object.assign(s, { voorbeeld:true, name:'Sprint 14 · Digitaal premieloket', days:10, buffer:20 });
+  s.team = [['Sofie', 10, 100], ['Mehdi', 7, 100], ['Griet', 10, 50], ['Tom', 10, 100]].map(([name, days, pct]) => ({ id:uid(), name, days, pct }));
+  s.stories = [
+    ['Formulier herschrijven in eenvoudige taal', 8, 'Samen met de schrijfcel van communicatie', 1],
+    ['Koppeling met het registratiesysteem', 13, 'Eerst de testomgeving vragen aan ICT', 2],
+    ['Sms als het dossier van status verandert', 5, '', 1],
+    ['Veelgestelde vragen op de website zetten', 3, '', 1],
+    ['Formulier testen met vijf aanvragers', 8, 'Twee via het loket, drie online', 1],
+    ['Melding als een dossier stilvalt', '?', 'Wie krijgt de melding: de dossierbeheerder of het diensthoofd?', 2],
+    ['Premie meteen berekenen in het formulier', 13, '', 1],
+    ['Formulier ook in het Engels en het Frans', 5, '', 1],
+    ['Affiche aan het loket ophangen', 1, '', 1],
+    ['Oude papieren dossiers inscannen', null, '', 0],
+  ].map(([title, est, note, rounds]) => ({ id:uid(), title, note, est, rounds }));
+  editing = null; save(); render();
+  toast('Voorbeeld geladen');
+  requestAnimationFrame(() => { const b = $('vb-bar'); b && !b.hidden && b.scrollIntoView({ block:'start', behavior:matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); });
+}
+$('vb-load').addEventListener('click', loadExample);
+$('vb-wis').addEventListener('click', () => {
+  const restore = snapshot(), idx = state.sprints.indexOf(cur());
+  state.sprints = state.sprints.filter(x => !x.voorbeeld);
+  if (!state.sprints.length) state.sprints.push(blankSprint());
+  if (!state.sprints.some(x => x.id === state.current)) state.current = state.sprints[clamp(idx - 1, 0, state.sprints.length - 1)].id;
+  editing = null; save(); render();
+  toast('Voorbeeld gewist', restore);
+});
+$('vb-eigen').addEventListener('click', () => {
+  state.sprints.forEach(x => { if (x.voorbeeld) delete x.voorbeeld; }); save(); render();
+  toast('Het voorbeeld is nu van jou');
+});
+
+/* ---------- Alles wissen ---------- */
+async function ocWipeAll() {
+  if (!await ocConfirm(`Alles wissen in ${OC_TOOL}?`, 'Alle sprints, teams en stories verdwijnen. Je kan dit nog ongedaan maken tot je iets anders doet.', 'Alles wissen')) return;
+  const copy = JSON.parse(JSON.stringify(state));
+  try { localStorage.removeItem(KEY); } catch {}
+  state = load(); editing = null; render();
+  clearTimeout(ocPubT); ocShare.clear(OC_ID);
+  toast('Alles gewist', ocUndoable(() => { state = copy; }));
+}
+document.addEventListener('click', e => { if (e.target.closest('[data-act="wipe"]')) ocWipeAll(); });
+
+/* ---------- Menu ---------- */
+function closeMenu() { $('menu').classList.remove('open'); $('menu-btn').setAttribute('aria-expanded', 'false'); }
+$('menu-btn').addEventListener('click', e => {
+  e.stopPropagation();
+  const open = !$('menu').classList.contains('open');
+  $('menu').classList.toggle('open', open); $('menu-btn').setAttribute('aria-expanded', String(open));
+  if (open) { const f = $('menu').querySelector('button:not([hidden])'); f && f.focus(); }
+});
+document.addEventListener('click', e => { if (!e.target.closest('.menu-wrap')) closeMenu(); });
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape' || sheet) return;
+  if ($('menu').classList.contains('open')) { closeMenu(); $('menu-btn').focus(); return; }
+  if (editing) { const id = editing; editing = null; render(); const b = document.querySelector(`.st[data-id="${CSS.escape(id)}"] .st-title`); b && b.focus(); }
+});
+
+function fileBase() {
+  const d = new Date(), iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const nm = String(cur().name || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/\d{4}-\d{2}-\d{2}/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').replace(/^sprintplanning(-|$)/, '').slice(0, 50).replace(/-$/, '');
+  return ['sprintplanning', nm, iso].filter(Boolean).join('-');
+}
+function asText() {
+  const s = cur(), f = fill(s);
+  const line = x => `- ${x.title}${x.est === null ? ' (nog in te schatten)' : x.est === '?' ? ' (te onduidelijk)' : ` (${hd(x.est)}, ${dagen(x.est)})`}`;
+  const notIn = s.stories.filter(x => f.st[x.id] !== 'in');
+  return `${s.name}\nWat past: ${hd(f.cap)} (${dagen(f.cap)}), ${s.buffer}% vrij voor onvoorzien\n` +
+    `Team: ${s.team.map(m => `${m.name || 'Naamloos'} ${nl(m.days)} d${m.pct < 100 ? ` aan ${m.pct}%` : ''}`).join(', ') || 'nog niemand'}\n\n` +
+    `In de sprint (${fmtU(f.used)} van ${fmtU(f.cap)} halve dagen)\n` + (f.inSprint.map(line).join('\n') || '- nog niets') + '\n' +
+    (notIn.length ? `\nVolgende sprint of nog te bekijken\n${notIn.map(line).join('\n')}\n` : '');
+}
+function buildExport() {
+  const s = cur(), f = fill(s), { persondays } = capacity(s);
+  const th = 'text-align:left;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#64748b;padding:0 0 6px;border-bottom:1px solid #e2e8f0;';
+  const td = 'padding:7px 0;border-bottom:1px solid #f1f5f9;font-size:14px;vertical-align:top;';
+  const head = t => `<div style="font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#047857;margin:22px 0 8px">${t}</div>`;
+  const row = (x, i, grey) => `<tr data-oc-keep><td style="${td}width:28px;color:#94a3b8;font-variant-numeric:tabular-nums">${i}</td><td style="${td}color:${grey ? '#64748b' : '#1e293b'}">${esc(x.title)}${x.note ? `<div style="font-size:12px;color:#64748b;margin-top:2px">${esc(x.note)}</div>` : ''}</td><td style="${td}text-align:right;white-space:nowrap;font-weight:700;font-variant-numeric:tabular-nums;color:${grey ? '#64748b' : '#1e293b'}">${x.est === null ? '<span style="font-weight:500;color:#64748b">nog in te schatten</span>' : x.est === '?' ? '<span style="font-weight:600;color:#92400e">? te onduidelijk</span>' : esc(fmtU(x.est))}</td><td style="${td}text-align:right;white-space:nowrap;width:96px;color:#64748b">${typeof x.est === 'number' ? esc(dagen(x.est)) : ''}</td></tr>`;
+  const table = (rows, grey) => `<table style="width:100%;border-collapse:collapse"><tr><th style="${th}"></th><th style="${th}">Story</th><th style="${th}text-align:right">Halve dagen</th><th style="${th}text-align:right">Dagen</th></tr>${rows.map((x, i) => row(x, i + 1, grey)).join('')}</table>`;
+  const notIn = s.stories.filter(x => f.st[x.id] === 'uit' || f.st[x.id] === 'open-uit' || f.st[x.id] === 'vaag-uit');
+  const loose = s.stories.filter(x => f.st[x.id] === 'open' || f.st[x.id] === 'vaag');
+  const node = document.createElement('div');
+  const total = Math.max(f.cap, f.used + f.over) || 1;
+  node.innerHTML = `
+    <div style="display:grid;grid-template-columns:260px 1fr;gap:28px;align-items:start" data-oc-keep>
+      <div style="background:#f8fafc;border:1px solid #f1f5f9;border-radius:12px;padding:16px 16px 14px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#64748b">Wat past er</div>
+        <div style="display:flex;align-items:flex-end;gap:10px;margin-top:4px"><span style="font-size:48px;line-height:1;font-weight:700;letter-spacing:-0.04em;color:#047857">${esc(fmtU(f.cap))}</span><span style="font-size:13px;color:#475569;line-height:1.3">halve dagen<br><b style="color:#1e293b;font-size:15px">= ${esc(dagen(f.cap))}</b></span></div>
+        <div style="height:10px;border-radius:99px;background:#e2e8f0;margin-top:14px;overflow:hidden;display:flex"><span style="display:block;height:100%;width:${f.used / total * 100}%;background:#10b981"></span><span style="display:block;height:100%;width:${Math.max(0, f.cap - f.used) / total * 100}%"></span><span style="display:block;height:100%;width:${f.over / total * 100}%;background:#d97706"></span></div>
+        <div style="font-size:12px;color:#475569;margin-top:6px">${esc(fmtU(f.used))} van ${esc(fmtU(f.cap))} gevuld${f.over ? ` · <b style="color:#92400e">${esc(fmtU(f.over))} past niet</b>` : ''}</div>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#64748b;margin-bottom:6px">Team</div>
+        <table style="width:100%;border-collapse:collapse">${s.team.map(m => `<tr><td style="${td}">${esc(m.name || 'Naamloos')}</td><td style="${td}text-align:right;color:#475569;white-space:nowrap">${esc(nl(m.days))} ${m.days === 1 ? 'dag' : 'dagen'}</td><td style="${td}text-align:right;color:#475569;width:60px">${esc(nl(m.pct))}%</td></tr>`).join('') || `<tr><td style="${td}color:#64748b">Nog geen teamleden</td></tr>`}</table>
+        <div style="font-size:12px;color:#64748b;margin-top:8px">Samen ${esc(nl(persondays))} dagen voor sprintwerk, ${s.buffer}% vrij voor onvoorzien.</div>
+      </div>
+    </div>
+    ${head(`In de sprint · ${esc(fmtU(f.used))} halve dagen (${esc(dagen(f.used))})`)}
+    ${f.inSprint.length ? table(f.inSprint, false) : '<div style="font-size:14px;color:#64748b">Nog niets.</div>'}
+    ${notIn.length ? head('Volgende sprint').replace('#047857', '#64748b') + table(notIn, true) : ''}
+    ${loose.length ? head('Nog in te schatten of te onduidelijk').replace('#047857', '#64748b') + table(loose, true) : ''}`;
+  return { node, title:'Sprintplanning', subtitle:`${s.name} · ${s.days} werkdagen · ${f.inSprint.length} ${f.inSprint.length === 1 ? 'story' : 'stories'} in de sprint` };
+}
+$('menu').addEventListener('click', async e => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  closeMenu();
+  const s = cur(), act = b.dataset.act;
+  if (act === 'delsprint') { deleteSprint(); return; }
+  if ((act === 'copy' || act === 'png' || act === 'pdf') && !s.stories.length && !s.team.length) { toast('Er is nog niets om te tonen'); return; }
+  if (act === 'copy') { toast((await copyText(asText())) ? 'Gekopieerd als tekst' : 'Kopiëren lukt hier niet'); }
+  if (act === 'png' || act === 'pdf') {
+    toast('Bezig…');
+    try {
+      await (act === 'png' ? ocExport.png(buildExport, fileBase()) : ocExport.pdf(buildExport, fileBase()));
+      toast(act === 'png' ? 'Afbeelding gedownload' : 'PDF gedownload');
+    } catch { toast('Downloaden lukt nu niet: geen verbinding?'); }
+  }
+});
+
+/* ---------- Andere tabbladen gelijk houden ---------- */
+window.addEventListener('storage', e => { if (e.key === KEY && !window.OC_KAART) { state = load(); render(); } });
+
+/* ---------- Kaartmodus: één kaart op je eigen gsm, bewaart niets ---------- */
+function kaartMode() {
+  const k = $('kaart'); k.hidden = false;
+  document.title = 'Jouw kaart · Sprintplanning';
+  let chosen = null, lock = null;
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const show = step => { ['kt-pick', 'kt-hold', 'kt-show'].forEach(id => $(id).hidden = id !== step); };
+  $('kt-grid').innerHTML = CARDS.map((v, i) => `<button type="button" data-k="${i}" aria-label="${v === '?' ? 'Vraagteken: te onduidelijk' : esc(hd(v)) + ', ' + esc(dagen(v))}"><b>${cardLabel(v)}</b><small>${v === '?' ? 'onduidelijk' : dagen(v)}</small></button>`).join('');
+  $('kt-grid').addEventListener('click', e => { const b = e.target.closest('[data-k]'); if (!b) return; chosen = CARDS[+b.dataset.k]; show('kt-hold'); $('kt-flip').focus(); });
+  $('kt-other').addEventListener('click', () => { chosen = null; show('kt-pick'); $('kt-grid').querySelector('button').focus(); });
+  $('kt-flip').addEventListener('click', () => {
+    $('kt-val').textContent = cardLabel(chosen);
+    $('kt-days').textContent = chosen === '?' ? 'te onduidelijk' : '= ' + dagen(chosen);
+    $('kt-face').setAttribute('aria-label', chosen === '?' ? 'Vraagteken: te onduidelijk' : `${hd(chosen)}, ${dagen(chosen)}`);
+    show('kt-show');
+    const f = $('kt-face'); f.classList.remove('kt-flip'); if (!still) { void f.offsetWidth; f.classList.add('kt-flip'); }
+    $('kt-new').focus();
+  });
+  $('kt-new').addEventListener('click', () => { chosen = null; show('kt-pick'); $('kt-grid').querySelector('button').focus(); });
+  // scherm blijft aan tijdens de vergadering (als het toestel dat toelaat)
+  const wake = async () => { try { if ('wakeLock' in navigator && document.visibilityState === 'visible') lock = await navigator.wakeLock.request('screen'); } catch {} };
+  wake(); document.addEventListener('visibilitychange', wake);
+  show('kt-pick');
+}
+
+if (window.OC_KAART) kaartMode(); else render();
+</script>
+<script>
+/* Opnieuw beginnen: zichtbaar zodra er echt iets ingevuld is; start de eigen 'Alles wissen' van de tool.
+   'Leeg' = wat de tool zelf bewaart zonder inbreng van de gebruiker (na een eerste bezoek of na wissen). */
+(() => {
+  if (window.OC_KAART) return;   // kaartmodus bewaart niets
+  const meta = document.querySelector('meta[name="oc:opslag"]');
+  const keys = meta ? meta.content.split(',').map(s => s.trim()).filter(k => k && !k.startsWith('oc.share.') && !k.endsWith('*')) : [];
+  const BASE = 'oc.leeg.' + location.pathname;   // niet onder oc-app.*: dat wist het gegevensscherm apart
+  const get = k => { try { return localStorage.getItem(k); } catch { return null; } };
+  const vals = () => Object.fromEntries(keys.map(k => [k, get(k)]));
+  const has = v => Array.isArray(v) ? v.length > 0 : v && typeof v === 'object' ? Object.values(v).some(has) : typeof v === 'string' && v.trim().length > 0;
+  const content = raw => { try { return has(JSON.parse(raw)); } catch { return !!raw; } };
+  let base = null; try { base = JSON.parse(get(BASE) || 'null'); } catch {}
+  const setBase = () => { base = vals(); try { localStorage.setItem(BASE, JSON.stringify(base)); } catch {} sync(); };
+  const filled = () => { const v = vals(); return keys.some(k => v[k] != null && content(v[k]) && !(base && v[k] === base[k])); };
+  const row = document.getElementById('oc-restart-row');
+  function sync() { row.hidden = !filled() || !document.querySelector('[data-act="wipe"]'); }
+  let t; const later = () => { clearTimeout(t); t = setTimeout(sync, 350); };
+  ['click', 'input', 'change', 'keyup'].forEach(ev => document.addEventListener(ev, later, true));
+  window.addEventListener('storage', later); window.addEventListener('focus', later);
+  // Eerste bezoek: wat de tool zelf meteen bewaart, telt als leeg. Een tool die nog niets klaarlegde
+  // voor andere tools (oc.share.*), heeft nog geen echte inhoud.
+  const share = meta ? meta.content.split(',').map(s => s.trim()).find(k => k.startsWith('oc.share.')) : null;
+  if (!base && share && get(share) == null) setBase();
+  else if (keys.every(k => get(k) == null)) setTimeout(setBase, 900);
+  // Na wissen (via deze knop of het menu): de nieuwe toestand is de lege toestand.
+  document.addEventListener('click', e => {
+    if (!e.target.closest('[data-act="wipe"]')) return;
+    const before = JSON.stringify(vals()); let n = 0;
+    const iv = setInterval(() => {
+      if (++n > 40) return clearInterval(iv);
+      if (document.querySelector('.ocw-back')) return;               // bevestiging staat nog open
+      if (JSON.stringify(vals()) !== before) { clearInterval(iv); setTimeout(setBase, 400); }
+      else if (n > 5) clearInterval(iv);                              // geannuleerd
+    }, 150);
+  }, true);
+  document.getElementById('oc-restart-btn').addEventListener('click', () => { const w = document.querySelector('[data-act="wipe"]'); w && w.click(); });
+  sync();
+})();
+</script>
+<script>
+/* Soepel: de hulpbibliotheken voor Afbeelding en PDF alvast ophalen zodra iemand naar een downloadknop gaat (niet bij het laden). */
+(() => {
+  let warm = false;
+  const go = () => {
+    warm = true;
+    ['/lib/html2canvas-1.4.1.min.js', '/lib/jspdf-2.5.1.umd.min.js'].forEach(h => {
+      const l = document.createElement('link');
+      if (l.relList && l.relList.supports && l.relList.supports('prefetch')) { l.rel = 'prefetch'; l.as = 'script'; l.href = h; document.head.appendChild(l); }
+      else try { fetch(h).catch(() => {}); } catch (e) {}
+    });
+  };
+  const SEL = '#menu-btn';
+  ['pointerdown', 'focusin', 'mouseover'].forEach(t => document.addEventListener(t, e => { if (!warm && e.target.closest && e.target.closest(SEL)) go(); }, { passive:true, capture:true }));
+})();
+</script>
+<input type="file" id="oc-bestand-in" accept=".json,application/json" hidden>
+<script>
+/* oc-bestand: je werk in deze tool bewaren als bestand en later (of op een ander toestel) weer openen.
+   Formaat = dat van de reservekopie in de app: { app:'Onder Constructie', version:1, created, tool, data:{ sleutel: tekst } }.
+   Een reservekopie uit de app kan je hier ook openen: de tool neemt er alleen zijn eigen deel uit. */
+window.ocBestand = (function () {
+  function patronen() {
+    var m = document.querySelector('meta[name="oc:opslag"]');
+    return m ? m.content.split(',').map(function (s) { return s.trim(); }).filter(Boolean) : [];
+  }
+  function past(k, p) { return p.slice(-1) === '*' ? k.indexOf(p.slice(0, -1)) === 0 : k === p; }
+  function eigen(k) { return patronen().some(function (p) { return past(k, p); }); }
+  function sleutels() {
+    var uit = [];
+    try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k && eigen(k)) uit.push(k); } } catch (e) {}
+    return uit;
+  }
+  function naam() {
+    var m = document.querySelector('meta[name="oc:titel"]') || document.querySelector('meta[name="application-name"]');
+    return (m && m.content) || (document.title.split(/\s[–-]\s/)[0] || 'tool').trim();
+  }
+  function slug(s) { return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
+  /* bewaar(): downloadt het bestand. Geeft het aantal bewaarde sleutels terug (0 = niets om te bewaren). */
+  function bewaar(extraNaam) {
+    var keys = sleutels(); if (!keys.length) return 0;
+    var data = {}; keys.forEach(function (k) { try { data[k] = localStorage.getItem(k); } catch (e) {} });
+    var id = location.pathname.replace(/\/index\.html$/, '').split('/').filter(Boolean).pop() || 'tool';
+    var blob = new Blob([JSON.stringify({ app: 'Onder Constructie', version: 1, created: new Date().toISOString(), tool: id, data: data }, null, 1)], { type: 'application/json' });
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    var stuk = slug(naam()) + (extraNaam ? '-' + slug(extraNaam) : '');
+    a.download = stuk + '-' + new Date().toISOString().slice(0, 10) + '.json';
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+    return keys.length;
+  }
+  /* lees(file): Promise met { data: {sleutel: tekst} } van alleen de eigen sleutels.
+     Fout 'vorm' = geen bestand van Onder Constructie; fout 'leeg' = niets van deze tool in het bestand. */
+  function lees(file) {
+    return file.text().then(function (t) {
+      var d; try { d = JSON.parse(t); } catch (e) { throw new Error('vorm'); }
+      if (!d || d.app !== 'Onder Constructie' || typeof d.data !== 'object' || !d.data) throw new Error('vorm');
+      var uit = {}, n = 0;
+      Object.keys(d.data).forEach(function (k) { if (eigen(k) && typeof d.data[k] === 'string') { uit[k] = d.data[k]; n++; } });
+      if (!n) throw new Error('leeg');
+      return { data: uit, aantal: n, created: d.created || null };
+    });
+  }
+  /* zetTerug(gelezen): vervangt het huidige werk van deze tool door wat in het bestand staat, en laat andere tabbladen herladen. */
+  function zetTerug(g) {
+    sleutels().forEach(function (k) { try { localStorage.removeItem(k); } catch (e) {} });
+    Object.keys(g.data).forEach(function (k) { try { localStorage.setItem(k, g.data[k]); } catch (e) {} });
+  }
+  function melding(err) {
+    return err && err.message === 'leeg' ? 'In dit bestand staat niets van ' + naam() + '.'
+      : 'Dit bestand kan ik niet openen. Kies een bestand dat je met "Bewaar als bestand" of als reservekopie maakte.';
+  }
+  return { bewaar: bewaar, lees: lees, zetTerug: zetTerug, melding: melding, sleutels: sleutels, naam: naam };
+})();
+</script>
+<script>
+/* Bewaar als bestand / Open bestand */
+(() => {
+  const heeftWerk = () => { try { return !document.getElementById('oc-restart-row').hidden; } catch (e) { return true; } };
+  const extraNaam = () => { try { return String((L => Array.isArray(L) && L.length === 1 ? L[0].name : '')(state.sprints) || '').trim(); } catch (e) { return ''; } };
+  const inp = document.getElementById('oc-bestand-in');
+  // Een lange melding blijft langer staan (minstens 4,5 s): toon ze opnieuw voor ze verdwijnt.
+  const lang = msg => { toast(msg); setTimeout(() => { const t = document.getElementById('toast-text'); if (t && t.textContent === msg) toast(msg); }, 2300); };
+  const sluit = () => { const m = document.getElementById('menu'), b = document.getElementById('menu-btn'); if (m) m.classList.remove('open'); if (b) b.setAttribute('aria-expanded', 'false'); };
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-bestand]'); if (!b) return;
+    sluit();
+    if (b.dataset.bestand === 'bewaar') {
+      if (!heeftWerk() || !ocBestand.bewaar(extraNaam())) { toast('Er is nog niets om te bewaren.'); return; }
+      toast('Bestand gedownload');
+    } else { inp.value = ''; inp.click(); }
+  });
+  inp.addEventListener('change', async () => {
+    const f = inp.files && inp.files[0]; if (!f) return;
+    let g; try { g = await ocBestand.lees(f); } catch (err) { lang(ocBestand.melding(err)); return; }
+    if (heeftWerk() && !await ocConfirm('Bestand openen?', 'Dit vervangt wat nu in ' + ocBestand.naam() + ' staat. Doorgaan?', 'Vervang')) return;
+    // Tot de herlaadbeurt mag niets het teruggezette werk nog overschrijven (uitgestelde bewaring, pagehide, ander tabblad).
+    const pat = (document.querySelector('meta[name="oc:opslag"]') || {}).content || '';
+    const eigen = k => pat.split(',').map(s => s.trim()).filter(Boolean).some(p => p.slice(-1) === '*' ? String(k).indexOf(p.slice(0, -1)) === 0 : k === p);
+    ocBestand.zetTerug(g);
+    try {
+      const set = Storage.prototype.setItem, rem = Storage.prototype.removeItem;
+      Storage.prototype.setItem = function (k, v) { if (this === localStorage && eigen(k)) return; return set.call(this, k, v); };
+      Storage.prototype.removeItem = function (k) { if (this === localStorage && eigen(k)) return; return rem.call(this, k); };
+    } catch (e) {}
+    location.reload();
+  });
+})();
+</script>
+<script>
+/* oc-sync: reageert op "Wissen" in de app (ook in andere tabbladen) en geeft Esc door aan de app */
+(function () {
+  if (window.__ocSync) return; window.__ocSync = true;
+  var gewist = false;
+  function wis() {
+    if (gewist) return; gewist = true;
+    try { var orig = Storage.prototype.setItem; Storage.prototype.setItem = function (k, v) { if (k === 'oc.wis') return orig.call(this, k, v); }; } catch (e) {}
+    try { document.body.innerHTML = '<p role="status" style="font-family:\'DM Sans\',system-ui,sans-serif;padding:3rem 1.5rem;text-align:center;color:#475569;font-size:1.0625rem">Er is iets veranderd op dit toestel. Deze pagina laadt opnieuw…</p>'; } catch (e) {}
+    setTimeout(function () { location.reload(); }, 400);
+  }
+  try { var bc = new BroadcastChannel('oc-sync'); bc.onmessage = function (e) { if (e.data && e.data.type === 'wis') wis(); }; } catch (e) {}
+  addEventListener('storage', function (e) { if (e.key === 'oc.wis' || e.key === null) wis(); });
+  if (window.parent === window) return;
+  addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape' || e.defaultPrevented) return;
+    var a = document.activeElement;
+    if (a && (a.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) return;
+    if (document.querySelector('dialog[open], [role="dialog"]:not([hidden]):not([aria-hidden="true"]), [aria-modal="true"]:not([hidden]), [aria-expanded="true"], .open, .show, .active.modal, .is-open')) return;
+    try { parent.postMessage({ type: 'oc-esc' }, location.origin); } catch (err) {}
+  }, true);
+})();
+</script>
+<script>
+/* Eenheid: "Begin met ..." zet de cursor in het eerste veld */
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-oc-begin]'); if (!b) return;
+  const el = [...document.querySelectorAll(b.dataset.ocBegin)].find(x => x.offsetParent !== null); if (!el) return;
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  el.scrollIntoView({ block:'center', behavior: still ? 'auto' : 'smooth' });
+  el.focus({ preventScroll:true });
+});
+</script>
+</body>
+</html>
