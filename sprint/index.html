@@ -175,6 +175,7 @@ a { color:var(--accent-dark); }
 .stories-card > .hint { padding:0 1.125rem 0.875rem; }
 .finish { display:flex; flex-wrap:wrap; gap:0.5rem; padding:0.875rem 1.125rem 1.125rem; border-top:1px solid var(--slate-100); align-items:center; }
 .finish .lbl { flex-basis:100%; margin:0; }
+.finish .finish-hint { flex-basis:100%; margin:0.125rem 0 0; }
 .sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
 
 /* Tabbladen (sprints) */
@@ -206,7 +207,7 @@ a { color:var(--accent-dark); }
   position:fixed; left:50%; bottom:calc(var(--bottom) + 1.25rem); transform:translate(-50%, calc(100% + 3rem)); visibility:hidden; z-index:20000;
   background:var(--slate-800); color:var(--wit); border-radius:12px; padding:0.625rem 0.625rem 0.625rem 1rem;
   display:flex; align-items:center; gap:0.875rem; font-size:0.9375rem; box-shadow:0 10px 30px rgba(15,23,42,0.25);
-  transition:transform 0.25s ease, visibility 0s 0.25s; max-width:calc(100% - 2rem);
+  transition:transform 0.25s ease, visibility 0s 0.25s; width:max-content; max-width:calc(100% - 2rem);
 }
 .toast.show { transform:translate(-50%, 0); visibility:visible; transition:transform 0.25s ease; }
 .toast button { color:#6ee7b7; font-weight:600; padding:0.25rem 0.5rem; border-radius:6px; min-height:44px; flex-shrink:0; white-space:nowrap; }
@@ -283,11 +284,12 @@ button.oc-import { color:#047857; min-height:44px; }
 .cnt-plus { width:100%; min-height:60px; display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.1; padding:0.375rem 0.25rem; font-variant-numeric:tabular-nums; }
 .cnt-plus b { font-size:1.375rem; font-weight:700; color:var(--slate-800); }
 .cnt-plus small { font-size:0.75rem; color:var(--slate-500); margin-top:0.125rem; white-space:nowrap; }
-.cnt-row { display:flex; align-items:center; border-top:1px solid var(--slate-100); }
+.cnt-row { display:grid; grid-template-columns:44px minmax(0,1fr); align-items:center; border-top:1px solid var(--slate-100); }
 .cnt.has .cnt-row { border-top-color:var(--accent-200); }
-.cnt-min { width:44px; height:40px; min-height:40px; display:flex; align-items:center; justify-content:center; color:var(--slate-500); font-size:1.25rem; font-weight:600; }
+.cnt-min { width:44px; height:44px; min-height:44px; display:flex; align-items:center; justify-content:center; color:var(--slate-500); font-size:1.25rem; font-weight:600; }
 .cnt-min:disabled { color:var(--slate-300); cursor:default; }
-.cnt-n { flex:1; text-align:center; font-weight:700; color:var(--slate-700); font-variant-numeric:tabular-nums; padding-right:44px; }
+.cnt-n { text-align:center; font-weight:700; color:var(--slate-700); font-variant-numeric:tabular-nums; }
+@media (min-width:480px) { .cnt-n { padding-right:44px; } }
 .cnt.has .cnt-n { color:var(--accent-dark); }
 .cnt-tools { display:flex; flex-wrap:wrap; align-items:center; gap:0.5rem; margin-top:0.625rem; font-size:0.8125rem; color:var(--slate-600); }
 .cnt-tools .sh-btn { font-size:0.875rem; padding:0.375rem 0.875rem; }
@@ -434,9 +436,9 @@ body { min-height:100dvh; }
         <label><span class="lbl">Werkdagen in de sprint</span><span class="unit-wrap"><input class="field num" id="sp-days" inputmode="decimal" autocomplete="off" enterkeyhint="next" maxlength="5"><span class="u">dagen</span></span></label>
         <label><span class="lbl">Ruimte voor onvoorzien</span><span class="unit-wrap"><input class="field num" id="sp-buf" inputmode="numeric" autocomplete="off" enterkeyhint="next" maxlength="3"><span class="u">%</span></span></label>
       </div>
-      <div class="cap" aria-live="polite">
+      <div class="cap">
         <div class="label">Wat past er in deze sprint</div>
-        <div class="cap-top"><span class="cap-big" id="cap-big">0</span><span class="cap-unit">halve dagen<b id="cap-days">= 0 dagen</b></span></div>
+        <div class="cap-top" aria-live="polite" aria-atomic="true"><span class="cap-big" id="cap-big">0</span><span class="cap-unit">halve dagen<b id="cap-days">= 0 dagen</b></span></div>
         <p class="cap-why" id="cap-why"></p>
         <div class="meter" id="meter" role="img" aria-label=""><i class="m-in" id="m-in"></i><i class="m-free" id="m-free"></i><i class="m-over" id="m-over"></i><span class="m-cap" id="m-cap" hidden></span></div>
         <p class="meter-txt" id="meter-txt"></p>
@@ -464,11 +466,12 @@ body { min-height:100dvh; }
         <input class="field" id="add-title" placeholder="Nieuwe story, bv. Formulier in eenvoudige taal" aria-label="Nieuwe story" maxlength="160" enterkeyhint="next">
         <button class="btn-add" type="submit" aria-label="Voeg story toe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Voeg toe</span></button>
       </form>
-      <p class="hint">Enter voegt toe en zet je klaar voor de volgende. Plak je een lijst, dan wordt elke regel een story. Versleep een story aan het greepje, of gebruik de pijltjes.</p>
+      <p class="hint">Enter voegt toe en zet je klaar voor de volgende. Plak je een lijst, dan wordt elke regel een story. Tik op een story om ze aan te passen, te verplaatsen of te verwijderen. Slepen kan aan het greepje.</p>
       <div class="finish">
         <span class="lbl">Sprint klaar?</span>
-        <button type="button" class="btn-s" id="to-board"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="11" rx="1.5"/><rect x="17" y="4" width="4" height="7" rx="1.5"/></svg>Zet in Takenbord</button>
+        <button type="button" class="btn-s" id="to-board" title="Opent Takenbord met deze sprint" aria-describedby="to-board-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="11" rx="1.5"/><rect x="17" y="4" width="4" height="7" rx="1.5"/></svg>Zet in Takenbord</button>
         <button type="button" class="btn-s" id="next-sprint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>Volgende sprint</button>
+        <p class="hint finish-hint" id="to-board-hint">Zet in Takenbord opent Takenbord met de stories uit deze sprint, met hun schatting.</p>
       </div>
     </section>
   </div>
@@ -485,7 +488,7 @@ body { min-height:100dvh; }
         <li><b>Schatten</b>: iedereen kiest gedekt een kaart, op tafel of op de eigen gsm. Draai samen om. Liggen de kaarten ver uiteen, laat dan de laagste en de hoogste uitleggen waarom, en doe nog een ronde.</li>
         <li><b>?</b> betekent: te onduidelijk om te schatten. Maak de story eerst duidelijker of kleiner.</li>
       </ul>
-      <p>Is de sprint klaar, kies dan "Zet in Takenbord". In <a href="https://onderconstructie.github.io/kanban/">Takenbord</a> haal je de stories op met "Overnemen uit…".</p>
+      <p>Is de sprint klaar, kies dan "Zet in Takenbord". <a href="https://onderconstructie.github.io/kanban/">Takenbord</a> opent dan met de stories uit deze sprint, met hun schatting en je team. Stories zonder schatting of met ? gaan niet mee.</p>
     </div>
   </details>
 </main>
@@ -838,7 +841,7 @@ function norm(s) {
   s.name = typeof s.name === 'string' ? s.name.slice(0, 80) : 'Sprint';
   s.days = num(s.days, 10, 0, 60);
   s.buffer = num(s.buffer, 20, 0, 90);
-  s.team = Array.isArray(s.team) ? s.team.filter(m => m && typeof m === 'object').map(m => ({ id:m.id || uid(), name:String(m.name || '').slice(0, 60), days:num(m.days, s.days, 0, 60), pct:num(m.pct, 100, 0, 100) })) : [];
+  s.team = Array.isArray(s.team) ? s.team.filter(m => m && typeof m === 'object').map(m => ({ id:m.id || uid(), name:String(m.name || '').slice(0, 60), days:num(m.days, s.days, 0, s.days), pct:num(m.pct, 100, 0, 100) })) : [];
   s.stories = Array.isArray(s.stories) ? s.stories.filter(x => x && typeof x.title === 'string').map(x => ({ id:x.id || uid(), title:x.title.slice(0, 160), note:String(x.note || '').slice(0, 300), est:estOk(x.est), rounds:+x.rounds || 0, ...(x.src ? { src:String(x.src).slice(0, 120) } : {}) })) : [];
   s.voorbeeld = !!s.voorbeeld || undefined;
   return s;
@@ -864,7 +867,8 @@ const snapshot = () => { const c = JSON.parse(JSON.stringify(state)); return () 
 
 /* ---------- Rekenen: wat past ---------- */
 function capacity(s) {
-  const persondays = s.team.reduce((n, m) => n + (m.days || 0) * (m.pct || 0) / 100, 0);
+  // niemand kan meer dagen werken dan de sprint lang is
+  const persondays = s.team.reduce((n, m) => n + Math.min(m.days || 0, s.days) * (m.pct || 0) / 100, 0);
   const raw = persondays * 2;
   const cap = Math.max(0, Math.floor(raw * (1 - s.buffer / 100) + 1e-9));
   return { persondays, raw, cap };
@@ -911,17 +915,23 @@ function renderCap() {
   const s = cur(), { persondays } = capacity(s), f = fill(s);
   $('cap-big').textContent = fmtU(f.cap);
   $('cap-days').textContent = '= ' + dagen(f.cap);
+  const half = Math.round(persondays * 2 * 100) / 100, rounded = Math.abs(persondays * 2 * (1 - s.buffer / 100) - f.cap) > 1e-6;
   $('cap-why').textContent = !s.team.length
     ? 'Voeg teamleden toe. Dan zie je hier hoeveel werk er in deze sprint past.'
-    : `Het team heeft samen ${nl(persondays)} ${persondays === 1 ? 'dag' : 'dagen'} voor sprintwerk. ${s.buffer ? `Daarvan hou je ${s.buffer}% vrij voor onvoorzien, naar beneden afgerond.` : 'Je houdt niets vrij voor onvoorzien.'}`;
-  const total = Math.max(f.cap, f.used + f.over) || 1;
-  $('m-in').style.width = (f.used / total * 100) + '%';
-  $('m-free').style.width = (Math.max(0, f.cap - f.used) / total * 100) + '%';
-  $('m-over').style.width = (f.over / total * 100) + '%';
-  const capMark = $('m-cap'); capMark.hidden = !f.over; capMark.style.left = `calc(${f.cap / total * 100}% - 1px)`;
-  $('meter').setAttribute('aria-label', `${fmtU(f.used)} van ${fmtU(f.cap)} halve dagen gevuld` + (f.over ? `, ${fmtU(f.over)} passen niet meer` : ''));
-  $('meter-txt').innerHTML = `<span><b>${fmtU(f.used)}</b> van ${fmtU(f.cap)} gevuld${f.rest > 0 && f.cap ? ` · nog ${esc(hd(f.rest))} vrij` : ''}</span>` + (f.over ? `<span class="over">${esc(fmtU(f.over))} past niet</span>` : '');
-  $('sum').textContent = s.stories.length ? `${f.inSprint.length} in de sprint · ${fmtU(f.used)}/${fmtU(f.cap)}` : '';
+    : `Het team heeft samen ${nl(persondays)} ${persondays === 1 ? 'dag' : 'dagen'} voor sprintwerk: ${nl(half)} halve ${half === 1 ? 'dag' : 'dagen'}. ` +
+      (s.buffer ? `Je houdt ${s.buffer}% vrij voor onvoorzien. ` : 'Je houdt niets vrij voor onvoorzien. ') +
+      (s.buffer || rounded ? `Er past dus ${fmtU(f.cap)}${rounded ? ', naar beneden afgerond' : ''}.` : '');
+  // De meter toont de sprint zelf (gevuld tegenover capaciteit). Wat niet past, is een korte gestreepte staart:
+  // een lange lijst voor later mag de sprint niet klein doen lijken.
+  const tail = f.over && f.cap ? 10 : 0, scale = (100 - tail) / (f.cap || 1);
+  $('m-in').style.width = (f.cap ? f.used * scale : 0) + '%';
+  $('m-free').style.width = (f.cap ? Math.max(0, f.cap - f.used) * scale : 0) + '%';
+  $('m-over').style.width = (f.cap ? tail : (f.over && s.team.length ? 100 : 0)) + '%';
+  const capMark = $('m-cap'); capMark.hidden = !tail; capMark.style.left = `calc(${100 - tail}% - 1px)`;
+  $('meter').setAttribute('aria-label', `${fmtU(f.used)} van ${fmtU(f.cap)} halve dagen gevuld` + (f.over ? `, ${fmtU(f.over)} halve dagen staan onder de lijn` : ''));
+  $('meter-txt').innerHTML = `<span><b>${fmtU(f.used)}</b> van ${fmtU(f.cap)} gevuld${f.rest > 0 && f.cap ? ` · nog ${esc(fmtU(f.rest))} vrij` : ''}</span>` + (f.over && s.team.length ? `<span class="over">${esc(hd(f.over))} onder de lijn</span>` : '');
+  const n = f.inSprint.length;
+  $('sum').textContent = s.stories.length ? `${n} ${n === 1 ? 'story' : 'stories'} in de sprint` : '';
   return f;
 }
 
@@ -965,7 +975,9 @@ function renderStories(f) {
   if (!s.stories.length) { $('stories').innerHTML = '<li class="stories-empty">Nog geen stories. Typ hieronder je eerste story, in volgorde van belang.</li>'; return; }
   let html = '';
   s.stories.forEach((x, i) => {
-    if (i === f.line) html += `<li class="line" role="separator" aria-label="Hier is de sprint vol"><b>${ICON.flag}Hier is de sprint vol</b><span>${fmtU(f.used)} van ${fmtU(f.cap)} halve dagen${f.rest > 0 ? ` · nog ${esc(hd(f.rest))} vrij` : ''}</span><small>Hieronder: volgende sprint</small></li>`;
+    if (i === f.line) html += !f.cap
+      ? `<li class="line"><b>${ICON.flag}Nog geen plaats in de sprint</b><span>${s.team.length ? 'Kijk de dagen en het deel van je team na.' : 'Voeg eerst je team toe.'}</span>${s.team.length ? '' : `<button type="button" class="past-btn" data-addmember>Teamlid toevoegen</button>`}</li>`
+      : `<li class="line" role="separator" aria-label="Hier is de sprint vol"><b>${ICON.flag}Hier is de sprint vol</b><span>${fmtU(f.used)} van ${fmtU(f.cap)} halve dagen${f.rest > 0 ? ` · nog ${esc(hd(f.rest))} vrij` : ''}</span><small>Hieronder: volgende sprint</small></li>`;
     html += storyRow(x, f, i);
   });
   if (f.line < 0) html += `<li class="line ok" role="separator"><b>${ICON.check}Alles past</b><span>${fmtU(f.used)} van ${fmtU(f.cap)} halve dagen${f.rest > 0 ? ` · nog ${esc(hd(f.rest))} vrij (${esc(dagen(f.rest))})` : ''}</span></li>`;
@@ -1015,6 +1027,12 @@ $('sp-days').addEventListener('input', () => {
   s.team.forEach(m => { if (m.days === old) { m.days = nw; const el = document.querySelector(`.tm[data-id="${CSS.escape(m.id)}"] .tm-days`); if (el) el.value = nl(nw); } });
   s.days = nw; save(); refresh();
 });
+// Sprint korter gemaakt: wie meer dagen had, krijgt het nieuwe maximum (pas na het typen, niet bij elke toets).
+$('sp-days').addEventListener('change', () => {
+  const s = cur(); let n = 0;
+  s.team.forEach(m => { if (m.days > s.days) { m.days = s.days; n++; const el = document.querySelector(`.tm[data-id="${CSS.escape(m.id)}"] .tm-days`); if (el) el.value = nl(m.days); } });
+  if (n) { save(); refresh(); }
+});
 $('sp-buf').addEventListener('input', () => { const v = numIn($('sp-buf').value); if (!isFinite(v)) return; cur().buffer = clamp(Math.round(v), 0, 90); save(); refresh(); });
 ['sp-days', 'sp-buf'].forEach(id => {
   $(id).addEventListener('blur', () => { const s = cur(); $(id).value = nl(id === 'sp-days' ? s.days : s.buffer); });
@@ -1032,7 +1050,7 @@ $('team').addEventListener('input', e => {
   const m = cur().team.find(x => x.id === li.dataset.id); if (!m) return;
   if (e.target.classList.contains('tm-name')) { m.name = e.target.value.slice(0, 60); li.querySelector('.tm-del').setAttribute('aria-label', 'Verwijder ' + (m.name || 'teamlid')); }
   else { const v = numIn(e.target.value); if (!isFinite(v)) return;
-    if (e.target.classList.contains('tm-days')) m.days = clamp(Math.round(v * 2) / 2, 0, 60);
+    if (e.target.classList.contains('tm-days')) m.days = clamp(Math.round(v * 2) / 2, 0, cur().days);
     else m.pct = clamp(Math.round(v), 0, 100); }
   save(); refresh();
 });
@@ -1061,7 +1079,7 @@ $('team').addEventListener('click', e => {
 
 /* ---------- Stories toevoegen ---------- */
 function parseLines(text) {
-  return text.split(/\r?\n/).map(t => t.trim().replace(/^([-*+•·▪◦–]|\d+[.)]|\[( |x|X)\])\s+/, '').trim()).filter(Boolean).map(t => t.slice(0, 160));
+  return text.split(/\r?\n/).map(t => t.trim().replace(/^(?:(?:[-*+•·▪◦–]|\d+[.)]|\[[ xX]\])\s+)+/, '').trim()).filter(Boolean).map(t => t.slice(0, 160));
 }
 $('add-form').addEventListener('submit', e => {
   e.preventDefault();
@@ -1089,6 +1107,7 @@ function move(id, to) {
   say(`${x.title}: nu plaats ${to + 1} van ${a.length}`);
 }
 $('stories').addEventListener('click', e => {
+  if (e.target.closest('[data-addmember]')) { addMember(); const n = document.querySelector('.tm:last-child .tm-name'); n && n.scrollIntoView({ block:'center' }); return; }
   const past = e.target.closest('[data-past]');
   if (past) {
     const s = cur(), f = fill(s), id = past.dataset.past, x = s.stories.find(y => y.id === id);
@@ -1192,8 +1211,9 @@ function openSheet(html, label, onKey) {
 }
 function closeSheet() {
   if (!sheet) return;
-  const { back, ret } = sheet; sheet = null; back.remove();
-  if (ret && document.contains(ret)) ret.focus({ preventScroll:true });
+  const { back, ret, retSel } = sheet; sheet = null; back.remove();
+  const to = ret && document.contains(ret) ? ret : retSel && document.querySelector(retSel);
+  if (to) to.focus({ preventScroll:true });
 }
 document.addEventListener('keydown', e => {
   if (!sheet) return;
@@ -1233,7 +1253,9 @@ function openEstimate(id) {
       ${x.est !== null ? '<button type="button" class="clear-est" id="e-clear">Schatting wissen</button>' : ''}
       <p class="tip">Kaarten in halve dagen. Groter dan 13? Splits de story.</p>
     </div>
-    <div class="sh-foot"><button type="button" class="sh-btn sh-sec" data-close>Annuleer</button><button type="button" class="sh-btn sh-sec" id="e-next" hidden>Bewaar en volgende</button><button type="button" class="sh-btn sh-ok" id="e-save">Bewaar</button></div>`, 'Schat in: ' + x.title);
+    <div class="sh-foot"><button type="button" class="sh-btn sh-sec" data-close>Annuleer</button><button type="button" class="sh-btn sh-ok" id="e-save">Bewaar</button><button type="button" class="sh-btn sh-ok" id="e-next" hidden>Bewaar en volgende</button></div>`, 'Schat in: ' + x.title);
+  // Na sluiten: focus terug op de schatting van deze story (de lijst wordt intussen opnieuw getekend).
+  sheet.ret = null; sheet.retSel = `.st[data-id="${CSS.escape(id)}"] [data-est]`;
   const q = sel => back.querySelector(sel);
   function paint() {
     const total = S.counts.reduce((a, b) => a + b, 0);
@@ -1257,7 +1279,10 @@ function openEstimate(id) {
     if (!S.manual && sug >= 0) S.pick = sug;
     q('#e-pick').innerHTML = CARDS.map((v, k) => `<button type="button" role="radio" aria-checked="${S.pick === k}" data-pick="${k}" aria-label="${v === '?' ? 'Te onduidelijk' : esc(hd(v)) + ', ' + esc(dagen(v))}${sug === k ? ', voorstel' : ''}">${sug === k ? '<span class="vs" aria-hidden="true">voorstel</span>' : ''}<b>${cardLabel(v)}</b><small>${v === '?' ? 'onduidelijk' : dagen(v)}</small></button>`).join('');
     q('#e-save').disabled = S.pick < 0;
-    const nx = nextOpen(); q('#e-next').hidden = !nx || S.pick < 0;
+    // In een vergadering ga je meestal door naar de volgende: dan is dat de hoofdknop.
+    const nx = nextOpen(), more = !!nx && S.pick >= 0;
+    q('#e-next').hidden = !more;
+    q('#e-save').classList.toggle('sh-ok', !more); q('#e-save').classList.toggle('sh-sec', more);
   }
   function commit() {
     if (S.pick < 0) return false;
@@ -1331,21 +1356,36 @@ document.addEventListener('click', async e => {
 
 /* ---------- Afronden: Takenbord en volgende sprint ---------- */
 const estNote = x => `Schatting: ${hd(x.est)} (${dagen(x.est)})` + (x.note ? ` · ${x.note}` : '');
+// Klaarleggen voor Takenbord: de open sprint eerst, dan de twee jongste andere sprints.
+// Zo blijft een geplande sprint ophaalbaar, ook na "Volgende sprint" of als je een andere sprint bekijkt.
 function ocPublish() {
-  const s = cur();
-  if (!s || s.voorbeeld) { ocShare.clear(OC_ID); return; }
-  ocShare.publish(OC_ID, OC_TOOL, [{ name:s.name, items:fill(s).inSprint.map(x => ({ type:'taak', text:x.title, note:estNote(x) })) }]);
+  const own = state.sprints.filter(s => !s.voorbeeld), c = cur();
+  const list = (c && !c.voorbeeld ? [c] : []).concat(own.filter(s => s !== c).reverse().slice(0, 2));
+  ocShare.publish(OC_ID, OC_TOOL, list.map(s => ({ name:s.name, items:fill(s).inSprint.map(x => ({ type:'taak', text:x.title, note:estNote(x) })) })));
 }
+// Zet in Takenbord: leg de sprint klaar onder 'oc.naar.kanban' en open meteen Takenbord, dat hem op het bord zet.
+// oc.share.sprint blijft bestaan als terugval voor "Overnemen uit…".
+const opHalf = v => Math.round(v * 2) / 2;   // afronden op 0,5
 $('to-board').addEventListener('click', () => {
   const s = cur(), f = fill(s);
-  if (s.voorbeeld) { toast('Een voorbeeld gaat niet naar Takenbord. Kies eerst "Maak er mijn eigen van".'); return; }
+  if (s.voorbeeld) { toast('Een voorbeeld gaat niet naar Takenbord.', () => $('vb-eigen').click(), 'Maak er mijn eigen van'); return; }
   if (!f.inSprint.length) { toast('Er staat nog niets in de sprint. Schat eerst de stories in.'); return; }
-  clearTimeout(ocPubT); ocPublish(); ocRefreshImports();
-  toast(`${f.inSprint.length} stories klaar. Kies in Takenbord "Overnemen uit…".`, () => { location.href = '/kanban/'; }, 'Open Takenbord');
+  clearTimeout(ocPubT); try { ocPublish(); } catch {}
+  const pakket = {
+    v:1, from:OC_ID, fromTitle:OC_TOOL, at:new Date().toISOString(),
+    sprint:{ name:s.name, days:s.days },
+    team:s.team.filter(m => m.name.trim()).map(m => ({ name:m.name.trim(), days:opHalf(Math.min(m.days, s.days) * m.pct / 100) })),
+    tasks:f.inSprint.map(x => ({ text:x.title, note:x.note || '', estimate:x.est / 2, halfDays:x.est }))
+  };
+  try { localStorage.setItem('oc.naar.kanban', JSON.stringify(pakket)); }
+  catch { toast('Doorgeven lukt hier niet. Kies in Takenbord "Overnemen uit…".'); return; }
+  location.href = '../kanban/?van=sprint';
 });
 function nextName(n) {
-  const m = /(\d+)(?!.*\d)/.exec(n || '');
-  return m ? n.slice(0, m.index) + (+m[1] + 1) + n.slice(m.index + m[1].length) : (n ? n + ' 2' : 'Sprint 2');
+  const step = v => { const m = /(\d+)(?!.*\d)/.exec(v || ''); return m ? v.slice(0, m.index) + (+m[1] + 1) + v.slice(m.index + m[1].length) : (v ? v + ' 2' : 'Sprint 2'); };
+  const used = new Set(state.sprints.map(s => s.name));
+  let v = step(n); for (let i = 0; i < 99 && used.has(v); i++) v = step(v);   // geen twee sprints met dezelfde naam
+  return v.slice(0, 80);
 }
 $('next-sprint').addEventListener('click', () => {
   const s = cur(), f = fill(s);
@@ -1448,7 +1488,7 @@ function asText() {
 }
 function buildExport() {
   const s = cur(), f = fill(s), { persondays } = capacity(s);
-  const th = 'text-align:left;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#64748b;padding:0 0 6px;border-bottom:1px solid #e2e8f0;';
+  const th = 'text-align:left;font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#64748b;padding:0 0 6px;border-bottom:1px solid #e2e8f0;';
   const td = 'padding:7px 0;border-bottom:1px solid #f1f5f9;font-size:14px;vertical-align:top;';
   const head = t => `<div style="font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#047857;margin:22px 0 8px">${t}</div>`;
   const row = (x, i, grey) => `<tr data-oc-keep><td style="${td}width:28px;color:#94a3b8;font-variant-numeric:tabular-nums">${i}</td><td style="${td}color:${grey ? '#64748b' : '#1e293b'}">${esc(x.title)}${x.note ? `<div style="font-size:12px;color:#64748b;margin-top:2px">${esc(x.note)}</div>` : ''}</td><td style="${td}text-align:right;white-space:nowrap;font-weight:700;font-variant-numeric:tabular-nums;color:${grey ? '#64748b' : '#1e293b'}">${x.est === null ? '<span style="font-weight:500;color:#64748b">nog in te schatten</span>' : x.est === '?' ? '<span style="font-weight:600;color:#92400e">? te onduidelijk</span>' : esc(fmtU(x.est))}</td><td style="${td}text-align:right;white-space:nowrap;width:96px;color:#64748b">${typeof x.est === 'number' ? esc(dagen(x.est)) : ''}</td></tr>`;
@@ -1456,14 +1496,14 @@ function buildExport() {
   const notIn = s.stories.filter(x => f.st[x.id] === 'uit' || f.st[x.id] === 'open-uit' || f.st[x.id] === 'vaag-uit');
   const loose = s.stories.filter(x => f.st[x.id] === 'open' || f.st[x.id] === 'vaag');
   const node = document.createElement('div');
-  const total = Math.max(f.cap, f.used + f.over) || 1;
+  const tail = f.over && f.cap ? 10 : 0, sc = (100 - tail) / (f.cap || 1);
   node.innerHTML = `
     <div style="display:grid;grid-template-columns:260px 1fr;gap:28px;align-items:start" data-oc-keep>
       <div style="background:#f8fafc;border:1px solid #f1f5f9;border-radius:12px;padding:16px 16px 14px">
-        <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#64748b">Wat past er</div>
+        <div style="font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#64748b">Wat past er</div>
         <div style="display:flex;align-items:flex-end;gap:10px;margin-top:4px"><span style="font-size:48px;line-height:1;font-weight:700;letter-spacing:-0.04em;color:#047857">${esc(fmtU(f.cap))}</span><span style="font-size:13px;color:#475569;line-height:1.3">halve dagen<br><b style="color:#1e293b;font-size:15px">= ${esc(dagen(f.cap))}</b></span></div>
-        <div style="height:10px;border-radius:99px;background:#e2e8f0;margin-top:14px;overflow:hidden;display:flex"><span style="display:block;height:100%;width:${f.used / total * 100}%;background:#10b981"></span><span style="display:block;height:100%;width:${Math.max(0, f.cap - f.used) / total * 100}%"></span><span style="display:block;height:100%;width:${f.over / total * 100}%;background:#d97706"></span></div>
-        <div style="font-size:12px;color:#475569;margin-top:6px">${esc(fmtU(f.used))} van ${esc(fmtU(f.cap))} gevuld${f.over ? ` · <b style="color:#92400e">${esc(fmtU(f.over))} past niet</b>` : ''}</div>
+        <div style="height:10px;border-radius:99px;background:#e2e8f0;margin-top:14px;overflow:hidden;display:flex"><span style="display:block;height:100%;width:${f.cap ? f.used * sc : 0}%;background:#10b981"></span><span style="display:block;height:100%;width:${f.cap ? Math.max(0, f.cap - f.used) * sc : 0}%"></span><span style="display:block;height:100%;width:${f.cap ? tail : (f.over && s.team.length ? 100 : 0)}%;background:#d97706"></span></div>
+        <div style="font-size:12px;color:#475569;margin-top:6px">${esc(fmtU(f.used))} van ${esc(fmtU(f.cap))} gevuld${f.over && s.team.length ? ` · <b style="color:#92400e">${esc(hd(f.over))} voor later</b>` : ''}</div>
       </div>
       <div>
         <div style="font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#64748b;margin-bottom:6px">Team</div>
