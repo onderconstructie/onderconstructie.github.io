@@ -175,6 +175,23 @@ header.header h1 + p, header.header h1 + p.subtitle, .oc-head h1 + p, .oc-head h
   header.header .back-link, .oc-head .back-link { position:static; display:flex; justify-content:center; margin:0 auto 0.75rem; width:max-content; }
   header.header .back-link span, .oc-head .back-link span { display:inline; }
 }
+
+/* Menu ⋮ (zoals in de andere tools): Download als PDF, kaartjes om te knippen (november 2026) */
+.card { position:relative; }
+.card-head { display:flex; justify-content:flex-end; margin:-0.75rem -0.5rem 0 0; }
+@media (min-width:640px) { .card-head { position:absolute; top:0.5rem; right:0.5rem; margin:0; z-index:5; } }
+.icon-btn { width:44px; height:44px; display:flex; align-items:center; justify-content:center; border-radius:10px; color:var(--slate-500); flex-shrink:0; }
+.icon-btn:hover { background:var(--slate-100); color:var(--slate-700); }
+.icon-btn svg { width:20px; height:20px; }
+.menu-wrap { position:relative; }
+.menu { display:none; position:absolute; right:0; top:calc(100% + 4px); z-index:50; min-width:272px; max-width:calc(100vw - 2rem); background:var(--wit); border:1px solid var(--slate-200); border-radius:12px; box-shadow:0 12px 32px rgba(15,23,42,0.14); padding:0.375rem; text-align:left; overscroll-behavior:contain; }
+.menu.open { display:block; }
+.menu button { width:100%; min-height:44px; display:flex; align-items:center; gap:0.625rem; padding:0.5625rem 0.625rem; border-radius:8px; font-size:0.9375rem; text-align:left; color:var(--slate-700); white-space:nowrap; }
+.menu button:hover { background:var(--slate-100); }
+.menu button svg { width:18px; height:18px; color:var(--slate-500); flex-shrink:0; }
+.menu .ocb-t { display:flex; flex-direction:column; min-width:0; white-space:normal; line-height:1.3; }
+.menu .ocb-t small { font-size:0.8125rem; color:var(--slate-500); margin-top:0.125rem; }
+.menu .ocb-note { margin:0; padding:0.25rem 0.625rem 0.375rem; font-size:0.8125rem; line-height:1.35; color:var(--slate-500); white-space:normal; }
 </style>
 </head>
 <body>
@@ -192,6 +209,15 @@ header.header h1 + p, header.header h1 + p.subtitle, .oc-head h1 + p, .oc-head h
 
     <main class="main">
         <section class="card" aria-label="IJsbreker">
+            <div class="card-head">
+                <div class="menu-wrap">
+                    <button class="icon-btn" id="menu-btn" type="button" aria-label="Meer acties" aria-haspopup="true" aria-expanded="false" aria-controls="menu"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg></button>
+                    <div class="menu" id="menu" role="menu">
+                        <button type="button" data-act="pdf" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 15h6M9 18h4"/></svg><span class="ocb-t">Download als PDF<small>Kaartjes om af te drukken en te knippen</small></span></button>
+                        <p class="ocb-note">Een PDF kan je niet terug openen.</p>
+                    </div>
+                </div>
+            </div>
             <div class="cols" aria-hidden="true"><span>Onderwerp</span><span>Moment</span><span>Vorm</span></div>
             <div class="reels" role="group" aria-label="Drie rollen">
                 <button type="button" class="reel" id="r0" aria-pressed="false" aria-disabled="true"><span class="win"><span class="strip"></span></span><span class="lock" aria-hidden="true"></span></button>
@@ -584,7 +610,179 @@ function toast(msg) {
   clearTimeout(toastT); toastT = setTimeout(() => $('toast').classList.remove('show'), 2800);
 }
 
-window.ijsbreker = { controle, opdracht, ALLE, ONDERWERPEN, MOMENTEN, VORMEN };
+/* ---------- Menu ⋮ ---------- */
+const menu = $('menu'), menuBtn = $('menu-btn');
+function sluitMenu(terug) {
+  if (!menu.classList.contains('open')) return;
+  menu.classList.remove('open'); menuBtn.setAttribute('aria-expanded', 'false');
+  if (terug) menuBtn.focus();
+}
+menuBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  const o = menu.classList.toggle('open'); menuBtn.setAttribute('aria-expanded', String(o));
+  if (o && e.detail === 0) menu.querySelector('[role="menuitem"]').focus();   // met het toetsenbord: meteen in het menu
+});
+document.addEventListener('click', e => { if (!e.target.closest('.menu-wrap')) sluitMenu(false); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && menu.classList.contains('open')) sluitMenu(menu.contains(document.activeElement)); });
+menu.addEventListener('click', e => { if (e.target.closest('[data-act="pdf"]')) { sluitMenu(false); kaartjesPdf(); } });
+
+/* ---------- Download als PDF: kaartjes om af te drukken en te knippen ----------
+   24 opdrachten, 8 per A4, met stippellijnen om te knippen. Ze volgen de tool: "Alleen korte opdrachten"
+   en rollen die vaststaan tellen mee, en de opdracht op het scherm komt eerst. Elke download is een nieuwe mix,
+   zo verdeeld dat onderwerpen, momenten en vormen goed afwisselen.
+   jsPDF komt van hetzelfde adres als bij ocExport in de andere tools (/lib/), zodat de app het offline kan bewaren. */
+const ocPdf = (() => {
+  const LIB = '/lib/jspdf-2.5.1.umd.min.js';
+  let laden = null;
+  function load() {
+    if (window.jspdf) return Promise.resolve();
+    if (!laden) laden = new Promise((ok, fail) => {
+      const s = document.createElement('script');
+      s.src = LIB; s.onload = ok;
+      s.onerror = () => { laden = null; s.remove(); fail(new Error('laden mislukt')); };
+      document.head.appendChild(s);
+    });
+    return laden;
+  }
+  function save(blob, name) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }
+  return { load, save };
+})();
+
+function kaartjes(n) {
+  const pool = ALLE.filter(past).slice();
+  for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+  const tel = [{}, {}, {}], uit = [];
+  const neem = c => { uit.push(c); c.forEach((v, r) => tel[r][v] = (tel[r][v] || 0) + 1); pool.splice(pool.indexOf(c), 1); };
+  const nu = huidig.every(v => v != null) && pool.find(c => c.every((v, r) => v === huidig[r]));
+  if (nu) neem(nu);
+  while (uit.length < n && pool.length) {
+    let best = pool[0], score = Infinity;
+    for (const c of pool) { const s = (tel[0][c[0]] || 0) * 3 + (tel[1][c[1]] || 0) + (tel[2][c[2]] || 0) * 2; if (s < score) { score = s; best = c; } }
+    neem(best);
+  }
+  return uit;
+}
+
+const LOGO = document.querySelector('.oc-head .logo svg').outerHTML;
+const PX = 12, PT = 0.3528;                 // pixels per mm (ongeveer 300 dpi), 1 punt in mm
+const FONT = "'DM Sans', system-ui, sans-serif";
+function regels(x, tekst, maxW) {
+  const uit = []; let lijn = '';
+  for (const w of tekst.split(/\s+/).filter(Boolean)) {
+    const p = lijn ? lijn + ' ' + w : w;
+    if (x.measureText(p).width <= maxW || !lijn) lijn = p; else { uit.push(lijn); lijn = w; }
+  }
+  if (lijn) uit.push(lijn);
+  return uit;
+}
+function evenwicht(x, tekst, maxW) {     // even lange regels, zoals text-wrap:balance op het scherm
+  let r = regels(x, tekst, maxW);
+  if (r.length < 2) return r;
+  for (let w = maxW * 0.97; w > maxW * 0.45; w -= maxW * 0.03) { const t = regels(x, tekst, w); if (t.length > r.length) break; r = t; }
+  return r;
+}
+
+async function kaartjesPdf() {
+  const lijst = kaartjes(24);
+  if (!lijst.length) { toast('Geen opdracht past bij wat vaststaat. Maak een rol los.'); return; }
+  toast('Bezig…');
+  try { await ocPdf.load(); } catch (e) { toast('Downloaden lukt nu niet: geen verbinding?'); return; }
+  try {
+    try { await Promise.all(['600', '700'].map(w => document.fonts.load(`${w} 40px 'DM Sans'`))); } catch (e) {}
+    const logo = new Image();
+    logo.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(LOGO.replace('<svg ', '<svg width="160" height="160" '));
+    await logo.decode();
+
+    const W = 210, H = 297, M = 10, KOL = 2, RIJ = 4, cw = (W - 2 * M) / KOL, ch = (H - 2 * M) / RIJ;
+    const mm = v => Math.round(v * PX), px = pt => pt * PT * PX;
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
+    const perBlad = KOL * RIJ, bladen = Math.ceil(lijst.length / perBlad);
+
+    for (let b = 0; b < bladen; b++) {
+      const c = document.createElement('canvas'); c.width = mm(W); c.height = mm(H);
+      const x = c.getContext('2d', { alpha: false });
+      x.fillStyle = '#ffffff'; x.fillRect(0, 0, c.width, c.height);
+      const deel = lijst.slice(b * perBlad, (b + 1) * perBlad);
+
+      deel.forEach(([a, m, v], i) => {
+        const kx = M + (i % KOL) * cw, ky = M + Math.floor(i / KOL) * ch, cx = mm(kx + cw / 2), maxW = mm(cw - 18);
+        x.textAlign = 'center'; x.textBaseline = 'alphabetic';
+        // Opdracht: zo groot als past, in even lange regels
+        let pt = 14, zin;
+        for (;;) { x.font = `600 ${px(pt)}px ${FONT}`; zin = evenwicht(x, opdracht(a, m, v), maxW); if (zin.length <= 4 || pt <= 11) break; pt -= 0.5; }
+        const zinLh = px(pt) * 1.3, eyeH = px(7), introH = px(10) * 1.3;
+        const blok = eyeH + mm(2.4) + introH + mm(1.2) + zin.length * zinLh;
+        const top = mm(ky + 6), onder = mm(ky + ch - 13);
+        let y = top + (onder - top - blok) / 2;
+        // STEL JE VOOR
+        x.font = `700 ${px(7)}px ${FONT}`; x.fillStyle = '#047857';
+        try { x.letterSpacing = `${px(7) * 0.08}px`; } catch (e) {}
+        x.fillText('STEL JE VOOR', cx, y + eyeH * 0.8);
+        try { x.letterSpacing = '0px'; } catch (e) {}
+        y += eyeH + mm(2.4);
+        x.font = `600 ${px(10)}px ${FONT}`; x.fillStyle = '#475569';
+        x.fillText('Zeg je naam.', cx, y + introH * 0.75);
+        y += introH + mm(1.2);
+        x.font = `600 ${px(pt)}px ${FONT}`; x.fillStyle = '#1e293b';
+        zin.forEach((l, k) => x.fillText(l, cx, y + k * zinLh + zinLh * 0.75));
+        // Voet: klein logo en "IJsbreker", rustig in grijs
+        const ls = mm(4.6), gap = mm(1.4);
+        x.font = `600 ${px(7.5)}px ${FONT}`; x.fillStyle = '#64748b';
+        const tw = x.measureText('IJsbreker').width, sx = cx - (ls + gap + tw) / 2, fy = mm(ky + ch - 7.5);
+        x.drawImage(logo, sx, fy - ls / 2, ls, ls);
+        x.textAlign = 'left'; x.textBaseline = 'middle';
+        x.fillText('IJsbreker', sx + ls + gap, fy + px(7.5) * 0.05);
+      });
+
+      // Stippellijnen om te knippen, alleen rond de gebruikte kaartjes
+      x.strokeStyle = '#94a3b8'; x.lineWidth = mm(0.25); x.setLineDash([mm(2), mm(1.6)]); x.lineCap = 'butt';
+      const rijen = Math.ceil(deel.length / KOL);
+      for (let r = 0; r < rijen; r++) {
+        const k = Math.min(KOL, deel.length - r * KOL), y0 = mm(M + r * ch), y1 = mm(M + (r + 1) * ch);
+        x.beginPath();
+        x.moveTo(mm(M), y0); x.lineTo(mm(M + k * cw), y0);
+        x.moveTo(mm(M), y1); x.lineTo(mm(M + k * cw), y1);
+        for (let q = 0; q <= k; q++) { x.moveTo(mm(M + q * cw), y0); x.lineTo(mm(M + q * cw), y1); }
+        x.stroke();
+      }
+      x.setLineDash([]);
+      // Schaartje op de bovenste lijn
+      const sx = mm(M + 8), sy = mm(M), s = mm(1);
+      x.fillStyle = '#ffffff'; x.fillRect(sx - 1.2 * s, sy - 2.2 * s, 7.2 * s, 4.4 * s);
+      x.strokeStyle = '#94a3b8'; x.lineWidth = mm(0.3); x.lineCap = 'round';
+      x.beginPath(); x.arc(sx, sy - 1.05 * s, 0.75 * s, 0, Math.PI * 2); x.moveTo(sx + 0.75 * s, sy + 1.05 * s); x.arc(sx, sy + 1.05 * s, 0.75 * s, 0, Math.PI * 2);
+      x.moveTo(sx + 0.6 * s, sy - 0.6 * s); x.lineTo(sx + 5.2 * s, sy + 1.2 * s);
+      x.moveTo(sx + 0.6 * s, sy + 0.6 * s); x.lineTo(sx + 5.2 * s, sy - 1.2 * s);
+      x.stroke();
+
+      if (b) doc.addPage();
+      doc.addImage(c.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, W, H);
+    }
+    doc.setProperties({ title: 'IJsbreker: kaartjes', creator: 'Onder Constructie' });
+    const d = new Date(), dag = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    ocPdf.save(doc.output('blob'), `ijsbreker-kaartjes-${dag}.pdf`);
+    toast(`PDF gedownload, met ${lijst.length} ${lijst.length === 1 ? 'kaartje' : 'kaartjes'}`);
+  } catch (e) { toast('Downloaden lukt nu niet'); }
+}
+/* Soepel: jsPDF alvast ophalen zodra iemand naar het menu gaat (niet bij het laden) */
+(() => {
+  let warm = false;
+  const go = () => {
+    warm = true;
+    const h = '/lib/jspdf-2.5.1.umd.min.js', l = document.createElement('link');
+    if (l.relList && l.relList.supports && l.relList.supports('prefetch')) { l.rel = 'prefetch'; l.as = 'script'; l.href = h; document.head.appendChild(l); }
+    else try { fetch(h).catch(() => {}); } catch (e) {}
+  };
+  ['pointerdown', 'focusin', 'mouseover'].forEach(t => menuBtn.addEventListener(t, () => { if (!warm) go(); }, { passive: true }));
+})();
+
+window.ijsbreker = { controle, opdracht, ALLE, ONDERWERPEN, MOMENTEN, VORMEN, kaartjes };
     </script>
 <script>
 /* oc-sync: reageert op "Wissen" in de app (ook in andere tabbladen) en geeft Esc door aan de app */
