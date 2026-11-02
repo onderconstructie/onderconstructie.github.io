@@ -249,6 +249,10 @@ header.header h1 + p, header.header h1 + p.subtitle, .oc-head h1 + p, .oc-head h
                 <summary><span>Instellingen</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
                 <div class="set-body">
                     <div class="switch-row">
+                        <div>We kennen elkaar al<small>Geen naam zeggen, gewoon een rondje.</small></div>
+                        <button type="button" class="switch" id="kennen" aria-pressed="false" aria-label="We kennen elkaar al"></button>
+                    </div>
+                    <div class="switch-row">
                         <div>Alleen korte opdrachten<small>Handig voor een grote groep.</small></div>
                         <button type="button" class="switch" id="kort" aria-pressed="false" aria-label="Alleen korte opdrachten"></button>
                     </div>
@@ -372,7 +376,7 @@ const ONDERWERPEN = [
     aanrader:['iets wat iedereen eens zou moeten leren', 'g'] } },
   { id:'buurt', label:'Je buurt', x:{
     kind:['een plek waar je als kind buiten speelde', 'w'], week:['iets wat je de voorbije week in je buurt opviel', ''], nu:['je favoriete plek in je buurt', 'w'],
-    later:['een plek in je buurt die je nog wil ontdekken', 'w'], eerste:['de eerste plek in je buurt waar je bezoek mee naartoe neemt', 'w'], verrast:['iets in je buurt dat je verraste', ''],
+    later:['een plek in je buurt die je nog wil ontdekken', 'w'], eerste:['de eerste plek in je buurt die je aan bezoek toont', 'w'], verrast:['iets in je buurt dat je verraste', ''],
     aanrader:['een adresje in je buurt dat je iedereen aanraadt', 'w'] } },
 ];
 /* Vormen: zin(t, kenmerken) geeft de opdracht na "Zeg je naam." of null als de combinatie niet past. */
@@ -394,6 +398,12 @@ function opdracht(a, b, c) {
   if (!deel || !v) return null;
   return v.zin(deel[0], deel[1], m.id);
 }
+/* In een groep die elkaar kent: geen "Zeg je naam." ervoor, dus ook geen "dan" in de opdracht */
+function tekst(a, b, c) {
+  const z = opdracht(a, b, c);
+  return z && inst.kennen ? z.replace(/^(\S+) dan /, '$1 ') : z;
+}
+const WACHT = () => inst.kennen ? 'Druk op Draai. Uit drie prentjes komt een korte opdracht voor een rondje.' : 'Druk op Draai. Uit drie prentjes komt een korte opdracht om jezelf voor te stellen.';
 /* Alle geldige combinaties, één keer berekend */
 const ALLE = [];
 ONDERWERPEN.forEach((_, a) => MOMENTEN.forEach((_, b) => VORMEN.forEach((_, c) => { if (opdracht(a, b, c)) ALLE.push([a, b, c]); })));
@@ -422,12 +432,13 @@ function controle() {
 
 /* ---------- Instellingen (alleen dit toestel) ---------- */
 const KEY = 'ijsbreker.v1';
-let inst = { kort:false, tijd:0 };
+let inst = { kort:false, tijd:0, kennen:false };
 function laad() {
   try {
     const d = JSON.parse(localStorage.getItem(KEY) || 'null');
     if (d && typeof d === 'object') {
       inst.kort = d.kort === true;
+      inst.kennen = d.kennen === true;
       inst.tijd = [0, 30, 60].includes(+d.tijd) ? +d.tijd : 0;
     }
   } catch {}
@@ -516,11 +527,12 @@ function draai() {
 
 function toon() {
   draait = false;
-  const z = opdracht(huidig[0], huidig[1], huidig[2]);
-  $('eyebrow').hidden = false; $('intro').hidden = false;
+  const z = tekst(huidig[0], huidig[1], huidig[2]);
+  $('eyebrow').hidden = false; $('intro').hidden = inst.kennen;
+  $('eyebrow').textContent = inst.kennen ? 'Jouw beurt' : 'Stel je voor';
   const s = $('sentence'); s.classList.remove('wacht'); s.textContent = z;
   void $('result').offsetWidth; $('result').classList.add('nieuw');
-  $('live').textContent = 'Stel je voor. Zeg je naam. ' + z;
+  $('live').textContent = (inst.kennen ? 'Jouw beurt. ' : 'Stel je voor. Zeg je naam. ') + z;
   $('draai').removeAttribute('aria-disabled');
   $('draai-tekst').textContent = 'Volgende persoon';
   $('liever').hidden = false;
@@ -588,8 +600,14 @@ $('tgo').addEventListener('click', () => {
 /* ---------- Instellingen ---------- */
 function toonInst() {
   $('kort').setAttribute('aria-pressed', String(inst.kort));
+  $('kennen').setAttribute('aria-pressed', String(inst.kennen));
   document.querySelectorAll('#tijd .chip').forEach(c => c.setAttribute('aria-pressed', String(+c.dataset.s === inst.tijd)));
 }
+$('kennen').addEventListener('click', () => {
+  inst.kennen = !inst.kennen; bewaar(); toonInst();
+  if (huidig[0] != null && !draait) toon(); else if (huidig[0] == null) $('sentence').textContent = WACHT();
+  toast(inst.kennen ? 'Zonder voorstellen' : 'Met voorstellen: naam zeggen');
+});
 $('kort').addEventListener('click', () => {
   inst.kort = !inst.kort; bewaar(); toonInst();
   if (inst.kort && vast[2] && huidig[2] != null && !VORMEN[huidig[2]].kort) {
@@ -601,6 +619,7 @@ document.querySelectorAll('#tijd .chip').forEach(c => c.addEventListener('click'
   inst.tijd = +c.dataset.s; bewaar(); toonInst(); toonKlok();
 }));
 toonInst();
+if (inst.kennen) $('sentence').textContent = WACHT();
 
 /* ---------- Melding ---------- */
 let toastT = null;
@@ -715,20 +734,22 @@ async function kaartjesPdf() {
         x.textAlign = 'center'; x.textBaseline = 'alphabetic';
         // Opdracht: zo groot als past, in even lange regels
         let pt = 14, zin;
-        for (;;) { x.font = `600 ${px(pt)}px ${FONT}`; zin = evenwicht(x, opdracht(a, m, v), maxW); if (zin.length <= 4 || pt <= 11) break; pt -= 0.5; }
-        const zinLh = px(pt) * 1.3, eyeH = px(7), introH = px(10) * 1.3;
-        const blok = eyeH + mm(2.4) + introH + mm(1.2) + zin.length * zinLh;
+        for (;;) { x.font = `600 ${px(pt)}px ${FONT}`; zin = evenwicht(x, tekst(a, m, v), maxW); if (zin.length <= 4 || pt <= 11) break; pt -= 0.5; }
+        const zinLh = px(pt) * 1.3, eyeH = px(7), introH = inst.kennen ? 0 : px(10) * 1.3;
+        const blok = eyeH + mm(2.4) + (introH ? introH + mm(1.2) : 0) + zin.length * zinLh;
         const top = mm(ky + 6), onder = mm(ky + ch - 13);
         let y = top + (onder - top - blok) / 2;
         // STEL JE VOOR
         x.font = `700 ${px(7)}px ${FONT}`; x.fillStyle = '#047857';
         try { x.letterSpacing = `${px(7) * 0.08}px`; } catch (e) {}
-        x.fillText('STEL JE VOOR', cx, y + eyeH * 0.8);
+        x.fillText(inst.kennen ? 'JOUW BEURT' : 'STEL JE VOOR', cx, y + eyeH * 0.8);
         try { x.letterSpacing = '0px'; } catch (e) {}
         y += eyeH + mm(2.4);
-        x.font = `600 ${px(10)}px ${FONT}`; x.fillStyle = '#475569';
-        x.fillText('Zeg je naam.', cx, y + introH * 0.75);
-        y += introH + mm(1.2);
+        if (!inst.kennen) {
+          x.font = `600 ${px(10)}px ${FONT}`; x.fillStyle = '#475569';
+          x.fillText('Zeg je naam.', cx, y + introH * 0.75);
+          y += introH + mm(1.2);
+        }
         x.font = `600 ${px(pt)}px ${FONT}`; x.fillStyle = '#1e293b';
         zin.forEach((l, k) => x.fillText(l, cx, y + k * zinLh + zinLh * 0.75));
         // Voet: klein logo en "IJsbreker", rustig in grijs

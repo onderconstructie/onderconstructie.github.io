@@ -10,7 +10,7 @@
     <meta name="oc:pdca" content="plan">
 <meta name="oc:kort" content="Kies op feiten, niet op een goed verhaal.">
 <meta name="oc:volgorde" content="46">
-<meta name="oc:opslag" content="beslisscore.v1">
+<meta name="oc:opslag" content="beslisscore.v1, oc.share.beslisscore">
 <meta name="theme-color" content="#ffffff">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox='0 0 40 40' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='20' cy='20' r='18' fill='%23f8fafc' stroke='%23e2e8f0' stroke-width='1.5'/%3E%3Ccircle cx='10.5' cy='12.5' r='2.1' fill='%2394a3b8'/%3E%3Ccircle cx='15.25' cy='12.5' r='2.1' fill='%2394a3b8'/%3E%3Ccircle cx='20' cy='12.5' r='2.1' fill='%2394a3b8'/%3E%3Ccircle cx='24.75' cy='12.5' r='1.6' stroke='%23cbd5e1' stroke-width='1.1'/%3E%3Ccircle cx='29.5' cy='12.5' r='1.6' stroke='%23cbd5e1' stroke-width='1.1'/%3E%3Crect x='6.4' y='16.1' width='27.2' height='7.8' rx='3.9' fill='%23d1fae5'/%3E%3Ccircle cx='10.5' cy='20' r='2.1' fill='%2310b981'/%3E%3Ccircle cx='15.25' cy='20' r='2.1' fill='%2310b981'/%3E%3Ccircle cx='20' cy='20' r='2.1' fill='%2310b981'/%3E%3Ccircle cx='24.75' cy='20' r='2.1' fill='%2310b981'/%3E%3Ccircle cx='29.5' cy='20' r='1.6' stroke='%23047857' stroke-width='1.1'/%3E%3Ccircle cx='10.5' cy='27.5' r='2.1' fill='%2394a3b8'/%3E%3Ccircle cx='15.25' cy='27.5' r='2.1' fill='%2394a3b8'/%3E%3Ccircle cx='20' cy='27.5' r='1.6' stroke='%23cbd5e1' stroke-width='1.1'/%3E%3Ccircle cx='24.75' cy='27.5' r='1.6' stroke='%23cbd5e1' stroke-width='1.1'/%3E%3Ccircle cx='29.5' cy='27.5' r='1.6' stroke='%23cbd5e1' stroke-width='1.1'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="/fonts/fonts.css">
@@ -610,8 +610,8 @@ function ocStyle() {
       .ocw b{display:block;font-size:1.0625rem;letter-spacing:-.01em;margin-bottom:.375rem}
       .ocw p{font-size:.9375rem;line-height:1.5;color:#475569}
       .ocw-row{display:flex;justify-content:flex-end;gap:.5rem;margin-top:1.25rem}
-      .ocw-row button{font:inherit;font-size:.9375rem;font-weight:600;padding:.625rem 1rem;border-radius:10px;border:0;cursor:pointer}
-      .ocw-no{background:#f1f5f9;color:#475569} .ocw-yes{background:#ef4444;color:#fff} .ocw-yes:hover{background:#dc2626}
+      .ocw-row button{font:inherit;font-size:.9375rem;font-weight:600;padding:.625rem 1rem;min-height:44px;border-radius:10px;border:0;cursor:pointer}
+      .ocw-no{background:#f1f5f9;color:#475569} .ocw-yes{background:#dc2626;color:#fff} .ocw-yes:hover{background:#b91c1c}
       .oc-import{display:inline-flex;align-items:center;gap:.375rem;font:inherit;font-size:.8125rem;font-weight:600;color:#059669;background:#fff;border:1px dashed #a7f3d0;border-radius:999px;padding:.3125rem .75rem;cursor:pointer;white-space:nowrap}
       .oc-import:hover{background:#ecfdf5;border-color:#10b981} .oc-import svg{width:15px;height:15px} .oc-import[hidden]{display:none}`;
     document.head.appendChild(s);
@@ -818,7 +818,21 @@ function load() {
   return { v:1, keuzes:[k], current:k.id };
 }
 let state = load();
-function save() { ocAfterSave(); try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
+function save() { ocAfterSave(); try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} deelBesluiten(); }
+/* Genomen beslissingen klaarleggen voor de Beslissingslog (gedeelde vorm 'oc.share.<tool>', type 'besluit'). Een voorbeeld gaat nooit mee. */
+function deelBesluiten() {
+  try {
+    const nf1 = x => String(Math.round(x * 10) / 10).replace('.', ',');
+    const items = state.keuzes.filter(k => !k.voorbeeld && k.besluit).map(k => {
+      const b = k.besluit, g = oName(k, b.gekozen), w = b.winnaar ? oName(k, b.winnaar) : '';
+      const note = b.soort === 'afwijking' ? `Afwijking van het hoogste totaal (${w}, ${nf1(b.tW)} tegen ${nf1(b.tG)}). Feit: ${b.feit}`
+        : `Hoogste totaal in de Beslisscore: ${nf1(b.tG)}` + (w && w !== g ? '' : '');
+      return { type:'besluit', text:`${(k.name || 'Keuze').trim()}: gekozen voor ${g}`.slice(0, 300), note:note.slice(0, 200), when:String(b.at || '').slice(0, 10) };
+    });
+    if (!items.length) { localStorage.removeItem('oc.share.beslisscore'); return; }
+    localStorage.setItem('oc.share.beslisscore', JSON.stringify({ id:'beslisscore', tool:'Beslisscore', updated:Date.now(), lists:[{ name:'Beslissingen', items }] }));
+  } catch {}
+}
 const cur = () => state.keuzes.find(k => k.id === state.current) || state.keuzes[0];
 const snapshot = () => { const c = JSON.parse(JSON.stringify(state)); return () => { state = c; resetRun(); }; };
 
@@ -1629,7 +1643,7 @@ $('vb-eigen').addEventListener('click', () => {
 async function ocWipeAll() {
   if (!await ocConfirm(`Alles wissen in ${OC_TOOL}?`, 'Alle keuzes, kenmerken en scores verdwijnen. Andere tools blijven zoals ze zijn. Je kan dit nog ongedaan maken tot je iets anders doet.', 'Alles wissen')) return;
   const copy = JSON.parse(JSON.stringify(state));
-  try { localStorage.removeItem(KEY); } catch {}
+  try { localStorage.removeItem(KEY); localStorage.removeItem('oc.share.beslisscore'); } catch {}
   state = load(); resetRun(); dev = { open:false, opt:null, kenmerk:'', feit:'' }; render();
   toast('Alles gewist', ocUndoable(() => { state = copy; resetRun(); }));
 }

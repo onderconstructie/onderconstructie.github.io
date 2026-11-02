@@ -397,9 +397,9 @@ dialog, [role="dialog"], [role="alertdialog"], .modal, .modal-backdrop { overscr
 <body>
 
 <header class="header">
-  <a href="https://onderconstructie.github.io/projectmanagement/" class="back-link" aria-label="Terug naar Projectmanagement">
+  <a href="https://onderconstructie.github.io/projectmanagement/#vergaderen" class="back-link" aria-label="Terug naar Vergaderen">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-    Projectmanagement
+    Vergaderen
   </a>
   <div class="logo">
     <svg viewBox="0 0 80 80" fill="none" aria-hidden="true">
@@ -671,8 +671,8 @@ function ocStyle() {
       .ocw b{display:block;font-size:1.0625rem;letter-spacing:-.01em;margin-bottom:.375rem}
       .ocw p{font-size:.9375rem;line-height:1.5;color:#475569}
       .ocw-row{display:flex;justify-content:flex-end;gap:.5rem;margin-top:1.25rem}
-      .ocw-row button{font:inherit;font-size:.9375rem;font-weight:600;padding:.625rem 1rem;border-radius:10px;border:0;cursor:pointer}
-      .ocw-no{background:#f1f5f9;color:#475569} .ocw-yes{background:#ef4444;color:#fff} .ocw-yes:hover{background:#dc2626}
+      .ocw-row button{font:inherit;font-size:.9375rem;font-weight:600;padding:.625rem 1rem;min-height:44px;border-radius:10px;border:0;cursor:pointer}
+      .ocw-no{background:#f1f5f9;color:#475569} .ocw-yes{background:#dc2626;color:#fff} .ocw-yes:hover{background:#b91c1c}
       .oc-import{display:inline-flex;align-items:center;gap:.375rem;font:inherit;font-size:.8125rem;font-weight:600;color:#059669;background:#fff;border:1px dashed #a7f3d0;border-radius:999px;padding:.3125rem .75rem;cursor:pointer;white-space:nowrap}
       .oc-import:hover{background:#ecfdf5;border-color:#10b981} .oc-import svg{width:15px;height:15px} .oc-import[hidden]{display:none}`;
     document.head.appendChild(s);
@@ -703,9 +703,15 @@ function ocUndoable(restore) {
   };
 }
 
+/* Een actie die je meenam naar een latere retro, wordt alleen daar klaargelegd: anders staat ze dubbel open
+   in andere tools, ook nadat je ze in de nieuwe retro afvinkte. */
 function ocPublish() {
-  ocShare.publish(OC_ID, OC_TOOL, state.retros.filter(r => !r.voorbeeld).map(r => ({ name:r.name, items:[...(r.carried || []), ...r.actions]
-    .filter(a => !a.done && a.text && a.text.trim()).map(a => ({ type:'actie', text:a.text, who:a.who, when:a.when })) })));
+  const echt = state.retros.filter(r => !r.voorbeeld), key = t => String(t || '').trim().toLowerCase();
+  ocShare.publish(OC_ID, OC_TOOL, echt.map((r, i) => {
+    const later = new Set(echt.slice(i + 1).flatMap(x => (x.carried || []).map(a => key(a.text))));
+    return { name:r.name, items:[...(r.carried || []), ...r.actions]
+      .filter(a => !a.done && a.text && a.text.trim() && !later.has(key(a.text))).map(a => ({ type:'actie', text:a.text, who:a.who, when:a.when })) };
+  }));
 }
 
 async function ocWipeAll() {
@@ -880,7 +886,7 @@ const FORMATS = {
     { t:'Wat proberen we', k:'Proberen', h:'Wat doen we volgende keer anders?', c:'#047857' } ] },
   gba: { name:'Goed / Beter / Proberen', cols:[
     { t:'Goed', h:'Wat ging goed?', c:'#10b981' },
-    { t:'Beter', h:'Wat kan beter?', c:'#f59e0b' },
+    { t:'Beter', h:'Wat kan beter?', c:'#64748b' },
     { t:'Proberen', h:'Wat willen we uitproberen?', c:'#047857' } ] },   // niet "Acties": dat is het blok eronder
   nrg: { name:'Energie / Moeite / Wat helpt', cols:[
     { t:'Energie', h:'Waar kreeg je energie van?', c:'#10b981' },
@@ -1025,8 +1031,7 @@ function render() {
 
   // acties
   $('action-list').innerHTML = r.actions.map(a => actionHTML(a, false)).join('');
-  const open = r.actions.filter(a => !a.done).length;
-  $('actions-count').textContent = r.actions.length ? `${open} open · ${r.actions.length - open} klaar` : '';
+  actionsCount(r);
   $('actions-empty').hidden = r.actions.length > 0;
 
   // acties van vorige keer
@@ -1040,6 +1045,12 @@ function render() {
   $('carried-hide').textContent = r.hideDone ? 'Toon alles' : 'Verberg wat klaar is';
 
   renderTabs();
+}
+
+// Teller boven de acties; een open actie zonder eigenaar valt op, want die gebeurt zelden
+function actionsCount(r) {
+  const open = r.actions.filter(a => !a.done).length, noWho = r.actions.filter(a => !a.done && !(a.who || '').trim()).length;
+  $('actions-count').textContent = r.actions.length ? `${open} open · ${r.actions.length - open} klaar${noWho ? ` · ${noWho} zonder wie` : ''}` : '';
 }
 
 /* ---------- Melding met ongedaan maken ---------- */
@@ -1206,7 +1217,7 @@ document.addEventListener('change', e => {
 });
 document.addEventListener('input', e => {
   const inp = e.target.closest('.action input[data-f="who"]'); if (!inp) return;
-  const { a } = findAction(inp); if (a) { a.who = inp.value.trim(); save(); }
+  const { a } = findAction(inp); if (a) { a.who = inp.value.trim(); save(); actionsCount(cur()); }
 });
 
 /* ---------- Acties toevoegen ---------- */
