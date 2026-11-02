@@ -1033,8 +1033,11 @@ function gapText(g) {
 }
 
 /* ---------- Signalen ---------- */
+// Pas signalen tonen als je aan een thema begonnen bent: een vers thema krijgt nog geen rij waarschuwingen.
+const begun = g => !!(g.asis.text.trim() || g.tobe.text.trim() || String(g.asis.value).trim() || String(g.tobe.value).trim() || g.evidence.length || g.whys.some(w => w.trim()) || g.actions.length || g.impact || g.feas);
 function gapSignals(g) {
   const s = [];
+  if (!begun(g)) return s;
   const ev = g.evidence;
   if (!ev.length) s.push({ id:'aanname', text:'Nog niet bewezen: toets eerst of dit klopt' });
   else {
@@ -1267,7 +1270,7 @@ function renderSignals() {
   const a = cur();
   const n = a.gaps.reduce((s, g) => s + gapSignals(g).length, 0);
   // Aandachtspunten pas tonen als je een verschil openklapt: eerst rustig invullen.
-  if (!a.gaps.length || !a.gaps.some(g => g.open)) { $('sigbar').innerHTML = ''; $('sig-analysis').innerHTML = ''; return; }
+  if (!a.gaps.length || !a.gaps.some(g => g.open) || !a.gaps.some(begun)) { $('sigbar').innerHTML = ''; $('sig-analysis').innerHTML = ''; return; }
   $('sigbar').innerHTML = n
     ? `<button class="sig-summary" id="sig-jump" title="Spring naar het volgende thema met een aandachtspunt">${ICON.warn}${n} ${n === 1 ? 'aandachtspunt' : 'aandachtspunten'}</button>`
     : `<span class="sig-summary ok">${ICON.ok}Geen aandachtspunten</span>`;

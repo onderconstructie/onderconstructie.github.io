@@ -218,6 +218,10 @@ button.oc-import { color:#047857; min-height:44px; }
 .okmsg { margin-top:0.75rem; font-size:0.875rem; color:#047857; background:#ecfdf5; border:1px solid #a7f3d0; border-radius:10px; padding:0.5rem 0.75rem; }
 .empty { font-size:0.9375rem; color:var(--slate-600); background:var(--slate-50); border-radius:12px; padding:0.875rem; }
 .warn { margin-top:0.75rem; }
+.to-board { margin-top:1rem; display:flex; flex-wrap:wrap; align-items:center; gap:0.5rem 0.75rem; }
+.to-board .btn { display:inline-flex; align-items:center; gap:0.375rem; color:var(--accent-dark); }
+.to-board svg { width:16px; height:16px; flex:none; }
+.to-board p { font-size:0.8125rem; color:var(--slate-500); flex:1; min-width:12rem; }
 @media (max-width:480px) { .draw-head .stat { order:3; flex-basis:100%; margin-left:2.125rem; } }
 .zoom:disabled { opacity:0.45; cursor:default; }
 .explain .inner a { padding:12px 4px; margin:0 -4px; }
@@ -857,6 +861,7 @@ function render() {
       ${likely.length ? `<h3 class="sub-h">Hoe ga je na of het klopt?</h3><p class="lead">Ga het na met feiten, en noteer wat je vond. Alleen wat klopt, pak je aan.</p><ul class="toets">${likely.map(l => `<li class="${l.uit ? 'u-' + l.uit : ''}"><b>${esc(l.text)}</b><input data-cid="${l.id}" data-k="toets" value="${esc(l.toets)}" maxlength="240" placeholder="Bv. 20 dossiers nakijken, met het loket praten, cijfers opvragen" aria-label="Hoe ga je na of ${esc(l.text)} klopt?">
         <div class="uit" role="group" aria-label="${esc('Uitkomst: ' + l.text)}">${UIT.map(([v, t]) => `<button type="button" data-act="uit" data-id="${l.id}" data-v="${v}" aria-pressed="${l.uit === v}">${t}</button>`).join('')}</div></li>`).join('')}</ul>
       ${weg && weg === likely.length ? '<p class="warn">Geen van de gekozen oorzaken klopt. Kies een andere oorzaak hierboven, of vul de oorzaken aan bij stap 3.</p>' : ok ? `<p class="okmsg">${ok === 1 ? 'Eén oorzaak klopt' : ok + ' oorzaken kloppen'}. Die pak je nu aan.</p>` : ''}` : ''}
+      ${likely.some(hot) ? `<div class="to-board"><button type="button" class="btn btn-ghost" data-act="to-board" aria-describedby="to-board-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="11" rx="1.5"/><rect x="17" y="4" width="4" height="7" rx="1.5"/></svg>Zet in Takenbord</button><p id="to-board-hint">Takenbord opent. Vink daar aan wat je overneemt: eerst nagaan, en wat klopt, aanpakken.</p></div>` : ''}
     </div>
   </section>`;
   sizeSvg();
@@ -934,6 +939,10 @@ document.addEventListener('click', e => {
     case 'del-unit': { const undo = snapshot(), k = state.units.indexOf(u); state.units.splice(k, 1); state.current = (state.units[k - 1] || state.units[0] || {}).id || null; save(); render(); toast(`${title(u)} verwijderd`, undo); return; }
     case 'vb-wis': { const undo = snapshot(); state.units = state.units.filter(x => !x.voorbeeld); state.current = (state.units[0] || {}).id || null; save(); render(); toast('Voorbeeld gewist', undo); return; }
     case 'vb-eigen': u.voorbeeld = false; save(); render(); toast('Het voorbeeld is nu van jou'); return;
+    case 'to-board': {   // zoals in Schildpaddiagram: meteen klaarleggen en Takenbord openen om over te nemen
+      if (u.voorbeeld) { toast('Een voorbeeld gaat niet naar Takenbord. Kies eerst "Maak er mijn eigen van".'); return; }
+      clearTimeout(save.t); try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} publish();
+      location.href = '../kanban/?van=visgraat'; return; }
   }
 });
 

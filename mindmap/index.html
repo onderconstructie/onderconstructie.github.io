@@ -201,7 +201,7 @@ button.oc-import { color:#047857; min-height:44px; }
 .mm-bar svg { width:17px; height:17px; flex-shrink:0; }
 .mm-edit { position:absolute; z-index:6; font:inherit; font-size:16px; font-weight:600; text-align:center; padding:0.25rem 0.5rem; border:2px solid var(--accent-dark); border-radius:10px; background:var(--wit); color:var(--slate-800); box-shadow:0 8px 24px rgba(15,23,42,0.14); outline:none; }
 .mm-tip { position:absolute; z-index:6; font-size:0.75rem; color:var(--slate-600); text-align:center; pointer-events:none; }
-.mm-tip { text-shadow:0 0 3px #fff, 0 0 3px #fff; }
+.mm-tip { background:var(--wit); border-radius:6px; padding:1px 4px; box-shadow:0 2px 8px rgba(15,23,42,0.10); }
 button.more { border:0; cursor:pointer; min-height:28px; }
 .macts button.add { color:var(--accent-dark); }
 .mtxt.hint:not(:focus) { font-style:italic; color:var(--slate-600); }
@@ -1094,9 +1094,12 @@ function overlay() {
     ${i ? `<button type="button" class="del" data-mm="del" aria-label="Verwijder dit idee${kids ? ' en zijn subtakken' : ''}" title="Verwijderen">${ICON.del}</button>` : ''}
   </div>`;
   const bar = ui.firstElementChild, bw = bar.offsetWidth, bh = bar.offsetHeight;
-  let top = box.y - bh - 10;
-  if (top < c.scrollTop + 2) top = box.y + box.h + 10;
   const left = Math.max(c.scrollLeft + 4, Math.min(box.x + box.w / 2 - bw / 2, c.scrollLeft + c.clientWidth - bw - 4));
+  // Boven of onder het idee: waar de balk de minste andere ideeën bedekt (gelijk: boven)
+  const others = [...c.querySelectorAll('[data-node]')].filter(g => g.dataset.node !== sel.id).map(g => g.querySelector('rect:last-of-type').getBoundingClientRect());
+  const hits = t => others.filter(r => { const x = r.left - cr.left + c.scrollLeft, y = r.top - cr.top + c.scrollTop; return x < left + bw && x + r.width > left && y < t + bh && y + r.height > t; }).length;
+  const up = box.y - bh - 10, down = box.y + box.h + 10;
+  let top = up < c.scrollTop + 2 ? down : hits(up) > hits(down) ? down : up;
   Object.assign(bar.style, { left: left + 'px', top: top + 'px' });
 }
 function reveal() {   // het gekozen idee (en zijn balk) in beeld schuiven
@@ -1610,8 +1613,20 @@ function fileBase(m) {
   const nm = slug(title(m)).replace(/^(mindmap|ideeenkaart)(-|$)/, '').slice(0, 50).replace(/-$/, '');
   return ['ideeenkaart', nm, iso].filter(Boolean).join('-');
 }
+// Voor een download: sjabloonvragen die je liet staan (plaatshouders zonder antwoord) weglaten, zodra je zelf iets invulde.
+function forExport(m) {
+  const ns = m.nodes, eigen = n => !n.hint && n.text.trim();
+  if (!ns.some((n, i) => i && plaats(n)) || !ns.some((n, i) => i && eigen(n))) return m;
+  const out = [];
+  for (let i = 0; i < ns.length; i++) {
+    const e = end(ns, i);
+    if (i && plaats(ns[i]) && !ns.slice(i + 1, e).some(eigen)) { i = e - 1; continue; }
+    out.push(ns[i]);
+  }
+  return { ...m, nodes: out };
+}
 function buildExport() {
-  const m = cur(), node = document.createElement('div');
+  const m = forExport(cur()), node = document.createElement('div');
   node.innerHTML = `<div style="display:flex;justify-content:center">${svgOf(m)}</div>`;
   const s = node.querySelector('svg'); s.style.maxWidth = '100%'; s.style.height = 'auto';
   const p = m.voorbeeld ? '' : ocProject(''), k = m.nodes.length - 1, dicht = m.nodes.some((n, i) => n.collapsed && hasKids(m.nodes, i));
@@ -1624,11 +1639,11 @@ document.addEventListener('click', async e => {
   const m = cur(), act = b.dataset.export || b.dataset.act;
   const base = fileBase(m);
   if (act === 'png' || act === 'pdf') {
-    const L = layout(m), w = L.width;
+    const L = layout(forExport(m)), w = L.width;
     toast('Bezig met downloaden…');
     try { const o = { width: Math.min(2400, Math.max(800, w + 80)), landscape: w > 640 && (!L.boom || w > L.height) }; await (act === 'png' ? ocExport.png(buildExport, base, o) : ocExport.pdf(buildExport, base, o)); toast(act === 'png' ? 'Afbeelding gedownload' : 'PDF gedownload'); }
     catch { toast('Downloaden lukte niet. Ben je online?'); }
-  } else if (act === 'svg') { saveBlob(new Blob(['<?xml version="1.0" encoding="UTF-8"?>\n' + svgOf(m)], { type:'image/svg+xml' }), base + '.svg'); toast('SVG gedownload'); }
+  } else if (act === 'svg') { saveBlob(new Blob(['<?xml version="1.0" encoding="UTF-8"?>\n' + svgOf(forExport(m))], { type:'image/svg+xml' }), base + '.svg'); toast('SVG gedownload'); }
   else if (act === 'copy' || act === 'mermaid') { try { await navigator.clipboard.writeText(act === 'copy' ? asList(m) : asMermaid(m)); toast(act === 'copy' ? 'Gekopieerd als lijst' : 'Diagramcode gekopieerd'); } catch { toast('Kopiëren lukte niet'); } }
   else if (act === 'gallery') openGallery();
   else if (act === 'expand') { m.nodes.forEach(n => n.collapsed = false); save(); render(); toast('Alles opengeklapt'); }

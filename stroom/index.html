@@ -198,6 +198,7 @@ button.oc-import { color:#047857; min-height:44px; }
 .hints { list-style:none; padding:0 1.125rem 1rem; display:grid; gap:0.375rem; }
 .hints li { display:flex; gap:0.5rem; font-size:0.8125rem; color:#92400e; background:var(--oranje-50); border:1px solid #fde68a; border-radius:10px; padding:0.4375rem 0.625rem; }
 .hints li.ok { color:#065f46; background:var(--accent-50); border-color:#a7f3d0; }
+.hints li svg { width:16px; height:16px; flex-shrink:0; margin-top:1px; }
 .hints a, .hints button.lnk { color:inherit; font-weight:700; text-decoration:underline; background:none; border:0; padding:0; cursor:pointer; font:inherit; }
 
 .vb-bar { display:flex; flex-wrap:wrap; align-items:center; gap:0.5rem 0.75rem; margin:0 1rem 0.75rem; padding:0.5rem 0.5rem 0.5rem 0.75rem; background:#fffbeb; border:1px solid #fde68a; border-radius:12px; font-size:0.875rem; line-height:1.4; color:#78350f; }
@@ -861,7 +862,7 @@ function hints(f) {
   edges(f).forEach(e => inc.set(e.to.id, inc.get(e.to.id) + 1));
   const name = n => `${f.nodes.indexOf(n) + 1}${n.text ? ' (' + n.text.slice(0, 30) + ')' : ''}`;
   f.nodes.forEach((n, i) => {
-    if (!n.text.trim() && n.type !== 'start' && n.type !== 'einde') out.push({ text:`Stap ${name(n)} heeft nog geen tekst.`, id:n.id });
+    if (!n.text.trim() && n.type !== 'start' && n.type !== 'einde' && n.id !== editId) out.push({ text:`Stap ${name(n)} heeft nog geen tekst.`, id:n.id });
     if (n.type === 'keuze' && !target(f, n, 'to')) out.push({ text:`Keuze ${name(n)}: kies waar "${n.yesLabel || 'ja'}" naartoe gaat.`, id:n.id });
     if (n.type === 'keuze' && (!n.no || n.no === 'none')) out.push({ text:`Keuze ${name(n)}: kies waar "${n.noLabel || 'nee'}" naartoe gaat.`, id:n.id });
     if (i > 0 && n.type !== 'start' && !inc.get(n.id)) out.push({ text:`Stap ${name(n)} is van nergens bereikbaar: geen enkele pijl komt er toe.`, id:n.id });
@@ -879,7 +880,7 @@ function hintsHTML(f) {
   const h = hints(f);
   return `${h.list.slice(0, 6).map(x => `<li>${ICON.info}<span>${esc(x.text)}${x.id ? ` <button type="button" class="lnk" data-act="goto" data-id="${x.id}">Toon</button>` : ''}</span></li>`).join('')}
           ${h.list.length > 6 ? `<li><span>En nog ${h.list.length - 6} punten.</span></li>` : ''}
-          ${!h.list.length && f.nodes.length > 2 ? `<li class="ok"><span>De stroom is sluitend${f.lanes.length && h.handoffs < 4 ? `, met ${h.handoffs} ${h.handoffs === 1 ? 'overdracht' : 'overdrachten'} tussen rollen` : ''}.</span></li>` : ''}
+          ${!h.list.length && f.nodes.length > 2 && !f.nodes.some(n => !n.text.trim() && n.type !== 'start' && n.type !== 'einde') ? `<li class="ok"><span>De stroom is sluitend${f.lanes.length && h.handoffs < 4 ? `, met ${h.handoffs} ${h.handoffs === 1 ? 'overdracht' : 'overdrachten'} tussen rollen` : ''}.</span></li>` : ''}
           ${h.handoffs >= 4 ? `<li><span>${h.handoffs} overdrachten tussen rollen. Elke overdracht is een plek waar werk kan blijven liggen: kunnen er minder?</span></li>` : ''}`;
 }
 // Passend: zo breed als de kaart, maar op een breed scherm nooit kleiner dan 85%, zodat de tekst leesbaar blijft.
@@ -1132,6 +1133,9 @@ document.addEventListener('click', async e => {
     case 'ns-prev': case 'ns-next': { const i = f.nodes.findIndex(x => x.id === editId), j = i + (act === 'ns-prev' ? -1 : 1); if (f.nodes[j]) openNode(f.nodes[j].id); return; }
     case 'add-after': {
       const i = f.nodes.indexOf(n); if (i < 0) return;
+      // Een lege stap die je net aanmaakte: niet laten staan, maar meteen die soort geven
+      if (n.type === 'stap' && !n.text.trim() && t.dataset.type === 'keuze') { Object.assign(n, node('keuze', '', n.lane), { id:n.id }); save(); openNode(n.id, { focus:true }); return; }
+      if (n.type === 'stap' && !n.text.trim() && t.dataset.type === 'stap') { openNode(n.id, { focus:true }); return; }
       const x = node(t.dataset.type, '', n.lane); f.nodes.splice(n.type === 'einde' ? i : i + 1, 0, x); save(); openNode(x.id, { focus:true }); return; }
     case 'new-flow': { const x = newFlow(state.flows.length ? 'Stroom ' + (state.flows.length + 1) : 'Mijn stroom'); state.flows.push(x); state.current = x.id; save(); openNode(x.nodes[1].id, { focus:true }); return; }
     case 'example': example(); return;

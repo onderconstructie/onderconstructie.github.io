@@ -1013,6 +1013,7 @@ function renderKenmerken(k) {
     ${locked ? `<div class="note green">${ICON.lock}<span><b>De kenmerken liggen vast, want het scoren is begonnen.</b> Zo kan niemand de maatstaf nog aanpassen nadat hij de opties zag.<br><button type="button" class="btn-s" id="unlock">Kenmerken aanpassen</button></span></div>`
       : `<div class="note green">${ICON.bulb}<span><b>Tip</b>: kies kenmerken die los van elkaar staan. Scoort een optie hoog op het ene, dan zegt dat nog niets over het andere. Wat elke optie hoe dan ook moet hebben, is geen kenmerk maar een voorwaarde: laat opties die er niet aan voldoen gewoon vallen.</span></div>`}
     <ol class="kgrid" id="klist" aria-label="Kenmerken">${list}</ol>
+    ${locked ? '' : '<p class="hint" style="margin-top:0.5rem">Enter brengt je naar het volgende kenmerk. Tik daarna in elk kenmerk de vraag en wat 1 en 5 betekenen.</p>'}
     ${!locked || k.kenmerken.some(x => !kScored(k, x.id)) ? `<div class="kbar">${locked ? '' : `<button type="button" class="add-btn" id="add-k"${canAdd ? '' : ' disabled'}>${ICON.plus}${canAdd ? 'Kenmerk' : 'Maximum 8 kenmerken'}</button>`}${kCount(k)}</div>` : ''}
     <div id="kwarn-wrap">${kWarn(k)}</div>
     ${locked ? '' : opts}
@@ -1250,6 +1251,7 @@ function go(step, focus = true) {
   if (step === 'scoren' && k.opties.some(o => !o.naam.trim())) { toast('Geef elke optie een naam, of verwijder ze.'); return; }
   k.step = step; dev = { open:false, opt:null, kenmerk:'', feit:'' };
   save(); render(); toTop();
+  if (focus && step === 'opties' && !k.opties.length && !hasScores(k)) { addO(); return; }   // meteen de eerste optie typen
   if (focus) { const s = document.querySelector('.step[aria-current="step"]'); s && s.focus({ preventScroll:true }); }
 }
 
@@ -1365,7 +1367,9 @@ $('stage').addEventListener('keydown', e => {
   if (kc && e.target.matches('input')) {
     e.preventDefault();
     const fields = [...kc.querySelectorAll('input')], i = fields.indexOf(e.target);
-    if (i < fields.length - 1) { fields[i + 1].focus(); return; }
+    // In de naam: Enter gaat naar het volgende kenmerk, zodat een rij kenmerken niet in de vraag of de ankers belandt
+    if (i > 0 && i < fields.length - 1) { fields[i + 1].focus(); return; }
+    if (i === 0 && !e.target.value.trim()) return;
     const next = kc.nextElementSibling && kc.nextElementSibling.querySelector('input');
     if (next) next.focus(); else if (k.kenmerken.length < MAX_K && !hasScores(k)) addK(); else { const g = document.querySelector('[data-go]'); g && g.focus(); }
     return;

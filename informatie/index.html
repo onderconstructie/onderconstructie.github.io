@@ -1742,7 +1742,14 @@ $('view').addEventListener('keydown', e => {
 function parseLines(text) {
   return text.split(/\r?\n/).map(t => t.trim().replace(/^(?:(?:[-*+•·▪◦–]|\d+[.)]|\[[ xX]\])\s+)+/, '').trim()).filter(Boolean).map(t => t.slice(0, 120));
 }
-const newField = name => normField({ id:uid(), name, req:true });
+// Een nieuw gegeven met een naam die duidelijk over een mens gaat, staat meteen als persoonsgegeven (je kan het nog aanpassen).
+function guessPers(v) {
+  const l = v.toLowerCase();
+  if (/gezondheid|ziekte|medisch|handicap|beperking|diagnose|geloof|godsdienst|religie|afkomst|etnisch|strafregister|veroordeling|vakbond|seksu|politieke? (voorkeur|overtuiging)|biometr|vingerafdruk/.test(l)) return 'gevoelig';
+  if (/rijksregister|insz|(^|[\s(])((voor|achter|familie)?naam|adres|woonplaats|domicilie|geboorte\w*|e-?mail\w*|telefoon\w*|gsm\w*|iban|rekeningnummer|bankrekening|nationaliteit|geslacht|burgerlijke staat|inkomen|loon|handtekening|foto|identiteitskaart|nummerplaat)(\b|$)/.test(l)) return 'ja';
+  return 'nee';
+}
+const newField = name => normField({ id:uid(), name, req:true, pers:guessPers(name) });
 $('view').addEventListener('submit', e => {
   const form = e.target.closest('form[data-form]'); if (!form) return;
   e.preventDefault();
