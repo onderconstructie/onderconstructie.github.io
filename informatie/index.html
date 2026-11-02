@@ -295,6 +295,12 @@ button.oc-import { color:#047857; min-height:44px; }
 }
 .access { list-style:none; padding:0 1.125rem 1.125rem; display:grid; gap:0.375rem; font-size:0.875rem; color:var(--slate-700); }
 .access b { color:var(--slate-800); }
+.access li.doel { padding:0.5rem 0; border-top:1px solid var(--slate-100); }
+.access li.doel:first-child { border-top:0; }
+.grond { display:grid; gap:0.25rem; margin-top:0.5rem; }
+.grond > span { font-size:0.8125rem; font-weight:600; color:var(--slate-600); }
+.grond.leeg > span::after { content:'nog niet ingevuld'; margin-left:0.5rem; font-weight:600; color:#92400e; }
+.grond .field { min-height:44px; }
 .view-tools { display:flex; flex-wrap:wrap; gap:0.5rem; padding:0 1.125rem 0.875rem; }
 
 /* Proefformulier */
@@ -932,7 +938,7 @@ function normField(f) {
 function normProject(p) {
   const q = {
     id: str(p.id, 20) || uid(), name: str(p.name, 80) || 'Project',
-    uses: (Array.isArray(p.uses) ? p.uses : []).filter(u => u && typeof u.name === 'string').map(u => ({ id: str(u.id, 20) || uid(), name: u.name.slice(0, 120), kind: pick(KINDS, u.kind, 'beslissing') })),
+    uses: (Array.isArray(p.uses) ? p.uses : []).filter(u => u && typeof u.name === 'string').map(u => ({ id: str(u.id, 20) || uid(), name: u.name.slice(0, 120), kind: pick(KINDS, u.kind, 'beslissing'), ...(str(u.grond, 160).trim() ? { grond: str(u.grond, 160) } : {}) })),
     roles: (Array.isArray(p.roles) ? p.roles : []).filter(r => r && typeof r.name === 'string').map(r => ({ id: str(r.id, 20) || uid(), name: r.name.slice(0, 60) })),
     subjects: (Array.isArray(p.subjects) ? p.subjects : []).filter(s => s && typeof s.name === 'string').map(s => ({ id: str(s.id, 20) || uid(), name: s.name.slice(0, 80), desc: str(s.desc, 400), plural: str(s.plural, 80), fields: (Array.isArray(s.fields) ? s.fields : []).filter(f => f && typeof f === 'object').map(normField) })),
     links: (Array.isArray(p.links) ? p.links : []).filter(l => l && typeof l === 'object').map(l => ({ id: str(l.id, 20) || uid(), a: str(l.a, 20), b: str(l.b, 20), verb: typeof l.verb === 'string' ? l.verb.slice(0, 40) : 'heeft', q: pick(QTY, l.q, 'meer') }))
@@ -1409,7 +1415,8 @@ function viewPrivacy(p, S) {
     ${!rows.length ? `<p class="hint pad">Nog geen persoonsgegevens. Duid bij een gegeven aan of het iets zegt over een mens.</p>` : ''}
     ${gev.length ? `<h3 class="sec-title">Gevoelige persoonsgegevens</h3>${table(gev)}` : ''}
     ${rest.length ? `<h3 class="sec-title">Andere persoonsgegevens</h3>${table(rest)}` : ''}
-    ${doel.length ? `<h3 class="sec-title">Per doel</h3><p class="hint pad" style="margin-top:-0.25rem">Waarvoor verwerk je welke persoonsgegevens? Zo is ook het register van verwerkingen opgebouwd.</p><ul class="access">${doel.map(d => `<li><b>${esc(d.u.name)}</b> <span class="chip-kind">${esc(label(KINDS, d.u.kind).toLowerCase())}</span><br>${esc(d.list.map(x => x.f.name + (x.f.pers === 'gevoelig' ? ' (gevoelig)' : '')).join(', '))}</li>`).join('')}</ul>` : ''}
+    ${doel.length ? `<h3 class="sec-title">Per doel</h3><p class="hint pad" style="margin-top:-0.25rem">Waarvoor verwerk je welke persoonsgegevens, en waarom mag dat? Noteer per doel de regel of de toestemming waarop je steunt. Zo is ook het register van verwerkingen opgebouwd.</p><ul class="access">${doel.map(d => `<li class="doel"><b>${esc(d.u.name)}</b> <span class="chip-kind">${esc(label(KINDS, d.u.kind).toLowerCase())}</span><br>${esc(d.list.map(x => x.f.name + (x.f.pers === 'gevoelig' ? ' (gevoelig)' : '')).join(', '))}
+      <label class="grond${(d.u.grond || '').trim() ? '' : ' leeg'}"><span>Waarom mag dit?</span><input class="field" data-in="use-grond" data-use="${esc(d.u.id)}" data-k="ug:${esc(d.u.id)}" value="${esc(d.u.grond || '')}" maxlength="160" autocomplete="off" placeholder="Bv. het premiereglement, een wet, of toestemming" aria-label="${esc('Waarom mag je persoonsgegevens gebruiken voor: ' + d.u.name)}"></label></li>`).join('')}</ul>` : ''}
     ${access ? `<h3 class="sec-title">Wie kan erbij?</h3><ul class="access">${access}</ul>` : ''}
   </section>`;
 }
@@ -1669,6 +1676,7 @@ $('view').addEventListener('input', e => {
   }
   if (s && k === 'subj-desc') { s.desc = t.value.slice(0, 400); save(); return; }
   if (s && k === 'subj-plural') { s.plural = t.value.slice(0, 80); save(); renderSchema(); return; }
+  if (k === 'use-grond') { const u = p.uses.find(x => x.id === t.dataset.use); if (u) { u.grond = t.value.slice(0, 160); t.closest('.grond').classList.toggle('leeg', !u.grond.trim()); save(); } return; }
   if (k === 'use-name') { const u = p.uses.find(x => x.id === t.closest('.use').dataset.use); if (u) { u.name = t.value.slice(0, 120); save(); } return; }
   if (k === 'role-name') { const r = p.roles.find(x => x.id === t.closest('.role').dataset.role); if (r) { r.name = t.value.slice(0, 60); save(); } return; }
   if (k === 'link-verb') { const l = p.links.find(x => x.id === t.closest('.ln').dataset.l); if (l) { l.verb = t.value.slice(0, 40); save(); renderSchema(); } return; }
@@ -1788,6 +1796,10 @@ function loadExample() {
   [['toek', 'beslissing', 'Beslissen of de premie toegekend wordt'], ['ber', 'berekening', 'Het premiebedrag berekenen'], ['brief', 'brief', 'De beslissing per brief of e-mail laten weten'],
    ['ctl', 'controle', 'Een controle ter plaatse plannen'], ['bet', 'ander', 'De premie uitbetalen'], ['cijf', 'rapport', 'Cijfers per gemeente voor het beleid'], ['tevr', 'rapport', 'Tevredenheid van aanvragers meten']]
     .forEach(([k, kind, name]) => U[k] = { id:uid(), kind, name });
+  // Waarom mag je de persoonsgegevens per doel gebruiken?
+  Object.assign(U.toek, { grond:'Premiereglement van de stad' }); Object.assign(U.ber, { grond:'Premiereglement van de stad' }); Object.assign(U.brief, { grond:'Premiereglement van de stad' });
+  Object.assign(U.ctl, { grond:'Premiereglement van de stad: de stad mag ter plaatse controleren' }); Object.assign(U.bet, { grond:'Premiereglement van de stad' });
+  Object.assign(U.cijf, { grond:'Opvolging van het beleid: alleen totalen per gemeente, niets per persoon' });
   [['zelf', 'Aanvrager zelf'], ['beh', 'Dossierbehandelaar'], ['dh', 'Diensthoofd'], ['bk', 'Boekhouding'], ['alle', 'Alle medewerkers van de afdeling']].forEach(([k, name]) => R[k] = { id:uid(), name });
   const F = (name, desc, type, req, src, uses, pers, keep, see, edit, ex, more) => normField({ id:uid(), name, desc, type, req, src, uses:uses.map(k => U[k].id), pers, keep, see:see.map(k => R[k].id), edit:edit.map(k => R[k].id), ex, ...(more || {}) });
   const BEW = '5 jaar na de laatste betaling';
@@ -1907,8 +1919,8 @@ function csvFields(p, subjects) {
 }
 function csvPrivacy(p) {
   const S = analyse(p);
-  return [['Gegeven', 'Onderwerp', 'Gevoelig', 'Waarvoor', 'Wie mag zien', 'Wie mag wijzigen', 'Bewaartermijn', 'Bron', 'Aandachtspunten']]
-    .concat(privRows(p).map(x => [x.f.name, x.s.name, x.f.pers === 'gevoelig' ? 'ja' : 'nee', jc(x.uses), jc(x.see), jc(x.edit), x.f.keep, label(SRC, x.f.src), S.filter(y => y.f === x.f.id && (y.kind === 'privacy' || y.kind === 'weg')).map(y => y.msg).join(' ')]));
+  return [['Gegeven', 'Onderwerp', 'Gevoelig', 'Waarvoor', 'Waarom mag dit', 'Wie mag zien', 'Wie mag wijzigen', 'Bewaartermijn', 'Bron', 'Aandachtspunten']]
+    .concat(privRows(p).map(x => [x.f.name, x.s.name, x.f.pers === 'gevoelig' ? 'ja' : 'nee', jc(x.uses), jc(x.f.uses.map(id => { const u = p.uses.find(y => y.id === id); return u && (u.grond || '').trim() ? u.name + ': ' + u.grond.trim() : ''; })), jc(x.see), jc(x.edit), x.f.keep, label(SRC, x.f.src), S.filter(y => y.f === x.f.id && (y.kind === 'privacy' || y.kind === 'weg')).map(y => y.msg).join(' ')]));
 }
 function csvGlossary(p) {
   return [['Begrip', 'Waar', 'Betekenis']].concat(glossary(p).flatMap(g => g.items.map(i => [g.term, i.where, i.desc])));
@@ -1946,7 +1958,7 @@ function pdfPrivacy(p) {
   return `<div data-oc-keep style="font-size:12.5px;color:#475569;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;margin-bottom:10px"><b style="color:#1e293b">Een vertrekpunt, geen juridisch advies.</b> Voor het register van verwerkingen en de privacyverklaring. Laat het nakijken door wie in je organisatie over privacy gaat.</div>
     <div style="font-size:13px;color:#334155;margin-bottom:6px">${rows.length} persoonsgegevens, waarvan ${gev.length} gevoelig. ${ps.length} aandachtspunten.</div>
     ${gev.length ? table(gev, 'Gevoelige persoonsgegevens') : ''}${rest.length ? table(rest, 'Andere persoonsgegevens') : ''}
-    ${perDoel(p, rows).length ? X.list(X.h2('Per doel'), perDoel(p, rows).map(d => `<div data-oc-keep style="font-size:12.5px;color:#334155;padding:4px 0;border-bottom:1px solid #f1f5f9"><b style="color:#1e293b">${esc(d.u.name)}</b> <span style="color:#64748b;font-size:11px">${esc(label(KINDS, d.u.kind).toLowerCase())}</span><div>${esc(d.list.map(x => x.f.name + (x.f.pers === 'gevoelig' ? ' (gevoelig)' : '')).join(', '))}</div></div>`)) : ''}
+    ${perDoel(p, rows).length ? X.list(X.h2('Per doel'), perDoel(p, rows).map(d => `<div data-oc-keep style="font-size:12.5px;color:#334155;padding:4px 0;border-bottom:1px solid #f1f5f9"><b style="color:#1e293b">${esc(d.u.name)}</b> <span style="color:#64748b;font-size:11px">${esc(label(KINDS, d.u.kind).toLowerCase())}</span><div>${esc(d.list.map(x => x.f.name + (x.f.pers === 'gevoelig' ? ' (gevoelig)' : '')).join(', '))}</div><div style="font-size:11.5px;color:#64748b;margin-top:2px">Waarom mag dit: ${(d.u.grond || '').trim() ? esc(d.u.grond.trim()) : X.miss('niet ingevuld')}</div></div>`)) : ''}
     ${ps.length ? X.list(X.h2('Aandachtspunten'), ps.map(x => `<div data-oc-keep style="font-size:12.5px;color:#334155;padding:4px 0;border-bottom:1px solid #f1f5f9"><b style="color:#1e293b">${esc(x.name)}</b> <span style="color:#64748b">${esc(x.where)}</span> · <span style="color:#92400e">${esc(x.msg)}</span></div>`)) : ''}`;
 }
 function buildPdf(what) {

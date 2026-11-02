@@ -581,7 +581,6 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
               <button data-act="csv" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h8"/></svg>Download CSV</button>
               <p class="ocb-note">Een afbeelding, PDF of CSV kan je niet terug openen.</p>
           <div class="sep"></div>
-          <div class="sep"></div>
           <button data-act="wipe" class="danger" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>Alles wissen</button>
             </div>
           </div>
@@ -833,7 +832,8 @@ function ocUndoable(restore) {
 function ocPublish() {
   ocShare.publish(OC_ID, OC_TOOL, state.analyses.filter(a => !a.voorbeeld).map(a => ({ name:a.name, items:[
     ...a.gaps.flatMap(g => g.actions.filter(x => !x.done && x.text && x.text.trim()).map(x => ({ type:'actie', text:x.text, who:x.who, when:x.by }))),
-    ...a.gaps.filter(g => g.theme && g.theme.trim()).map(g => ({ type:'taak', text:'Verschil wegwerken: ' + g.theme.trim(), note: rated(g) ? `impact ${g.impact}/4 · haalbaarheid ${g.feas}/4` : undefined })) ] })));
+    // Een thema met acties is al opgesplitst in werk: dan gaan alleen de acties mee, anders komt het dubbel in Takenbord.
+    ...a.gaps.filter(g => g.theme && g.theme.trim() && !g.actions.some(x => x.text && x.text.trim())).map(g => ({ type:'taak', text:'Verschil wegwerken: ' + g.theme.trim(), note: rated(g) ? `impact ${g.impact}/4 · haalbaarheid ${g.feas}/4` : undefined })) ] })));
 }
 
 async function ocWipeAll() {
@@ -1019,12 +1019,16 @@ function gapCalc(g) {
   const diff = b - a, pct = a !== 0 ? diff / Math.abs(a) * 100 : null;
   return { a, b, diff, pct, dir: diff < 0 ? 'omlaag' : diff > 0 ? 'omhoog' : 'gelijk' };
 }
+// Is de maat zelf een percentage? Dan is het verschil in procentpunten, niet in procent.
+const isPct = g => /^\s*(%|procent|percent)/i.test(g.asis.unit || '') || (/%/.test(g.asis.value || '') && !(g.asis.unit || '').trim());
 function gapText(g) {
-  const c = gapCalc(g), u = g.asis.unit ? ' ' + g.asis.unit : '';
+  const c = gapCalc(g);
   if (!c) return null;
+  const pp = isPct(g), u = pp ? '%' : g.asis.unit ? ' ' + g.asis.unit : '';
   const sign = c.diff > 0 ? '+' : c.diff < 0 ? '−' : '';
   const pct = c.pct == null ? '' : ` (${sign}${nf(Math.abs(c.pct), 0)}%)`;
-  return { line:`${nf(c.a)} → ${nf(c.b)}${u}`, delta:`${sign}${nf(Math.abs(c.diff))}${u}${pct}`,
+  const du = pp ? ` ${Math.abs(c.diff) === 1 ? 'procentpunt' : 'procentpunten'}` : u;
+  return { line:`${nf(c.a)}${pp ? '%' : ''} → ${nf(c.b)}${u}`, delta:`${sign}${nf(Math.abs(c.diff))}${du}${pct}`,
            dir: c.dir === 'omlaag' ? 'lager is beter' : c.dir === 'omhoog' ? 'hoger is beter' : 'al bereikt', c };
 }
 
@@ -1102,7 +1106,7 @@ function gapBoxHTML(g) {
   if (!gt) return `<div class="qual">Nog zonder cijfers. Geef wat je nu meet en wat je wil halen, dan zie je het verschil.</div>`;
   const { a, b } = gt.c, max = Math.max(Math.abs(a), Math.abs(b)) * 1.15 || 1;
   const pa = Math.max(0, Math.min(100, a / max * 100)), pb = Math.max(0, Math.min(100, b / max * 100));
-  const u = g.asis.unit ? ' ' + esc(g.asis.unit) : '';
+  const u = isPct(g) ? '%' : g.asis.unit ? ' ' + esc(g.asis.unit) : '';
   return `<div class="big">${esc(gt.delta)}<span class="dir">${esc(gt.dir)}</span></div>
     <div class="bar" aria-hidden="true"><span class="track"></span>
       <span class="span" style="left:${Math.min(pa, pb)}%;width:${Math.abs(pb - pa)}%"></span>
@@ -1290,7 +1294,7 @@ function kloofkaart(a, big) {
           <div style="position:absolute;left:0;right:0;top:5px;height:4px;border-radius:2px;background:#f1f5f9"></div>
           <div style="position:absolute;left:${x1}%;width:${Math.max(0.5, x2 - x1)}%;top:4px;height:6px;border-radius:3px;background:${QBAR[q]}${q === 'liggen' ? ';border:1px dashed #94a3b8;box-sizing:border-box' : ''}"></div>
           <div style="position:absolute;left:${pos(va)}%;top:1px;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:#fff;border:2px solid #475569;box-sizing:border-box"></div>
-          <div style="position:absolute;left:${pos(vb)}%;top:1px;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:#1e293b;border:2px solid #fff;box-sizing:border-box;box-shadow:0 0 0 1px #1e293b"></div>
+          <div style="position:absolute;left:${pos(vb)}%;top:1px;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:#047857;border:2px solid #fff;box-sizing:border-box;box-shadow:0 0 0 1px #047857"></div>
         </div>
         <span style="font-size:12px;font-weight:700;color:#1e293b;font-variant-numeric:tabular-nums;white-space:nowrap;min-width:3.25em;text-align:right">${e(pct)}</span></div>
         <div style="font-size:12px;color:#64748b;font-variant-numeric:tabular-nums">${e(gt.line)}</div>`;
@@ -1304,7 +1308,7 @@ function kloofkaart(a, big) {
   }).join('');
   const legend = `<div style="display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:#64748b;margin-top:6px;align-items:center">
     <span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;border:2px solid #475569;vertical-align:-1px"></span> nu</span>
-    <span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#1e293b;vertical-align:-1px"></span> doel</span>
+    <span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#047857;vertical-align:-1px"></span> doel</span>
     ${['eerst', 'plannen', 'snel'].map(k => `<span><span style="display:inline-block;width:14px;height:6px;border-radius:3px;background:${QBAR[k]};vertical-align:1px"></span> ${QUADS[k].name.toLowerCase()}</span>`).join('')}
     <span>stipjes: bewijs per soort</span></div>`;
   return rows + legend;
@@ -1601,19 +1605,19 @@ function asMarkdown() {
   const a = cur();
   let md = `# ${a.name}\n\n`;
   if (a.question) md += `> ${a.question}\n\n`;
-  const as = analysisSignals(a); if (as.length) md += as.map(s => `- ⚠ ${s.text}`).join('\n') + '\n\n';
+  const as = analysisSignals(a); if (as.length) md += as.map(s => `- Let op: ${s.text}`).join('\n') + '\n\n';
   ranked(a).forEach((g, i) => {
     const gt = gapText(g);
     md += `## ${i + 1}. ${g.theme || 'Thema zonder naam'} (${QUADS[quadOf(g)].name})\n\n`;
-    md += `**Huidige situatie**${g.evidence.length ? '' : ' _(nog niet bewezen)_'}: ${g.asis.text || '—'}`;
+    md += `**Huidige situatie**${g.evidence.length ? '' : ' _(nog niet bewezen)_'}: ${g.asis.text || '(nog leeg)'}`;
     if (g.asis.indicator || g.asis.value) md += ` (${[g.asis.indicator, [g.asis.value, g.asis.unit].filter(Boolean).join(' ')].filter(Boolean).join(': ')})`;
-    md += `\n\n**Gewenste situatie**: ${g.tobe.text || '—'}`;
+    md += `\n\n**Gewenste situatie**: ${g.tobe.text || '(nog leeg)'}`;
     if (g.tobe.value) md += ` (doel ${g.tobe.value}${g.asis.unit ? ' ' + g.asis.unit : ''}${g.tobe.by ? ', tegen ' + fmtDate(g.tobe.by) : ''})`;
     md += `\n\n**Verschil**: ${gt ? `${gt.line}, ${gt.delta} (${gt.dir})` : 'kwalitatief'}\n\n`;
     md += `**Bewijs**:\n${g.evidence.length ? g.evidence.map(e => `- ${evLine(e)}`).join('\n') : '- Geen: dit is nog niet bewezen'}\n\n`;
     const whys = g.whys.filter(w => w.trim());
     md += `**Waarom**:\n${whys.length ? whys.map((w, k) => `${k + 1}. ${w}`).join('\n') : '- Nog niet onderzocht'}\n\n`;
-    md += `**Wat is nodig**:\n${g.actions.length ? g.actions.map(x => `- [${x.done ? 'x' : ' '}] ${x.text || '—'}${x.who ? ` (${x.who}` : ' (wie?'}${x.by ? `, tegen ${fmtDate(x.by)})` : ')'}`).join('\n') : '- Nog geen acties'}\n\n`;
+    md += `**Wat is nodig**:\n${g.actions.length ? g.actions.map(x => `- ${x.text || '(nog leeg)'}${x.who ? ` (${x.who}` : ' (wie?'}${x.by ? `, tegen ${fmtDate(x.by)})` : ')'}${x.done ? ', klaar' : ''}`).join('\n') : '- Nog geen acties'}\n\n`;
     md += rated(g) ? `**Prioriteit**: impact ${g.impact}/4, haalbaarheid ${g.feas}/4\n` : '**Prioriteit**: nog niet ingeschat\n';
     const s = gapSignals(g); if (s.length) md += `\n**Aandachtspunten**: ${s.map(x => x.text).join('; ')}\n`;
     md += '\n';
@@ -1628,7 +1632,7 @@ function asCSV() {
     const gt = gapText(g), whys = g.whys.filter(w => w.trim());
     return [i + 1, g.theme, g.asis.text, g.asis.indicator, g.asis.value, g.asis.unit, g.tobe.text, g.tobe.value, g.tobe.by,
       gt ? gt.delta : 'kwalitatief', g.evidence.map(evLine).join(' | '), g.evidence.length, g.evidence.length ? 'nee' : 'ja',
-      whys[whys.length - 1] || '', whys.join(' > '), g.actions.map(a => `${a.done ? '[x] ' : ''}${a.text}${a.who ? ' (' + a.who + ')' : ''}${a.by ? ' tegen ' + a.by : ''}`).join(' | '),
+      whys[whys.length - 1] || '', whys.join(' > '), g.actions.map(a => `${a.done ? '(klaar) ' : ''}${a.text}${a.who ? ' (' + a.who + ')' : ''}${a.by ? ' tegen ' + a.by : ''}`).join(' | '),
       g.impact || '', g.feas || '', QUADS[quadOf(g)].name, gapSignals(g).map(s => s.text).join(' | ')];
   });
   return '﻿' + [head, ...rows].map(r => r.map(cell).join(';')).join('\r\n');
@@ -1659,7 +1663,7 @@ function buildExport() {
           <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${t.color};margin-right:6px"></span>${t.name}</span>
           <span style="height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden"><span style="display:block;height:6px;width:${n ? k / n * 100 : 0}%;background:${t.color}"></span></span>
           <span style="text-align:right">${k}/${n}</span></div>`; }).join('')}
-      ${analysisSignals(a).map(s => `<div style="font-size:12px;color:${s.soft ? '#64748b' : '#b45309'};margin-top:6px">⚠ ${e(s.text)}</div>`).join('')}
+      ${analysisSignals(a).map(s => `<div style="font-size:12px;color:${s.soft ? '#64748b' : '#b45309'};margin-top:6px">Let op: ${e(s.text)}</div>`).join('')}
     </div>
     <div><div style="${S.h}">Volgorde</div>
       ${ranked(a).map((g, i) => `<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;font-size:13px;color:#1e293b;padding:4px 0;border-bottom:1px solid #eef2f6">

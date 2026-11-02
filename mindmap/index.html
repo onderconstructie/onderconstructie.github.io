@@ -421,7 +421,7 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
       <p><b>Sjabloon projectaanpak</b>: tien hoofdtakken om een project voor te bereiden: doel, globale planning, risico, afhankelijkheden, betrokkenen, communicatie, monitoring, mensen en competenties, budget, en gebouw en informatica. De vragen staan schuin. Je antwoord komt eronder: kies een vraag en druk Enter, begin te typen, of tik op +. Zo blijft de vraag staan. Wat je niet nodig hebt, verwijder je. Heb je in de app een projectnaam ingesteld, dan staat die in het midden.</p>
       <p><b>Sjabloon eerst het echte probleem</b>: zes vragen om het probleem scherp te krijgen, voor je een oplossing kiest. Handig als iemand vraagt om "een opleiding" of "een nieuw programma": wat loopt er mis, wat moet er anders gaan, waaraan merk je dat het beter gaat, wat houdt het tegen, wie doet wat, en wie volgt op?</p>
       <p><b>Sjabloon voorstel onderbouwen</b>: wat stel je voor en waarom, met drie mogelijkheden naast elkaar (niets veranderen, het minimum doen, het volledig aanpakken). Bij elke mogelijkheid: wat het oplevert, wat het moeilijk maakt, hoe lang het duurt, wat het kost (mensen, aankopen, onderhoud) en de risico's. Zo vergelijk je ze op dezelfde punten.</p>
-      <p>Je eigen ideeën (niet de vragen uit een sjabloon) liggen klaar voor andere tools, bijvoorbeeld om er in <a href="https://onderconstructie.github.io/prioriteit/">Prioriteren</a> of <a href="https://onderconstructie.github.io/vinkje/">Vinkje</a> mee verder te gaan.</p>
+      <p>Je eigen ideeën (niet de vragen uit een sjabloon) liggen klaar voor andere tools. Wat onder een tak als "Wie" of "Doelgroepen" staat, gaat mee als betrokkene, wat onder "Risico's" staat als risico, de rest als taak. Zo kan je er bijvoorbeeld in <a href="https://onderconstructie.github.io/prioriteit/">Prioriteren</a> of <a href="https://onderconstructie.github.io/vinkje/">Vinkje</a> mee verder.</p>
     </div>
   </details>
 </main>
@@ -1241,13 +1241,22 @@ document.addEventListener('click', async e => {
 });
 
 /* Klaarleggen: hoofdtakken en hun ideeën als taken (voorbeelden niet) */
+// Wat is een blad? Dat zegt de tak er net boven: onder "Wie" of "Doelgroepen" staan mensen, onder "Risico's" risico's.
+// Maatregelen en acties blijven werk ("Beheersmaatregelen per risico" is dus een taak).
+const soortVan = tak => { const t = String(tak || '').trim();
+  if (/maatregel|aanpak|actie|oplossing|stappen|wie moet|wie doet wat/i.test(t)) return 'taak';
+  if (/^wie\b|betrokken|doelgroep|belanghebbend|partners|gebruikers|klanten/i.test(t)) return 'betrokkene';
+  if (/risico|gevaren|bedreiging/i.test(t)) return 'risico';
+  return 'taak'; };
 function publish() {
   const lists = [];
   state.maps.filter(m => !m.voorbeeld).forEach(m => {
     const items = [];
     let main = '';
-    // ideeën zonder subtakken zijn de concrete punten; de hoofdtak gaat mee als notitie
-    m.nodes.forEach((n, i) => { if (n.level === 1) main = n.text.trim(); if (n.level >= 1 && n.text.trim() && !n.hint && !hasKids(m.nodes, i)) items.push({ type:'taak', text:n.text.trim(), note: n.level > 1 ? main || undefined : undefined }); });
+    // ideeën zonder subtakken zijn de concrete punten; de hoofdtak gaat mee als notitie.
+    // De hoofdtak zegt ook wat het is: onder "Wie" of "Betrokkenen" staan mensen, onder "Risico's" risico's. De rest is werk.
+    const kop = [];   // de tak boven elk niveau
+    m.nodes.forEach((n, i) => { kop[n.level] = n.text.trim(); if (n.level === 1) main = n.text.trim(); if (n.level >= 1 && n.text.trim() && !n.hint && !hasKids(m.nodes, i)) items.push({ type: n.level > 1 ? soortVan(kop[n.level - 1]) : 'taak', text:n.text.trim(), note: n.level > 1 ? main || undefined : undefined }); });
     // ook een kaart met alleen sjabloonvragen telt als werk: een kerncijfer met het aantal ideeën
     items.push({ type:'kerncijfer', text:'mindmap.ideeen', note:String(m.nodes.length - 1) });
     if (m.nodes.length > 1 || m.nodes[0].text.trim()) lists.push({ name: title(m), items });
