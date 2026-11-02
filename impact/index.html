@@ -893,7 +893,7 @@ const HIGH = {
   cult: { why:'Een gewoonte verandert niet met een nieuwe procedure. Mensen moeten het nieuwe gedrag zien, oefenen en er erkenning voor krijgen.',
     how:['Beschrijf het gedrag dat je wil zien, zo concreet dat je het kan waarnemen.', 'Laat leidinggevenden het voordoen en bespreek het geregeld in het teamoverleg.', 'Volg op hoe groepen meegaan en waar ze vastzitten.'],
     watch:['Wat vandaag beloond of gewaardeerd wordt', 'Ongeschreven regels', 'Wat mensen kwijtspelen, ook als het nieuwe beter is'],
-    tool:{ name:'Weerstand', path:'/weerstand/' } },
+    tool:{ name:'Gedragsverandering', path:'/gedrag/', what:'om het nieuwe gedrag uit te werken' } },
   tech: { why:'Een nieuw systeem werkt pas als mensen het kunnen en willen gebruiken, en de gegevens kloppen.',
     how:['Laat echte gebruikers vroeg testen, met hun eigen dossiers.', 'Geef opleiding vlak vóór het gebruik, en voorzie de eerste weken hulp op de werkvloer.', 'Maak een plan om gegevens over te zetten en na te kijken.'],
     watch:['Toegangen en rechten op de eerste dag', 'Koppelingen met andere systemen', 'Wat er gebeurt als het systeem uitvalt'],
@@ -989,7 +989,7 @@ function newProfile(name) {
 const START_NAME = /^(Profiel \d+|Nieuw profiel|Doelgroep \d+|Nieuwe doelgroep)$/;
 function newAnalysis(name, change) {
   const p = newProfile('Doelgroep 1');
-  return { id:uid(), name:name || ocProject('Mijn analyse'), change:change || '', profiles:[p], current:p.id, view:'profiel', cmp:'reeks' };
+  return { id:uid(), name:name || ocProject('Mijn analyse'), change:change || '', ...(change ? { changeFrom:true } : {}), profiles:[p], current:p.id, view:'profiel', cmp:'reeks' };
 }
 // Een nieuwe analyse neemt "de verandering in één zin" over uit een andere tool, als die er is.
 const sharedChangeText = () => { const c = ocSharedChange(OC_ID); return c ? c.text.slice(0, 300) : ''; };
@@ -1037,7 +1037,7 @@ function signals(p) {
   const out = [];
   if (!touched(p)) return out;   // de lege toestand en de samenvatting zeggen dit al
   hotDims(p).forEach(d => { if (!hasMeasure(p, d)) out.push({ kind:'warn', text:`Grote impact op ${d.name.toLowerCase()}, nog geen maatregel.`, dim:d.id }); });
-  if (p.dims.cult.score >= HOT) out.push({ kind:'tip', html:'Gewoonten veranderen niet op een dag: reken op tijd, voorbeeldgedrag en herhaling. Neem dit mee in je aanpak van weerstand, bijvoorbeeld met <a href="https://onderconstructie.github.io/weerstand/">de Weerstand-tool</a>.' });
+  if (p.dims.cult.score >= HOT) out.push({ kind:'tip', html:'Gewoonten veranderen niet op een dag: reken op tijd, voorbeeldgedrag en herhaling. Werk het nieuwe gedrag uit met <a href="https://onderconstructie.github.io/gedrag/">Gedragsverandering</a>, en volg met <a href="https://onderconstructie.github.io/weerstand/">Weerstand</a> op hoe groepen meegaan.' });
   return out;
 }
 
@@ -1295,7 +1295,7 @@ const findAct = (p, dim, id) => p.dims[dim].actions.find(x => x.id === id);
 document.addEventListener('input', e => {
   const t = e.target, a = cur(), p = curProfile(a);
   if (t.id === 'a-name') { a.name = t.value.slice(0, 70); save(); renderTabs(); unitLabel(a); return; }
-  if (t.id === 'a-change') { a.change = t.value; autosize(t); save(); renderEmpty(); return; }
+  if (t.id === 'a-change') { a.change = t.value; delete a.changeFrom; autosize(t); save(); renderEmpty(); return; }
   if (!p) return;
   if (t.id === 'p-name') { p.name = t.value.slice(0, 60); save(); renderProfiles(); return; }
   if (t.dataset.what) { p.dims[t.dataset.what].what = t.value; autosize(t); save(); return; }
@@ -1456,13 +1456,14 @@ function ocPublish() {
 /* Kerncijfers van de actieve analyse voor een samenvattingstool: waarde als tekst in note, punt als decimaalteken.
    Alleen als er minstens één dimensie gescoord is (schaal 1–4; niet gescoorde dimensies tellen niet mee). */
 function kerncijfers(a) {
-  const filled = a.profiles.filter(touched), ch = (a.change || '').trim();
+  const filled = a.profiles.filter(touched), ch = a.changeFrom ? '' : (a.change || '').trim();   // een overgenomen zin is niet van hier
   if (!filled.length) return ch ? [{ name:'Kerncijfers', items:[{ type:'kerncijfer', text:'verandering', note:ch }] }] : [];
   const all = filled.flatMap(p => scores(p)).filter(Boolean);
   const hot = DIMS.filter(d => filled.some(p => p.dims[d.id].score >= HOT));
   return [{ name:'Kerncijfers', items: [
     ['impact.max', String(Math.max(...all))],
     ['impact.gemiddeld', (all.reduce((s, v) => s + v, 0) / all.length).toFixed(1)],
+    ['impact.zwaarst', Math.max(...filled.map(avgOf)).toFixed(1)],   // gemiddelde van de zwaarst geraakte doelgroep: zo rekent het Veranderprofiel
     ['impact.breed', String(Math.max(...filled.map(p => hotDims(p).length)))],   // zwaarste profiel, niet de optelsom
     ['impact.gescoord', String(Math.min(...filled.map(p => scores(p).filter(Boolean).length)))],   // 5 = alles ingevuld
     ['impact.cultuur', String(Math.max(...filled.map(p => p.dims.cult.score || 0)))],

@@ -199,7 +199,7 @@ button { background:none; border:0; cursor:pointer; }
 .vb-btn { min-height:44px; padding:0.375rem 0.625rem; border-radius:10px; font-size:0.875rem; font-weight:600; background:#fff; border:1px solid #e2e8f0; }
 .vb-wis { color:#b91c1c; border-color:#fecaca; }
 .vb-eigen { color:#047857; border-color:#a7f3d0; }
-.vb-tag { font-size:0.6875rem; font-weight:600; padding:0 0.375rem; border-radius:999px; background:#fef3c7; color:#92400e; }
+.vb-tag { font-size:0.75rem; font-weight:600; padding:0 0.375rem; border-radius:999px; background:#fef3c7; color:#92400e; }
 .tab.active .vb-tag { background:#fde68a; }
 .ex-btn { margin-top:0.75rem; min-height:44px; padding:0 1rem; border-radius:10px; border:1.5px solid #a7f3d0; background:#fff; color:#047857; font-size:0.875rem; font-weight:600; }
 .ex-btn:hover { background:#ecfdf5; }
@@ -236,6 +236,8 @@ button.oc-import { color:#047857; min-height:44px; }
 .item-fields label { display:flex; align-items:center; gap:0.25rem; min-height:44px; border:1px solid var(--slate-200); border-radius:8px; padding:0 0.5rem; background:var(--slate-50); font-size:0.8125rem; color:var(--slate-500); }
 .item-fields label:focus-within { border-color:var(--accent); background:#fff; }
 .item-fields svg { width:14px; height:14px; flex:none; }
+.item-meta .late { color:#b45309; font-weight:600; }
+.item-fields label.late { border-color:#f59e0b; background:#fffbeb; color:#b45309; }
 .item-fields input { border:0; background:none; outline:none; font-size:0.875rem; color:var(--slate-700); min-width:0; min-height:42px; }
 .item-fields input[type=text] { width:7.5rem; }
 .item-fields input[type=date] { width:8.5rem; }
@@ -275,9 +277,9 @@ dialog, [role="dialog"], [role="alertdialog"], .modal, .modal-backdrop { overscr
 <body>
 
 <header class="header">
-  <a href="https://onderconstructie.github.io/projectmanagement/" class="back-link" aria-label="Terug naar Projectmanagement">
+  <a href="https://onderconstructie.github.io/projectmanagement/#vergaderen" class="back-link" aria-label="Terug naar Vergaderen">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-    Projectmanagement
+    Vergaderen
   </a>
   <div class="logo">
     <svg viewBox="0 0 80 80" fill="none" aria-hidden="true">
@@ -703,7 +705,24 @@ const ocExport = (() => {
 const KEY = 'vinkje.v1';
 const uid = () => Math.random().toString(36).slice(2, 10);
 function load() {
-  try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && Array.isArray(d.lists) && d.lists.length) return d; } catch {}
+  try {
+    const d = JSON.parse(localStorage.getItem(KEY));
+    if (d && Array.isArray(d.lists)) {
+      // Kapotte lijsten of items overslaan in plaats van de pagina te laten vastlopen
+      const ISO = /^\d{4}-\d{2}-\d{2}$/;
+      const lists = d.lists.filter(l => l && typeof l === 'object').map(l => Object.assign({}, l, {
+        id: typeof l.id === 'string' && l.id ? l.id : uid(),
+        name: (typeof l.name === 'string' || typeof l.name === 'number') ? String(l.name).slice(0, 60) : 'Naamloos',
+        items: (Array.isArray(l.items) ? l.items : []).filter(i => i && typeof i === 'object' && typeof i.text === 'string' && i.text.trim()).map(i => {
+          const it = Object.assign({}, i, { id: typeof i.id === 'string' && i.id ? i.id : uid(), text: i.text.slice(0, 500), done: !!i.done });
+          if (typeof it.who !== 'string' || !it.who.trim()) delete it.who;
+          if (typeof it.when !== 'string' || !ISO.test(it.when)) delete it.when;
+          return it;
+        })
+      }));
+      if (lists.length) return Object.assign({}, d, { lists, current: lists.some(l => l.id === d.current) ? d.current : lists[0].id });
+    }
+  } catch {}
   const first = { id:uid(), name:'Mijn lijst', items:[] };
   return { lists:[first], current:first.id, doneOpen:true };
 }
@@ -742,12 +761,16 @@ function fmtWhen(iso) {
   return isNaN(d) ? iso : d.toLocaleDateString('nl-BE', { day:'numeric', month:'short' });
 }
 function metaText(it) { return [it.who, it.when ? 'tegen ' + fmtWhen(it.when) : ''].filter(Boolean).join(' · '); }
+// Over datum: een open item met een datum vóór vandaag
+const todayISO = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
+const isLate = it => !it.done && it.when && it.when < todayISO();
 function itemHTML(it) {
   const fields = cur().fields && !it.done;
-  const meta = !fields && (it.who || it.when) ? `<div class="item-meta">${esc(metaText(it))}</div>` : '';
+  const late = isLate(it);
+  const meta = !fields && (it.who || it.when) ? `<div class="item-meta">${esc(metaText(it))}${late ? ' · <b class="late">te laat</b>' : ''}</div>` : '';
   const edit = fields ? `<div class="item-fields">
       <label title="Wie">${ICON_USER}<input type="text" data-f="who" value="${esc(it.who || '')}" placeholder="wie" aria-label="Wie" maxlength="80"></label>
-      <label title="Tegen wanneer">${ICON_CAL}<input type="date" data-f="when" value="${esc(it.when || '')}" aria-label="Tegen wanneer"></label>
+      <label title="${late ? 'Te laat' : 'Tegen wanneer'}"${late ? ' class="late"' : ''}>${ICON_CAL}<input type="date" data-f="when" value="${esc(it.when || '')}" aria-label="${late ? 'Tegen wanneer, te laat' : 'Tegen wanneer'}"></label>
     </div>` : '';
   return `<li class="item${it.done ? ' done' : ''}" data-id="${it.id}">
     <button class="check" aria-label="${it.done ? 'Niet meer afgevinkt' : 'Afvinken'}"><span class="box">${ICON_CHECK}</span></button>
@@ -848,6 +871,7 @@ document.addEventListener('change', e => {
   const v = inp.value.trim().slice(0, 80);
   if (v) it[inp.dataset.f] = v; else delete it[inp.dataset.f];
   save(); renderTabs();
+  if (inp.dataset.f === 'when') { const lab = inp.closest('label'); lab.classList.toggle('late', isLate(it)); lab.title = isLate(it) ? 'Te laat' : 'Tegen wanneer'; }
 });
 $('add-input').addEventListener('paste', e => {
   const text = (e.clipboardData || window.clipboardData).getData('text');

@@ -204,7 +204,7 @@ textarea.field { resize:vertical; min-height:4.25rem; line-height:1.45; }
 .vb-btn { min-height:44px; padding:0.375rem 0.625rem; border-radius:10px; font-size:0.875rem; font-weight:600; background:#fff; border:1px solid #e2e8f0; }
 .vb-wis { color:#b91c1c; border-color:#fecaca; }
 .vb-eigen { color:#047857; border-color:#a7f3d0; }
-.vb-tag { font-size:0.6875rem; font-weight:600; padding:0 0.375rem; border-radius:999px; background:#fef3c7; color:#92400e; }
+.vb-tag { font-size:0.75rem; font-weight:600; padding:0 0.375rem; border-radius:999px; background:#fef3c7; color:#92400e; }
 .tab.active .vb-tag { background:#fde68a; }
 .ex-btn { margin-top:0.75rem; min-height:44px; padding:0 1rem; border-radius:10px; border:1.5px solid #a7f3d0; background:#fff; color:#047857; font-size:0.875rem; font-weight:600; }
 .ex-btn:hover { background:#ecfdf5; }
@@ -223,7 +223,10 @@ button.oc-import { color:#047857; min-height:44px; }
 /* Bewaren, foutmelding, acties */
 .err { margin:0.375rem 0.125rem 0; font-size:0.875rem; font-weight:500; color:#b91c1c; }
 .add-input[aria-invalid="true"] { border-color:#dc2626; background:var(--wit); }
-.save-row { display:flex; justify-content:flex-end; margin-top:0.75rem; }
+.save-row { display:flex; justify-content:flex-end; align-items:center; gap:0.5rem; flex-wrap:wrap; margin-top:0.75rem; }
+.save-row .oc-import { margin-right:auto; }
+button.oc-import { color:#047857; min-height:44px; }
+.dec-act .meta .late { color:#b45309; font-weight:600; }
 .save-btn { min-height:44px; padding:0 1.25rem; font-size:0.9375rem; border-radius:10px; }
 @media (max-width:480px) { .save-btn { width:100%; } }
 .acts-edit { display:flex; flex-direction:column; gap:0.375rem; }
@@ -305,9 +308,9 @@ dialog, [role="dialog"], [role="alertdialog"], .modal, .modal-backdrop { overscr
 <body>
 
 <header class="header">
-  <a href="https://onderconstructie.github.io/projectmanagement/" class="back-link" aria-label="Terug naar Onder Constructie">
+  <a href="https://onderconstructie.github.io/projectmanagement/#vergaderen" class="back-link" aria-label="Terug naar Vergaderen">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-    Onder Constructie
+    Vergaderen
   </a>
   <div class="logo">
     <svg viewBox="0 0 80 80" fill="none" aria-hidden="true">
@@ -378,7 +381,7 @@ dialog, [role="dialog"], [role="alertdialog"], .modal, .modal-backdrop { overscr
           <button type="button" class="add-act" id="add-act">+ Nog een actie</button>
         </div>
       </div>
-      <div class="save-row"><button type="submit" class="btn btn-primary save-btn">Bewaar beslissing</button></div>
+      <div class="save-row"><button type="button" class="oc-import" data-oc-types="besluit" id="oc-imp" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v11M7.5 9.5L12 14l4.5-4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>Overnemen uit…</button><button type="submit" class="btn btn-primary save-btn">Bewaar beslissing</button></div>
       <datalist id="who-list"></datalist>
     </form>
 
@@ -616,6 +619,25 @@ function ocPublish() {
   ] })));
 }
 
+/* Overnemen: beslissingen (soort 'besluit') uit andere tools. De knop verschijnt pas als een andere tool er klaarlegt. */
+document.addEventListener('click', async e => {
+  if (!e.target.closest('#oc-imp')) return;
+  const picked = await ocShare.pick({ types:['besluit'], self:OC_ID, title:'Beslissingen overnemen', intro:'Kies beslissingen uit andere tools. Ze komen in deze log, met hun reden en datum.' });
+  if (!picked.length) return;
+  const l = cur(), have = new Set(l.items.map(i => i.what.trim().toLowerCase())), restore = snapshot();
+  let n = 0;
+  picked.forEach(p => {
+    const what = String(p.text || '').trim().slice(0, 300);
+    if (!what || have.has(what.toLowerCase())) return; have.add(what.toLowerCase());
+    l.items.push({ id:uid(), what, why:p.note ? String(p.note).slice(0, 2000) : '', who:p.who ? String(p.who).slice(0, 120) : '',
+      date:/^\d{4}-\d{2}-\d{2}/.test(p.when || '') ? String(p.when).slice(0, 10) : today(), alt:'', status:'genomen', note:'',
+      created:Date.now() + n, bron:String(p.source || '').slice(0, 60) || undefined });
+    n++;
+  });
+  save(); render();
+  toast(n ? `${n} ${n === 1 ? 'beslissing' : 'beslissingen'} overgenomen` : 'Die beslissingen staan er al', n ? restore : undefined);
+});
+
 async function ocWipeAll() {
   if (!await ocConfirm(`Alles wissen in ${OC_TOOL}?`, 'Alle logs en beslissingen verdwijnen. Je kan dit nog ongedaan maken tot je iets anders doet.', 'Alles wissen')) return;
   const copy = JSON.parse(JSON.stringify(state));
@@ -731,10 +753,23 @@ const KEY = 'beslissingen.v1';
 const uid = () => Math.random().toString(36).slice(2, 10);
 const today = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
 function load() {
-  try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && Array.isArray(d.logs) && d.logs.length) {
-    // oudere bewaringen hebben geen acties: die blijven gewoon laden (acties zijn optioneel)
-    d.logs.forEach(l => { if (!Array.isArray(l.items)) l.items = []; l.items.forEach(it => { if (it.actions && !Array.isArray(it.actions)) delete it.actions; }); });
-    return d; } } catch {}
+  try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && Array.isArray(d.logs)) {
+    // Elke log, beslissing en actie apart nakijken: één kapot stuk mag de rest van de log niet meenemen.
+    // Oudere bewaringen hebben geen acties: die blijven gewoon laden (acties zijn optioneel).
+    const str = v => typeof v === 'string' ? v : typeof v === 'number' ? String(v) : '';
+    const logs = d.logs.filter(l => l && typeof l === 'object').map(l => Object.assign({}, l, {
+      id: str(l.id) || uid(), name: str(l.name) || 'Naamloos',
+      items: (Array.isArray(l.items) ? l.items : []).filter(it => it && typeof it === 'object').map(it => {
+        const o = Object.assign({}, it, { id: str(it.id) || uid(), what: str(it.what).trim() || 'Zonder titel', why: str(it.why), who: str(it.who), date: str(it.date),
+          alt: str(it.alt), note: str(it.note), status: ['genomen', 'herzien', 'ingetrokken'].includes(it.status) ? it.status : 'genomen', created: +it.created || 0 });
+        if (Array.isArray(it.actions)) o.actions = it.actions.filter(a => a && typeof a === 'object')
+          .map(a => Object.assign({}, a, { id: str(a.id) || uid(), text: str(a.text), who: str(a.who), when: str(a.when), done: !!a.done }));
+        else delete o.actions;
+        return o;
+      })
+    }));
+    if (logs.length) return Object.assign({}, d, { logs, current: logs.some(l => l.id === d.current) ? d.current : logs[0].id });
+  } } catch {}
   const first = { id:uid(), name:ocProject('Mijn project'), items:[] };
   return { logs:[first], current:first.id, lastWho:'' };
 }
@@ -751,6 +786,7 @@ function fmtDate(iso) {
   return isNaN(d) ? iso : d.toLocaleDateString('nl-BE', { day:'numeric', month:'short', year:'numeric' });
 }
 function actMeta(a) { return [a.who, a.when ? 'tegen ' + fmtDate(a.when) : ''].filter(Boolean).join(' · '); }
+const isLate = (a, it) => !a.done && a.when && a.when < today() && it.status !== 'ingetrokken';
 function sorted(items) {
   return [...items].sort((a, b) => (b.date || '').localeCompare(a.date || '') || b.created - a.created);
 }
@@ -858,7 +894,7 @@ $('replacing-x').addEventListener('click', () => setReplacing(null));
 /* ---------- Tekenen ---------- */
 const CHEV = '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
 function decHTML(it, l) {
-  const meta = [fmtDate(it.date), it.who].filter(Boolean).join(' · ');
+  const meta = [fmtDate(it.date), it.who, it.bron ? 'uit ' + it.bron : ''].filter(Boolean).join(' · ');
   const pill = it.status !== 'genomen' ? `<span class="pill ${it.status}">${STATUS[it.status]}</span>` : '';
   const metaLine = (pill || meta) ? `<span class="dec-meta" style="display:block">${pill}${esc(meta)}</span>` : '';
   const by = it.replacedBy && l.items.find(x => x.id === it.replacedBy);
@@ -878,7 +914,7 @@ function decHTML(it, l) {
   const acts = it.actions || [];
   const actList = acts.length ? `<ul class="dec-acts" aria-label="Acties">${acts.map(a => `<li class="dec-act${a.done ? ' done' : ''}" data-aid="${a.id}">
       <button type="button" class="act-check" aria-pressed="${!!a.done}" aria-label="Klaar: ${esc(a.text)}"><span class="act-box">${ICON_CHECK}</span></button>
-      <span><span class="txt">${esc(a.text)}</span>${actMeta(a) ? `<span class="meta">${esc(actMeta(a))}</span>` : ''}</span></li>`).join('')}</ul>` : '';
+      <span><span class="txt">${esc(a.text)}</span>${actMeta(a) ? `<span class="meta">${esc(actMeta(a))}${isLate(a, it) ? ' · <b class="late">te laat</b>' : ''}</span>` : ''}</span></li>`).join('')}</ul>` : '';
   if (!open) return `<li class="dec ${it.status}" data-id="${it.id}">${head}${actList}</li>`;
   return `<li class="dec open ${it.status}" data-id="${it.id}">${head}
     <div class="dec-edit">
@@ -936,8 +972,9 @@ function render() {
 
   const active = l.items.filter(i => i.status === 'genomen').length;
   const openActs = l.items.reduce((n, i) => n + (i.actions || []).filter(a => !a.done).length, 0);
+  const lateActs = l.items.reduce((n, i) => n + (i.actions || []).filter(a => isLate(a, i)).length, 0);
   $('count-line').textContent = total
-    ? `${total} ${total === 1 ? 'beslissing' : 'beslissingen'}${active !== total ? `, ${active} van kracht` : ''}${openActs ? ` · ${openActs} open ${openActs === 1 ? 'actie' : 'acties'}` : ''}`
+    ? `${total} ${total === 1 ? 'beslissing' : 'beslissingen'}${active !== total ? `, ${active} van kracht` : ''}${openActs ? ` · ${openActs} open ${openActs === 1 ? 'actie' : 'acties'}` : ''}${lateActs ? `, ${lateActs} te laat` : ''}`
     : '';
   $('count-line').hidden = !total;
 

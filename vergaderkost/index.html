@@ -295,9 +295,9 @@ button:not(:disabled):active, summary:active { filter:brightness(0.93); }
 <body>
 
 <header class="header">
-  <a href="https://onderconstructie.github.io/projectmanagement/" class="back-link" aria-label="Terug naar Onder Constructie">
+  <a href="https://onderconstructie.github.io/projectmanagement/#vergaderen" class="back-link" aria-label="Terug naar Vergaderen">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-    Onder Constructie
+    Vergaderen
   </a>
   <div class="logo">
     <svg viewBox="0 0 80 80" fill="none" aria-hidden="true">
@@ -352,7 +352,7 @@ button:not(:disabled):active, summary:active { filter:brightness(0.93); }
           <label class="switch"><input type="checkbox" id="euro-on" aria-label="Ook in euro's tonen"><span></span></label>
         </div>
         <div class="opt" id="rate-row" hidden>
-          <div>Uurtarief per persoon<small>Een gemiddelde, jouw schatting.</small></div>
+          <div>Uurtarief per persoon<small>De loonkost voor de werkgever, niet je nettoloon. Een gemiddelde volstaat.</small></div>
           <label class="own">€ <input class="num" id="rate" type="number" inputmode="decimal" enterkeyhint="done" min="0" step="1" placeholder="…" aria-label="Uurtarief in euro"></label>
         </div>
       </div>
@@ -649,7 +649,21 @@ function freshState(prev) {
 function load() {
   try {
     const d = JSON.parse(localStorage.getItem(KEY));
-    if (d && Array.isArray(d.segments)) return Object.assign(freshState(), d);
+    if (d && Array.isArray(d.segments)) {
+      // Elk veld apart nakijken: één kapotte waarde mag de teller niet stilleggen
+      const f = freshState(), int = (v, lo, hi, fb) => Number.isFinite(+v) && v !== null && v !== '' && +v >= lo && +v <= hi ? Math.round(+v) : fb;
+      const segments = d.segments.filter(g => g && Number.isFinite(+g.s) && (g.e == null || Number.isFinite(+g.e)))
+        .map(g => ({ s: +g.s, e: g.e == null ? null : +g.e, n: int(g.n, 1, 500, 1) }));
+      const phase = ['setup', 'running', 'paused', 'done'].includes(d.phase) && (d.phase === 'setup' || segments.length) ? d.phase : 'setup';
+      return Object.assign(f, {
+        phase, segments: phase === 'setup' ? [] : segments,
+        people: int(d.people, 1, 500, f.people), planned: int(d.planned, 1, 600, f.planned), prep: int(d.prep, 0, 480, 0),
+        euroOn: d.euroOn === true, rate: Number.isFinite(+d.rate) && +d.rate > 0 ? +d.rate : null,
+        startPeople: int(d.startPeople, 1, 500, null),
+        history: Array.isArray(d.history) ? d.history.filter(x => x && Number.isFinite(+x.at) && Number.isFinite(+x.ms) && Number.isFinite(+x.allMs))
+          .map(x => ({ at: +x.at, ms: +x.ms, avg: Number.isFinite(+x.avg) ? +x.avg : 1, allMs: +x.allMs, eur: typeof x.eur === 'string' ? x.eur : '' })).slice(0, 10) : []
+      });
+    }
   } catch {}
   return freshState();
 }
@@ -676,7 +690,7 @@ function clock(ms) {
 // "4 u 12 min", onder het uur met seconden zodat je het ziet oplopen
 function personTime(ms, withSeconds = true) {
   const t = Math.round(ms / 1000), h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), s = t % 60;
-  if (h) return `${h} u ${m} min`;
+  if (h) return m ? `${h} u ${m} min` : `${h} u`;
   if (m) return withSeconds && m < 10 ? `${m} min ${s} s` : `${m} min`;
   return withSeconds ? `${s} s` : '0 min';
 }
@@ -685,7 +699,7 @@ function compareText(ms) {
   if (h <= 0) return '';
   if (h < 0.75) {
     const min = Math.round(ms / 60000);
-    return min < 1 ? 'nog geen minuut van één persoon' : `≈ ${min} min werk van één persoon`;
+    return min < 1 ? 'nog geen minuut van één persoon' : 'minder dan een achtste werkdag';
   }
   if (h < WERKDAG_U * 0.9) {
     const r = h / WERKDAG_U;
@@ -751,7 +765,10 @@ function render() {
 
   const started = st.segments.length > 0;
   setH($('cost'), `${started ? personTime(T.personMs) : '0 min'}<small>van iedereen samen</small>`);
-  $('compare').textContent = started ? (compareText(T.allMs) || 'nog geen minuut van één persoon') : 'Druk op start als de vergadering begint.';
+  // Vooraf: wat de vergadering zal kosten als ze loopt zoals gepland
+  const planMs = st.people * (st.planned + (st.prep || 0)) * 60000, planEur = euroText(planMs);
+  $('compare').textContent = started ? (compareText(T.allMs) || 'nog geen minuut van één persoon')
+    : `Gepland: ${st.people} × ${st.prep ? `(${plannedText(st.planned)} + ${st.prep} min voorbereiding)` : plannedText(st.planned)} = ${personTime(planMs, false)} werktijd, ${compareText(planMs)}${planEur ? ` (${planEur})` : ''}.`;
   const eur = started ? euroText(T.allMs) : '';
   $('euro').hidden = !eur;
   $('euro').textContent = eur ? `${eur} aan loonkost, met jouw uurtarief` : '';

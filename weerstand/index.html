@@ -1715,9 +1715,10 @@ function loadExample() {
   const bestaand = state.groups.find(x => x.voorbeeld);
   if (bestaand) { state.current = bestaand.id; save(); render(); toast('Dit is het voorbeeld'); return; }
   const ago = n => { const d = new Date(); d.setDate(d.getDate() - n); return d.toISOString().slice(0, 10); };
-  // w: per vorm drie signalen; b: per bron twee signalen (0 = herken ik niet … 3 = sterk, null = leeg)
+  // w: per vorm drie signalen; b: per bron twee signalen (0 = herken ik niet … 3 = sterk, null = leeg).
+  // Signalen die scan en bronnen delen (LINK), neemt de bron over uit de scan; wat hier bij de bron staat, telt daar niet.
   const fill = (w, b) => { const o = {}; w.forEach((v, li) => v.forEach((x, i) => { if (x !== null) o['w' + (li + 1) + i] = x; }));
-    BRONNEN.forEach((B, bi) => b[bi].forEach((x, i) => { if (x !== null) o['b' + B.id + i] = x; })); return o; };
+    BRONNEN.forEach((B, bi) => b[bi].forEach((x, i) => { if (x !== null && !LINK['b' + B.id + i]) o['b' + B.id + i] = x; })); return o; };   // gedeelde signalen volgen de scan
   const g1 = newGroup('Loketmedewerkers premies');
   g1.project = 'Digitaal premieloket'; g1.size = '14'; g1.change = 'Van papieren premieaanvragen naar het digitale premieloket';
   g1.scans = [
