@@ -1,0 +1,1812 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Beslisscore – Onder Constructie</title>
+<meta name="description" content="Kies eerlijk tussen een handvol opties. Leg eerst vast wat telt, scoor dan kenmerk per kenmerk, en laat het hoogste totaal beslissen.">
+<meta name="oc:groep" content="projecten">
+<meta name="oc:labels" content="inzicht">
+    <meta name="oc:pdca" content="plan">
+<meta name="oc:kort" content="Kies op feiten, niet op een goed verhaal.">
+<meta name="oc:volgorde" content="46">
+<meta name="oc:opslag" content="beslisscore.v1">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox='0 0 40 40' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='20' cy='20' r='18' fill='%23f8fafc' stroke='%23e2e8f0' stroke-width='1.5'/%3E%3Ccircle cx='10.5' cy='12.5' r='2.1' fill='%2394a3b8'/%3E%3Ccircle cx='15.25' cy='12.5' r='2.1' fill='%2394a3b8'/%3E%3Ccircle cx='20' cy='12.5' r='2.1' fill='%2394a3b8'/%3E%3Ccircle cx='24.75' cy='12.5' r='1.6' stroke='%23cbd5e1' stroke-width='1.1'/%3E%3Ccircle cx='29.5' cy='12.5' r='1.6' stroke='%23cbd5e1' stroke-width='1.1'/%3E%3Crect x='6.4' y='16.1' width='27.2' height='7.8' rx='3.9' fill='%23d1fae5'/%3E%3Ccircle cx='10.5' cy='20' r='2.1' fill='%2310b981'/%3E%3Ccircle cx='15.25' cy='20' r='2.1' fill='%2310b981'/%3E%3Ccircle cx='20' cy='20' r='2.1' fill='%2310b981'/%3E%3Ccircle cx='24.75' cy='20' r='2.1' fill='%2310b981'/%3E%3Ccircle cx='29.5' cy='20' r='1.6' stroke='%23047857' stroke-width='1.1'/%3E%3Ccircle cx='10.5' cy='27.5' r='2.1' fill='%2394a3b8'/%3E%3Ccircle cx='15.25' cy='27.5' r='2.1' fill='%2394a3b8'/%3E%3Ccircle cx='20' cy='27.5' r='1.6' stroke='%23cbd5e1' stroke-width='1.1'/%3E%3Ccircle cx='24.75' cy='27.5' r='1.6' stroke='%23cbd5e1' stroke-width='1.1'/%3E%3Ccircle cx='29.5' cy='27.5' r='1.6' stroke='%23cbd5e1' stroke-width='1.1'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/fonts/fonts.css">
+<link rel="preload" href="/fonts/dm-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/dm-sans-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+:root {
+  --slate-900:#0f172a; --slate-800:#1e293b; --slate-700:#334155; --slate-600:#475569;
+  --slate-500:#64748b; --slate-400:#94a3b8; --slate-300:#cbd5e1; --slate-200:#e2e8f0;
+  --slate-100:#f1f5f9; --slate-50:#f8fafc; --wit:#ffffff;
+  --accent:#10b981; --accent-dark:#047857; --accent-hover:#065f46; --accent-light:#d1fae5; --accent-50:#ecfdf5; --accent-200:#a7f3d0;
+  --rood:#ef4444; --amber:#d97706; --amber-ink:#92400e; --amber-50:#fffbeb; --amber-200:#fde68a;
+  --bottom: env(safe-area-inset-bottom, 0px);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body {
+  font-family:'DM Sans', system-ui, sans-serif; background:var(--slate-50); color:var(--slate-700);
+  line-height:1.5; min-height:100vh; -webkit-font-smoothing:antialiased;
+  display:flex; flex-direction:column;
+}
+button, input, textarea, select { font:inherit; color:inherit; }
+button { background:none; border:0; cursor:pointer; }
+a { color:var(--accent-dark); }
+[hidden] { display:none !important; }
+
+/* Kop */
+.header { background:var(--wit); border-bottom:1px solid var(--slate-200); padding:1.5rem 1.25rem 1.75rem; position:relative; text-align:center; }
+.back-link {
+  position:absolute; top:1.25rem; left:1.25rem; display:inline-flex; align-items:center; gap:0.5rem;
+  font-size:0.875rem; color:var(--slate-500); text-decoration:none; transition:color 0.2s;
+}
+.back-link:hover { color:var(--accent-dark); }
+.back-link svg { width:16px; height:16px; }
+.logo svg { width:56px; height:56px; }
+.title { font-size:1.625rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.03em; line-height:1.2; margin-top:0.5rem; }
+.subtitle { font-size:0.9375rem; color:var(--slate-500); max-width:34rem; margin:0.125rem auto 0; }
+
+.main { flex:1; width:100%; max-width:1080px; margin:0 auto; padding:1.25rem clamp(1rem, 2.5vw, 2.5rem) 3rem; display:flex; flex-direction:column; gap:1rem; }
+.card { background:var(--wit); border:1px solid var(--slate-200); border-radius:16px; box-shadow:0 1px 2px rgba(15,23,42,0.04); min-width:0; }
+.card-head { display:flex; align-items:center; gap:0.5rem; padding:1rem 0.75rem 0.5rem 1.125rem; }
+.project { flex:1; min-width:0; min-height:44px; font-size:1.25rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.02em; border:0; background:none; outline:none; padding:0.125rem 0; border-bottom:1.5px solid transparent; }
+.project:focus { border-bottom-color:var(--accent); }
+.project::placeholder { color:var(--slate-400); }
+.lbl { display:block; font-size:0.75rem; font-weight:600; color:var(--slate-500); margin-bottom:0.3125rem; }
+.label { font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.12em; color:var(--slate-500); }
+.field { width:100%; min-width:0; min-height:44px; padding:0.5625rem 0.75rem; border:1.5px solid var(--slate-200); border-radius:10px; background:var(--slate-50); outline:none; font-size:0.9375rem; transition:border-color 0.15s, background 0.15s; }
+.field:focus { border-color:var(--accent); background:var(--wit); }
+.field::placeholder { color:var(--slate-400); }
+textarea.field { resize:vertical; line-height:1.45; }
+select.field { appearance:auto; cursor:pointer; }
+.hint { font-size:0.8125rem; color:var(--slate-500); line-height:1.45; }
+.sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+
+/* Tabbladen (keuzes) */
+.tabs { display:flex; gap:0.375rem; flex-wrap:wrap; align-items:center; }
+.tab { min-height:44px; padding:0.375rem 0.875rem; border-radius:999px; border:1px solid var(--slate-200); background:var(--wit); font-size:0.875rem; font-weight:600; color:var(--slate-600); display:inline-flex; align-items:center; gap:0.375rem; max-width:16rem; }
+.tab span.nm { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tab[aria-pressed="true"] { background:var(--slate-800); border-color:var(--slate-800); color:var(--wit); }
+.tab.add { color:var(--accent-dark); border-style:dashed; border-color:var(--accent-200); }
+.tab.add:hover { background:var(--accent-50); }
+.vb-tag { font-size:0.75rem; font-weight:600; padding:0 0.375rem; border-radius:999px; background:#fef3c7; color:#92400e; }
+
+/* Stappenbalk */
+.steps { list-style:none; display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:0.375rem; padding:0.25rem 1.125rem 0; }
+.step { width:100%; min-height:56px; display:flex; align-items:center; justify-content:center; gap:0.5rem; padding:0.375rem 0.25rem 0.625rem; border-radius:10px 10px 0 0; color:var(--slate-500); font-size:0.9375rem; font-weight:600; position:relative; }
+.step::after { content:''; position:absolute; left:0; right:0; bottom:0; height:3px; border-radius:3px; background:var(--slate-200); }
+.step .n { flex:none; width:26px; height:26px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:0.8125rem; font-weight:700; border:1.5px solid var(--slate-300); color:var(--slate-600); background:var(--wit); font-variant-numeric:tabular-nums; }
+.step .n svg { width:14px; height:14px; }
+.step:hover:not([aria-disabled="true"]) { background:var(--slate-50); color:var(--slate-700); }
+.step.done .n { background:var(--accent-light); border-color:var(--accent-light); color:var(--accent-dark); }
+.step.done::after { background:var(--accent-200); }
+.step[aria-current="step"] { color:var(--slate-800); }
+.step[aria-current="step"] .n { background:var(--accent-dark); border-color:var(--accent-dark); color:var(--wit); }
+.step[aria-current="step"]::after { background:var(--accent-dark); }
+.step[aria-disabled="true"] { cursor:default; }
+.step[aria-disabled="true"] .n { border-style:dashed; }
+
+/* Werkvlak per stap */
+.stage { padding:1.25rem 1.125rem 1.25rem; border-top:1px solid var(--slate-100); }
+.intro { font-size:0.9375rem; color:var(--slate-600); max-width:46rem; }
+.intro b { color:var(--slate-800); display:block; font-size:1.0625rem; margin-bottom:0.125rem; letter-spacing:-0.01em; }
+.note { display:flex; gap:0.625rem; align-items:flex-start; margin-top:0.875rem; padding:0.75rem 0.875rem; border-radius:12px; background:var(--slate-50); border:1px solid var(--slate-100); font-size:0.875rem; color:var(--slate-600); line-height:1.45; }
+.note svg { width:18px; height:18px; flex:none; margin-top:0.0625rem; color:var(--slate-500); }
+.note.green { background:var(--accent-50); border-color:var(--accent-light); color:var(--slate-700); }
+.note.green svg { color:var(--accent-dark); }
+.note.amber { background:var(--amber-50); border-color:var(--amber-200); color:#78350f; }
+.note.amber svg { color:#b45309; }
+.note b { color:var(--slate-800); }
+.note.amber b { color:#78350f; }
+.note .btn-s { margin-top:0.5rem; }
+.btn-pri { display:inline-flex; align-items:center; justify-content:center; gap:0.5rem; min-height:48px; padding:0.5rem 1.25rem; border-radius:12px; background:var(--accent-dark); color:var(--wit); font-weight:600; font-size:0.9375rem; text-align:center; line-height:1.3; }
+.btn-pri:hover { background:var(--accent-hover); }
+.btn-pri[aria-disabled="true"] { background:var(--slate-200); color:var(--slate-600); cursor:default; }
+.btn-pri svg, .btn-sec svg { width:18px; height:18px; flex:none; }
+.btn-sec { display:inline-flex; align-items:center; justify-content:center; gap:0.5rem; min-height:48px; padding:0.5rem 1.125rem; border-radius:12px; background:var(--slate-100); color:var(--slate-700); font-weight:600; font-size:0.9375rem; text-align:center; line-height:1.3; }
+.btn-sec:hover { background:var(--slate-200); }
+.btn-s { display:inline-flex; align-items:center; justify-content:center; gap:0.375rem; min-height:44px; padding:0.25rem 0.875rem; border-radius:10px; border:1.5px solid var(--slate-200); background:var(--wit); font-size:0.875rem; font-weight:600; color:var(--accent-dark); text-align:left; line-height:1.3; }
+.btn-s:hover { border-color:var(--accent-200); background:var(--accent-50); }
+.btn-s svg { width:16px; height:16px; flex:none; }
+.link-btn { display:inline-flex; align-items:center; min-height:44px; padding:0.25rem 0.375rem; font-size:0.875rem; font-weight:600; color:var(--slate-600); text-decoration:underline; text-decoration-color:var(--slate-300); text-underline-offset:3px; border-radius:8px; }
+.link-btn:hover { color:var(--slate-800); background:var(--slate-50); }
+.stage-nav { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:0.5rem; margin-top:1.25rem; padding-top:1rem; border-top:1px solid var(--slate-100); }
+.stage-nav .grow { flex:1; }
+.add-btn { display:inline-flex; align-items:center; gap:0.375rem; min-height:44px; padding:0.375rem 0.875rem; border-radius:10px; border:1.5px dashed var(--accent-200); color:var(--accent-dark); font-size:0.875rem; font-weight:600; }
+.add-btn:hover:not(:disabled) { background:var(--accent-50); border-color:var(--accent); }
+.add-btn:disabled { color:var(--slate-500); border-color:var(--slate-200); cursor:default; }
+.add-btn svg { width:16px; height:16px; }
+.del { width:44px; height:44px; flex:none; display:flex; align-items:center; justify-content:center; color:var(--slate-400); border-radius:10px; }
+.del:hover { color:#b91c1c; background:#fef2f2; }
+.del svg { width:17px; height:17px; }
+
+/* Stap 1: kenmerken */
+.kgrid { list-style:none; display:grid; gap:0.75rem; margin-top:1rem; }
+@media (min-width:860px) { .kgrid { grid-template-columns:repeat(2, minmax(0,1fr)); } }
+.kc { border:1px solid var(--slate-200); border-radius:14px; padding:0.75rem 0.5rem 0.875rem 0.875rem; background:var(--wit); display:grid; gap:0.5rem; align-content:start; }
+.kc.locked { background:var(--slate-50); border-color:var(--slate-100); padding-right:0.875rem; }
+.kc.extra { border-color:var(--accent-200); box-shadow:0 0 0 3px var(--accent-50); }
+.kc-head { display:flex; align-items:center; gap:0.5rem; }
+.kc-nr { flex:none; width:28px; height:28px; border-radius:50%; background:var(--accent-light); color:var(--accent-dark); display:inline-flex; align-items:center; justify-content:center; font-size:0.875rem; font-weight:700; font-variant-numeric:tabular-nums; }
+.kc-name { font-weight:700; font-size:1rem; color:var(--slate-800); }
+.kc-anchors { display:grid; gap:0.5rem; }
+@media (min-width:520px) { .kc-anchors { grid-template-columns:repeat(2, minmax(0,1fr)); } }
+.kc-anchors .lbl b { color:var(--slate-700); }
+.kc-body { padding-right:0.375rem; display:grid; gap:0.5rem; }
+.kc-ro-name { font-weight:700; font-size:1rem; color:var(--slate-800); line-height:1.35; }
+.kc-ro-q { font-size:0.9375rem; color:var(--slate-600); }
+.kc-ro-a { display:grid; gap:0.375rem; font-size:0.875rem; color:var(--slate-600); }
+@media (min-width:520px) { .kc-ro-a { grid-template-columns:repeat(2, minmax(0,1fr)); } }
+.kc-ro-a span b { display:block; font-size:0.75rem; color:var(--slate-500); font-weight:600; }
+.kc-ro-a .leeg { color:var(--slate-500); font-style:italic; }
+.kc-tag { font-size:0.75rem; font-weight:600; color:var(--accent-dark); background:var(--accent-50); border:1px solid var(--accent-200); border-radius:999px; padding:0 0.5rem; white-space:nowrap; }
+.kbar { display:flex; flex-wrap:wrap; align-items:center; gap:0.5rem 0.875rem; margin-top:0.875rem; }
+.kcount { font-size:0.875rem; color:var(--slate-600); font-variant-numeric:tabular-nums; }
+.kcount b { color:var(--slate-800); }
+.dots6 { display:inline-flex; gap:3px; vertical-align:-1px; margin-right:0.375rem; }
+.dots6 i { width:8px; height:8px; border-radius:50%; background:var(--slate-200); }
+.dots6 i.on { background:var(--accent); }
+.dots6 i.over { background:var(--slate-500); }
+.tieb { display:grid; gap:0.25rem; margin-top:1rem; max-width:30rem; }
+
+/* Stap 2: opties en beoordelaars */
+.ogrid { display:grid; gap:1.25rem; margin-top:0.25rem; }
+@media (min-width:860px) { .ogrid { grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:2rem; } }
+.olist { list-style:none; display:grid; gap:0.5rem; margin-top:0.875rem; }
+.orow { display:grid; grid-template-columns:28px minmax(0,1fr) 44px; align-items:center; gap:0.375rem; }
+.orow .kc-nr { background:var(--slate-100); color:var(--slate-600); }
+.orow.rater .kc-nr { background:var(--wit); border:1.5px solid var(--slate-200); }
+.orow .state { grid-column:2 / 3; font-size:0.8125rem; color:var(--slate-500); margin-top:-0.125rem; }
+.ogrid .add-btn { margin-top:0.625rem; }
+.ogrid .hint { margin-top:0.5rem; }
+
+/* Stap 3: scoren */
+.sc { max-width:760px; margin:0 auto; }
+.sc-top { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:baseline; gap:0.25rem 0.75rem; font-size:0.875rem; color:var(--slate-600); }
+.sc-top b { color:var(--slate-800); font-variant-numeric:tabular-nums; }
+.prog { display:flex; gap:4px; margin:0.5rem 0 0.375rem; }
+.prog i { flex:1; height:6px; border-radius:99px; background:var(--slate-200); }
+.prog i.on { background:var(--accent-200); }
+.prog i.cur { background:var(--accent-dark); }
+.sc-lock { display:flex; align-items:center; gap:0.375rem; font-size:0.8125rem; color:var(--slate-500); }
+.sc-lock svg { width:14px; height:14px; flex:none; }
+.sc-k { font-size:1.625rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.025em; line-height:1.2; margin-top:1rem; overflow-wrap:anywhere; }
+.sc-q { font-size:1.0625rem; color:var(--slate-600); margin-top:0.25rem; }
+.anchors { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:0.5rem; margin:1rem 0 1.25rem; }
+.anchor { background:var(--slate-50); border:1px solid var(--slate-100); border-radius:12px; padding:0.625rem 0.75rem; font-size:0.875rem; color:var(--slate-700); line-height:1.4; overflow-wrap:anywhere; }
+.anchor b { display:block; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--slate-500); margin-bottom:0.125rem; }
+.anchor.hi { background:var(--accent-50); border-color:var(--accent-light); }
+.anchor.hi b { color:var(--accent-dark); }
+.anchor .leeg { color:var(--slate-500); font-style:italic; }
+.sc-opts { list-style:none; display:grid; gap:0.75rem; }
+.sc-opt { border:1.5px solid var(--slate-200); border-radius:14px; padding:0.75rem 0.75rem 0.875rem; background:var(--wit); transition:border-color 0.15s; }
+.sc-opt.has { border-color:var(--accent-200); }
+.sc-name { display:flex; justify-content:space-between; align-items:baseline; gap:0.5rem; font-weight:700; font-size:1.0625rem; color:var(--slate-800); margin:0 0.125rem 0.5rem; overflow-wrap:anywhere; }
+.sc-name small { font-size:0.8125rem; font-weight:600; color:var(--accent-dark); white-space:nowrap; }
+.scale { display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:0.375rem; }
+.scale button { min-height:64px; border-radius:12px; border:1.5px solid var(--slate-200); background:var(--wit); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.125rem; line-height:1.1; padding:0.375rem 0.125rem; font-variant-numeric:tabular-nums; transition:background 0.12s, border-color 0.12s; }
+.scale button b { font-size:1.375rem; font-weight:700; color:var(--slate-800); }
+.scale button small { font-size:0.75rem; color:var(--slate-500); text-align:center; }
+.scale button:hover { border-color:var(--accent-200); background:var(--accent-50); }
+.scale button[aria-checked="true"] { background:var(--accent-dark); border-color:var(--accent-dark); }
+.scale button[aria-checked="true"] b, .scale button[aria-checked="true"] small { color:var(--wit); }
+.sc-why { margin-top:0.5rem; font-size:0.875rem; min-height:44px; }
+.sc-nav { display:grid; grid-template-columns:auto minmax(0,1fr); gap:0.5rem; margin-top:1.25rem; }
+.sc-nav .btn-pri { width:100%; }
+.sc-keys { margin-top:0.75rem; text-align:center; }
+@media (hover:none) { .sc-keys { display:none; } }
+kbd { font:inherit; font-size:0.75rem; font-weight:600; color:var(--slate-700); background:var(--wit); border:1px solid var(--slate-300); border-bottom-width:2px; border-radius:5px; padding:0 0.3125rem; }
+
+.handoff { max-width:520px; margin:0 auto; text-align:center; padding:0.75rem 0 0.5rem; }
+.ho-ill { width:72px; height:72px; margin:0 auto 0.75rem; }
+.handoff h2 { font-size:1.5rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.02em; line-height:1.25; }
+.handoff p { margin-top:0.5rem; color:var(--slate-600); }
+.handoff .btn-pri { margin-top:1.25rem; min-width:14rem; }
+.ho-other { margin-top:1.25rem; padding-top:1rem; border-top:1px solid var(--slate-100); }
+.ho-other .chips { justify-content:center; }
+.chips { display:flex; flex-wrap:wrap; gap:0.375rem; margin-top:0.375rem; }
+.chip { min-height:44px; padding:0.25rem 0.875rem; border-radius:999px; border:1.5px solid var(--slate-200); background:var(--wit); font-size:0.875rem; font-weight:600; color:var(--slate-700); text-align:left; line-height:1.3; }
+.chip:hover { border-color:var(--accent-200); background:var(--accent-50); }
+.chip[aria-pressed="true"], .chip[aria-checked="true"] { background:var(--slate-800); border-color:var(--slate-800); color:var(--wit); }
+.imp { max-width:560px; margin:0 auto; }
+.imp h2 { font-size:1.5rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.02em; line-height:1.25; }
+.imp > p { margin-top:0.375rem; color:var(--slate-600); }
+.imp-list { list-style:none; display:grid; gap:0.5rem; margin-top:1rem; }
+.imp-list button { width:100%; min-height:56px; padding:0.625rem 1rem; border-radius:12px; border:1.5px solid var(--slate-200); background:var(--wit); text-align:left; font-weight:600; font-size:1rem; color:var(--slate-800); }
+.imp-list button:hover { border-color:var(--accent-200); background:var(--accent-50); }
+.imp .skip { margin-top:0.75rem; }
+.done-msg { text-align:center; max-width:520px; margin:0 auto; padding:0.5rem 0; }
+.done-msg h2 { font-size:1.375rem; color:var(--slate-800); letter-spacing:-0.02em; }
+.done-msg p { color:var(--slate-600); margin-top:0.375rem; }
+.done-msg .btn-pri { margin-top:1rem; }
+
+/* Stap 4: uitslag */
+.res { display:grid; grid-template-columns:minmax(0,1fr); gap:1.25rem; align-items:start; }
+@media (min-width:900px) { .res { grid-template-columns:minmax(0,5fr) minmax(0,6fr); gap:1.5rem; } }
+.res-col { display:grid; grid-template-columns:minmax(0,1fr); gap:1.25rem; min-width:0; }
+.win { border-radius:14px; background:var(--accent-50); border:1px solid var(--accent-light); padding:1rem 1.125rem 1.125rem; }
+.win .kick { font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--accent-dark); }
+.win h2 { font-size:1.625rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.025em; line-height:1.2; margin-top:0.125rem; overflow-wrap:anywhere; }
+.win p { color:var(--slate-700); margin-top:0.25rem; font-variant-numeric:tabular-nums; }
+.win.even { background:var(--amber-50); border-color:var(--amber-200); }
+.win.even .kick { color:var(--amber-ink); }
+.sec-h { font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.12em; color:var(--slate-500); margin-bottom:0.5rem; display:flex; justify-content:space-between; gap:0.5rem; }
+.rank { list-style:none; display:grid; gap:0.625rem; }
+.rk-top { display:flex; justify-content:space-between; align-items:baseline; gap:0.75rem; font-size:0.9375rem; }
+.rk-top span { font-weight:600; color:var(--slate-800); min-width:0; overflow-wrap:anywhere; }
+.rk-top span i { font-style:normal; color:var(--slate-500); font-weight:500; margin-right:0.375rem; font-variant-numeric:tabular-nums; }
+.rk-top b { font-variant-numeric:tabular-nums; color:var(--slate-800); white-space:nowrap; }
+.rk-top b small { font-weight:500; color:var(--slate-500); font-size:0.8125rem; }
+.bar { height:10px; border-radius:99px; background:var(--slate-100); margin-top:0.25rem; overflow:hidden; }
+.bar i { display:block; height:100%; border-radius:99px; background:var(--slate-400); }
+.rank li.first .bar i { background:var(--accent); }
+.even-note { margin-top:0.625rem; font-size:0.8125rem; color:var(--slate-500); }
+.tbl-wrap { overflow-x:auto; border:1px solid var(--slate-200); border-radius:12px; -webkit-overflow-scrolling:touch; }
+.tbl { width:100%; border-collapse:collapse; font-size:0.875rem; font-variant-numeric:tabular-nums; }
+.tbl th, .tbl td { padding:0.5rem 0.5rem; border-bottom:1px solid var(--slate-100); text-align:center; vertical-align:top; }
+.tbl thead th { font-size:0.8125rem; font-weight:600; color:var(--slate-600); background:var(--slate-50); line-height:1.3; min-width:4.5rem; hyphens:auto; -webkit-hyphens:auto; }
+.tbl thead th.w { color:var(--accent-dark); background:var(--accent-50); }
+.tbl th.k { text-align:left; font-weight:600; color:var(--slate-700); min-width:7.5rem; max-width:12rem; }
+.tbl td b { font-size:1rem; color:var(--slate-800); }
+.tbl td.w { background:#f6fdf9; }
+.tbl tfoot td, .tbl tfoot th { border-bottom:0; background:var(--slate-50); font-weight:700; color:var(--slate-800); }
+.tbl td.split b::after { content:''; display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--amber); margin-left:0.25rem; vertical-align:2px; }
+.tbl td small { display:block; font-size:0.75rem; color:var(--amber-ink); font-weight:600; white-space:nowrap; }
+.tbl tr:last-child td, .tbl tr:last-child th { border-bottom:0; }
+.why { margin-top:0.5rem; }
+.why summary { min-height:44px; display:inline-flex; align-items:center; gap:0.375rem; font-size:0.875rem; font-weight:600; color:var(--accent-dark); cursor:pointer; padding:0 0.25rem; border-radius:8px; }
+.why summary::-webkit-details-marker { display:none; }
+.why summary::before { content:'+'; font-weight:400; font-size:1.125rem; }
+.why[open] summary::before { content:'−'; }
+.why-list { list-style:none; display:grid; gap:0.625rem; margin-top:0.25rem; font-size:0.875rem; }
+.why-list b { color:var(--slate-800); }
+.why-list ul { list-style:none; margin-top:0.125rem; }
+.why-list li li { color:var(--slate-600); padding-left:0.75rem; border-left:2px solid var(--slate-200); margin-top:0.25rem; }
+.split-list { list-style:none; display:grid; gap:0.5rem; margin-top:0.5rem; }
+.split-list li { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:0.25rem 0.75rem; }
+.split-list li > span { min-width:0; }
+.imp-res { list-style:none; display:grid; gap:0.25rem; margin-top:0.375rem; }
+.decide { border:1px solid var(--slate-200); border-radius:14px; padding:1rem 1.125rem 1.125rem; }
+.decide h3 { font-size:1.0625rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.01em; }
+.decide > p { margin-top:0.25rem; font-size:0.9375rem; color:var(--slate-600); }
+.dec-btns { display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.875rem; align-items:center; }
+.dev { margin-top:1rem; padding-top:1rem; border-top:1px solid var(--slate-100); display:grid; gap:0.875rem; }
+.dev h4 { font-size:1rem; font-weight:700; color:var(--slate-800); }
+.dev p { font-size:0.9375rem; color:var(--slate-600); }
+.dev .calc { padding:0.75rem 0.875rem; border-radius:12px; background:var(--slate-50); border:1px solid var(--slate-100); font-size:0.9375rem; color:var(--slate-700); }
+.dev .calc b { color:var(--slate-800); }
+.dev .calc.hard { background:var(--amber-50); border-color:var(--amber-200); color:#78350f; }
+.dev .calc.hard b { color:#78350f; }
+.dev-btns { display:flex; flex-wrap:wrap; gap:0.5rem; }
+.dev-btns .btn-dev { background:var(--slate-700); color:var(--wit); }
+.dev-btns .btn-dev:hover { background:var(--slate-800); }
+.dev-btns .btn-dev[aria-disabled="true"] { background:var(--slate-200); color:var(--slate-600); cursor:default; }
+.verdict { border-radius:14px; padding:1rem 1.125rem 1.125rem; background:var(--wit); border:1.5px solid var(--accent); }
+.verdict.afw { border-color:var(--amber-200); background:var(--amber-50); }
+.verdict .kick { font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--accent-dark); display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap; }
+.verdict.afw .kick { color:var(--amber-ink); }
+.verdict .kick span { font-size:0.75rem; letter-spacing:0; text-transform:none; font-weight:600; background:#fef3c7; color:#92400e; border-radius:999px; padding:0 0.5rem; }
+.verdict p { margin-top:0.375rem; color:var(--slate-700); font-size:0.9375rem; overflow-wrap:anywhere; }
+.verdict p.big { font-size:1.25rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.015em; margin-top:0.125rem; }
+.verdict .when { font-size:0.8125rem; color:var(--slate-500); }
+.verdict.afw .when { color:#78350f; }
+.verdict .dec-btns { margin-top:0.75rem; }
+
+/* Menu */
+.icon-btn { width:44px; height:44px; display:flex; align-items:center; justify-content:center; border-radius:10px; color:var(--slate-500); flex-shrink:0; }
+.icon-btn:hover { background:var(--slate-100); color:var(--slate-700); }
+.icon-btn svg { width:20px; height:20px; }
+.menu-wrap { position:relative; }
+.menu { display:none; position:absolute; right:0; top:calc(100% + 4px); z-index:50; min-width:250px; background:var(--wit); border:1px solid var(--slate-200); border-radius:12px; box-shadow:0 12px 32px rgba(15,23,42,0.14); padding:0.375rem; }
+.menu.open { display:block; }
+.menu button { width:100%; display:flex; align-items:center; gap:0.625rem; min-height:44px; padding:0.5625rem 0.625rem; border-radius:8px; font-size:0.9375rem; text-align:left; color:var(--slate-700); white-space:nowrap; }
+.menu button:hover { background:var(--slate-100); }
+.menu button svg { width:18px; height:18px; color:var(--slate-500); flex-shrink:0; }
+.menu .sep { height:1px; background:var(--slate-100); margin:0.25rem 0.375rem; }
+.menu .danger, .menu .danger svg { color:#dc2626; }
+.menu [data-bestand] { min-height:44px; }
+.menu .ocb-t { display:flex; flex-direction:column; min-width:0; white-space:normal; line-height:1.3; }
+.menu .ocb-t small { font-size:0.8125rem; color:var(--slate-500, #64748b); margin-top:0.125rem; }
+.menu .ocb-note { margin:0; padding:0.25rem 0.625rem 0.375rem; font-size:0.8125rem; line-height:1.35; color:var(--slate-500, #64748b); white-space:normal; }
+
+/* Melding */
+.toast {
+  position:fixed; left:50%; bottom:calc(var(--bottom) + 1.25rem); transform:translate(-50%, calc(100% + 3rem)); visibility:hidden; z-index:20000;
+  background:var(--slate-800); color:var(--wit); border-radius:12px; padding:0.625rem 0.625rem 0.625rem 1rem;
+  display:flex; align-items:center; gap:0.875rem; font-size:0.9375rem; box-shadow:0 10px 30px rgba(15,23,42,0.25);
+  transition:transform 0.25s ease, visibility 0s 0.25s; width:max-content; max-width:calc(100% - 2rem);
+}
+.toast.show { transform:translate(-50%, 0); visibility:visible; transition:transform 0.25s ease; }
+.toast button { color:#6ee7b7; font-weight:600; padding:0.25rem 0.5rem; border-radius:6px; min-height:44px; flex-shrink:0; white-space:nowrap; }
+#toast-text { min-width:0; overflow-wrap:normal; word-break:normal; }
+.toast button:hover { background:rgba(255,255,255,0.08); }
+
+.footer { text-align:center; padding:2rem 2rem calc(var(--bottom) + 2rem); border-top:1px solid var(--slate-200); background:var(--wit); }
+.quote { font-size:0.8125rem; color:var(--accent-dark); }
+
+/* Uitleg */
+.explain { background:var(--wit); border:1px solid var(--slate-200); border-radius:16px; }
+.explain summary { min-height:44px; padding:0.875rem 1.125rem; font-weight:600; color:var(--slate-700); cursor:pointer; list-style:none; display:flex; align-items:center; justify-content:space-between; }
+.explain summary::-webkit-details-marker { display:none; }
+.explain summary::after { content:'+'; color:var(--slate-500); font-size:1.25rem; font-weight:400; }
+.explain[open] summary::after { content:'−'; }
+.explain .inner { padding:0 1.125rem 1.125rem; font-size:0.9375rem; color:var(--slate-600); }
+.explain .inner p + p, .explain .inner ul { margin-top:0.5rem; }
+.explain .inner ul { padding-left:1.125rem; }
+
+/* Voorbeeld, startscherm, opnieuw beginnen */
+.vb-bar { display:flex; flex-wrap:wrap; align-items:center; gap:0.5rem 0.75rem; padding:0.5rem 0.5rem 0.5rem 0.75rem; background:#fffbeb; border:1px solid #fde68a; border-radius:12px; font-size:0.875rem; line-height:1.4; color:#78350f; }
+.vb-bar svg { width:18px; height:18px; flex-shrink:0; color:#b45309; }
+.vb-text { flex:1 1 14rem; min-width:0; display:flex; gap:0.5rem; align-items:flex-start; }
+.vb-btns { display:flex; flex-wrap:wrap; gap:0.375rem; }
+.vb-btn { min-height:44px; padding:0.375rem 0.625rem; border-radius:10px; font-size:0.875rem; font-weight:600; background:#fff; border:1px solid #e2e8f0; }
+.vb-wis { color:#b91c1c; border-color:#fecaca; }
+.vb-wis:hover { background:#fef2f2; }
+.vb-eigen { color:#047857; border-color:#a7f3d0; }
+.vb-eigen:hover { background:var(--accent-50); }
+@media (max-width:420px) { .vb-btn { font-size:0.8125rem; padding:0.375rem 0.5rem; } }
+.vb-start.oc-start { display:block; text-align:center; padding:0.25rem 0 0; font-size:0.9375rem; color:var(--slate-600); }
+.vb-start.oc-start > span { display:block; max-width:36rem; margin:0 auto; }
+.oc-start-btns { display:flex; gap:0.5rem; justify-content:center; flex-wrap:wrap; margin-top:0.875rem; }
+.oc-start-btns .oc-begin, .oc-start-btns .oc-vb { display:inline-flex; align-items:center; justify-content:center; min-height:44px; padding:0.5rem 1rem; border:0; border-radius:10px; font:inherit; font-weight:600; font-size:0.9375rem; line-height:1.3; cursor:pointer; text-align:center; }
+.oc-start-btns .oc-begin { background:#047857; color:#fff; }
+.oc-start-btns .oc-begin:hover { background:#065f46; }
+.oc-start-btns .oc-vb { background:#f1f5f9; color:#334155; }
+.oc-start-btns .oc-vb:hover { background:#e2e8f0; }
+.oc-start-btns [hidden] { display:none !important; }
+.oc-open-row { display:flex; justify-content:center; margin:0.5rem 0 0; }
+.oc-open-row .oc-open-link { display:inline-flex; align-items:center; gap:0.5rem; min-height:44px; padding:0.5rem 1rem; border:0; background:none; border-radius:10px; font:inherit; font-size:0.875rem; font-weight:600; color:#047857; cursor:pointer; text-decoration:none; }
+.oc-open-row .oc-open-link:hover { background:#ecfdf5; }
+.oc-open-row .oc-open-link svg { width:18px; height:18px; flex:none; }
+.oc-restart-row { display:flex; justify-content:center; padding:0.5rem 0 0; }
+.oc-restart-row[hidden] { display:none !important; }
+.oc-restart { min-height:44px; padding:0.5rem 1rem; font:inherit; font-size:0.875rem; font-weight:500; color:#64748b; background:none; border:0; border-radius:10px; cursor:pointer; text-decoration:underline; text-decoration-color:#cbd5e1; text-underline-offset:3px; }
+.oc-restart:hover { color:#b91c1c; background:#fef2f2; text-decoration-color:currentColor; }
+.ocw-row .ocw-yes { background:#dc2626; } .ocw-row .ocw-yes:hover { background:#b91c1c; }
+.ocw-row .ocw-yes.ok { background:#047857; } .ocw-row .ocw-yes.ok:hover { background:#065f46; }
+.ocw-row button { min-height:44px; }
+
+/* Gsm */
+@media (max-width:640px) {
+  .header .back-link { position:static; display:flex; justify-content:center; margin:0 auto 0.75rem; width:max-content; }
+  .steps { padding:0.25rem 0.625rem 0; gap:0.25rem; }
+  .step { flex-direction:column; gap:0.25rem; font-size:0.8125rem; min-height:64px; padding:0.375rem 0.125rem 0.625rem; }
+  .stage { padding:1rem 0.875rem 1.125rem; }
+  .sc-k { font-size:1.375rem; }
+  .scale { gap:0.25rem; }
+  .sc-opt { padding:0.625rem 0.5rem 0.75rem; }
+  .sc-nav { grid-template-columns:minmax(0,1fr); }
+  .sc-nav .btn-sec { order:2; }
+  .win h2 { font-size:1.375rem; }
+  .tbl th, .tbl td { padding:0.4375rem 0.3125rem; }
+  .tbl thead th { min-width:3.5rem; font-size:0.75rem; }
+  .tbl th.k { min-width:6.25rem; font-size:0.8125rem; }
+}
+@media (max-width:380px) { .anchors { grid-template-columns:minmax(0,1fr); } }
+
+/* Toegankelijkheid en soepel op gsm */
+:focus-visible { outline:2px solid #047857 !important; outline-offset:2px; }
+.back-link { min-height:44px; min-width:44px; }
+html { -webkit-text-size-adjust:100%; text-size-adjust:100%; }
+button, a, summary, label, select, [role="button"], [role="tab"], [role="radio"], [data-act] { touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+@media (hover:none) { button:not(:disabled):active, a:active, summary:active, [role="button"]:active { filter:brightness(0.93); } }
+@media (pointer:coarse) { .field, .project { font-size:16px !important; } }
+html:has(.ocs-back, .ocw-back) { overflow:hidden; }
+.ocs-back *, .ocw-back * { overscroll-behavior:contain; }
+body { min-height:100dvh; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important; } }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <a href="https://onderconstructie.github.io/projectmanagement/" class="back-link" aria-label="Terug naar Projectmanagement">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    <span>Projectmanagement</span>
+  </a>
+  <div class="logo">
+    <svg viewBox="0 0 80 80" fill="none" aria-hidden="true">
+      <circle cx="40" cy="40" r="36" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2"/>
+      <g transform="scale(2)"><circle cx="10.5" cy="12.5" r="2.1" fill="#94a3b8"/><circle cx="15.25" cy="12.5" r="2.1" fill="#94a3b8"/><circle cx="20" cy="12.5" r="2.1" fill="#94a3b8"/><circle cx="24.75" cy="12.5" r="1.6" stroke="#cbd5e1" stroke-width="1.1"/><circle cx="29.5" cy="12.5" r="1.6" stroke="#cbd5e1" stroke-width="1.1"/><rect x="6.4" y="16.1" width="27.2" height="7.8" rx="3.9" fill="#d1fae5"/><circle cx="10.5" cy="20" r="2.1" fill="#10b981"/><circle cx="15.25" cy="20" r="2.1" fill="#10b981"/><circle cx="20" cy="20" r="2.1" fill="#10b981"/><circle cx="24.75" cy="20" r="2.1" fill="#10b981"/><circle cx="29.5" cy="20" r="1.6" stroke="#047857" stroke-width="1.1"/><circle cx="10.5" cy="27.5" r="2.1" fill="#94a3b8"/><circle cx="15.25" cy="27.5" r="2.1" fill="#94a3b8"/><circle cx="20" cy="27.5" r="1.6" stroke="#cbd5e1" stroke-width="1.1"/><circle cx="24.75" cy="27.5" r="1.6" stroke="#cbd5e1" stroke-width="1.1"/><circle cx="29.5" cy="27.5" r="1.6" stroke="#cbd5e1" stroke-width="1.1"/></g>
+    </svg>
+  </div>
+  <h1 class="title">Beslisscore</h1>
+  <p class="subtitle">Kies op feiten, niet op een goed verhaal.</p>
+</header>
+
+<main class="main">
+  <div class="vb-start oc-start" id="vb-start" hidden><span>Nog niets ingevuld. Leg eerst vast wat telt, scoor dan de opties, en laat het hoogste totaal beslissen. Of bekijk eerst een ingevuld voorbeeld.</span><div class="oc-start-btns"><button type="button" class="oc-begin" data-oc-begin="#k-name">Begin met een keuze</button><button type="button" class="oc-vb" id="vb-load">Voorbeeld bekijken</button></div><p class="oc-open-row"><button type="button" class="oc-open-link" data-bestand="open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 16v-5M9.5 13.5 12 11l2.5 2.5"/></svg>Open bestand</button></p></div>
+
+  <div class="tabs" id="tabs" role="toolbar" aria-label="Keuzes" hidden></div>
+
+  <div class="vb-bar" id="vb-bar" role="note" hidden>
+    <span class="vb-text"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg><span>Dit is een voorbeeld om de tool te verkennen. Het telt niet mee in andere tools.</span></span>
+    <span class="vb-btns"><button type="button" class="vb-btn vb-wis" id="vb-wis">Wis voorbeeld</button><button type="button" class="vb-btn vb-eigen" id="vb-eigen">Maak er mijn eigen van</button></span>
+  </div>
+
+  <section class="card" aria-label="Keuze">
+    <div class="card-head">
+      <input class="project" id="k-name" autocomplete="off" enterkeyhint="next" maxlength="80" placeholder="Waarover beslis je?" aria-label="Waarover beslis je?" spellcheck="false">
+      <div class="menu-wrap">
+        <button class="icon-btn" id="menu-btn" aria-label="Meer acties" aria-haspopup="true" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
+        </button>
+        <div class="menu" id="menu" role="menu">
+          <button type="button" data-bestand="bewaar" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M12 11v6M9 14l3 3 3-3"/></svg><span class="ocb-t">Bewaar als bestand<small>Om later verder te werken, of door te geven</small></span></button>
+          <button type="button" data-bestand="open" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 10v6M9 13l3-3 3 3"/></svg>Open bestand</button>
+          <div class="sep"></div>
+          <button data-act="pdf" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 15h6M9 18h4"/></svg>Download als PDF</button>
+          <button data-act="png" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>Download als afbeelding</button>
+          <button data-act="copy" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Kopieer als tekst</button>
+          <p class="ocb-note">Een afbeelding, PDF of tekst kan je niet terug openen.</p>
+          <div class="sep"></div>
+          <button data-act="dup" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M4 16V5a1 1 0 0 1 1-1h11"/></svg>Dupliceer, zonder scores</button>
+          <button data-act="delkeuze" role="menuitem" id="m-delkeuze" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg>Verwijder deze keuze</button>
+          <div class="sep"></div>
+          <button data-act="wipe" class="danger" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>Alles wissen</button>
+        </div>
+      </div>
+    </div>
+    <ol class="steps" id="steps" aria-label="Stappen"></ol>
+    <div class="stage" id="stage"></div>
+  </section>
+  <div class="sr" id="live" aria-live="polite"></div>
+<div class="oc-restart-row" id="oc-restart-row" hidden><button type="button" class="oc-restart" id="oc-restart-btn">Opnieuw beginnen</button></div>
+
+  <details class="explain">
+    <summary>Hoe werkt dit?</summary>
+    <div class="inner">
+      <p>Je kiest eerlijker als je eerst afspreekt wat telt, en pas daarna naar de opties kijkt.</p>
+      <ul>
+        <li><b>Kenmerken</b>: kies er ongeveer zes die echt beslissen. Schrijf bij elk wat een 1 en een 5 betekenen, zodat iedereen hetzelfde verstaat.</li>
+        <li><b>Opties</b>: zet de kandidaten, offertes of voorstellen op een rij. Scoren jullie met meer, voeg dan beoordelaars toe.</li>
+        <li><b>Scoren</b>: je geeft alle opties een score op één kenmerk, dan op het volgende. Je eerdere scores blijven verborgen en de volgorde van de opties wisselt. Zo kleurt één sterke indruk de rest minder.</li>
+        <li><b>Uitslag</b>: de optie met het hoogste totaal wint. Alle kenmerken wegen even zwaar. Waar beoordelaars 2 punten of meer verschillen, zie je een signaal.</li>
+      </ul>
+      <p>Tip: wil je toch een andere optie kiezen? Dat mag. Noem dan het feit dat je miste en het kenmerk waar het bij hoort. De tool toont wat die optie had moeten scoren, en je reden staat in de PDF. Hou je ook een <a href="https://onderconstructie.github.io/beslissingen/">Beslissingslog</a> bij, kopieer dan de beslissing en plak ze daar.</p>
+    </div>
+  </details>
+</main>
+
+<footer class="footer">
+  <p class="quote">Een goed verhaal is nog geen goede reden.</p>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-text"></span><button id="toast-btn" hidden>Ongedaan</button></div>
+
+<script>
+/* ---------- Alles wissen en ongedaan maken ---------- */
+const OC_ID = 'beslisscore', OC_TOOL = 'Beslisscore';
+let ocSaves = 0;
+// Wordt bij elke bewaring aangeroepen: telt (voor 'Ongedaan').
+// Deze tool legt niets klaar voor andere tools: de Beslissingslog haalt (nog) niets op uit andere tools.
+function ocAfterSave() { ocSaves++; }
+// Bevestiging in de pagina (geen pop-up van de browser).
+// Stijl van de bevestiging en de knoppen 'Overnemen uit…': meteen laden.
+function ocStyle() {
+  if (!document.getElementById('ocw-style')) {
+    const s = document.createElement('style'); s.id = 'ocw-style';
+    s.textContent = `.ocw-back{position:fixed;inset:0;z-index:10001;display:flex;align-items:center;justify-content:center;padding:1rem;background:rgba(15,23,42,.45);backdrop-filter:blur(3px);font-family:'DM Sans',system-ui,sans-serif}
+      .ocw{width:100%;max-width:400px;background:#fff;border-radius:16px;padding:1.375rem 1.375rem 1.125rem;box-shadow:0 20px 50px rgba(15,23,42,.25);color:#1e293b}
+      .ocw b{display:block;font-size:1.0625rem;letter-spacing:-.01em;margin-bottom:.375rem}
+      .ocw p{font-size:.9375rem;line-height:1.5;color:#475569}
+      .ocw-row{display:flex;justify-content:flex-end;gap:.5rem;margin-top:1.25rem}
+      .ocw-row button{font:inherit;font-size:.9375rem;font-weight:600;padding:.625rem 1rem;border-radius:10px;border:0;cursor:pointer}
+      .ocw-no{background:#f1f5f9;color:#475569} .ocw-yes{background:#ef4444;color:#fff} .ocw-yes:hover{background:#dc2626}
+      .oc-import{display:inline-flex;align-items:center;gap:.375rem;font:inherit;font-size:.8125rem;font-weight:600;color:#059669;background:#fff;border:1px dashed #a7f3d0;border-radius:999px;padding:.3125rem .75rem;cursor:pointer;white-space:nowrap}
+      .oc-import:hover{background:#ecfdf5;border-color:#10b981} .oc-import svg{width:15px;height:15px} .oc-import[hidden]{display:none}`;
+    document.head.appendChild(s);
+  }
+}
+ocStyle();
+function ocConfirm(title, text, okText) {
+  return new Promise(resolve => {
+    const back = document.createElement('div'); back.className = 'ocw-back';
+    back.innerHTML = '<div class="ocw" role="alertdialog" aria-modal="true"><b></b><p></p><div class="ocw-row"><button class="ocw-no" type="button">Annuleer</button><button class="ocw-yes" type="button"></button></div></div>';
+    back.querySelector('b').textContent = title; back.querySelector('p').textContent = text; back.querySelector('.ocw-yes').textContent = okText;
+    document.body.appendChild(back);
+    const done = v => { document.removeEventListener('keydown', key, true); back.remove(); resolve(v); };
+    const key = e => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); done(false); } };
+    document.addEventListener('keydown', key, true);
+    back.querySelector('.ocw-no').onclick = () => done(false);
+    back.querySelector('.ocw-yes').onclick = () => done(true);
+    back.addEventListener('click', e => { if (e.target === back) done(false); });
+    back.querySelector('.ocw-no').focus();
+  });
+}
+// Ongedaan maken van een wisbeurt kan alleen zolang er sindsdien niets anders bewaard werd.
+function ocUndoable(restore) {
+  const mark = ocSaves;
+  return () => {
+    if (ocSaves !== mark) { setTimeout(() => toast('Ongedaan maken kan niet meer: er is intussen iets veranderd'), 60); return; }
+    restore();
+  };
+}
+
+
+/* ---------- Download als afbeelding of PDF (gedeeld door de Onder Constructie-tools, v2) ----------
+   Gebruik:
+     ocExport.png(bouwFn, 'bestandsnaam', { landscape:true })
+     ocExport.pdf(bouwFn, 'bestandsnaam', { landscape:true })
+   bouwFn() geeft { node, title, subtitle } terug: een DOM-knoop met inline styles, zonder knoppen of invoervelden.
+   Die komt buiten beeld op een witte pagina met kop (titel, ondertitel, datum) en voet.
+   Zet data-oc-keep op blokken die in een PDF niet over twee pagina's gesplitst mogen worden
+   (een beslissing, een kaartje, een rij); ze schuiven dan door naar de volgende pagina.
+   html2canvas en jsPDF worden pas geladen bij de eerste download, van dezelfde adressen als de
+   andere tools, zodat de app ze offline kan bewaren. */
+const ocExport = (() => {
+  const LIBS = {
+    h2c: '/lib/html2canvas-1.4.1.min.js',
+    pdf: '/lib/jspdf-2.5.1.umd.min.js'
+  };
+  const A4 = { w: 210, h: 297 }, MARGIN = 10;   // mm
+  const loaded = {};
+  function load(url) {
+    if (!loaded[url]) loaded[url] = new Promise((ok, fail) => {
+      const s = document.createElement('script');
+      s.src = url; s.onload = ok; s.onerror = () => { delete loaded[url]; fail(new Error('laden mislukt')); };
+      document.head.appendChild(s);
+    });
+    return loaded[url];
+  }
+  const today = () => new Date().toLocaleDateString('nl-BE', { day: 'numeric', month: 'long', year: 'numeric' });
+  function page(content, { title, subtitle, width }) {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = `position:fixed;left:-20000px;top:0;width:${width}px;background:#fff;padding:36px 40px 28px;
+      font-family:'DM Sans',system-ui,-apple-system,sans-serif;color:#1e293b;-webkit-font-smoothing:antialiased;box-sizing:border-box;`;
+    const head = document.createElement('div');
+    head.style.cssText = 'display:flex;align-items:flex-end;justify-content:space-between;gap:24px;border-bottom:2px solid #10b981;padding-bottom:12px;margin-bottom:20px;';
+    head.innerHTML = `<div><div style="font-size:22px;font-weight:700;letter-spacing:-0.02em;color:#1e293b"></div>
+      <div style="font-size:14px;color:#64748b;margin-top:2px"></div></div>
+      <div style="font-size:12px;color:#94a3b8;white-space:nowrap">${today()}</div>`;
+    head.children[0].children[0].textContent = title || '';
+    head.children[0].children[1].textContent = subtitle || '';
+    const foot = document.createElement('div');
+    foot.style.cssText = 'margin-top:22px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;display:flex;justify-content:space-between;';
+    foot.innerHTML = '<span>Onder Constructie</span><span>onderconstructie.github.io</span>';
+    wrap.append(head, content, foot);
+    document.body.appendChild(wrap);
+    return wrap;
+  }
+  // Schuift blokken met data-oc-keep die over een paginagrens zouden vallen naar de volgende pagina.
+  function keepTogether(wrap, pageH) {
+    const top0 = () => wrap.getBoundingClientRect().top;
+    for (const el of wrap.querySelectorAll('[data-oc-keep]')) {
+      const r = el.getBoundingClientRect(), t = r.top - top0(), b = t + r.height;
+      if (r.height > pageH * 0.85) continue;            // te groot om heel te houden
+      const boundary = Math.ceil(t / pageH) * pageH;     // eerstvolgende grens na de bovenkant
+      if (t % pageH !== 0 && b > boundary && t < boundary) {
+        const gap = document.createElement('div');
+        gap.style.cssText = `height:${boundary - t + 6}px;`;
+        el.parentNode.insertBefore(gap, el);
+      }
+    }
+  }
+  async function canvasOf(build, opts) {
+    await load(LIBS.h2c);
+    const built = build();
+    const node = page(built.node, { title: built.title, subtitle: built.subtitle, width: opts.width });
+    try {
+      if (document.fonts && document.fonts.ready) await document.fonts.ready;
+      if (opts.pageH) keepTogether(node, opts.pageH);
+      return await window.html2canvas(node, { scale: 2, backgroundColor: '#ffffff', logging: false, useCORS: true });
+    } finally { node.remove(); }
+  }
+  function save(blob, name) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }
+  const widthFor = opts => opts.width || (opts.landscape ? 1120 : 800);
+  async function png(build, name, opts = {}) {
+    const c = await canvasOf(build, { width: widthFor(opts) });
+    await new Promise(ok => c.toBlob(b => { save(b, name + '.png'); ok(); }, 'image/png'));
+  }
+  async function pdf(build, name, opts = {}) {
+    const landscape = !!opts.landscape, width = widthFor(opts);
+    const pw = landscape ? A4.h : A4.w, ph = landscape ? A4.w : A4.h, w = pw - 2 * MARGIN;
+    const pageCss = (ph - 2 * MARGIN) / w * width;       // paginahoogte in CSS-pixels van de exportknoop
+    const [c] = await Promise.all([canvasOf(build, { width, pageH: pageCss }), load(LIBS.pdf)]);
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: landscape ? 'landscape' : 'portrait', unit: 'mm', format: 'a4' });
+    const scale = w / c.width, pageH = (ph - 2 * MARGIN) / scale;   // paginahoogte in canvaspixels
+    for (let y = 0, i = 0; y < c.height - 2; y += pageH, i++) {
+      const h = Math.min(pageH, c.height - y);
+      const part = document.createElement('canvas'); part.width = c.width; part.height = h;
+      part.getContext('2d').drawImage(c, 0, y, c.width, h, 0, 0, c.width, h);
+      if (i) doc.addPage();
+      doc.addImage(part.toDataURL('image/jpeg', 0.92), 'JPEG', MARGIN, MARGIN, w, h * scale);
+    }
+    save(doc.output('blob'), name + '.pdf');
+  }
+  return { png, pdf };
+})();
+
+/* ---------- Schaal en grenzen ---------- */
+const WORDS = ['heel zwak', 'zwak', 'gemiddeld', 'sterk', 'heel sterk'];
+const MIN_K = 3, GOOD_K = 6, MAX_K = 8, MIN_O = 2, MAX_O = 8, MAX_R = 8;
+const STEPS = [
+  { id:'kenmerken', name:'Kenmerken' },
+  { id:'opties', name:'Opties' },
+  { id:'scoren', name:'Scoren' },
+  { id:'uitslag', name:'Uitslag' }
+];
+const nf = n => String(Math.round(n * 10) / 10).replace('.', ',');
+const pts = n => `${nf(n)} ${Math.abs(n - 1) < 1e-9 ? 'punt' : 'punten'}`;
+const EPS = 1e-9;
+
+/* ---------- Opslag ---------- */
+const KEY = 'beslisscore.v1';
+const uid = () => Math.random().toString(36).slice(2, 10);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const str = (v, n) => typeof v === 'string' ? v.slice(0, n) : '';
+const blankRater = () => ({ id:uid(), naam:'', indruk:null, gevraagd:false });
+function blank(name) {
+  return { id:uid(), name:name || 'Mijn keuze', kenmerken:[], opties:[], raters:[blankRater()], scores:{}, orde:{}, beslist:null, step:'kenmerken', besluit:null };
+}
+function norm(k) {
+  k.id = k.id || uid();
+  k.name = str(k.name, 80) || 'Mijn keuze';
+  k.kenmerken = (Array.isArray(k.kenmerken) ? k.kenmerken : []).filter(x => x && typeof x === 'object').slice(0, MAX_K)
+    .map(x => ({ id:x.id || uid(), naam:str(x.naam, 60), vraag:str(x.vraag, 140), laag:str(x.laag, 140), hoog:str(x.hoog, 140), ...(x.extra ? { extra:true } : {}) }));
+  k.opties = (Array.isArray(k.opties) ? k.opties : []).filter(x => x && typeof x === 'object').slice(0, MAX_O)
+    .map(x => ({ id:x.id || uid(), naam:str(x.naam, 80) }));
+  const oIds = new Set(k.opties.map(o => o.id)), kIds = new Set(k.kenmerken.map(x => x.id));
+  k.raters = (Array.isArray(k.raters) ? k.raters : []).filter(x => x && typeof x === 'object').slice(0, MAX_R)
+    .map(r => ({ id:r.id || uid(), naam:str(r.naam, 40), indruk:oIds.has(r.indruk) ? r.indruk : null, gevraagd:!!r.gevraagd }));
+  if (!k.raters.length) k.raters.push(blankRater());
+  const scores = {}, src = k.scores && typeof k.scores === 'object' ? k.scores : {};
+  k.raters.forEach(r => {
+    const byK = src[r.id]; if (!byK || typeof byK !== 'object') return;
+    Object.keys(byK).forEach(kid => {
+      if (!kIds.has(kid) || !byK[kid] || typeof byK[kid] !== 'object') return;
+      Object.keys(byK[kid]).forEach(oid => {
+        const v = byK[kid][oid], s = v && Math.round(+v.s);
+        if (!oIds.has(oid) || !(s >= 1 && s <= 5)) return;
+        ((scores[r.id] = scores[r.id] || {})[kid] = scores[r.id][kid] || {})[oid] = { s, r:str(v.r, 140) };
+      });
+    });
+  });
+  k.scores = scores;
+  k.orde = k.orde && typeof k.orde === 'object' ? k.orde : {};
+  k.beslist = kIds.has(k.beslist) ? k.beslist : null;
+  k.step = STEPS.some(s => s.id === k.step) ? k.step : 'kenmerken';
+  const b = k.besluit;
+  k.besluit = b && typeof b === 'object' && oIds.has(b.gekozen) ? {
+    soort:['hoogste', 'afspraak', 'gelijk', 'afwijking'].includes(b.soort) ? b.soort : 'hoogste',
+    gekozen:b.gekozen, winnaar:oIds.has(b.winnaar) ? b.winnaar : null,
+    feit:str(b.feit, 300), kenmerk:kIds.has(b.kenmerk) ? b.kenmerk : (b.kenmerk === 'geen' ? 'geen' : null),
+    tG:+b.tG || 0, tW:+b.tW || 0, at:str(b.at, 40) || new Date().toISOString()
+  } : null;
+  k.voorbeeld = !!k.voorbeeld || undefined;
+  return k;
+}
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem(KEY));
+    if (d && Array.isArray(d.keuzes) && d.keuzes.length) {
+      d.keuzes = d.keuzes.filter(k => k && typeof k === 'object').map(norm);
+      if (d.keuzes.length) {
+        if (!d.keuzes.some(k => k.id === d.current)) d.current = d.keuzes[0].id;
+        return { v:1, keuzes:d.keuzes, current:d.current };
+      }
+    }
+  } catch {}
+  const k = blank();
+  return { v:1, keuzes:[k], current:k.id };
+}
+let state = load();
+function save() { ocAfterSave(); try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
+const cur = () => state.keuzes.find(k => k.id === state.current) || state.keuzes[0];
+const snapshot = () => { const c = JSON.parse(JSON.stringify(state)); return () => { state = c; resetRun(); }; };
+
+/* ---------- Afgeleide gegevens ---------- */
+const rName = (k, r) => (r.naam || '').trim() || `Beoordelaar ${k.raters.indexOf(r) + 1}`;
+const oById = (k, id) => k.opties.find(o => o.id === id);
+const oName = (k, id) => { const o = oById(k, id); return o ? (o.naam.trim() || 'Naamloze optie') : 'Optie'; };
+const kName = x => (x.naam || '').trim() || 'Naamloos kenmerk';
+const scoreOf = (k, r, kid, oid) => ((k.scores[r.id] || {})[kid] || {})[oid] || null;
+const kDone = (k, r, kid) => k.opties.every(o => scoreOf(k, r, kid, o.id));
+const rDone = (k, r) => k.kenmerken.every(x => kDone(k, r, x.id));
+const kScored = (k, kid) => k.raters.some(r => Object.keys((k.scores[r.id] || {})[kid] || {}).length);
+const hasScores = k => k.kenmerken.some(x => kScored(k, x.id));
+const namedK = k => k.kenmerken.filter(x => x.naam.trim());
+const namedO = k => k.opties.filter(o => o.naam.trim());
+const kReady = k => namedK(k).length >= MIN_K;
+const oReady = k => namedO(k).length >= MIN_O;
+const allDone = k => kReady(k) && oReady(k) && k.raters.every(r => rDone(k, r));
+const missing = k => k.raters.reduce((n, r) => n + k.kenmerken.reduce((m, x) => m + k.opties.filter(o => !scoreOf(k, r, x.id, o.id)).length, 0), 0);
+const isEmpty = () => state.keuzes.every(k => !k.kenmerken.length && !k.opties.length);
+const tieK = k => k.kenmerken.find(x => x.id === k.beslist) || k.kenmerken[0];
+
+function results(k) {
+  const avg = {};
+  k.kenmerken.forEach(x => {
+    avg[x.id] = {};
+    k.opties.forEach(o => {
+      const list = k.raters.map(r => ({ r, v:scoreOf(k, r, x.id, o.id) })).filter(e => e.v);
+      const vals = list.map(e => e.v.s);
+      avg[x.id][o.id] = { m:vals.reduce((a, b) => a + b, 0) / (vals.length || 1), min:Math.min(...vals), max:Math.max(...vals), list };
+    });
+  });
+  const tot = {};
+  k.opties.forEach(o => { tot[o.id] = k.kenmerken.reduce((n, x) => n + avg[x.id][o.id].m, 0); });
+  const rank = k.opties.slice().sort((a, b) => tot[b.id] - tot[a.id] > EPS ? 1 : tot[a.id] - tot[b.id] > EPS ? -1 : 0);
+  const top = rank[0], max = 5 * k.kenmerken.length;
+  const group = rank.filter(o => tot[top.id] - tot[o.id] < 1 - EPS);        // binnen 1 punt van de hoogste
+  const tied = rank.filter(o => tot[top.id] - tot[o.id] < EPS);             // exact gelijk
+  const kb = tieK(k);
+  let kbw = null;   // wie wint op het afgesproken kenmerk, binnen de groep die nipt bij elkaar ligt
+  if (group.length > 1 && kb) {
+    const best = Math.max(...group.map(o => avg[kb.id][o.id].m));
+    const w = group.filter(o => best - avg[kb.id][o.id].m < EPS);
+    if (w.length === 1) kbw = w[0];
+  }
+  const exact = tied.length > 1;
+  // Wie mag je kiezen zonder af te wijken: de hoogste, of (bij een nipt verschil) wie wint op het afgesproken kenmerk.
+  let legit = exact ? (kbw ? [kbw] : tied) : [top];
+  if (!exact && kbw && kbw !== top) legit = [top, kbw];
+  const ref = exact ? kbw : top;    // tegenover wie een afwijking gemeten wordt
+  const split = [];
+  if (k.raters.length > 1) k.kenmerken.forEach(x => k.opties.forEach(o => { const a = avg[x.id][o.id]; if (a.max - a.min >= 2) split.push({ x, o, a }); }));
+  return { avg, tot, rank, top, max, group, tied, exact, kb, kbw, legit, ref, split, diff:rank.length > 1 ? tot[top.id] - tot[rank[1].id] : 0 };
+}
+
+/* ---------- Scoren: wie, waar, in welke volgorde ---------- */
+let run = { keuze:null, rater:null, started:false, pos:0, cand:null, impOrder:null };
+function resetRun() { run = { keuze:null, rater:null, started:false, pos:0, cand:null, impOrder:null }; }
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+// De volgorde van de opties: per beoordelaar en per kenmerk toevallig, en bewaard (terugkeren toont dezelfde volgorde).
+function orderFor(k, r, kid) {
+  const byR = k.orde[r.id] = k.orde[r.id] && typeof k.orde[r.id] === 'object' ? k.orde[r.id] : {};
+  const ids = k.opties.map(o => o.id);
+  let ord = Array.isArray(byR[kid]) ? byR[kid].filter(id => ids.includes(id)) : [];
+  const before = JSON.stringify(byR[kid] || null);
+  if (!ord.length) {
+    ord = shuffle(ids.slice());
+    // niet twee keer na elkaar dezelfde optie bovenaan
+    const i = k.kenmerken.findIndex(x => x.id === kid), prev = i > 0 && byR[k.kenmerken[i - 1].id];
+    if (Array.isArray(prev) && prev[0] === ord[0] && ord.length > 1) { const j = 1 + Math.floor(Math.random() * (ord.length - 1)); [ord[0], ord[j]] = [ord[j], ord[0]]; }
+  } else ids.filter(id => !ord.includes(id)).forEach(id => ord.splice(Math.floor(Math.random() * (ord.length + 1)), 0, id));
+  byR[kid] = ord;
+  if (JSON.stringify(ord) !== before) { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
+  return ord;
+}
+const firstOpen = (k, r) => { const i = k.kenmerken.findIndex(x => !kDone(k, r, x.id)); return i < 0 ? 0 : i; };
+function currentRater(k) {
+  if (run.keuze !== k.id) { resetRun(); run.keuze = k.id; }
+  let r = k.raters.find(x => x.id === run.rater);
+  if (!r || (rDone(k, r) && !run.started)) {
+    r = k.raters.find(x => x.id === run.cand && !rDone(k, x)) || k.raters.find(x => !rDone(k, x)) || null;
+    if (!r) return null;
+    if (run.rater !== r.id) { run.rater = r.id; run.started = false; run.pos = firstOpen(k, r); run.impOrder = null; }
+  }
+  // Alleen: geen toestel door te geven.
+  if (k.raters.length === 1 && !run.started) { run.started = true; run.pos = firstOpen(k, r); }
+  return r;
+}
+// Na dit kenmerk: het eerstvolgende open kenmerk, anders een vroeger open kenmerk, anders klaar (-1).
+function nextPos(k, r, pos) {
+  for (let i = pos + 1; i < k.kenmerken.length; i++) if (!kDone(k, r, k.kenmerken[i].id)) return i;
+  for (let i = 0; i < pos; i++) if (!kDone(k, r, k.kenmerken[i].id)) return i;
+  return -1;
+}
+
+/* ---------- Tekenen ---------- */
+const ICON = {
+  x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+  right:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+  left:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>',
+  info:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>',
+  bulb:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg>',
+  lock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
+  warn:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9.5 17h-19z"/><path d="M12 10v4M12 17h.01"/></svg>',
+  pdf:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M9 13h6M9 17h4"/></svg>',
+  img:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>',
+  copy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>',
+  redo:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>'
+};
+const PASS = '<svg class="ho-ill" viewBox="0 0 72 72" fill="none" aria-hidden="true"><circle cx="36" cy="36" r="34" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2"/><rect x="25" y="16" width="22" height="38" rx="4" fill="#fff" stroke="#64748b" stroke-width="2"/><path d="M33 49h6" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/><circle cx="31" cy="27" r="2" fill="#10b981"/><circle cx="36" cy="27" r="2" fill="#10b981"/><circle cx="41" cy="27" r="2" fill="#cbd5e1"/><path d="M30 35h12M30 40h8" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round"/><path d="M50 40c5 0 8 3 8 7M54 45l4 2.5 2-4.5" stroke="#047857" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+function canGo(k, id) {
+  if (id === 'kenmerken') return true;
+  if (id === 'opties') return kReady(k);
+  if (id === 'scoren') return kReady(k) && oReady(k);
+  return allDone(k);
+}
+function stepState(k, id) {
+  if (id === 'kenmerken') return kReady(k);
+  if (id === 'opties') return kReady(k) && oReady(k);
+  if (id === 'scoren') return allDone(k);
+  return !!k.besluit;
+}
+function renderSteps() {
+  const k = cur();
+  $('steps').innerHTML = STEPS.map((s, i) => {
+    const on = k.step === s.id, ok = canGo(k, s.id), done = !on && stepState(k, s.id);
+    return `<li><button type="button" class="step${done ? ' done' : ''}" data-step="${s.id}"${on ? ' aria-current="step"' : ''}${ok ? '' : ' aria-disabled="true"'} aria-label="Stap ${i + 1}: ${s.name}${done ? ', klaar' : ''}${ok ? '' : ', nog niet beschikbaar'}"><span class="n" aria-hidden="true">${done ? ICON.check : i + 1}</span><span aria-hidden="true">${s.name}</span></button></li>`;
+  }).join('');
+}
+function renderTabs() {
+  const t = $('tabs');
+  t.hidden = isEmpty();
+  t.innerHTML = state.keuzes.map(k => `<button type="button" class="tab" data-keuze="${esc(k.id)}" aria-pressed="${k.id === state.current}"><span class="nm">${esc(k.name || 'Naamloos')}</span>${k.voorbeeld ? '<span class="vb-tag">voorbeeld</span>' : ''}</button>`).join('')
+    + `<button type="button" class="tab add" id="new-keuze" aria-label="Nieuwe keuze">+ Keuze</button>`;
+  $('m-delkeuze').hidden = state.keuzes.length < 2;
+}
+
+/* Stap 1: kenmerken */
+function kCount(k) {
+  const n = namedK(k).length;
+  const dots = `<span class="dots6" aria-hidden="true">${Array.from({ length:Math.max(GOOD_K, k.kenmerken.length) }, (_, i) => `<i class="${i < n ? (i < GOOD_K ? 'on' : 'over') : ''}"></i>`).join('')}</span>`;
+  const txt = n < MIN_K ? `<b>${n}</b> van minstens ${MIN_K}. Ongeveer zes is goed.` : n <= GOOD_K ? `<b>${n}</b> ${n === 1 ? 'kenmerk' : 'kenmerken'}${n < GOOD_K ? '. Ongeveer zes is goed.' : '. Mooi zo.'}` : `<b>${n}</b> kenmerken`;
+  return `<span class="kcount" id="kcount">${dots}${txt}</span>`;
+}
+function kWarn(k) {
+  return namedK(k).length > GOOD_K ? `<div class="note" id="kwarn">${ICON.info}<span><b>Meer is niet beter.</b> Elk extra kenmerk maakt de andere lichter, en een kenmerk dat er minder toe doet, kan dan toch de doorslag geven. Hou de kenmerken die echt beslissen.</span></div>` : '';
+}
+function kCard(k, x, i, locked) {
+  const editable = !locked || !kScored(k, x.id);
+  if (!editable) return `<li class="kc locked" data-k="${esc(x.id)}"><div class="kc-head"><span class="kc-nr" aria-hidden="true">${i + 1}</span><span class="kc-ro-name">${esc(kName(x))}</span></div>
+      <div class="kc-body">${x.vraag ? `<p class="kc-ro-q">${esc(x.vraag)}</p>` : ''}
+      <div class="kc-ro-a"><span><b>1 heel zwak</b>${x.laag ? esc(x.laag) : '<span class="leeg">niet beschreven</span>'}</span><span><b>5 heel sterk</b>${x.hoog ? esc(x.hoog) : '<span class="leeg">niet beschreven</span>'}</span></div></div></li>`;
+  return `<li class="kc${x.extra ? ' extra' : ''}" data-k="${esc(x.id)}">
+      <div class="kc-head"><span class="kc-nr" aria-hidden="true">${i + 1}</span>
+        <input class="field kc-name" data-f="naam" value="${esc(x.naam)}" maxlength="60" placeholder="Kenmerk, bv. Ervaring met gelijkaardig werk" aria-label="Naam van kenmerk ${i + 1}" autocomplete="off" enterkeyhint="next">
+        ${x.extra ? '<span class="kc-tag">extra</span>' : ''}
+        <button type="button" class="del" data-delk="${esc(x.id)}" aria-label="Verwijder kenmerk ${i + 1}${x.naam ? ': ' + esc(x.naam) : ''}">${ICON.x}</button></div>
+      <div class="kc-body">
+        <input class="field" data-f="vraag" value="${esc(x.vraag)}" maxlength="140" placeholder="Korte vraag, bv. Deden ze dit al eerder?" aria-label="Korte vraag bij kenmerk ${i + 1}" autocomplete="off" enterkeyhint="next">
+        <div class="kc-anchors">
+          <label><span class="lbl"><b>1 heel zwak</b> betekent</span><input class="field" data-f="laag" value="${esc(x.laag)}" maxlength="140" placeholder="bv. Nooit gedaan" autocomplete="off" enterkeyhint="next"></label>
+          <label><span class="lbl"><b>5 heel sterk</b> betekent</span><input class="field" data-f="hoog" value="${esc(x.hoog)}" maxlength="140" placeholder="bv. Al vaak, met referenties" autocomplete="off" enterkeyhint="next"></label>
+        </div>
+      </div></li>`;
+}
+function renderKenmerken(k) {
+  const locked = hasScores(k);
+  const list = k.kenmerken.map((x, i) => kCard(k, x, i, locked)).join('');
+  const canAdd = k.kenmerken.length < MAX_K;
+  const tie = tieK(k);
+  const opts = namedK(k).length ? `<label class="tieb"><span class="lbl">Bij een gelijke stand beslist</span><select class="field" id="tie-k" aria-describedby="tie-hint">${k.kenmerken.filter(x => x.naam.trim()).map(x => `<option value="${esc(x.id)}"${tie && tie.id === x.id ? ' selected' : ''}>${esc(kName(x))}</option>`).join('')}</select><span class="hint" id="tie-hint">Spreek dit nu af, voor iemand de scores ziet.</span></label>` : '';
+  const done = allDone(k);
+  return `
+    <p class="intro"><b>Wat moet de beste optie goed doen?</b> Kies de kenmerken die echt beslissen, nog voor je naar de opties kijkt. Schrijf bij elk wat een 1 en een 5 betekenen, zodat iedereen hetzelfde verstaat.</p>
+    ${locked ? `<div class="note green">${ICON.lock}<span><b>De kenmerken liggen vast, want het scoren is begonnen.</b> Zo kan niemand de maatstaf nog aanpassen nadat hij de opties zag.<br><button type="button" class="btn-s" id="unlock">Kenmerken aanpassen</button></span></div>`
+      : `<div class="note green">${ICON.bulb}<span><b>Tip</b>: kies kenmerken die los van elkaar staan. Scoort een optie hoog op het ene, dan zegt dat nog niets over het andere. Wat elke optie hoe dan ook moet hebben, is geen kenmerk maar een voorwaarde: laat opties die er niet aan voldoen gewoon vallen.</span></div>`}
+    <ol class="kgrid" id="klist" aria-label="Kenmerken">${list}</ol>
+    ${!locked || k.kenmerken.some(x => !kScored(k, x.id)) ? `<div class="kbar">${locked ? '' : `<button type="button" class="add-btn" id="add-k"${canAdd ? '' : ' disabled'}>${ICON.plus}${canAdd ? 'Kenmerk' : 'Maximum 8 kenmerken'}</button>`}${kCount(k)}</div>` : ''}
+    <div id="kwarn-wrap">${kWarn(k)}</div>
+    ${locked ? '' : opts}
+    <div class="stage-nav"><span class="grow"></span>${locked
+      ? `<button type="button" class="btn-pri" data-go="${done ? 'uitslag' : 'scoren'}">${done ? 'Naar de uitslag' : 'Verder met scoren'}${ICON.right}</button>`
+      : `<button type="button" class="btn-pri" data-go="opties" id="to-opties"${kReady(k) ? '' : ' aria-disabled="true"'}>Verder naar opties${ICON.right}</button>`}</div>`;
+}
+
+/* Stap 2: opties en beoordelaars */
+function renderOpties(k) {
+  const locked = hasScores(k), multi = k.raters.length > 1, done = allDone(k);
+  const opts = k.opties.map((o, i) => `<li class="orow" data-o="${esc(o.id)}"><span class="kc-nr" aria-hidden="true">${String.fromCharCode(65 + i)}</span><input class="field o-name" value="${esc(o.naam)}" maxlength="80" placeholder="${i === 0 ? 'bv. Offerte van bureau Noord' : 'Naam van de optie'}" aria-label="Optie ${String.fromCharCode(65 + i)}" autocomplete="off" enterkeyhint="next"><button type="button" class="del" data-delo="${esc(o.id)}" aria-label="Verwijder optie ${String.fromCharCode(65 + i)}${o.naam ? ': ' + esc(o.naam) : ''}">${ICON.x}</button></li>`).join('');
+  const raters = k.raters.map((r, i) => {
+    const n = k.kenmerken.reduce((m, x) => m + k.opties.filter(o => scoreOf(k, r, x.id, o.id)).length, 0), all = k.kenmerken.length * k.opties.length;
+    const st = !locked ? '' : rDone(k, r) ? 'klaar met scoren' : n ? `bezig: ${n} van ${all} scores` : 'nog niet begonnen';
+    return `<li class="orow rater" data-r="${esc(r.id)}"><span class="kc-nr" aria-hidden="true">${i + 1}</span><input class="field r-name" value="${esc(r.naam)}" maxlength="40" placeholder="Beoordelaar ${i + 1} (of een voornaam)" aria-label="Naam van beoordelaar ${i + 1}" autocomplete="off" enterkeyhint="done">${k.raters.length > 1 ? `<button type="button" class="del" data-delr="${esc(r.id)}" aria-label="Verwijder beoordelaar ${i + 1}">${ICON.x}</button>` : '<span></span>'}${st ? `<span class="state">${esc(st)}</span>` : ''}</li>`;
+  }).join('');
+  const goLabel = done ? 'Naar de uitslag' : locked ? 'Verder met scoren' : 'Begin met scoren';
+  return `
+    <div class="ogrid">
+      <div>
+        <p class="intro"><b>Tussen welke opties kies je?</b> Zet de kandidaten, offertes of voorstellen op een rij. Twee tot acht.</p>
+        <ol class="olist" id="olist" aria-label="Opties">${opts}</ol>
+        <button type="button" class="add-btn" id="add-o"${k.opties.length >= MAX_O ? ' disabled' : ''}>${ICON.plus}${k.opties.length >= MAX_O ? 'Maximum 8 opties' : 'Optie'}</button>
+        <p class="hint">Enter zet je klaar voor de volgende optie. Plak je een lijst, dan wordt elke regel een optie.${locked ? ' Voeg je nu nog een optie toe, dan scoort iedereen die nog op alle kenmerken.' : ''}</p>
+      </div>
+      <div>
+        <p class="intro"><b>Wie scoort?</b> Alleen of met meer. Iedereen scoort apart op dit toestel, en ziet de scores van de anderen pas bij de uitslag.</p>
+        <ol class="olist" id="rlist" aria-label="Beoordelaars">${raters}</ol>
+        <button type="button" class="add-btn" id="add-r"${k.raters.length >= MAX_R ? ' disabled' : ''}>${ICON.plus}Beoordelaar</button>
+        <p class="hint">Een naam is niet nodig. ${multi ? 'Elke beoordelaar krijgt het toestel om de beurt.' : 'Scoor je alleen, dan laat je dit zo.'}</p>
+      </div>
+    </div>
+    <div class="stage-nav"><button type="button" class="btn-sec" data-go="kenmerken">${ICON.left}Kenmerken</button><button type="button" class="btn-pri" data-go="${done ? 'uitslag' : 'scoren'}" id="to-scoren"${canGo(k, 'scoren') ? '' : ' aria-disabled="true"'}>${goLabel}${ICON.right}</button></div>`;
+}
+
+/* Stap 3: scoren */
+function renderScoren(k) {
+  // Wie net de laatste score gaf, blijft op zijn scherm tot hij zelf op Klaar tikt (een reden kan nog).
+  const busy = run.keuze === k.id && run.started && k.raters.some(x => x.id === run.rater);
+  if (allDone(k) && !busy) return `<div class="done-msg"><h2>Alle scores zijn binnen</h2><p>De uitslag staat klaar. Wil je een kenmerk opnieuw scoren, dan kan dat vanuit de uitslag.</p><button type="button" class="btn-pri" data-go="uitslag">Naar de uitslag${ICON.right}</button></div>`;
+  const r = currentRater(k);
+  const multi = k.raters.length > 1, who = rName(k, r);
+  if (!run.started) {
+    const others = k.raters.filter(x => x !== r && !rDone(k, x));
+    const prev = k.raters.filter(x => rDone(k, x));
+    return `<div class="handoff">${PASS}
+      <h2>${prev.length ? 'Geef het toestel door aan ' : 'Beurt aan '}${esc(who)}</h2>
+      <p>${esc(who)} scoort nu, zonder de scores van de anderen te zien. ${prev.length ? `${esc(prev.map(x => rName(k, x)).join(' en '))} ${prev.length === 1 ? 'is' : 'zijn'} klaar.` : 'Wie na jou scoort, ziet jouw scores ook niet.'}</p>
+      <button type="button" class="btn-pri" id="ho-start">Ik ben ${esc(who)}, begin${ICON.right}</button>
+      ${others.length ? `<div class="ho-other"><span class="lbl">Scoort iemand anders eerst?</span><div class="chips">${others.map(x => `<button type="button" class="chip" data-cand="${esc(x.id)}">${esc(rName(k, x))}</button>`).join('')}</div></div>` : ''}
+    </div>`;
+  }
+  if (!r.gevraagd) {
+    run.impOrder = run.impOrder && run.impOrder.length === k.opties.length ? run.impOrder : shuffle(k.opties.map(o => o.id));
+    return `<div class="imp">
+      <h2>Wat is je eerste indruk?</h2>
+      <p>Welke optie zou je nu kiezen, op je gevoel? Dit blijft verborgen tot na de uitslag. Dan zie je of je gevoel en de scores hetzelfde zeggen.</p>
+      <ul class="imp-list">${run.impOrder.map(id => `<li><button type="button" data-imp="${esc(id)}">${esc(oName(k, id))}</button></li>`).join('')}</ul>
+      <button type="button" class="link-btn skip" data-imp="">Sla over</button>
+    </div>`;
+  }
+  const x = k.kenmerken[clamp(run.pos, 0, k.kenmerken.length - 1)], pos = k.kenmerken.indexOf(x);
+  const ord = orderFor(k, r, x.id);
+  const left = k.opties.filter(o => !scoreOf(k, r, x.id, o.id)).length;
+  const np = nextPos(k, r, pos);
+  const nextLabel = left ? `Nog ${left} ${left === 1 ? 'optie' : 'opties'} te scoren` : np < 0 ? (k.raters.every(y => y === r || rDone(k, y)) ? 'Klaar: naar de uitslag' : 'Klaar met scoren') : 'Volgend kenmerk';
+  const opts = ord.map(id => {
+    const o = oById(k, id), v = scoreOf(k, r, x.id, id), on = v ? v.s : 0;
+    return `<li class="sc-opt${on ? ' has' : ''}" data-o="${esc(id)}">
+      <div class="sc-name" id="on-${esc(id)}"><span>${esc(oName(k, id))}</span>${on ? `<small>${on} · ${WORDS[on - 1]}</small>` : ''}</div>
+      <div class="scale" role="radiogroup" aria-labelledby="on-${esc(id)}">${WORDS.map((w, i) => `<button type="button" role="radio" data-s="${i + 1}" aria-checked="${on === i + 1}" tabindex="${(on ? on === i + 1 : i === 0) ? 0 : -1}" aria-label="${i + 1}, ${w}"><b>${i + 1}</b><small>${w}</small></button>`).join('')}</div>
+      ${on ? `<input class="field sc-why" value="${esc(v.r)}" maxlength="140" placeholder="Wat zag je? (mag leeg)" aria-label="Reden voor de score van ${esc(oName(k, id))}" autocomplete="off" enterkeyhint="done">` : ''}
+    </li>`;
+  }).join('');
+  return `<div class="sc">
+    <div class="sc-top"><span>${multi ? `<b>${esc(who)}</b> scoort` : 'Scoren'}</span><span>Kenmerk <b>${pos + 1}</b> van ${k.kenmerken.length}</span></div>
+    <div class="prog" role="progressbar" aria-label="Voortgang" aria-valuemin="0" aria-valuemax="${k.kenmerken.length}" aria-valuenow="${k.kenmerken.filter(y => kDone(k, r, y.id)).length}">${k.kenmerken.map((y, i) => `<i class="${i === pos ? 'cur' : kDone(k, r, y.id) ? 'on' : ''}"></i>`).join('')}</div>
+    <p class="sc-lock">${ICON.lock}Eerdere scores en totalen blijven verborgen tot de uitslag.</p>
+    <h2 class="sc-k" tabindex="-1" id="sc-k">${esc(kName(x))}</h2>
+    ${x.vraag ? `<p class="sc-q">${esc(x.vraag)}</p>` : ''}
+    <div class="anchors"><div class="anchor"><b>1 heel zwak</b>${x.laag ? esc(x.laag) : '<span class="leeg">niet beschreven</span>'}</div><div class="anchor hi"><b>5 heel sterk</b>${x.hoog ? esc(x.hoog) : '<span class="leeg">niet beschreven</span>'}</div></div>
+    <ol class="sc-opts" aria-label="Opties, in wisselende volgorde">${opts}</ol>
+    <div class="sc-nav">${pos > 0 ? `<button type="button" class="btn-sec" id="sc-prev">${ICON.left}Vorig kenmerk</button>` : `<button type="button" class="btn-sec" data-go="opties">${ICON.left}Opties</button>`}<button type="button" class="btn-pri" id="sc-next"${left ? ' aria-disabled="true"' : ''}>${nextLabel}${left ? '' : ICON.right}</button></div>
+    <p class="hint sc-keys">Sneltoetsen: <kbd>1</kbd> tot <kbd>5</kbd> geeft een score, <kbd>Enter</kbd> gaat verder.</p>
+  </div>`;
+}
+
+/* Stap 4: uitslag */
+let dev = { open:false, opt:null, kenmerk:'', feit:'' };
+function verdictHTML(k, R) {
+  const b = k.besluit; if (!b) return '';
+  const g = oName(k, b.gekozen), w = b.winnaar ? oName(k, b.winnaar) : '', kb = R.kb ? kName(R.kb) : '';
+  const datum = new Date(b.at).toLocaleDateString('nl-BE', { day:'numeric', month:'long', year:'numeric' });
+  const kx = b.kenmerk && b.kenmerk !== 'geen' ? k.kenmerken.find(x => x.id === b.kenmerk) : null;
+  const lines = b.soort === 'afwijking'
+    ? `<p>Gekozen: <b>${esc(g)}</b>, hoewel ${esc(w)} het hoogste totaal had (${nf(b.tW)} tegenover ${nf(b.tG)}), omdat: ${esc(b.feit)}</p><p>Dit feit hoort bij ${kx ? `het kenmerk <b>${esc(kName(kx))}</b>` : 'geen enkel kenmerk'}.</p>`
+    : b.soort === 'afspraak' ? `<p>Het verschil in totaal was kleiner dan 1 punt. Volgens de afspraak beslist dan <b>${esc(kb)}</b>, en daar scoorde ${esc(g)} het hoogst.</p>`
+    : b.soort === 'gelijk' ? `<p>Gelijke stand in totaal, ook op ${esc(kb)}. Jullie kozen zelf tussen de gelijke opties.</p>`
+    : `<p>De optie met het hoogste totaal: ${nf(b.tG)} van ${R.max}.</p>`;
+  return `<div class="verdict${b.soort === 'afwijking' ? ' afw' : ''}" id="verdict">
+    <div class="kick">Beslissing${b.soort === 'afwijking' ? '<span>afwijking van het hoogste totaal</span>' : ''}</div>
+    <p class="big">Gekozen: ${esc(g)}</p>${lines}
+    <p class="when">Vastgelegd op ${esc(datum)}.</p>
+    <div class="dec-btns"><button type="button" class="btn-s" data-exp="pdf">${ICON.pdf}PDF</button><button type="button" class="btn-s" data-exp="png">${ICON.img}Afbeelding</button><button type="button" class="btn-s" id="copy-dec">${ICON.copy}Kopieer de beslissing</button><button type="button" class="link-btn" id="undo-dec">Kies opnieuw</button></div>
+  </div>`;
+}
+function devHTML(k, R) {
+  if (!dev.open) return '';
+  const cands = k.opties.filter(o => !R.legit.includes(o));
+  const O = cands.find(o => o.id === dev.opt) || null, W = R.ref || R.top;
+  let calc = '';
+  if (O && W) {
+    const gap = R.tot[W.id] - R.tot[O.id];
+    calc = `<div class="calc">${esc(oName(k, O.id))} heeft ${nf(R.tot[O.id])}, ${esc(oName(k, W.id))} heeft ${nf(R.tot[W.id])}. ${gap < EPS ? `In totaal staan ze gelijk, maar volgens jullie afspraak beslist dan ${esc(kName(R.kb))}, en daar scoort ${esc(oName(k, W.id))} hoger.` : `Om te winnen moet ${esc(oName(k, O.id))} er <b>meer dan ${pts(gap)}</b> bij krijgen.`}</div>`;
+    if (dev.kenmerk && dev.kenmerk !== 'geen') {
+      const x = k.kenmerken.find(y => y.id === dev.kenmerk);
+      if (x) {
+        const s = R.avg[x.id][O.id].m, need = s + gap;
+        calc += need < 5 - EPS
+          ? `<div class="calc">Op <b>${esc(kName(x))}</b> scoort ${esc(oName(k, O.id))} nu ${nf(s)}. Dat had <b>meer dan ${nf(need)}</b> moeten zijn. Verandert jouw feit de score echt zoveel? Scoor dan dit kenmerk opnieuw, voor alle opties.</div>`
+          : `<div class="calc hard">Op <b>${esc(kName(x))}</b> scoort ${esc(oName(k, O.id))} nu ${nf(s)}. Zelfs met een 5 wint ze niet: er kan op dit kenmerk hoogstens ${pts(5 - s)} bij, en het verschil is ${pts(gap)}. Dit feit alleen verklaart de keuze dus niet.</div>`;
+      }
+    } else if (dev.kenmerk === 'geen') {
+      calc += `<div class="calc">Hoort je feit bij geen enkel kenmerk? Dan ontbrak er misschien een kenmerk. Voeg het toe en laat iedereen het voor alle opties scoren. Zo beslist het feit, niet het verhaal.${canExtra(k) ? `<br><button type="button" class="btn-s" data-extra style="margin-top:0.5rem">${ICON.plus}Voeg één kenmerk toe</button>` : ''}</div>`;
+    }
+  }
+  const ok = O && dev.feit.trim().length >= 5 && dev.kenmerk;
+  return `<div class="dev" id="dev">
+    <h4>Toch een andere optie?</h4>
+    <p>Dat kan. Een goed verhaal voelt overtuigend, maar het telt pas als er een feit achter zit dat je bij het scoren miste.</p>
+    <div><span class="lbl" id="dev-o-l">Welke optie wil je kiezen?</span><div class="chips" role="radiogroup" aria-labelledby="dev-o-l">${cands.map(o => `<button type="button" class="chip" role="radio" data-devo="${esc(o.id)}" aria-checked="${dev.opt === o.id}">${esc(oName(k, o.id))}</button>`).join('')}</div></div>
+    ${O ? `<label><span class="lbl">Welk feit heb je gemist? Een feit, geen gevoel.</span><textarea class="field" id="dev-feit" rows="2" maxlength="300" placeholder="bv. Hun referentie bij een andere stad bevestigt een werkende koppeling.">${esc(dev.feit)}</textarea></label>
+    <label><span class="lbl">Bij welk kenmerk hoort dat feit?</span><select class="field" id="dev-k"><option value=""${dev.kenmerk ? '' : ' selected'}>Kies een kenmerk</option>${k.kenmerken.map(x => `<option value="${esc(x.id)}"${dev.kenmerk === x.id ? ' selected' : ''}>${esc(kName(x))}</option>`).join('')}<option value="geen"${dev.kenmerk === 'geen' ? ' selected' : ''}>Bij geen enkel kenmerk</option></select></label>
+    <div id="dev-calc" aria-live="polite">${calc}</div>
+    <div class="dev-btns">${dev.kenmerk && dev.kenmerk !== 'geen' ? `<button type="button" class="btn-sec" data-rescore="${esc(dev.kenmerk)}">${ICON.redo}Scoor dit kenmerk opnieuw</button>` : ''}<button type="button" class="btn-pri btn-dev" id="dev-ok"${ok ? '' : ' aria-disabled="true"'}>Kies toch ${esc(oName(k, O.id))}</button><button type="button" class="link-btn" id="dev-cancel">Annuleer</button></div>` : `<div class="dev-btns"><button type="button" class="link-btn" id="dev-cancel">Annuleer</button></div>`}
+  </div>`;
+}
+const canExtra = k => k.kenmerken.length < MAX_K && !k.kenmerken.some(x => x.extra);
+function renderUitslag(k) {
+  if (!allDone(k)) { k.step = 'scoren'; return renderScoren(k); }
+  const R = results(k), top = R.top, second = R.rank[1];
+  const multi = k.raters.length > 1;
+  // Kop: de winnaar, of eerlijk zeggen dat het nipt of gelijk is.
+  let head;
+  if (R.exact) head = `<div class="win even"><div class="kick">Gelijke stand</div><h2>${esc(R.tied.map(o => oName(k, o.id)).join(' en '))}</h2><p>Allebei ${nf(R.tot[top.id])} van ${R.max} punten.</p></div>`;
+  else head = `<div class="win${R.group.length > 1 ? ' even' : ''}"><div class="kick">${R.group.length > 1 ? 'Hoogste totaal, maar nipt' : 'Hoogste totaal'}</div><h2>${esc(oName(k, top.id))}</h2><p>${nf(R.tot[top.id])} van ${R.max} punten${second ? ` · ${pts(R.diff)} meer dan ${esc(oName(k, second.id))}` : ''}</p></div>`;
+  let close = '';
+  if (R.group.length > 1) {
+    const kb = R.kb, names = R.group.map(o => `${esc(oName(k, o.id))} ${nf(R.avg[kb.id][o.id].m)}`).join(', ');
+    close = `<div class="note amber">${ICON.warn}<span><b>${R.exact ? 'De totalen zijn gelijk.' : 'Het verschil is kleiner dan 1 punt.'}</b> Dat is te weinig om op te bouwen. Jullie spraken af dat dan <b>${esc(kName(kb))}</b> beslist: ${names}. ${R.kbw ? `Daar wint ${esc(oName(k, R.kbw.id))}.` : 'Ook daar is er geen verschil.'} ${canExtra(k) ? 'Of voeg één kenmerk toe dat echt het verschil maakt.' : ''}${canExtra(k) ? `<br><button type="button" class="btn-s" data-extra>${ICON.plus}Voeg één kenmerk toe</button>` : ''}</span></div>`;
+  }
+  const rank = `<div><div class="sec-h"><span>Rangorde</span><span>totaal</span></div><ol class="rank">${R.rank.map((o, i) => `<li class="${i === 0 && !R.exact ? 'first' : ''}"><div class="rk-top"><span><i>${i + 1}.</i>${esc(oName(k, o.id))}</span><b>${nf(R.tot[o.id])} <small>van ${R.max}</small></b></div><div class="bar" aria-hidden="true"><i style="width:${(R.tot[o.id] / R.max * 100).toFixed(1)}%"></i></div></li>`).join('')}</ol>
+    <p class="even-note">Alle kenmerken wegen even zwaar. Dat is een bewuste keuze: met gewichten kan je blijven schuiven tot je favoriet wint.</p></div>`;
+  // Beslissen
+  let decide;
+  if (k.besluit) decide = verdictHTML(k, R);
+  else {
+    const others = k.opties.filter(o => !R.legit.includes(o));
+    decide = `<div class="decide" id="decide"><h3>Wat kies je?</h3><p>${R.legit.length > 1 && R.exact ? 'Kies tussen de gelijke opties, of voeg één kenmerk toe.' : 'Het hoogste totaal beslist. Dat was de afspraak.'}</p>
+      <div class="dec-btns">${R.legit.map((o, i) => `<button type="button" class="${i === 0 ? 'btn-pri' : 'btn-sec'}" data-kies="${esc(o.id)}">Kies ${esc(oName(k, o.id))}${o === R.kbw && o !== top ? ` <span style="font-weight:500">(wint op ${esc(kName(R.kb))})</span>` : ''}</button>`).join('')}
+      ${others.length && !dev.open ? `<button type="button" class="link-btn" id="dev-open">Ik wil toch een andere optie kiezen</button>` : ''}</div>${devHTML(k, R)}</div>`;
+  }
+  // Tabel per kenmerk
+  const winId = R.exact ? null : top.id;
+  const table = `<div><div class="sec-h"><span>Scores per kenmerk</span><span>${multi ? `gemiddelde van ${k.raters.length}` : ''}</span></div><div class="tbl-wrap" role="region" aria-label="Scores per kenmerk" tabindex="0"><table class="tbl">
+    <thead><tr><th class="k" scope="col">Kenmerk</th>${k.opties.map(o => `<th scope="col"${o.id === winId ? ' class="w"' : ''}>${esc(oName(k, o.id))}</th>`).join('')}</tr></thead>
+    <tbody>${k.kenmerken.map(x => `<tr><th class="k" scope="row">${esc(kName(x))}</th>${k.opties.map(o => { const a = R.avg[x.id][o.id], sp = multi && a.max - a.min >= 2; return `<td class="${o.id === winId ? 'w' : ''}${sp ? ' split' : ''}"><b>${nf(a.m)}</b>${sp ? `<small>${a.list.map(e => e.v.s).join(' en ')}</small>` : ''}</td>`; }).join('')}</tr>`).join('')}</tbody>
+    <tfoot><tr><th class="k" scope="row">Totaal</th>${k.opties.map(o => `<td${o.id === winId ? ' class="w"' : ''}>${nf(R.tot[o.id])}</td>`).join('')}</tr></tfoot>
+  </table></div>${whyHTML(k)}</div>`;
+  const split = R.split.length ? `<div class="note amber">${ICON.warn}<span><b>Hier verschillen jullie 2 punten of meer.</b> Praat hierover, en scoor eventueel opnieuw.<ul class="split-list">${groupSplit(R.split).map(g => `<li><span><b>${esc(kName(g.x))}</b>: ${g.items.map(s => `${esc(oName(k, s.o.id))} (${s.a.list.map(e => `${esc(rName(k, e.r))} ${e.v.s}`).join(', ')})`).join('; ')}</span><button type="button" class="btn-s" data-rescore="${esc(g.x.id)}">${ICON.redo}Scoor opnieuw</button></li>`).join('')}</ul></span></div>` : '';
+  const imps = k.raters.filter(r => r.indruk);
+  const ref = R.exact ? null : top;
+  const imp = imps.length ? `<div class="note">${ICON.info}<span><b>Eerste indruk, voor het scoren</b><ul class="imp-res">${imps.map(r => `<li>${multi ? `${esc(rName(k, r))}: ` : ''}${esc(oName(k, r.indruk))}${ref && r.indruk === ref.id ? ', ook de hoogste' : `, plaats ${R.rank.indexOf(oById(k, r.indruk)) + 1} met ${nf(R.tot[r.indruk])}`}</li>`).join('')}</ul>${ref && imps.some(r => r.indruk !== ref.id) ? 'Een eerste indruk rust vaak op één sterk punt of een goed verhaal. Daarom tellen de kenmerken.' : ref ? 'Je eerste indruk en de scores zeggen hier hetzelfde.' : ''}</span></div>` : '';
+  return `<div class="res"><div class="res-col">${head}${close}${rank}${decide}</div><div class="res-col">${table}${split}${imp}</div></div>`;
+}
+function groupSplit(list) {
+  const g = [];
+  list.forEach(s => { let e = g.find(x => x.x === s.x); if (!e) g.push(e = { x:s.x, items:[] }); e.items.push(s); });
+  return g;
+}
+function whyHTML(k) {
+  const rows = k.kenmerken.map(x => {
+    const items = [];
+    k.opties.forEach(o => k.raters.forEach(r => { const v = scoreOf(k, r, x.id, o.id); if (v && v.r.trim()) items.push(`<li>${esc(oName(k, o.id))}: ${v.s}${k.raters.length > 1 ? ` (${esc(rName(k, r))})` : ''}. ${esc(v.r)}</li>`); }));
+    return items.length ? `<li><b>${esc(kName(x))}</b><ul>${items.join('')}</ul></li>` : '';
+  }).join('');
+  return rows ? `<details class="why"><summary>Toon de redenen bij de scores</summary><ul class="why-list">${rows}</ul></details>` : '';
+}
+
+function render() {
+  const k = cur();
+  if (k.step === 'uitslag' && !allDone(k)) k.step = canGo(k, 'scoren') ? 'scoren' : canGo(k, 'opties') ? 'opties' : 'kenmerken';
+  if (k.step !== 'kenmerken' && !canGo(k, k.step)) k.step = 'kenmerken';
+  $('vb-start').hidden = !isEmpty();
+  $('vb-bar').hidden = !k.voorbeeld;
+  if (document.activeElement !== $('k-name')) $('k-name').value = k.name;
+  renderTabs(); renderSteps();
+  const html = k.step === 'kenmerken' ? renderKenmerken(k) : k.step === 'opties' ? renderOpties(k) : k.step === 'scoren' ? renderScoren(k) : renderUitslag(k);
+  $('stage').innerHTML = html;
+}
+// Na typen in een veld: alleen tellers, stappen en tabbladen bijwerken (de velden zelf blijven staan).
+function refresh() {
+  const k = cur();
+  renderTabs(); renderSteps();
+  $('vb-start').hidden = !isEmpty();
+  const c = $('kcount'); if (c) c.outerHTML = kCount(k);
+  const w = $('kwarn-wrap'); if (w) w.innerHTML = kWarn(k);
+  const t = $('to-opties'); if (t) { if (kReady(k)) t.removeAttribute('aria-disabled'); else t.setAttribute('aria-disabled', 'true'); }
+  const s = $('to-scoren'); if (s) { if (canGo(k, 'scoren')) s.removeAttribute('aria-disabled'); else s.setAttribute('aria-disabled', 'true'); }
+  const tie = $('tie-k'); if (tie && document.activeElement !== tie) {
+    const named = k.kenmerken.filter(x => x.naam.trim()), sel = tieK(k);
+    tie.innerHTML = named.map(x => `<option value="${esc(x.id)}"${sel && sel.id === x.id ? ' selected' : ''}>${esc(kName(x))}</option>`).join('');
+  }
+}
+const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+const toTop = () => { const c = document.querySelector('.card'); if (c && c.getBoundingClientRect().top < 0) c.scrollIntoView({ block:'start', behavior:still() ? 'auto' : 'smooth' }); };
+function go(step, focus = true) {
+  const k = cur();
+  if (!canGo(k, step)) {
+    if (step === 'opties') toast(`Geef eerst minstens ${MIN_K} kenmerken een naam.`);
+    else if (step === 'scoren') toast(!kReady(k) ? `Geef eerst minstens ${MIN_K} kenmerken een naam.` : `Zet eerst minstens ${MIN_O} opties op een rij.`);
+    else { const n = missing(k); toast(n ? `De uitslag verschijnt als iedereen alles gescoord heeft. Nog ${n} ${n === 1 ? 'score' : 'scores'}.` : 'Nog niet alles is ingevuld.'); }
+    return;
+  }
+  // lege rijen opruimen als je verder gaat
+  if (k.step === 'kenmerken' && step !== 'kenmerken') k.kenmerken = k.kenmerken.filter(x => x.naam.trim() || x.vraag.trim() || x.laag.trim() || x.hoog.trim() || kScored(k, x.id));
+  if (k.step === 'opties' && step !== 'opties') k.opties = k.opties.filter(o => o.naam.trim() || k.raters.some(r => k.kenmerken.some(x => scoreOf(k, r, x.id, o.id))));
+  if (step === 'scoren' && k.step !== 'scoren' && k.kenmerken.some(x => !x.naam.trim())) { toast('Geef elk kenmerk een naam, of verwijder het.'); return; }
+  if (step === 'scoren' && k.opties.some(o => !o.naam.trim())) { toast('Geef elke optie een naam, of verwijder ze.'); return; }
+  k.step = step; dev = { open:false, opt:null, kenmerk:'', feit:'' };
+  save(); render(); toTop();
+  if (focus) { const s = document.querySelector('.step[aria-current="step"]'); s && s.focus({ preventScroll:true }); }
+}
+
+/* ---------- Melding met ongedaan maken ---------- */
+let undoFn = null, toastTimer = null;
+function toast(msg, undo, label) {
+  undoFn = undo || null;
+  $('toast-text').textContent = msg;
+  $('toast-btn').hidden = !undo;
+  $('toast-btn').textContent = label || 'Ongedaan';
+  $('toast').classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { $('toast').classList.remove('show'); undoFn = null; }, undo ? 6000 : Math.max(2800, msg.length * 55));
+}
+$('toast-btn').addEventListener('click', () => {
+  const fn = undoFn; undoFn = null;
+  $('toast').classList.remove('show');
+  if (!fn) return;
+  fn(); save(); render();
+});
+const say = t => { const l = $('live'); l.textContent = ''; setTimeout(() => { l.textContent = t; }, 30); };
+
+/* ---------- Keuze: naam, tabbladen, voorbeeld ---------- */
+$('k-name').addEventListener('input', () => { cur().name = $('k-name').value.slice(0, 80); save(); renderTabs(); });
+$('k-name').addEventListener('blur', () => { if (!cur().name.trim()) { cur().name = 'Mijn keuze'; save(); render(); } });
+$('k-name').addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  e.preventDefault();
+  const k = cur();
+  if (k.step === 'kenmerken' && !hasScores(k)) {
+    const f = document.querySelector('#klist .kc-name');
+    if (f) f.focus(); else $('add-k') && $('add-k').click();
+  }
+});
+$('tabs').addEventListener('click', e => {
+  if (e.target.closest('#new-keuze')) {
+    const k = blank('Nieuwe keuze'); state.keuzes.push(k); state.current = k.id; resetRun(); save(); render();
+    $('k-name').focus(); $('k-name').select();
+    return;
+  }
+  const t = e.target.closest('[data-keuze]'); if (!t) return;
+  state.current = t.dataset.keuze; resetRun(); dev = { open:false, opt:null, kenmerk:'', feit:'' }; save(); render();
+});
+function deleteKeuze() {
+  if (state.keuzes.length < 2) return;
+  const k = cur(), restore = snapshot(), idx = state.keuzes.indexOf(k);
+  state.keuzes.splice(idx, 1); state.current = state.keuzes[Math.max(0, idx - 1)].id; resetRun(); save(); render();
+  toast(`${k.name || 'Keuze'} verwijderd`, restore);
+}
+function dupKeuze() {
+  const k = cur(), map = {};
+  const c = blank((k.name || 'Keuze').slice(0, 72) + ' (kopie)');
+  c.kenmerken = k.kenmerken.map(x => { const n = { ...x, id:uid() }; delete n.extra; map[x.id] = n.id; return n; });
+  c.opties = k.opties.map(o => ({ ...o, id:uid() }));
+  c.raters = k.raters.map(r => ({ id:uid(), naam:r.naam, indruk:null, gevraagd:false }));
+  c.beslist = map[k.beslist] || null;
+  c.step = c.kenmerken.length >= MIN_K ? 'opties' : 'kenmerken';
+  state.keuzes.splice(state.keuzes.indexOf(k) + 1, 0, c); state.current = c.id; resetRun(); save(); render();
+  toast('Kopie gemaakt, zonder scores');
+}
+
+/* ---------- Stappen ---------- */
+$('steps').addEventListener('click', e => { const b = e.target.closest('[data-step]'); if (b) go(b.dataset.step); });
+$('stage').addEventListener('click', e => { const b = e.target.closest('[data-go]'); if (b) go(b.dataset.go); });
+
+/* ---------- Stap 1: kenmerken ---------- */
+function addK(extra) {
+  const k = cur(); if (k.kenmerken.length >= MAX_K) return;
+  const x = { id:uid(), naam:'', vraag:'', laag:'', hoog:'', ...(extra ? { extra:true } : {}) };
+  k.kenmerken.push(x); save(); render();
+  const f = document.querySelector(`.kc[data-k="${CSS.escape(x.id)}"] .kc-name`); if (f) { f.focus({ preventScroll:true }); f.scrollIntoView({ block:'center', behavior:still() ? 'auto' : 'smooth' }); }
+}
+$('stage').addEventListener('input', e => {
+  const k = cur();
+  const kc = e.target.closest('.kc[data-k]');
+  if (kc && e.target.dataset.f) {
+    const x = k.kenmerken.find(y => y.id === kc.dataset.k); if (!x) return;
+    x[e.target.dataset.f] = e.target.value.slice(0, e.target.maxLength > 0 ? e.target.maxLength : 140);
+    if (e.target.dataset.f === 'naam') { const d = kc.querySelector('[data-delk]'); d && d.setAttribute('aria-label', 'Verwijder kenmerk' + (x.naam ? ': ' + x.naam : '')); }
+    save(); refresh(); return;
+  }
+  const or = e.target.closest('.orow[data-o]');
+  if (or && e.target.classList.contains('o-name')) { const o = oById(k, or.dataset.o); if (o) { o.naam = e.target.value.slice(0, 80); save(); refresh(); } return; }
+  const rr = e.target.closest('.orow[data-r]');
+  if (rr && e.target.classList.contains('r-name')) { const r = k.raters.find(y => y.id === rr.dataset.r); if (r) { r.naam = e.target.value.slice(0, 40); save(); } return; }
+  const so = e.target.closest('.sc-opt[data-o]');
+  if (so && e.target.classList.contains('sc-why')) {
+    const r = k.raters.find(y => y.id === run.rater), x = k.kenmerken[run.pos], v = r && x && scoreOf(k, r, x.id, so.dataset.o);
+    if (v) { v.r = e.target.value.slice(0, 140); save(); }
+    return;
+  }
+  if (e.target.id === 'dev-feit') { dev.feit = e.target.value.slice(0, 300); syncDevOk(); }
+});
+$('stage').addEventListener('change', e => {
+  const k = cur();
+  if (e.target.id === 'tie-k') { k.beslist = e.target.value || null; save(); toast(`Bij een gelijke stand beslist ${kName(tieK(k))}`); }
+  if (e.target.id === 'dev-k') { dev.kenmerk = e.target.value; const R = results(k); const d = $('dev'); if (d) { d.outerHTML = devHTML(k, R); const s = $('dev-k'); s && s.focus(); } }
+});
+function syncDevOk() {
+  const b = $('dev-ok'); if (!b) return;
+  const ok = dev.opt && dev.feit.trim().length >= 5 && dev.kenmerk;
+  if (ok) b.removeAttribute('aria-disabled'); else b.setAttribute('aria-disabled', 'true');
+}
+$('stage').addEventListener('keydown', e => {
+  if (e.key !== 'Enter' || e.isComposing) return;
+  const k = cur();
+  const kc = e.target.closest('.kc[data-k]');
+  if (kc && e.target.matches('input')) {
+    e.preventDefault();
+    const fields = [...kc.querySelectorAll('input')], i = fields.indexOf(e.target);
+    if (i < fields.length - 1) { fields[i + 1].focus(); return; }
+    const next = kc.nextElementSibling && kc.nextElementSibling.querySelector('input');
+    if (next) next.focus(); else if (k.kenmerken.length < MAX_K && !hasScores(k)) addK(); else { const g = document.querySelector('[data-go]'); g && g.focus(); }
+    return;
+  }
+  const or = e.target.closest('.orow[data-o]');
+  if (or && e.target.matches('input')) {
+    e.preventDefault();
+    const next = or.nextElementSibling && or.nextElementSibling.querySelector('input');
+    if (next) next.focus(); else if (k.opties.length < MAX_O) addO(); else $('add-r') && $('add-r').focus();
+    return;
+  }
+  const rr = e.target.closest('.orow[data-r]');
+  if (rr && e.target.matches('input')) { e.preventDefault(); const next = rr.nextElementSibling && rr.nextElementSibling.querySelector('input'); if (next) next.focus(); else { const g = $('to-scoren'); g && g.focus(); } return; }
+  if (e.target.classList.contains('sc-why')) { e.preventDefault(); const nx = e.target.closest('.sc-opt').nextElementSibling; const b = nx ? nx.querySelector('[role=radio][tabindex="0"]') : $('sc-next'); b && b.focus(); }
+});
+$('stage').addEventListener('paste', e => {
+  const or = e.target.closest('.orow[data-o]'); if (!or || !e.target.classList.contains('o-name')) return;
+  const text = (e.clipboardData || window.clipboardData).getData('text');
+  if (!/\n/.test(text.trim())) return;
+  e.preventDefault();
+  const k = cur(), names = text.split(/\r?\n/).map(t => t.trim().replace(/^([-*+•·▪◦]|\d+[.)])\s+/, '').trim()).filter(Boolean).map(t => t.slice(0, 80));
+  const o = oById(k, or.dataset.o), restore = snapshot();
+  let n = 0;
+  names.forEach((nm, i) => { if (i === 0 && o && !o.naam.trim()) { o.naam = nm; n++; return; } if (k.opties.length < MAX_O) { k.opties.push({ id:uid(), naam:nm }); n++; } });
+  if (hasScores(k)) k.besluit = null;
+  save(); render();
+  toast(`${n} ${n === 1 ? 'optie' : 'opties'} toegevoegd${names.length > n ? `. Maximum ${MAX_O}.` : ''}`, restore);
+});
+
+/* ---------- Stap 2: opties en beoordelaars ---------- */
+function addO() {
+  const k = cur(); if (k.opties.length >= MAX_O) return;
+  const o = { id:uid(), naam:'' }; k.opties.push(o);
+  if (hasScores(k)) k.besluit = null;
+  save(); render();
+  const f = document.querySelector(`.orow[data-o="${CSS.escape(o.id)}"] input`); f && f.focus();
+}
+function addR() {
+  const k = cur(); if (k.raters.length >= MAX_R) return;
+  const r = blankRater(); k.raters.push(r);
+  if (hasScores(k)) k.besluit = null;
+  save(); render();
+  const f = document.querySelector(`.orow[data-r="${CSS.escape(r.id)}"] input`); f && f.focus();
+}
+
+/* ---------- Klikken in het werkvlak ---------- */
+$('stage').addEventListener('click', async e => {
+  const k = cur(), t = e.target;
+  if (t.closest('#add-k')) { addK(); return; }
+  if (t.closest('#add-o')) { addO(); return; }
+  if (t.closest('#add-r')) { addR(); return; }
+  const dk = t.closest('[data-delk]');
+  if (dk) {
+    const i = k.kenmerken.findIndex(x => x.id === dk.dataset.delk); if (i < 0) return;
+    const x = k.kenmerken[i], restore = snapshot();
+    k.kenmerken.splice(i, 1); if (k.beslist === x.id) k.beslist = null; save(); render();
+    if (x.naam || x.vraag || x.laag || x.hoog) toast(`${x.naam || 'Kenmerk'} verwijderd`, restore);
+    const f = document.querySelectorAll('#klist .kc-name')[Math.min(i, k.kenmerken.length - 1)]; f ? f.focus() : $('add-k') && $('add-k').focus();
+    return;
+  }
+  const dO = t.closest('[data-delo]');
+  if (dO) {
+    const i = k.opties.findIndex(o => o.id === dO.dataset.delo); if (i < 0) return;
+    const o = k.opties[i], restore = snapshot(), had = k.raters.some(r => k.kenmerken.some(x => scoreOf(k, r, x.id, o.id)));
+    k.opties.splice(i, 1);
+    k.raters.forEach(r => { if (r.indruk === o.id) r.indruk = null; Object.values(k.scores[r.id] || {}).forEach(byO => { delete byO[o.id]; }); });
+    if (had || (k.besluit && (k.besluit.gekozen === o.id || k.besluit.winnaar === o.id))) k.besluit = null;
+    save(); render();
+    if (o.naam || had) toast(`${o.naam || 'Optie'} verwijderd${had ? ', met haar scores' : ''}`, restore);
+    const f = document.querySelectorAll('#olist .o-name')[Math.min(i, k.opties.length - 1)]; f ? f.focus() : $('add-o').focus();
+    return;
+  }
+  const dR = t.closest('[data-delr]');
+  if (dR) {
+    const i = k.raters.findIndex(r => r.id === dR.dataset.delr); if (i < 0 || k.raters.length < 2) return;
+    const r = k.raters[i], restore = snapshot(), had = Object.keys(k.scores[r.id] || {}).length;
+    k.raters.splice(i, 1); delete k.scores[r.id]; delete k.orde[r.id]; if (had) k.besluit = null;
+    if (run.rater === r.id) resetRun();
+    save(); render();
+    toast(`${rName(k, r) === `Beoordelaar ${i + 1}` ? 'Beoordelaar' : r.naam} verwijderd${had ? ', met de scores' : ''}`, restore);
+    const f = document.querySelectorAll('#rlist .r-name')[Math.min(i, k.raters.length - 1)]; f && f.focus();
+    return;
+  }
+  if (t.closest('#unlock')) {
+    if (!await ocConfirm('Kenmerken aanpassen?', 'Dan worden alle scores gewist en scoort iedereen opnieuw. Wie de maatstaf aanpast nadat hij de opties zag, schuift vaak ongemerkt naar zijn favoriet. Daarom begin je dan opnieuw. Je kan dit ongedaan maken tot je iets anders doet.', 'Wis scores en pas aan')) return;
+    const restore = snapshot();
+    k.scores = {}; k.orde = {}; k.besluit = null; k.kenmerken.forEach(x => { delete x.extra; }); k.step = 'kenmerken'; resetRun(); save(); render();
+    toast('Scores gewist. Pas de kenmerken aan.', ocUndoable(restore));
+    const f = document.querySelector('#klist .kc-name'); f && f.focus();
+    return;
+  }
+  // scoren
+  if (t.closest('#ho-start')) { run.started = true; const r = k.raters.find(x => x.id === run.rater); run.pos = firstOpen(k, r); render(); focusStage(); return; }
+  const cand = t.closest('[data-cand]');
+  if (cand) { run.cand = cand.dataset.cand; run.rater = null; run.started = false; render(); const b = $('ho-start'); b && b.focus(); return; }
+  const imp = t.closest('[data-imp]');
+  if (imp) {
+    const r = k.raters.find(x => x.id === run.rater); if (!r) return;
+    r.gevraagd = true; r.indruk = imp.dataset.imp || null; save(); render(); focusStage();
+    toast(imp.dataset.imp ? 'Opgeborgen. Je ziet het terug na de uitslag.' : 'Overgeslagen');
+    return;
+  }
+  const sb = t.closest('.scale [data-s]');
+  if (sb) { setScore(sb.closest('.sc-opt').dataset.o, +sb.dataset.s, false); return; }
+  if (t.closest('#sc-prev')) { run.pos = Math.max(0, run.pos - 1); render(); focusStage(); return; }
+  if (t.closest('#sc-next')) { nextKenmerk(); return; }
+  // uitslag
+  const kies = t.closest('[data-kies]');
+  if (kies) { decideFor(kies.dataset.kies); return; }
+  if (t.closest('#dev-open')) { dev = { open:true, opt:null, kenmerk:'', feit:'' }; render(); const c = document.querySelector('[data-devo]'); c && c.focus(); return; }
+  if (t.closest('#dev-cancel')) { dev = { open:false, opt:null, kenmerk:'', feit:'' }; render(); const b = $('dev-open'); b && b.focus(); return; }
+  const dv = t.closest('[data-devo]');
+  if (dv) { dev.opt = dv.dataset.devo; render(); const f = $('dev-feit'); f && f.focus(); return; }
+  if (t.closest('#dev-ok')) {
+    if ($('dev-ok').matches('[aria-disabled="true"]')) { toast(!dev.feit.trim() ? 'Schrijf eerst het feit dat je miste.' : dev.feit.trim().length < 5 ? 'Beschrijf het feit iets duidelijker.' : 'Kies eerst bij welk kenmerk het feit hoort.'); return; }
+    const R = results(k), O = oById(k, dev.opt), W = R.ref || R.top;
+    const restore = snapshot();
+    k.besluit = { soort:'afwijking', gekozen:O.id, winnaar:W ? W.id : null, feit:dev.feit.trim(), kenmerk:dev.kenmerk, tG:R.tot[O.id], tW:W ? R.tot[W.id] : 0, at:new Date().toISOString() };
+    dev = { open:false, opt:null, kenmerk:'', feit:'' };
+    save(); render(); toast(`Gekozen: ${oName(k, O.id)}. De reden staat erbij.`, restore);
+    const v = $('verdict'); v && v.scrollIntoView({ block:'nearest', behavior:still() ? 'auto' : 'smooth' });
+    return;
+  }
+  const rs = t.closest('[data-rescore]');
+  if (rs) { rescore(rs.dataset.rescore); return; }
+  if (t.closest('[data-extra]')) { extraK(); return; }
+  if (t.closest('#undo-dec')) { const restore = snapshot(); k.besluit = null; save(); render(); toast('Beslissing teruggezet', restore); return; }
+  if (t.closest('#copy-dec')) { toast((await copyText(decisionText(k))) ? 'Beslissing gekopieerd. Plak ze waar je wil, bv. in je Beslissingslog.' : 'Kopiëren lukt hier niet'); return; }
+  const ex = t.closest('[data-exp]');
+  if (ex) { const m = document.querySelector(`#menu [data-act="${ex.dataset.exp}"]`); m && m.click(); }
+});
+function focusStage() {
+  const h = $('sc-k') || document.querySelector('#stage h2') || document.querySelector('#stage button');
+  if (h && h.tagName === 'H2') h.setAttribute('tabindex', '-1');
+  if (h) h.focus({ preventScroll:true });
+  toTop();
+}
+function setScore(oid, s, viaKey) {
+  const k = cur(), r = k.raters.find(x => x.id === run.rater), x = k.kenmerken[run.pos];
+  if (!r || !x || !oById(k, oid)) return;
+  const byK = (k.scores[r.id] = k.scores[r.id] || {}), byO = (byK[x.id] = byK[x.id] || {});
+  const was = byO[oid];
+  byO[oid] = { s, r:was ? was.r : '' };
+  if (k.besluit) k.besluit = null;
+  save(); render();
+  say(`${oName(k, oid)}: ${s}, ${WORDS[s - 1]}`);
+  const li = document.querySelector(`.sc-opt[data-o="${CSS.escape(oid)}"]`);
+  if (viaKey) {
+    // verder naar de volgende optie zonder score, of naar de knop verder
+    const next = [...document.querySelectorAll('.sc-opt')].find(el => !el.classList.contains('has'));
+    const b = next ? next.querySelector('[role=radio]') : $('sc-next');
+    b && b.focus();
+  } else {
+    const b = li && li.querySelector(`[data-s="${s}"]`); b && b.focus({ preventScroll:true });
+  }
+}
+function nextKenmerk() {
+  const k = cur(), r = k.raters.find(x => x.id === run.rater); if (!r) return;
+  const x = k.kenmerken[run.pos], left = k.opties.filter(o => !scoreOf(k, r, x.id, o.id)).length;
+  if (left) { toast(`Geef eerst elke optie een score. Nog ${left}.`); const el = document.querySelector('.sc-opt:not(.has) [role=radio]'); el && el.focus(); return; }
+  const np = nextPos(k, r, run.pos);
+  if (np >= 0) { run.pos = np; render(); focusStage(); return; }
+  // deze beoordelaar is klaar
+  if (allDone(k)) { k.step = 'uitslag'; resetRun(); save(); render(); toTop(); const w = document.querySelector('.win h2'); toast('Alle scores zijn binnen. Hier is de uitslag.'); w && w.setAttribute('tabindex', '-1'); w && w.focus({ preventScroll:true }); return; }
+  const done = rName(k, r);
+  run.rater = null; run.started = false; run.cand = null; render(); focusStage();
+  toast(`Klaar, ${done}. De scores zijn opgeborgen.`);
+}
+function decideFor(oid) {
+  const k = cur(), R = results(k), O = oById(k, oid); if (!O) return;
+  const soort = O === R.top && !R.exact ? 'hoogste' : O === R.kbw ? 'afspraak' : 'gelijk';
+  const restore = snapshot();
+  k.besluit = { soort, gekozen:O.id, winnaar:R.exact ? null : R.top.id, feit:'', kenmerk:null, tG:R.tot[O.id], tW:R.tot[R.top.id], at:new Date().toISOString() };
+  save(); render(); toast(`Gekozen: ${oName(k, O.id)}`, restore);
+  const v = $('verdict'); if (v) { v.setAttribute('tabindex', '-1'); v.focus({ preventScroll:true }); v.scrollIntoView({ block:'nearest', behavior:still() ? 'auto' : 'smooth' }); }
+}
+async function rescore(kid) {
+  const k = cur(), x = k.kenmerken.find(y => y.id === kid); if (!x) return;
+  const many = k.raters.length > 1;
+  if (!await ocConfirm(`${kName(x)} opnieuw scoren?`, `De scores van ${many ? 'iedereen' : 'jou'} op dit kenmerk worden gewist. ${many ? 'Elk' : 'Je'} scoort opnieuw, zonder de oude scores te zien.${k.besluit ? ' De beslissing vervalt.' : ''} Je kan dit ongedaan maken tot je iets anders doet.`, 'Scoor opnieuw')) return;
+  const restore = snapshot();
+  k.raters.forEach(r => { if (k.scores[r.id]) delete k.scores[r.id][x.id]; if (k.orde[r.id]) delete k.orde[r.id][x.id]; });
+  k.besluit = null; k.step = 'scoren'; resetRun(); dev = { open:false, opt:null, kenmerk:'', feit:'' };
+  save(); render(); focusStage();
+  toast(`${kName(x)} staat klaar om opnieuw te scoren`, ocUndoable(restore));
+}
+async function extraK() {
+  const k = cur(); if (!canExtra(k)) return;
+  const ask = ocConfirm('Eén kenmerk toevoegen?', 'Voeg alleen een kenmerk toe als er echt iets ontbrak, niet om een favoriet te laten winnen. Het telt even zwaar als de andere, en iedereen scoort het voor alle opties.', 'Voeg toe');
+  const y = document.querySelector('.ocw-back .ocw-yes'); y && y.classList.add('ok');
+  if (!await ask) return;
+  const restore = snapshot();
+  k.besluit = null; k.step = 'kenmerken'; dev = { open:false, opt:null, kenmerk:'', feit:'' }; resetRun();
+  addK(true);
+  toast('Beschrijf het extra kenmerk en scoor het daarna', ocUndoable(restore));
+}
+
+/* ---------- Toetsenbord bij het scoren: 1 tot 5, pijltjes, Enter ---------- */
+document.addEventListener('keydown', e => {
+  const k = cur();
+  if (k.step !== 'scoren' || !$('sc-next') || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (document.querySelector('.ocw-back, .ocs-back') || $('menu').classList.contains('open')) return;
+  const tg = e.target;
+  if (tg && (tg.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName))) return;
+  const li = tg && tg.closest && tg.closest('.sc-opt');
+  if (/^[1-5]$/.test(e.key)) {
+    e.preventDefault();
+    const el = li || document.querySelector('.sc-opt:not(.has)') || document.querySelector('.sc-opt');
+    if (el) setScore(el.dataset.o, +e.key, true);
+    return;
+  }
+  if (li && tg.matches('[role=radio]') && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+    e.preventDefault();
+    const s = clamp(+tg.dataset.s + (e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : -1), 1, 5);
+    setScore(li.dataset.o, s, false);
+    return;
+  }
+  if (e.key === 'Enter' && !(tg && tg.closest && tg.closest('button, a, summary'))) { e.preventDefault(); nextKenmerk(); }
+});
+
+/* ---------- Voorbeeld ---------- */
+function loadExample() {
+  const bestaand = state.keuzes.find(x => x.voorbeeld);
+  if (bestaand) { state.current = bestaand.id; resetRun(); save(); render(); toast('Dit is het voorbeeld'); return; }
+  let k = cur();
+  if (k.kenmerken.length || k.opties.length) { k = blank(); state.keuzes.push(k); state.current = k.id; }
+  const K = [
+    ['Gebruiksgemak voor de aanvrager', 'Raakt een burger zonder hulp door de aanvraag?', 'Testers liepen vast zonder hulp', 'Alle testers raakten zonder hulp tot het einde'],
+    ['Koppeling met onze systemen', 'Sluit het aan op ons registratiesysteem?', 'Alles moet nog gebouwd worden', 'Werkende koppeling getoond, met referentie'],
+    ['Totale kost over vijf jaar', 'Wat kost het, alles samen, over vijf jaar?', 'Boven het budget', 'Ruim binnen het budget, alles inbegrepen'],
+    ['Ervaring met gelijkaardig werk', 'Deden ze dit al bij een andere overheid?', 'Geen vergelijkbaar project', 'Meerdere projecten, referenties bevestigd'],
+    ['Beveiliging en privacy', 'Beschermen ze de gegevens van aanvragers goed?', 'Vage antwoorden, geen bewijs', 'Aantoonbaar op orde, met recente controle'],
+    ['Hulp na de lancering', 'Wie helpt als er iets misloopt?', 'Geen vaste afspraken', 'Vast aanspreekpunt en snelle hulp, op papier']
+  ].map(([naam, vraag, laag, hoog]) => ({ id:uid(), naam, vraag, laag, hoog }));
+  const O = ['Lokaal webbureau', 'Grote integrator', 'Eigen ICT-dienst', 'Jong gespecialiseerd bedrijf'].map(naam => ({ id:uid(), naam }));
+  const R = [{ id:uid(), naam:'Sofie', indruk:O[3].id, gevraagd:true }, { id:uid(), naam:'Mehdi', indruk:O[1].id, gevraagd:true }];
+  // scores [Sofie, Mehdi] per kenmerk, per optie (A, B, C, D)
+  const S = [
+    [[4, 4], [3, 3], [2, 3], [5, 5]],
+    [[4, 4], [5, 4], [4, 5], [2, 2]],
+    [[4, 4], [2, 2], [3, 3], [4, 3]],
+    [[4, 3], [5, 5], [3, 3], [2, 2]],
+    [[4, 4], [4, 4], [4, 3], [2, 4]],
+    [[4, 4], [3, 3], [4, 4], [2, 2]]
+  ];
+  const WHY = {
+    '0,3,0':'Mooiste demo: alles in drie klikken.', '0,0,0':'Vijf van de zes testers klaar zonder hulp.', '1,3,0':'Nog geen koppeling met een registratiesysteem gebouwd.',
+    '1,1,1':'Koppeling bestaat, maar voor een ander pakket.', '2,1,0':'Licenties lopen na drie jaar sterk op.', '4,3,0':'Geen antwoord op de vragen over bewaartermijnen.',
+    '4,3,1':'Recente controle door een extern bureau, zonder grote opmerkingen.', '5,3,0':'Twee mensen, geen afspraken over hulp bij storingen.'
+  };
+  const scores = {};
+  R.forEach((r, ri) => { scores[r.id] = {}; K.forEach((x, ki) => { scores[r.id][x.id] = {}; O.forEach((o, oi) => { scores[r.id][x.id][o.id] = { s:S[ki][oi][ri], r:WHY[`${ki},${oi},${ri}`] || '' }; }); }); });
+  Object.assign(k, { voorbeeld:true, name:'Leverancier voor het digitaal premieloket', kenmerken:K, opties:O, raters:R, scores, orde:{}, beslist:K[1].id, step:'uitslag', besluit:null });
+  resetRun(); dev = { open:false, opt:null, kenmerk:'', feit:'' };
+  save(); render();
+  toast('Voorbeeld geladen');
+  requestAnimationFrame(() => { const b = $('vb-bar'); b && !b.hidden && b.scrollIntoView({ block:'start', behavior:still() ? 'auto' : 'smooth' }); });
+}
+$('vb-load').addEventListener('click', loadExample);
+$('vb-wis').addEventListener('click', () => {
+  const restore = snapshot(), idx = state.keuzes.indexOf(cur());
+  state.keuzes = state.keuzes.filter(x => !x.voorbeeld);
+  if (!state.keuzes.length) state.keuzes.push(blank());
+  if (!state.keuzes.some(x => x.id === state.current)) state.current = state.keuzes[clamp(idx - 1, 0, state.keuzes.length - 1)].id;
+  resetRun(); save(); render();
+  toast('Voorbeeld gewist', restore);
+});
+$('vb-eigen').addEventListener('click', () => {
+  state.keuzes.forEach(x => { if (x.voorbeeld) delete x.voorbeeld; }); save(); render();
+  toast('Het voorbeeld is nu van jou');
+});
+
+/* ---------- Alles wissen ---------- */
+async function ocWipeAll() {
+  if (!await ocConfirm(`Alles wissen in ${OC_TOOL}?`, 'Alle keuzes, kenmerken en scores verdwijnen. Andere tools blijven zoals ze zijn. Je kan dit nog ongedaan maken tot je iets anders doet.', 'Alles wissen')) return;
+  const copy = JSON.parse(JSON.stringify(state));
+  try { localStorage.removeItem(KEY); } catch {}
+  state = load(); resetRun(); dev = { open:false, opt:null, kenmerk:'', feit:'' }; render();
+  toast('Alles gewist', ocUndoable(() => { state = copy; resetRun(); }));
+}
+document.addEventListener('click', e => { if (e.target.closest('[data-act="wipe"]')) ocWipeAll(); });
+
+/* ---------- Menu ---------- */
+function closeMenu() { $('menu').classList.remove('open'); $('menu-btn').setAttribute('aria-expanded', 'false'); }
+$('menu-btn').addEventListener('click', e => {
+  e.stopPropagation();
+  const open = !$('menu').classList.contains('open');
+  $('menu').classList.toggle('open', open); $('menu-btn').setAttribute('aria-expanded', String(open));
+  if (open) { const f = $('menu').querySelector('button:not([hidden])'); f && f.focus(); }
+});
+document.addEventListener('click', e => { if (!e.target.closest('.menu-wrap')) closeMenu(); });
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if ($('menu').classList.contains('open')) { closeMenu(); $('menu-btn').focus(); return; }
+  if (dev.open && !document.querySelector('.ocw-back')) { dev = { open:false, opt:null, kenmerk:'', feit:'' }; render(); const b = $('dev-open'); b && b.focus(); }
+});
+$('menu').addEventListener('keydown', e => {
+  if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+  e.preventDefault();
+  const items = [...$('menu').querySelectorAll('button:not([hidden])')], i = items.indexOf(document.activeElement);
+  items[(i + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length].focus();
+});
+
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch {}
+  try {
+    const t = document.createElement('textarea'); t.value = text; t.style.position = 'fixed'; t.style.opacity = '0';
+    document.body.appendChild(t); t.select(); const ok = document.execCommand('copy'); t.remove(); return ok;
+  } catch { return false; }
+}
+function fileBase() {
+  const d = new Date(), iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const nm = String(cur().name || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/\d{4}-\d{2}-\d{2}/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').replace(/^beslisscore(-|$)/, '').slice(0, 50).replace(/-$/, '');
+  return ['beslisscore', nm, iso].filter(Boolean).join('-');
+}
+// De beslissing in één zin (voor kopiëren, tekst en PDF).
+function decisionLine(k, R) {
+  const b = k.besluit;
+  if (!b) return R.exact ? `Gelijke stand: ${R.tied.map(o => oName(k, o.id)).join(' en ')}. Nog geen beslissing vastgelegd.` : `Hoogste totaal: ${oName(k, R.top.id)} (${nf(R.tot[R.top.id])} van ${R.max}). Nog geen beslissing vastgelegd.`;
+  const g = oName(k, b.gekozen), kx = b.kenmerk && b.kenmerk !== 'geen' ? k.kenmerken.find(x => x.id === b.kenmerk) : null;
+  if (b.soort === 'afwijking') return `Gekozen: ${g}, hoewel ${b.winnaar ? oName(k, b.winnaar) : 'een andere optie'} het hoogste totaal had (${nf(b.tW)} tegenover ${nf(b.tG)}), omdat: ${b.feit} (dit feit hoort bij ${kx ? kName(kx) : 'geen enkel kenmerk'}).`;
+  if (b.soort === 'afspraak') return `Gekozen: ${g}. Het verschil in totaal was kleiner dan 1 punt; volgens de afspraak besliste ${kName(R.kb)}, en daar scoorde ${g} het hoogst.`;
+  if (b.soort === 'gelijk') return `Gekozen: ${g}, bij een gelijke stand in totaal en op ${kName(R.kb)}.`;
+  return `Gekozen: ${g}, de optie met het hoogste totaal (${nf(b.tG)} van ${R.max}).`;
+}
+function decisionText(k) {
+  const R = results(k), when = k.besluit ? new Date(k.besluit.at).toLocaleDateString('nl-BE', { day:'numeric', month:'long', year:'numeric' }) : '';
+  return `${k.name}\n${decisionLine(k, R)}${when ? `\nVastgelegd op ${when}.` : ''}\nOp basis van ${k.kenmerken.length} kenmerken die even zwaar wegen, gescoord door ${k.raters.map(r => rName(k, r)).join(', ')} (Beslisscore).\n`;
+}
+function asText() {
+  const k = cur(), done = allDone(k);
+  let t = `${k.name}\n\nKenmerken (1 heel zwak tot 5 heel sterk)\n` + k.kenmerken.map((x, i) => `${i + 1}. ${kName(x)}${x.vraag ? `: ${x.vraag}` : ''}\n   1 = ${x.laag || 'niet beschreven'} · 5 = ${x.hoog || 'niet beschreven'}`).join('\n') + '\n';
+  if (!done) return t + `\nOpties\n${k.opties.map(o => `- ${oName(k, o.id)}`).join('\n')}\n\nHet scoren is nog bezig. Scores blijven verborgen tot iedereen klaar is.\n`;
+  const R = results(k);
+  t += `\nUitslag (totaal van ${R.max})\n` + R.rank.map((o, i) => `${i + 1}. ${oName(k, o.id)}: ${nf(R.tot[o.id])}`).join('\n') + '\n';
+  t += `\nScores per kenmerk\n` + k.kenmerken.map(x => `${kName(x)}: ` + k.opties.map(o => `${oName(k, o.id)} ${nf(R.avg[x.id][o.id].m)}`).join(', ')).join('\n') + '\n';
+  const imps = k.raters.filter(r => r.indruk);
+  if (imps.length) t += `\nEerste indruk, voor het scoren: ${imps.map(r => `${rName(k, r)}: ${oName(k, r.indruk)}`).join('; ')}\n`;
+  return t + `\n${decisionLine(k, R)}\n`;
+}
+/* Exportweergave (A4 staand): beslissing, rangorde, scores, kenmerken met ankers, eerste indruk, redenen. */
+function buildExport() {
+  const k = cur(), done = allDone(k);
+  const H = t => `<div style="font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#047857;margin:22px 0 8px">${t}</div>`;
+  const td = 'padding:7px 8px;border-bottom:1px solid #f1f5f9;font-size:13px;vertical-align:top;';
+  const th = 'padding:6px 8px;border-bottom:1px solid #e2e8f0;font-size:12px;font-weight:700;color:#475569;vertical-align:bottom;';
+  const kenm = `${H('Kenmerken en wat de scores betekenen')}<div style="font-size:12px;color:#64748b;margin:-4px 0 8px">Schaal 1 heel zwak, 2 zwak, 3 gemiddeld, 4 sterk, 5 heel sterk. Alle kenmerken wegen even zwaar.</div>
+    <table style="width:100%;border-collapse:collapse"><tr><th style="${th}text-align:left;width:34%">Kenmerk</th><th style="${th}text-align:left">1 heel zwak</th><th style="${th}text-align:left">5 heel sterk</th></tr>
+    ${k.kenmerken.map((x, i) => `<tr data-oc-keep><td style="${td}"><b style="color:#1e293b">${i + 1}. ${esc(kName(x))}</b>${x.vraag ? `<div style="font-size:12px;color:#64748b;margin-top:2px">${esc(x.vraag)}</div>` : ''}</td><td style="${td}color:#475569">${esc(x.laag || 'niet beschreven')}</td><td style="${td}color:#475569">${esc(x.hoog || 'niet beschreven')}</td></tr>`).join('')}</table>`;
+  const who = `<div style="font-size:12px;color:#64748b;margin-top:10px">${k.raters.length > 1 ? `Beoordelaars: ${esc(k.raters.map(r => rName(k, r)).join(', '))}. Elk scoorde apart, zonder de scores van de anderen te zien.` : 'Eén beoordelaar.'} Per kenmerk werden alle opties na elkaar gescoord, in wisselende volgorde.</div>`;
+  const node = document.createElement('div');
+  if (!done) {
+    node.innerHTML = `<div style="padding:12px 14px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0;font-size:14px;color:#334155">Het scoren is nog bezig. Scores en totalen blijven verborgen tot iedereen klaar is.</div>
+      ${H('Opties')}<div style="font-size:14px;color:#1e293b">${k.opties.map(o => esc(oName(k, o.id))).join(' · ') || 'Nog geen opties'}</div>${kenm}`;
+    return { node, title:'Beslisscore', subtitle:`${k.name} · nog bezig` };
+  }
+  const R = results(k), b = k.besluit, afw = b && b.soort === 'afwijking', winId = R.exact ? null : R.top.id;
+  const dec = `<div data-oc-keep style="padding:14px 16px;border-radius:12px;border:1.5px solid ${afw ? '#fde68a' : '#10b981'};background:${afw ? '#fffbeb' : '#ffffff'}">
+    <div style="font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${afw ? '#92400e' : '#047857'}">Beslissing${afw ? ' · afwijking van het hoogste totaal' : ''}</div>
+    <div style="font-size:17px;font-weight:700;color:#1e293b;margin-top:4px;line-height:1.4">${esc(decisionLine(k, R))}</div>
+    ${b ? `<div style="font-size:12px;color:#64748b;margin-top:4px">Vastgelegd op ${esc(new Date(b.at).toLocaleDateString('nl-BE', { day:'numeric', month:'long', year:'numeric' }))}</div>` : ''}</div>`;
+  const rank = `${H(`Rangorde · totaal van ${R.max}`)}${R.rank.map((o, i) => `<div data-oc-keep style="display:grid;grid-template-columns:24px 220px 1fr 60px;gap:10px;align-items:center;padding:5px 0;font-size:14px">
+      <span style="color:#94a3b8;font-variant-numeric:tabular-nums">${i + 1}.</span><span style="color:#1e293b;font-weight:${o.id === winId ? 700 : 500}">${esc(oName(k, o.id))}</span>
+      <span style="display:block;height:10px;border-radius:99px;background:#f1f5f9;overflow:hidden"><span style="display:block;height:100%;width:${(R.tot[o.id] / R.max * 100).toFixed(1)}%;background:${o.id === winId ? '#10b981' : '#94a3b8'};border-radius:99px"></span></span>
+      <span style="text-align:right;font-weight:700;color:#1e293b;font-variant-numeric:tabular-nums">${nf(R.tot[o.id])}</span></div>`).join('')}
+    ${R.group.length > 1 ? `<div style="font-size:12px;color:#92400e;margin-top:6px">${R.exact ? 'Gelijke stand in totaal.' : 'Het verschil tussen de eerste opties is kleiner dan 1 punt.'} Afgesproken beslissend kenmerk bij gelijke stand: ${esc(kName(R.kb))}.</div>` : ''}`;
+  const multi = k.raters.length > 1;
+  const table = `${H(`Scores per kenmerk${multi ? ` · gemiddelde van ${k.raters.length} beoordelaars` : ''}`)}<table style="width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums">
+    <tr><th style="${th}text-align:left">Kenmerk</th>${k.opties.map(o => `<th style="${th}text-align:center;${o.id === winId ? 'color:#047857;background:#ecfdf5;' : ''}">${esc(oName(k, o.id))}</th>`).join('')}</tr>
+    ${k.kenmerken.map(x => `<tr data-oc-keep><td style="${td}color:#334155">${esc(kName(x))}</td>${k.opties.map(o => { const a = R.avg[x.id][o.id], sp = multi && a.max - a.min >= 2; return `<td style="${td}text-align:center;${o.id === winId ? 'background:#f6fdf9;' : ''}"><b style="color:#1e293b">${nf(a.m)}</b>${sp ? `<div style="font-size:11px;color:#92400e;font-weight:600">verschil: ${a.list.map(e => e.v.s).join(' en ')}</div>` : ''}</td>`; }).join('')}</tr>`).join('')}
+    <tr><td style="${td}font-weight:700;color:#1e293b;border-bottom:0">Totaal</td>${k.opties.map(o => `<td style="${td}text-align:center;font-weight:700;color:#1e293b;border-bottom:0;${o.id === winId ? 'background:#ecfdf5;' : ''}">${nf(R.tot[o.id])}</td>`).join('')}</tr></table>${who}`;
+  const imps = k.raters.filter(r => r.indruk);
+  const imp = imps.length ? `${H('Eerste indruk, voor het scoren')}<div style="font-size:13px;color:#334155">${imps.map(r => `${multi ? esc(rName(k, r)) + ': ' : ''}${esc(oName(k, r.indruk))}`).join(' · ')}</div>` : '';
+  const why = k.kenmerken.map(x => {
+    const items = [];
+    k.opties.forEach(o => k.raters.forEach(r => { const v = scoreOf(k, r, x.id, o.id); if (v && v.r.trim()) items.push(`<div style="font-size:12px;color:#475569;padding:2px 0 2px 10px;border-left:2px solid #e2e8f0;margin-top:3px">${esc(oName(k, o.id))}: ${v.s}${multi ? ` (${esc(rName(k, r))})` : ''}. ${esc(v.r)}</div>`); }));
+    return items.length ? `<div data-oc-keep style="margin-bottom:8px"><div style="font-size:13px;font-weight:600;color:#1e293b">${esc(kName(x))}</div>${items.join('')}</div>` : '';
+  }).join('');
+  node.innerHTML = dec + rank + table + kenm + imp + (why ? H('Redenen bij de scores') + why : '');
+  return { node, title:'Beslisscore', subtitle:`${k.name} · ${k.opties.length} opties · ${k.kenmerken.length} kenmerken` };
+}
+$('menu').addEventListener('click', async e => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  closeMenu();
+  const k = cur(), act = b.dataset.act;
+  if (act === 'delkeuze') { deleteKeuze(); return; }
+  if (act === 'dup') { if (!k.kenmerken.length && !k.opties.length) { toast('Er is nog niets om te dupliceren'); return; } dupKeuze(); return; }
+  if ((act === 'copy' || act === 'png' || act === 'pdf') && !k.kenmerken.length && !k.opties.length) { toast('Er is nog niets om te tonen'); return; }
+  if (act === 'copy') { toast((await copyText(asText())) ? 'Gekopieerd als tekst' : 'Kopiëren lukt hier niet'); }
+  if (act === 'png' || act === 'pdf') {
+    toast('Bezig…');
+    try {
+      await (act === 'png' ? ocExport.png(buildExport, fileBase()) : ocExport.pdf(buildExport, fileBase()));
+      toast(act === 'png' ? 'Afbeelding gedownload' : 'PDF gedownload');
+    } catch { toast('Downloaden lukt nu niet: geen verbinding?'); }
+  }
+});
+
+/* ---------- Andere tabbladen gelijk houden ---------- */
+window.addEventListener('storage', e => { if (e.key === KEY) { state = load(); resetRun(); render(); } });
+
+render();
+</script>
+<script>
+/* Opnieuw beginnen: zichtbaar zodra er echt iets ingevuld is; start de eigen 'Alles wissen' van de tool.
+   'Leeg' = wat de tool zelf bewaart zonder inbreng van de gebruiker (na een eerste bezoek of na wissen). */
+(() => {
+  const meta = document.querySelector('meta[name="oc:opslag"]');
+  const keys = meta ? meta.content.split(',').map(s => s.trim()).filter(k => k && !k.startsWith('oc.share.') && !k.endsWith('*')) : [];
+  const BASE = 'oc.leeg.' + location.pathname;   // niet onder oc-app.*: dat wist het gegevensscherm apart
+  const get = k => { try { return localStorage.getItem(k); } catch { return null; } };
+  const vals = () => Object.fromEntries(keys.map(k => [k, get(k)]));
+  const has = v => Array.isArray(v) ? v.length > 0 : v && typeof v === 'object' ? Object.values(v).some(has) : typeof v === 'string' && v.trim().length > 0;
+  const content = raw => { try { return has(JSON.parse(raw)); } catch { return !!raw; } };
+  let base = null; try { base = JSON.parse(get(BASE) || 'null'); } catch {}
+  const setBase = () => { base = vals(); try { localStorage.setItem(BASE, JSON.stringify(base)); } catch {} sync(); };
+  const filled = () => { const v = vals(); return keys.some(k => v[k] != null && content(v[k]) && !(base && v[k] === base[k])); };
+  const row = document.getElementById('oc-restart-row');
+  function sync() { row.hidden = !filled() || !document.querySelector('[data-act="wipe"]'); }
+  let t; const later = () => { clearTimeout(t); t = setTimeout(sync, 350); };
+  ['click', 'input', 'change', 'keyup'].forEach(ev => document.addEventListener(ev, later, true));
+  window.addEventListener('storage', later); window.addEventListener('focus', later);
+  // Eerste bezoek: wat de tool zelf meteen bewaart, telt als leeg. Een tool die nog niets klaarlegde
+  // voor andere tools (oc.share.*), heeft nog geen echte inhoud.
+  const share = meta ? meta.content.split(',').map(s => s.trim()).find(k => k.startsWith('oc.share.')) : null;
+  if (!base && share && get(share) == null) setBase();
+  else if (keys.every(k => get(k) == null)) setTimeout(setBase, 900);
+  // Na wissen (via deze knop of het menu): de nieuwe toestand is de lege toestand.
+  document.addEventListener('click', e => {
+    if (!e.target.closest('[data-act="wipe"]')) return;
+    const before = JSON.stringify(vals()); let n = 0;
+    const iv = setInterval(() => {
+      if (++n > 40) return clearInterval(iv);
+      if (document.querySelector('.ocw-back')) return;               // bevestiging staat nog open
+      if (JSON.stringify(vals()) !== before) { clearInterval(iv); setTimeout(setBase, 400); }
+      else if (n > 5) clearInterval(iv);                              // geannuleerd
+    }, 150);
+  }, true);
+  document.getElementById('oc-restart-btn').addEventListener('click', () => { const w = document.querySelector('[data-act="wipe"]'); w && w.click(); });
+  sync();
+})();
+</script>
+<script>
+/* Soepel: de hulpbibliotheken voor Afbeelding en PDF alvast ophalen zodra iemand naar een downloadknop gaat (niet bij het laden). */
+(() => {
+  let warm = false;
+  const go = () => {
+    warm = true;
+    ['/lib/html2canvas-1.4.1.min.js', '/lib/jspdf-2.5.1.umd.min.js'].forEach(h => {
+      const l = document.createElement('link');
+      if (l.relList && l.relList.supports && l.relList.supports('prefetch')) { l.rel = 'prefetch'; l.as = 'script'; l.href = h; document.head.appendChild(l); }
+      else try { fetch(h).catch(() => {}); } catch (e) {}
+    });
+  };
+  const SEL = '[data-exp], #menu-btn';
+  ['pointerdown', 'focusin', 'mouseover'].forEach(t => document.addEventListener(t, e => { if (!warm && e.target.closest && e.target.closest(SEL)) go(); }, { passive:true, capture:true }));
+})();
+</script>
+<input type="file" id="oc-bestand-in" accept=".json,application/json" hidden>
+<script>
+/* oc-bestand: je werk in deze tool bewaren als bestand en later (of op een ander toestel) weer openen.
+   Formaat = dat van de reservekopie in de app: { app:'Onder Constructie', version:1, created, tool, data:{ sleutel: tekst } }.
+   Een reservekopie uit de app kan je hier ook openen: de tool neemt er alleen zijn eigen deel uit. */
+window.ocBestand = (function () {
+  function patronen() {
+    var m = document.querySelector('meta[name="oc:opslag"]');
+    return m ? m.content.split(',').map(function (s) { return s.trim(); }).filter(Boolean) : [];
+  }
+  function past(k, p) { return p.slice(-1) === '*' ? k.indexOf(p.slice(0, -1)) === 0 : k === p; }
+  function eigen(k) { return patronen().some(function (p) { return past(k, p); }); }
+  function sleutels() {
+    var uit = [];
+    try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k && eigen(k)) uit.push(k); } } catch (e) {}
+    return uit;
+  }
+  function naam() {
+    var m = document.querySelector('meta[name="oc:titel"]') || document.querySelector('meta[name="application-name"]');
+    return (m && m.content) || (document.title.split(/\s[–-]\s/)[0] || 'tool').trim();
+  }
+  function slug(s) { return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
+  /* bewaar(): downloadt het bestand. Geeft het aantal bewaarde sleutels terug (0 = niets om te bewaren). */
+  function bewaar(extraNaam) {
+    var keys = sleutels(); if (!keys.length) return 0;
+    var data = {}; keys.forEach(function (k) { try { data[k] = localStorage.getItem(k); } catch (e) {} });
+    var id = location.pathname.replace(/\/index\.html$/, '').split('/').filter(Boolean).pop() || 'tool';
+    var blob = new Blob([JSON.stringify({ app: 'Onder Constructie', version: 1, created: new Date().toISOString(), tool: id, data: data }, null, 1)], { type: 'application/json' });
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    var stuk = slug(naam()) + (extraNaam ? '-' + slug(extraNaam) : '');
+    a.download = stuk + '-' + new Date().toISOString().slice(0, 10) + '.json';
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+    return keys.length;
+  }
+  /* lees(file): Promise met { data: {sleutel: tekst} } van alleen de eigen sleutels.
+     Fout 'vorm' = geen bestand van Onder Constructie; fout 'leeg' = niets van deze tool in het bestand. */
+  function lees(file) {
+    return file.text().then(function (t) {
+      var d; try { d = JSON.parse(t); } catch (e) { throw new Error('vorm'); }
+      if (!d || d.app !== 'Onder Constructie' || typeof d.data !== 'object' || !d.data) throw new Error('vorm');
+      var uit = {}, n = 0;
+      Object.keys(d.data).forEach(function (k) { if (eigen(k) && typeof d.data[k] === 'string') { uit[k] = d.data[k]; n++; } });
+      if (!n) throw new Error('leeg');
+      return { data: uit, aantal: n, created: d.created || null };
+    });
+  }
+  /* zetTerug(gelezen): vervangt het huidige werk van deze tool door wat in het bestand staat, en laat andere tabbladen herladen. */
+  function zetTerug(g) {
+    sleutels().forEach(function (k) { try { localStorage.removeItem(k); } catch (e) {} });
+    Object.keys(g.data).forEach(function (k) { try { localStorage.setItem(k, g.data[k]); } catch (e) {} });
+  }
+  function melding(err) {
+    return err && err.message === 'leeg' ? 'In dit bestand staat niets van ' + naam() + '.'
+      : 'Dit bestand kan ik niet openen. Kies een bestand dat je met "Bewaar als bestand" of als reservekopie maakte.';
+  }
+  return { bewaar: bewaar, lees: lees, zetTerug: zetTerug, melding: melding, sleutels: sleutels, naam: naam };
+})();
+</script>
+<script>
+/* Bewaar als bestand / Open bestand */
+(() => {
+  const heeftWerk = () => { try { return !document.getElementById('oc-restart-row').hidden; } catch (e) { return true; } };
+  const extraNaam = () => { try { return String((L => Array.isArray(L) && L.length === 1 ? L[0].name : '')(state.keuzes) || '').trim(); } catch (e) { return ''; } };
+  const inp = document.getElementById('oc-bestand-in');
+  // Een lange melding blijft langer staan (minstens 4,5 s): toon ze opnieuw voor ze verdwijnt.
+  const lang = msg => { toast(msg); setTimeout(() => { const t = document.getElementById('toast-text'); if (t && t.textContent === msg) toast(msg); }, 2300); };
+  const sluit = () => { const m = document.getElementById('menu'), b = document.getElementById('menu-btn'); if (m) m.classList.remove('open'); if (b) b.setAttribute('aria-expanded', 'false'); };
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-bestand]'); if (!b) return;
+    sluit();
+    if (b.dataset.bestand === 'bewaar') {
+      if (!heeftWerk() || !ocBestand.bewaar(extraNaam())) { toast('Er is nog niets om te bewaren.'); return; }
+      toast('Bestand gedownload');
+    } else { inp.value = ''; inp.click(); }
+  });
+  inp.addEventListener('change', async () => {
+    const f = inp.files && inp.files[0]; if (!f) return;
+    let g; try { g = await ocBestand.lees(f); } catch (err) { lang(ocBestand.melding(err)); return; }
+    if (heeftWerk() && !await ocConfirm('Bestand openen?', 'Dit vervangt wat nu in ' + ocBestand.naam() + ' staat. Doorgaan?', 'Vervang')) return;
+    // Tot de herlaadbeurt mag niets het teruggezette werk nog overschrijven (uitgestelde bewaring, pagehide, ander tabblad).
+    const pat = (document.querySelector('meta[name="oc:opslag"]') || {}).content || '';
+    const eigen = k => pat.split(',').map(s => s.trim()).filter(Boolean).some(p => p.slice(-1) === '*' ? String(k).indexOf(p.slice(0, -1)) === 0 : k === p);
+    ocBestand.zetTerug(g);
+    try {
+      const set = Storage.prototype.setItem, rem = Storage.prototype.removeItem;
+      Storage.prototype.setItem = function (k, v) { if (this === localStorage && eigen(k)) return; return set.call(this, k, v); };
+      Storage.prototype.removeItem = function (k) { if (this === localStorage && eigen(k)) return; return rem.call(this, k); };
+    } catch (e) {}
+    location.reload();
+  });
+})();
+</script>
+<script>
+/* oc-sync: reageert op "Wissen" in de app (ook in andere tabbladen) en geeft Esc door aan de app */
+(function () {
+  if (window.__ocSync) return; window.__ocSync = true;
+  var gewist = false;
+  function wis() {
+    if (gewist) return; gewist = true;
+    try { var orig = Storage.prototype.setItem; Storage.prototype.setItem = function (k, v) { if (k === 'oc.wis') return orig.call(this, k, v); }; } catch (e) {}
+    try { document.body.innerHTML = '<p role="status" style="font-family:\'DM Sans\',system-ui,sans-serif;padding:3rem 1.5rem;text-align:center;color:#475569;font-size:1.0625rem">Er is iets veranderd op dit toestel. Deze pagina laadt opnieuw…</p>'; } catch (e) {}
+    setTimeout(function () { location.reload(); }, 400);
+  }
+  try { var bc = new BroadcastChannel('oc-sync'); bc.onmessage = function (e) { if (e.data && e.data.type === 'wis') wis(); }; } catch (e) {}
+  addEventListener('storage', function (e) { if (e.key === 'oc.wis' || e.key === null) wis(); });
+  if (window.parent === window) return;
+  addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape' || e.defaultPrevented) return;
+    var a = document.activeElement;
+    if (a && (a.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) return;
+    if (document.querySelector('dialog[open], [role="dialog"]:not([hidden]):not([aria-hidden="true"]), [aria-modal="true"]:not([hidden]), [aria-expanded="true"], .open, .show, .active.modal, .is-open')) return;
+    try { parent.postMessage({ type: 'oc-esc' }, location.origin); } catch (err) {}
+  }, true);
+})();
+</script>
+<script>
+/* Eenheid: "Begin met ..." zet de cursor in het eerste veld */
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-oc-begin]'); if (!b) return;
+  const el = [...document.querySelectorAll(b.dataset.ocBegin)].find(x => x.offsetParent !== null); if (!el) return;
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  el.scrollIntoView({ block:'center', behavior: still ? 'auto' : 'smooth' });
+  el.focus({ preventScroll:true });
+});
+</script>
+</body>
+</html>
