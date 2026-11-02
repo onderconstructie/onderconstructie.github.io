@@ -994,7 +994,7 @@ const MEAS = [
   { id:'overleg', label:'Vragen in het teamoverleg', ph:'bv. elk team besprak het minstens één keer' },
   { id:'vragen', label:'Aantal vragen of klachten', ph:'bv. na een maand minder dan 5 per week' },
   { id:'gebruik', label:'Gebruik van het nieuwe', ph:'bv. 90% werkt via de nieuwe manier' },
-  { id:'weerstand', label:'Weerstand-scan', ph:'bv. geen enkel team meer in verzet', link:'https://onderconstructie.github.io/weerstand/' },
+  { id:'weerstand', label:'Weerstand-scan', ph:'bv. bij geen enkele groep nog een knelpunt', link:'https://onderconstructie.github.io/weerstand/' },
   { id:'ander', label:'Iets anders', ph:'Wat meet je, en wat is goed genoeg?' }
 ];
 const SWATCHES = ['#10b981', '#0ea5e9', '#6366f1', '#f97316', '#e11d48', '#334155'];
@@ -1105,8 +1105,9 @@ function sponsorFound() {
 function suggestIntens(g) {
   const n = (g.hint || '').toLowerCase(), from = g.source ? `volgens ${g.source}` : 'volgens de bron';
   // Ook de namen die de Betrokkenenradar nu gebruikt: nauw betrekken, vroeg opzoeken, op de hoogte houden, in het oog houden.
-  if (/manag|nauw|anticip|opzoeken|sleutel|tegen|weerstand|verzet|ontkenning|boos/.test(n)) return { v:'sterk', why:`${from}: ${g.hint}` };
-  if (/tevreden|informe|hoogte houden/.test(n)) return { v:'midden', why:`${from}: ${g.hint}` };
+  // Weerstand geeft "dominant: …" en "knelpunt: …" mee, het Veranderklimaat "klimaat: …".
+  if (/manag|nauw|anticip|opzoeken|sleutel|tegen|weerstand|verzet|ontkenning|boos|dominant|knelpunt|verzadigd|afwachtend/.test(n)) return { v:'sterk', why:`${from}: ${g.hint}` };
+  if (/tevreden|informe|hoogte houden|moe maar/.test(n)) return { v:'midden', why:`${from}: ${g.hint}` };
   if (/monitor|opvolgen|volgen|oog houden/.test(n)) return { v:'licht', why:`${from}: ${g.hint}` };
   const p = profile();
   if (heavyProfile(p)) return { v:'sterk', why:'het Veranderprofiel schat deze verandering zwaar in' };
@@ -1604,7 +1605,7 @@ function planHTML() {
       <div class="ident"><div class="r-lbl">Herkenbaarheid</div>${identHTML()}
         ${state.start || state.launch ? `<div>${state.start ? 'Start ' + nice(state.start, { day:'numeric', month:'long', year:'numeric' }) : ''}${state.start && state.launch ? ' · ' : ''}${state.launch ? 'Lancering <b>' + nice(state.launch, { day:'numeric', month:'long', year:'numeric' }) + '</b>' : ''}</div>` : ''}</div>
     </div></section>
-    ${tr ? `<section class="card"><div class="card-head"><h2 class="card-title">Wie hoort wanneer iets</h2></div><div class="tracks">${tr}
+    ${tr ? `<section class="card"><div class="card-head"><h2 class="card-title">Tijdlijn per doelgroep</h2></div><div class="tracks">${tr}
       <div class="tracks-legend"><span>● gedaan</span><span>○ gepland</span><span>Per kolom één week</span></div></div></section>` : ''}
     <section class="card"><div class="card-head"><h2 class="card-title">Per doelgroep</h2></div>
       <div class="gplan">${state.groups.map(g => { const gm = momentsFor(g);
@@ -1982,7 +1983,7 @@ function buildExport() {
           <span style="font-size:15px;font-weight:700;color:#1e293b">${esc(id.slogan.trim() || state.name.trim() || '–')}</span></div>
         <div style="font-size:12px;color:#475569;margin-top:6px;line-height:1.5">${id.image.trim() ? esc(id.image.trim()) + '<br>' : ''}${id.place.trim() ? 'Alle info: ' + esc(id.place.trim()) + '<br>' : ''}${state.start ? 'Start ' + kort(state.start) : ''}${state.start && state.launch ? ' · ' : ''}${state.launch ? '<b>Lancering ' + kort(state.launch) + '</b>' : ''}</div></div>
     </div>
-    ${tracksHTML() ? `<div data-oc-keep style="margin-bottom:16px"><div style="font-size:15px;font-weight:700;color:#1e293b;margin-bottom:6px">Wie hoort wanneer iets</div>${tracksHTML()}
+    ${tracksHTML() ? `<div data-oc-keep style="margin-bottom:16px"><div style="font-size:15px;font-weight:700;color:#1e293b;margin-bottom:6px">Tijdlijn per doelgroep</div>${tracksHTML()}
       <div style="font-size:11px;color:#64748b;margin-top:6px">● gedaan · ○ gepland${state.launch ? ' · <span style="color:#047857;font-weight:700">| lancering</span>' : ''} · per kolom één week</div></div>` : ''}
     <div style="display:grid;grid-template-columns:repeat(${gcols},1fr);gap:12px;margin-bottom:16px">${state.groups.map(g => `
       <div data-oc-keep style="${box}">

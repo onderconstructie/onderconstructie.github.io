@@ -562,7 +562,7 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
           </ol>
           <div class="calc">
             <div><b>Ervaring</b> (links negatief, rechts positief). Per verandering: doel gehaald (ja 1, deels ½, nee 0) en begeleiding (goed 1, deels ½, slecht 0: was er inspraak, werden beloften nagekomen?) tellen elk voor 35%, op tijd en binnen budget elk voor 15% (ja 1, nee 0). Wat je niet weet, telt niet mee. Veranderingen van de laatste twee jaar wegen dubbel. Het gemiddelde (0 tot 1) wordt omgezet naar −1 tot +1, met ½ als midden. Zonder eerdere veranderingen is er geen ervaring om op te steunen: dan toont de tool geen klimaat, alleen “nog onzeker”.</div>
-            <div><b>Veranderlast</b> (onder weinig, boven veel). Elke verandering van de laatste 24 maanden telt mee volgens haar zwaarte (1 tot 4, gedeeld door 4). Een verandering van deze maand telt volledig, een van twee jaar geleden nog voor een kwart. Drie zware, recente veranderingen samen geven het maximum. Schat je ook de werkdruk in, dan telt de zwaarste van de twee: werkdruk “zwaar” of “te zwaar” zet een team dus altijd in de zware helft, ook zonder recente veranderingen.</div>
+            <div><b>Veranderlast</b> (onder weinig, boven veel). Elke verandering van de laatste 24 maanden telt mee volgens haar zwaarte (1 tot 4, gedeeld door 4). Een verandering van deze maand telt volledig, een van twee jaar geleden nog voor een kwart. Drie zeer zware, recente veranderingen samen geven het maximum. Schat je ook de werkdruk in, dan telt de zwaarste van de twee: werkdruk “zwaar” of “te zwaar” zet een team dus altijd in de zware helft, ook zonder recente veranderingen.</div>
           </div>
           <p class="note">Met minder dan twee veranderingen is een punt onzeker (gestreepte rand). De berekening is een hulpmiddel, geen waarheid: sleep een punt als je het anders inschat en noteer waarom.</p>
         </div>
@@ -801,7 +801,7 @@ function ocPublish() {
   const kern = cur().voorbeeld ? echt.find(a => kerncijfers(a)) : cur();
   const k = kern ? kerncijfers(kern) : null;
   const items = k ? Object.entries(k).map(([key, v]) => ({ type:'kerncijfer', text:key, note:v })) : [];
-  const ch = kern && typeof kern.change === 'string' ? kern.change.trim() : '';
+  const ch = kern && typeof kern.change === 'string' && !kern.changeFrom ? kern.change.trim() : '';   // een overgenomen zin is niet van hier
   if (ch) items.push({ type:'kerncijfer', text:'verandering', note:ch });   // "de verandering in één zin" voor de andere tools
   if (items.length) lists.push({ name:'Kerncijfers', items });
   ocShare.publish(OC_ID, OC_TOOL, lists);
@@ -1002,7 +1002,7 @@ function ocSharedChange(self) {
 }
 const newProject = name => ({ id:uid(), name:name || '', month:'', year:'', goal:'', support:'', time:'', budget:'', weight:null, lesson:'', open:true });
 const newUnit = name => ({ id:uid(), name:name || DEFAULT_UNIT, workload:null, projects:[], manual:null, reason:'', plan:[], notes:{}, open:true, guide:false });
-const newAnalysis = (name, change) => ({ id:uid(), name:name || ocProject('Mijn analyse'), change:change || '', units:[newUnit()] });
+const newAnalysis = (name, change) => ({ id:uid(), name:name || ocProject('Mijn analyse'), change:change || '', ...(change ? { changeFrom:true } : {}), units:[newUnit()] });
 // Een nieuwe analyse neemt "de verandering in één zin" over uit een andere tool, als die er is.
 const sharedChangeText = () => { const c = ocSharedChange(OC_ID); return c ? c.text : ''; };
 function load() {
@@ -1101,13 +1101,14 @@ function kerncijfers(a) {
   if (!rs.length) return null;
   const mx = rs.reduce((s, r) => s + r.x, 0) / rs.length, my = rs.reduce((s, r) => s + r.y, 0) / rs.length;
   const spread = new Set(rs.map(r => r.cid)).size > 1;
-  // Onzeker: een team met te weinig eerdere veranderingen (en niet bijgesteld), of teams die in een ander klimaat zitten.
+  // Onzeker: een team met te weinig eerdere veranderingen (en niet bijgesteld).
+  // Teams in een ander klimaat zijn geen onzekerheid maar informatie: dat staat apart in klimaat.verschilt.
   // Het type van het gemiddelde zou bij uiteenlopende teams een klimaat tonen dat geen enkel team heeft.
   const unsure = rs.some(r => r.unsure && !r.adjusted);
   return {
     'klimaat.ervaring': r2(mx), 'klimaat.belasting': r2(my), 'klimaat.type': spread ? 'Verschilt per team' : CLIM[rs[0].cid].name,
     'klimaat.ervaring_min': r2(Math.min(...rs.map(r => r.x))), 'klimaat.belasting_max': r2(Math.max(...rs.map(r => r.y))),
-    'klimaat.onzeker': unsure || spread ? '1' : '0', 'klimaat.interviews': String(rs.length),
+    'klimaat.onzeker': unsure ? '1' : '0', 'klimaat.verschilt': spread ? '1' : '0', 'klimaat.interviews': String(rs.length),
     'klimaat.analyse': a.name || 'Analyse' };
 }
 const nf = (n, d = 2) => n.toLocaleString('nl-BE', { minimumFractionDigits:d, maximumFractionDigits:d }).replace('-', '−');
@@ -1435,7 +1436,7 @@ function ctx(el) {
 document.addEventListener('input', e => {
   const t = e.target;
   if (t.id === 'name') { cur().name = t.value; save(); renderTabs(); unitLabel(cur()); return; }
-  if (t.id === 'question') { cur().change = t.value; grow(t); save(); return; }
+  if (t.id === 'question') { cur().change = t.value; delete cur().changeFrom; grow(t); save(); return; }
   const f = t.dataset.f; if (!f || t.tagName === 'SELECT') return;
   const { u, p } = ctx(t); if (!u) return;
   if (t.tagName === 'TEXTAREA') grow(t);
@@ -1587,6 +1588,7 @@ $('example').addEventListener('click', () => {
   const ago = n => { let mm = m - n, yy = y; while (mm < 1) { mm += 12; yy--; } return { month:String(mm), year:String(yy) }; };
   a.voorbeeld = true;   // telt niet mee in andere tools tot je het voorbeeld van jou maakt
   a.change = 'Vanaf de lancering vraag je een renovatiepremie alleen nog online aan, niet meer op papier.';
+  delete a.changeFrom;
   a.name = 'Digitaal premieloket';
   const u1 = newUnit('Premiedienst'); u1.workload = 4; u1.open = true;
   u1.projects = [

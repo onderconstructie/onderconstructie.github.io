@@ -1248,17 +1248,18 @@ function refreshImports() { document.querySelectorAll('[data-oc-types]').forEach
 /* Voorbeeld */
 function example() {
   const ex = state.units.find(x => x.voorbeeld);
-  if (ex) { state.current = ex.id; save(); render(); return; }
-  const x = { id:uid(), voorbeeld:true, project:'', wie:'Loketmedewerkers', wat:'registreren elke premieaanvraag meteen in het nieuwe systeem', waar:'tijdens het eerste gesprek aan het loket',
+  if (ex) { state.current = ex.id; save(); render(); toast('Dit is het voorbeeld'); return; }
+  // Hetzelfde voorbeeldproject als in de andere tools van dit stappenplan.
+  const x = { id:uid(), voorbeeld:true, project:'Digitaal premieloket', wie:'Loketmedewerkers', wat:'registreren elke premieaanvraag meteen in het nieuwe systeem', waar:'tijdens het eerste gesprek aan het loket',
     scores:{ duidelijk:2, eraan:0, vlot:0, loont:1, gezien:1 },
     notes:{ vlot:'Het systeem is traag op de loketcomputers, en er is geen tweede scherm.', eraan:'Iedereen noteert al jaren eerst op papier en typt het later over.', gezien:'Twee teamleiders blijven de papieren lijst opvragen.' },
     acts:[
-      { id:uid(), text:'Tweede scherm en snellere computers aan elk loket', part:'vlot', help:'makkelijk', who:'ICT', when:'maart', done:false },
+      { id:uid(), text:'Tweede scherm en snellere computers aan elk loket', part:'vlot', help:'makkelijk', who:'ICT-dienst', when:'maart', done:false },
       { id:uid(), text:'Papieren aanvraagformulier niet meer bijdrukken', part:'eraan', help:'standaard', who:'Teamleider', when:'april', done:false },
-      { id:uid(), text:'Teamleiders vragen alleen nog cijfers uit het systeem op', part:'gezien', help:'voorgaan', who:'Diensthoofd', when:'april', done:false }
+      { id:uid(), text:'Teamleiders vragen alleen nog cijfers uit het systeem op', part:'gezien', help:'voorgaan', who:'Afdelingshoofd', when:'april', done:false }
     ],
-    meet:'Aandeel aanvragen dat dezelfde dag in het systeem staat', terug:'' };
-  state.units.push(x); state.current = x.id; save(); render();
+    meet:'Aandeel aanvragen dat dezelfde dag in het systeem staat', terug:'na drie maanden' };
+  state.units.push(x); state.current = x.id; save(); render(); toast('Voorbeeld geladen');
 }
 
 /* Menu */
@@ -1328,7 +1329,7 @@ document.addEventListener('keydown', e => { const g = e.target.closest && e.targ
 document.addEventListener('click', async e => {
   const b = e.target.closest('#menu [data-act]'); if (!b) return;
   $('menu').classList.remove('open');
-  const u = cur(), act = b.dataset.act, base = ('gedrag-' + (u.project ? u.project + '-' : '') + title(u)).normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
+  const u = cur(), act = b.dataset.act, base = ('gedrag-' + (u.project ? u.project + '-' : '') + title(u)).normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50).replace(/-$/, '') + '-' + new Date().toISOString().slice(0, 10);   // tool-project-gedrag-datum, zoals elders
   if (act === 'png' || act === 'pdf') {
     toast('Bezig met downloaden…');
     try { await (act === 'png' ? ocExport.png(buildExport, base, { width:900 }) : ocExport.pdf(buildExport, base, { width:900 })); toast(act === 'png' ? 'Afbeelding gedownload' : 'PDF gedownload'); }
