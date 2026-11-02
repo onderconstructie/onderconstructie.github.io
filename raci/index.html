@@ -795,8 +795,8 @@ function rowFlags(m, t) {
 // veel werk: minstens 4 keer R of A, en minstens dubbel zoveel als de andere rollen gemiddeld;
 // bijna alles: een letter bij minstens 8 op de 10 taken (vanaf 5 taken). Beide pas vanaf 3 rollen: met 2 rollen valt er weinig te vergelijken.
 const BUSY_MIN = 4, WIDE_MIN = 5, WIDE_SHARE = 0.8;
-const SIG_LONG = { busy:'Let op: veel werk bij één rol', wide:'Betrokken bij bijna alles' };
-const SIG_SHORT = { busy:'veel werk', wide:'bij bijna alles' };
+const SIG_LONG = { busy:'Let op: veel werk bij één rol', wide:'Betrokken bij bijna alles', none:'Bij geen enkele taak' };
+const SIG_SHORT = { busy:'veel werk', wide:'bij bijna alles', none:'nergens bij' };
 const SIG_NOTE = 'Dit is een signaal om te bespreken, geen vaste regel.';
 function counts(m, role) {
   let r = 0, a = 0, c = 0, i = 0;
@@ -808,7 +808,9 @@ function roleLoad(m, role) {
   const avg = others.length ? others.reduce((s, x) => s + counts(m, x).ra, 0) / others.length : 0;
   const busy = others.length >= 2 && l.ra >= BUSY_MIN && l.ra >= 2 * avg;
   const wide = others.length >= 2 && m.tasks.length >= WIDE_MIN && l.any >= WIDE_SHARE * m.tasks.length;
-  return { ...l, busy, wide, sig:[busy && 'busy', wide && 'wide'].filter(Boolean) };
+  // een rol zonder enige letter: hoort die echt in de matrix, of ontbreekt er een letter?
+  const none = m.tasks.length >= 2 && l.any === 0;
+  return { ...l, busy, wide, none, sig:[busy && 'busy', wide && 'wide', none && 'none'].filter(Boolean) };
 }
 // Problemen zijn fouten in een rij (geen A, geen R, meer dan één A). De signalen per rol tellen hier niet mee.
 function problems(m) {
@@ -819,7 +821,8 @@ function signalLines(m) {
   const all = m.roles.map(r => ({ r, l:roleLoad(m, r) }));
   const busy = all.filter(x => x.l.busy).map(x => `${x.r.name} (${x.l.ra} keer uitvoeren of beslissen)`);
   const wide = all.filter(x => x.l.wide).map(x => `${x.r.name} (${x.l.any} van de ${m.tasks.length} taken)`);
-  return [busy.length && { label:SIG_LONG.busy, text:busy.join(', ') }, wide.length && { label:SIG_LONG.wide, text:wide.join(', ') }].filter(Boolean);
+  const none = all.filter(x => x.l.none).map(x => x.r.name);
+  return [busy.length && { label:SIG_LONG.busy, text:busy.join(', ') }, wide.length && { label:SIG_LONG.wide, text:wide.join(', ') }, none.length && { label:SIG_LONG.none, text:none.join(', ') }].filter(Boolean);
 }
 
 /* ---------- Tekenen ---------- */
@@ -1132,7 +1135,7 @@ function loadExample() {
     { name:'Infobrief voor aanvragers schrijven', cells:{ [pl]:'A', [co]:'R', [lo]:'C', [dh]:'I' } },
     { name:'Stuurgroep informeren', cells:{ [pl]:'R', [dh]:'A', [co]:'I' } },
   ].map(t => ({ id:uid(), ...t }));
-  m.name = 'Digitaal premieloket';
+  m.name = 'Digitaal premieloket renovatie';
   save(); render();
   toast('Voorbeeld geladen: bij "Budget goedkeuren" voert nog niemand uit');
 }
