@@ -962,30 +962,30 @@ function dotsHTML(v) {
 function noteHTML(n, col) {
   const isAction = cur().actions.some(a => a.fromCard === n.id);
   return `<li class="note${isAction ? ' is-action' : ''}" data-id="${n.id}" style="--c:${col.c}">
-    <div class="note-text" contenteditable="plaintext-only" spellcheck="false" role="textbox" aria-label="Kaartje">${esc(n.text)}</div>
+    <div class="note-text" id="nt-${esc(String(n.id))}" contenteditable="plaintext-only" spellcheck="false" role="textbox" aria-label="Kaartje">${esc(n.text)}</div>
     <div class="note-foot">
       <div class="votes" aria-label="${n.votes} stemmen">
-        <button class="vote-btn" data-vote="-1" aria-label="Stem minder">${I.minus}</button>
+        <button class="vote-btn" data-vote="-1" aria-label="Stem minder" aria-describedby="nt-${esc(String(n.id))}">${I.minus}</button>
         <span class="dots">${dotsHTML(n.votes)}</span>
-        <button class="vote-btn" data-vote="1" aria-label="Stem meer">${I.plus}</button>
+        <button class="vote-btn" data-vote="1" aria-label="Stem meer" aria-describedby="nt-${esc(String(n.id))}">${I.plus}</button>
       </div>
-      <button class="mini make-action${isAction ? ' on' : ''}" title="${isAction ? 'Staat bij de acties' : 'Maak hier een actie van'}">${I.flag}Actie</button>
-      <button class="del" aria-label="Verwijder kaartje">${I.del}</button>
+      <button class="mini make-action${isAction ? ' on' : ''}" aria-describedby="nt-${esc(String(n.id))}" title="${isAction ? 'Staat bij de acties' : 'Maak hier een actie van'}">${I.flag}Actie</button>
+      <button class="del" aria-label="Verwijder kaartje" aria-describedby="nt-${esc(String(n.id))}">${I.del}</button>
     </div>
   </li>`;
 }
 function actionHTML(a, carried) {
   return `<li class="action${a.done ? ' done' : ''}" data-id="${a.id}" data-carried="${carried ? 1 : 0}">
-    <button class="check" aria-label="${a.done ? 'Niet meer afgevinkt' : 'Afvinken'}"><span class="box">${I.check}</span></button>
+    <button class="check" aria-label="${a.done ? 'Niet meer afgevinkt' : 'Afvinken'}" aria-describedby="at-${esc(String(a.id))}"><span class="box">${I.check}</span></button>
     <div class="action-body">
-      <div class="action-text" contenteditable="plaintext-only" spellcheck="false" role="textbox" aria-label="Actie">${esc(a.text)}</div>
+      <div class="action-text" id="at-${esc(String(a.id))}" contenteditable="plaintext-only" spellcheck="false" role="textbox" aria-label="Actie">${esc(a.text)}</div>
       <div class="action-fields">
         <label class="field${a.who ? '' : ' empty'}" title="Wie">${I.user}<input type="text" data-f="who" value="${esc(a.who || '')}" placeholder="wie" aria-label="Wie"></label>
         <label class="field${a.when ? '' : ' empty'}" title="Tegen wanneer">${I.cal}<input type="date" data-f="when" value="${esc(a.when || '')}" aria-label="Tegen wanneer"></label>
         ${a.origin ? `<span class="from">uit ${esc(a.origin)}</span>` : ''}
       </div>
     </div>
-    <button class="del" aria-label="Verwijder actie">${I.del}</button>
+    <button class="del" aria-label="Verwijder actie" aria-describedby="at-${esc(String(a.id))}">${I.del}</button>
   </li>`;
 }
 
@@ -1015,7 +1015,7 @@ function render() {
       <div class="col-head"><span class="col-dot" style="background:${c.c}"></span><h2 class="col-title">${esc(c.t)}</h2><span class="col-count">${cards.length}</span></div>
       <p class="col-hint">${esc(c.h)}</p>
       <form class="add-row" data-col="${i}" autocomplete="off">
-        <input class="add-input" placeholder="Typ en druk Enter, of plak een lijst" aria-label="Nieuw kaartje bij ${esc(c.t)}" enterkeyhint="enter" autocomplete="off" autocapitalize="sentences">
+        <input class="add-input" placeholder="Typ of plak, druk Enter" aria-label="Nieuw kaartje bij ${esc(c.t)}" enterkeyhint="enter" autocomplete="off" autocapitalize="sentences">
         <button class="add-btn" type="submit" aria-label="Toevoegen">${I.plus}</button>
       </form>
       <ul class="notes">${cards.map(n => noteHTML(n, c)).join('')}</ul>

@@ -135,9 +135,12 @@ textarea.field { resize:vertical; min-height:4.25rem; line-height:1.45; }
 .dec-edit .grid { margin-top:0; }
 .status { display:flex; gap:0.375rem; flex-wrap:wrap; }
 .status button {
-  padding:0.4375rem 0.75rem; border-radius:999px; border:1px solid var(--slate-200); font-size:0.875rem; font-weight:500; color:var(--slate-600); background:var(--wit);
+  min-height:44px; padding:0.4375rem 0.875rem; border-radius:999px; border:1px solid var(--slate-200); font-size:0.875rem; font-weight:500; color:var(--slate-600); background:var(--wit);
 }
 .status button[aria-pressed="true"] { background:var(--slate-800); border-color:var(--slate-800); color:var(--wit); }
+/* Wie al aan het typen is, heeft de startknoppen niet meer nodig: één groene knop, Bewaar beslissing */
+#card:has(#add-what:not(:placeholder-shown)) #empty .oc-start-btns, #card:has(#add-what:not(:placeholder-shown)) #empty .oc-open-row,
+#card:has(#more:not([hidden])) #empty .oc-start-btns, #card:has(#more:not([hidden])) #empty .oc-open-row { display:none; }
 .edit-actions { display:flex; align-items:center; gap:0.5rem; margin-top:0.875rem; flex-wrap:wrap; }
 .btn { padding:0.5rem 0.875rem; border-radius:8px; font-weight:600; font-size:0.875rem; white-space:nowrap; }
 .btn-primary { background:var(--accent-dark); color:var(--wit); }
@@ -820,6 +823,32 @@ $('more-toggle').addEventListener('click', () => {
   state.moreOpen = open; try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {}
 });
 if (state.moreOpen) setMore(true);
+/* Concept: wat je typt maar nog niet bewaarde, overleeft herladen en de terugknop (zelfde opslag, eigen veld) */
+function formLeeg() {
+  return !$('add-what').value.trim() && !$('add-why').value.trim() && !$('add-alt').value.trim()
+    && ![...$('add-acts').querySelectorAll('[data-a="text"]')].some(i => i.value.trim());
+}
+let draftT = null;
+function bewaarConcept() {
+  clearTimeout(draftT);
+  draftT = setTimeout(() => {
+    if (formLeeg()) delete state.draft;
+    else state.draft = { what:$('add-what').value, why:$('add-why').value, who:$('add-who').value, date:$('add-date').value, alt:$('add-alt').value,
+      acts:[...$('add-acts').querySelectorAll('.act-row')].map(r => ({ text:r.querySelector('[data-a="text"]').value, who:r.querySelector('[data-a="who"]').value, when:r.querySelector('[data-a="when"]').value })) };
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {}
+  }, 300);
+}
+$('add-form').addEventListener('input', bewaarConcept);
+(function herstelConcept() {
+  const d = state.draft; if (!d || typeof d !== 'object') return;
+  const t = v => typeof v === 'string' ? v : '';
+  $('add-what').value = t(d.what).slice(0, 300); $('add-why').value = t(d.why); $('add-alt').value = t(d.alt);
+  if (t(d.who)) $('add-who').value = t(d.who);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(t(d.date))) $('add-date').value = d.date;
+  const acts = Array.isArray(d.acts) ? d.acts.filter(a => a && typeof a === 'object') : [];
+  if (acts.length) $('add-acts').innerHTML = acts.map(a => actRowHTML({ text:t(a.text), who:t(a.who), when:t(a.when) }, false)).join('');
+  if (t(d.why) || t(d.alt) || acts.some(a => t(a.text))) setMore(true);
+})();
 $('add-act').addEventListener('click', () => {
   $('add-acts').insertAdjacentHTML('beforeend', actRowHTML({}, false));
   const rows = $('add-acts').querySelectorAll('.act-row'); rows[rows.length - 1].querySelector('input').focus();
@@ -871,6 +900,7 @@ $('add-form').addEventListener('submit', e => {
   }
   l.items.push(it);
   if (it.who) state.lastWho = it.who;
+  delete state.draft; clearTimeout(draftT);
   save();
   ['add-what', 'add-why', 'add-alt'].forEach(id => $(id).value = '');
   $('add-date').value = today();
@@ -1026,6 +1056,8 @@ $('decs').addEventListener('click', e => {
   if (head) {
     const { it } = findIt(head); if (!it) return;
     openId = openId === it.id ? null : it.id;
+    // Eén formulier tegelijk: een leeg invulpaneel klapt dicht als je een bewaarde beslissing opent
+    if (openId && !$('more').hidden && formLeeg()) setMore(false);
     render();
     const li = document.querySelector(`.dec[data-id="${it.id}"]`);
     if (openId && li) li.scrollIntoView({ block:'nearest', behavior:'smooth' });

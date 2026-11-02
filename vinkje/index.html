@@ -773,10 +773,10 @@ function itemHTML(it) {
       <label title="${late ? 'Te laat' : 'Tegen wanneer'}"${late ? ' class="late"' : ''}>${ICON_CAL}<input type="date" data-f="when" value="${esc(it.when || '')}" aria-label="${late ? 'Tegen wanneer, te laat' : 'Tegen wanneer'}"></label>
     </div>` : '';
   return `<li class="item${it.done ? ' done' : ''}" data-id="${it.id}">
-    <button class="check" aria-label="${it.done ? 'Niet meer afgevinkt' : 'Afvinken'}"><span class="box">${ICON_CHECK}</span></button>
-    <div class="body"><div class="text" contenteditable="plaintext-only" spellcheck="false" enterkeyhint="done" role="textbox" aria-label="Item">${esc(it.text)}</div>${meta}${edit}</div>
+    <button class="check" aria-label="${it.done ? 'Niet meer afgevinkt' : 'Afvinken'}" aria-describedby="it-${esc(String(it.id))}"><span class="box">${ICON_CHECK}</span></button>
+    <div class="body"><div class="text" id="it-${esc(String(it.id))}" contenteditable="plaintext-only" spellcheck="false" enterkeyhint="done" role="textbox" aria-label="Item">${esc(it.text)}</div>${meta}${edit}</div>
     <div class="item-actions">
-      <button class="del" aria-label="Verwijder">${ICON_DEL}</button>
+      <button class="del" aria-label="Verwijder" aria-describedby="it-${esc(String(it.id))}">${ICON_DEL}</button>
       ${it.done ? '' : `<span class="grip" aria-hidden="true">${ICON_GRIP}</span>`}
     </div>
   </li>`;
@@ -899,6 +899,8 @@ document.addEventListener('click', e => {
     // korte pauze zodat je het vinkje ziet verschijnen voor het item verhuist
     const li = chk.closest('.item'); li.classList.toggle('done', it.done);
     setTimeout(render, it.done ? 220 : 0);
+    // Afgevinkt schuift naar onderen: wie zich vergiste, zet het met één tik terug
+    if (it.done) toast(`'${it.text.length > 28 ? it.text.slice(0, 28) + '…' : it.text}' afgevinkt`, () => { it.done = false; });
     return;
   }
   const del = e.target.closest('.del');

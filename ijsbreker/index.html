@@ -141,6 +141,29 @@
             .btn-primary { min-height:64px; font-size:1.25rem; min-width:14rem; }
         }
 
+        /* Groot scherm: voor een tablet of laptop aan een beamer of tv */
+        .oc-groot { width:44px; height:44px; min-width:44px; padding:0 !important; color:var(--slate-600); background:none; }
+        .oc-groot:hover { background:var(--slate-100); }
+        .oc-groot svg { width:20px; height:20px; }
+        .exit-present { display:none; position:fixed; top:0.75rem; right:0.75rem; z-index:30; background:#fff; border:1px solid var(--slate-200); box-shadow:0 4px 14px rgba(15,23,42,0.1); color:var(--slate-700); }
+        .exit-present svg { width:18px; height:18px; }
+        body.present { background:#fff; }
+        body.present .oc-head, body.present .oc-footer, body.present .set, body.present .mono, body.present .hint, body.present .card-head, body.present #groot { display:none !important; }
+        body.present .exit-present { display:inline-flex; }
+        body.present .main { max-width:none; min-height:100vh; min-height:100dvh; display:flex; align-items:center; justify-content:center; padding:1.5rem; }
+        body.present .card { border:0; width:100%; max-width:1100px; padding:0; }
+        body.present .cols, body.present .reels { max-width:min(820px, 46vh, 92vw); gap:1rem; }
+        body.present .cols span { font-size:clamp(0.875rem, 1.6vw, 1.125rem); }
+        body.present .item b { font-size:clamp(0.9375rem, 2vw, 1.5rem); }
+        body.present .lockhint { font-size:clamp(0.875rem, 1.6vw, 1.125rem); }
+        body.present .result { max-width:1000px; min-height:12rem; }
+        body.present .eyebrow { font-size:clamp(0.9375rem, 1.6vw, 1.25rem); }
+        body.present .intro { font-size:clamp(1.25rem, 2.6vw, 2rem); }
+        body.present .sentence { font-size:clamp(1.75rem, 4.2vw, 3.25rem); }
+        body.present .sentence.wacht { font-size:clamp(1.125rem, 2.4vw, 1.75rem); }
+        body.present .btn-primary { min-height:64px; font-size:1.25rem; min-width:14rem; }
+        body.present .timer { font-size:1.25rem; }
+
         /* Melding */
         .toast { position:fixed; left:50%; bottom:calc(env(safe-area-inset-bottom, 0px) + 1.25rem); transform:translate(-50%, calc(100% + 3rem)); visibility:hidden; z-index:50;
           background:var(--slate-800); color:#fff; border-radius:12px; padding:0.625rem 1rem; display:flex; align-items:center; gap:0.75rem; font-size:0.9375rem; min-height:44px;
@@ -235,6 +258,7 @@ header.header h1 + p, header.header h1 + p.subtitle, .oc-head h1 + p, .oc-head h
 
             <div class="controls">
                 <button type="button" class="btn btn-primary" id="draai"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v4.5h-4.5"/></svg><span id="draai-tekst">Draai</span></button>
+                <button type="button" class="btn oc-groot" id="groot" title="Toon op groot scherm" aria-label="Toon op groot scherm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
             </div>
             <button type="button" class="link-btn" id="liever" hidden>Liever niet? Draai opnieuw</button>
 
@@ -270,6 +294,7 @@ header.header h1 + p, header.header h1 + p.subtitle, .oc-head h1 + p, .oc-head h
         <p class="mono">Wil je iedereen om de beurt een minuut geven? <a href="/check-in/">Open Check-in</a></p>
     </main>
 
+    <button type="button" class="btn exit-present" id="exit-present"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>Sluit groot scherm</button>
     <footer class="footer oc-footer">
         <p class="quote oc-quote">Een groep begint pas als iedereen één keer iets zei.</p>
     </footer>
@@ -556,6 +581,17 @@ document.addEventListener('keydown', e => {
   if (t && t !== document.body && t.closest('button, a, input, textarea, select, summary, [contenteditable]')) return;
   e.preventDefault(); draai();
 });
+
+/* ---------- Groot scherm ---------- */
+function groot(on) {
+  document.body.classList.toggle('present', on);
+  if (on) { try { if (document.documentElement.requestFullscreen && window.self === window.top) document.documentElement.requestFullscreen().catch(() => {}); } catch {} $('draai').focus(); }
+  else { try { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); } catch {} $('groot').focus(); }
+}
+$('groot').addEventListener('click', () => groot(true));
+$('exit-present').addEventListener('click', () => groot(false));
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.body.classList.contains('present')) groot(false); });
+document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && document.body.classList.contains('present')) groot(false); });
 
 /* ---------- Tijd per persoon ---------- */
 let klokT = null, eindOp = 0;
