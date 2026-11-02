@@ -109,6 +109,8 @@ textarea.field { min-height:4.5rem; resize:vertical; line-height:1.45; }
 .add-row .field { flex:1; }
 .del { width:44px; height:44px; display:flex; align-items:center; justify-content:center; color:var(--slate-400); border-radius:10px; flex:none; }
 .del:hover { color:#b91c1c; background:#fef2f2; }
+button.oc-import { color:#047857; min-height:44px; }
+.roles-card .oc-imp { padding:0 1.125rem 1rem; margin-top:-0.25rem; }
 .del svg { width:17px; height:17px; }
 .tools { display:flex; flex-wrap:wrap; gap:0.5rem; align-items:center; }
 
@@ -224,11 +226,11 @@ textarea.field { min-height:4.5rem; resize:vertical; line-height:1.45; }
 .links { list-style:none; display:grid; gap:0.5rem; padding:0 1.125rem; }
 .ln { display:flex; flex-wrap:wrap; align-items:center; gap:0.375rem; padding:0.5rem; border-radius:12px; background:var(--slate-50); border:1px solid var(--slate-100); }
 .ln > span { font-size:0.9375rem; font-weight:600; color:var(--slate-700); padding:0 0.25rem; }
-.ln select.field, .ln input.field { width:auto; flex:1 1 7rem; background-color:var(--wit); }
+.ln select.field, .ln input.field { width:0; min-width:0; flex:1 1 7rem; background-color:var(--wit); text-overflow:ellipsis; }
 .ln .ln-verb { flex:0 1 6.5rem; }
 .ln .del { margin-left:auto; }
 .links-empty { padding:0 1.125rem; font-size:0.875rem; color:var(--slate-500); }
-.sentences { list-style:none; padding:0.75rem 1.125rem 0; display:grid; gap:0.25rem; font-size:0.9375rem; color:var(--slate-700); }
+.sentences { list-style:none; padding:0.75rem 1.125rem 0; display:grid; gap:0.25rem; font-size:0.9375rem; color:var(--slate-700); overflow-wrap:anywhere; }
 .sentences li::before { content:''; display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--accent); margin:0 0.5rem 0.125rem 0; }
 .schema { padding:0.75rem 0.75rem 0.25rem; }
 .schema svg { display:block; width:100%; height:auto; }
@@ -278,13 +280,15 @@ textarea.field { min-height:4.5rem; resize:vertical; line-height:1.45; }
 .ptab td b { color:var(--slate-800); font-weight:600; }
 .ptab td small { display:block; font-size:0.75rem; color:var(--slate-500); }
 .ptab .miss { color:var(--amber-ink); font-weight:600; }
-.ptab .p-go { min-height:44px; text-align:left; font-weight:600; color:var(--slate-800); text-decoration:underline; text-decoration-color:var(--slate-300); text-underline-offset:3px; }
+.ptab .p-go { min-height:44px; max-width:100%; overflow-wrap:anywhere; text-align:left; font-weight:600; color:var(--slate-800); text-decoration:underline; text-decoration-color:var(--slate-300); text-underline-offset:3px; }
 .ptab .p-go:hover { color:var(--accent-dark); }
+@media (min-width:761px) { .ptab { table-layout:fixed; } .ptab td:first-child { min-width:0; } }
 @media (max-width:760px) {
   .ptab thead { display:none; }
   .ptab, .ptab tbody, .ptab tr, .ptab td { display:block; width:100%; }
   .ptab tr { padding:0.5rem 1.125rem 0.625rem; border-bottom:1px solid var(--slate-100); }
   .ptab td { border:0; padding:0.125rem 0 !important; display:grid; grid-template-columns:7.5rem minmax(0,1fr); gap:0.5rem; }
+  .ptab td { overflow-wrap:anywhere; }
   .ptab td::before { content:attr(data-l); font-size:0.75rem; font-weight:600; color:var(--slate-500); padding-top:0.125rem; }
   .ptab td:first-child { display:block; }
   .ptab td:first-child::before { display:none; }
@@ -413,6 +417,10 @@ div.pf-in { display:flex; align-items:center; }
   .stat b { font-size:1.5rem; }
 }
 
+/* Lange woorden zonder spaties mogen de pagina niet breder maken */
+.subj-desc, .access, .pf-h, .pf-radios label, .pf-block legend, .gl-row dd, .sig-go, .note, .chip, .ok-box, .stat span { overflow-wrap:anywhere; }
+.pf-radios label { min-width:0; }
+
 /* Toegankelijkheid en soepel op gsm */
 :focus-visible { outline:2px solid #047857 !important; outline-offset:2px; }
 .back-link { min-height:44px; min-width:44px; }
@@ -439,7 +447,7 @@ body { min-height:100dvh; }
     </svg>
   </div>
   <h1 class="title">Informatietabel</h1>
-  <p class="subtitle">Beschrijf welke gegevens je toepassing nodig heeft, waarvoor, en waar ze vandaan komen.</p>
+  <p class="subtitle">Welke gegevens heb je echt nodig?</p>
 </header>
 
 <main class="main">
@@ -651,8 +659,131 @@ const ocExport = (() => {
   return { png, pdf };
 })();
 
+/* ---------- Overnemen uit andere tools (gedeeld door de Onder Constructie-tools) ----------
+   Deze tool legt zelf niets klaar; ze neemt alleen rollen over (soort 'betrokkene'). */
+const ocShare = (() => {
+  const PREFIX = 'oc.share.';
+  const LABEL = { betrokkene:'betrokkenen', taak:'taken', actie:'acties', risico:"risico's" };
+  const esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+
+  function publish(id, tool, lists) {
+    try {
+      const clean = (lists || []).map(l => ({
+        name: String(l.name || '').slice(0, 80),
+        items: (l.items || []).filter(i => i && i.type && String(i.text || '').trim())
+          .slice(0, 300).map(i => ({ type:i.type, text:String(i.text).trim().slice(0, 300),
+            note: i.note ? String(i.note).slice(0, 200) : undefined, who: i.who || undefined, when: i.when || undefined }))
+      })).filter(l => l.items.length);
+      if (!clean.length) { localStorage.removeItem(PREFIX + id); return; }
+      localStorage.setItem(PREFIX + id, JSON.stringify({ id, tool, updated: Date.now(), lists: clean }));
+    } catch {}
+  }
+  function clear(id) { try { localStorage.removeItem(PREFIX + id); } catch {} }
+
+  // Elke bron apart: één kapotte sleutel mag de andere niet verbergen.
+  function sources(types, self) {
+    const out = [];
+    let keys = [];
+    try { for (let i = 0; i < localStorage.length; i++) keys.push(localStorage.key(i)); } catch { return out; }
+    keys.forEach(k => {
+      if (!k || !k.startsWith(PREFIX) || k === PREFIX + self) return;
+      try {
+        const d = JSON.parse(localStorage.getItem(k));
+        if (!d || !Array.isArray(d.lists)) return;
+        d.lists.forEach(l => {
+          if (!l || !Array.isArray(l.items)) return;
+          const items = l.items.filter(it => it && types.includes(it.type) && typeof it.text === 'string');
+          if (items.length) out.push({ tool: String(d.tool || d.id || k.slice(PREFIX.length)), id: d.id, updated: +d.updated || 0, list: String(l.name || ''), items });
+        });
+      } catch {}
+    });
+    return out.sort((a, b) => (b.updated || 0) - (a.updated || 0));
+  }
+
+  let styled = false;
+  function style() {
+    if (styled) return; styled = true;
+    const s = document.createElement('style');
+    s.textContent = `
+      .ocs-back{position:fixed;inset:0;z-index:10000;display:flex;align-items:flex-end;justify-content:center;background:rgba(15,23,42,.45);
+        backdrop-filter:blur(3px);opacity:0;transition:opacity .15s;font-family:'DM Sans',system-ui,sans-serif}
+      @media(min-width:640px){.ocs-back{align-items:center;padding:1rem}}
+      .ocs-back.open{opacity:1}
+      .ocs{width:100%;max-width:520px;max-height:min(86vh,720px);display:flex;flex-direction:column;background:#fff;border-radius:18px 18px 0 0;
+        box-shadow:0 20px 50px rgba(15,23,42,.25);transform:translateY(12px);transition:transform .15s;color:#1e293b}
+      @media(min-width:640px){.ocs{border-radius:18px}}
+      .ocs-back.open .ocs{transform:none}
+      .ocs-head{padding:1.125rem 1.25rem .75rem;border-bottom:1px solid #e2e8f0}
+      .ocs-title{font-size:1.125rem;font-weight:700;letter-spacing:-.02em}
+      .ocs-sub{font-size:.8125rem;color:#64748b;margin-top:.125rem}
+      .ocs-body{overflow:auto;padding:.5rem 1.25rem 1rem;flex:1}
+      .ocs-src{margin-top:.875rem}
+      .ocs-src-head{display:flex;align-items:center;gap:.5rem;padding:.375rem 0}
+      .ocs-src-head b{font-size:.9375rem}
+      .ocs-src-head span{font-size:.75rem;color:#64748b}
+      .ocs-all{margin-left:auto;font:inherit;font-size:.8125rem;color:#047857;background:none;border:0;cursor:pointer;padding:.25rem .5rem;min-height:44px;border-radius:6px}
+      .ocs-all:hover{background:#d1fae5}
+      .ocs-item{display:flex;align-items:flex-start;gap:.625rem;padding:.625rem .25rem;min-height:44px;box-sizing:border-box;border-top:1px solid #f1f5f9;cursor:pointer;font-size:.9375rem;line-height:1.4}
+      .ocs-item input{width:18px;height:18px;margin-top:.125rem;accent-color:#10b981;flex:none}
+      .ocs-item small{display:block;font-size:.75rem;color:#64748b}
+      .ocs-empty{padding:1.5rem .25rem;color:#64748b;font-size:.9375rem;line-height:1.5}
+      .ocs-foot{display:flex;gap:.5rem;justify-content:flex-end;padding:.875rem 1.25rem calc(.875rem + env(safe-area-inset-bottom,0px));border-top:1px solid #e2e8f0}
+      .ocs-btn{font:inherit;font-size:.9375rem;font-weight:600;padding:.625rem 1rem;min-height:44px;border-radius:10px;border:0;cursor:pointer}
+      .ocs-cancel{background:#f1f5f9;color:#475569}
+      .ocs-ok{background:#047857;color:#fff}.ocs-ok:hover{background:#065f46}
+      .ocs-ok:disabled{background:#cbd5e1;color:#334155;cursor:default}
+      .ocs-back :focus-visible{outline:2px solid #047857;outline-offset:2px}`;
+    document.head.appendChild(s);
+  }
+
+  function pick({ types, self, title, intro }) {
+    style();
+    return new Promise(resolve => {
+      const src = sources(types, self);
+      const back = document.createElement('div');
+      back.className = 'ocs-back';
+      const what = types.map(t => LABEL[t] || t).join(' of ');
+      back.innerHTML = `<div class="ocs" role="dialog" aria-modal="true" aria-label="${esc(title || 'Overnemen')}">
+        <div class="ocs-head"><div class="ocs-title">${esc(title || 'Overnemen uit een andere tool')}</div>
+          <div class="ocs-sub">${esc(intro || `Kies welke ${what} je wil overnemen.`)}</div></div>
+        <div class="ocs-body">${src.length ? src.map((s, si) => `
+          <div class="ocs-src"><div class="ocs-src-head"><b>${esc(s.tool)}</b><span>${esc(s.list)} · ${s.items.length}</span>
+            <button class="ocs-all" type="button" data-all="${si}">alles</button></div>
+            ${s.items.map((it, ii) => `<label class="ocs-item"><input type="checkbox" data-s="${si}" data-i="${ii}">
+              <span>${esc(it.text)}${it.who || it.when || it.note ? `<small>${esc([it.who, it.when, it.note].filter(Boolean).join(' · '))}</small>` : ''}</span></label>`).join('')}
+          </div>`).join('') : `<p class="ocs-empty">Er zijn nog geen ${esc(what)} om over te nemen. Vul ze eerst in een andere tool van Onder Constructie in, dan verschijnen ze hier.</p>`}
+        </div>
+        <div class="ocs-foot"><button class="ocs-btn ocs-cancel" type="button">Annuleer</button>
+          <button class="ocs-btn ocs-ok" type="button" disabled>Neem over</button></div></div>`;
+      document.body.appendChild(back);
+      requestAnimationFrame(() => back.classList.add('open'));
+      const ok = back.querySelector('.ocs-ok');
+      const boxes = () => [...back.querySelectorAll('input[type=checkbox]')];
+      const sync = () => { const n = boxes().filter(b => b.checked).length; ok.disabled = !n; ok.textContent = n ? `Neem ${n} over` : 'Neem over'; };
+      back.addEventListener('change', sync);
+      back.addEventListener('click', e => {
+        const a = e.target.closest('[data-all]');
+        if (a) { const bs = boxes().filter(b => b.dataset.s === a.dataset.all); const all = bs.every(b => b.checked); bs.forEach(b => b.checked = !all); sync(); }
+        if (e.target === back) close([]);
+      });
+      function close(v) { document.removeEventListener('keydown', onKey, true); back.remove(); resolve(v); }
+      function onKey(e) { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close([]); } }
+      document.addEventListener('keydown', onKey, true);
+      back.querySelector('.ocs-cancel').addEventListener('click', () => close([]));
+      ok.addEventListener('click', () => close(boxes().filter(b => b.checked).map(b => {
+        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, list: s.list };
+      })));
+      const first = back.querySelector('input,.ocs-cancel'); first && first.focus();
+    });
+  }
+
+  // Hoeveel er klaarligt voor deze soorten (om een knop te tonen of een teller te zetten).
+  const count = (types, self) => sources(types, self).reduce((n, s) => n + s.items.length, 0);
+  return { publish, clear, pick, count, sources, esc };
+})();
+
 /* ---------- Basis ---------- */
-const OC_TOOL = 'Informatietabel';
+const OC_TOOL = 'Informatietabel', OC_ID = 'informatie';
 const KEY = 'informatie.v1';
 const uid = () => Math.random().toString(36).slice(2, 10);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -699,6 +830,8 @@ function normProject(p) {
   // verwijzingen naar gebruiken en rollen die niet (meer) bestaan, vallen weg
   const U = new Set(q.uses.map(u => u.id)), R = new Set(q.roles.map(r => r.id));
   q.subjects.forEach(s => s.fields.forEach(f => { f.uses = f.uses.filter(x => U.has(x)); f.see = f.see.filter(x => R.has(x)); f.edit = f.edit.filter(x => R.has(x)); }));
+  const SB = new Set(q.subjects.map(s => s.id));
+  q.links = q.links.filter(l => SB.has(l.a) && SB.has(l.b));
   if (p.voorbeeld) q.voorbeeld = true;
   return q;
 }
@@ -734,7 +867,7 @@ const allFields = p => p.subjects.flatMap(s => s.fields.map(f => ({ f, s })));
 const findField = (p, id) => { for (const s of p.subjects) { const f = s.fields.find(x => x.id === id); if (f) return { f, s }; } return null; };
 const useName = (p, id) => (p.uses.find(u => u.id === id) || {}).name || '';
 const roleName = (p, id) => (p.roles.find(r => r.id === id) || {}).name || '';
-const isEmpty = () => state.projects.every(p => !p.subjects.length && !p.uses.length);
+const isEmpty = () => state.projects.every(p => !p.subjects.length && !p.uses.length && !p.roles.length);
 
 /* ---------- Meervoud (voor de zinnen bij de verbanden) ---------- */
 function meervoud(w) {
@@ -778,13 +911,22 @@ function lijkt(a, b) {
   if (a.trim() === b.trim()) return false;
   const A = toks(a), B = toks(b); if (!A.length || !B.length) return false;
   if (normName(a) === normName(b)) return true;
+  // Genummerde gegevens (Adresregel 1, Adresregel 2) zijn bewust verschillend.
+  if ((normName(a).match(/\d+/g) || []).join(' ') !== (normName(b).match(/\d+/g) || []).join(' ')) return false;
   if (A.length === B.length) { const rest = B.slice(); if (A.every(x => { const k = rest.findIndex(y => wordEq(x, y)); if (k < 0) return false; rest.splice(k, 1); return true; })) return true; }
   const cA = A.join(''), cB = B.join('');
   if (A.length > 1 && perms(A).some(p => wordEq(p.join(''), cB))) return true;
   if (B.length > 1 && perms(B).some(p => wordEq(p.join(''), cA))) return true;
   if (wordEq(cA, cB)) return true;
   const n = Math.min(cA.length, cB.length);
-  return n >= 6 && lev(cA, cB, n >= 12 ? 2 : 1) <= (n >= 12 ? 2 : 1);
+  return n >= 8 && lev(cA, cB, n >= 12 ? 2 : 1) <= (n >= 12 ? 2 : 1);
+}
+// Onthouden: bij elke toetsaanslag worden alle namen vergeleken, maar namen veranderen zelden.
+const lijktMemo = new Map();
+function lijktC(a, b) {
+  const k = a + '\u0001' + b; let v = lijktMemo.get(k);
+  if (v === undefined) { if (lijktMemo.size > 200000) lijktMemo.clear(); v = lijkt(a, b); lijktMemo.set(k, v); }
+  return v;
 }
 const normDesc = s => normName(s).replace(/\s+/g, ' ');
 
@@ -799,11 +941,14 @@ const KIND_INFO = {
   woorden:  { t:'Namen en betekenissen', short:'Naam', p:'Eén begrip, één naam en één betekenis. Dan praten burger, medewerker en ontwikkelaar over hetzelfde.' },
   aanvullen:{ t:'Nog aan te vullen', short:'Aan te vullen', p:'Kleine gaten in de beschrijving. Geen probleem, wel nog werk.' }
 };
-const KIND_ORDER = ['weg', 'gekend', 'gebruik', 'privacy', 'woorden', 'aanvullen'];
+const bare = f => !f.desc.trim() && !f.src && !f.uses.length && f.pers === 'nee' && !f.see.length && !f.edit.length && !f.keep.trim() && !f.ex.trim() && !f.note.trim() && f.known !== 'ja';
+const KIND_ORDER = ['weg','gekend', 'gebruik', 'privacy', 'woorden', 'aanvullen'];
 function analyse(p) {
   const S = [], F = allFields(p).filter(x => x.f.name.trim());
   F.forEach(({ f, s }) => {
     const base = { f:f.id, s:s.id, name:f.name, where:s.name };
+    // Net ingetikt en nog niet beschreven: één rustige melding in plaats van drie signalen.
+    if (bare(f)) { S.push({ ...base, kind:'aanvullen', msg:'Nog niet beschreven: betekenis, waarvoor en bron ontbreken.' }); return; }
     if (!f.uses.length) S.push({ ...base, kind:'weg', msg: f.pers !== 'nee' ? 'Persoonsgegeven zonder gebruik.' : 'Aan geen enkel gebruik gekoppeld.' });
     if (f.src === 'burger' && f.known === 'ja') S.push({ ...base, kind:'gekend', msg:`Al gekend${f.knownWhere.trim() ? ': ' + f.knownWhere.trim() : ''}. Je vraagt het toch aan de burger of klant.` });
     if (f.pers !== 'nee') {
@@ -815,7 +960,8 @@ function analyse(p) {
     if (!f.src) S.push({ ...base, kind:'aanvullen', msg:'Bron ontbreekt: waar komt het vandaan?' });
     if (f.type === 'lijst' && f.options.length < 2) S.push({ ...base, kind:'aanvullen', msg:'Keuzelijst zonder waarden.' });
   });
-  p.uses.forEach(u => { if (u.name.trim() && !F.some(x => x.f.uses.includes(u.id))) S.push({ kind:'gebruik', use:u.id, name:u.name, where:label(KINDS, u.kind), msg:'Er is nog geen enkel gegeven aan gekoppeld.' }); });
+  // Een gebruik zonder gegevens telt pas als je begonnen bent met koppelen.
+  if (F.some(x => x.f.uses.length)) p.uses.forEach(u => { if (u.name.trim() && !F.some(x => x.f.uses.includes(u.id))) S.push({ kind:'gebruik', use:u.id, name:u.name, where:label(KINDS, u.kind), msg:'Er is nog geen enkel gegeven aan gekoppeld.' }); });
   // dezelfde naam, een andere betekenis
   const groups = {};
   F.forEach(x => { const k = normName(x.f.name); (groups[k] = groups[k] || []).push(x); });
@@ -833,7 +979,7 @@ function analyse(p) {
   const L = F.slice(0, 300);
   for (let i = 0; i < L.length; i++) for (let j = i + 1; j < L.length; j++) {
     const a = L[i], b = L[j];
-    if (lijkt(a.f.name, b.f.name)) S.push({ f:a.f.id, s:a.s.id, name:a.f.name, where:a.s.name, kind:'woorden', msg:`Lijkt sterk op ${b.f.name} (${b.s.name}). Is het hetzelfde gegeven? Kies dan één naam.`, pair:[a.f.id, b.f.id] });
+    if (lijktC(a.f.name, b.f.name)) S.push({ f:a.f.id, s:a.s.id, name:a.f.name, where:a.s.name, kind:'woorden', msg:`Lijkt sterk op ${b.f.name} (${b.s.name}). Is het hetzelfde gegeven? Kies dan één naam.`, pair:[a.f.id, b.f.id] });
   }
   return S;
 }
@@ -871,11 +1017,11 @@ function renderHead(S) {
   $('pj-sum').textContent = n || p.subjects.length
     ? `${p.subjects.length} ${p.subjects.length === 1 ? 'onderwerp' : 'onderwerpen'} · ${n} ${n === 1 ? 'gegeven' : 'gegevens'} · ${pers} ${pers === 1 ? 'persoonsgegeven' : 'persoonsgegevens'} · ${p.uses.length} ${p.uses.length === 1 ? 'gebruik' : 'gebruiken'}`
     : 'Nog geen gegevens. Begin met waarvoor je ze nodig hebt.';
-  const r = real(S).length;
+  const r = real(S).length, ok = n && !F.some(x => bare(x.f));
   document.querySelectorAll('#views [role="tab"]').forEach(b => {
     const on = b.dataset.view === state.view;
     b.setAttribute('aria-selected', String(on)); b.tabIndex = on ? 0 : -1;
-    if (b.dataset.view === 'controle') b.innerHTML = 'Controle' + (r ? ` <span class="badge" aria-label="${r} ${r === 1 ? 'signaal' : 'signalen'}">${r}</span>` : (n ? `<svg class="ok-ico" aria-label="geen signalen" role="img" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>` : ''));
+    if (b.dataset.view === 'controle') b.innerHTML = 'Controle' + (r ? ` <span class="badge" aria-label="${r} ${r === 1 ? 'signaal' : 'signalen'}">${r}</span>` : (ok ? `<svg class="ok-ico" aria-label="geen signalen" role="img" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>` : ''));
   });
   $('view').setAttribute('aria-labelledby', 't-' + state.view);
 }
@@ -908,12 +1054,12 @@ const say = t => { const l = $('live'); l.textContent = ''; setTimeout(() => { l
 
 /* ---------- Weergave: gegevens ---------- */
 function viewGegevens(p, S) {
-  const usedBy = id => allFields(p).filter(x => x.f.uses.includes(id)).length;
+  const usedBy = id => allFields(p).filter(x => x.f.uses.includes(id)).length, linking = allFields(p).some(x => x.f.uses.length);
   const uses = p.uses.length ? `<ul class="uses">${p.uses.map(u => { const n = usedBy(u.id); return `<li class="use" data-use="${esc(u.id)}">
       <select class="field use-kind" data-sel="use-kind" data-k="uk:${esc(u.id)}" aria-label="Soort gebruik">${opts(KINDS, u.kind)}</select>
       <input class="field use-name" data-in="use-name" data-k="un:${esc(u.id)}" value="${esc(u.name)}" maxlength="120" autocomplete="off" aria-label="Gebruik" enterkeyhint="done">
       <button type="button" class="del" data-act="use-del" aria-label="Verwijder ${esc(u.name || 'gebruik')}">${ICON.x}</button>
-      <span class="use-n${n ? '' : ' leeg'}">${n ? `${n} ${n === 1 ? 'gegeven' : 'gegevens'}` : 'Nog geen gegevens gekoppeld'}</span></li>`; }).join('')}</ul>`
+      <span class="use-n${n || !linking ? '' : ' leeg'}">${n ? `${n} ${n === 1 ? 'gegeven' : 'gegevens'}` : 'Nog geen gegevens gekoppeld'}</span></li>`; }).join('')}</ul>`
     : `<p class="uses-empty">Nog geen gebruiken. Wat doe je met de gegevens? Bijvoorbeeld: beslissen of iemand recht heeft, een bedrag berekenen, een brief sturen.</p>`;
   const subjects = p.subjects.map((s, si) => subjCard(p, s, si, S)).join('');
   const links = p.links.length ? `<ul class="links">${p.links.map(l => `<li class="ln" data-l="${esc(l.id)}"><span aria-hidden="true">Eén</span>
@@ -962,6 +1108,7 @@ function viewGegevens(p, S) {
           <input class="field" data-k="role-new" placeholder="Nieuwe rol, bv. Dossierbehandelaar" aria-label="Nieuwe rol" maxlength="60">
           <button class="btn-add" type="submit" aria-label="Voeg rol toe">${ICON.plus}<span>Voeg toe</span></button>
         </form>
+        <div class="oc-imp"><button type="button" class="oc-import" data-oc-types="betrokkene" data-oc-roles${ocShare.count(['betrokkene'], OC_ID) ? '' : ' hidden'}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v11M7.5 9.5L12 14l4.5-4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>Rollen overnemen uit…</button></div>
       </section>
     </div>
   </div>`;
@@ -1031,19 +1178,19 @@ function fieldRow(p, s, f, i, S) {
     <div class="ed-grid">
       <label><span class="lbl">Naam</span><input class="field" data-in="name" ${K('name')} value="${esc(f.name)}" maxlength="120" autocomplete="off" enterkeyhint="next"></label>
       <label><span class="lbl">Betekenis in één zin</span><input class="field" data-in="desc" ${K('desc')} value="${esc(f.desc)}" maxlength="400" placeholder="Bv. De dag waarop de aanvrager geboren is." autocomplete="off" enterkeyhint="next"></label>
-      <label><span class="lbl">Soort</span><select class="field" data-sel="type" ${K('type')}>${opts(TYPES, f.type)}</select></label>
-      <div><span class="lbl">Verplicht?</span>${seg(f.id, 'req', f.req ? '1' : '0', [['1', 'Ja'], ['0', 'Nee']], 'Verplicht')}</div>
-      ${f.type === 'lijst' ? `<label class="span2"><span class="lbl">Waarden in de lijst <small>één per regel</small></span><textarea class="field" data-in="options" ${K('options')} rows="3" maxlength="2000">${esc(f.options.join('\n'))}</textarea></label>` : ''}
-      <label><span class="lbl">Voorbeeldwaarde</span><input class="field" data-in="ex" ${K('ex')} value="${esc(f.ex)}" maxlength="160" autocomplete="off" enterkeyhint="next"></label>
-      <label><span class="lbl">Opmerking</span><input class="field" data-in="note" ${K('note')} value="${esc(f.note)}" maxlength="400" autocomplete="off" enterkeyhint="next"></label>
+      <div class="span2"><span class="lbl">Waarvoor gebruik je het?</span>${chipsFor(p, f, 'uses')}</div>
       <div class="span2"><span class="lbl">Bron: waar komt het vandaan?</span>${seg(f.id, 'src', f.src, SRC, 'Bron')}</div>
       ${f.src === 'burger' ? `<div class="span2 known"><span class="lbl">Bestaat dit gegeven al bij de overheid of in een ander systeem?</span>${seg(f.id, 'known', f.known, [['nee', 'Nee'], ['ja', 'Ja, namelijk']], 'Al gekend')}
         ${f.known === 'ja' ? `<input class="field" data-in="knownWhere" ${K('knownWhere')} value="${esc(f.knownWhere)}" maxlength="160" placeholder="Waar? Bv. het eigen klantenbestand" aria-label="Waar is het al gekend?" autocomplete="off" enterkeyhint="next">` : ''}</div>` : ''}
-      <div class="span2"><span class="lbl">Waarvoor gebruik je het?</span>${chipsFor(p, f, 'uses')}</div>
+      <label><span class="lbl">Soort</span><select class="field" data-sel="type" ${K('type')}>${opts(TYPES, f.type)}</select></label>
+      <div><span class="lbl">Verplicht?</span>${seg(f.id, 'req', f.req ? '1' : '0', [['1', 'Ja'], ['0', 'Nee']], 'Verplicht')}</div>
+      ${f.type === 'lijst' ? `<label class="span2"><span class="lbl">Waarden in de lijst <small>één per regel</small></span><textarea class="field" data-in="options" ${K('options')} rows="3" maxlength="2000">${esc(f.options.join('\n'))}</textarea></label>` : ''}
+      <label class="span2"><span class="lbl">Voorbeeldwaarde</span><input class="field" data-in="ex" ${K('ex')} value="${esc(f.ex)}" maxlength="160" autocomplete="off" enterkeyhint="next"></label>
+      <div class="span2"><span class="lbl">Is het een persoonsgegeven?</span>${seg(f.id, 'pers', f.pers, PERS, 'Persoonsgegeven')}<p class="hint" style="margin-top:0.375rem">Een persoonsgegeven zegt iets over een mens die je kan herkennen, ook onrechtstreeks: een naam, een adres, een factuur op naam. Gevoelig is bijvoorbeeld iets over gezondheid, geloof, afkomst of strafzaken.</p></div>
       <div><span class="lbl">Wie mag het zien?</span>${chipsFor(p, f, 'see')}</div>
       <div><span class="lbl">Wie mag het wijzigen?</span>${chipsFor(p, f, 'edit')}</div>
-      <div class="span2"><span class="lbl">Is het een persoonsgegeven?</span>${seg(f.id, 'pers', f.pers, PERS, 'Persoonsgegeven')}<p class="hint" style="margin-top:0.375rem">Een persoonsgegeven zegt iets over een mens. Gevoelig is bijvoorbeeld iets over gezondheid, geloof, afkomst of strafzaken.</p></div>
-      <label class="span2"><span class="lbl">Hoe lang bewaar je het?</span><input class="field" data-in="keep" ${K('keep')} value="${esc(f.keep)}" maxlength="160" placeholder="Bv. 5 jaar na de laatste betaling" autocomplete="off" enterkeyhint="next"></label>
+      <label><span class="lbl">Hoe lang bewaar je het?</span><input class="field" data-in="keep" ${K('keep')} value="${esc(f.keep)}" maxlength="160" placeholder="Bv. 5 jaar na de laatste betaling" autocomplete="off" enterkeyhint="next"></label>
+      <label><span class="lbl">Opmerking</span><input class="field" data-in="note" ${K('note')} value="${esc(f.note)}" maxlength="400" autocomplete="off" enterkeyhint="next"></label>
     </div>
     <div class="ed-sig" aria-live="polite">${edSigs(S, f.id)}</div>
     <div class="row-btns">
@@ -1112,6 +1259,7 @@ function viewControle(p, S) {
   const kinds = KIND_ORDER.filter(k => byKind(k).length);
   let top;
   if (!F.length && !p.uses.length) top = `<p class="hint pad">Nog niets om te controleren. Vul eerst gebruiken en gegevens in.</p>`;
+  else if (!r.length && F.some(x => bare(x.f))) { const u = F.filter(x => bare(x.f)).length; top = `<p class="hint pad">Nog ${u} ${u === 1 ? 'gegeven' : 'gegevens'} niet beschreven. Geef ${u === 1 ? 'het' : 'ze'} een betekenis, een bron en een gebruik: dan kijkt de tool mee.</p>`; }
   else if (!r.length) top = `<div class="ok-box" role="status">${ICON.check}<span><b>Alles in orde: geen open signalen.</b>Elk gegeven heeft een gebruik, je vraagt niets wat al gekend is, de persoonsgegevens zijn beschreven en de namen zijn eenduidig.</span></div>`;
   else top = `<p class="hint pad">De tool kijkt mee met wat vaak vergeten wordt. Een signaal is geen fout, wel een vraag om even bij stil te staan. Tik op een signaal om het gegeven te openen.</p>`;
   const chips = kinds.length ? `<div class="sum-chips">${kinds.map(k => `<a href="#g-${k}" class="${k === 'aanvullen' ? 'grey' : ''}" data-jump="g-${k}">${esc(KIND_INFO[k].t)} <b>${byKind(k).length}</b></a>`).join('')}</div>` : '';
@@ -1125,35 +1273,42 @@ function privRows(p) {
     f, s, uses:f.uses.map(id => useName(p, id)).filter(Boolean), see:f.see.map(id => roleName(p, id)).filter(Boolean), edit:f.edit.map(id => roleName(p, id)).filter(Boolean)
   }));
 }
+// Per doel: welke persoonsgegevens heb je voor elk gebruik nodig (zo is een register van verwerkingen opgebouwd).
+function perDoel(p, rows) {
+  return p.uses.map(u => ({ u, list:rows.filter(x => x.f.uses.includes(u.id)) })).filter(x => x.list.length && x.u.name.trim());
+}
 function viewPrivacy(p, S) {
   const rows = privRows(p), gev = rows.filter(x => x.f.pers === 'gevoelig'), rest = rows.filter(x => x.f.pers === 'ja');
   const ps = S.filter(x => x.kind === 'privacy' || (x.kind === 'weg' && findField(p, x.f) && findField(p, x.f).f.pers !== 'nee'));
   const miss = t => `<span class="miss">${t}</span>`;
-  const table = list => `<table class="ptab"><thead><tr><th>Gegeven</th><th>Waarvoor</th><th>Wie mag zien</th><th>Wie mag wijzigen</th><th>Bewaren</th><th>Bron</th></tr></thead><tbody>${list.map(x => `<tr>
+  const table = list => `<table class="ptab"><thead><tr><th style="width:19%">Gegeven</th><th style="width:27%">Waarvoor</th><th style="width:18%">Wie mag zien</th><th style="width:12%">Wie mag wijzigen</th><th style="width:14%">Bewaren</th><th style="width:10%">Bron</th></tr></thead><tbody>${list.map(x => `<tr>
       <td><button type="button" class="p-go" data-go="${esc(x.f.id)}">${esc(x.f.name)}</button><small>${esc(x.s.name)}</small></td>
       <td data-l="Waarvoor">${x.uses.length ? esc(x.uses.join(', ')) : miss('nergens voor')}</td>
       <td data-l="Wie mag zien">${x.see.length ? esc(x.see.join(', ')) : miss('niet ingevuld')}${x.f.pers === 'gevoelig' && x.f.see.length && isBroad(p, x.f.see) ? '<small class="miss">breed zichtbaar</small>' : ''}</td>
       <td data-l="Wie mag wijzigen">${x.edit.length ? esc(x.edit.join(', ')) : '<span>niet ingevuld</span>'}</td>
       <td data-l="Bewaren">${x.f.keep ? esc(x.f.keep) : miss('niet ingevuld')}</td>
       <td data-l="Bron">${esc(SRC_KORT[x.f.src] || 'niet ingevuld')}${x.f.src === 'burger' && x.f.known === 'ja' ? '<small>al gekend</small>' : ''}</td></tr>`).join('')}</tbody></table>`;
+  const doel = perDoel(p, rows);
   const access = p.roles.map(r => { const v = rows.filter(x => x.f.see.includes(r.id)), g = v.filter(x => x.f.pers === 'gevoelig').length; return v.length ? `<li><b>${esc(r.name)}</b> ziet ${v.length} ${v.length === 1 ? 'persoonsgegeven' : 'persoonsgegevens'}${g ? `, waarvan ${g} gevoelig` : ''}.</li>` : ''; }).join('');
   return `<section class="card" aria-labelledby="h-priv">
     <div class="card-head"><h2 class="card-title" id="h-priv">Privacyoverzicht</h2></div>
     <p class="disclaimer"><b>Een vertrekpunt, geen juridisch advies.</b> Gebruik dit overzicht om het register van verwerkingen en de privacyverklaring voor te bereiden. Laat het nakijken door wie in je organisatie over privacy gaat.</p>
-    <div class="stats"><div class="stat"><b>${rows.length}</b><span>${rows.length === 1 ? 'persoonsgegeven' : 'persoonsgegevens'}</span></div><div class="stat"><b>${gev.length}</b><span>gevoelig</span></div><div class="stat${ps.length ? ' warn' : ''}"><b>${ps.length}</b><span>${ps.length === 1 ? 'signaal' : 'signalen'}</span></div></div>
+    <div class="stats"><div class="stat"><b>${rows.length}</b><span>${rows.length === 1 ? 'persoonsgegeven' : 'persoonsgegevens'}</span></div><div class="stat"><b>${gev.length}</b><span>gevoelig</span></div><div class="stat${ps.length ? ' warn' : ''}"><b>${ps.length}</b><span>${ps.length === 1 ? 'aandachtspunt' : 'aandachtspunten'}</span></div></div>
     <div class="view-tools"><button type="button" class="btn-s" data-act="pdf-priv"${rows.length ? '' : ' disabled'}>${ICON.pdf}PDF</button><button type="button" class="btn-s" data-act="csv-priv"${rows.length ? '' : ' disabled'}>${ICON.dl}CSV</button></div>
     ${ps.length ? `<div class="grp"><h3>Aandachtspunten <span class="n">${ps.length}</span></h3><ul class="sig-list">${ps.map(sigItem).join('')}</ul></div>` : ''}
     ${!rows.length ? `<p class="hint pad">Nog geen persoonsgegevens. Duid bij een gegeven aan of het iets zegt over een mens.</p>` : ''}
     ${gev.length ? `<h3 class="sec-title">Gevoelige persoonsgegevens</h3>${table(gev)}` : ''}
     ${rest.length ? `<h3 class="sec-title">Andere persoonsgegevens</h3>${table(rest)}` : ''}
+    ${doel.length ? `<h3 class="sec-title">Per doel</h3><p class="hint pad" style="margin-top:-0.25rem">Waarvoor verwerk je welke persoonsgegevens? Zo is ook het register van verwerkingen opgebouwd.</p><ul class="access">${doel.map(d => `<li><b>${esc(d.u.name)}</b> <span class="chip-kind">${esc(label(KINDS, d.u.kind).toLowerCase())}</span><br>${esc(d.list.map(x => x.f.name + (x.f.pers === 'gevoelig' ? ' (gevoelig)' : '')).join(', '))}</li>`).join('')}</ul>` : ''}
     ${access ? `<h3 class="sec-title">Wie kan erbij?</h3><ul class="access">${access}</ul>` : ''}
   </section>`;
 }
 
 /* ---------- Weergave: proefformulier ---------- */
+const unused = f => !f.uses.length && !bare(f) && !!f.name.trim();
 function formStats(p) {
   const F = allFields(p).filter(x => x.f.src === 'burger');
-  return { F, n:F.length, m:F.filter(x => x.f.req).length, k:F.filter(x => x.f.known === 'ja').length };
+  return { F, n:F.length, m:F.filter(x => x.f.req).length, k:F.filter(x => x.f.known === 'ja').length, w:F.filter(x => unused(x.f)).length };
 }
 function formHtml(p, still) {
   const { F } = formStats(p);
@@ -1177,7 +1332,8 @@ function formHtml(p, still) {
       } else {
         ctl = still ? inBox('') : `<input class="pf-in" id="${id}"${f.type === 'getal' ? ' inputmode="numeric"' : ''} placeholder="${esc(ph)}" autocomplete="off">`;
       }
-      const known = f.known === 'ja' ? `<p class="note pf-known"><span>Al gekend${f.knownWhere ? ' (' + esc(f.knownWhere) + ')' : ''}. Kan je het ophalen in plaats van opvragen?</span></p>` : '';
+      const known = (f.known === 'ja' ? `<p class="note pf-known"><span>Al gekend${f.knownWhere ? ' (' + esc(f.knownWhere) + ')' : ''}. Kan je het ophalen in plaats van opvragen?</span></p>` : '')
+        + (unused(f) ? `<p class="note pf-known"><span>Nergens voor gebruikt. Kan deze vraag weg?</span></p>` : '');
       return `<div class="pf-field"><label class="pf-l" id="${id}-l"${!still && !['janee', 'bestand'].includes(f.type) && !(f.type === 'lijst' && f.options.length <= 4) ? ` for="${id}"` : ''}>${esc(f.name)}${f.req ? '<span class="req" aria-hidden="true">*</span><span class="sr"> (verplicht)</span>' : '<span class="opt">(niet verplicht)</span>'}</label>${f.desc ? `<span class="pf-h">${esc(f.desc)}</span>` : ''}${ctl}${known}</div>`;
     }).join('')}</fieldset>`;
   }).join('');
@@ -1186,7 +1342,7 @@ function formHtml(p, still) {
     ${F.length ? blocks : '<p class="pf-empty">Er zijn nog geen gegevens met bron "de burger of klant". Die komen hier als vraag in het formulier.</p>'}
     ${F.length ? `<div class="pf-send"><span class="b">Indienen</span><small>Dit is een proefformulier. Er wordt niets verstuurd of bewaard.</small></div>` : ''}</div>`;
 }
-function countLine(p) { const { n, m, k } = formStats(p); return `Je vraagt <b>${n}</b> ${n === 1 ? 'gegeven' : 'gegevens'}, waarvan <b>${m}</b> verplicht en <b>${k}</b> al gekend.`; }
+function countLine(p) { const { n, m, k, w } = formStats(p); return `Je vraagt <b>${n}</b> ${n === 1 ? 'gegeven' : 'gegevens'}, waarvan <b>${m}</b> verplicht en <b>${k}</b> al gekend.${w ? ` <b>${w}</b> gebruik je nergens voor.` : ''}`; }
 function viewForm(p) {
   const { n } = formStats(p);
   return `<section class="card" aria-labelledby="h-pf">
@@ -1547,7 +1703,7 @@ function loadExample() {
   ]);
   const aanvraag = S('Aanvraag', 'Eén vraag om een premie, voor één woning.', [
     F('Aanvraagdatum', 'De dag waarop de aanvraag ingediend werd.', 'datum', true, 'berekend', ['toek', 'cijf'], 'nee', '', [], [], '02/11/2026', { note:'Wordt automatisch ingevuld bij het indienen.' }),
-    F('Factuur van de werken', 'De factuur van de aannemer, als bewijs.', 'bestand', true, 'burger', ['toek', 'ber'], 'nee', '', [], [], '', { known:'nee' }),
+    F('Factuur van de werken', 'De factuur van de aannemer, als bewijs. Staat op naam van de aanvrager.', 'bestand', true, 'burger', ['toek', 'ber'], 'ja', BEW, ['beh'], ['zelf'], '', { known:'nee' }),
     F('Factuurbedrag', 'Het totale bedrag op de factuur, met btw.', 'bedrag', true, 'burger', ['ber'], 'nee', '', [], [], '6 450,00', { known:'nee' }),
     F('Datum van de factuur', 'De dag waarop de factuur opgemaakt is. Ze mag niet ouder zijn dan twee jaar.', 'datum', true, 'burger', ['toek'], 'nee', '', [], [], '12/09/2026', { known:'nee' }),
     F('Aannemer', 'Het bedrijf dat de werken uitvoerde.', 'tekst', true, 'burger', ['ctl'], 'nee', '', [], [], 'Dakwerken Janssens', { known:'nee' }),
@@ -1632,16 +1788,17 @@ function downloadCsv(rows, name) {
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
 }
 const jn = a => a.filter(Boolean).join(', ');
+const jc = a => a.filter(Boolean).join(' | ');   // in CSV: namen bevatten zelf soms een komma
 function csvFields(p, subjects) {
   const rows = [['Onderwerp', 'Gegeven', 'Betekenis', 'Soort', 'Waarden', 'Verplicht', 'Voorbeeldwaarde', 'Bron', 'Al gekend', 'Waar gekend', 'Waarvoor', 'Wie mag zien', 'Wie mag wijzigen', 'Persoonsgegeven', 'Bewaartermijn', 'Opmerking']];
   subjects.forEach(s => s.fields.forEach(f => rows.push([s.name, f.name, f.desc, label(TYPES, f.type), f.options.join(' | '), f.req ? 'ja' : 'nee', f.ex, label(SRC, f.src), f.src === 'burger' ? f.known : '', f.src === 'burger' && f.known === 'ja' ? f.knownWhere : '',
-    jn(f.uses.map(id => useName(p, id))), jn(f.see.map(id => roleName(p, id))), jn(f.edit.map(id => roleName(p, id))), label(PERS, f.pers).toLowerCase(), f.keep, f.note])));
+    jc(f.uses.map(id => useName(p, id))), jc(f.see.map(id => roleName(p, id))), jc(f.edit.map(id => roleName(p, id))), label(PERS, f.pers).toLowerCase(), f.keep, f.note])));
   return rows;
 }
 function csvPrivacy(p) {
   const S = analyse(p);
   return [['Gegeven', 'Onderwerp', 'Gevoelig', 'Waarvoor', 'Wie mag zien', 'Wie mag wijzigen', 'Bewaartermijn', 'Bron', 'Aandachtspunten']]
-    .concat(privRows(p).map(x => [x.f.name, x.s.name, x.f.pers === 'gevoelig' ? 'ja' : 'nee', jn(x.uses), jn(x.see), jn(x.edit), x.f.keep, label(SRC, x.f.src), S.filter(y => y.f === x.f.id && (y.kind === 'privacy' || y.kind === 'weg')).map(y => y.msg).join(' ')]));
+    .concat(privRows(p).map(x => [x.f.name, x.s.name, x.f.pers === 'gevoelig' ? 'ja' : 'nee', jc(x.uses), jc(x.see), jc(x.edit), x.f.keep, label(SRC, x.f.src), S.filter(y => y.f === x.f.id && (y.kind === 'privacy' || y.kind === 'weg')).map(y => y.msg).join(' ')]));
 }
 function csvGlossary(p) {
   return [['Begrip', 'Waar', 'Betekenis']].concat(glossary(p).flatMap(g => g.items.map(i => [g.term, i.where, i.desc])));
@@ -1658,43 +1815,52 @@ const X = {
   td:'padding:6px 8px 6px 0;border-bottom:1px solid #f1f5f9;font-size:12.5px;vertical-align:top;color:#334155;line-height:1.4;',
   h:t => `<div data-oc-keep style="font-size:15px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#047857;margin:26px 0 8px">${t}</div>`,
   h2:t => `<div style="font-size:16px;font-weight:700;color:#1e293b;margin:18px 0 6px">${t}</div>`,
-  miss:t => `<span style="color:#92400e;font-weight:600">${t}</span>`
+  miss:t => `<span style="color:#92400e;font-weight:600">${t}</span>`,
+  // Titel en eerste item van een lijst samen houden.
+  list:(title, items) => items.length ? `<div data-oc-keep>${title}${items[0]}</div>${items.slice(1).join('')}` : title,
+  // Tabel waarvan titel, kop en eerste rij samen blijven (geen losse kop onderaan een pagina).
+  table:(title, cols, rows) => {
+    const T = inner => `<table style="width:100%;border-collapse:collapse;table-layout:fixed"><colgroup>${cols.map(c => `<col style="width:${c[1]}%">`).join('')}</colgroup>${inner}</table>`;
+    const head = `<tr>${cols.map(c => `<th style="${X.th}">${c[0]}</th>`).join('')}</tr>`;
+    return `<div data-oc-keep>${title}${T(head + (rows[0] || ''))}</div>${rows.length > 1 ? T(rows.slice(1).join('')) : ''}`;
+  }
 };
 function pdfPrivacy(p) {
   const rows = privRows(p), S = analyse(p);
   const ps = S.filter(x => x.kind === 'privacy' || (x.kind === 'weg' && findField(p, x.f) && findField(p, x.f).f.pers !== 'nee'));
-  const table = list => `<table style="width:100%;border-collapse:collapse;table-layout:fixed"><tr><th style="${X.th}width:20%">Gegeven</th><th style="${X.th}width:24%">Waarvoor</th><th style="${X.th}width:18%">Wie mag zien</th><th style="${X.th}width:13%">Wie mag wijzigen</th><th style="${X.th}width:15%">Bewaren</th><th style="${X.th}width:10%">Bron</th></tr>${list.map(x => `<tr data-oc-keep>
+  const table = (list, title) => X.table(X.h2(title), [['Gegeven', 20], ['Waarvoor', 24], ['Wie mag zien', 18], ['Wie mag wijzigen', 13], ['Bewaren', 15], ['Bron', 10]], list.map(x => `<tr data-oc-keep>
     <td style="${X.td}"><b style="color:#1e293b">${esc(x.f.name)}</b><div style="font-size:11px;color:#64748b">${esc(x.s.name)}</div></td><td style="${X.td}">${x.uses.length ? esc(x.uses.join(', ')) : X.miss('nergens voor')}</td>
     <td style="${X.td}">${x.see.length ? esc(x.see.join(', ')) : X.miss('niet ingevuld')}</td><td style="${X.td}">${esc(x.edit.join(', ') || 'niet ingevuld')}</td>
-    <td style="${X.td}">${x.f.keep ? esc(x.f.keep) : X.miss('niet ingevuld')}</td><td style="${X.td}">${esc(SRC_KORT[x.f.src] || '')}</td></tr>`).join('')}</table>`;
+    <td style="${X.td}">${x.f.keep ? esc(x.f.keep) : X.miss('niet ingevuld')}</td><td style="${X.td}">${esc(SRC_KORT[x.f.src] || '')}</td></tr>`));
   const gev = rows.filter(x => x.f.pers === 'gevoelig'), rest = rows.filter(x => x.f.pers === 'ja');
   return `<div data-oc-keep style="font-size:12.5px;color:#475569;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;margin-bottom:10px"><b style="color:#1e293b">Een vertrekpunt, geen juridisch advies.</b> Voor het register van verwerkingen en de privacyverklaring. Laat het nakijken door wie in je organisatie over privacy gaat.</div>
     <div style="font-size:13px;color:#334155;margin-bottom:6px">${rows.length} persoonsgegevens, waarvan ${gev.length} gevoelig. ${ps.length} aandachtspunten.</div>
-    ${gev.length ? X.h2('Gevoelige persoonsgegevens') + table(gev) : ''}${rest.length ? X.h2('Andere persoonsgegevens') + table(rest) : ''}
-    ${ps.length ? X.h2('Aandachtspunten') + ps.map(x => `<div data-oc-keep style="font-size:12.5px;color:#334155;padding:4px 0;border-bottom:1px solid #f1f5f9"><b style="color:#1e293b">${esc(x.name)}</b> <span style="color:#64748b">${esc(x.where)}</span> · <span style="color:#92400e">${esc(x.msg)}</span></div>`).join('') : ''}`;
+    ${gev.length ? table(gev, 'Gevoelige persoonsgegevens') : ''}${rest.length ? table(rest, 'Andere persoonsgegevens') : ''}
+    ${perDoel(p, rows).length ? X.list(X.h2('Per doel'), perDoel(p, rows).map(d => `<div data-oc-keep style="font-size:12.5px;color:#334155;padding:4px 0;border-bottom:1px solid #f1f5f9"><b style="color:#1e293b">${esc(d.u.name)}</b> <span style="color:#64748b;font-size:11px">${esc(label(KINDS, d.u.kind).toLowerCase())}</span><div>${esc(d.list.map(x => x.f.name + (x.f.pers === 'gevoelig' ? ' (gevoelig)' : '')).join(', '))}</div></div>`)) : ''}
+    ${ps.length ? X.list(X.h2('Aandachtspunten'), ps.map(x => `<div data-oc-keep style="font-size:12.5px;color:#334155;padding:4px 0;border-bottom:1px solid #f1f5f9"><b style="color:#1e293b">${esc(x.name)}</b> <span style="color:#64748b">${esc(x.where)}</span> · <span style="color:#92400e">${esc(x.msg)}</span></div>`)) : ''}`;
 }
 function buildPdf(what) {
   const p = cur(), S = analyse(p), node = document.createElement('div');
   if (what === 'privacy') { node.innerHTML = pdfPrivacy(p); return { node, title:'Privacyoverzicht', subtitle:p.name }; }
-  const subj = p.subjects.map(s => `${X.h2(esc(s.name) + `<span style="font-size:12px;font-weight:500;color:#64748b;margin-left:8px">${s.fields.length} gegevens${s.desc ? ' · ' + esc(s.desc) : ''}</span>`)}
-    <table style="width:100%;border-collapse:collapse;table-layout:fixed"><tr><th style="${X.th}width:24%">Gegeven</th><th style="${X.th}width:10%">Soort</th><th style="${X.th}width:11%">Bron</th><th style="${X.th}width:21%">Waarvoor</th><th style="${X.th}width:15%">Toegang</th><th style="${X.th}width:8%">Persoon</th><th style="${X.th}width:11%">Bewaren</th></tr>
-    ${s.fields.map(f => `<tr data-oc-keep><td style="${X.td}"><b style="color:#1e293b">${esc(f.name)}</b>${f.desc ? `<div style="font-size:11.5px;color:#64748b">${esc(f.desc)}</div>` : ''}${f.ex ? `<div style="font-size:11px;color:#94a3b8">Bv. ${esc(f.ex)}</div>` : ''}</td>
+  const subj = p.subjects.map(s => X.table(X.h2(esc(s.name) + `<span style="font-size:12px;font-weight:500;color:#64748b;margin-left:8px">${s.fields.length} ${s.fields.length === 1 ? 'gegeven' : 'gegevens'}${s.desc ? ' · ' + esc(s.desc) : ''}</span>`),
+    [['Gegeven', 24], ['Soort', 10], ['Bron', 11], ['Waarvoor', 21], ['Toegang', 15], ['Persoon', 8], ['Bewaren', 11]],
+    s.fields.map(f => `<tr data-oc-keep><td style="${X.td}"><b style="color:#1e293b">${esc(f.name)}</b>${f.desc ? `<div style="font-size:11.5px;color:#64748b">${esc(f.desc)}</div>` : ''}${f.ex ? `<div style="font-size:11px;color:#94a3b8">Bv. ${esc(f.ex)}</div>` : ''}</td>
       <td style="${X.td}">${esc(label(TYPES, f.type))}<div style="font-size:11px;color:#64748b">${f.req ? 'verplicht' : 'niet verplicht'}</div>${f.type === 'lijst' && f.options.length ? `<div style="font-size:11px;color:#64748b">${esc(f.options.join(' / '))}</div>` : ''}</td>
       <td style="${X.td}">${esc(SRC_KORT[f.src] || '') || X.miss('?')}${f.src === 'burger' && f.known === 'ja' ? `<div style="font-size:11px;color:#92400e">al gekend</div>` : ''}</td>
       <td style="${X.td}">${f.uses.length ? esc(jn(f.uses.map(id => useName(p, id)))) : X.miss('nergens voor')}</td>
       <td style="${X.td}">${f.see.length ? 'Ziet: ' + esc(jn(f.see.map(id => roleName(p, id)))) : ''}${f.edit.length ? `<div>Wijzigt: ${esc(jn(f.edit.map(id => roleName(p, id))))}</div>` : ''}</td>
       <td style="${X.td}">${f.pers === 'gevoelig' ? '<b style="color:#1e293b">gevoelig</b>' : f.pers === 'ja' ? 'ja' : 'nee'}</td>
-      <td style="${X.td}">${esc(f.keep) || (f.pers !== 'nee' ? X.miss('niet ingevuld') : '')}</td></tr>`).join('')}</table>`).join('');
+      <td style="${X.td}">${esc(f.keep) || (f.pers !== 'nee' ? X.miss('niet ingevuld') : '')}</td></tr>`))).join('');
   const uses = p.uses.length ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 24px">${p.uses.map(u => `<div style="font-size:13px;color:#334155"><span style="color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;margin-right:6px">${esc(label(KINDS, u.kind))}</span>${esc(u.name)}</div>`).join('')}</div>` : '';
   const sents = p.links.map(l => sentence(p, l)).filter(Boolean);
   const links = sents.length ? `<div data-oc-keep>${X.h('Verbanden').replace(' data-oc-keep', '')}${sents.map(t => `<div style="font-size:13.5px;color:#334155;padding:2px 0">${esc(t)}</div>`).join('')}<div style="margin-top:10px">${schemaSvg(p, 1000)}</div></div>` : '';
   const G = glossary(p);
-  const gloss = G.length ? `${X.h('Woordenlijst')}${G.map(g => `<div data-oc-keep style="display:grid;grid-template-columns:220px 1fr;gap:16px;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:12.5px"><b style="color:#1e293b">${esc(g.term)}</b><div>${g.items.map(i => `<div><span style="color:#64748b;font-size:11px;margin-right:6px">${esc(i.where)}</span>${esc(i.desc) || '<i style="color:#94a3b8">nog geen betekenis</i>'}</div>`).join('')}</div></div>`).join('')}` : '';
-  const open = KIND_ORDER.filter(k => S.some(x => x.kind === k)).map(k => `${X.h2(esc(KIND_INFO[k].t) + ` (${S.filter(x => x.kind === k).length})`)}${S.filter(x => x.kind === k).map(x => `<div data-oc-keep style="font-size:12.5px;color:#334155;padding:4px 0;border-bottom:1px solid #f1f5f9"><b style="color:#1e293b">${esc(x.name)}</b> <span style="color:#64748b">${esc(x.where)}</span> · ${esc(x.msg)}</div>`).join('')}`).join('');
+  const gloss = G.length ? X.list(X.h('Woordenlijst').replace(' data-oc-keep', ''), G.map(g => `<div data-oc-keep style="display:grid;grid-template-columns:220px 1fr;gap:16px;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:12.5px"><b style="color:#1e293b">${esc(g.term)}</b><div>${g.items.map(i => `<div><span style="color:#64748b;font-size:11px;margin-right:6px">${esc(i.where)}</span>${esc(i.desc) || '<i style="color:#94a3b8">nog geen betekenis</i>'}</div>`).join('')}</div></div>`)) : '';
+  const open = KIND_ORDER.filter(k => S.some(x => x.kind === k)).map((k, ki) => X.list((ki ? '' : X.h('Open signalen').replace(' data-oc-keep', '')) + X.h2(esc(KIND_INFO[k].t) + ` (${S.filter(x => x.kind === k).length})`), S.filter(x => x.kind === k).map(x => `<div data-oc-keep style="font-size:12.5px;color:#334155;padding:4px 0;border-bottom:1px solid #f1f5f9"><b style="color:#1e293b">${esc(x.name)}</b> <span style="color:#64748b">${esc(x.where)}</span> · ${esc(x.msg)}</div>`))).join('');
   const F = allFields(p);
   node.innerHTML = `<div style="font-size:13px;color:#475569">${p.subjects.length} onderwerpen · ${F.length} gegevens · ${F.filter(x => x.f.pers !== 'nee').length} persoonsgegevens · ${real(S).length} open signalen</div>
     ${uses ? X.h('Waarvoor') + uses : ''}${X.h('Gegevens per onderwerp')}${subj || '<div style="color:#64748b">Nog geen gegevens.</div>'}${links}
-    ${privRows(p).length ? X.h('Privacyoverzicht') + pdfPrivacy(p) : ''}${gloss}${open ? X.h('Open signalen') + open : X.h('Open signalen') + '<div style="font-size:13px;color:#047857;font-weight:600">Geen open signalen.</div>'}`;
+    ${privRows(p).length ? X.h('Privacyoverzicht') + pdfPrivacy(p) : ''}${gloss}${open ? open : X.h('Open signalen') + '<div style="font-size:13px;color:#047857;font-weight:600">Geen open signalen.</div>'}`;
   return { node, title:'Informatietabel', subtitle:p.name };
 }
 async function exportPdf(what) {
@@ -1710,6 +1876,22 @@ async function exportForm() {
     toast('Afbeelding gedownload');
   } catch { toast('Downloaden lukt nu niet: geen verbinding?'); }
 }
+
+/* ---------- Rollen overnemen uit andere tools ---------- */
+function ocRefreshImports() { document.querySelectorAll('[data-oc-types]').forEach(b => { b.hidden = !ocShare.count(b.dataset.ocTypes.split(','), OC_ID); }); }
+['focus', 'storage'].forEach(ev => window.addEventListener(ev, () => setTimeout(ocRefreshImports, 50)));
+document.addEventListener('visibilitychange', () => { if (!document.hidden) ocRefreshImports(); });
+$('view').addEventListener('click', async e => {
+  const b = e.target.closest('[data-oc-roles]'); if (!b) return;
+  const picked = await ocShare.pick({ types:['betrokkene'], self:OC_ID, title:'Rollen overnemen',
+    intro:'Kies rollen of groepen uit andere tools. Daarna vink je bij elk gegeven aan wie het mag zien of wijzigen.' });
+  if (!picked.length) { b.focus(); return; }
+  const p = cur(), restore = snapshot(), have = new Set(p.roles.map(r => normName(r.name)));
+  let n = 0;
+  picked.forEach(x => { const name = String(x.text || '').trim().slice(0, 60), k = normName(name); if (!k || have.has(k)) return; have.add(k); p.roles.push({ id:uid(), name }); n++; });
+  save(); render();
+  toast(n ? `${n} ${n === 1 ? 'rol' : 'rollen'} overgenomen` : 'Die rollen stonden er al', n ? restore : undefined);
+});
 
 /* ---------- Andere tabbladen gelijk houden ---------- */
 window.addEventListener('storage', e => { if (e.key === KEY) { state = load(); editing = null; render(); } });
@@ -1896,6 +2078,5 @@ document.addEventListener('click', e => {
   el.focus({ preventScroll:true });
 });
 </script>
-</body>
 </body>
 </html>

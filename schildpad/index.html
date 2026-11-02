@@ -7,8 +7,8 @@
 <meta name="description" content="Breng een proces in één beeld: wat erin gaat, wat eruit komt, met wie, met wat, hoe, welke regels gelden en hoe je weet dat het goed loopt. Zie meteen wat beter kan.">
 <meta name="oc:groep" content="projecten">
 <meta name="oc:labels" content="inzicht">
-<meta name="oc:pdca" content="plan, check">
-<meta name="oc:kort" content="Hoe loopt dit proces echt?">
+<meta name="oc:pdca" content="check, plan">
+<meta name="oc:kort" content="Wat heeft een proces nodig, en loopt het goed?">
 <meta name="oc:volgorde" content="25">
 <meta name="oc:opslag" content="schildpad.v1, oc.share.schildpad">
 <meta name="theme-color" content="#ffffff">
@@ -251,7 +251,10 @@ textarea.grow { resize:none; overflow:hidden; min-height:44px; }
 .btn-add:hover { background:var(--accent-hover); }
 .btn-add svg { width:16px; height:16px; }
 .btn-add span { display:none; }
-@container (min-width:19rem) { .btn-add span { display:inline; } }
+@container (min-width:17.5rem) { .btn-add span { display:inline; } }
+.oc-import { display:inline-flex; align-items:center; gap:0.375rem; min-height:44px; margin-top:0.5rem; padding:0.3125rem 0.875rem; border:1px dashed var(--accent-200); border-radius:999px; background:var(--wit); font-size:0.8125rem; font-weight:600; color:var(--accent-dark); white-space:nowrap; }
+.oc-import:hover { background:var(--accent-50); border-color:var(--accent); }
+.oc-import svg { width:15px; height:15px; }
 
 /* Het schild: het proces zelf */
 .shell { position:relative; z-index:1; min-width:0; background:var(--wit); border:2px solid var(--accent); border-radius:24px; padding:0.875rem 1rem 1rem; display:grid; gap:0.625rem; scroll-margin-top:1rem; }
@@ -280,6 +283,8 @@ textarea.grow { resize:none; overflow:hidden; min-height:44px; }
 .ap-vak svg { width:14px; height:14px; }
 .ap-text { font-size:0.9375rem; font-weight:600; color:var(--slate-800); line-height:1.35; overflow-wrap:anywhere; }
 .ap-note { font-size:0.8125rem; color:var(--slate-600); line-height:1.4; overflow-wrap:anywhere; }
+.ap-wie { display:grid; grid-template-columns:minmax(0,1.3fr) minmax(0,1fr); gap:0.5rem; }
+.ap-wie input[type=date] { padding-right:0.375rem; }
 .ap-empty { margin:0 1.125rem 1rem; font-size:0.9375rem; color:var(--slate-600); background:var(--slate-50); border-radius:12px; padding:0.875rem; }
 .finish { display:flex; flex-wrap:wrap; gap:0.5rem; padding:0.875rem 1.125rem 1.125rem; border-top:1px solid var(--slate-100); align-items:center; }
 .finish .hint { flex:1 1 16rem; }
@@ -325,7 +330,7 @@ body { min-height:100dvh; }
     </svg>
   </div>
   <h1 class="title">Schildpaddiagram</h1>
-  <p class="subtitle">Breng een proces in één beeld: wat erin gaat, wat eruit komt, met wie, met wat, hoe, en hoe je weet dat het goed loopt.</p>
+  <p class="subtitle">Wat heeft een proces nodig, en loopt het goed?</p>
 </header>
 
 <main class="main">
@@ -375,12 +380,12 @@ body { min-height:100dvh; }
 
   <section class="card" id="ap-card" aria-labelledby="ap-title" hidden>
     <div class="card-head"><h2 class="card-title" id="ap-title">Aandachtspunten <small id="ap-n"></small></h2></div>
-    <p class="hint ap-lead">Alles wat je als aandachtspunt of probleem beoordeelde, op één lijst. Schrijf bij elk wat je eraan doet.</p>
+    <p class="hint ap-lead">Alles wat je als aandachtspunt of probleem beoordeelde, op één lijst. Schrijf bij elk wat je eraan doet, wie het doet en tegen wanneer.</p>
     <div class="tally" id="tally"></div>
     <ol class="ap-list" id="ap-list" aria-label="Aandachtspunten en problemen"></ol>
     <div class="finish">
       <button type="button" class="btn-s" id="to-board" aria-describedby="to-board-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="11" rx="1.5"/><rect x="17" y="4" width="4" height="7" rx="1.5"/></svg>Zet in Takenbord</button>
-      <p class="hint" id="to-board-hint">Takenbord opent. Kies daar bij Te doen "Overnemen uit…" en vink de acties aan.</p>
+      <p class="hint" id="to-board-hint">Takenbord opent. Vink daar de taken aan die je wil overnemen. Ze komen in Te doen.</p>
     </div>
   </section>
   <div class="sr" id="live" aria-live="polite"></div>
@@ -395,9 +400,11 @@ body { min-height:100dvh; }
         <li><b>Vul de vakken</b> met korte items, liefst samen met de mensen die het werk doen. Enter geeft meteen een nieuw item. Een lijst plakken mag ook.</li>
         <li><b>Beoordeel elk item:</b> in orde, aandachtspunt of probleem. Tik op een item om dat te kiezen of om het aan te passen.</li>
         <li><b>Hoe weet je dat het goed loopt?</b> Kies een paar cijfers, elk met een streefwaarde, en zet erbij waar je nu staat.</li>
-        <li><b>Onderaan</b> staan alle aandachtspunten samen. Schrijf bij elk wat je eraan doet.</li>
+        <li><b>Onderaan</b> staan alle aandachtspunten samen. Schrijf bij elk wat je eraan doet, wie het doet en tegen wanneer. Een actie zonder eigenaar volgt niemand op.</li>
       </ul>
-      <p>Wat je eraan doet, ligt klaar voor andere tools als taak. Kies "Zet in Takenbord" en daarna in <a href="https://onderconstructie.github.io/kanban/">Takenbord</a> "Overnemen uit…". Een voorbeeld gaat nooit mee.</p>
+      <p>Wat je eraan doet, ligt klaar voor andere tools. Kies "Zet in Takenbord": <a href="../kanban/">Takenbord</a> opent en je vinkt aan welke taken je overneemt. Later kan het ook daar, via "Overnemen uit…" bij Te doen. Staat er wie en tegen wanneer bij, dan krijgt de taak daar meteen een eigenaar en een einddatum. Een voorbeeld gaat nooit mee.</p>
+      <p>Tekende je het proces al in <a href="../stroom/">Stroom</a> of verdeelde je de rollen in <a href="../raci/">RACI-matrix</a>? Bij "Met wie?" neem je die rollen over met "Overnemen uit…".</p>
+      <p>Stappen van het proces tekenen? Gebruik <a href="../stroom/">Stroom</a>. Weet je niet waarom iets misloopt? Gebruik het <a href="../visgraat/">Visgraatdiagram</a>.</p>
     </div>
   </details>
 </main>
@@ -663,6 +670,7 @@ const ICON = {
   down:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>',
   goto:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>',
   doc:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>',
+  imp:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>',
   shell:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="12" rx="9" ry="7"/><ellipse cx="12" cy="12" rx="3.5" ry="2.6"/><path d="M12 5v4.4M12 14.6V19M3.6 10.5l5.2.8M15.2 11.3l5.2-.8"/></svg>'
 };
 // Beoordeling: kleur is nooit de enige drager, er staat altijd een eigen teken en een woord bij.
@@ -686,20 +694,27 @@ const VAKKEN = [
     ic:'<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>' },
   { k:'hoe', t:'Hoe?', q:'Welke werkwijze volg je: afspraken, stappen, sjablonen?', tip:'Staat een afspraak nergens op papier? Dan is dat vaak al een aandachtspunt.', ph:'Bv. checklist',
     ic:'<path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6h.01M4 12h.01M4 18h.01"/>' },
-  { k:'regels', t:'Welke regels gelden?', q:'Aan welke regels moet dit proces voldoen?', tip:'Regelgeving, privacyregels, interne afspraken, kwaliteitseisen en wat de klant of aanvrager mag verwachten.', ph:'Bv. termijn om te beslissen',
+  { k:'regels', t:'Welke regels gelden?', q:'Aan welke regels moet dit proces voldoen?', tip:'Regelgeving, privacyregels, interne afspraken, kwaliteitseisen en wat de klant of aanvrager mag verwachten.', ph:'Bv. beslistermijn',
     ic:'<path d="M12 3v18M5 21h14"/><path d="M5 7h14"/><path d="M5 7l-3 6a3 3 0 0 0 6 0zM19 7l-3 6a3 3 0 0 0 6 0z"/>' },
   { k:'meet', t:'Hoe weet je dat het goed loopt?', q:'Waaraan zie je dat het proces doet wat het moet doen?', tip:'Kies een paar cijfers, elk met een streefwaarde. Bv. doorlooptijd, fouten of tevredenheid.', ph:'Bv. doorlooptijd',
     ic:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>' }
 ];
 const VK = VAKKEN.map(v => v.k), VD = Object.fromEntries(VAKKEN.map(v => [v.k, v]));
 const kort = k => k === 'meet' ? 'Loopt het goed?' : VD[k].t;
+// Het vak in een lopende zin (notitie bij een taak in een andere tool)
+const NV = { in:'wat erin gaat', uit:'wat eruit komt', wie:'met wie', wat:'met wat', hoe:'de werkwijze', regels:'de regels', meet:'het meten' };
+const kpiTxt = (k, it) => k === 'meet' ? [it.streef && 'streef ' + it.streef, it.nu && 'nu ' + it.nu].filter(Boolean).join(', ') : '';
 const vakIcon = k => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${VD[k].ic}</svg>`;
 
 /* ---------- Opslag ---------- */
 function fresh() { return { v:1, procs:[], current:null }; }
 function emptyVak() { return Object.fromEntries(VK.map(k => [k, []])); }
 function newProc() { return { id:uid(), naam:'', doel:'', eigenaar:'', start:'', einde:'', vak:emptyVak() }; }
-function newItem(k, text) { const o = { id:uid(), text:String(text).slice(0, 200), note:'', st:'', actie:'' }; if (k === 'meet') { o.streef = ''; o.nu = ''; } if (k === 'regels') o.ref = ''; return o; }
+function newItem(k, text) { const o = { id:uid(), text:String(text).slice(0, 200), note:'', st:'', actie:'', wie:'', tegen:'' }; if (k === 'meet') { o.streef = ''; o.nu = ''; } if (k === 'regels') o.ref = ''; return o; }
+const isoD = v => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) && !isNaN(Date.parse(v)) ? v : '';
+const fmtD = iso => iso ? new Date(iso + 'T12:00:00').toLocaleDateString('nl-BE', { day:'numeric', month:'long', year:'numeric' }) : '';
+// Wie en tegen wanneer, kort op één regel (voor lijst, tekst en PDF)
+const wieTegen = it => [it.wie && it.wie.trim(), it.tegen && 'tegen ' + fmtD(it.tegen)].filter(Boolean).join(', ');
 function valid(s) {
   if (!s || !Array.isArray(s.procs)) return fresh();
   const str = (v, n) => String(v == null ? '' : v).slice(0, n), okId = v => typeof v === 'string' && /^[\w-]{1,40}$/.test(v);
@@ -709,7 +724,7 @@ function valid(s) {
     VK.forEach(k => {
       const a = p.vak && Array.isArray(p.vak[k]) ? p.vak[k] : [];
       vak[k] = a.filter(i => i && typeof i === 'object' && String(i.text || '').trim()).slice(0, 80).map(i => {
-        const o = { id:id(i.id), text:str(i.text, 200), note:str(i.note, 300), st:STS.includes(i.st) ? i.st : '', actie:str(i.actie, 200) };
+        const o = { id:id(i.id), text:str(i.text, 200), note:str(i.note, 300), st:STS.includes(i.st) ? i.st : '', actie:str(i.actie, 200), wie:str(i.wie, 80), tegen:isoD(i.tegen) };
         if (k === 'meet') { o.streef = str(i.streef, 40); o.nu = str(i.nu, 40); }
         if (k === 'regels') o.ref = str(i.ref, 120);
         return o;
@@ -784,6 +799,7 @@ function vakHtml(p, k) {
     <ol class="items" data-list="${k}">${its.map((it, i) => itemRow(p, k, it, i, its.length)).join('')}</ol>
     ${its.length ? '' : `<p class="vak-tip">${esc(v.tip)}</p>`}
     <form class="add-row" data-add="${k}" autocomplete="off"><input class="field" data-f="add:${k}" data-addin="${k}" maxlength="200" placeholder="${esc(v.ph)}" aria-label="Nieuw item bij ${esc(v.t)}" enterkeyhint="next"><button type="submit" class="btn-add" aria-label="Voeg toe bij ${esc(v.t)}">${ICON.plus}<span>Voeg toe</span></button></form>
+    ${k === 'wie' ? `<button type="button" class="oc-import" data-act="imp-wie" data-f="imp:wie" title="Rollen uit Stroom, RACI-matrix of een andere tool"${canImpWie() ? '' : ' hidden'}>${ICON.imp}Overnemen uit…</button>` : ''}
   </section>`;
 }
 function shellHtml(p) {
@@ -829,6 +845,7 @@ function renderAp(p) {
       <div class="ap-text">${esc(it.text)}</div>
       ${it.note || (k === 'meet' && (it.streef || it.nu)) ? `<div class="ap-note">${k === 'meet' && (it.streef || it.nu) ? esc([it.streef && 'streef ' + it.streef, it.nu && 'nu ' + it.nu].filter(Boolean).join(' · ')) + (it.note ? '. ' : '') : ''}${esc(it.note)}</div>` : ''}
       <label><span class="lbl">Wat doe je eraan?</span><input class="field" data-actie="${esc(it.id)}" data-f="ac:${esc(it.id)}" value="${esc(it.actie)}" maxlength="200" placeholder="Bv. afspraak uitschrijven" autocomplete="off" enterkeyhint="next"></label>
+      <div class="ap-wie"${it.actie.trim() || it.wie || it.tegen ? '' : ' hidden'}><label><span class="lbl">Wie</span><input class="field" data-wie="${esc(it.id)}" data-f="aw:${esc(it.id)}" value="${esc(it.wie)}" maxlength="80" placeholder="Bv. teamcoördinator" autocomplete="off" enterkeyhint="next"></label><label><span class="lbl">Tegen wanneer</span><input class="field" type="date" data-tegen="${esc(it.id)}" data-f="at:${esc(it.id)}" value="${esc(it.tegen)}"></label></div>
     </li>`).join('');
   $('ap-list').hidden = !fl.length;
   document.querySelector('#ap-card .finish').hidden = !fl.length;
@@ -931,7 +948,18 @@ document.addEventListener('paste', e => {
 document.addEventListener('input', e => {
   const el = e.target, p = cur(); if (!p) return;
   if (el.dataset.p) { if (el.dataset.p !== 'doel' && /\n/.test(el.value)) el.value = el.value.replace(/\s*\n\s*/g, ' '); p[el.dataset.p] = el.value; if (el.classList.contains('grow')) grow(el); save(); refreshLight(); if (el.dataset.p === 'naam') drawSoon(); return; }
-  if (el.dataset.actie) { const f = findItem(p, el.dataset.actie); if (f) { f.it.actie = el.value.slice(0, 200); save(); } return; }
+  if (el.dataset.actie) {
+    const f = findItem(p, el.dataset.actie); if (!f) return;
+    f.it.actie = el.value.slice(0, 200); save();
+    // Wie en tegen wanneer verschijnen zodra er een actie staat
+    const row = el.closest('.ap') && el.closest('.ap').querySelector('.ap-wie'); if (row) row.hidden = !(f.it.actie.trim() || f.it.wie || f.it.tegen);
+    return;
+  }
+  if (el.dataset.wie || el.dataset.tegen) {
+    const f = findItem(p, el.dataset.wie || el.dataset.tegen); if (!f) return;
+    if (el.dataset.wie) f.it.wie = el.value.slice(0, 80); else f.it.tegen = isoD(el.value);
+    save(); return;
+  }
   const li = el.closest('.it'); if (!li) return;
   const f = findItem(p, li.dataset.id); if (!f) return;
   if (el.classList.contains('ed-text')) { if (/\n/.test(el.value)) el.value = el.value.replace(/\s*\n\s*/g, ' '); grow(el); const v = el.value.trim(); if (v) f.it.text = v.slice(0, 200); }
@@ -957,8 +985,9 @@ document.addEventListener('keydown', e => {
     if (i < order.length - 1) focusF('p:' + order[i + 1]); else focusF('add:uit');
     return;
   }
-  if (el.dataset && el.dataset.actie && e.key === 'Enter') {
-    e.preventDefault(); const all = [...document.querySelectorAll('[data-actie]')], i = all.indexOf(el); (all[i + 1] || el).focus(); return;
+  if (el.dataset && (el.dataset.actie || el.dataset.wie || el.dataset.tegen) && e.key === 'Enter') {
+    // Enter: naar het volgende veld in de lijst (actie, wie, tegen wanneer, volgende actie)
+    e.preventDefault(); const all = [...document.querySelectorAll('#ap-list input')].filter(x => x.offsetParent), i = all.indexOf(el); (all[i + 1] || el).focus(); return;
   }
   const li = el.closest && el.closest('.it');
   if (li && e.key === 'Enter' && (el.tagName === 'INPUT' || el.classList.contains('ed-text'))) { e.preventDefault(); closeEditor(li.dataset.id); return; }
@@ -1002,8 +1031,21 @@ document.addEventListener('click', e => {
     case 'example': example(); return;
     case 'vb-wis': { const undo = snapshot(), idx = state.procs.indexOf(p); state.procs = state.procs.filter(x => !x.voorbeeld); state.current = (state.procs[Math.max(0, idx - 1)] || state.procs[0] || {}).id || null; editing = null; save(); render(); toast('Voorbeeld gewist', undo); return; }
     case 'vb-eigen': makeOwn(); return;
+    case 'imp-wie': impWie(); return;
   }
 });
+/* Rollen overnemen in "Met wie?", bv. de banen uit Stroom of de rollen uit RACI-matrix */
+const canImpWie = () => { try { return ocShare.count(['betrokkene'], OC_ID) > 0; } catch { return false; } };
+async function impWie() {
+  const picked = await ocShare.pick({ types:['betrokkene'], self:OC_ID, title:'Rollen overnemen', intro:'Kies wie het werk doet. Elk komt als item in het vak "Met wie?"' });
+  const p = cur(); if (!picked.length || !p) { focusF('imp:wie'); return; }
+  const have = new Set(p.vak.wie.map(it => it.text.trim().toLowerCase())), undo = snapshot(); let n = 0;
+  picked.forEach(x => { const t = String(x.text || '').trim().slice(0, 200); if (!t || have.has(t.toLowerCase())) return; have.add(t.toLowerCase()); p.vak.wie.push(newItem('wie', t)); n++; });
+  if (!n) { toast('Niets nieuws: die rollen stonden er al'); focusF('add:wie'); return; }
+  save(); render(); focusF('add:wie');
+  toast(`${n} ${n === 1 ? 'rol' : 'rollen'} overgenomen`, undo);
+}
+document.addEventListener('visibilitychange', () => { const b = document.querySelector('[data-act="imp-wie"]'); if (b && document.visibilityState === 'visible') b.hidden = !canImpWie(); });
 function makeOwn() { state.procs.forEach(x => { delete x.voorbeeld; }); save(); render(); toast('Het voorbeeld is nu van jou'); }
 
 /* ---------- Slepen (muis en vinger), binnen één vak ---------- */
@@ -1050,8 +1092,13 @@ document.addEventListener('touchmove', e => { if (drag && e.cancelable) e.preven
 function publish() {
   const lists = state.procs.filter(p => !p.voorbeeld).map(p => ({
     name: title(p).slice(0, 80),
-    items: flagged(p).map(({ k, it }) => ({ type:'taak', text: it.actie.trim() || 'Aanpakken: ' + it.text.trim(),
-      note: [ST[it.st].l, kort(k), it.actie.trim() ? it.text.trim() : ''].filter(Boolean).join(' · ') }))
+    items: flagged(p).map(({ k, it }) => {
+      const a = it.actie.trim(), wie = (it.wie || '').trim(), kpi = kpiTxt(k, it);
+      // Met wie of een datum is het een actie: Takenbord zet dan de eigenaar en de einddatum
+      return { type: wie || it.tegen ? 'actie' : 'taak', text: a || 'Aanpakken: ' + it.text.trim(),
+        note: `${ST[it.st].l} bij ${NV[k]}` + (a ? `: ${it.text.trim()}` : '') + (kpi ? ` (${kpi})` : ''),
+        who: wie || undefined, when: it.tegen || undefined };
+    })
   })).filter(l => l.items.length);
   ocShare.publish(OC_ID, OC_TOOL, lists);
 }
@@ -1060,7 +1107,7 @@ $('to-board').addEventListener('click', () => {
   if (p.voorbeeld) { toast('Een voorbeeld gaat niet naar Takenbord.', makeOwn, 'Maak er mijn eigen van'); return; }
   if (!flagged(p).length) { toast('Er zijn nog geen aandachtspunten om door te geven.'); return; }
   clearTimeout(save.t); try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} publish();
-  const a = document.createElement('a'); a.href = '../kanban/'; document.body.appendChild(a); a.click(); a.remove();
+  const a = document.createElement('a'); a.href = '../kanban/?van=schildpad'; document.body.appendChild(a); a.click(); a.remove();
 });
 
 /* ---------- Voorbeeld ---------- */
@@ -1070,9 +1117,10 @@ function example() {
   const p = newProc(); p.voorbeeld = true;
   Object.assign(p, { naam:'Aanvraag renovatiepremie behandelen', doel:'Elke aanvrager krijgt snel een correcte beslissing, en wie recht heeft, krijgt zijn premie.',
     eigenaar:'Teamcoördinator premies', start:'Aanvraag komt binnen via het e-loket of op papier', einde:'Beslissing verstuurd en premie uitbetaald' });
+  const inDays = n => { const d = new Date(Date.now() + n * 864e5); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
   const add = (k, text, st, extra = {}) => { const it = newItem(k, text); Object.assign(it, { st }, extra); p.vak[k].push(it); };
   add('in', 'Ingevuld aanvraagformulier, van de aanvrager', 'ok');
-  add('in', 'Facturen en foto\'s van de werken, van de aanvrager', 'let', { note:'Drie op tien dossiers zijn onvolledig bij indiening.', actie:'Lijst met verplichte stukken bovenaan het formulier zetten' });
+  add('in', 'Facturen en foto\'s van de werken, van de aanvrager', 'let', { note:'Drie op tien dossiers zijn onvolledig bij indiening.', actie:'Lijst met verplichte stukken bovenaan het formulier zetten', wie:'Teamcoördinator premies', tegen:inDays(21) });
   add('in', 'Gegevens over inkomen en woning, uit de gekoppelde bronnen', 'ok');
   add('uit', 'Beslissing met uitleg, voor de aanvrager', 'ok');
   add('uit', 'Uitbetaling op de rekening van de aanvrager', 'ok');
@@ -1080,12 +1128,12 @@ function example() {
   add('wie', 'Dossierbehandelaars, drie voltijds', 'let', { note:'Eén collega is lang afwezig, zonder vervanging.' });
   add('wie', 'Kennis van het premiereglement en van bouwtechniek', 'ok');
   add('wie', 'Loketmedewerker die vragen beantwoordt', 'ok');
-  add('wat', 'Dossiersysteem', 'prob', { note:'Geen koppeling met de boekhouding: alles wordt twee keer ingegeven.', actie:'Koppeling met de boekhouding aanvragen bij ICT' });
+  add('wat', 'Dossiersysteem', 'prob', { note:'Geen koppeling met de boekhouding: alles wordt twee keer ingegeven.', actie:'Koppeling met de boekhouding aanvragen bij ICT', wie:'Diensthoofd', tegen:inDays(45) });
   add('wat', 'Scanner aan het loket voor papieren aanvragen', 'ok');
   add('wat', 'Budget voor premies dit jaar', 'ok');
   add('hoe', 'Checklist om de volledigheid na te kijken', 'ok');
   add('hoe', 'Sjabloon voor de beslissingsbrief', 'ok');
-  add('hoe', 'Afspraak over het opvragen van ontbrekende stukken', 'prob', { note:'Staat nergens op papier: elke behandelaar doet het anders.', actie:'Afspraak uitschrijven en overlopen op het teamoverleg' });
+  add('hoe', 'Afspraak over het opvragen van ontbrekende stukken', 'prob', { note:'Staat nergens op papier: elke behandelaar doet het anders.', actie:'Afspraak uitschrijven en overlopen op het teamoverleg', wie:'Teamcoördinator premies', tegen:inDays(14) });
   add('regels', 'Aanvraag binnen 6 maanden na de factuurdatum', 'ok', { ref:'Premiereglement van de stad' });
   add('regels', 'Beslissen binnen 60 dagen na een volledige aanvraag', 'ok', { ref:'Premiereglement van de stad' });
   add('regels', 'Inkomensgegevens enkel opvragen met toestemming van de aanvrager', 'let', { ref:'Privacyverklaring van de dienst', note:'De toestemming staat nog niet in het e-loket.' });
@@ -1159,17 +1207,19 @@ const GLYPH = {
 const SCOL = { ok:'#10b981', let:'#d97706', prob:'#dc2626' };
 function dot(x, y, st) { return st ? `<g transform="translate(${x} ${y})"><circle r="7.5" fill="${SCOL[st]}"/>${GLYPH[st]}</g>` : `<circle cx="${x}" cy="${y}" r="6.5" fill="#fff" stroke="#cbd5e1" stroke-width="1.5"/>`; }
 // Het volledige diagram als SVG, voor afbeelding en PDF
-function svgFull(p) {
+function svgFull(p, cap = Infinity) {
+  svgFull.cut = false;
   const PAD = 16, COL = 300, MID = 340, GX = 42, GY = 30, W = PAD * 2 + COL * 2 + MID + GX * 2;
   const xs = [PAD, PAD + COL + GX, PAD + COL + GX + MID + GX], LH = 18, FS = 14;
   const measure = (k, w) => {
     const tw = w - 46;
-    const rows = p.vak[k].map(it => {
+    const all = p.vak[k], more = Math.max(0, all.length - cap); if (more) svgFull.cut = true;
+    const rows = all.slice(0, cap).map(it => {
       const lines = wrapW(it.text, FS, 500, tw, 3);
       const sub = k === 'meet' && (it.streef || it.nu) ? clip([it.streef && 'streef ' + it.streef, it.nu && 'nu ' + it.nu].filter(Boolean).join(' · '), 12.5, 500, tw) : k === 'regels' && it.ref ? clip(it.ref, 12.5, 400, tw) : '';
       return { it, lines, sub, h: lines.length * LH + (sub ? 17 : 0) + 9 };
     });
-    return { k, w, rows, h: 48 + (rows.length ? rows.reduce((s, r) => s + r.h, 0) : 26) + 8 };
+    return { k, w, rows, more, h: 48 + (rows.length ? rows.reduce((s, r) => s + r.h, 0) : 26) + (more ? 22 : 0) + 8 };
   };
   const B = {}; VK.forEach(k => { B[k] = measure(k, k === 'regels' ? MID : COL); });
   // het schild
@@ -1188,7 +1238,7 @@ function svgFull(p) {
   const box = k => {
     const b = B[k], [x, y] = pos[k], out = [`<rect x="${x}" y="${y}" width="${b.w}" height="${b.h}" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/>`,
       `<text x="${x + 16}" y="${y + 28}" font-size="15" font-weight="700" fill="#047857">${esc(clip(VD[k].t, 15, 700, b.w - 56))}</text>`,
-      b.rows.length ? `<text x="${x + b.w - 16}" y="${y + 28}" text-anchor="end" font-size="12.5" font-weight="600" fill="#64748b">${b.rows.length}</text>` : '',
+      b.rows.length ? `<text x="${x + b.w - 16}" y="${y + 28}" text-anchor="end" font-size="12.5" font-weight="600" fill="#64748b">${b.rows.length + b.more}</text>` : '',
       `<line x1="${x + 14}" y1="${y + 40}" x2="${x + b.w - 14}" y2="${y + 40}" stroke="#f1f5f9" stroke-width="1.5"/>`];
     let yy = y + 48;
     if (!b.rows.length) out.push(`<text x="${x + 16}" y="${yy + 16}" font-size="13" fill="#94a3b8">Nog leeg</text>`);
@@ -1198,6 +1248,7 @@ function svgFull(p) {
       if (r.sub) out.push(`<text x="${x + 38}" y="${yy + 16 + r.lines.length * LH}" font-size="12.5" font-weight="500" fill="#475569">${esc(r.sub)}</text>`);
       yy += r.h;
     });
+    if (b.more) out.push(`<text x="${x + 38}" y="${yy + 14}" font-size="12.5" font-weight="600" fill="#047857">+ ${b.more} meer, zie de lijst verder</text>`);
     return out.join('');
   };
   let ty = cy - ch / 2 + 16;
@@ -1221,11 +1272,27 @@ function buildExport(fit) {
   const p = cur(), fl = flagged(p), node = document.createElement('div');
   const legend = `<div style="display:flex;gap:18px;justify-content:center;margin-top:8px;font-size:12px;color:#475569">${STS.map(s => `<span style="display:inline-flex;align-items:center;gap:6px"><svg width="16" height="16" viewBox="-8 -8 16 16"><circle r="7.5" fill="${SCOL[s]}"/>${GLYPH[s]}</svg>${ST[s].l}</span>`).join('')}<span style="display:inline-flex;align-items:center;gap:6px"><svg width="16" height="16" viewBox="-8 -8 16 16"><circle r="6.5" fill="#fff" stroke="#cbd5e1" stroke-width="1.5"/></svg>Nog niet beoordeeld</span></div>`;
   const tag = st => `<span style="display:inline-block;font-size:11.5px;font-weight:700;border-radius:999px;padding:1px 8px;${st === 'prob' ? 'color:#b91c1c;background:#fef2f2;border:1px solid #fecaca' : 'color:#92400e;background:#fffbeb;border:1px solid #fde68a'}">${ST[st].l}</span>`;
-  node.innerHTML = `<div style="display:flex;justify-content:center">${svgFull(p)}</div>${legend}
-    ${fl.length ? `<div style="margin-top:22px"><div data-oc-keep style="font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#047857;margin-bottom:6px">Aandachtspunten en wat we eraan doen</div>
-      <table style="width:100%;border-collapse:collapse;font-size:13.5px">${fl.map(({ k, it }) => `<tr data-oc-keep><td style="padding:8px 10px 8px 0;border-bottom:1px solid #f1f5f9;vertical-align:top;width:120px">${tag(it.st)}</td><td style="padding:8px 10px 8px 0;border-bottom:1px solid #f1f5f9;vertical-align:top;width:150px;color:#047857;font-weight:600">${esc(kort(k))}</td><td style="padding:8px 10px 8px 0;border-bottom:1px solid #f1f5f9;vertical-align:top;color:#1e293b"><b>${esc(it.text)}</b>${it.note ? `<div style="color:#475569;font-size:12.5px;margin-top:2px">${esc(it.note)}</div>` : ''}</td><td style="padding:8px 0;border-bottom:1px solid #f1f5f9;vertical-align:top;width:300px;color:${it.actie ? '#1e293b' : '#94a3b8'}">${it.actie ? esc(it.actie) : 'Nog geen actie'}</td></tr>`).join('')}</table></div>` : ''}`;
+  // PDF: het hele diagram op de eerste bladzijde. Te veel items om leesbaar te blijven? Dan per vak de eerste items
+  // in het diagram, en alle items in een lijst achteraan.
+  const dims = svg => { const m = /width="([\d.]+)" height="([\d.]+)"/.exec(svg); return { w:+m[1], h:+m[2] }; };
+  const fits = svg => { const d = dims(svg); return d.h * Math.min(1, 1040 / d.w) <= 760; };
+  let svg = svgFull(p);
+  if (fit && !fits(svg)) for (const c of [10, 8, 6, 5, 4, 3]) { svg = svgFull(p, c); if (fits(svg)) break; }
+  const cut = fit && svgFull.cut;
+  const H = t => `<div style="font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#047857;margin-bottom:6px">${t}</div>`;
+  const row = cells => `<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:13.5px;line-height:1.4">${cells}</div>`;
+  const apRow = ({ k, it }) => row(`<div style="flex:0 0 112px">${tag(it.st)}</div><div style="flex:0 0 140px;color:#047857;font-weight:600">${esc(kort(k))}</div>
+    <div style="flex:1 1 0;min-width:0;color:#1e293b"><b>${esc(it.text)}</b>${it.note || kpiTxt(k, it) ? `<div style="color:#475569;font-size:12.5px;margin-top:2px">${esc([kpiTxt(k, it), it.note].filter(Boolean).join('. '))}</div>` : ''}</div>
+    <div style="flex:0 0 290px;color:${it.actie ? '#1e293b' : '#94a3b8'}">${it.actie ? esc(it.actie) : 'Nog geen actie'}${wieTegen(it) ? `<div style="color:#475569;font-size:12.5px;margin-top:2px">${esc(wieTegen(it))}</div>` : ''}</div>`);
+  // De kop blijft altijd bij de eerste rij
+  const listOf = (head, rows) => rows.length ? `<div data-oc-keep>${head}${rows[0]}</div>${rows.slice(1).map(r => `<div data-oc-keep>${r}</div>`).join('')}` : '';
+  const stTxt = st => st ? `<span style="display:inline-flex;align-items:center;gap:5px"><svg width="14" height="14" viewBox="-8 -8 16 16"><circle r="7.5" fill="${SCOL[st]}"/>${GLYPH[st]}</svg>${ST[st].l}</span>` : '<span style="color:#94a3b8">Niet beoordeeld</span>';
+  const allRows = k => p.vak[k].map(it => row(`<div style="flex:0 0 140px;font-size:12.5px;color:#475569">${stTxt(it.st)}</div>
+    <div style="flex:1 1 0;min-width:0;color:#1e293b"><b style="font-weight:600">${esc(it.text)}</b>${[kpiTxt(k, it), k === 'regels' && it.ref, it.note].filter(Boolean).length ? `<div style="color:#475569;font-size:12.5px;margin-top:2px">${esc([kpiTxt(k, it), k === 'regels' && it.ref, it.note].filter(Boolean).join('. '))}</div>` : ''}</div>`));
+  node.innerHTML = `<div style="display:flex;justify-content:center">${svg}</div>${legend}
+    ${fl.length ? `<div style="margin-top:22px">${listOf(H('Aandachtspunten en wat we eraan doen'), fl.map(apRow))}</div>` : ''}
+    ${cut ? `<div style="margin-top:22px">${H('Alle items per vak')}${VK.filter(k => p.vak[k].length).map(k => `<div style="margin-top:10px">${listOf(`<div style="font-size:14px;font-weight:700;color:#1e293b;padding-top:4px">${esc(VD[k].t)} <span style="font-weight:600;color:#64748b">${p.vak[k].length}</span></div>`, allRows(k))}</div>`).join('')}</div>` : ''}`;
   const s = node.querySelector('svg'); s.style.maxWidth = '100%'; s.style.height = 'auto';
-  // PDF: het hele diagram op de eerste bladzijde, de lijst daarna
   if (fit) { const w = +s.getAttribute('width'), h = +s.getAttribute('height'), maxH = 610; if (h * Math.min(1, 1040 / w) > maxH) s.style.width = Math.round(maxH * w / h) + 'px'; }
   const proj = p.voorbeeld ? '' : ocProject('');
   return { node, title:'Schildpaddiagram', subtitle: proj && proj !== title(p) ? `${proj} · ${title(p)}` : title(p) };
@@ -1245,7 +1312,7 @@ function asText() {
     p.vak[k].forEach(it => L.push(`- ${it.text}${it.st ? ` [${ST[it.st].l.toLowerCase()}]` : ''}${k === 'meet' && (it.streef || it.nu) ? ` (${[it.streef && 'streef ' + it.streef, it.nu && 'nu ' + it.nu].filter(Boolean).join(', ')})` : ''}${k === 'regels' && it.ref ? ` (${it.ref})` : ''}${it.note ? `: ${it.note}` : ''}`));
   });
   const fl = flagged(p);
-  if (fl.length) { L.push('', 'Aandachtspunten'); fl.forEach(({ k, it }) => L.push(`- ${ST[it.st].l}, ${kort(k)}: ${it.text}${it.actie ? ` → ${it.actie}` : ''}`)); }
+  if (fl.length) { L.push('', 'Aandachtspunten'); fl.forEach(({ k, it }) => L.push(`- ${ST[it.st].l}, ${kort(k)}: ${it.text}${it.actie ? ` → ${it.actie}` : ''}${wieTegen(it) ? ` (${wieTegen(it)})` : ''}`)); }
   return L.join('\n');
 }
 async function copyText(text) {
