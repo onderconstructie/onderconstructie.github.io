@@ -1193,7 +1193,7 @@ body.searching #cycle, body.searching #vs-note { display:none !important; }
     <span class="sep" aria-hidden="true">·</span>
     <button class="footer-link fb-link" id="fb-open" type="button" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/></svg>Suggestie of fout?</button>
     <span class="sep" aria-hidden="true">·</span>
-    <span class="app-version" title="Versie van de app">v61</span>
+    <span class="app-version" title="Versie van de app">v62</span>
   </footer>
 </div>
 
@@ -1981,18 +1981,26 @@ $('update-btn').addEventListener('click', async () => {
   if (run.length && !await appConfirm(`${run.join(', ')} loopt nog`, 'Vernieuwen stopt wat er loopt. Wat je invulde, blijft bewaard.', 'Toch vernieuwen')) return;
   const btn = $('update-btn'); btn.disabled = true; btn.textContent = 'Even geduld…';
   let reg = null; try { reg = await navigator.serviceWorker.getRegistration(); } catch {}
-  // Op een iPad duurt het klaarzetten van de nieuwe versie (alle tools offline) soms langer. Toen herlaadde de knop
-  // te vroeg, kreeg je de oude versie terug en leek er niets te gebeuren. Nu wacht hij tot de nieuwe versie echt klaar staat.
-  const ready = () => new Promise(res => {
-    const w = reg && (reg.waiting || reg.installing); if (!w) return res(null);
-    if (w.state === 'installed') return res(w);
-    const t = setTimeout(() => res(reg.waiting || null), 30000);
-    w.addEventListener('statechange', () => { if (w.state === 'installed' || w.state === 'redundant') { clearTimeout(t); res(reg.waiting || null); } });
+  const pause = ms => new Promise(r => setTimeout(r, ms));
+  // Alleen de pagina zelf is veranderd (geen nieuwe service worker): die staat al klaar, gewoon herladen.
+  if (!reg || (!reg.waiting && !reg.installing)) {
+    if (reg) { try { await Promise.race([reg.update(), pause(5000)]); } catch {} }
+    if (!reg || (!reg.waiting && !reg.installing)) { location.reload(); return; }
+  }
+  // Een nieuwe versie is nog aan het klaarzetten (alle tools offline): even wachten, hooguit 20 seconden.
+  const w = reg.waiting || await new Promise(res => {
+    const i = reg.installing; if (!i) return res(reg.waiting || null);
+    const t = setTimeout(() => res(reg.waiting || null), 20000);
+    i.addEventListener('statechange', () => { if (i.state === 'installed' || i.state === 'redundant') { clearTimeout(t); res(reg.waiting || null); } });
   });
-  if (reg && !reg.waiting && !reg.installing) { try { await reg.update(); } catch {} }
-  const w = await ready();
-  if (w) { wantReload = true; w.postMessage({ type:'skip' }); setTimeout(() => location.reload(), 10000); }
-  else location.reload();
+  if (!w) { location.reload(); return; }
+  wantReload = true; w.postMessage({ type:'skip' });
+  // Op een iPad neemt een wachtende versie het soms niet over. Dan na 4 seconden de oude service worker loslaten
+  // en herladen: de nieuwe versie zet zich dan meteen zelf klaar. Je gegevens blijven staan (die zitten niet in de service worker).
+  await pause(4000);
+  if (!wantReload) return;
+  if (navigator.onLine !== false) { try { await reg.unregister(); } catch {} }
+  location.reload();
 });
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('message', e => {

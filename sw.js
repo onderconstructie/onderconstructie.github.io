@@ -12,7 +12,7 @@
   - Een nieuwe versie van de service worker wacht. De app toont "Nieuwe versie klaar" met Vernieuwen;
     pas dan wisselt hij. Nooit stil wisselen terwijl je werkt.
 */
-const VERSION = 'oc-app-v61';
+const VERSION = 'oc-app-v62';
 // Lettertypes en bibliotheken hebben vaste bestandsnamen (met versienummer): die bewaren we apart,
 // zodat een nieuwe versie van de app ze niet opnieuw moet downloaden.
 const STATIC = 'oc-static-1';
@@ -78,6 +78,9 @@ self.addEventListener('install', e => {
     // Eenmalige overgang van v35 of ouder: die app kent "Vernieuwen" nog niet (en herlaadt zichzelf bij een wissel).
     const old = (await caches.keys()).filter(k => /^oc-app-v\d+$/.test(k) && k !== VERSION).map(k => +k.slice(8));
     if (old.length && Math.max(...old) <= 35) await self.skipWaiting();
+    // Eenmalige overgang van v61 of ouder: op een iPad bleef de Vernieuwen-knop daar soms hangen. Deze versie neemt
+    // zelf over (zonder de pagina te herladen); wat open staat, werkt gewoon verder en de volgende keer is ze nieuw.
+    else if (old.length && Math.max(...old) <= 61) await self.skipWaiting();
   })());
 });
 
