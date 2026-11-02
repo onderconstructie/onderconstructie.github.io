@@ -112,6 +112,8 @@ a { color:var(--accent-dark); }
 .views button[aria-selected="true"] { background:var(--wit); color:var(--slate-800); box-shadow:0 1px 2px rgba(15,23,42,0.08); }
 .views small { display:block; font-size:0.75rem; font-weight:500; color:var(--slate-500); }
 .view-hint { font-size:0.8125rem; color:var(--slate-500); padding:0 1.125rem 0.75rem; }
+.hint-lnk { font:inherit; font-weight:600; color:var(--accent-dark); text-decoration:underline; text-underline-offset:2px; padding:0; position:relative; vertical-align:baseline; }
+.hint-lnk::after { content:''; position:absolute; inset:-14px -4px; }
 .prog { display:flex; align-items:center; gap:0.625rem; padding:0 1.125rem 0.75rem; font-size:0.75rem; color:var(--slate-500); }
 .prog i { flex:1; height:6px; border-radius:99px; background:var(--slate-100); overflow:hidden; }
 .prog i b { display:block; height:100%; background:var(--accent); border-radius:99px; transition:width 0.2s; }
@@ -873,9 +875,9 @@ function render() {
     : 'Zonder duidelijke sponsor mist de verandering haar belangrijkste steun. Leg dit eerst voor aan de leiding, nog voor je de lijst invult.';
   document.querySelectorAll('#views [data-view]').forEach(b => b.setAttribute('aria-selected', b.dataset.view === v));
   const nm = state.name.trim() || 'de sponsor';
-  $('view-hint').textContent = v === 'lead'
-    ? `Hoe zie jij ${nm === 'de sponsor' ? 'de sponsor' : nm}? Kies per stelling wat het best past.`
-    : `Laat ${nm} hier zelf antwoorden, of neem de antwoorden over van de papieren lijst.`;
+  $('view-hint').innerHTML = v === 'lead'
+    ? `Hoe zie jij ${esc(nm)}? Kies per stelling wat het best past.`
+    : `Laat ${esc(nm)} hier zelf antwoorden, of geef een <button type="button" class="hint-lnk" data-blank>lege lijst als PDF</button> mee en neem de antwoorden daarna over.`;
   const n = scores(v).n;
   $('prog-bar').style.width = Math.round(n / ALL.length * 100) + '%';
   $('prog-text').textContent = `${n} van ${ALL.length}`;
@@ -1151,6 +1153,8 @@ $('vb-wis').addEventListener('click', () => {
   const mark = saves;
   toast('Voorbeeld gewist', () => { if (saves !== mark) return; state = copy; save(); render(); });
 });
+// De lege lijst staat ook in het menu; bij "De sponsor zelf" vind je hem waar je hem nodig hebt.
+document.addEventListener('click', e => { if (e.target.closest('[data-blank]')) document.querySelector('#menu [data-act="blank"]').click(); });
 $('vb-eigen').addEventListener('click', () => { delete state.voorbeeld; delete state.vorigProject; save(); render(); toast('Het voorbeeld is nu van jou'); });
 
 document.addEventListener('click', async e => {

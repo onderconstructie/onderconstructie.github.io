@@ -63,12 +63,14 @@ button { background:none; border:0; cursor:pointer; }
 
 .layout { display:grid; grid-template-columns:minmax(0, 1fr); gap:1rem; align-items:start; }
 .content { display:grid; grid-template-columns:minmax(0, 1fr); gap:1rem; min-width:0; }
-/* Op smalle schermen: analyse, uitleg, dan de kaart, dan de teams */
+/* Op smalle schermen: analyse, uitleg, dan de kaart, dan de teams.
+   Zolang er niets ingevuld is, komt "Begin met een team" voor de lege kaart. */
 @media (max-width:999.98px) {
   .content { display:contents; }
   .content > * { order:3; }
   .content > .card:first-child { order:0; }
   .content > #how { order:1; }
+  .content > #empty { order:1; }
   .layout > .aside { order:2; }
 }
 @media (min-width:1000px) {
@@ -157,7 +159,7 @@ button { background:none; border:0; cursor:pointer; }
 .sec-label .hint { text-transform:none; letter-spacing:0; font-weight:400; font-size:0.75rem; color:var(--slate-500); }
 .seg { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:3px; background:var(--slate-100); border-radius:10px; padding:3px; }
 .seg.c3 { grid-template-columns:repeat(3, minmax(0, 1fr)); }
-.seg button { padding:0.375rem 0.125rem; border-radius:8px; font-size:0.8125rem; font-weight:600; color:var(--slate-500); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.seg button { padding:0.375rem 0.125rem; border-radius:8px; font-size:0.8125rem; font-weight:600; line-height:1.2; color:var(--slate-500); min-width:0; overflow-wrap:anywhere; }
 .seg button:hover { color:var(--slate-700); }
 .seg button.on { background:var(--wit); color:var(--slate-800); box-shadow:0 1px 2px rgba(15,23,42,0.1); }
 .seg-ends { display:flex; justify-content:space-between; font-size:0.75rem; color:var(--slate-500); margin-top:0.1875rem; }
@@ -571,7 +573,7 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
       <div class="card empty" id="empty" hidden>
         <strong>Nog niets ingevuld</strong>
         Begin bij een team of afdeling: welke veranderingen maakten de mensen mee?
-        <div class="oc-start-btns"><button type="button" class="oc-begin" data-oc-begin="[id^=&quot;pn-&quot;], #new-unit">Begin met een team</button><button type="button" class="oc-vb" id="example">Voorbeeld bekijken</button></div><p class="oc-open-row"><button type="button" class="oc-open-link" data-bestand="open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 16v-5M9.5 13.5 12 11l2.5 2.5"/></svg>Open bestand</button></p>
+        <div class="oc-start-btns"><button type="button" class="oc-begin" data-oc-begin="[id^=&quot;pn-&quot;], .u-name, #new-unit">Begin met een team</button><button type="button" class="oc-vb" id="example">Voorbeeld bekijken</button></div><p class="oc-open-row"><button type="button" class="oc-open-link" data-bestand="open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 16v-5M9.5 13.5 12 11l2.5 2.5"/></svg>Open bestand</button></p>
       </div>
 
       <div class="units-bar">
@@ -1238,9 +1240,11 @@ function renderMatrix(svgEl = $('matrix'), forExport = false) {
   svgEl.innerHTML = matrixStatic() + ghosts + `<g id="points">${dots}</g>`;
 }
 
+// De vraag bij elke keuzerij, zodat een schermlezer weet waarover "ja" of "3" gaat
+const SEG_VRAAG = { goal:'Doel gehaald?', support:'Hoe werd het begeleid?', time:'Op tijd?', budget:'Binnen budget?', weight:'Hoe zwaar was het voor de mensen?', workload:'Hoe voelt de werkdruk nu?' };
 function seg(name, value, opts, cls = '') {
-  return `<div class="seg ${cls}" role="radiogroup">${opts.map(([v, l, t]) =>
-    `<button type="button" role="radio" aria-checked="${value === v}" class="${value === v ? 'on' : ''}" data-seg="${name}" data-v="${v}" data-key="${name}-${v}"${t ? ` title="${esc(t)}"` : ''}>${esc(l)}</button>`).join('')}</div>`;
+  return `<div class="seg ${cls}" role="radiogroup"${SEG_VRAAG[name] ? ` aria-label="${SEG_VRAAG[name]}"` : ''}>${opts.map(([v, l, t]) =>
+    `<button type="button" role="radio" aria-checked="${value === v}" class="${value === v ? 'on' : ''}" data-seg="${name}" data-v="${v}" data-key="${name}-${v}"${t ? ` title="${esc(t)}" aria-label="${esc(l + ', ' + t)}"` : ''}>${esc(l)}</button>`).join('')}</div>`;
 }
 const CHEV = '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
@@ -1272,9 +1276,9 @@ function projectHTML(p) {
     ${p.open ? `<div class="p-body">
       <label class="mini" for="pn-${p.id}">Welke verandering?</label>
       <input class="field" autocomplete="off" enterkeyhint="done" id="pn-${p.id}" data-f="p.name" data-key="pn-${p.id}" value="${esc(p.name)}" maxlength="80" placeholder="Bv. Verhuis naar flexwerkplekken">
-      <span class="mini">Wanneer?</span>
+      <span class="mini">Wanneer? <span class="mini-hint">maand mag je openlaten</span></span>
       <div class="p-row">
-        <select class="field sm" data-f="p.month" aria-label="Maand"><option value="">maand (optioneel)</option>${MONTHS.map((m, i) => `<option value="${i + 1}"${String(i + 1) === String(p.month) ? ' selected' : ''}>${m}</option>`).join('')}</select>
+        <select class="field sm" data-f="p.month" aria-label="Maand, mag je openlaten"><option value="">maand</option>${MONTHS.map((m, i) => `<option value="${i + 1}"${String(i + 1) === String(p.month) ? ' selected' : ''}>${m}</option>`).join('')}</select>
         <select class="field sm" data-f="p.year" aria-label="Jaar">${yearOptions(p.year)}</select>
       </div>
       <div class="p-grid">
@@ -1575,6 +1579,11 @@ svg.addEventListener('keydown', e => {
 });
 
 /* ---------- Voorbeeld ---------- */
+// "Begin met een team" zet de cursor in de naam van het eerste team: die naam staat geselecteerd, zodat je meteen je eigen team typt
+document.addEventListener('click', e => {
+  if (!e.target.closest('[data-oc-begin]')) return;
+  setTimeout(() => { const a = document.activeElement; if (a && a.classList.contains('u-name')) a.select(); }, 0);
+});
 $('example').addEventListener('click', () => {
   // Bestaat er al een voorbeeld, spring er dan naartoe in plaats van een tweede te maken.
   const bestaand = state.analyses.find(x => x.voorbeeld);
