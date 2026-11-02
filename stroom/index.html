@@ -265,6 +265,116 @@ html:has(.ocs-back, .ocw-back, .gal-back, .oc-dialog-backdrop) { overflow:hidden
 .pinch-hint { display:none; margin:0 1.125rem 0.5rem; font-size:0.8125rem; color:var(--slate-600); }
 @media (hover:none) { .pinch-hint { display:block; } }
 body { min-height:100dvh; }
+/* oc-uitleg v1 begin */
+/* "Hoe werkt dit?": één blok voor alle tools. Zonder JavaScript blijft de gewone uitklapper leesbaar.
+   Het script zet .oc-u op <details class="explain"> en bouwt de inhoud om tot inleiding, stappen, tip en verwijzingen. */
+details.explain { scroll-margin-top:1rem; }
+details.explain.oc-u { --u-groen:#10b981; --u-donker:#047857; --u-licht:#a7f3d0; --u-zacht:#ecfdf5;
+  background:#ffffff; border:1px solid #e2e8f0; border-radius:18px; box-shadow:0 1px 2px rgba(15,23,42,0.04); transition:border-color 0.2s, box-shadow 0.2s; }
+details.explain.oc-u:hover, details.explain.oc-u[open] { border-color:#cbd5e1; }
+details.explain.oc-u[open] { box-shadow:0 1px 2px rgba(15,23,42,0.04), 0 12px 32px -18px rgba(15,23,42,0.18); }
+
+/* ingeklapt: een uitnodigende kaart */
+details.explain.oc-u > summary { display:flex; align-items:center; gap:0.875rem; min-height:76px; padding:0.875rem 1rem 0.875rem 0.875rem; border-radius:17px; cursor:pointer; list-style:none; color:#1e293b; font-weight:400; outline:none; -webkit-tap-highlight-color:transparent; }
+details.explain.oc-u > summary::-webkit-details-marker { display:none; }
+details.explain.oc-u > summary::after, details.explain.oc-u > summary::before { content:none; }
+details.explain.oc-u > summary svg { transform:none; margin:0; }
+details.explain.oc-u > summary:focus-visible { box-shadow:0 0 0 2px #ffffff, 0 0 0 4px var(--u-groen); }
+details.explain.oc-u[open] > summary { border-bottom-left-radius:0; border-bottom-right-radius:0; }
+details.explain.oc-u .oc-u-ico { flex-shrink:0; width:48px; height:48px; border-radius:14px; background:var(--u-zacht); display:flex; align-items:center; justify-content:center; transition:background-color 0.2s; }
+details.explain.oc-u .oc-u-ico svg { width:28px; height:28px; display:block; }
+details.explain.oc-u .oc-u-kop { flex:1; min-width:0; display:flex; flex-direction:column; gap:0.125rem; }
+details.explain.oc-u .oc-u-titel { font-size:1.0625rem; font-weight:700; color:#1e293b; letter-spacing:-0.01em; line-height:1.3; }
+details.explain.oc-u .oc-u-meta { font-size:0.8125rem; color:#64748b; line-height:1.35; font-variant-numeric:tabular-nums; }
+details.explain.oc-u .oc-u-pijl { flex-shrink:0; width:40px; height:40px; border-radius:50%; background:#f1f5f9; color:#475569; display:flex; align-items:center; justify-content:center; transition:background-color 0.2s, color 0.2s, transform 0.35s cubic-bezier(0.2,0.7,0.2,1); }
+details.explain.oc-u .oc-u-pijl svg { width:20px; height:20px; }
+details.explain.oc-u > summary:hover .oc-u-pijl { background:var(--u-zacht); color:var(--u-donker); }
+details.explain.oc-u[open] .oc-u-pijl { transform:rotate(180deg); background:var(--u-zacht); color:var(--u-donker); }
+
+/* op brede schermen: de stappen als kleine route, die plaats maakt voor de echte stappen bij openen */
+details.explain.oc-u .oc-u-route { display:none; align-items:center; flex-shrink:0; margin-right:0.75rem; transition:opacity 0.25s, visibility 0.25s; }
+details.explain.oc-u .oc-u-route i { position:relative; display:flex; align-items:center; justify-content:center; width:26px; height:26px; margin-left:16px; border-radius:50%; border:1.5px solid var(--u-licht); background:#ffffff; color:var(--u-donker); font-style:normal; font-size:0.75rem; font-weight:700; line-height:1; font-variant-numeric:tabular-nums; transition:border-color 0.2s, background-color 0.2s; }
+details.explain.oc-u .oc-u-route i:first-child { margin-left:0; }
+details.explain.oc-u .oc-u-route i + i::before { content:''; position:absolute; right:calc(100% + 1.5px); top:calc(50% - 0.75px); width:16px; height:1.5px; background:var(--u-licht); }
+details.explain.oc-u > summary:hover .oc-u-route i { border-color:var(--u-groen); }
+details.explain.oc-u[open] .oc-u-route { opacity:0; visibility:hidden; }
+@media (min-width:700px) { details.explain.oc-u .oc-u-route { display:flex; } }
+
+/* uitgeklapt */
+details.explain.oc-u > .inner { padding:0; margin:0; border:0; border-radius:0; background:none; font-size:0.9375rem; color:#475569; container-type:inline-size; }
+details.explain.oc-u > .inner p, details.explain.oc-u > .inner ul, details.explain.oc-u > .inner ol, details.explain.oc-u > .inner li { margin:0; }
+details.explain.oc-u .oc-u-raam { border-top:1px solid #f1f5f9; margin:0 1.25rem; padding:1.25rem 0 1.5rem; display:grid; gap:1.375rem; }
+details.explain.oc-u .oc-u-lees, details.explain.oc-u .oc-u-doe { display:flex; flex-direction:column; gap:1.125rem; min-width:0; }
+details.explain.oc-u .oc-u-intro { font-size:1.0625rem; line-height:1.55; color:#334155; letter-spacing:-0.005em; margin:0; max-width:40em; text-wrap:pretty; }
+details.explain.oc-u .oc-u-noot { margin:0; line-height:1.6; max-width:42em; text-wrap:pretty; }
+details.explain.oc-u .oc-u-noot b { color:#1e293b; }
+
+/* stappen: genummerde tijdlijn */
+details.explain.oc-u ol.oc-u-stappen { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; }
+details.explain.oc-u .oc-u-stap { position:relative; display:grid; grid-template-columns:2.25rem minmax(0,1fr); column-gap:0.875rem; padding-bottom:1.125rem; }
+details.explain.oc-u .oc-u-stap:last-child { padding-bottom:0; }
+details.explain.oc-u .oc-u-stap::before { content:''; position:absolute; left:calc(1.125rem - 1px); top:2.5rem; bottom:0.25rem; width:2px; border-radius:2px; background:var(--u-licht); transform-origin:top; }
+details.explain.oc-u .oc-u-stap:last-child::before { content:none; }
+details.explain.oc-u .oc-u-nr { width:2.25rem; height:2.25rem; border-radius:50%; background:#ffffff; border:2px solid var(--u-groen); color:var(--u-donker); font-size:0.9375rem; font-weight:700; display:flex; align-items:center; justify-content:center; font-variant-numeric:tabular-nums; line-height:1; }
+details.explain.oc-u .oc-u-stap-tekst { padding-top:0.3125rem; min-width:0; }
+details.explain.oc-u .oc-u-stap-titel { display:block; font-size:1rem; font-weight:700; color:#1e293b; line-height:1.35; letter-spacing:-0.005em; }
+details.explain.oc-u .oc-u-stap-uitleg { display:block; margin-top:0.25rem; line-height:1.55; color:#475569; text-wrap:pretty; }
+details.explain.oc-u .oc-u-stap-uitleg b { color:#1e293b; }
+
+details.explain.oc-u .oc-u-stap-uitleg.oc-u-enkel { margin-top:0; color:#334155; }
+details.explain.oc-u .oc-u-doe > ul:not([class]), details.explain.oc-u .oc-u-doe > ol:not([class]) { padding-left:1.25rem; display:grid; gap:0.375rem; line-height:1.55; }
+details.explain.oc-u .oc-u-doe > ul:not([class]) > li::marker { color:var(--u-groen); }
+
+/* begrippen: dezelfde opbouw zonder nummers, voor lijsten die geen volgorde zijn */
+details.explain.oc-u ul.oc-u-begrippen { list-style:none; margin:0; padding:0; display:grid; gap:0.875rem; }
+details.explain.oc-u .oc-u-begrip { display:grid; grid-template-columns:0.5rem minmax(0,1fr); column-gap:0.875rem; }
+details.explain.oc-u .oc-u-begrip::before { content:''; width:0.5rem; height:0.5rem; border-radius:50%; background:var(--u-groen); margin-top:0.5rem; }
+
+/* tip */
+details.explain.oc-u .oc-u-tip { display:grid; grid-template-columns:auto minmax(0,1fr); column-gap:0.75rem; align-items:start; background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:0.875rem 1rem; }
+details.explain.oc-u .oc-u-tip svg { width:22px; height:22px; color:var(--u-donker); margin-top:0.0625rem; }
+details.explain.oc-u .oc-u-tip-titel { display:block; font-weight:700; color:#1e293b; font-size:0.9375rem; line-height:1.4; }
+details.explain.oc-u .oc-u-tip-tekst { display:block; line-height:1.55; color:#475569; margin-top:0.125rem; }
+details.explain.oc-u kbd { display:inline-block; font:inherit; font-size:0.8125rem; font-weight:600; line-height:1.35; color:#334155; background:#ffffff; border:1px solid #cbd5e1; border-bottom-width:2px; border-radius:6px; padding:0 0.4375rem; margin:0 0.0625rem; vertical-align:0.0625rem; white-space:nowrap; }
+
+/* stil: alles blijft op dit toestel */
+details.explain.oc-u .oc-u-stil { display:flex; gap:0.5rem; align-items:flex-start; font-size:0.875rem; color:#64748b; line-height:1.5; margin:0; }
+details.explain.oc-u .oc-u-stil svg { flex-shrink:0; width:18px; height:18px; margin-top:0.0625rem; color:#64748b; }
+
+/* verwijzingen naar andere tools */
+details.explain.oc-u .oc-u-samen { display:flex; flex-direction:column; gap:0.5rem; }
+details.explain.oc-u .oc-u-samen-titel { font-size:0.875rem; font-weight:600; color:#475569; }
+details.explain.oc-u .oc-u-chips { display:flex; flex-wrap:wrap; gap:0.5rem; }
+details.explain.oc-u a.oc-u-chip { display:inline-flex; align-items:center; gap:0.5rem; min-height:44px; margin:0; padding:0 0.875rem 0 0.5rem; border:1px solid var(--u-licht); border-radius:999px; background:#ffffff; color:var(--u-donker); font-size:0.9375rem; font-weight:600; text-decoration:none; line-height:1.2; transition:background-color 0.2s, border-color 0.2s; }
+details.explain.oc-u .oc-u-chip-ico { width:28px; height:28px; border-radius:50%; background:var(--u-zacht); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+details.explain.oc-u .oc-u-chip-ico svg { width:15px; height:15px; }
+details.explain.oc-u a.oc-u-chip:hover { background:var(--u-zacht); border-color:var(--u-groen); }
+details.explain.oc-u a.oc-u-chip:focus-visible { outline:2px solid var(--u-groen); outline-offset:2px; }
+details.explain.oc-u .oc-u-noot a, details.explain.oc-u .oc-u-stap-uitleg a, details.explain.oc-u .oc-u-tip-tekst a { color:var(--u-donker); font-weight:600; text-decoration:underline; text-decoration-color:var(--u-licht); text-decoration-thickness:2px; text-underline-offset:3px; }
+details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker); }
+
+/* breed: links lezen, rechts doen */
+@container (min-width:720px) and (max-width:999.98px) {
+  details.explain.oc-u .oc-u-raam.oc-u-lang { grid-template-columns:minmax(0,1fr); grid-template-rows:none; }
+  details.explain.oc-u .oc-u-lang .oc-u-lees, details.explain.oc-u .oc-u-lang .oc-u-doe, details.explain.oc-u .oc-u-lang .oc-u-samen { grid-column:1; grid-row:auto; }
+}
+@container (min-width:720px) {
+  details.explain.oc-u .oc-u-raam { grid-template-columns:minmax(0,5fr) minmax(0,7fr); grid-template-rows:auto 1fr; column-gap:3rem; row-gap:1.75rem; align-items:start; padding:1.75rem 0.5rem 2rem; }
+  details.explain.oc-u .oc-u-lees { grid-column:1; grid-row:1; }
+  details.explain.oc-u .oc-u-doe { grid-column:2; grid-row:1 / span 2; }
+  details.explain.oc-u .oc-u-samen { grid-column:1; grid-row:2; }
+  details.explain.oc-u .oc-u-zonder-intro { grid-template-columns:minmax(0,1fr); }
+  details.explain.oc-u .oc-u-zonder-intro .oc-u-doe, details.explain.oc-u .oc-u-zonder-intro .oc-u-samen { grid-column:1; grid-row:auto; }
+  details.explain.oc-u .oc-u-intro { font-size:1.25rem; line-height:1.5; }
+}
+@media (min-width:760px) { details.explain.oc-u .oc-u-raam { margin:0 1.5rem; } details.explain.oc-u > summary { padding:1rem 1.25rem 1rem 1rem; } }
+
+/* beweging enkel als antwoord op openen */
+@media (prefers-reduced-motion:reduce) {
+  details.explain.oc-u, details.explain.oc-u .oc-u-pijl, details.explain.oc-u .oc-u-ico, details.explain.oc-u .oc-u-route, details.explain.oc-u .oc-u-route i, details.explain.oc-u a.oc-u-chip { transition:none; }
+}
+@media print { details.explain { display:none; } }
+/* oc-uitleg v1 einde */
 </style>
 </head>
 <body>
@@ -294,7 +404,7 @@ body { min-height:100dvh; }
     <summary>Hoe werkt dit?</summary>
     <div class="inner">
       <p>Je tekent niet met de muis: je schrijft de stappen in volgorde, en de tool zet ze onder elkaar met pijlen. Een stap gaat standaard naar de volgende. Wil je dat anders, kies dan bij "daarna" een andere stap.</p>
-      <ul>
+      <ul data-uitleg="begrippen">
         <li><b>Start</b> en <b>einde</b>: waar het proces begint en stopt.</li>
         <li><b>Stap</b>: iets dat iemand doet. Begin met een werkwoord: "Aanvraag registreren".</li>
         <li><b>Keuze</b>: een vraag met twee uitwegen, standaard ja en nee. "Ja" gaat naar de volgende stap, "nee" kies je zelf. Zo maak je ook een lus terug.</li>
@@ -1385,6 +1495,208 @@ window.ocBestand = (function () {
     try { parent.postMessage({ type: 'oc-esc' }, location.origin); } catch (err) {}
   }, true);
 })();
+</script>
+<script>
+/* oc-uitleg v1 begin */
+/* "Hoe werkt dit?": zet de gewone uitleg in <details class="explain"><div class="inner"> om tot een kaart met
+   inleiding, genummerde stappen, tip en verwijzingen naar andere tools. De tekst zelf blijft in de HTML staan,
+   dus zonder JavaScript is alles nog gewoon leesbaar. Sturen per tool kan met data-uitleg op een lijst of alinea:
+   "stappen" (genummerd), "begrippen" (zonder nummers), "lijst" (laten zoals hij is), "tip", "noot", "stil". */
+(function () {
+  var d = document.querySelector('details.explain');
+  if (!d || d.classList.contains('oc-u')) return;
+  var sum = d.querySelector(':scope > summary'), inner = d.querySelector(':scope > .inner');
+  if (!sum || !inner) return;
+  var SLUG = 'hoe-werkt-dit';
+  var SVG = function (b, w) { return '<svg viewBox="0 0 ' + (w || 24) + ' ' + (w || 24) + '" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' + b + '</svg>'; };
+  var ICO = {
+    kaart: '<svg viewBox="0 0 28 28" fill="none" aria-hidden="true" focusable="false">'
+      + '<circle cx="7" cy="6.5" r="2.25" fill="#047857"/><circle cx="7" cy="14" r="2.25" fill="#10b981"/><circle cx="7" cy="21.5" r="2.25" fill="#10b981"/>'
+      + '<path d="M13 6.5h9.5M13 14h6.5M13 21.5h8" stroke="#10b981" stroke-width="2.25" stroke-linecap="round"/></svg>',
+    pijl: SVG('<path d="M6 9l6 6 6-6"/>'),
+    tip: SVG('<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.7.6 1.1 1.3 1.1 2.2h5c0-.9.4-1.6 1.1-2.2A6 6 0 0 0 12 3z"/>'),
+    stil: SVG('<rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>'),
+    naar: SVG('<path d="M8 16L16 8M9.5 8H16v6.5"/>')
+  };
+  var maak = function (tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
+  var tekst = function (e) { return (e.textContent || '').replace(/\s+/g, ' ').trim(); };
+  var soort = function (e) { return (e.getAttribute('data-uitleg') || '').toLowerCase(); };
+
+  // eerste tekst van een stuk DOM netjes laten beginnen: leestekens weg, hoofdletter
+  function netjesBegin(node) {
+    var w = document.createTreeWalker(node, NodeFilter.SHOW_TEXT), t;
+    while ((t = w.nextNode())) {
+      var s = t.nodeValue.replace(/^[\s:.,;]+/, '');
+      if (!s) { t.nodeValue = ''; continue; }
+      t.nodeValue = s.charAt(0).toUpperCase() + s.slice(1);
+      return true;
+    }
+    return false;
+  }
+  // toetsen als toets tonen
+  var TOETS = /(^|[^\wÀ-ÿ+])(Shift\+Tab|Alt\+↑|Alt\+↓|Enter|Escape|Esc|Backspace|Delete|F2|Tab)(?![\wÀ-ÿ])/g;
+  function toetsen(root) {
+    var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), lijst = [], t;
+    while ((t = w.nextNode())) { TOETS.lastIndex = 0; if (TOETS.test(t.nodeValue) && !t.parentNode.closest('a, kbd, code')) lijst.push(t); }
+    lijst.forEach(function (t) {
+      var s = t.nodeValue, frag = document.createDocumentFragment(), van = 0, m;
+      TOETS.lastIndex = 0;
+      while ((m = TOETS.exec(s))) {
+        var start = m.index + m[1].length;
+        frag.appendChild(document.createTextNode(s.slice(van, start)));
+        var k = document.createElement('kbd'); k.textContent = m[2]; frag.appendChild(k);
+        van = start + m[2].length;
+      }
+      frag.appendChild(document.createTextNode(s.slice(van)));
+      t.parentNode.replaceChild(frag, t);
+    });
+  }
+  // begint dit lijstitem met een vetgedrukte titel?
+  function kopVan(li) {
+    for (var n = li.firstChild; n; n = n.nextSibling) {
+      if (n.nodeType === 3 && !n.nodeValue.trim()) continue;
+      return n.nodeType === 1 && /^(B|STRONG)$/.test(n.tagName) ? n : null;
+    }
+    return null;
+  }
+
+  var kids = Array.prototype.slice.call(inner.children);
+  var lijsten = kids.filter(function (k) { return /^(UL|OL)$/.test(k.tagName) && soort(k) !== 'lijst'; });
+  var metKop = lijsten.filter(function (l) { var li = l.querySelectorAll(':scope > li'); return li.length > 1 && Array.prototype.every.call(li, kopVan); });
+  // stappen: uitdrukkelijk gevraagd, of de enige lijst waarvan elk item met een vette titel begint
+  var stapLijst = lijsten.filter(function (l) { return soort(l) === 'stappen'; })[0]
+    || (metKop.length === 1 && soort(metKop[0]) !== 'begrippen' ? metKop[0] : null);
+
+  var raam = maak('div', 'oc-u-raam'), lees = maak('div', 'oc-u-lees'), doe = maak('div', 'oc-u-doe'), aantal = 0;
+  kids.forEach(function (k, i) {
+    var s = soort(k), t = tekst(k);
+    if (i === 0 && k.tagName === 'P' && !/^Tip\b/.test(t) && !/^(tip|noot|stil)$/.test(s)) { k.classList.add('oc-u-intro'); lees.appendChild(k); return; }
+    if (k === stapLijst) {
+      var ol = maak('ol', 'oc-u-stappen');
+      Array.prototype.forEach.call(k.querySelectorAll(':scope > li'), function (li) {
+        var b = kopVan(li), stap = maak('li', 'oc-u-stap'), tx = maak('div', 'oc-u-stap-tekst');
+        aantal++;
+        stap.appendChild(maak('span', 'oc-u-nr', String(aantal))).setAttribute('aria-hidden', 'true');
+        var titel = maak('span', 'oc-u-stap-titel'), rest = maak('span', 'oc-u-stap-uitleg');
+        if (b) { titel.innerHTML = b.innerHTML.replace(/\s*[.:]\s*$/, ''); b.remove(); }
+        while (li.firstChild) rest.appendChild(li.firstChild);
+        if (b) tx.appendChild(titel); else rest.classList.add('oc-u-enkel');
+        if (netjesBegin(rest)) tx.appendChild(rest);
+        stap.appendChild(tx); ol.appendChild(stap);
+      });
+      doe.appendChild(ol); k.remove(); return;
+    }
+    if (/^(UL|OL)$/.test(k.tagName) && s !== 'lijst' && (s === 'begrippen' || metKop.indexOf(k) > -1)) {
+      k.className = 'oc-u-begrippen';
+      Array.prototype.forEach.call(k.children, function (li) { var w = maak('span', 'oc-u-begrip-tekst'); while (li.firstChild) w.appendChild(li.firstChild); li.className = 'oc-u-begrip'; li.appendChild(w); });
+      doe.appendChild(k); return;
+    }
+    var tip = k.tagName === 'P' && (s === 'tip' || /^Tip\b[^:.]{0,40}:/.test(t));
+    if (tip) {
+      var kaart = maak('div', 'oc-u-tip'), m = t.match(/^(Tip\b[^:.]{0,40}):/);
+      kaart.setAttribute('role', 'note');
+      kaart.innerHTML = ICO.tip;
+      var tt = maak('div'), tk = maak('span', 'oc-u-tip-titel', m ? m[1] : 'Tip'), tb = maak('span', 'oc-u-tip-tekst');
+      while (k.firstChild) tb.appendChild(k.firstChild);
+      if (m) { // "Tip:" of "Tip voor ...:" weghalen uit de tekst zelf
+        var w = document.createTreeWalker(tb, NodeFilter.SHOW_TEXT), n, weg = m[0].length;
+        while (weg > 0 && (n = w.nextNode())) { var l = n.nodeValue.replace(/^\s+/, '').length, voor = n.nodeValue.length - l; var x = Math.min(weg, l); n.nodeValue = n.nodeValue.slice(voor + x); weg -= x; }
+        netjesBegin(tb);
+      }
+      tt.appendChild(tk); tt.appendChild(tb); kaart.appendChild(tt);
+      doe.appendChild(kaart); k.remove(); return;
+    }
+    if (s === 'stil' || (k.tagName === 'P' && /^Alles blijft op dit toestel/.test(t))) {
+      k.className = 'oc-u-stil'; var sp = maak('span'); while (k.firstChild) sp.appendChild(k.firstChild);
+      k.innerHTML = ICO.stil; k.appendChild(sp); doe.appendChild(k); return;
+    }
+    if (k.tagName === 'P') k.classList.add('oc-u-noot');
+    doe.appendChild(k);
+  });
+
+  // verwijzingen naar andere tools als chips, elk één keer
+  var hier = location.pathname.replace(/index\.html$/, ''), gezien = {}, chips = [];
+  Array.prototype.forEach.call(doe.querySelectorAll('a[href]'), function (a) {
+    var u; try { u = new URL(a.getAttribute('href'), location.href); } catch (e) { return; }
+    var thuis = u.host === location.host || /(^|\.)onderconstructie\.github\.io$/.test(u.host);
+    var pad = u.pathname.replace(/index\.html$/, '');
+    if (!thuis || pad === hier || pad === '/' || gezien[pad] || u.hash) return;
+    gezien[pad] = 1;
+    var c = maak('a', 'oc-u-chip'); c.href = a.getAttribute('href');
+    c.innerHTML = '<span class="oc-u-chip-ico">' + ICO.naar + '</span>';
+    c.appendChild(document.createTextNode(tekst(a)));
+    chips.push(c);
+  });
+  if (lees.firstChild) raam.appendChild(lees); else raam.classList.add('oc-u-zonder-intro');
+  // een lange inleiding krijgt pas naast de stappen plaats op een echt breed scherm
+  if (lees.firstChild && tekst(lees.firstChild).split(' ').length > 50) raam.classList.add('oc-u-lang');
+  raam.appendChild(doe);
+  if (chips.length) {
+    var samen = maak('div', 'oc-u-samen'), id = 'oc-u-samen-' + Math.random().toString(36).slice(2, 7);
+    samen.appendChild(maak('span', 'oc-u-samen-titel', 'Werkt samen met')).id = id;
+    var rij = maak('div', 'oc-u-chips'); rij.setAttribute('role', 'group'); rij.setAttribute('aria-labelledby', id);
+    chips.forEach(function (c) { rij.appendChild(c); });
+    samen.appendChild(rij); raam.appendChild(samen);
+  }
+  toetsen(raam);
+  inner.innerHTML = ''; inner.appendChild(raam);
+
+  // kop: icoon, titel, belofte, pijl
+  var titel = tekst(sum) || 'Hoe werkt dit?';
+  var woorden = tekst(raam).split(' ').length, min = Math.max(1, Math.round(woorden / 180));
+  var belofte = (aantal ? aantal + ' stappen, ' : '') + min + (min === 1 ? ' minuut' : ' minuten') + ' lezen';
+  sum.innerHTML = '<span class="oc-u-ico" aria-hidden="true">' + ICO.kaart + '</span>'
+    + '<span class="oc-u-kop"><span class="oc-u-titel"></span><span class="oc-u-meta"></span></span>'
+    + (aantal > 1 && aantal < 10 ? '<span class="oc-u-route" aria-hidden="true">' + Array.apply(null, Array(aantal)).map(function (x, i) { return '<i>' + (i + 1) + '</i>'; }).join('') + '</span>' : '')
+    + '<span class="oc-u-pijl" aria-hidden="true">' + ICO.pijl + '</span>';
+  sum.querySelector('.oc-u-titel').textContent = titel;
+  sum.querySelector('.oc-u-meta').textContent = belofte;
+  if (!d.id) d.id = SLUG;
+  d.classList.add('oc-u');
+
+  // vloeiend openen en sluiten (niet bij minder beweging)
+  var rustig = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : { matches: true };
+  var ease = 'cubic-bezier(0.2, 0.7, 0.2, 1)', loopt = null, staat = d.open;
+  function klaar() { loopt = null; inner.style.overflow = ''; inner.style.height = ''; }
+  function zet(open, vloeiend) {
+    staat = open;
+    if (!vloeiend || rustig.matches || !inner.animate) { if (loopt) loopt.cancel(); klaar(); d.open = open; return; }
+    var nu = d.open ? inner.getBoundingClientRect().height : 0;
+    if (loopt) loopt.cancel();
+    d.open = true; inner.style.overflow = 'hidden';
+    var doel = open ? inner.scrollHeight : 0;
+    loopt = inner.animate([{ height: nu + 'px', opacity: open ? (nu ? 1 : 0) : 1 }, { height: doel + 'px', opacity: open ? 1 : 0 }],
+      { duration: open ? 420 : 260, easing: ease });
+    loopt.onfinish = function () { klaar(); if (!open) d.open = false; };
+    loopt.oncancel = function () { inner.style.overflow = ''; };
+    if (open && !nu) {
+      var stukken = raam.querySelectorAll('.oc-u-intro, .oc-u-stap, .oc-u-begrip, .oc-u-tip, .oc-u-noot, .oc-u-stil, .oc-u-samen');
+      Array.prototype.forEach.call(stukken, function (e, i) {
+        e.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 380, delay: 80 + Math.min(i, 8) * 55, easing: ease, fill: 'backwards' });
+      });
+      Array.prototype.forEach.call(raam.querySelectorAll('.oc-u-stap'), function (e, i) {
+        try { e.animate([{ transform: 'scaleY(0)' }, { transform: 'scaleY(1)' }], { pseudoElement: '::before', duration: 360, delay: 200 + i * 55, easing: ease, fill: 'backwards' }); } catch (x) {}
+      });
+    }
+  }
+  sum.addEventListener('click', function (e) { e.preventDefault(); zet(!staat, true); });
+  d.addEventListener('toggle', function () { if (!loopt) staat = d.open; });
+
+  // #hoe-werkt-dit opent het blok
+  function vanAdres(vloeiend) {
+    var h = decodeURIComponent(location.hash.slice(1));
+    if (h !== SLUG && h !== d.id) return;
+    if (!staat) zet(true, vloeiend);
+    requestAnimationFrame(function () { d.scrollIntoView({ behavior: vloeiend && !rustig.matches ? 'smooth' : 'auto', block: 'start' }); });
+  }
+  window.addEventListener('hashchange', function () { vanAdres(true); });
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[href="#' + SLUG + '"]');
+    if (a && location.hash === '#' + SLUG) { e.preventDefault(); vanAdres(true); }
+  });
+  vanAdres(false);
+})();
+/* oc-uitleg v1 einde */
 </script>
 </body>
 </html>
