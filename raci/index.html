@@ -744,7 +744,12 @@ function roleNote(m, r) {
 }
 function ocPublish() {
   ocShare.publish(OC_ID, OC_TOOL, state.mats.filter(m => !m.voorbeeld).map(m => ({ name:m.name, items:[
-    ...m.roles.map(r => ({ type:'betrokkene', text:r.name, note:roleNote(m, r) })), ...m.tasks.map(t => ({ type:'taak', text:t.name })) ] })));
+    ...m.roles.map(r => ({ type:'betrokkene', text:r.name, note:roleNote(m, r) })), ...m.tasks.map(t => {
+      // Wie het werk doet (R of A+R) gaat mee als eigenaar; wie beslist (A) staat in de notitie.
+      const who = m.roles.filter(r => IS_R(t.cells[r.id])).map(r => r.name.trim()).filter(Boolean);
+      const acc = m.roles.filter(r => t.cells[r.id] === 'A').map(r => r.name.trim()).filter(Boolean);
+      return { type:'taak', text:t.name, who: who.length ? who.join(', ') : undefined, note: acc.length ? 'Beslist: ' + acc.join(', ') : undefined };
+    }) ] })));
 }
 
 async function ocWipeAll() {
