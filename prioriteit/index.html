@@ -81,6 +81,9 @@ button { background:none; border:0; cursor:pointer; }
 .form-card { grid-area:form; padding:1.25rem; }
 .matrix-card { grid-area:matrix; padding:1rem; }
 .list-card { grid-area:list; overflow:hidden; }
+.next-note { font-size:0.8125rem; line-height:1.45; color:#047857; background:#ecfdf5; border-top:1px solid #d1fae5; padding:0.625rem 0.875rem; margin:0; text-align:center; }
+.next-note[hidden] { display:none; }
+.next-note a { color:#047857; font-weight:600; text-underline-offset:2px; }
 .list-card:has(.menu.open) { overflow:visible; }
 .label {
   font-size:0.6875rem; font-weight:600; text-transform:uppercase; letter-spacing:0.12em; color:var(--slate-500);
@@ -524,6 +527,7 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
     <section class="card list-card" aria-label="Lijst per kwadrant">
       <div class="list-head label"><span>Overzicht</span><span id="count"></span></div>
       <div id="list"></div>
+      <p class="next-note" id="next-note" hidden>Snelle winsten aanpakken? Neem ze over in het <a href="../kanban/?van=prioriteit">Takenbord</a>.</p>
     </section>
   </div>
 <div class="oc-restart-row" id="oc-restart-row" hidden><button type="button" class="oc-restart" id="oc-restart-btn">Opnieuw beginnen</button></div>
@@ -1326,6 +1330,7 @@ function render() {
   if (document.activeElement !== $('list-name')) $('list-name').value = cur().name;
   unitLabel(cur());
   renderTabs(); renderMatrix(); renderList(); syncForm();
+  $('next-note').hidden = !!cur().voorbeeld || !cur().items.some(i => !i.done && quadOf(i) === Q[0]);
 }
 
 /* ---------- Melding met ongedaan maken ---------- */
@@ -1408,9 +1413,10 @@ document.addEventListener('click', e => {
   toast(left ? `${it.name.slice(0, 40)}: ${Q.find(q => q.id === b.dataset.pick).name.toLowerCase()}. Nog ${left}.` : 'Alles ingeschat. Versleep een punt om fijn te regelen.');
   const nx = document.querySelector('.todo-item .pick-btn'); if (nx) nx.focus({ preventScroll:true });
 }, true);
-function startEdit(id) {
+function startEdit(id, viaKey) {
   editing = id; $('name').value = '';
   render();
+  if (viaKey) $('name').focus({ preventScroll:true });
   if (matchMedia('(max-width:760px)').matches) $('form-card').scrollIntoView({ behavior:'smooth', block:'start' });
 }
 
@@ -1448,7 +1454,7 @@ $('list').addEventListener('click', e => {
 });
 $('list').addEventListener('keydown', e => {
   const li = e.target.closest('.item');
-  if (li && e.target === li && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); startEdit(li.dataset.id); }
+  if (li && e.target === li && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); startEdit(li.dataset.id, true); }
 });
 
 /* ---------- Punten verslepen in de matrix ---------- */
@@ -1507,7 +1513,7 @@ svg.addEventListener('keydown', e => {
     const [k, d] = moves[e.key]; it[k] = clamp(it[k] + d, 1, N); editing = it.id;
     save(); render();
     const again = svg.querySelector(`.pt[data-id="${it.id}"]`); again && again.focus();
-  } else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startEdit(it.id); }
+  } else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startEdit(it.id, true); }
 });
 
 /* ---------- Lijsten ---------- */
