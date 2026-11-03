@@ -105,7 +105,18 @@ button { background:none; border:0; cursor:pointer; }
   flex:none; width:1.75rem; height:1.75rem; border-radius:50%; border:1.5px solid #a7f3d0; background:var(--wit);
   color:var(--accent-dark); font-size:0.8125rem; font-weight:700; display:inline-flex; align-items:center; justify-content:center; font-variant-numeric:tabular-nums;
 }
-.sec-card.vol .sec-n { background:var(--accent-50); }
+.sec-card.vol .sec-n { background:var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center / 62% no-repeat; border-color:var(--accent); color:transparent; }
+.secnav { display:none; }
+@media (max-width:999px) {
+  .secnav { display:flex; position:sticky; top:0; z-index:4; gap:0.375rem; overflow-x:auto; padding:0.5rem 0.25rem; margin:0 -0.25rem 0.25rem; background:rgba(248,250,252,0.94); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px); scrollbar-width:none; }
+  .secnav::-webkit-scrollbar { display:none; }
+  .secnav a { flex:none; display:inline-flex; align-items:center; justify-content:center; min-width:44px; height:44px; padding:0 0.5rem; border-radius:999px; border:1.5px solid #a7f3d0; background:#fff; color:var(--accent-dark); font-weight:700; font-size:0.875rem; text-decoration:none; font-variant-numeric:tabular-nums; }
+  .secnav a.vol { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .secnav a.vol.punt { background:#fff; border-color:#f59e0b; color:#b45309; }
+  .secnav a.ctl-link { padding:0 0.875rem; font-weight:600; border-color:var(--slate-200, #e2e8f0); color:var(--slate-700, #334155); }
+  .secnav a:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+}
+@media print { .secnav { display:none !important; } }
 .sec-title { font-size:1.0625rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.01em; line-height:1.3; }
 .tag-gew { font-size:0.75rem; font-weight:600; color:#92400e; background:var(--oranje-50); border:1px solid var(--oranje-200); border-radius:999px; padding:0.0625rem 0.5rem; white-space:nowrap; }
 .sec-q { font-size:0.875rem; color:var(--slate-500); margin:0.375rem 0 0.875rem; max-width:44em; }
@@ -508,6 +519,7 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
         <div class="status-row" id="status-row"></div>
       </section>
       <div class="card vb-start oc-start" id="vb-start" hidden><strong>Nog geen opdracht</strong><span>Leg op één pagina vast wat het project moet opleveren, en wat niet. Kort en scherp, zodat de opdrachtgever kan aftekenen.</span><div class="oc-start-btns"><button type="button" class="oc-begin" id="begin-btn" data-oc-begin="#name">Begin met de opdracht</button><button type="button" class="oc-vb" id="example">Voorbeeld bekijken</button></div><p class="oc-open-row"><button type="button" class="oc-open-link" data-bestand="open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 16v-5M9.5 13.5 12 11l2.5 2.5"/></svg>Open bestand</button></p></div>
+      <nav class="secnav" id="secnav" aria-label="Spring naar een vak" hidden></nav>
       <div id="form" class="content"></div>
     </div>
 
@@ -1066,7 +1078,7 @@ function signalen(o) {
   if (!o.opleveren.trim()) add('einde', '#f-opleveren', 'Schrijf wat je oplevert.');
   const doelen = o.doelen.map((t, i) => [t.trim(), i]).filter(x => x[0]);
   if (!doelen.length) add('einde', '[data-list="doelen"] [data-i="0"]', 'Nog geen doel: wat wordt er beter?');
-  doelen.forEach(([t, i]) => { if (!meetbaar(t)) add('einde', `[data-list="doelen"] [data-i="${i}"]`, `Doel zonder iets meetbaars: ‘${kort(t, 34)}’`); });
+  doelen.forEach(([t, i]) => { if (!meetbaar(t)) add('einde', `[data-list="doelen"] [data-i="${i}"]`, `Doel nog zonder cijfer: ‘${kort(t, 34)}’. Hoe je het meet, leg je vast in het Meetplan.`, true); });
   if (!vol(o.buiten).length) add('scope', '[data-list="buiten"] [data-i="0"]', 'Niets valt erbuiten. Wat doen we niet, ook al zal iemand het vragen?');
   if (!o.opdrachtgever.trim()) add('wie', '#f-opdrachtgever', 'Nog geen opdrachtgever: wie beslist en tekent af?');
   if (!o.einddatum) add('middelen', '#f-einddatum', 'Nog geen einddatum.');
@@ -1270,9 +1282,15 @@ function renderHead() {
   const dl = `Verwijder ${o.name || 'opdracht'}`; $('del-unit').setAttribute('aria-label', dl); $('del-unit').title = dl;
   if (document.activeElement !== $('name')) $('name').value = o.name;
 }
+// Een lege opdracht toont eerst alleen de startkaart; de vakken verschijnen na "Begin met de opdracht".
+let gestart = false;
 function renderStart() {
   const o = cur(), leeg = !begun(o) && !o.voorbeeld;
   $('vb-start').hidden = !leeg;
+  const toon = !leeg || gestart;
+  $('form').hidden = !toon; $('secnav').hidden = !toon;
+  const as = document.querySelector('.layout > .aside'); if (as) as.hidden = !toon;
+  const tw = $('teken-wrap'); if (tw) tw.hidden = !toon;
   $('begin-btn').dataset.ocBegin = isStd(o.name) ? '#name' : '#f-waarom';
 }
 
@@ -1357,9 +1375,16 @@ function renderTeken() {
 }
 
 // Wat afhangt van de inhoud, zonder de invoervelden opnieuw te tekenen (de cursor blijft staan).
+function renderNav() {
+  const o = cur(), pv = new Set(signalen(o).map(x => x.sectie)), secs = SECTIES.filter(s => s.n);
+  $('secnav').innerHTML = secs.map(s => { const v = gevuld(o, s.id);
+    return `<a href="#s-${s.id}" data-nav="s-${s.id}" class="${v ? 'vol' : ''}${v && pv.has(s.id) ? ' punt' : ''}" aria-label="${s.n}. ${esc(s.titel)}${v ? ', ingevuld' : ''}${v && pv.has(s.id) ? ', er staat een punt open' : ''}">${s.n}</a>`; }).join('')
+    + `<a href="#s-teken" data-nav="s-teken" class="${ingevuld(o) ? 'vol' : ''}" aria-label="9. Aftekenen${ingevuld(o) ? ', ingevuld' : ''}">9</a>`
+    + `<a href="#controle" data-nav="controle" class="ctl-link">Klaar?</a>`;
+}
 function afgeleid() {
   const o = cur(), gew = new Set(gewijzigd(o));
-  renderTabs(); renderStart(); renderStatus(); renderControle(); renderTeken();
+  renderTabs(); renderStart(); renderStatus(); renderControle(); renderTeken(); renderNav();
   document.querySelectorAll('[data-gew]').forEach(t => { t.hidden = !gew.has(t.dataset.gew); });
   SECTIES.forEach(s => { const c = $('s-' + s.id); if (c) c.classList.toggle('vol', gevuld(o, s.id)); });
   const tc = $('s-teken'); if (tc) tc.classList.toggle('vol', ingevuld(o));
@@ -1382,6 +1407,16 @@ function afgeleid() {
 const afgeleidSoon = (() => { let t = 0; return () => { clearTimeout(t); t = setTimeout(afgeleid, 180); }; })();
 
 function render() { renderHead(); renderForm(); afgeleid(); }
+document.addEventListener('click', e => {
+  const a = e.target.closest && e.target.closest('[data-nav]'); if (!a) return;
+  e.preventDefault();
+  const el = $(a.dataset.nav); if (!el) return;
+  const rm = matchMedia('(prefers-reduced-motion: reduce)').matches, nav = $('secnav').getBoundingClientRect().height;
+  window.scrollTo({ top: el.getBoundingClientRect().top + scrollY - nav - 8, behavior: rm ? 'auto' : 'smooth' });
+  const f = el.querySelector('textarea, input, button'); if (f) setTimeout(() => f.focus({ preventScroll:true }), rm ? 0 : 350);
+});
+// Begin: eerst de vakken tonen, daarna zet het gedeelde blok de focus.
+$('begin-btn').addEventListener('click', () => { gestart = true; renderStart(); }, true);
 
 /* ---------- Melding met Ongedaan ---------- */
 let undoFn = null, undoVersion = -1, toastTimer = null;
@@ -1567,7 +1602,7 @@ $('example').addEventListener('click', () => {
     escaleren:'Dreigt een mijlpaal meer dan 4 weken uit te lopen, of het budget meer dan 10% te stijgen, dan beslist de opdrachtgever binnen de week. Blijkt de koppeling niet haalbaar, dan stoppen we en kiezen we opnieuw.',
   }));
   save(); render();
-  toast('Voorbeeld geladen. Eén punt staat nog open.');
+  toast('Voorbeeld geladen. Bij ‘Klaar om te laten aftekenen?’ zie je wat nog kan.');
 });
 
 /* ---------- Voorbeeld wissen of houden, één opdracht verwijderen ---------- */
