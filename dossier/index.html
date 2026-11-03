@@ -1,0 +1,2375 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Projectdossier – Onder Constructie</title>
+<meta name="description" content="Bundel wat je in de andere tools invulde voor één project tot één heldere nota voor de stuurgroep: als PDF, afbeelding of tekst voor een mail.">
+<meta name="oc:groep" content="projecten">
+<meta name="oc:labels" content="">
+<meta name="oc:pdca" content="check">
+<meta name="oc:kort" content="Alles over je project in één nota voor de stuurgroep.">
+<meta name="oc:volgorde" content="60">
+<meta name="oc:traject" content="project:10">
+<meta name="oc:opslag" content="dossier.v1">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40' fill='none' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='20' cy='20' r='18' fill='%23f8fafc' stroke='%23e2e8f0' stroke-width='1.5'/%3E%3Cpath d='M9.5 13a1.5 1.5 0 0 1 1.5-1.5h3.8l2 2.5H29a1.5 1.5 0 0 1 1.5 1.5v12a2 2 0 0 1-2 2h-17a2 2 0 0 1-2-2z' stroke='%2364748b'/%3E%3Crect x='16.5' y='8.5' width='11' height='12.5' rx='1.5' fill='%23d1fae5' stroke='%2310b981'/%3E%3Cpath d='M19.5 12.5h5' stroke='%2310b981'/%3E%3Cpath d='M9.5 20.5h21v7a2 2 0 0 1-2 2h-17a2 2 0 0 1-2-2z' fill='%23f8fafc' stroke='%2364748b'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/fonts/fonts.css">
+<link rel="preload" href="/fonts/dm-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/dm-sans-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+:root {
+  --slate-900:#0f172a; --slate-800:#1e293b; --slate-700:#334155; --slate-600:#475569;
+  --slate-500:#64748b; --slate-400:#94a3b8; --slate-300:#cbd5e1; --slate-200:#e2e8f0;
+  --slate-100:#f1f5f9; --slate-50:#f8fafc; --wit:#ffffff;
+  --accent:#10b981; --accent-dark:#047857; --accent-hover:#065f46; --accent-light:#d1fae5; --accent-50:#ecfdf5;
+  --rood:#ef4444; --oranje:#d97706; --oranje-50:#fffbeb; --oranje-200:#fde68a;
+  --bottom: env(safe-area-inset-bottom, 0px);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body {
+  font-family:'DM Sans', system-ui, sans-serif; background:var(--slate-50); color:var(--slate-700);
+  line-height:1.5; min-height:100vh; -webkit-font-smoothing:antialiased;
+  display:flex; flex-direction:column;
+}
+button, input, textarea, select { font:inherit; color:inherit; }
+button { background:none; border:0; cursor:pointer; }
+[hidden] { display:none !important; }
+
+/* Kop */
+.header { background:var(--wit); border-bottom:1px solid var(--slate-200); padding:1.5rem 1.25rem 1.75rem; position:relative; text-align:center; }
+.back-link {
+  position:absolute; top:1.25rem; left:1.25rem; display:inline-flex; align-items:center; gap:0.5rem;
+  font-size:0.875rem; color:var(--slate-500); text-decoration:none; transition:color 0.2s;
+}
+.back-link:hover { color:var(--accent-dark); }
+.back-link svg { width:16px; height:16px; }
+.logo svg { width:56px; height:56px; }
+.title { font-size:1.625rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.03em; line-height:1.2; margin-top:0.5rem; }
+.subtitle { font-size:0.9375rem; color:var(--slate-500); }
+
+.main { flex:1; width:100%; max-width:1180px; margin:0 auto; padding:1.25rem clamp(1rem, 2.5vw, 2rem) 3rem; }
+
+/* Dossiers (tabs) */
+.lists { display:flex; gap:0.5rem; overflow-x:auto; scrollbar-width:none; margin:0 -1rem 1rem; padding:0.125rem 1rem; }
+.lists::-webkit-scrollbar { display:none; }
+.tab {
+  flex-shrink:0; padding:0.4375rem 0.875rem; border-radius:999px; font-size:0.875rem; font-weight:600;
+  border:1px solid var(--slate-200); background:var(--wit); color:var(--slate-600); white-space:nowrap;
+  display:flex; align-items:center; gap:0.375rem;
+}
+.tab.active { background:var(--slate-800); border-color:var(--slate-800); color:var(--wit); }
+.tab.add { color:var(--accent-dark); border-style:dashed; }
+.tab small { font-weight:500; opacity:0.8; }
+
+.card { background:var(--wit); border:1px solid var(--slate-200); border-radius:16px; box-shadow:0 1px 2px rgba(15,23,42,0.04); }
+.card-head { display:flex; align-items:center; gap:0.5rem; padding:1rem 0.75rem 0.25rem 1.125rem; }
+.list-name {
+  flex:1; min-width:0; font-size:1.25rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.02em;
+  border:0; background:none; outline:none; padding:0.125rem 0; border-bottom:1.5px solid transparent;
+}
+.list-name:focus, .list-name:focus-visible { border-bottom-color:var(--accent); }
+.icon-btn { width:38px; height:38px; display:flex; align-items:center; justify-content:center; border-radius:10px; color:var(--slate-500); flex-shrink:0; }
+.icon-btn:hover { background:var(--slate-100); color:var(--slate-700); }
+.icon-btn svg { width:20px; height:20px; }
+.icon-btn.del-unit:hover { color:#b91c1c; background:#fef2f2; }
+
+/* Bediening: welk project, welke datum */
+.bed { margin-bottom:1rem; }
+.bed-in { padding:0.25rem 1.125rem 1.125rem; display:grid; gap:0.875rem; }
+.lbl { display:block; font-size:0.8125rem; font-weight:600; color:var(--slate-500); margin-bottom:0.375rem; }
+.chips { display:flex; flex-wrap:wrap; gap:0.375rem; }
+.chip {
+  display:inline-flex; align-items:center; gap:0.5rem; min-height:44px; padding:0.25rem 0.875rem; border-radius:999px;
+  border:1.5px solid var(--slate-200); background:var(--wit); font-size:0.875rem; font-weight:600; color:var(--slate-700); text-align:left; max-width:100%;
+}
+.chip .t { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
+.chip .n { flex:none; font-size:0.75rem; font-weight:600; color:var(--slate-500); font-variant-numeric:tabular-nums; }
+.chip:hover { border-color:var(--slate-300); }
+.chip[aria-checked="true"] { border-color:var(--accent); background:var(--accent-50); box-shadow:inset 0 0 0 1px var(--accent); color:#065f46; }
+.chip[aria-checked="true"] .n { color:#047857; }
+.chip svg { width:15px; height:15px; flex:none; color:var(--accent-dark); }
+.meer-chips { min-height:44px; padding:0 0.625rem; border-radius:999px; font-size:0.8125rem; font-weight:600; color:var(--accent-dark); }
+.meer-chips:hover { background:var(--accent-50); }
+.zacht { font-size:0.875rem; color:var(--slate-500); }
+.hint-geen { font-size:0.875rem; color:#78350f; background:var(--oranje-50); border:1px solid var(--oranje-200); border-radius:10px; padding:0.5rem 0.75rem; margin-top:0.5rem; }
+.rij2 { display:flex; flex-wrap:wrap; align-items:flex-end; gap:0.75rem 1.25rem; }
+.field {
+  width:100%; min-width:0; min-height:44px; border:1.5px solid var(--slate-200); border-radius:9px; background:var(--wit); outline:none;
+  padding:0.5rem 0.625rem; font-size:0.9375rem; color:var(--slate-800); transition:border-color 0.15s;
+}
+.field:focus { border-color:var(--accent); }
+.field::placeholder { color:var(--slate-400); }
+textarea.field { resize:none; overflow:hidden; line-height:1.45; display:block; }
+input[type="date"].field { font-variant-numeric:tabular-nums; width:auto; min-width:11rem; }
+.datum-veld { display:flex; flex-wrap:wrap; align-items:center; gap:0.5rem; }
+.mini-link { display:inline-flex; align-items:center; min-height:44px; padding:0 0.5rem; border-radius:8px; font-size:0.8125rem; font-weight:600; color:var(--accent-dark); }
+.mini-link:hover { background:var(--accent-50); }
+
+/* Hoort dit bij je project? */
+.voorstel { border:1px solid var(--slate-200); background:var(--slate-50); border-radius:12px; padding:0.75rem 0.875rem; }
+.voorstel > p { font-size:0.875rem; color:var(--slate-600); line-height:1.45; }
+.voorstel > p b { color:var(--slate-800); }
+.vs-lijst { list-style:none; display:grid; gap:0.375rem; margin-top:0.5rem; }
+.vs-rij { display:flex; flex-wrap:wrap; align-items:center; gap:0.25rem 0.75rem; padding-top:0.375rem; border-top:1px solid var(--slate-200); }
+.vs-rij:first-child { border-top:0; padding-top:0; }
+.vs-rij > span { flex:1 1 14rem; min-width:0; font-size:0.875rem; color:var(--slate-700); }
+.vs-rij > span small { display:block; font-size:0.8125rem; color:var(--slate-500); }
+.vs-knop { display:flex; gap:0.375rem; }
+.knop { display:inline-flex; align-items:center; justify-content:center; gap:0.375rem; min-height:44px; padding:0.375rem 0.875rem; border-radius:10px; font-size:0.875rem; font-weight:600; border:1.5px solid var(--slate-200); background:var(--wit); color:var(--slate-700); }
+.knop:hover { background:var(--slate-50); }
+.knop.groen { background:var(--accent-dark); border-color:var(--accent-dark); color:#fff; }
+.knop.groen:hover { background:var(--accent-hover); }
+
+/* Indeling: links de nota, rechts wat ontbreekt en delen (op gsm en iPad staand: eronder) */
+.layout { display:grid; grid-template-columns:minmax(0, 1fr); gap:1rem; align-items:start; }
+.zij { display:grid; gap:1rem; min-width:0; }
+@media (min-width:1000px) {
+  .layout { grid-template-columns:minmax(0, 1fr) 290px; gap:1rem 1.5rem; }
+  .zij { position:sticky; top:1rem; }
+}
+
+/* De nota: een rustig blad */
+.papier { min-width:0; container-type:inline-size; }
+.nota {
+  background:var(--wit); border:1px solid var(--slate-200); border-radius:6px;
+  box-shadow:0 1px 2px rgba(15,23,42,0.04), 0 14px 36px -20px rgba(15,23,42,0.22);
+  padding:2.25rem 2.5rem 2rem; color:var(--slate-700);
+}
+@container (max-width:599.98px) { .nota { padding:1.25rem 1.125rem 1.25rem; } }
+.nk { border-bottom:2px solid var(--accent); padding-bottom:0.875rem; margin-bottom:0.25rem; }
+.nk-boven { display:flex; flex-wrap:wrap; justify-content:space-between; gap:0.25rem 1rem; font-size:0.8125rem; color:var(--slate-500); }
+.nk-soort { font-weight:600; letter-spacing:0.06em; text-transform:uppercase; font-size:0.75rem; color:var(--accent-dark); }
+.nk-datum { font-variant-numeric:tabular-nums; }
+.nk-titel { font-size:1.5rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.025em; line-height:1.25; margin-top:0.25rem; overflow-wrap:anywhere; }
+.nk-wie { display:flex; flex-wrap:wrap; gap:0.25rem 1.5rem; margin-top:0.5rem; font-size:0.875rem; }
+.nk-wie div { display:flex; gap:0.375rem; min-width:0; }
+.nk-wie dt { color:var(--slate-500); }
+.nk-wie dd { color:var(--slate-800); font-weight:600; overflow-wrap:anywhere; }
+
+.blok { padding:1rem 0 1.125rem; border-top:1px solid var(--slate-200); scroll-margin-top:1rem; }
+.nk + .blok { border-top:0; }
+.blok-kop { display:flex; align-items:center; gap:0.5rem; min-height:44px; }
+.blok-t { flex:1; min-width:0; font-size:0.8125rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--slate-600); line-height:1.35; }
+.bron { display:flex; flex-wrap:wrap; align-items:center; gap:0.125rem 1rem; margin:-0.25rem 0 0.5rem; font-size:0.8125rem; color:var(--slate-500); }
+.bron-i { display:inline-flex; flex-wrap:wrap; align-items:center; gap:0 0.375rem; min-width:0; }
+.bron a { display:inline-flex; align-items:center; gap:0.25rem; min-height:44px; color:var(--accent-dark); font-weight:600; text-decoration:none; border-radius:6px; padding:0 0.25rem; margin:0 -0.25rem; }
+.bron a:hover { text-decoration:underline; }
+.bron a svg { width:13px; height:13px; flex:none; }
+.bron-sel { min-height:44px; max-width:100%; min-width:0; border:1px solid var(--slate-200); border-radius:8px; background:var(--wit); padding:0 0.5rem; font-size:0.8125rem; color:var(--slate-700); }
+.bron-sel:focus { outline:none; border-color:var(--accent); }
+.bron-vs { font-size:0.75rem; color:var(--slate-500); }
+.blok.uit .blok-t { color:var(--slate-500); font-weight:600; }
+.blok.uit { padding-bottom:0.5rem; }
+.teaser { font-size:0.8125rem; color:var(--slate-500); margin-top:-0.125rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+/* Schakelaar "In de nota" */
+.schakel { flex:none; display:inline-flex; align-items:center; gap:0.5rem; min-height:44px; padding:0 0.375rem 0 0.5rem; border-radius:10px; font-size:0.8125rem; font-weight:600; color:var(--slate-600); }
+.schakel:hover { background:var(--slate-50); }
+.schakel .sw { position:relative; width:34px; height:20px; border-radius:999px; background:var(--slate-300); transition:background-color 0.15s; flex:none; }
+.schakel .sw::after { content:''; position:absolute; left:2px; top:2px; width:16px; height:16px; border-radius:50%; background:#fff; box-shadow:0 1px 2px rgba(15,23,42,0.25); transition:transform 0.15s; }
+.schakel[aria-checked="true"] .sw { background:var(--accent-dark); }
+.schakel[aria-checked="true"] .sw::after { transform:translateX(14px); }
+.schakel[aria-checked="false"] .sw-t { color:var(--slate-500); }
+
+/* Inhoud van de blokken */
+.p { font-size:0.9375rem; line-height:1.55; color:var(--slate-700); }
+.sub-t { font-size:0.8125rem; font-weight:700; color:var(--slate-600); margin:0.75rem 0 0.25rem; }
+.sub-t:first-child { margin-top:0; }
+.lijst { list-style:none; display:grid; gap:0.25rem; }
+.lijst li { display:grid; grid-template-columns:14px minmax(0, 1fr); gap:0.5rem; font-size:0.9375rem; line-height:1.45; }
+.lijst li > i { font-style:normal; font-weight:700; color:var(--slate-400); text-align:center; }
+.lijst.groen li > i { color:var(--accent-dark); }
+.lijst li small, .rij small { display:block; font-size:0.8125rem; color:var(--slate-500); line-height:1.4; }
+.twee { display:grid; grid-template-columns:minmax(0, 1fr); gap:0.75rem 1.5rem; }
+@container (min-width:560px) { .twee { grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); } }
+.rijen { display:grid; }
+.rij { display:grid; grid-template-columns:minmax(0, 1fr) auto; gap:0.125rem 0.75rem; align-items:start; padding:0.4375rem 0; border-top:1px solid var(--slate-100); font-size:0.9375rem; line-height:1.45; }
+.rij:first-child { border-top:0; padding-top:0.125rem; }
+.rij > .r { text-align:right; white-space:nowrap; font-size:0.8125rem; color:var(--slate-500); font-variant-numeric:tabular-nums; }
+.rij.datum-links { grid-template-columns:6.75rem minmax(0, 1fr) auto; }
+.rij.datum-links > .d { font-size:0.8125rem; font-weight:600; color:var(--slate-600); font-variant-numeric:tabular-nums; padding-top:0.0625rem; }
+@container (max-width:479.98px) {
+  .rij.datum-links { grid-template-columns:minmax(0, 1fr) auto; }
+  .rij.datum-links > .d { grid-column:1 / -1; }
+}
+.meer-tekst { font-size:0.8125rem; color:var(--slate-500); margin-top:0.375rem; }
+
+/* Kleine labels: tekst draagt de betekenis, kleur ondersteunt */
+.pil { display:inline-flex; align-items:center; gap:0.3125rem; font-size:0.75rem; font-weight:600; line-height:1.3; padding:0.125rem 0.5rem; border-radius:999px; border:1px solid var(--slate-200); background:var(--slate-50); color:var(--slate-600); white-space:nowrap; }
+.pil i { width:7px; height:7px; border-radius:50%; background:currentColor; flex:none; }
+.pil.groen { color:#047857; background:var(--accent-50); border-color:#a7f3d0; }
+.pil.amber { color:#92400e; background:var(--oranje-50); border-color:var(--oranje-200); }
+.pil.rood { color:#b91c1c; background:#fef2f2; border-color:#fecaca; }
+.pil.geel { color:#854d0e; background:#fefce8; border-color:#fde68a; }
+.pil.oranje { color:#c2410c; background:#fff7ed; border-color:#fed7aa; }
+
+/* Wat vragen we aan de stuurgroep? */
+.vraag { border-left:4px solid var(--accent); background:var(--accent-50); border-radius:0 12px 12px 0; padding:0.875rem 1rem 1rem; }
+.vraag-kop { display:flex; align-items:flex-start; gap:0.5rem; }
+.vraag-kop .vraag-t { flex:1; min-width:0; padding-top:0.5rem; }
+.vraag-kop .schakel { margin:0 -0.5rem 0 0; }
+.vraag-kop .schakel:hover { background:rgba(255,255,255,0.6); }
+.vraag-t { display:block; font-size:1.125rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.01em; line-height:1.3; margin-bottom:0.125rem; }
+.vraag-q { font-size:0.8125rem; color:#065f46; margin-bottom:0.5rem; }
+.vraag .field { border-color:#a7f3d0; }
+.vraag .field:focus { border-color:var(--accent); }
+.vraag .lijst li { font-size:1rem; color:var(--slate-800); font-weight:500; }
+.vraag .lijst li > i { color:var(--accent-dark); }
+.vraag .toel { margin-top:0.625rem; }
+.vraag .toel-p { margin-top:0.625rem; font-size:0.9375rem; color:var(--slate-700); }
+.add-link { display:inline-flex; align-items:center; gap:0.375rem; min-height:44px; font-size:0.875rem; font-weight:600; color:var(--accent-dark); padding:0.375rem 0.5rem; border-radius:8px; margin:0.25rem 0 -0.5rem -0.5rem; }
+.add-link:hover { background:rgba(255,255,255,0.7); }
+.add-link svg { width:16px; height:16px; }
+.blok.leeg-vraag .vraag { border-left-color:#6ee7b7; }
+
+/* In één oogopslag */
+.stand { display:flex; flex-wrap:wrap; align-items:center; gap:0.375rem 0.75rem; }
+.stand-label { display:inline-flex; align-items:center; gap:0.5rem; font-size:1.0625rem; font-weight:700; padding:0.25rem 0.75rem; border-radius:10px; }
+.stand-label i { width:10px; height:10px; border-radius:50%; background:currentColor; }
+.stand-label.green { color:#047857; background:var(--accent-50); }
+.stand-label.orange { color:#92400e; background:var(--oranje-50); }
+.stand-label.red { color:#b91c1c; background:#fef2f2; }
+.stand-label.empty { color:var(--slate-600); background:var(--slate-100); }
+.stand-noot { font-size:0.8125rem; color:var(--slate-500); }
+.knel { list-style:none; display:grid; gap:0.375rem; margin-top:0.625rem; }
+.knel li { display:grid; grid-template-columns:auto minmax(0, 1fr); gap:0.25rem 0.625rem; align-items:baseline; font-size:0.9375rem; line-height:1.45; }
+.knel li b { color:var(--slate-800); font-weight:600; }
+.knel li small { display:block; font-size:0.8125rem; color:var(--slate-600); }
+.oog-rest { font-size:0.8125rem; color:var(--slate-500); margin-top:0.5rem; }
+.oog-rest b { color:var(--slate-600); font-weight:600; }
+.doelen { display:grid; gap:0.625rem; }
+.doel-t { font-size:0.9375rem; font-weight:600; color:var(--slate-800); line-height:1.4; }
+.ind { display:grid; grid-template-columns:minmax(0, 1fr) 7.5rem; gap:0.125rem 0.75rem; align-items:center; font-size:0.8125rem; color:var(--slate-600); margin-top:0.25rem; }
+.ind .w { grid-column:1 / -1; color:var(--slate-700); font-size:0.875rem; }
+.balk { height:6px; border-radius:3px; background:var(--slate-200); overflow:hidden; }
+.balk span { display:block; height:100%; background:var(--accent); border-radius:3px; }
+@container (max-width:479.98px) { .ind { grid-template-columns:minmax(0, 1fr) 5rem; } }
+
+/* Werk: aantal per kolom */
+.kolommen { display:grid; grid-template-columns:repeat(5, minmax(0, 1fr)); gap:0.375rem; }
+.kolom { border:1px solid var(--slate-200); border-radius:10px; padding:0.375rem 0.5rem; background:var(--slate-50); min-width:0; }
+.kolom b { display:block; font-size:1.25rem; color:var(--slate-800); font-variant-numeric:tabular-nums; line-height:1.2; }
+.kolom span { display:block; font-size:0.75rem; color:var(--slate-500); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.kolom.klaar { background:var(--accent-50); border-color:#a7f3d0; }
+.kolom.klaar b { color:#047857; }
+@container (max-width:419.98px) { .kolommen { grid-template-columns:repeat(3, minmax(0, 1fr)); } }
+
+/* Zijkant */
+.zij-kaart { padding:1rem 1.125rem 1.125rem; }
+.zij-t { font-size:1rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.01em; }
+.zij-sub { font-size:0.8125rem; color:var(--slate-500); margin-top:0.125rem; line-height:1.4; }
+.mis { list-style:none; display:grid; margin-top:0.5rem; }
+.mis li { border-top:1px solid var(--slate-100); padding:0.125rem 0; }
+.mis li:first-child { border-top:0; }
+.mis-a { display:flex; align-items:center; justify-content:space-between; gap:0.5rem; min-height:44px; padding:0 0.375rem; margin:0 -0.375rem; border-radius:8px; font-size:0.9375rem; color:var(--slate-700); text-decoration:none; }
+.mis-a:hover { background:var(--slate-50); color:var(--accent-dark); }
+.mis-a svg { width:16px; height:16px; color:var(--slate-400); flex:none; }
+.mis-a small { font-size:0.75rem; color:var(--slate-500); margin-left:0.375rem; }
+.mis .bron-sel { width:100%; margin:0 0 0.375rem; }
+.mis-ok { display:flex; gap:0.5rem; align-items:flex-start; margin-top:0.5rem; font-size:0.875rem; color:#065f46; }
+.mis-ok svg { width:18px; height:18px; flex:none; margin-top:0.0625rem; }
+.kapot { margin-top:0.75rem; padding:0.5rem 0.75rem; border-radius:10px; background:var(--slate-50); border:1px solid var(--slate-200); font-size:0.8125rem; color:var(--slate-600); line-height:1.45; }
+.exp-btns { display:grid; grid-template-columns:1fr 1fr; gap:0.375rem; margin-top:0.75rem; }
+.exp-btns .breed { grid-column:1 / -1; }
+.btn-s { min-height:44px; padding:0 0.875rem; border-radius:10px; border:1.5px solid var(--slate-200); background:var(--wit); font-size:0.875rem; font-weight:600; color:#047857; white-space:nowrap; }
+.btn-s:hover:not(:disabled) { border-color:#a7f3d0; background:var(--accent-50); }
+.eerlijk { display:flex; gap:0.5rem; margin-top:0.875rem; padding-top:0.75rem; border-top:1px solid var(--slate-100); font-size:0.8125rem; color:var(--slate-500); line-height:1.45; }
+.eerlijk svg { width:16px; height:16px; flex:none; margin-top:0.125rem; color:var(--slate-400); }
+
+/* Exportweergave: hetzelfde blad, zonder bediening */
+.nota.export { border:0; box-shadow:none; border-radius:0; padding:0; }
+.nota.export .blok { padding:12px 0 14px; }
+.nota.export .blok-kop { min-height:0; margin-bottom:6px; }
+.nota.export .nk-wie { margin:0 0 6px; }
+/* Startscherm */
+.vb-start.oc-start { display:block; text-align:center; padding:0.25rem 0 1.25rem; font-size:0.9375rem; color:var(--slate-600); }
+.vb-start.oc-start > span { display:block; max-width:36rem; margin:0 auto; }
+
+/* Menu */
+.menu-wrap { position:relative; }
+.menu {
+  position:absolute; right:0; top:42px; z-index:20; min-width:230px; background:var(--wit); border:1px solid var(--slate-200);
+  border-radius:12px; box-shadow:0 12px 32px rgba(15,23,42,0.14); padding:0.375rem; display:none;
+}
+.menu.open { display:block; }
+.menu button { width:100%; display:flex; align-items:center; gap:0.625rem; padding:0.5625rem 0.625rem; border-radius:8px; font-size:0.9375rem; text-align:left; color:var(--slate-700); white-space:nowrap; min-height:44px; }
+.menu button:hover { background:var(--slate-100); }
+.menu button svg { width:18px; height:18px; color:var(--slate-500); flex-shrink:0; }
+.menu .sep { height:1px; background:var(--slate-100); margin:0.25rem 0.375rem; }
+.menu .danger { color:var(--rood); }
+.menu .danger svg { color:var(--rood); }
+
+/* Melding */
+.toast {
+  position:fixed; left:50%; bottom:calc(var(--bottom) + 1.25rem); transform:translate(-50%, calc(100% + 3rem)); visibility:hidden; z-index:50;
+  background:var(--slate-800); color:var(--wit); border-radius:12px; padding:0.625rem 0.625rem 0.625rem 1rem;
+  display:flex; align-items:center; gap:0.875rem; font-size:0.9375rem; box-shadow:0 10px 30px rgba(15,23,42,0.25);
+  transition:transform 0.25s ease, visibility 0s 0.25s; max-width:calc(100% - 2rem);
+}
+.toast.show { transform:translate(-50%, 0); visibility:visible; transition:transform 0.25s ease; }
+.toast button { color:#6ee7b7; font-weight:600; padding:0.25rem 0.5rem; border-radius:6px; min-height:44px; }
+.toast button:hover { background:rgba(255,255,255,0.08); }
+
+.footer { text-align:center; padding:2rem 2rem calc(var(--bottom) + 2rem); border-top:1px solid var(--slate-200); background:var(--wit); }
+.quote { font-size:0.8125rem; color:var(--accent-dark); }
+
+@media (max-width:640px) {
+  .back-link { position:static; margin-bottom:0.75rem; justify-content:center; display:flex; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
+
+/* Toegankelijkheid */
+:focus-visible { outline:2px solid #047857 !important; outline-offset:2px; }
+.back-link { min-height:44px; min-width:44px; }
+.icon-btn, #menu-btn { min-width:44px; min-height:44px; }
+.tab { min-height:44px; }
+.status { min-height:44px; }
+.list-name { min-height:44px; }
+.ocw-row .ocw-yes { background:#dc2626; } .ocw-row .ocw-yes:hover { background:#b91c1c; }
+.ocw-row button { min-height:44px; }
+button.oc-import { color:#047857; min-height:44px; margin-top:0.25rem; }
+
+/* Voorbeeld en wissen */
+.vb-bar { display:flex; flex-wrap:wrap; align-items:center; gap:0.5rem 0.75rem; margin:0.75rem 0.75rem 0; padding:0.5rem 0.5rem 0.5rem 0.75rem; background:#fffbeb; border:1px solid #fde68a; border-radius:12px; font-size:0.875rem; line-height:1.4; color:#78350f; }
+.vb-bar[hidden] { display:none !important; }
+.vb-bar svg { width:18px; height:18px; flex-shrink:0; color:#b45309; }
+.vb-bar .vb-text { flex:1 1 14rem; min-width:0; display:flex; gap:0.5rem; align-items:flex-start; }
+.vb-bar .vb-btns { display:flex; flex-wrap:wrap; gap:0.375rem; }
+.vb-btn { min-height:44px; padding:0.375rem 0.625rem; border-radius:10px; font-size:0.875rem; font-weight:600; background:var(--wit); border:1px solid var(--slate-200); }
+.vb-wis { color:#b91c1c; border-color:#fecaca; }
+.vb-wis:hover { background:#fef2f2; }
+.vb-eigen { color:var(--accent-dark); border-color:#a7f3d0; }
+.vb-eigen:hover { background:var(--accent-50); }
+.vb-tag { font-size:0.75rem; font-weight:600; padding:0 0.375rem; border-radius:999px; background:#fef3c7; color:#92400e; }
+@media (max-width:420px) { .vb-btn { font-size:0.8125rem; padding:0.375rem 0.5rem; } }
+
+/* Opnieuw beginnen (zelfde knop in elke tool) */
+.oc-restart-row { display:flex; justify-content:center; padding:0.5rem 0 0; }
+.oc-restart-row[hidden] { display:none !important; }
+.oc-restart { min-height:44px; padding:0.5rem 1rem; font:inherit; font-size:0.875rem; font-weight:500; color:#64748b; background:none; border:0; border-radius:10px; cursor:pointer; text-decoration:underline; text-decoration-color:#cbd5e1; text-underline-offset:3px; }
+.oc-restart:hover { color:#b91c1c; background:#fef2f2; text-decoration-color:currentColor; }
+
+/* ---------- Soepel op gsm: tikken, typen, schuiven ---------- */
+html { -webkit-text-size-adjust:100%; text-size-adjust:100%; }
+button, a, summary, label, select, [role="button"], [role="tab"], [data-act], input[type="range"], input[type="checkbox"], input[type="radio"] { touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+@media (hover:none) { button:not(:disabled):active, a:active, summary:active, [role="button"]:active, [role="tab"]:active { filter:brightness(0.93); } }
+@media (pointer:coarse) { .field { font-size:16px !important; } }
+/* venster open: de pagina erachter schuift niet mee, en scrollen binnen het venster loopt niet door naar de pagina */
+html:has(.ocs-back, .ocw-back, .gal-back, .oc-dialog-backdrop) { overflow:hidden; }
+.ocs-back *, .ocw-back *, .gal-back * { overscroll-behavior:contain; }
+
+body { min-height:100dvh; }
+
+/* Bewaar als bestand / Open bestand */
+.menu [data-bestand] { min-height:44px; }
+.menu .ocb-t { display:flex; flex-direction:column; min-width:0; white-space:normal; line-height:1.3; }
+.menu .ocb-t small { font-size:0.8125rem; color:var(--slate-500, #64748b); margin-top:0.125rem; }
+.menu .ocb-note { margin:0; padding:0.25rem 0.625rem 0.375rem; font-size:0.8125rem; line-height:1.35; color:var(--slate-500, #64748b); white-space:normal; }
+
+/* Eenheid: startscherm zonder gegevens (Begin als hoofdknop, Voorbeeld bekijken rustig, Open bestand als link) */
+.oc-start-btns { display:flex; gap:0.5rem; justify-content:center; flex-wrap:wrap; margin-top:0.875rem; }
+.oc-start-btns .oc-begin, .oc-start-btns .oc-vb { display:inline-flex; align-items:center; justify-content:center; min-height:44px; padding:0.5rem 1rem; border:0; border-radius:10px; font:inherit; font-weight:600; font-size:0.9375rem; line-height:1.3; cursor:pointer; text-align:center; }
+.oc-start-btns .oc-begin { background:#047857; color:#fff; }
+.oc-start-btns .oc-begin:hover { background:#065f46; }
+.oc-start-btns .oc-vb { background:#f1f5f9; color:#334155; }
+.oc-start-btns .oc-vb:hover { background:#e2e8f0; }
+.oc-start-btns [hidden] { display:none !important; }
+.oc-open-row { display:flex; justify-content:center; margin:0.5rem 0 0; }
+.oc-open-row .oc-open-link { display:inline-flex; align-items:center; gap:0.5rem; min-height:44px; padding:0.5rem 1rem; border:0; background:none; border-radius:10px; font:inherit; font-size:0.875rem; font-weight:600; color:#047857; cursor:pointer; text-decoration:none; }
+.oc-open-row .oc-open-link:hover { background:#ecfdf5; }
+.oc-open-row .oc-open-link svg { width:18px; height:18px; flex:none; }
+
+/* Eenheid: de melding staat ook op tablet en computer onderaan in het midden, zoals in Stroom */
+@media (min-width:768px) { .toast { left:50%; right:auto; max-width:calc(100% - 2rem); transform:translate(-50%, calc(100% + 3rem)); } .toast.show { transform:translate(-50%, 0); } }
+.explain { margin-top:1.5rem; }
+.vb-start a { color:var(--accent-dark); font-weight:600; }
+@media (max-width:420px) { .chip { padding:0.25rem 0.75rem; } }
+/* oc-uitleg v1 begin */
+/* "Hoe werkt dit?": één blok voor alle tools. Zonder JavaScript blijft de gewone uitklapper leesbaar.
+   Het script zet .oc-u op <details class="explain"> en bouwt de inhoud om tot inleiding, stappen, tip en verwijzingen. */
+details.explain { scroll-margin-top:1rem; }
+details.explain.oc-u { --u-groen:#10b981; --u-donker:#047857; --u-licht:#a7f3d0; --u-zacht:#ecfdf5;
+  background:#ffffff; border:1px solid #e2e8f0; border-radius:18px; box-shadow:0 1px 2px rgba(15,23,42,0.04); transition:border-color 0.2s, box-shadow 0.2s; }
+details.explain.oc-u:hover, details.explain.oc-u[open] { border-color:#cbd5e1; }
+details.explain.oc-u[open] { box-shadow:0 1px 2px rgba(15,23,42,0.04), 0 12px 32px -18px rgba(15,23,42,0.18); }
+
+/* ingeklapt: een uitnodigende kaart */
+details.explain.oc-u > summary { display:flex; align-items:center; gap:0.875rem; min-height:76px; padding:0.875rem 1rem 0.875rem 0.875rem; border-radius:17px; cursor:pointer; list-style:none; color:#1e293b; font-weight:400; outline:none; -webkit-tap-highlight-color:transparent; }
+details.explain.oc-u > summary::-webkit-details-marker { display:none; }
+details.explain.oc-u > summary::after, details.explain.oc-u > summary::before { content:none; }
+details.explain.oc-u > summary svg { transform:none; margin:0; }
+details.explain.oc-u > summary:focus-visible { box-shadow:0 0 0 2px #ffffff, 0 0 0 4px var(--u-groen); }
+details.explain.oc-u[open] > summary { border-bottom-left-radius:0; border-bottom-right-radius:0; }
+details.explain.oc-u .oc-u-ico { flex-shrink:0; width:48px; height:48px; border-radius:14px; background:var(--u-zacht); display:flex; align-items:center; justify-content:center; transition:background-color 0.2s; }
+details.explain.oc-u .oc-u-ico svg { width:28px; height:28px; display:block; }
+details.explain.oc-u .oc-u-kop { flex:1; min-width:0; display:flex; flex-direction:column; gap:0.125rem; }
+details.explain.oc-u .oc-u-titel { font-size:1.0625rem; font-weight:700; color:#1e293b; letter-spacing:-0.01em; line-height:1.3; }
+details.explain.oc-u .oc-u-meta { font-size:0.8125rem; color:#64748b; line-height:1.35; font-variant-numeric:tabular-nums; }
+details.explain.oc-u .oc-u-pijl { flex-shrink:0; width:40px; height:40px; border-radius:50%; background:#f1f5f9; color:#475569; display:flex; align-items:center; justify-content:center; transition:background-color 0.2s, color 0.2s, transform 0.35s cubic-bezier(0.2,0.7,0.2,1); }
+details.explain.oc-u .oc-u-pijl svg { width:20px; height:20px; }
+details.explain.oc-u > summary:hover .oc-u-pijl { background:var(--u-zacht); color:var(--u-donker); }
+details.explain.oc-u[open] .oc-u-pijl { transform:rotate(180deg); background:var(--u-zacht); color:var(--u-donker); }
+
+/* op brede schermen: de stappen als kleine route, die plaats maakt voor de echte stappen bij openen */
+details.explain.oc-u .oc-u-route { display:none; align-items:center; flex-shrink:0; margin-right:0.75rem; transition:opacity 0.25s, visibility 0.25s; }
+details.explain.oc-u .oc-u-route i { position:relative; display:flex; align-items:center; justify-content:center; width:26px; height:26px; margin-left:16px; border-radius:50%; border:1.5px solid var(--u-licht); background:#ffffff; color:var(--u-donker); font-style:normal; font-size:0.75rem; font-weight:700; line-height:1; font-variant-numeric:tabular-nums; transition:border-color 0.2s, background-color 0.2s; }
+details.explain.oc-u .oc-u-route i:first-child { margin-left:0; }
+details.explain.oc-u .oc-u-route i + i::before { content:''; position:absolute; right:calc(100% + 1.5px); top:calc(50% - 0.75px); width:16px; height:1.5px; background:var(--u-licht); }
+details.explain.oc-u > summary:hover .oc-u-route i { border-color:var(--u-groen); }
+details.explain.oc-u[open] .oc-u-route { opacity:0; visibility:hidden; }
+@media (min-width:700px) { details.explain.oc-u .oc-u-route { display:flex; } }
+
+/* uitgeklapt */
+details.explain.oc-u > .inner { padding:0; margin:0; border:0; border-radius:0; background:none; font-size:0.9375rem; color:#475569; container-type:inline-size; }
+details.explain.oc-u > .inner p, details.explain.oc-u > .inner ul, details.explain.oc-u > .inner ol, details.explain.oc-u > .inner li { margin:0; }
+details.explain.oc-u .oc-u-raam { border-top:1px solid #f1f5f9; margin:0 1.25rem; padding:1.25rem 0 1.5rem; display:grid; gap:1.375rem; }
+details.explain.oc-u .oc-u-lees, details.explain.oc-u .oc-u-doe { display:flex; flex-direction:column; gap:1.125rem; min-width:0; }
+details.explain.oc-u .oc-u-intro { font-size:1.0625rem; line-height:1.55; color:#334155; letter-spacing:-0.005em; margin:0; max-width:40em; text-wrap:pretty; }
+details.explain.oc-u .oc-u-noot { margin:0; line-height:1.6; max-width:42em; text-wrap:pretty; }
+details.explain.oc-u .oc-u-noot b { color:#1e293b; }
+
+/* stappen: genummerde tijdlijn */
+details.explain.oc-u ol.oc-u-stappen { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; }
+details.explain.oc-u .oc-u-stap { position:relative; display:grid; grid-template-columns:2.25rem minmax(0,1fr); column-gap:0.875rem; padding-bottom:1.125rem; }
+details.explain.oc-u .oc-u-stap:last-child { padding-bottom:0; }
+details.explain.oc-u .oc-u-stap::before { content:''; position:absolute; left:calc(1.125rem - 1px); top:2.5rem; bottom:0.25rem; width:2px; border-radius:2px; background:var(--u-licht); transform-origin:top; }
+details.explain.oc-u .oc-u-stap:last-child::before { content:none; }
+details.explain.oc-u .oc-u-nr { width:2.25rem; height:2.25rem; border-radius:50%; background:#ffffff; border:2px solid var(--u-groen); color:var(--u-donker); font-size:0.9375rem; font-weight:700; display:flex; align-items:center; justify-content:center; font-variant-numeric:tabular-nums; line-height:1; }
+details.explain.oc-u .oc-u-stap-tekst { padding-top:0.3125rem; min-width:0; }
+details.explain.oc-u .oc-u-stap-titel { display:block; font-size:1rem; font-weight:700; color:#1e293b; line-height:1.35; letter-spacing:-0.005em; }
+details.explain.oc-u .oc-u-stap-uitleg { display:block; margin-top:0.25rem; line-height:1.55; color:#475569; text-wrap:pretty; }
+details.explain.oc-u .oc-u-stap-uitleg b { color:#1e293b; }
+
+details.explain.oc-u .oc-u-stap-uitleg.oc-u-enkel { margin-top:0; color:#334155; }
+details.explain.oc-u .oc-u-doe > ul:not([class]), details.explain.oc-u .oc-u-doe > ol:not([class]) { padding-left:1.25rem; display:grid; gap:0.375rem; line-height:1.55; }
+details.explain.oc-u .oc-u-doe > ul:not([class]) > li::marker { color:var(--u-groen); }
+
+/* begrippen: dezelfde opbouw zonder nummers, voor lijsten die geen volgorde zijn */
+details.explain.oc-u ul.oc-u-begrippen { list-style:none; margin:0; padding:0; display:grid; gap:0.875rem; }
+details.explain.oc-u .oc-u-begrip { display:grid; grid-template-columns:0.5rem minmax(0,1fr); column-gap:0.875rem; }
+details.explain.oc-u .oc-u-begrip::before { content:''; width:0.5rem; height:0.5rem; border-radius:50%; background:var(--u-groen); margin-top:0.5rem; }
+
+/* tip */
+details.explain.oc-u .oc-u-tip { display:grid; grid-template-columns:auto minmax(0,1fr); column-gap:0.75rem; align-items:start; background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:0.875rem 1rem; }
+details.explain.oc-u .oc-u-tip svg { width:22px; height:22px; color:var(--u-donker); margin-top:0.0625rem; }
+details.explain.oc-u .oc-u-tip-titel { display:block; font-weight:700; color:#1e293b; font-size:0.9375rem; line-height:1.4; }
+details.explain.oc-u .oc-u-tip-tekst { display:block; line-height:1.55; color:#475569; margin-top:0.125rem; }
+details.explain.oc-u kbd { display:inline-block; font:inherit; font-size:0.8125rem; font-weight:600; line-height:1.35; color:#334155; background:#ffffff; border:1px solid #cbd5e1; border-bottom-width:2px; border-radius:6px; padding:0 0.4375rem; margin:0 0.0625rem; vertical-align:0.0625rem; white-space:nowrap; }
+
+/* stil: alles blijft op dit toestel */
+details.explain.oc-u .oc-u-stil { display:flex; gap:0.5rem; align-items:flex-start; font-size:0.875rem; color:#64748b; line-height:1.5; margin:0; }
+details.explain.oc-u .oc-u-stil svg { flex-shrink:0; width:18px; height:18px; margin-top:0.0625rem; color:#64748b; }
+
+/* verwijzingen naar andere tools */
+details.explain.oc-u .oc-u-samen { display:flex; flex-direction:column; gap:0.5rem; }
+details.explain.oc-u .oc-u-samen-titel { font-size:0.875rem; font-weight:600; color:#475569; }
+details.explain.oc-u .oc-u-chips { display:flex; flex-wrap:wrap; gap:0.5rem; }
+details.explain.oc-u a.oc-u-chip { display:inline-flex; align-items:center; gap:0.5rem; min-height:44px; margin:0; padding:0 0.875rem 0 0.5rem; border:1px solid var(--u-licht); border-radius:999px; background:#ffffff; color:var(--u-donker); font-size:0.9375rem; font-weight:600; text-decoration:none; line-height:1.2; transition:background-color 0.2s, border-color 0.2s; }
+details.explain.oc-u .oc-u-chip-ico { width:28px; height:28px; border-radius:50%; background:var(--u-zacht); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+details.explain.oc-u .oc-u-chip-ico svg { width:15px; height:15px; }
+details.explain.oc-u a.oc-u-chip:hover { background:var(--u-zacht); border-color:var(--u-groen); }
+details.explain.oc-u a.oc-u-chip:focus-visible { outline:2px solid var(--u-groen); outline-offset:2px; }
+details.explain.oc-u .oc-u-noot a, details.explain.oc-u .oc-u-stap-uitleg a, details.explain.oc-u .oc-u-tip-tekst a { color:var(--u-donker); font-weight:600; text-decoration:underline; text-decoration-color:var(--u-licht); text-decoration-thickness:2px; text-underline-offset:3px; }
+details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker); }
+
+/* breed: links lezen, rechts doen */
+@container (min-width:720px) and (max-width:999.98px) {
+  details.explain.oc-u .oc-u-raam.oc-u-lang { grid-template-columns:minmax(0,1fr); grid-template-rows:none; }
+  details.explain.oc-u .oc-u-lang .oc-u-lees, details.explain.oc-u .oc-u-lang .oc-u-doe, details.explain.oc-u .oc-u-lang .oc-u-samen { grid-column:1; grid-row:auto; }
+}
+@container (min-width:720px) {
+  details.explain.oc-u .oc-u-raam { grid-template-columns:minmax(0,5fr) minmax(0,7fr); grid-template-rows:auto 1fr; column-gap:3rem; row-gap:1.75rem; align-items:start; padding:1.75rem 0.5rem 2rem; }
+  details.explain.oc-u .oc-u-lees { grid-column:1; grid-row:1; }
+  details.explain.oc-u .oc-u-doe { grid-column:2; grid-row:1 / span 2; }
+  details.explain.oc-u .oc-u-samen { grid-column:1; grid-row:2; }
+  details.explain.oc-u .oc-u-zonder-intro { grid-template-columns:minmax(0,1fr); }
+  details.explain.oc-u .oc-u-zonder-intro .oc-u-doe, details.explain.oc-u .oc-u-zonder-intro .oc-u-samen { grid-column:1; grid-row:auto; }
+  details.explain.oc-u .oc-u-intro { font-size:1.25rem; line-height:1.5; }
+}
+@media (min-width:760px) { details.explain.oc-u .oc-u-raam { margin:0 1.5rem; } details.explain.oc-u > summary { padding:1rem 1.25rem 1rem 1rem; } }
+
+/* beweging enkel als antwoord op openen */
+@media (prefers-reduced-motion:reduce) {
+  details.explain.oc-u, details.explain.oc-u .oc-u-pijl, details.explain.oc-u .oc-u-ico, details.explain.oc-u .oc-u-route, details.explain.oc-u .oc-u-route i, details.explain.oc-u a.oc-u-chip { transition:none; }
+}
+@media print { details.explain { display:none; } }
+/* oc-uitleg v1 einde */
+</style>
+</head>
+<body>
+
+<header class="header">
+  <a href="https://onderconstructie.github.io/projectmanagement/" class="back-link" aria-label="Terug naar Projectmanagement">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Projectmanagement
+  </a>
+  <div class="logo">
+    <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="20" cy="20" r="18" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.5"/><path d="M9.5 13a1.5 1.5 0 0 1 1.5-1.5h3.8l2 2.5H29a1.5 1.5 0 0 1 1.5 1.5v12a2 2 0 0 1-2 2h-17a2 2 0 0 1-2-2z" stroke="#64748b"/><rect x="16.5" y="8.5" width="11" height="12.5" rx="1.5" fill="#d1fae5" stroke="#10b981"/><path d="M19.5 12.5h5" stroke="#10b981"/><path d="M9.5 20.5h21v7a2 2 0 0 1-2 2h-17a2 2 0 0 1-2-2z" fill="#f8fafc" stroke="#64748b"/></svg>
+  </div>
+  <h1 class="title">Projectdossier</h1>
+  <p class="subtitle">Alles over je project in één nota voor de stuurgroep.</p>
+</header>
+
+<main class="main">
+  <div class="vb-start oc-start" id="vb-start" hidden><span>Het dossier bundelt wat je in de andere tools invulde tot één nota voor de stuurgroep. Op dit toestel staat nog niets. Vul eerst een tool in, zoals de <a href="../opdracht/">Projectopdracht</a> of de <a href="../risico/">Risicomatrix</a>, of bekijk een voorbeeld.</span><div class="oc-start-btns"><button type="button" class="oc-begin" id="begin-btn" data-oc-begin="#name">Begin met je dossier</button><button type="button" class="oc-vb" id="example">Voorbeeld bekijken</button></div><p class="oc-open-row"><button type="button" class="oc-open-link" data-bestand="open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 16v-5M9.5 13.5 12 11l2.5 2.5"/></svg>Open bestand</button></p></div>
+
+  <nav class="lists" id="lists" aria-label="Dossiers"></nav>
+
+  <section class="card bed" aria-label="Project en datum">
+    <div class="vb-bar" id="vb-bar" role="note" hidden>
+      <span class="vb-text"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg><span>Dit is een voorbeeld met verzonnen gegevens. Het leest en wijzigt niets in je andere tools.</span></span>
+      <span class="vb-btns"><button type="button" class="vb-btn vb-wis" id="vb-wis">Wis voorbeeld</button><button type="button" class="vb-btn vb-eigen" id="vb-eigen">Maak mijn eigen dossier</button></span>
+    </div>
+    <div class="card-head">
+      <input class="list-name" id="name" data-oc-titel data-oc-projectnaam placeholder="Naam van het project" aria-label="Naam van het project" maxlength="80" spellcheck="false" enterkeyhint="done" autocomplete="off">
+      <button class="icon-btn del-unit" id="del-unit" type="button" aria-label="Verwijder dossier" title="Verwijder dossier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg></button>
+      <div class="menu-wrap">
+        <button class="icon-btn" id="menu-btn" aria-label="Meer acties" aria-haspopup="true" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
+        </button>
+        <div class="menu" id="menu" role="menu">
+          <button type="button" data-bestand="bewaar" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M12 11v6M9 14l3 3 3-3"/></svg><span class="ocb-t">Bewaar als bestand<small>Om later verder te werken, of door te geven</small></span></button>
+          <button type="button" data-bestand="open" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 10v6M9 13l3-3 3 3"/></svg>Open bestand</button>
+          <div class="sep"></div>
+          <button data-act="pdf" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 15h6M9 18h4"/></svg>Download als PDF</button>
+          <button data-act="png" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>Download als afbeelding</button>
+          <button data-act="copy" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Kopieer als tekst</button>
+          <p class="ocb-note">Een afbeelding, PDF of tekst kan je niet terug openen.</p>
+          <div class="sep"></div>
+          <button data-act="dup" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M4 16V5a1 1 0 0 1 1-1h11"/></svg>Dupliceer (bv. voor de volgende stuurgroep)</button>
+          <div class="sep"></div>
+          <button data-act="wipe" class="danger" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>Alles wissen</button>
+        </div>
+      </div>
+    </div>
+    <div class="bed-in">
+      <div id="gevonden"></div>
+      <div id="voorstel" hidden></div>
+      <div class="datum-veld"><label class="lbl" for="datum" style="margin:0">Datum van de nota</label><input class="field" type="date" id="datum"><button type="button" class="mini-link" id="datum-nu" hidden>Vandaag</button></div>
+    </div>
+  </section>
+
+  <div class="layout" id="layout">
+    <div class="papier"><article class="nota" id="nota" aria-label="Nota voor de stuurgroep"></article></div>
+    <aside class="zij" aria-label="Wat ontbreekt en delen">
+      <section class="card zij-kaart" id="ontbreekt" aria-labelledby="mis-t"></section>
+      <section class="card zij-kaart" aria-labelledby="deel-t">
+        <h2 class="zij-t" id="deel-t">Delen</h2>
+        <p class="zij-sub">Wat uit staat of leeg is, komt niet in de nota.</p>
+        <div class="exp-btns"><button type="button" class="btn-s" data-exp="pdf">PDF</button><button type="button" class="btn-s" data-exp="png">Afbeelding</button><button type="button" class="btn-s breed" data-exp="copy">Kopieer als tekst</button></div>
+        <p class="eerlijk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg><span>Het dossier ziet alleen wat op dit toestel staat. Werkte je op een ander toestel? Bewaar daar je werk als bestand en open het hier in dezelfde tool.</span></p>
+      </section>
+    </aside>
+  </div>
+
+  <details class="explain" id="hoe-werkt-dit">
+    <summary>Hoe werkt dit?</summary>
+    <div class="inner">
+      <p>Wie een stuurgroep voorbereidt, opent anders vijf tools en kopieert met de hand. Het dossier leest wat je op dit toestel in de andere tools invulde voor één project, en zet dat op één nota. Het wijzigt niets in die tools.</p>
+      <ul>
+        <li><b>Kies je project.</b> Bovenaan staat het project uit de app. Bij "Gevonden op dit toestel" kies je een ander. Het dossier zoekt in elke tool de lijst of tab met dezelfde naam.</li>
+        <li><b>Schrijf je vraag.</b> Vul in wat je aan de stuurgroep vraagt, één vraag per regel. Daar draait de vergadering om.</li>
+        <li><b>Kies wat erin komt.</b> Zet een onderdeel uit met de schakelaar "In de nota". Klopt de bron niet, kies dan een andere lijst onder de titel.</li>
+        <li><b>Deel de nota.</b> Download ze als PDF of afbeelding, of kopieer ze als tekst voor een mail.</li>
+      </ul>
+      <p>Tip: stel een vraag waarop de stuurgroep ja of nee kan zeggen. Die krijgt sneller een antwoord dan een open vraag.</p>
+      <p>De inhoud komt uit de <a href="https://onderconstructie.github.io/opdracht/">Projectopdracht</a>, <a href="https://onderconstructie.github.io/project-radar/">Project Radar</a>, het <a href="https://onderconstructie.github.io/meetplan/">Meetplan</a>, de <a href="https://onderconstructie.github.io/risico/">Risicomatrix</a>, het <a href="https://onderconstructie.github.io/beslissingen/">Beslissingslog</a>, het <a href="https://onderconstructie.github.io/kanban/">Takenbord</a> en de <a href="https://onderconstructie.github.io/raci/">RACI-matrix</a>. Pas je daar iets aan, dan toont het dossier het meteen.</p>
+    </div>
+  </details>
+<div class="oc-restart-row" id="oc-restart-row" hidden><button type="button" class="oc-restart" id="oc-restart-btn">Opnieuw beginnen</button></div>
+</main>
+
+<footer class="footer">
+  <p class="quote">Een goede nota eindigt met een duidelijke vraag.</p>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-text"></span><button id="toast-btn" hidden>Ongedaan</button></div>
+
+<script>
+/* Het actieve project uit de app (oc.project): nieuwe projecten, analyses en lijsten krijgen die naam. */
+function ocProject(fb) { try { const p = JSON.parse(localStorage.getItem('oc.project')); return p && typeof p.name === 'string' && p.name.trim() ? p.name.trim().slice(0, 80) : fb; } catch { return fb; } }
+function ocPickProject(st, arr, cur = 'current') { const p = ocProject(''); if (!p || !st || !Array.isArray(st[arr])) return; const u = st[arr].find(x => x && x.name === p); if (u) st[cur] = u.id; }   // open het actieve project uit de app
+/* ---------- Overnemen tussen tools (gedeeld door de Onder Constructie-tools, v2) ----------
+   Alle tools draaien op hetzelfde domein en delen dus localStorage. Elke tool legt wat hij te bieden
+   heeft klaar onder 'oc.share.<tool-id>', in een vaste vorm, zodat andere tools het kunnen overnemen
+   zonder elkaars binnenkant te kennen.
+
+   Soorten (type):
+     'betrokkene'  persoon, rol, stakeholder, doelgroep of team   { text, note? }
+     'taak'        iets dat gedaan moet worden                     { text, note? }
+     'actie'       taak met eigenaar en/of termijn                 { text, who?, when? }
+     'risico'      risico met kans en impact                       { text, note? }
+
+   Gebruik:
+     ocShare.publish('raci', 'RACI-matrix', [
+       { name:'Heraanleg stadspark', items:[ { type:'betrokkene', text:'Projectleider' }, { type:'taak', text:'Budget goedkeuren' } ] }
+     ]);                                   // aanroepen na elke bewaring
+     ocShare.clear('raci');                // bij "Alles wissen"
+     const gekozen = await ocShare.pick({ types:['betrokkene'], self:'weerstand', title:'Doelgroepen overnemen' });
+     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source en .list erbij)
+*/
+const ocShare = (() => {
+  const PREFIX = 'oc.share.';
+  const LABEL = { betrokkene:'betrokkenen', taak:'taken', actie:'acties', risico:"risico's" };
+  const esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+
+  function publish(id, tool, lists) {
+    try {
+      const clean = (lists || []).map(l => ({
+        name: String(l.name || '').slice(0, 80),
+        items: (l.items || []).filter(i => i && i.type && String(i.text || '').trim())
+          .slice(0, 300).map(i => ({ type:i.type, text:String(i.text).trim().slice(0, 300),
+            note: i.note ? String(i.note).slice(0, 200) : undefined, who: i.who || undefined, when: i.when || undefined }))
+      })).filter(l => l.items.length);
+      if (!clean.length) { localStorage.removeItem(PREFIX + id); return; }
+      localStorage.setItem(PREFIX + id, JSON.stringify({ id, tool, updated: Date.now(), lists: clean }));
+    } catch {}
+  }
+  function clear(id) { try { localStorage.removeItem(PREFIX + id); } catch {} }
+
+  // Elke bron apart: één kapotte sleutel mag de andere niet verbergen.
+  function sources(types, self) {
+    const out = [];
+    let keys = [];
+    try { for (let i = 0; i < localStorage.length; i++) keys.push(localStorage.key(i)); } catch { return out; }
+    keys.forEach(k => {
+      if (!k || !k.startsWith(PREFIX) || k === PREFIX + self) return;
+      try {
+        const d = JSON.parse(localStorage.getItem(k));
+        if (!d || !Array.isArray(d.lists)) return;
+        d.lists.forEach(l => {
+          if (!l || !Array.isArray(l.items)) return;
+          const items = l.items.filter(it => it && types.includes(it.type) && typeof it.text === 'string');
+          if (items.length) out.push({ tool: String(d.tool || d.id || k.slice(PREFIX.length)), id: d.id, updated: +d.updated || 0, list: String(l.name || ''), items });
+        });
+      } catch {}
+    });
+    return out.sort((a, b) => (b.updated || 0) - (a.updated || 0));
+  }
+
+  let styled = false;
+  function style() {
+    if (styled) return; styled = true;
+    const s = document.createElement('style');
+    s.textContent = `
+      .ocs-back{position:fixed;inset:0;z-index:10000;display:flex;align-items:flex-end;justify-content:center;background:rgba(15,23,42,.45);
+        backdrop-filter:blur(3px);opacity:0;transition:opacity .15s;font-family:'DM Sans',system-ui,sans-serif}
+      @media(min-width:640px){.ocs-back{align-items:center;padding:1rem}}
+      .ocs-back.open{opacity:1}
+      .ocs{width:100%;max-width:520px;max-height:min(86vh,720px);display:flex;flex-direction:column;background:#fff;border-radius:18px 18px 0 0;
+        box-shadow:0 20px 50px rgba(15,23,42,.25);transform:translateY(12px);transition:transform .15s;color:#1e293b}
+      @media(min-width:640px){.ocs{border-radius:18px}}
+      .ocs-back.open .ocs{transform:none}
+      .ocs-head{padding:1.125rem 1.25rem .75rem;border-bottom:1px solid #e2e8f0}
+      .ocs-title{font-size:1.125rem;font-weight:700;letter-spacing:-.02em}
+      .ocs-sub{font-size:.8125rem;color:#64748b;margin-top:.125rem}
+      .ocs-body{overflow:auto;padding:.5rem 1.25rem 1rem;flex:1}
+      .ocs-src{margin-top:.875rem}
+      .ocs-src-head{display:flex;align-items:center;gap:.5rem;padding:.375rem 0}
+      .ocs-src-head b{font-size:.9375rem}
+      .ocs-src-head span{font-size:.75rem;color:#64748b}
+      .ocs-all{margin-left:auto;font:inherit;font-size:.8125rem;color:#047857;background:none;border:0;cursor:pointer;padding:.25rem .5rem;min-height:44px;border-radius:6px}
+      .ocs-all:hover{background:#d1fae5}
+      .ocs-item{display:flex;align-items:flex-start;gap:.625rem;padding:.625rem .25rem;min-height:44px;box-sizing:border-box;border-top:1px solid #f1f5f9;cursor:pointer;font-size:.9375rem;line-height:1.4}
+      .ocs-item input{width:18px;height:18px;margin-top:.125rem;accent-color:#10b981;flex:none}
+      .ocs-item small{display:block;font-size:.75rem;color:#64748b}
+      .ocs-empty{padding:1.5rem .25rem;color:#64748b;font-size:.9375rem;line-height:1.5}
+      .ocs-foot{display:flex;gap:.5rem;justify-content:flex-end;padding:.875rem 1.25rem calc(.875rem + env(safe-area-inset-bottom,0px));border-top:1px solid #e2e8f0}
+      .ocs-btn{font:inherit;font-size:.9375rem;font-weight:600;padding:.625rem 1rem;min-height:44px;border-radius:10px;border:0;cursor:pointer}
+      .ocs-cancel{background:#f1f5f9;color:#475569}
+      .ocs-ok{background:#047857;color:#fff}.ocs-ok:hover{background:#065f46}
+      .ocs-ok:disabled{background:#cbd5e1;color:#334155;cursor:default}
+      .ocs-back :focus-visible{outline:2px solid #047857;outline-offset:2px}`;
+    document.head.appendChild(s);
+  }
+
+  function pick({ types, self, title, intro }) {
+    style();
+    return new Promise(resolve => {
+      const src = sources(types, self);
+      const back = document.createElement('div');
+      back.className = 'ocs-back';
+      const what = types.map(t => LABEL[t] || t).join(' of ');
+      back.innerHTML = `<div class="ocs" role="dialog" aria-modal="true" aria-label="${esc(title || 'Overnemen')}">
+        <div class="ocs-head"><div class="ocs-title">${esc(title || 'Overnemen uit een andere tool')}</div>
+          <div class="ocs-sub">${esc(intro || `Kies welke ${what} je wil overnemen.`)}</div></div>
+        <div class="ocs-body">${src.length ? src.map((s, si) => `
+          <div class="ocs-src"><div class="ocs-src-head"><b>${esc(s.tool)}</b><span>${esc(s.list)} · ${s.items.length}</span>
+            <button class="ocs-all" type="button" data-all="${si}">alles</button></div>
+            ${s.items.map((it, ii) => `<label class="ocs-item"><input type="checkbox" data-s="${si}" data-i="${ii}">
+              <span>${esc(it.text)}${it.who || it.when || it.note ? `<small>${esc([it.who, it.when, it.note].filter(Boolean).join(' · '))}</small>` : ''}</span></label>`).join('')}
+          </div>`).join('') : `<p class="ocs-empty">Er zijn nog geen ${esc(what)} om over te nemen. Vul ze eerst in een andere tool van Onder Constructie in, dan verschijnen ze hier.</p>`}
+        </div>
+        <div class="ocs-foot"><button class="ocs-btn ocs-cancel" type="button">Annuleer</button>
+          <button class="ocs-btn ocs-ok" type="button" disabled>Neem over</button></div></div>`;
+      document.body.appendChild(back);
+      requestAnimationFrame(() => back.classList.add('open'));
+      const ok = back.querySelector('.ocs-ok');
+      const boxes = () => [...back.querySelectorAll('input[type=checkbox]')];
+      const sync = () => { const n = boxes().filter(b => b.checked).length; ok.disabled = !n; ok.textContent = n ? `Neem ${n} over` : 'Neem over'; };
+      // Eén bron, of geopend vanuit een tool (?van=<tool>): die items staan al aangevinkt.
+      let van = window.ocVan || ''; try { van = van || new URLSearchParams(location.search).get('van') || ''; } catch {}
+      boxes().forEach(b => { const s = src[+b.dataset.s]; if (src.length === 1 || (van && s.id === van)) b.checked = true; }); sync();
+      back.addEventListener('change', sync);
+      back.addEventListener('click', e => {
+        const a = e.target.closest('[data-all]');
+        if (a) { const bs = boxes().filter(b => b.dataset.s === a.dataset.all); const all = bs.every(b => b.checked); bs.forEach(b => b.checked = !all); sync(); }
+        if (e.target === back) close([]);
+      });
+      function close(v) { document.removeEventListener('keydown', onKey, true); back.remove(); resolve(v); }
+      function onKey(e) { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close([]); } }
+      document.addEventListener('keydown', onKey, true);
+      back.querySelector('.ocs-cancel').addEventListener('click', () => close([]));
+      ok.addEventListener('click', () => close(boxes().filter(b => b.checked).map(b => {
+        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, list: s.list };
+      })));
+      const first = back.querySelector('input,.ocs-cancel'); first && first.focus();
+    });
+  }
+
+  // Hoeveel er klaarligt voor deze soorten (om een knop te tonen of een teller te zetten).
+  const count = (types, self) => sources(types, self).reduce((n, s) => n + s.items.length, 0);
+  return { publish, clear, pick, count, sources, esc };
+})();
+
+/* ---------- Alles wissen ----------
+   Het dossier leest de sleutels van andere tools maar schrijft er nooit in. Het legt ook niets klaar voor
+   andere tools: wat het toont, komt al uit die tools. Alles wissen wist alleen dossier.v1. */
+const OC_ID = 'dossier', OC_TOOL = 'Projectdossier';
+let ocSaves = 0;
+function ocAfterSave() { ocSaves++; }
+// Bevestiging in de pagina (geen pop-up van de browser).
+// Stijl van de bevestiging en de knoppen 'Overnemen uit…': meteen laden.
+function ocStyle() {
+  if (!document.getElementById('ocw-style')) {
+    const s = document.createElement('style'); s.id = 'ocw-style';
+    s.textContent = `.ocw-back{position:fixed;inset:0;z-index:10001;display:flex;align-items:center;justify-content:center;padding:1rem;background:rgba(15,23,42,.45);backdrop-filter:blur(3px);font-family:'DM Sans',system-ui,sans-serif}
+      .ocw{width:100%;max-width:400px;background:#fff;border-radius:16px;padding:1.375rem 1.375rem 1.125rem;box-shadow:0 20px 50px rgba(15,23,42,.25);color:#1e293b}
+      .ocw b{display:block;font-size:1.0625rem;letter-spacing:-.01em;margin-bottom:.375rem}
+      .ocw p{font-size:.9375rem;line-height:1.5;color:#475569}
+      .ocw-row{display:flex;justify-content:flex-end;gap:.5rem;margin-top:1.25rem}
+      .ocw-row button{font:inherit;font-size:.9375rem;font-weight:600;padding:.625rem 1rem;min-height:44px;border-radius:10px;border:0;cursor:pointer}
+      .ocw-no{background:#f1f5f9;color:#475569} .ocw-yes{background:#dc2626;color:#fff} .ocw-yes:hover{background:#b91c1c}
+      .oc-import{display:inline-flex;align-items:center;gap:.375rem;font:inherit;font-size:.8125rem;font-weight:600;color:#059669;background:#fff;border:1px dashed #a7f3d0;border-radius:999px;padding:.3125rem .75rem;cursor:pointer;white-space:nowrap}
+      .oc-import:hover{background:#ecfdf5;border-color:#10b981} .oc-import svg{width:15px;height:15px} .oc-import[hidden]{display:none}`;
+    document.head.appendChild(s);
+  }
+}
+ocStyle();
+function ocConfirm(title, text, okText) {
+  return new Promise(resolve => {
+    const back = document.createElement('div'); back.className = 'ocw-back';
+    back.innerHTML = '<div class="ocw" role="alertdialog" aria-modal="true"><b></b><p></p><div class="ocw-row"><button class="ocw-no" type="button">Annuleer</button><button class="ocw-yes" type="button"></button></div></div>';
+    back.querySelector('b').textContent = title; back.querySelector('p').textContent = text; back.querySelector('.ocw-yes').textContent = okText;
+    document.body.appendChild(back);
+    const done = v => { document.removeEventListener('keydown', key, true); back.remove(); resolve(v); };
+    const key = e => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); done(false); } };
+    document.addEventListener('keydown', key, true);
+    back.querySelector('.ocw-no').onclick = () => done(false);
+    back.querySelector('.ocw-yes').onclick = () => done(true);
+    back.addEventListener('click', e => { if (e.target === back) done(false); });
+    back.querySelector('.ocw-no').focus();
+  });
+}
+// Ongedaan maken van een wisbeurt kan alleen zolang er sindsdien niets anders bewaard werd.
+function ocUndoable(restore) {
+  const mark = ocSaves;
+  return () => {
+    if (ocSaves !== mark) { setTimeout(() => toast('Ongedaan maken kan niet meer: er is intussen iets veranderd'), 60); return; }
+    restore();
+  };
+}
+
+async function ocWipeAll() {
+  if (!await ocConfirm(`Alles wissen in ${OC_TOOL}?`, 'Je vragen, keuzes en dossiers verdwijnen. De andere tools blijven zoals ze zijn. Je kan dit nog ongedaan maken tot je iets anders doet.', 'Alles wissen')) return;
+  const copy = JSON.parse(JSON.stringify(state));
+  try { localStorage.removeItem(KEY); } catch {}
+  state = load(); save(); render();
+  toast('Alles gewist', ocUndoable(() => { state = copy; }));
+}
+document.addEventListener('click', e => { if (e.target.closest('[data-act="wipe"]')) ocWipeAll(); });
+
+/* ---------- Download als afbeelding of PDF (gedeeld door de Onder Constructie-tools, v2) ----------
+   Gebruik:
+     ocExport.png(bouwFn, 'bestandsnaam', { landscape:true })
+     ocExport.pdf(bouwFn, 'bestandsnaam', { landscape:true })
+   bouwFn() geeft { node, title, subtitle } terug: een DOM-knoop met inline styles, zonder knoppen of invoervelden.
+   Die komt buiten beeld op een witte pagina met kop (titel, ondertitel, datum) en voet.
+   Zet data-oc-keep op blokken die in een PDF niet over twee pagina's gesplitst mogen worden
+   (een beslissing, een kaartje, een rij); ze schuiven dan door naar de volgende pagina.
+   html2canvas en jsPDF worden pas geladen bij de eerste download, van dezelfde adressen als de
+   andere tools, zodat de app ze offline kan bewaren. */
+const ocExport = (() => {
+  const LIBS = {
+    h2c: '/lib/html2canvas-1.4.1.min.js',
+    pdf: '/lib/jspdf-2.5.1.umd.min.js'
+  };
+  const A4 = { w: 210, h: 297 }, MARGIN = 10;   // mm
+  const loaded = {};
+  function load(url) {
+    if (!loaded[url]) loaded[url] = new Promise((ok, fail) => {
+      const s = document.createElement('script');
+      s.src = url; s.onload = ok; s.onerror = () => { delete loaded[url]; fail(new Error('laden mislukt')); };
+      document.head.appendChild(s);
+    });
+    return loaded[url];
+  }
+  const today = () => new Date().toLocaleDateString('nl-BE', { day: 'numeric', month: 'long', year: 'numeric' });
+  function page(content, { title, subtitle, width }) {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = `position:fixed;left:-20000px;top:0;width:${width}px;background:#fff;padding:36px 40px 28px;
+      font-family:'DM Sans',system-ui,-apple-system,sans-serif;color:#1e293b;-webkit-font-smoothing:antialiased;box-sizing:border-box;`;
+    const head = document.createElement('div');
+    head.style.cssText = 'display:flex;align-items:flex-end;justify-content:space-between;gap:24px;border-bottom:2px solid #10b981;padding-bottom:12px;margin-bottom:20px;';
+    head.innerHTML = `<div><div style="font-size:22px;font-weight:700;letter-spacing:-0.02em;color:#1e293b"></div>
+      <div style="font-size:14px;color:#64748b;margin-top:2px"></div></div>
+      <div style="font-size:12px;color:#94a3b8;white-space:nowrap">${today()}</div>`;
+    head.children[0].children[0].textContent = title || '';
+    head.children[0].children[1].textContent = subtitle || '';
+    const foot = document.createElement('div');
+    foot.style.cssText = 'margin-top:22px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;display:flex;justify-content:space-between;';
+    foot.innerHTML = '<span>Onder Constructie</span><span>onderconstructie.github.io</span>';
+    wrap.append(head, content, foot);
+    document.body.appendChild(wrap);
+    return wrap;
+  }
+  // Schuift blokken met data-oc-keep die over een paginagrens zouden vallen naar de volgende pagina.
+  function keepTogether(wrap, pageH) {
+    const top0 = () => wrap.getBoundingClientRect().top;
+    for (const el of wrap.querySelectorAll('[data-oc-keep]')) {
+      const r = el.getBoundingClientRect(), t = r.top - top0(), b = t + r.height;
+      if (r.height > pageH * 0.85) continue;            // te groot om heel te houden
+      const boundary = Math.ceil(t / pageH) * pageH;     // eerstvolgende grens na de bovenkant
+      if (t % pageH !== 0 && b > boundary && t < boundary) {
+        const gap = document.createElement('div');
+        gap.style.cssText = `height:${boundary - t + 6}px;`;
+        el.parentNode.insertBefore(gap, el);
+      }
+    }
+  }
+  async function canvasOf(build, opts) {
+    await load(LIBS.h2c);
+    const built = build();
+    const node = page(built.node, { title: built.title, subtitle: built.subtitle, width: opts.width });
+    try {
+      if (document.fonts && document.fonts.ready) await document.fonts.ready;
+      if (opts.pageH) keepTogether(node, opts.pageH);
+      return await window.html2canvas(node, { scale: 2, backgroundColor: '#ffffff', logging: false, useCORS: true });
+    } finally { node.remove(); }
+  }
+  function save(blob, name) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }
+  const widthFor = opts => opts.width || (opts.landscape ? 1120 : 800);
+  async function png(build, name, opts = {}) {
+    const c = await canvasOf(build, { width: widthFor(opts) });
+    await new Promise(ok => c.toBlob(b => { save(b, name + '.png'); ok(); }, 'image/png'));
+  }
+  async function pdf(build, name, opts = {}) {
+    const landscape = !!opts.landscape, width = widthFor(opts);
+    const pw = landscape ? A4.h : A4.w, ph = landscape ? A4.w : A4.h, w = pw - 2 * MARGIN;
+    const pageCss = (ph - 2 * MARGIN) / w * width;       // paginahoogte in CSS-pixels van de exportknoop
+    const [c] = await Promise.all([canvasOf(build, { width, pageH: pageCss }), load(LIBS.pdf)]);
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: landscape ? 'landscape' : 'portrait', unit: 'mm', format: 'a4' });
+    const scale = w / c.width, pageH = (ph - 2 * MARGIN) / scale;   // paginahoogte in canvaspixels
+    for (let y = 0, i = 0; y < c.height - 2; y += pageH, i++) {
+      const h = Math.min(pageH, c.height - y);
+      const part = document.createElement('canvas'); part.width = c.width; part.height = h;
+      part.getContext('2d').drawImage(c, 0, y, c.width, h, 0, 0, c.width, h);
+      if (i) doc.addPage();
+      doc.addImage(part.toDataURL('image/jpeg', 0.92), 'JPEG', MARGIN, MARGIN, w, h * scale);
+    }
+    save(doc.output('blob'), name + '.pdf');
+  }
+  return { png, pdf };
+})();
+
+/* ---------- Hulpjes ---------- */
+const KEY = 'dossier.v1';
+const uid = () => Math.random().toString(36).slice(2, 10);
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const obj = x => !!x && typeof x === 'object' && !Array.isArray(x);
+const str = (v, n = 2000) => typeof v === 'string' ? v.slice(0, n) : typeof v === 'number' ? String(v) : '';
+const arr = v => Array.isArray(v) ? v : [];
+const vol = a => arr(a).map(x => typeof x === 'string' ? x.trim() : '').filter(Boolean);
+const okDate = s => /^\d{4}-\d{2}-\d{2}$/.test(s || '') && !isNaN(new Date(s + 'T00:00:00'));
+const isoVan = d => new Date(d.getTime() - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10);
+const vandaag = () => isoVan(new Date());
+const plus = n => { const d = new Date(); d.setDate(d.getDate() + n); return isoVan(d); };
+const fmtDate = s => okDate(s) ? new Date(s + 'T00:00:00').toLocaleDateString('nl-BE', { day:'numeric', month:'short', year:'numeric' }) : String(s || '');
+const fmtLang = s => okDate(s) ? new Date(s + 'T00:00:00').toLocaleDateString('nl-BE', { day:'numeric', month:'long', year:'numeric' }) : String(s || '');
+const dagenTot = s => Math.round((new Date(s + 'T00:00:00') - new Date(vandaag() + 'T00:00:00')) / 864e5);
+const nf = (n, d = 1) => n.toLocaleString('nl-BE', { maximumFractionDigits:d });
+const kort = (t, n = 60) => { t = String(t || '').trim(); return t.length > n ? t.slice(0, n - 1).trimEnd() + '…' : t; };
+const meer = (n, een, veel) => `${n} ${n === 1 ? een : veel}`;
+// Namen vergelijken: hoofdletters, accenten, spaties en leestekens tellen niet mee.
+const sleutel = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '');
+const isStd = v => window.ocStandaardNaam ? ocStandaardNaam(v) : /^((mijn|nieuwe?) )?project( \d+)?$|^naamloos$/i.test(String(v || '').trim());
+const VBN = 'Digitaal premieloket voor renovatie';
+
+/* ---------- De tools die het dossier leest ----------
+   Elke lezer krijgt de ruwe inhoud van één sleutel en geeft een lijst items terug: { id, name, voorbeeld, data, inhoud }.
+   Wat kapot of onverwacht is, slaat de lezer stil over. Een sleutel die helemaal niet te lezen is, meldt het dossier rustig. */
+const TOOLS = [
+  { id:'opdracht',  naam:'Projectopdracht',  pad:'../opdracht/',          key:'opdracht.v1' },
+  { id:'radar',     naam:'Project Radar',    pad:'../project-radar/',     key:'projectradar.v1' },
+  { id:'meetplan',  naam:'Meetplan',         pad:'../meetplan/',          key:'meetplan.v1' },
+  { id:'risico',    naam:'Risicomatrix',     pad:'../risico/',            key:'risico.v1' },
+  { id:'besluit',   naam:'Beslissingslog',   pad:'../beslissingen/',      key:'beslissingen.v1' },
+  // Het Takenbord opent met ?van= meteen "Overnemen": daarom zonder.
+  { id:'kanban',    naam:'Takenbord',        pad:'../kanban/',            key:'sprintflow_kanban_v5', geenVan:true },
+  { id:'raci',      naam:'RACI-matrix',      pad:'../raci/',              key:'raci.v1' },
+  { id:'gap',       naam:'Gap-analyse',      pad:'../gap/',               key:'gap.v1' },
+  { id:'prio',      naam:'Prioriteren',      pad:'../prioriteit/',        key:'prioriteit.v1' },
+  { id:'betrokken', naam:'Betrokkenenradar', pad:'../stakeholders/',      key:'stakeholders.v1' },
+  { id:'realisme',  naam:'Project Realisme Monitor', pad:'../project-realisme/', key:'realisme.v1' },
+];
+const TOOL = Object.fromEntries(TOOLS.map(t => [t.id, t]));
+const link = t => t.pad + (t.geenVan ? '' : '?van=dossier');
+const itemId = (x, i) => (typeof x.id === 'string' && x.id) ? x.id : 'i' + i;
+
+/* Projectopdracht: opdracht.v1 = { opdrachten:[...], current } */
+const OP_TEKST = ['waarom', 'opleveren', 'opdrachtgever', 'projectleider', 'kernteam', 'einddatum', 'budget', 'mensen', 'knelt', 'freq', 'aanWie', 'escaleren'];
+const OP_LIJST = ['doelen', 'binnen', 'buiten', 'akkoord', 'risicos'];
+// Dezelfde vakken als in de Projectopdracht: zo herkent het dossier "gewijzigd na akkoord" op dezelfde manier.
+const OP_SEC = { naam:['name'], waarom:['waarom'], einde:['opleveren', 'doelen'], scope:['binnen', 'buiten'], wie:['opdrachtgever', 'projectleider', 'kernteam', 'akkoord'],
+  middelen:['einddatum', 'budget', 'mensen', 'knelt'], mijlpalen:['mijlpalen'], risicos:['risicos'], afspraken:['freq', 'aanWie', 'escaleren'] };
+const OP_KORT = { naam:'Naam', waarom:'Waarom', einde:'Resultaat', scope:'Binnen en buiten', wie:'Wie', middelen:'Middelen', mijlpalen:'Mijlpalen', risicos:"Risico's", afspraken:'Afspraken' };
+function opNorm(o) {
+  const n = { name: str(o.name, 200) };
+  OP_TEKST.forEach(k => { n[k] = typeof o[k] === 'string' ? o[k] : ''; });
+  OP_LIJST.forEach(k => { n[k] = arr(o[k]).filter(x => typeof x === 'string'); });
+  n.mijlpalen = arr(o.mijlpalen).filter(obj).map(m => ({ text:String(m.text == null ? '' : m.text), date: typeof m.date === 'string' ? m.date : '' }));
+  const t = obj(o.teken) ? o.teken : {};
+  n.teken = { naam:String(t.naam || ''), datum: typeof t.datum === 'string' ? t.datum : '', kopie: obj(t.kopie) ? t.kopie : null };
+  return n;
+}
+function opWaarde(o, k) {
+  if (k === 'name') return String(o.name || '').trim();
+  if (k === 'mijlpalen') return o.mijlpalen.filter(m => m.text.trim() || m.date).map(m => ({ text:m.text.trim(), date:m.date }));
+  if (OP_LIJST.includes(k)) return vol(o[k]);
+  return String(o[k] || '').trim();
+}
+const opSectie = (o, id) => OP_SEC[id].map(k => opWaarde(o, k));
+const opGetekend = o => !!(o.teken.naam.trim() && o.teken.datum);
+function opGewijzigd(o) {
+  if (!opGetekend(o) || !o.teken.kopie) return [];
+  return Object.keys(OP_SEC).filter(id => o.teken.kopie[id] && JSON.stringify(opSectie(o, id)) !== JSON.stringify(o.teken.kopie[id]));
+}
+const opKopie = o => Object.fromEntries(Object.keys(OP_SEC).map(id => [id, opSectie(o, id)]));
+const opInhoud = o => ['waarom', 'opleveren', 'opdrachtgever', 'projectleider', 'einddatum'].some(k => o[k].trim()) || ['doelen', 'binnen', 'buiten'].some(k => vol(o[k]).length) || o.mijlpalen.some(m => m.text.trim());
+
+/* Meetplan: meetplan.v1 = { plans:[{ id, name, doelen:[{ text, inds:[...] }] }], current } */
+function mpInd(i) {
+  const s = k => str(i[k], 300), v = x => obj(x) ? { v:str(x.v, 20), d:str(x.d, 10) } : { v:'', d:'' };
+  return { name:s('name'), vorm:s('vorm'), eenheid:s('eenheid'), richting:s('richting'), nul:v(i.nul), streef:v(i.streef),
+    metingen: arr(i.metingen).filter(obj).map(m => ({ d:str(m.d, 10), v:str(m.v, 20) })) };
+}
+// Getallen zoals je ze schrijft: 1.240, 1,5 en 85% (zelfde regels als het Meetplan).
+function num(v) {
+  if (v == null) return NaN;
+  let s = String(v).trim().replace(/[\s %€]/g, '');
+  if (/^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(s)) s = s.replace(/\./g, '');
+  else if (/^-?\d{1,3}(,\d{3})+\.\d+$/.test(s)) s = s.replace(/,/g, '');
+  s = s.replace(',', '.');
+  return s === '' || !/^-?\d*\.?\d+$/.test(s) ? NaN : parseFloat(s);
+}
+function mpCalc(i) {
+  const nul = num(i.nul.v), streef = num(i.streef.v);
+  const mets = i.metingen.map(m => ({ d:m.d, v:num(m.v) })).filter(m => !isNaN(m.v) && okDate(m.d)).sort((a, b) => a.d < b.d ? -1 : a.d > b.d ? 1 : 0);
+  const c = { nul: isNaN(nul) ? null : nul, streef: isNaN(streef) ? null : streef, last: mets.length ? mets[mets.length - 1] : null };
+  c.dir = i.richting || (c.nul != null && c.streef != null ? (c.streef > c.nul ? 'hoger' : c.streef < c.nul ? 'lager' : '') : '');
+  c.reachedAtStart = c.nul != null && c.streef != null && (c.nul === c.streef || (c.dir === 'hoger' && c.nul > c.streef) || (c.dir === 'lager' && c.nul < c.streef));
+  c.prog = !c.reachedAtStart && c.last && c.nul != null && c.streef != null ? (c.last.v - c.nul) / (c.streef - c.nul) : null;
+  return c;
+}
+function mpStand(i) {
+  const c = mpCalc(i);
+  if (c.nul == null) return { woorden:'Nog geen nulmeting', pct:null };
+  if (c.streef == null) return { woorden:'Nog geen streefwaarde', pct:null };
+  if (c.reachedAtStart) return { woorden:'Al gehaald bij de start', pct:null };
+  if (!c.last) return { woorden:'Nog geen meting na de nulmeting', pct:0 };
+  const p = c.prog;
+  if (p >= 1) return { woorden:'Streefwaarde gehaald', pct:100 };
+  if (p < 0) return { woorden:'Verder af dan bij de nulmeting', pct:0, slecht:true };
+  if (p === 0) return { woorden:'Nog even ver als bij de nulmeting', pct:0 };
+  const r = Math.min(99, Math.max(1, Math.round(p * 100)));
+  return { woorden:`Op ${r}% van de weg`, pct:r };
+}
+
+/* Project Radar: projectradar.v1 = { version:2, projects:[{ id, name, scores, toelichtingen }] }; oud: { projectName, scores, toelichtingen } */
+const CATS = [
+  { id:'scope', label:'Inhoud', w:1.2 }, { id:'planning', label:'Planning', w:1.2 }, { id:'budget', label:'Budget', w:1.1 },
+  { id:'communication', label:'Communicatie', w:1.0 }, { id:'risks', label:"Risico's", w:1.3 }, { id:'issues', label:'Knelpunten', w:1.2 },
+  { id:'resources', label:'Mensen en middelen', w:1.0 }, { id:'dependencies', label:'Afhankelijkheden', w:1.1 }, { id:'stakeholders', label:'Betrokkenen', w:1.0 },
+];
+function radarNorm(p) {
+  const sc = {}, tl = {};
+  CATS.forEach(c => { const v = Number(obj(p.scores) && p.scores[c.id]); sc[c.id] = [1, 2, 3].includes(v) ? v : 0; const t = obj(p.toelichtingen) && p.toelichtingen[c.id]; tl[c.id] = typeof t === 'string' ? t.trim() : ''; });
+  return { scores:sc, toelichtingen:tl };
+}
+// Zelfde regel als Project Radar: twee zware problemen of een gemiddelde onder 2 is rood; groen vraagt 2,7 en geen zwaar probleem.
+function radarStand(sc) {
+  let tw = 0, ws = 0, n = 0, red = 0;
+  CATS.forEach(c => { const v = sc[c.id]; if (v > 0) { ws += v * c.w; tw += c.w; n++; if (v === 1) red++; } });
+  const avg = tw ? ws / tw : 0;
+  if (!avg) return { cls:'empty', label:'Nog niet beoordeeld', n };
+  const cls = (avg < 2 || red >= 2) ? 'red' : (red || avg < 2.7) ? 'orange' : 'green';
+  return { cls, label:{ red:'Zwaar probleem', orange:'Aandacht nodig', green:'Op koers' }[cls], n };
+}
+
+/* Risicomatrix: risico.v1 = { schaal:5, projects:[{ id, name, items:[{ name, probability, impact, measure, owner, status }] }] }.
+   Zonder schaal:5 is het de oude schaal 1 tot 10: omzetten zoals de Risicomatrix zelf doet. */
+const RI_STATUS = { open:'Nog te doen', bezig:'Maatregel loopt', klaar:'Onder controle' };
+function riNiveau(score) {
+  if (score >= 15) return { naam:'Kritiek', cls:'rood' };
+  if (score >= 10) return { naam:'Hoog', cls:'oranje' };
+  if (score >= 5) return { naam:'Gemiddeld', cls:'geel' };
+  return { naam:'Laag', cls:'groen' };
+}
+
+/* Takenbord: sprintflow_kanban_v5 = { projects:[{ id, name, cards, team, sprints }], activeProjectId } */
+const KOLOMMEN = [{ id:'backlog', naam:'Later' }, { id:'todo', naam:'Te doen' }, { id:'bezig', naam:'Bezig' }, { id:'review', naam:'Nakijken' }, { id:'klaar', naam:'Klaar' }];
+function kbNorm(p) {
+  const team = arr(p.team).filter(obj).map(m => ({ id:str(m.id, 80), name:str(m.name, 200) }));
+  const cards = arr(p.cards).filter(obj).map(c => ({ title:str(c.title, 500).trim(), status: KOLOMMEN.some(k => k.id === c.status) ? c.status : 'backlog',
+    ownerId:str(c.ownerId, 80), dueDate: okDate(c.dueDate) ? c.dueDate : '', priority:str(c.priority, 10) })).filter(c => c.title);
+  return { team, cards };
+}
+
+/* Gap-analyse en Prioriteren: zelfde getallen en kwadranten als die tools. */
+function gapNorm(g) {
+  const a = obj(g.asis) ? g.asis : {}, b = obj(g.tobe) ? g.tobe : {};
+  return { theme:str(g.theme, 200).trim(), asis:{ text:str(a.text).trim(), indicator:str(a.indicator), value:str(a.value, 40), unit:str(a.unit, 40) },
+    tobe:{ text:str(b.text).trim(), value:str(b.value, 40), by:str(b.by, 10) }, impact:+g.impact || 0, feas:+g.feas || 0,
+    acties: arr(g.actions).filter(obj).filter(x => !x.done && str(x.text).trim()).length };
+}
+function gapLijn(g) {
+  const a = num(g.asis.value), b = num(g.tobe.value);
+  if (isNaN(a) || isNaN(b)) return '';
+  const pp = /^\s*(%|procent|percent)/i.test(g.asis.unit) || (/%/.test(g.asis.value) && !g.asis.unit.trim());
+  const u = pp ? '%' : g.asis.unit.trim() ? ' ' + g.asis.unit.trim() : '';
+  return `${nf(a)}${pp ? '%' : ''} nu, ${nf(b)}${u} gewenst`;
+}
+const gapGrootte = g => { const a = num(g.asis.value), b = num(g.tobe.value); return isNaN(a) || isNaN(b) || !a ? 0 : Math.abs((b - a) / a); };
+
+/* Betrokkenenradar: stakeholders.v1 = { model:2, project, items:[{ name, contribution, willingness, next, wat, todo }], voorbeeld } (één project) */
+const clamp10 = v => Math.max(1, Math.min(10, Math.round(+v) || 1));
+const BR_KWADRANT = (c, w) => c >= 6 ? (w >= 6 ? 'Nauw betrekken' : 'Vroeg opzoeken') : (w >= 6 ? 'Op de hoogte houden' : 'In het oog houden');
+
+/* De lezers zelf */
+const LEES = {
+  opdracht: d => arr(d && d.opdrachten).filter(obj).map((o, i) => { const n = opNorm(o); return { id:itemId(o, i), name:n.name, voorbeeld:o.voorbeeld === true, data:n, inhoud:opInhoud(n) }; }),
+  meetplan: d => arr(d && d.plans).filter(obj).map((p, i) => {
+    const doelen = arr(p.doelen).filter(obj).map(x => ({ text:str(x.text, 300).trim(), inds:arr(x.inds).filter(obj).map(mpInd) })).filter(x => x.text || x.inds.some(i => i.name.trim()));
+    return { id:itemId(p, i), name:str(p.name, 200), voorbeeld:p.voorbeeld === true, data:{ doelen }, inhoud:doelen.length > 0 };
+  }),
+  radar: d => {
+    const ps = d && Array.isArray(d.projects) ? d.projects.filter(obj) : obj(d) && d.scores && d.toelichtingen ? [d] : null;
+    if (!ps) return null;
+    return ps.map((p, i) => { const n = radarNorm(p); return { id:itemId(p, i), name:typeof p.name === 'string' ? p.name : str(p.projectName, 200), voorbeeld:p.voorbeeld === true, data:n, inhoud:CATS.some(c => n.scores[c.id] > 0) }; });
+  },
+  risico: d => {
+    if (!obj(d)) return null;
+    const oud = d.schaal !== 5, c = v => oud ? Math.max(1, Math.min(5, Math.ceil(Math.max(1, Math.min(10, Math.round(+v) || 1)) / 2))) : Math.max(1, Math.min(5, Math.round(+v) || 1));
+    const items = l => arr(l).filter(x => obj(x) && typeof x.name === 'string' && x.name.trim()).map(x => ({ name:x.name.trim().slice(0, 300), kans:c(x.probability), impact:c(x.impact),
+      maatregel:str(x.measure, 500).trim(), eigenaar:str(x.owner, 80).trim(), status: RI_STATUS[x.status] ? x.status : '' }));
+    const ps = Array.isArray(d.projects) ? d.projects.filter(obj) : Array.isArray(d.items) ? [{ name:d.project, items:d.items, voorbeeld:d.voorbeeld }] : null;
+    if (!ps) return null;
+    return ps.map((p, i) => { const it = items(p.items); return { id:itemId(p, i), name:str(p.name, 80), voorbeeld:p.voorbeeld === true, data:{ items:it }, inhoud:it.length > 0 }; });
+  },
+  besluit: d => arr(d && d.logs).filter(obj).map((l, i) => {
+    const items = arr(l.items).filter(obj).map(it => ({ what:str(it.what, 300).trim() || 'Zonder titel', why:str(it.why).trim(), who:str(it.who, 120).trim(), date:okDate(it.date) ? it.date : '',
+      status:['genomen', 'herzien', 'ingetrokken'].includes(it.status) ? it.status : 'genomen', created:+it.created || 0,
+      acties:arr(it.actions).filter(obj).map(a => ({ text:str(a.text, 300).trim(), who:str(a.who, 120).trim(), when:okDate(a.when) ? a.when : '', done:!!a.done })).filter(a => a.text) }));
+    return { id:itemId(l, i), name:str(l.name, 200), voorbeeld:l.voorbeeld === true, data:{ items }, inhoud:items.length > 0 };
+  }),
+  kanban: d => {
+    if (!obj(d)) return null;
+    const ps = Array.isArray(d.projects) && d.projects.length ? d.projects.filter(obj) : (d.cards || d.team) ? [{ id:'oud', name:'Mijn project', cards:d.cards, team:d.team }] : null;
+    if (!ps) return null;
+    return ps.map((p, i) => { const n = kbNorm(p); return { id:itemId(p, i), name:str(p.name, 200), voorbeeld:p.voorbeeld === true, data:n, inhoud:n.cards.length > 0 }; });
+  },
+  raci: d => arr(d && d.mats).filter(obj).map((m, i) => {
+    const roles = arr(m.roles).filter(obj).map(r => ({ id:str(r.id, 80), name:str(r.name, 120).trim() })).filter(r => r.id);
+    const tasks = arr(m.tasks).filter(obj).map(t => ({ name:str(t.name, 200).trim(), cells:obj(t.cells) ? t.cells : {} })).filter(t => t.name);
+    return { id:itemId(m, i), name:str(m.name, 200), voorbeeld:m.voorbeeld === true, data:{ roles, tasks }, inhoud:tasks.length > 0 };
+  }),
+  gap: d => arr(d && d.analyses).filter(obj).map((a, i) => {
+    const gaps = arr(a.gaps).filter(obj).map(gapNorm).filter(g => g.theme);
+    return { id:itemId(a, i), name:str(a.name, 200), voorbeeld:a.voorbeeld === true, data:{ gaps }, inhoud:gaps.length > 0 };
+  }),
+  prio: d => {
+    if (!obj(d) || !Array.isArray(d.lists)) return null;
+    const max = d.scale === 4 ? 4 : 4, c = v => Math.max(1, Math.min(max, Math.round(+v) || 1));
+    return d.lists.filter(obj).map((l, i) => {
+      const items = arr(l.items).filter(obj).map(x => ({ name:str(x.name, 200).trim(), impact:c(x.impact), effort:c(x.effort), done:!!x.done, nieuw:!!x.nieuw })).filter(x => x.name);
+      return { id:itemId(l, i), name:str(l.name, 200), voorbeeld:l.voorbeeld === true, data:{ items }, inhoud:items.length > 0 };
+    });
+  },
+  betrokken: d => {
+    if (!obj(d) || !Array.isArray(d.items)) return null;
+    const items = d.items.filter(x => obj(x) && x.name).map(x => {
+      const oud = !('contribution' in x) && ('power' in x || 'interest' in x);
+      return { name:String(x.name).slice(0, 80), c:clamp10(oud ? x.power : x.contribution), w:clamp10(oud ? x.interest : x.willingness), next:str(x.next, 140).trim(), wat:str(x.wat, 200).trim(), todo:x.todo === true };
+    });
+    return [{ id:'enig', name:str(d.project, 80), voorbeeld:d.voorbeeld === true, data:{ items }, inhoud:items.length > 0 }];
+  },
+  realisme: d => arr(d && d.projects).filter(x => obj(x) && typeof x.name === 'string' && x.name.trim()).map((x, i) => {
+    const o = parseFloat(String(x.o == null ? '' : x.o).replace(',', '.')), m = parseFloat(String(x.m == null ? '' : x.m).replace(',', '.')), p = parseFloat(String(x.p == null ? '' : x.p).replace(',', '.'));
+    const geldig = o > 0 && o <= m && m <= p;
+    return { id:itemId(x, i), name:x.name.slice(0, 80), voorbeeld:x.voorbeeld === true, data:{ o, m, p, geldig }, inhoud:geldig };
+  }),
+};
+
+/* ---------- Lezen: van dit toestel, of uit het ingebakken voorbeeld ---------- */
+function rauw(key, vb) {
+  if (vb) { const v = VOORBEELD()[key]; return v === undefined ? undefined : JSON.parse(JSON.stringify(v)); }
+  let t = null; try { t = localStorage.getItem(key); } catch { return undefined; }
+  if (t == null) return undefined;
+  return JSON.parse(t);   // gooit bij kapotte tekst: de lezer vangt dat op
+}
+// De Project Realisme Monitor legt zijn uitkomst klaar (einddatum, mensdagen, doorlooptijd): die rekent ze zelf, met feestdagen en marge.
+function realismeCijfers(naam, vb) {
+  try {
+    const d = rauw('oc.share.project-realisme', vb); if (!obj(d)) return null;
+    const l = arr(d.lists).find(x => obj(x) && sleutel(x.name) === sleutel(naam)); if (!l) return null;
+    const k = t => { const it = arr(l.items).find(x => obj(x) && x.type === 'kerncijfer' && x.text === t); return it ? String(it.note || '') : ''; };
+    const eind = k('realisme.einddatum');
+    return okDate(eind) ? { eind, mensdagen:num(k('realisme.mensdagen')), doorloop:num(k('realisme.doorlooptijd')) } : null;
+  } catch { return null; }
+}
+function leesAlles(vb) {
+  const uit = {};
+  TOOLS.forEach(t => {
+    let r = { items:[], kapot:false, leeg:true };
+    try {
+      const d = rauw(t.key, vb);
+      if (d !== undefined && d !== null) {
+        const items = LEES[t.id](d);
+        if (items === null || !Array.isArray(items)) r = { items:[], kapot:true, leeg:false };
+        else r = { items:items.filter(x => x && !x.voorbeeld), kapot:false, leeg:false };
+      }
+    } catch { r = { items:[], kapot:true, leeg:false }; }
+    uit[t.id] = r;
+  });
+  return uit;
+}
+
+/* Welk item hoort bij het project? Eigen keuze eerst, dan dezelfde naam, anders een voorstel. */
+function kiesItem(t, r, d) {
+  const k = d.keuze[t.id], met = r.items.filter(x => x.inhoud);
+  if (k === '-') return { item:null, hoe:'nee', met };
+  if (k) { const x = r.items.find(i => i.id === k); if (x && x.inhoud) return { item:x, hoe:'keuze', met }; }
+  const s = sleutel(d.name), x = s && met.find(i => sleutel(i.name) === s);
+  if (x) return { item:x, hoe:'naam', met };
+  if (!d.voorbeeld && r.items.length === 1 && r.items[0].inhoud && isStd(r.items[0].name)) return { item:null, hoe:'voorstel', voorstel:r.items[0], met };
+  return { item:null, hoe:'', met };
+}
+
+/* ---------- Het ingebakken voorbeeld ----------
+   Dezelfde vorm als de echte sleutels van de tools, zodat dezelfde lezers het lezen. Het blijft in het geheugen:
+   het dossier schrijft het nergens weg. Datums staan ten opzichte van vandaag, zodat "te laat" klopt. */
+let vbCache = null, vbDag = '';
+function VOORBEELD() {
+  if (vbCache && vbDag === vandaag()) return vbCache;
+  const d = plus, N = VBN;
+  const opdracht = { id:'vb-op', name:N,
+    waarom:'Wie een renovatiepremie aanvraagt, vult nu een PDF-formulier in en wacht gemiddeld 21 werkdagen op een beslissing.',
+    opleveren:'Een online loket waar burgers een renovatiepremie aanvragen, bijlagen opladen en hun dossier volgen. Met een behandelscherm voor de dossierbeheerders.',
+    doelen:['Een volledige aanvraag krijgt binnen 10 werkdagen een beslissing (nu 21)', 'Minstens 80% van de aanvragen komt online binnen', 'Aanvragers weten op elk moment waar hun dossier staat'],
+    binnen:['Aanvraag, bijlagen en status online', 'Koppeling met het bestaande dossierbeheer', 'Opleiding voor de 25 dossierbeheerders'],
+    buiten:['Andere premies dan de renovatiepremie', 'De bedragen en voorwaarden van de premie', 'Een app voor de smartphone'],
+    opdrachtgever:'Els Peeters, afdelingshoofd Wonen', projectleider:'Tom Claes', kernteam:'Sara, Jonas, Leen', akkoord:['Directiecomité'],
+    einddatum:d(395), budget:'€ 450.000', mensen:'3 voltijds', knelt:'inhoud',
+    mijlpalen:[{ id:'m1', text:'Ontwerp van het loket goedgekeurd', date:d(-40) }, { id:'m2', text:'Proefversie getest met 20 aanvragers', date:d(25) },
+      { id:'m3', text:'Koppeling met het dossierbeheer werkt', date:d(150) }, { id:'m4', text:'Dossierbeheerders opgeleid', date:d(300) }, { id:'m5', text:'Loket open voor alle aanvragers', date:d(380) }],
+    risicos:['De leverancier levert de koppeling pas na de zomer'], freq:'Elke maand', aanWie:'De stuurgroep', escaleren:'Meer dan 4 weken vertraging: de opdrachtgever beslist binnen de week.',
+    teken:{ naam:'Els Peeters', datum:d(-75), kopie:null } };
+  // Afgetekend met een lager budget: sindsdien gewijzigd
+  const kop = opKopie(opNorm(opdracht)); kop.middelen = kop.middelen.slice(); kop.middelen[1] = '€ 420.000'; opdracht.teken.kopie = kop;
+  const ind = (name, nul, streef, mets, extra) => Object.assign({ id:uid(), name, nul:{ v:nul, d:d(-200) }, streef:{ v:streef, d:d(395) }, metingen:mets.map(([n, v]) => ({ id:uid(), d:d(n), v })) }, extra || {});
+  vbCache = {
+    'opdracht.v1': { opdrachten:[opdracht], current:'vb-op' },
+    'meetplan.v1': { plans:[{ id:'vb-mp', name:N, doelen:[
+      { id:'d1', text:'Een volledige aanvraag krijgt binnen 10 werkdagen een beslissing', inds:[ind('Gemiddelde behandeltijd in werkdagen', '21', '10', [[-90, '17'], [-30, '14']], { eenheid:'werkdagen' })] },
+      { id:'d2', text:'Minstens 80% van de aanvragen komt online binnen', inds:[ind('Aandeel online aanvragen', '0', '80', [[-30, '35']], { vorm:'pct' })] },
+      { id:'d3', text:'Aanvragers weten waar hun dossier staat', inds:[ind('Telefoontjes over de stand van een dossier, per week', '600', '150', [])] } ] }], current:'vb-mp' },
+    'projectradar.v1': { version:2, projects:[{ id:'vb-ra', name:N,
+      scores:{ scope:3, planning:2, budget:3, communication:3, risks:2, issues:1, resources:2, dependencies:3, stakeholders:3 },
+      toelichtingen:{ planning:'De koppeling met het dossierbeheer loopt vier weken uit.', issues:'De testomgeving van de leverancier ligt al twee weken stil.',
+        risks:'Na de campagne in het voorjaar verwachten we een piek in aanvragen.', resources:'Een van de twee ontwikkelaars valt weg tot eind januari.' } }], current:'vb-ra' },
+    'risico.v1': { schaal:5, projects:[{ id:'vb-ri', name:N, items:[
+      { name:'Koppeling met het dossierbeheer raakt niet op tijd klaar', probability:4, impact:4, measure:'Wekelijks overleg met de leverancier', owner:'Dienst ICT', status:'bezig' },
+      { name:'Piek in aanvragen na de campagne in het voorjaar', probability:4, impact:3, measure:'Extra loketuren in de weken na de campagne', owner:'Loketverantwoordelijke', status:'open' },
+      { name:'Advies over gegevensbescherming komt laat', probability:3, impact:4, measure:'Het advies nu al aanvragen, met een vaste datum', owner:'Projectleider', status:'bezig' },
+      { name:'Regels voor de premie wijzigen tijdens het project', probability:2, impact:5 },
+      { name:'Dossierbeheerders kennen het nieuwe scherm nog niet', probability:3, impact:2, measure:'Korte opleiding voor de start', owner:'Loketverantwoordelijke' },
+      { name:'Budget voor de testfase is te krap', probability:2, impact:3 },
+      { name:'Website tijdelijk onbereikbaar', probability:1, impact:2, measure:'Afspraak met de hostingpartner', owner:'Dienst ICT', status:'klaar' } ] }], current:'vb-ri' },
+    'beslissingen.v1': { logs:[{ id:'vb-be', name:N, items:[
+      { id:'b1', what:'Aanvragen enkel nog digitaal, met hulp aan het loket voor wie geen computer heeft', why:'Digitaal mag niemand uitsluiten.', who:'Stuurgroep', date:d(-34), status:'genomen', created:1,
+        actions:[{ id:'a1', text:'Loketmedewerkers kort opleiden', who:'Diensthoofd', when:d(-9), done:false }, { id:'a2', text:'Affiche aan het loket ophangen', who:'Communicatie', when:d(-20), done:true }] },
+      { id:'b2', what:'Proefversie eerst testen met 20 aanvragers', why:'Liever nu fouten vinden dan na de lancering.', who:'Projectleider', date:d(-12), status:'genomen', created:2,
+        actions:[{ id:'a3', text:'20 testers zoeken via de nieuwsbrief', who:'Communicatie', when:d(-3), done:false }] },
+      { id:'b3', what:'Elke maand een korte stand van zaken naar de stuurgroep', why:'Er kwamen te veel losse vragen tussendoor.', who:'Opdrachtgever', date:d(-60), status:'genomen', created:0, actions:[] } ] }], current:'vb-be' },
+    'sprintflow_kanban_v5': { projects:[{ id:'vb-kb', name:N, sprints:[{ id:'s1', name:'Sprint 1', status:'active' }],
+      team:[{ id:'t1', name:'Tom' }, { id:'t2', name:'Sara' }, { id:'t3', name:'Jonas' }, { id:'t4', name:'Leen' }],
+      cards:[
+        { id:'k1', title:'Mijlpaal: Ontwerp van het loket goedgekeurd', status:'klaar', ownerId:'t1', dueDate:d(-40) },
+        { id:'k2', title:'Mijlpaal: Proefversie getest met 20 aanvragers', status:'bezig', ownerId:'t2', dueDate:d(25) },
+        { id:'k3', title:'Koppeling met het dossierbeheer bouwen', status:'bezig', ownerId:'t3', dueDate:d(-6) },
+        { id:'k4', title:'Teksten van het formulier in eenvoudige taal', status:'review', ownerId:'t4', dueDate:d(-2) },
+        { id:'k5', title:'Testscenario voor de proefversie schrijven', status:'todo', ownerId:'t2', dueDate:d(10) },
+        { id:'k6', title:'Veelgestelde vragen op de website', status:'todo', ownerId:'t4' },
+        { id:'k7', title:'Opleiding voor dossierbeheerders plannen', status:'backlog', ownerId:'t1' },
+        { id:'k8', title:'Nieuwsbrief over het nieuwe loket', status:'backlog', ownerId:'t4' },
+        { id:'k9', title:'Bewijsstukken voor de premie opsommen', status:'klaar', ownerId:'t2' },
+        { id:'k10', title:'Huisstijl van het loket vastleggen', status:'klaar', ownerId:'t4' } ] }], activeProjectId:'vb-kb' },
+    'raci.v1': { mats:[{ id:'vb-rc', name:N, roles:[{ id:'r1', name:'Opdrachtgever' }, { id:'r2', name:'Projectleider' }, { id:'r3', name:'Dienst ICT' }, { id:'r4', name:'Dossierbeheer' }, { id:'r5', name:'Communicatie' }],
+      tasks:[
+        { id:'x1', name:'Budget en planning goedkeuren', cells:{ r1:'A', r2:'R' } },
+        { id:'x2', name:'Koppeling met het dossierbeheer bouwen', cells:{ r2:'A', r3:'R', r4:'C' } },
+        { id:'x3', name:'Proefversie testen met aanvragers', cells:{ r2:'A', r4:'R', r5:'C' } },
+        { id:'x4', name:'Dossierbeheerders opleiden', cells:{ r4:'AR', r2:'I' } },
+        { id:'x5', name:'Lancering aankondigen', cells:{ r1:'I', r5:'R' } } ] }], current:'vb-rc' },
+    'gap.v1': { analyses:[{ id:'vb-gp', name:N, question:'', gaps:[
+      { id:'g1', theme:'Behandeltijd van een aanvraag', asis:{ text:'Een aanvraag wacht gemiddeld 21 werkdagen op een beslissing.', indicator:'Behandeltijd', value:'21', unit:'werkdagen' },
+        tobe:{ text:'Een volledige aanvraag krijgt binnen 10 werkdagen een beslissing.', value:'10', by:d(395) }, impact:4, feas:3,
+        actions:[{ text:'Onvolledige dossiers meteen terugsturen', who:'Sara', done:false }, { text:'Controle van bijlagen automatiseren', who:'Jonas', done:false }] },
+      { id:'g2', theme:'Vragen aan het loket', asis:{ text:'600 telefoontjes per week', value:'600', unit:'per week' }, tobe:{ text:'Minder dan 150 per week', value:'150' }, impact:3, feas:4, actions:[] } ] }], current:'vb-gp' },
+    'prioriteit.v1': { scale:4, lists:[{ id:'vb-pr', name:N, items:[
+      { id:'p1', name:'Ontvangstbevestiging met de verwachte beslisdatum', impact:4, effort:1, done:false },
+      { id:'p2', name:'Checklist met bijlagen op de aanvraagpagina', impact:3, effort:1, done:false },
+      { id:'p3', name:'Statuspagina voor aanvragers', impact:4, effort:4, done:false },
+      { id:'p4', name:'Tweetalige versie van het formulier', impact:2, effort:3, done:false } ] }], current:'vb-pr' },
+    'stakeholders.v1': { model:2, project:N, items:[
+      { name:'Dienst ICT', contribution:9, willingness:4, next:'Afspraak over 2 dagen per week tot de zomer', wat:'Veel andere projecten tegelijk' },
+      { name:'Dossierbeheerders', contribution:7, willingness:5, next:'Uitnodigen voor de test van de proefversie', wat:'Vrezen extra werk in de overgang' },
+      { name:'Directiecomité', contribution:9, willingness:8, next:'Maandelijkse stand van zaken' },
+      { name:'Seniorenraad', contribution:4, willingness:3, next:'Toelichten hoe de hulp aan het loket werkt' } ] },
+    'realisme.v1': { projects:[{ id:'vb-re', name:N, o:'300', m:'420', p:'650', cap:'3', context:'governance', updated:1 }], current:'vb-re' },
+    'oc.share.project-realisme': { id:'project-realisme', tool:'Project Realisme', updated:1, lists:[{ name:N, items:[
+      { type:'kerncijfer', text:'realisme.einddatum', note:d(452) }, { type:'kerncijfer', text:'realisme.mensdagen', note:'478.3' }, { type:'kerncijfer', text:'realisme.doorlooptijd', note:'265.7' } ] }] },
+  };
+  vbDag = vandaag();
+  return vbCache;
+}
+
+/* ---------- Het dossier zelf: dossier.v1 = { dossiers:[{ id, name, datum, vraag, toelichting, aan:{}, keuze:{}, voorbeeld? }], current } ---------- */
+const SECS = [
+  { id:'vraag',     titel:'Wat vragen we aan de stuurgroep?', tools:[] },
+  { id:'oog',       titel:'In één oogopslag',          tools:['radar', 'meetplan'] },
+  { id:'opdracht',  titel:'Opdracht',                  tools:['opdracht'] },
+  { id:'risico',    titel:"Risico's",                  tools:['risico'] },
+  { id:'besluit',   titel:'Besluiten',                 tools:['besluit'] },
+  { id:'werk',      titel:'Werk',                      tools:['kanban'] },
+  { id:'rollen',    titel:'Wie beslist',               tools:['raci'] },
+  { id:'gap',       titel:'Grootste verschil',         tools:['gap'], opt:true },
+  { id:'prio',      titel:'Snelle winsten',            tools:['prio'], opt:true },
+  { id:'betrokken', titel:'Wie vraagt extra aandacht', tools:['betrokken'], opt:true },
+  { id:'realisme',  titel:'Realistische duur',         tools:['realisme'], opt:true },
+];
+const SEC = Object.fromEntries(SECS.map(s => [s.id, s]));
+const nieuw = name => ({ id:uid(), name: name == null ? ocProject('Mijn project') : name, datum:'', vraag:'', toelichting:'', aan:{}, keuze:{} });
+function norm(x) {
+  const n = nieuw(typeof x.name === 'string' ? x.name : 'Naamloos');
+  if (typeof x.id === 'string' && x.id) n.id = x.id;
+  if (x.voorbeeld === true) n.voorbeeld = true;
+  n.datum = okDate(x.datum) ? x.datum : '';
+  n.vraag = str(x.vraag, 1500); n.toelichting = str(x.toelichting, 1500);
+  if (obj(x.aan)) SECS.forEach(s => { if (typeof x.aan[s.id] === 'boolean') n.aan[s.id] = x.aan[s.id]; });
+  if (obj(x.keuze)) TOOLS.forEach(t => { if (typeof x.keuze[t.id] === 'string' && x.keuze[t.id]) n.keuze[t.id] = x.keuze[t.id].slice(0, 80); });
+  return n;
+}
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem(KEY));
+    if (d && Array.isArray(d.dossiers)) {
+      const ds = d.dossiers.filter(obj).map(norm);
+      if (ds.length) return { dossiers:ds, current: ds.some(x => x.id === d.current) ? d.current : ds[0].id };
+    }
+  } catch {}
+  const first = nieuw();
+  return { dossiers:[first], current:first.id };
+}
+let state = load();
+ocPickProject(state, 'dossiers');
+let version = 0;
+function save() { ocAfterSave(); version++; try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
+const cur = () => state.dossiers.find(x => x.id === state.current) || state.dossiers[0];
+const isAan = (d, id) => typeof d.aan[id] === 'boolean' ? d.aan[id] : !SEC[id].opt;
+const begun = d => !!(d.vraag.trim() || d.toelichting.trim() || d.datum || Object.keys(d.keuze).length || Object.keys(d.aan).length);
+const notaDatum = d => d.datum || vandaag();
+
+/* ---------- Het model: alles wat de nota nodig heeft, in één keer gelezen ---------- */
+let M = null;
+function bouwModel() {
+  const d = cur(), vb = !!d.voorbeeld, lees = leesAlles(vb);
+  const bron = {}, ontbreekt = [], voorstellen = [], kapot = [];
+  TOOLS.forEach(t => {
+    const r = lees[t.id];
+    if (r.kapot) kapot.push(t);
+    const k = kiesItem(t, r, d); bron[t.id] = k;
+    if (!k.item) { ontbreekt.push(t); if (k.hoe === 'voorstel') voorstellen.push({ t, item:k.voorstel }); }
+  });
+  // Welke projecten kennen de tools? Per naam: in hoeveel tools.
+  const namen = new Map();
+  TOOLS.forEach(t => lees[t.id].items.forEach(x => {
+    if (!x.inhoud || isStd(x.name)) return;
+    const s = sleutel(x.name); if (!s) return;
+    const e = namen.get(s) || { name:x.name.trim(), tools:new Set(), spel:{} };
+    e.tools.add(t.id); e.spel[x.name.trim()] = (e.spel[x.name.trim()] || 0) + 1; namen.set(s, e);
+  }));
+  const projecten = [...namen.values()].map(e => ({ name:Object.entries(e.spel).sort((a, b) => b[1] - a[1])[0][0], n:e.tools.size, s:sleutel(e.name) }))
+    .sort((a, b) => b.n - a.n || a.name.localeCompare(b.name, 'nl'));
+  const data = id => bron[id].item ? bron[id].item.data : null;
+  M = { d, vb, lees, bron, ontbreekt, voorstellen, kapot, projecten, data, ietsOpToestel: projecten.length > 0 || TOOLS.some(t => lees[t.id].items.some(x => x.inhoud)) };
+  return M;
+}
+
+/* ---------- Iconen ---------- */
+const ICON = {
+  ext:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg>',
+  pijl:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>',
+  ok:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+  plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
+};
+
+/* ---------- Inhoud per onderdeel (zelfde opmaak op het scherm en in de export) ---------- */
+const lijstHTML = (a, teken = '•', cls = '') => a.length ? `<ul class="lijst${cls ? ' ' + cls : ''}">${a.map(x => `<li data-oc-keep><i aria-hidden="true">${teken}</i><span>${x}</span></li>`).join('')}</ul>` : '';
+const pil = (tekst, cls) => `<span class="pil ${cls || ''}"><i aria-hidden="true"></i>${esc(tekst)}</span>`;
+const meerTekst = (n, wat, t) => n > 0 ? `<p class="meer-tekst">En nog ${meer(n, wat[0], wat[1])} in ${esc(t)}.</p>` : '';
+
+// Mijlpaal: staat ze als kaart "Mijlpaal: …" in het Takenbord van dit project, dan telt die kolom. Anders zegt de datum iets.
+function mijlpaalStand(m) {
+  const kb = M.data('kanban');
+  if (kb) { const c = kb.cards.find(c => sleutel(c.title) === sleutel('Mijlpaal: ' + m.text) || sleutel(c.title) === sleutel(m.text));
+    if (c) { const k = KOLOMMEN.find(x => x.id === c.status); return c.status === 'klaar' ? { t:'Klaar', cls:'groen' } : { t:k.naam + ' in het Takenbord', cls:'' }; } }
+  if (!okDate(m.date)) return { t:'Zonder datum', cls:'' };
+  const n = dagenTot(m.date);
+  return n < 0 ? { t:'Datum voorbij', cls:'amber' } : { t: n <= 31 ? `Over ${meer(n, 'dag', 'dagen')}` : 'Gepland', cls:'' };
+}
+
+const INHOUD = {
+  oog(ex) {
+    const r = M.data('radar'), mp = M.data('meetplan'); let h = '';
+    if (r) {
+      const st = radarStand(r.scores), knel = CATS.filter(c => r.scores[c.id] === 1 || r.scores[c.id] === 2).sort((a, b) => r.scores[a.id] - r.scores[b.id]);
+      const goed = CATS.filter(c => r.scores[c.id] === 3).map(c => c.label), nog = CATS.filter(c => !r.scores[c.id]).map(c => c.label);
+      h += `<div data-oc-keep><div class="sub-t">Stand van het project</div><div class="stand"><span class="stand-label ${st.cls}"><i aria-hidden="true"></i>${esc(st.label)}</span><span class="stand-noot">${st.n} van ${CATS.length} onderdelen beoordeeld</span></div>
+        ${knel.length ? `<ul class="knel" aria-label="Waar het knelt">${knel.map(c => `<li>${pil(r.scores[c.id] === 1 ? 'Zwaar probleem' : 'Licht probleem', r.scores[c.id] === 1 ? 'rood' : 'amber')}<span><b>${esc(c.label)}</b>${r.toelichtingen[c.id] ? `<small>${esc(r.toelichtingen[c.id])}</small>` : ''}</span></li>`).join('')}</ul>` : ''}
+        ${goed.length ? `<p class="oog-rest"><b>Op koers:</b> ${esc(goed.join(', '))}.</p>` : ''}${nog.length && nog.length < CATS.length ? `<p class="oog-rest"><b>Nog niet beoordeeld:</b> ${esc(nog.join(', '))}.</p>` : ''}</div>`;
+    }
+    if (mp) {
+      const ds = mp.doelen.slice(0, 5);
+      h += `<div class="sub-t"${r ? ' style="margin-top:1rem"' : ''}>Doelen en hoe ver we staan</div><div class="doelen">${ds.map(x => {
+        const inds = x.inds.filter(i => i.name.trim()).slice(0, 3);
+        return `<div data-oc-keep><div class="doel-t">${esc(x.text || 'Doel zonder naam')}</div>${inds.length ? inds.map(i => { const s = mpStand(i);
+          return `<div class="ind"><span>${esc(i.name.trim())}</span>${s.pct != null ? `<span class="balk" role="img" aria-label="${s.pct}% van de weg"><span style="width:${s.pct}%"></span></span>` : '<span></span>'}<span class="w">${esc(s.woorden)}</span></div>`; }).join('') : '<div class="ind"><span class="w">Nog geen indicator</span></div>'}</div>`; }).join('')}</div>
+        ${meerTekst(mp.doelen.length - ds.length, ['doel', 'doelen'], 'het Meetplan')}`;
+    }
+    return h;
+  },
+  opdracht(ex) {
+    const o = M.data('opdracht'); if (!o) return '';
+    let h = '';
+    const doelen = vol(o.doelen);
+    if (o.opleveren.trim() || doelen.length) h += `<div class="twee" data-oc-keep>${o.opleveren.trim() ? `<div><div class="sub-t">Wat we opleveren</div><p class="p">${esc(o.opleveren.trim())}</p></div>` : ''}${doelen.length ? `<div><div class="sub-t">Wat er beter wordt</div>${lijstHTML(doelen.map(esc), '✓', 'groen')}</div>` : ''}</div>`;
+    const bi = vol(o.binnen), bu = vol(o.buiten);
+    if (bi.length || bu.length) h += `<div class="twee" data-oc-keep style="margin-top:0.75rem">${bi.length ? `<div><div class="sub-t">Valt erbinnen</div>${lijstHTML(bi.map(esc), '✓', 'groen')}</div>` : ''}${bu.length ? `<div><div class="sub-t">Valt erbuiten</div>${lijstHTML(bu.map(esc), '×')}</div>` : ''}</div>`;
+    const ms = o.mijlpalen.filter(m => m.text.trim()).slice().sort((a, b) => (a.date || '9999') < (b.date || '9999') ? -1 : 1);
+    if (o.einddatum || ms.length) {
+      h += `<div data-oc-keep style="margin-top:0.75rem"><div class="sub-t">Einddatum en mijlpalen</div>${o.einddatum ? `<p class="p" style="margin-bottom:0.25rem">Klaar tegen <b>${esc(fmtLang(o.einddatum))}</b>.</p>` : ''}
+        <div class="rijen">${ms.map(m => { const s = mijlpaalStand(m); return `<div class="rij datum-links" data-oc-keep><span class="d">${m.date ? esc(fmtDate(m.date)) : 'zonder datum'}</span><span>${esc(m.text.trim())}</span><span>${pil(s.t, s.cls)}</span></div>`; }).join('')}</div></div>`;
+    }
+    const gew = opGewijzigd(o);
+    const teken = opGetekend(o) && gew.length ? pil('Gewijzigd na akkoord', 'amber') + ` <span class="stand-noot">Afgetekend op ${esc(fmtLang(o.teken.datum))} door ${esc(o.teken.naam.trim())}. Sindsdien veranderde: ${esc(gew.map(id => OP_KORT[id]).join(', '))}.</span>`
+      : opGetekend(o) ? pil('Afgetekend', 'groen') + ` <span class="stand-noot">op ${esc(fmtLang(o.teken.datum))} door ${esc(o.teken.naam.trim())}</span>`
+      : pil('Nog niet afgetekend', '') + ' <span class="stand-noot">De opdrachtgever gaf nog geen akkoord.</span>';
+    h += `<div data-oc-keep style="margin-top:0.875rem"><div class="sub-t">Akkoord van de opdrachtgever</div><div class="stand">${teken}</div></div>`;
+    return h;
+  },
+  risico(ex) {
+    const r = M.data('risico'); if (!r) return '';
+    const open = r.items.filter(x => x.status !== 'klaar').sort((a, b) => (b.kans * b.impact - a.kans * a.impact) || (b.impact - a.impact));
+    const top = open.slice(0, 5), klaar = r.items.length - open.length;
+    let h = top.length ? `<div class="rijen">${top.map(x => { const sc = x.kans * x.impact, nv = riNiveau(sc);
+      const extra = [x.maatregel && 'Maatregel: ' + x.maatregel, x.eigenaar && 'Eigenaar: ' + x.eigenaar, x.status && RI_STATUS[x.status]].filter(Boolean);
+      return `<div class="rij" data-oc-keep><span><b style="font-weight:600;color:#1e293b">${esc(x.name)}</b>${extra.length ? `<small>${esc(extra.join(' · '))}</small>` : '<small>Nog geen maatregel</small>'}</span><span>${pil(`${nv.naam} · ${sc}`, nv.cls)}</span></div>`; }).join('')}</div>`
+      : `<p class="p">Alle risico's staan onder controle.</p>`;
+    const rest = open.length - top.length;
+    if (rest || klaar) h += `<p class="meer-tekst">${[rest && `Nog ${meer(rest, 'kleiner risico', 'kleinere risico’s')}`, klaar && `${klaar} onder controle`].filter(Boolean).join(' · ')}. Alles staat in de Risicomatrix.</p>`;
+    return h;
+  },
+  besluit(ex) {
+    const b = M.data('besluit'); if (!b) return '';
+    const nu = vandaag(), genomen = b.items.filter(x => x.status === 'genomen').sort((a, c) => (c.date || '').localeCompare(a.date || '') || c.created - a.created);
+    const laat = b.items.filter(x => x.status !== 'ingetrokken').flatMap(x => x.acties.filter(a => !a.done && a.when && a.when < nu).map(a => ({ ...a, besluit:x.what }))).sort((a, c) => a.when < c.when ? -1 : 1);
+    let h = '';
+    if (genomen.length) h += `<div class="sub-t">Laatste besluiten</div><div class="rijen">${genomen.slice(0, 4).map(x => `<div class="rij datum-links" data-oc-keep><span class="d">${x.date ? esc(fmtDate(x.date)) : ''}</span><span>${esc(x.what)}${x.why ? `<small>${esc(kort(x.why, 140))}</small>` : ''}</span><span class="r">${esc(x.who)}</span></div>`).join('')}</div>${meerTekst(genomen.length - 4, ['besluit', 'besluiten'], 'het Beslissingslog')}`;
+    h += `<div class="sub-t"${genomen.length ? ' style="margin-top:0.875rem"' : ''}>Acties die te laat zijn</div>` + (laat.length
+      ? `<div class="rijen">${laat.slice(0, 6).map(a => `<div class="rij" data-oc-keep><span>${esc(a.text)}<small>${esc([a.who, 'bij: ' + kort(a.besluit, 70)].filter(Boolean).join(' · '))}</small></span><span>${pil('te laat sinds ' + fmtDate(a.when), 'amber')}</span></div>`).join('')}</div>${meerTekst(laat.length - 6, ['actie', 'acties'], 'het Beslissingslog')}`
+      : `<p class="p">Geen enkele actie is te laat.</p>`);
+    return h;
+  },
+  werk(ex) {
+    const k = M.data('kanban'); if (!k) return '';
+    const nu = vandaag(), wie = id => (k.team.find(m => m.id === id) || {}).name || '';
+    const laat = k.cards.filter(c => c.status !== 'klaar' && c.dueDate && c.dueDate < nu).sort((a, b) => a.dueDate < b.dueDate ? -1 : 1);
+    let h = `<div class="kolommen" data-oc-keep role="list" aria-label="Taken per kolom">${KOLOMMEN.map(c => { const n = k.cards.filter(x => x.status === c.id).length;
+      return `<div class="kolom${c.id === 'klaar' ? ' klaar' : ''}" role="listitem"><b>${n}</b><span>${esc(c.naam)}</span></div>`; }).join('')}</div>`;
+    h += `<div class="sub-t" style="margin-top:0.875rem">Taken die te laat zijn</div>` + (laat.length
+      ? `<div class="rijen">${laat.slice(0, 6).map(c => `<div class="rij" data-oc-keep><span>${esc(c.title)}<small>${esc([wie(c.ownerId), KOLOMMEN.find(x => x.id === c.status).naam].filter(Boolean).join(' · '))}</small></span><span>${pil('te laat sinds ' + fmtDate(c.dueDate), 'amber')}</span></div>`).join('')}</div>${meerTekst(laat.length - 6, ['taak', 'taken'], 'het Takenbord')}`
+      : `<p class="p">Geen enkele taak is te laat.</p>`);
+    return h;
+  },
+  rollen(ex) {
+    const r = M.data('raci'); if (!r) return '';
+    const namen = (t, f) => r.roles.filter(x => f(t.cells[x.id])).map(x => x.name).filter(Boolean);
+    const A = v => v === 'A' || v === 'AR', R = v => v === 'R' || v === 'AR';
+    const toon = r.tasks.slice(0, 8);
+    return `<div class="rijen">${toon.map(t => { const a = namen(t, A), u = namen(t, R);
+      return `<div class="rij" data-oc-keep style="grid-template-columns:minmax(0,1fr)"><span><b style="font-weight:600;color:#1e293b">${esc(t.name)}</b><small>Beslist: ${a.length ? esc(a.join(', ')) : '<span style="color:#92400e">nog niemand</span>'} · Voert uit: ${u.length ? esc(u.join(', ')) : '<span style="color:#92400e">nog niemand</span>'}</small></span></div>`; }).join('')}</div>${meerTekst(r.tasks.length - toon.length, ['taak', 'taken'], 'de RACI-matrix')}`;
+  },
+  gap(ex) {
+    const g = M.data('gap'); if (!g) return '';
+    const rated = g.gaps.filter(x => x.impact >= 1 && x.feas >= 1), lijst = (rated.length ? rated : g.gaps).slice().sort((a, b) => (b.impact - a.impact) || (gapGrootte(b) - gapGrootte(a)));
+    const x = lijst[0], lijn = gapLijn(x);
+    return `<div data-oc-keep><p class="p"><b style="color:#1e293b">${esc(x.theme)}</b></p>${x.asis.text || x.tobe.text ? `<div class="twee" style="margin-top:0.375rem">${x.asis.text ? `<div><div class="sub-t">Nu</div><p class="p">${esc(x.asis.text)}</p></div>` : ''}${x.tobe.text ? `<div><div class="sub-t">Waar we heen willen</div><p class="p">${esc(x.tobe.text)}</p></div>` : ''}</div>` : ''}
+      ${lijn || x.acties ? `<p class="meer-tekst">${esc([lijn, x.tobe.by && okDate(x.tobe.by) ? 'tegen ' + fmtDate(x.tobe.by) : '', x.acties ? meer(x.acties, 'open actie', 'open acties') : ''].filter(Boolean).join(' · '))}</p>` : ''}</div>`;
+  },
+  prio(ex) {
+    const p = M.data('prio'); if (!p) return '';
+    const snel = p.items.filter(i => !i.done && !i.nieuw && i.impact >= 3 && i.effort <= 2).sort((a, b) => ((b.impact - b.effort) - (a.impact - a.effort)) || (b.impact - a.impact));
+    return snel.length ? lijstHTML(snel.slice(0, 5).map(i => `${esc(i.name)} <small>veel effect, weinig werk</small>`), '✓', 'groen') + meerTekst(snel.length - 5, ['snelle winst', 'snelle winsten'], 'Prioriteren')
+      : '<p class="p">Nog geen snelle winsten: niets met veel effect en weinig werk.</p>';
+  },
+  betrokken(ex) {
+    const b = M.data('betrokken'); if (!b) return '';
+    const top = b.items.filter(x => !x.todo).sort((a, c) => (c.c * (11 - c.w)) - (a.c * (11 - a.w)) || c.c - a.c).slice(0, 3), todo = b.items.filter(x => x.todo).length;
+    return (top.length ? `<div class="rijen">${top.map(x => `<div class="rij" data-oc-keep><span><b style="font-weight:600;color:#1e293b">${esc(x.name)}</b><small>${esc([x.next && 'Volgende stap: ' + x.next, x.wat && 'Wat speelt er: ' + x.wat].filter(Boolean).join(' · ') || 'Nog geen volgende stap')}</small></span><span>${pil(BR_KWADRANT(x.c, x.w), BR_KWADRANT(x.c, x.w) === 'Vroeg opzoeken' ? 'oranje' : '')}</span></div>`).join('')}</div>` : '<p class="p">Nog niemand ingeschat.</p>')
+      + (todo ? `<p class="meer-tekst">${meer(todo, 'betrokkene is', 'betrokkenen zijn')} nog niet ingeschat.</p>` : '');
+  },
+  realisme(ex) {
+    const r = M.data('realisme'); if (!r) return '';
+    const c = realismeCijfers(M.bron.realisme.item.name, M.vb), o = M.data('opdracht');
+    if (!c) return `<p class="p">Schatting: ${nf(r.o)} tot ${nf(r.p)} dagen werk. Open de Project Realisme Monitor om de realistische einddatum te berekenen.</p>`;
+    let verschil = '';
+    if (o && okDate(o.einddatum)) {
+      const w = Math.round((new Date(c.eind + 'T00:00:00') - new Date(o.einddatum + 'T00:00:00')) / (7 * 864e5));
+      verschil = w > 0 ? pil(`${meer(w, 'week', 'weken')} later dan gepland`, 'amber') : w < 0 ? pil(`${meer(-w, 'week', 'weken')} vroeger dan gepland`, 'groen') : pil('Zoals gepland', 'groen');
+    }
+    return `<div class="rijen" data-oc-keep>
+      <div class="rij"><span>Realistisch klaar</span><span class="r" style="font-size:0.9375rem;color:#1e293b;font-weight:600">${esc(fmtLang(c.eind))}</span></div>
+      ${o && okDate(o.einddatum) ? `<div class="rij"><span>Gepland in de opdracht</span><span class="r" style="font-size:0.9375rem;color:#1e293b">${esc(fmtLang(o.einddatum))}</span></div>` : ''}
+      ${!isNaN(c.mensdagen) ? `<div class="rij"><span>Werk en doorlooptijd</span><span class="r">${nf(c.mensdagen)} dagen werk · ${nf(c.doorloop)} werkdagen</span></div>` : ''}</div>
+      ${verschil ? `<div class="stand" style="margin-top:0.5rem">${verschil}</div>` : ''}`;
+  },
+};
+// Eén regel om te tonen als een onderdeel uit staat
+const TEASER = {
+  oog: () => { const r = M.data('radar'); return r ? 'Stand: ' + radarStand(r.scores).label : M.data('meetplan') ? meer(M.data('meetplan').doelen.length, 'doel', 'doelen') : ''; },
+  opdracht: () => { const o = M.data('opdracht'); return o.einddatum ? 'Klaar tegen ' + fmtLang(o.einddatum) : 'Doel, binnen en buiten, mijlpalen'; },
+  risico: () => meer(M.data('risico').items.length, 'risico', "risico's"),
+  besluit: () => meer(M.data('besluit').items.length, 'beslissing', 'beslissingen'),
+  werk: () => meer(M.data('kanban').cards.length, 'taak', 'taken'),
+  rollen: () => meer(M.data('raci').tasks.length, 'taak', 'taken') + ' met wie beslist en wie uitvoert',
+  gap: () => { const g = M.data('gap'); return g.gaps[0] ? g.gaps.slice().sort((a, b) => b.impact - a.impact)[0].theme : ''; },
+  prio: () => { const n = M.data('prio').items.filter(i => !i.done && !i.nieuw && i.impact >= 3 && i.effort <= 2).length; return n ? meer(n, 'snelle winst', 'snelle winsten') : 'Nog geen snelle winsten'; },
+  betrokken: () => meer(M.data('betrokken').items.length, 'betrokkene', 'betrokkenen'),
+  realisme: () => { const c = realismeCijfers(M.bron.realisme.item.name, M.vb); return c ? 'Realistisch klaar: ' + fmtLang(c.eind) : 'Schatting in de Monitor'; },
+  vraag: () => cur().vraag.trim() ? kort(cur().vraag.split('\n').find(x => x.trim()), 70) : 'Nog geen vraag',
+};
+const heeftData = s => s.id === 'vraag' || s.tools.some(id => M.bron[id].item);
+
+/* ---------- Tekenen ---------- */
+function vraagHTML(d, ex, sw = '') {
+  const vragen = d.vraag.split('\n').map(x => x.trim().replace(/^[-•*]\s*/, '')).filter(Boolean);
+  if (ex) return `<div class="vraag" data-oc-keep><span class="vraag-t">Wat vragen we aan de stuurgroep?</span>${vragen.length > 1 ? lijstHTML(vragen.map(esc), '?') : `<p class="p" style="font-size:1rem;color:#1e293b;font-weight:500">${esc(vragen[0] || '')}</p>`}${d.toelichting.trim() ? `<p class="toel-p">${esc(d.toelichting.trim())}</p>` : ''}</div>`;
+  const toonToel = !!d.toelichting.trim() || toelOpen;
+  return `<div class="vraag"><div class="vraag-kop"><label class="vraag-t" for="vraag">Wat vragen we aan de stuurgroep?</label>${sw}</div>
+    <p class="vraag-q" id="vraag-q">Daar draait de vergadering om. Eén vraag per regel, liefst met ja of nee te beantwoorden.</p>
+    <textarea class="field" id="vraag" rows="2" maxlength="1500" aria-describedby="vraag-q" placeholder="Bv. Gaan jullie akkoord om de opleiding te verschuiven naar januari?">${esc(d.vraag)}</textarea>
+    ${toonToel ? `<div class="toel"><label class="lbl" for="toel">Korte toelichting <span style="font-weight:400">(niet verplicht)</span></label><textarea class="field" id="toel" rows="2" maxlength="1500" placeholder="Bv. De koppeling loopt vier weken uit. Met de opleiding in januari halen we de einddatum nog.">${esc(d.toelichting)}</textarea></div>`
+      : `<button type="button" class="add-link" id="toel-btn">${ICON.plus}Korte toelichting</button>`}</div>`;
+}
+let toelOpen = false;
+
+function bronHTML(s) {
+  return s.tools.filter(id => M.bron[id].item).map(id => {
+    const t = TOOL[id], b = M.bron[id], opties = b.met;
+    const sel = opties.length > 1 || b.hoe === 'keuze' ? `<select class="bron-sel" data-keuze="${id}" aria-label="Welke lijst uit ${esc(t.naam)}?">${opties.map(x => `<option value="${esc(x.id)}"${x.id === b.item.id ? ' selected' : ''}>${esc(kort(x.name || 'Naamloos', 40))}</option>`).join('')}<option value="-">Niet opnemen</option></select>` : '';
+    return `<span class="bron-i">Uit <a href="${esc(link(t))}">${esc(t.naam)}${ICON.ext}</a>${sel}</span>`;
+  }).join('');
+}
+
+function blokHTML(s, ex) {
+  const d = M.d;
+  if (!heeftData(s)) return '';
+  const aan = isAan(d, s.id);
+  if (ex) {
+    if (!aan) return '';
+    if (s.id === 'vraag') return d.vraag.trim() ? `<section class="blok">${vraagHTML(d, true)}</section>` : '';
+    const body = INHOUD[s.id](true); if (!body) return '';
+    return `<section class="blok"><div class="blok-kop"><h2 class="blok-t">${esc(s.titel)}</h2></div>${body}</section>`;
+  }
+  const sw = `<button type="button" class="schakel" role="switch" aria-checked="${aan}" data-aan="${s.id}" aria-label="${esc(s.titel)}: in de nota"><span class="sw" aria-hidden="true"></span><span class="sw-t" aria-hidden="true">In de nota</span></button>`;
+  if (s.id === 'vraag') {
+    return `<section class="blok${aan ? '' : ' uit'}${d.vraag.trim() ? '' : ' leeg-vraag'}" id="b-vraag" aria-label="${esc(s.titel)}">
+      ${aan ? vraagHTML(d, false, sw) : `<div class="blok-kop"><h2 class="blok-t">${esc(s.titel)}</h2>${sw}</div><p class="teaser">Niet in de nota. ${esc(TEASER.vraag())}</p>`}</section>`;
+  }
+  const body = aan ? INHOUD[s.id](false) : '';
+  return `<section class="blok${aan ? '' : ' uit'}" id="b-${s.id}" aria-labelledby="h-${s.id}">
+    <div class="blok-kop"><h2 class="blok-t" id="h-${s.id}">${esc(s.titel)}</h2>${sw}</div>
+    ${aan ? `<div class="bron">${bronHTML(s)}</div>${body}` : `<p class="teaser">Niet in de nota. ${esc(TEASER[s.id]())}</p>`}</section>`;
+}
+
+function kopHTML(ex) {
+  const d = M.d, o = M.data('opdracht'), wie = o ? [['Opdrachtgever', o.opdrachtgever.trim()], ['Projectleider', o.projectleider.trim()]].filter(x => x[1]) : [];
+  const wieHTML = wie.length ? `<dl class="nk-wie">${wie.map(x => `<div><dt>${x[0]}</dt><dd>${esc(x[1])}</dd></div>`).join('')}</dl>` : '';
+  if (ex) return wieHTML;
+  return `<header class="nk"><div class="nk-boven"><span class="nk-soort">Nota voor de stuurgroep</span><span class="nk-datum">${esc(fmtLang(notaDatum(d)))}</span></div>
+    <p class="nk-titel">${esc(d.name.trim() || 'Naamloos')}</p>${wieHTML}</header>`;
+}
+
+function renderNota() {
+  const a = document.activeElement, id = a && a.id, s0 = a && a.selectionStart, s1 = a && a.selectionEnd;
+  $('nota').innerHTML = kopHTML(false) + SECS.map(s => blokHTML(s, false)).join('')
+    + (M.ontbreekt.length === TOOLS.length && $('vb-start').hidden ? `<p class="hint-geen" style="margin-top:1rem">Geen enkele tool kent ‘${esc(kort(M.d.name, 50))}’ nog. ${M.projecten.length ? 'Kies hierboven een project dat de tools wel kennen, of vul' : 'Vul'} eerst een tool in, zoals de <a href="../opdracht/" style="color:#92400e;font-weight:600">Projectopdracht</a>.</p>` : '');
+  document.querySelectorAll('#nota textarea').forEach(autosize);
+  if (id && (id === 'vraag' || id === 'toel')) { const el = $(id); if (el) { el.focus({ preventScroll:true }); try { el.setSelectionRange(s0, s1); } catch {} } }
+}
+
+function renderGevonden() {
+  const d = M.d, s = sleutel(d.name), lijst = M.projecten;
+  if (d.voorbeeld) { $('gevonden').innerHTML = `<p class="zacht">In het voorbeeld komt alles uit een verzonnen project. Je eigen tools blijven buiten beeld.</p>`; return; }
+  if (!lijst.length) { $('gevonden').innerHTML = `<span class="lbl">Gevonden op dit toestel</span><p class="zacht">Nog geen projecten. Zodra je een tool invult, verschijnt het project hier.</p>`; return; }
+  const max = gevondenAlle ? lijst.length : 6, toon = lijst.slice(0, max);
+  if (!toon.some(p => p.s === s)) { const i = lijst.findIndex(p => p.s === s); if (i >= max) toon.push(lijst[i]); }
+  $('gevonden').innerHTML = `<span class="lbl" id="gev-l">Gevonden op dit toestel</span><div class="chips" role="radiogroup" aria-labelledby="gev-l">${toon.map(p => `<button type="button" class="chip" role="radio" aria-checked="${p.s === s}" data-project="${esc(p.name)}">${p.s === s ? ICON.ok : ''}<span class="t">${esc(p.name)}</span><span class="n">${meer(p.n, 'tool', 'tools')}</span></button>`).join('')}${lijst.length > 6 ? `<button type="button" class="meer-chips" id="gev-meer">${gevondenAlle ? 'Toon minder' : `Toon alle ${lijst.length}`}</button>` : ''}</div>`;
+}
+let gevondenAlle = false;
+
+function samenvat(id, x) {
+  const v = x.data;
+  return ({ opdracht:'een opdracht', radar:'een stand van zaken', meetplan:meer(v.doelen ? v.doelen.length : 0, 'doel', 'doelen'), risico:meer(v.items ? v.items.length : 0, 'risico', "risico's"),
+    besluit:meer(v.items ? v.items.length : 0, 'beslissing', 'beslissingen'), kanban:meer(v.cards ? v.cards.length : 0, 'taak', 'taken'), raci:meer(v.tasks ? v.tasks.length : 0, 'taak', 'taken'),
+    gap:meer(v.gaps ? v.gaps.length : 0, 'thema', "thema's"), prio:meer(v.items ? v.items.length : 0, 'item', 'items'), betrokken:meer(v.items ? v.items.length : 0, 'betrokkene', 'betrokkenen'), realisme:'een schatting' })[id] || '';
+}
+function renderVoorstel() {
+  const v = M.voorstellen, el = $('voorstel');
+  el.hidden = !v.length;
+  if (!v.length) { el.innerHTML = ''; return; }
+  el.className = 'voorstel';
+  el.innerHTML = `<p><b>Hoort dit bij je project?</b> Deze ${v.length === 1 ? 'tool heeft' : 'tools hebben'} maar één lijst, nog met een standaardnaam.</p>
+    <ul class="vs-lijst">${v.map(x => `<li class="vs-rij"><span>${esc(x.t.naam)}: ‘${esc(kort(x.item.name || 'Naamloos', 40))}’<small>${esc(samenvat(x.t.id, x.item))}</small></span>
+      <span class="vs-knop"><button type="button" class="knop groen" data-vs-ja="${x.t.id}" data-item="${esc(x.item.id)}" aria-label="Ja, neem ${esc(x.t.naam)} mee">Ja, neem mee</button><button type="button" class="knop" data-vs-nee="${x.t.id}" aria-label="Nee, ${esc(x.t.naam)} hoort er niet bij">Nee</button></span></li>`).join('')}</ul>`;
+}
+
+function renderOntbreekt() {
+  const d = M.d, mis = M.ontbreekt.filter(t => !M.voorstellen.some(v => v.t.id === t.id)), naam = kort(d.name.trim() || 'dit project', 40);
+  let h = `<h2 class="zij-t" id="mis-t">Nog niet ingevuld</h2>`;
+  if (!mis.length && !M.voorstellen.length) h += `<p class="mis-ok">${ICON.ok}<span>Alle tools hebben iets voor ‘${esc(naam)}’.</span></p>`;
+  else if (!mis.length) h += `<p class="zij-sub">Bekijk bovenaan of die lijsten bij je project horen.</p>`;
+  else {
+    h += `<p class="zij-sub">${d.voorbeeld ? 'In het voorbeeld ontbreekt niets.' : `Deze tools hebben nog niets voor ‘${esc(naam)}’. Ze staan niet in de nota.`}</p><ul class="mis">${mis.map(t => {
+      const b = M.bron[t.id], k = M.lees[t.id].kapot;
+      const sel = !k && b.met.length && !d.voorbeeld ? `<select class="bron-sel" data-keuze="${t.id}" aria-label="Een lijst uit ${esc(t.naam)} kiezen"><option value="">${b.hoe === 'nee' ? 'Weggelaten. Toch een lijst kiezen?' : 'Of kies een lijst uit deze tool'}</option>${b.met.map(x => `<option value="${esc(x.id)}">${esc(kort(x.name || 'Naamloos', 40))}</option>`).join('')}</select>` : '';
+      return `<li><a class="mis-a" href="${esc(link(t))}"><span>${esc(t.naam)}${k ? '<small>niet te lezen</small>' : ''}</span>${ICON.pijl}</a>${sel}</li>`; }).join('')}</ul>`;
+  }
+  if (M.kapot.length) h += `<p class="kapot">De gegevens van ${esc(M.kapot.map(t => t.naam).join(' en '))} kon ik niet lezen. Ze staan niet in de nota. Open de tool om ze na te kijken.</p>`;
+  $('ontbreekt').innerHTML = h;
+}
+
+function renderTabs() {
+  const tel = {}; state.dossiers.forEach(x => { const s = sleutel(x.name); tel[s] = (tel[s] || 0) + 1; });
+  $('lists').innerHTML = state.dossiers.map(x => `<button class="tab${x.id === state.current ? ' active' : ''}" data-tab="${esc(x.id)}"${x.id === state.current ? ' aria-current="true"' : ''}>${esc(x.name || 'Naamloos')}${tel[sleutel(x.name)] > 1 ? ` <small>${esc(fmtDate(notaDatum(x)))}</small>` : ''}${x.voorbeeld ? '<span class="vb-tag">voorbeeld</span>' : ''}</button>`).join('')
+    + '<button class="tab add" id="new-dossier" aria-label="Nieuw dossier">+ Dossier</button>';
+}
+function renderHead() {
+  const d = cur();
+  $('vb-bar').hidden = !d.voorbeeld;
+  const dl = `Verwijder dossier ${d.name || ''}`.trim(); $('del-unit').setAttribute('aria-label', dl); $('del-unit').title = dl;
+  if (document.activeElement !== $('name')) $('name').value = d.name;
+  $('name').readOnly = !!d.voorbeeld;
+  if (document.activeElement !== $('datum')) $('datum').value = notaDatum(d);
+  $('datum-nu').hidden = !d.datum || d.datum === vandaag();
+}
+function renderStart() {
+  const d = cur();
+  $('vb-start').hidden = !!d.voorbeeld || begun(d) || M.ietsOpToestel;
+  $('begin-btn').dataset.ocBegin = isStd(d.name) ? '#name' : '#vraag';
+}
+function afgeleid() { bouwModel(); renderTabs(); renderStart(); renderGevonden(); renderVoorstel(); renderNota(); renderOntbreekt(); }
+const afgeleidSoon = (() => { let t = 0; return () => { clearTimeout(t); t = setTimeout(afgeleid, 250); }; })();
+function render() { renderHead(); afgeleid(); }
+function autosize(el) { if (!el) return; el.style.height = 'auto'; el.style.height = el.scrollHeight + 2 + 'px'; }
+
+/* ---------- Melding met Ongedaan ---------- */
+let undoFn = null, undoVersion = -1, toastTimer = null;
+function toast(msg, undo) {
+  undoFn = undo || null; undoVersion = version;
+  $('toast-text').textContent = msg;
+  $('toast-btn').hidden = !undo;
+  $('toast').classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { $('toast').classList.remove('show'); undoFn = null; }, undo ? 6000 : 2600);
+}
+$('toast-btn').addEventListener('click', () => {
+  if (undoFn && version === undoVersion) { undoFn(); undoFn = null; save(); render(); }
+  else if (undoFn) { undoFn = null; toast('Ongedaan maken kan niet meer: er is intussen iets veranderd'); return; }
+  $('toast').classList.remove('show');
+});
+function snapshot() { const copy = JSON.parse(JSON.stringify(state)); return () => { state = copy; }; }
+
+/* ---------- Invoer ---------- */
+document.addEventListener('input', e => {
+  const t = e.target, d = cur();
+  if (t.id === 'name') { if (d.voorbeeld) return; d.name = t.value; save(); renderTabs(); afgeleidSoon(); return; }
+  if (t.id === 'vraag') { d.vraag = t.value; autosize(t); save(); renderStart(); return; }
+  if (t.id === 'toel') { d.toelichting = t.value; autosize(t); save(); return; }
+  if (t.id === 'datum') { d.datum = okDate(t.value) && t.value !== vandaag() ? t.value : ''; save(); renderTabs(); $('datum-nu').hidden = !d.datum; renderNota(); return; }
+});
+document.addEventListener('change', e => {
+  const s = e.target.closest('[data-keuze]'); if (!s) return;
+  const d = cur(), id = s.dataset.keuze, restore = snapshot();
+  if (!s.value) return;
+  d.keuze[id] = s.value; save(); afgeleid();
+  toast(s.value === '-' ? `${TOOL[id].naam} staat niet meer in de nota` : `Lijst uit ${TOOL[id].naam} gekozen`, restore);
+});
+$('name').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('name').blur(); } });
+$('name').addEventListener('blur', () => { const d = cur(); if (!d.name.trim()) { d.name = 'Naamloos'; save(); render(); } });
+
+document.addEventListener('click', e => {
+  const t = e.target, d = cur();
+  const tab = t.closest('[data-tab]');
+  if (tab) { state.current = tab.dataset.tab; toelOpen = false; try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} render(); return; }
+  if (t.closest('#new-dossier')) { nieuwDossier(); return; }
+  const pr = t.closest('[data-project]');
+  if (pr) {
+    if (sleutel(pr.dataset.project) === sleutel(d.name)) return;
+    const restore = snapshot(); d.name = pr.dataset.project; d.keuze = {}; save(); render();
+    toast(`Dossier voor ${kort(d.name, 40)}`, restore); return;
+  }
+  if (t.closest('#gev-meer')) { gevondenAlle = !gevondenAlle; renderGevonden(); return; }
+  const sw = t.closest('[data-aan]');
+  if (sw) { const id = sw.dataset.aan; d.aan[id] = !isAan(d, id); save(); renderNota(); const n = document.querySelector(`[data-aan="${id}"]`); if (n) n.focus({ preventScroll:true }); return; }
+  const ja = t.closest('[data-vs-ja]');
+  if (ja) { const restore = snapshot(); d.keuze[ja.dataset.vsJa] = ja.dataset.item; save(); afgeleid(); toast(`${TOOL[ja.dataset.vsJa].naam} staat nu in de nota`, restore); return; }
+  const nee = t.closest('[data-vs-nee]');
+  if (nee) { const restore = snapshot(); d.keuze[nee.dataset.vsNee] = '-'; save(); afgeleid(); toast(`${TOOL[nee.dataset.vsNee].naam} blijft buiten de nota`, restore); return; }
+  if (t.closest('#toel-btn')) { toelOpen = true; renderNota(); const x = $('toel'); if (x) x.focus(); return; }
+  if (t.closest('#datum-nu')) { d.datum = ''; save(); renderHead(); renderTabs(); renderNota(); return; }
+});
+
+/* ---------- Dossiers ---------- */
+function nieuwDossier() {
+  const d = nieuw(''); d.name = ocProject('') && !state.dossiers.some(x => sleutel(x.name) === sleutel(ocProject(''))) ? ocProject('') : 'Nieuw project';
+  state.dossiers.push(d); state.current = d.id; save(); render();
+  $('name').focus(); $('name').select();
+}
+function dupliceer() {
+  const d = cur(), restore = snapshot(), c = norm(JSON.parse(JSON.stringify(d)));
+  c.id = uid(); delete c.voorbeeld; c.datum = ''; c.vraag = ''; c.toelichting = '';
+  if (d.voorbeeld) { c.name = ocProject('Mijn project'); c.keuze = {}; }
+  const i = state.dossiers.indexOf(d); state.dossiers.splice(i + 1, 0, c); state.current = c.id; save(); render();
+  toast('Kopie gemaakt: zelfde keuzes, nog zonder vraag', restore);
+}
+function verwijder(d) {
+  const restore = snapshot(), idx = state.dossiers.findIndex(x => x.id === d.id);
+  state.dossiers = state.dossiers.filter(x => x.id !== d.id);
+  if (!state.dossiers.length) state.dossiers.push(nieuw());
+  state.current = state.dossiers[Math.min(Math.max(idx - 1, 0), state.dossiers.length - 1)].id; save(); render();
+  toast(`Dossier ${kort(d.name || '', 30)} verwijderd`, restore);
+}
+$('del-unit').addEventListener('click', () => verwijder(cur()));
+
+/* ---------- Voorbeeld: een ingebakken, verzonnen project. Het schrijft niets in de sleutels van andere tools. ---------- */
+$('example').addEventListener('click', () => {
+  const bestaand = state.dossiers.find(x => x.voorbeeld);
+  if (bestaand) { state.current = bestaand.id; save(); render(); toast('Dit is het voorbeeld'); return; }
+  let d = cur();
+  if (begun(d)) { d = nieuw(''); state.dossiers.push(d); state.current = d.id; }
+  Object.assign(d, { name:VBN, voorbeeld:true, datum:'', aan:{ gap:true, realisme:true }, keuze:{},
+    vraag:'Gaan jullie akkoord om de opleiding van de dossierbeheerders te verschuiven naar januari?\nKrijgt de dienst ICT tot de zomer 2 dagen per week extra voor de koppeling?',
+    toelichting:'De koppeling met het dossierbeheer loopt vier weken uit. Met de opleiding in januari halen we de einddatum nog.' });
+  toelOpen = false; save(); render();
+  toast('Voorbeeld geladen');
+});
+$('vb-wis').addEventListener('click', () => {
+  const restore = snapshot(), idx = state.dossiers.findIndex(x => x.id === cur().id);
+  state.dossiers = state.dossiers.filter(x => !x.voorbeeld);
+  if (!state.dossiers.length) state.dossiers.push(nieuw());
+  if (!state.dossiers.some(x => x.id === state.current)) state.current = state.dossiers[Math.min(Math.max(idx - 1, 0), state.dossiers.length - 1)].id;
+  save(); render(); toast('Voorbeeld gewist', restore);
+});
+// Het voorbeeld is verzonnen: "mijn eigen" betekent een dossier voor je eigen project, met de inhoud uit je eigen tools.
+$('vb-eigen').addEventListener('click', () => {
+  const restore = snapshot(), vb = cur(), p = ocProject('') || (bouwModel(), M.projecten[0] ? M.projecten[0].name : 'Mijn project');
+  const bestaand = state.dossiers.find(x => !x.voorbeeld && sleutel(x.name) === sleutel(p));
+  state.dossiers = state.dossiers.filter(x => x !== vb);
+  if (bestaand) state.current = bestaand.id;
+  else { const d = nieuw(p); state.dossiers.push(d); state.current = d.id; }
+  save(); render(); toast('Je eigen dossier staat klaar', restore);
+});
+
+/* ---------- Menu ---------- */
+function closeMenu() { $('menu').classList.remove('open'); $('menu-btn').setAttribute('aria-expanded', 'false'); }
+$('menu-btn').addEventListener('click', e => {
+  e.stopPropagation();
+  const open = !$('menu').classList.contains('open');
+  $('menu').classList.toggle('open', open); $('menu-btn').setAttribute('aria-expanded', String(open));
+  if (open) { const f = $('menu').querySelector('button'); f && f.focus(); }
+});
+document.addEventListener('click', e => { if (!e.target.closest('.menu-wrap')) closeMenu(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
+$('menu').addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeMenu(); $('menu-btn').focus(); }
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault(); const b = [...$('menu').querySelectorAll('button')], i = b.indexOf(document.activeElement);
+    b[(i + (e.key === 'ArrowDown' ? 1 : -1) + b.length) % b.length].focus();
+  }
+});
+
+/* ---------- Export: PDF, afbeelding, tekst ---------- */
+const slug = s => (s || 'dossier').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50) || 'dossier';
+async function copy(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch {}
+  try { const t = document.createElement('textarea'); t.value = text; t.style.position = 'fixed'; t.style.opacity = '0'; document.body.appendChild(t); t.select(); const ok = document.execCommand('copy'); t.remove(); return ok; } catch { return false; }
+}
+const heeftNota = () => { bouwModel(); return SECS.some(s => isAan(M.d, s.id) && heeftData(s) && (s.id === 'vraag' ? M.d.vraag.trim() : INHOUD[s.id](true))); };
+
+// Exportweergave: hetzelfde blad, zonder bediening. Wat uit staat of leeg is, valt weg.
+function buildExport() {
+  bouwModel();
+  const d = M.d, node = document.createElement('div');
+  node.className = 'nota export';
+  node.style.cssText = 'container-type:inline-size;width:100%';
+  node.innerHTML = kopHTML(true) + SECS.map(s => blokHTML(s, true)).join('');
+  const datumTekst = fmtLang(notaDatum(d));
+  return { node, title: d.name.trim() || 'Projectdossier', subtitle: 'Nota voor de stuurgroep' + (d.datum ? ' van ' + datumTekst : '') + (d.voorbeeld ? ' (voorbeeld)' : ''), datum: datumTekst };
+}
+
+/* PDF op A4 met in de voet de projectnaam en het paginanummer. Zelfde bibliotheken en kop als ocExport;
+   alleen de voet staat hier op elke pagina, daarom een eigen versie. */
+const pdfVoet = (() => {
+  const laden = {};
+  const laad = url => laden[url] || (laden[url] = new Promise((ok, fail) => { const s = document.createElement('script'); s.src = url; s.onload = ok; s.onerror = () => { delete laden[url]; fail(new Error('laden mislukt')); }; document.head.appendChild(s); }));
+  const W = 800, MARGE = 10, VOET = 9;   // breedte in px, marges in mm
+  function blad(b) {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = `position:fixed;left:-20000px;top:0;width:${W}px;background:#fff;padding:36px 40px 12px;font-family:'DM Sans',system-ui,-apple-system,sans-serif;color:#1e293b;-webkit-font-smoothing:antialiased;box-sizing:border-box;`;
+    const head = document.createElement('div');
+    head.style.cssText = 'display:flex;align-items:flex-end;justify-content:space-between;gap:24px;border-bottom:2px solid #10b981;padding-bottom:12px;margin-bottom:20px;';
+    head.innerHTML = '<div><div style="font-size:22px;font-weight:700;letter-spacing:-0.02em;color:#1e293b"></div><div style="font-size:14px;color:#64748b;margin-top:2px"></div></div><div style="font-size:12px;color:#94a3b8;white-space:nowrap"></div>';
+    head.children[0].children[0].textContent = b.title; head.children[0].children[1].textContent = 'Nota voor de stuurgroep' + (cur().voorbeeld ? ' (voorbeeld)' : ''); head.children[1].textContent = b.datum;
+    wrap.append(head, b.node); document.body.appendChild(wrap);
+    return wrap;
+  }
+  function samen(wrap, pageH) {
+    const top0 = () => wrap.getBoundingClientRect().top;
+    for (const el of wrap.querySelectorAll('[data-oc-keep], .blok-kop, .sub-t')) {
+      const r = el.getBoundingClientRect(), t = r.top - top0(), b = t + r.height;
+      // een titel blijft bij het blok dat erna komt (tot 40% van een pagina)
+      let volg = el.matches('.blok-kop, .sub-t') ? el.nextElementSibling : null;
+      while (volg && volg.matches('.bron, .sub-t') && volg.nextElementSibling) volg = volg.nextElementSibling;
+      const nx = volg ? volg.getBoundingClientRect() : null;
+      const b2 = nx ? Math.max(b, Math.min(nx.bottom - top0(), t + pageH * 0.4)) : b;
+      if (r.height > pageH * 0.85) continue;
+      const grens = Math.ceil(t / pageH) * pageH;
+      if (t % pageH !== 0 && b2 > grens && t < grens) { const g = document.createElement('div'); g.style.height = (grens - t + 8) + 'px'; el.parentNode.insertBefore(g, el); }
+    }
+  }
+  async function voetBeeld(breedte, links, rechts) {
+    try { await document.fonts.load('400 22px "DM Sans"'); } catch {}
+    const c = document.createElement('canvas'); c.width = breedte; c.height = 44;
+    const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height);
+    x.fillStyle = '#e2e8f0'; x.fillRect(0, 0, c.width, 2);
+    x.font = '400 21px "DM Sans", system-ui, sans-serif'; x.fillStyle = '#64748b'; x.textBaseline = 'middle';
+    const rw = x.measureText(rechts).width; let l = links;
+    while (l.length > 4 && x.measureText(l).width > c.width - rw - 60) l = l.slice(0, -2).trimEnd() + '…';
+    x.fillText(l, 0, 26); x.fillText(rechts, c.width - rw, 26);
+    return c.toDataURL('image/png');
+  }
+  return async (build, name) => {
+    await Promise.all([laad('/lib/html2canvas-1.4.1.min.js'), laad('/lib/jspdf-2.5.1.umd.min.js')]);
+    const b = build(), w = 210 - 2 * MARGE, hInhoud = 297 - 2 * MARGE - VOET, pageCss = hInhoud / w * W;
+    const wrap = blad(b);
+    let c;
+    try { if (document.fonts && document.fonts.ready) await document.fonts.ready; samen(wrap, pageCss); c = await window.html2canvas(wrap, { scale:2, backgroundColor:'#ffffff', logging:false }); }
+    finally { wrap.remove(); }
+    const { jsPDF } = window.jspdf, doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+    const scale = w / c.width, pageH = hInhoud / scale, n = Math.max(1, Math.ceil((c.height - 2) / pageH));
+    for (let i = 0; i < n; i++) {
+      const y = i * pageH, h = Math.min(pageH, c.height - y);
+      const part = document.createElement('canvas'); part.width = c.width; part.height = h;
+      part.getContext('2d').drawImage(c, 0, y, c.width, h, 0, 0, c.width, h);
+      if (i) doc.addPage();
+      doc.addImage(part.toDataURL('image/jpeg', 0.92), 'JPEG', MARGE, MARGE, w, h * scale);
+      const voet = await voetBeeld(c.width, `${b.title} · Projectdossier · Onder Constructie`, `pagina ${i + 1} van ${n}`);
+      doc.addImage(voet, 'PNG', MARGE, 297 - MARGE - 6, w, 44 * scale);
+    }
+    const blob = doc.output('blob'), a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = name + '.pdf'; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  };
+})();
+
+function alsTekst() {
+  bouwModel();
+  const d = M.d, L = [], blok = (kop, regels) => { regels = regels.filter(Boolean); if (regels.length) L.push(kop, ...regels, ''); };
+  const o = M.data('opdracht');
+  L.push(d.name.trim() || 'Projectdossier', `Nota voor de stuurgroep, ${fmtLang(notaDatum(d))}`);
+  if (o) { const w = [o.opdrachtgever.trim() && 'Opdrachtgever: ' + o.opdrachtgever.trim(), o.projectleider.trim() && 'Projectleider: ' + o.projectleider.trim()].filter(Boolean).join(' · '); if (w) L.push(w); }
+  L.push('');
+  const aan = id => isAan(d, id) && heeftData(SEC[id]);
+  if (aan('vraag')) blok('Wat vragen we aan de stuurgroep?', [...d.vraag.split('\n').map(x => x.trim().replace(/^[-•*]\s*/, '')).filter(Boolean).map(x => '- ' + x), d.toelichting.trim() && '\n' + d.toelichting.trim()]);
+  if (aan('oog')) {
+    const r = M.data('radar'), mp = M.data('meetplan'), regels = [];
+    if (r) { const st = radarStand(r.scores); regels.push(`Stand: ${st.label} (${st.n} van ${CATS.length} beoordeeld)`);
+      CATS.filter(c => r.scores[c.id] === 1 || r.scores[c.id] === 2).sort((a, b) => r.scores[a.id] - r.scores[b.id]).forEach(c => regels.push(`- ${c.label}: ${r.scores[c.id] === 1 ? 'zwaar probleem' : 'licht probleem'}${r.toelichtingen[c.id] ? '. ' + r.toelichtingen[c.id] : ''}`));
+      const goed = CATS.filter(c => r.scores[c.id] === 3).map(c => c.label); if (goed.length) regels.push('Op koers: ' + goed.join(', ')); }
+    if (mp) { regels.push('Doelen:'); mp.doelen.slice(0, 5).forEach(x => { const inds = x.inds.filter(i => i.name.trim()); regels.push(`- ${x.text || 'Doel zonder naam'}${inds.length ? ': ' + inds.slice(0, 3).map(i => `${mpStand(i).woorden.toLowerCase()} (${i.name.trim()})`).join('; ') : ''}`); }); }
+    blok('In één oogopslag', regels);
+  }
+  if (aan('opdracht') && o) {
+    const ms = o.mijlpalen.filter(m => m.text.trim()).slice().sort((a, b) => (a.date || '9999') < (b.date || '9999') ? -1 : 1), gew = opGewijzigd(o);
+    blok('Opdracht', [o.opleveren.trim() && 'Wat we opleveren: ' + o.opleveren.trim(), ...vol(o.doelen).map(x => '- ' + x),
+      vol(o.binnen).length && 'Valt erbinnen: ' + vol(o.binnen).join('; '), vol(o.buiten).length && 'Valt erbuiten: ' + vol(o.buiten).join('; '),
+      o.einddatum && 'Klaar tegen ' + fmtLang(o.einddatum), ...ms.map(m => `- ${m.date ? fmtDate(m.date) : 'zonder datum'}: ${m.text.trim()} (${mijlpaalStand(m).t.toLowerCase()})`),
+      opGetekend(o) ? `Afgetekend op ${fmtLang(o.teken.datum)} door ${o.teken.naam.trim()}.${gew.length ? ' Gewijzigd na akkoord: ' + gew.map(id => OP_KORT[id]).join(', ') + '.' : ''}` : 'Nog niet afgetekend.']);
+  }
+  if (aan('risico')) { const r = M.data('risico'), open = r.items.filter(x => x.status !== 'klaar').sort((a, b) => (b.kans * b.impact - a.kans * a.impact) || (b.impact - a.impact));
+    blok("Risico's", open.slice(0, 5).map(x => `- ${x.name} (${riNiveau(x.kans * x.impact).naam.toLowerCase()}, score ${x.kans * x.impact})${x.maatregel ? '. Maatregel: ' + x.maatregel : ''}${x.eigenaar ? '. Eigenaar: ' + x.eigenaar : ''}`)); }
+  if (aan('besluit')) { const b = M.data('besluit'), nu = vandaag();
+    const gen = b.items.filter(x => x.status === 'genomen').sort((a, c) => (c.date || '').localeCompare(a.date || '') || c.created - a.created).slice(0, 4);
+    const laat = b.items.filter(x => x.status !== 'ingetrokken').flatMap(x => x.acties.filter(a => !a.done && a.when && a.when < nu));
+    blok('Besluiten', [...gen.map(x => `- ${x.date ? fmtDate(x.date) + ': ' : ''}${x.what}${x.who ? ' (' + x.who + ')' : ''}`), laat.length ? 'Te laat:' : 'Geen enkele actie is te laat.', ...laat.slice(0, 6).map(a => `- ${a.text}${a.who ? ' (' + a.who + ')' : ''}, te laat sinds ${fmtDate(a.when)}`)]); }
+  if (aan('werk')) { const k = M.data('kanban'), nu = vandaag(), laat = k.cards.filter(c => c.status !== 'klaar' && c.dueDate && c.dueDate < nu);
+    blok('Werk', [KOLOMMEN.map(c => `${c.naam}: ${k.cards.filter(x => x.status === c.id).length}`).join(' · '), laat.length ? 'Te laat:' : 'Geen enkele taak is te laat.', ...laat.slice(0, 6).map(c => `- ${c.title}, te laat sinds ${fmtDate(c.dueDate)}`)]); }
+  if (aan('rollen')) { const r = M.data('raci'), nm = (t, f) => r.roles.filter(x => f(t.cells[x.id])).map(x => x.name).filter(Boolean).join(', ') || 'nog niemand';
+    blok('Wie beslist', r.tasks.slice(0, 8).map(t => `- ${t.name}: beslist ${nm(t, v => v === 'A' || v === 'AR')}, voert uit ${nm(t, v => v === 'R' || v === 'AR')}`)); }
+  if (aan('gap')) { const g = M.data('gap'), x = g.gaps.slice().sort((a, b) => (b.impact - a.impact) || (gapGrootte(b) - gapGrootte(a)))[0]; blok('Grootste verschil', [x.theme, x.asis.text && 'Nu: ' + x.asis.text, x.tobe.text && 'Waar we heen willen: ' + x.tobe.text, gapLijn(x)]); }
+  if (aan('prio')) blok('Snelle winsten', M.data('prio').items.filter(i => !i.done && !i.nieuw && i.impact >= 3 && i.effort <= 2).slice(0, 5).map(i => '- ' + i.name));
+  if (aan('betrokken')) blok('Wie vraagt extra aandacht', M.data('betrokken').items.filter(x => !x.todo).sort((a, c) => (c.c * (11 - c.w)) - (a.c * (11 - a.w))).slice(0, 3).map(x => `- ${x.name} (${BR_KWADRANT(x.c, x.w).toLowerCase()})${x.next ? ': ' + x.next : ''}`));
+  if (aan('realisme')) { const c = realismeCijfers(M.bron.realisme.item.name, M.vb); if (c) blok('Realistische duur', ['Realistisch klaar: ' + fmtLang(c.eind), o && okDate(o.einddatum) && 'Gepland in de opdracht: ' + fmtLang(o.einddatum)]); }
+  return L.join('\n').replace(/\n{3,}/g, '\n\n').trim() + '\n';
+}
+
+async function doe(act) {
+  if (!heeftNota()) { toast('De nota is nog leeg'); return; }
+  if (act === 'copy') { (await copy(alsTekst())) ? toast('Gekopieerd als tekst. Plak het in je mail.') : toast('Kopiëren lukt hier niet'); return; }
+  const base = `projectdossier-${slug(cur().name)}-${notaDatum(cur())}`;
+  toast('Bezig…');
+  try {
+    await (act === 'pdf' ? pdfVoet(buildExport, base) : ocExport.png(buildExport, base));
+    toast(act === 'pdf' ? 'PDF gedownload' : 'Afbeelding gedownload');
+  } catch { toast('Downloaden lukt nu niet: geen verbinding?'); }
+}
+document.addEventListener('click', e => { const b = e.target.closest('[data-exp]'); if (b && !b.disabled) doe(b.dataset.exp); });
+$('menu').addEventListener('click', e => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  closeMenu();
+  const act = b.dataset.act;
+  if (act === 'pdf' || act === 'png' || act === 'copy') doe(act);
+  if (act === 'dup') dupliceer();
+});
+
+/* ---------- Altijd actueel: wat je in een andere tool wijzigt, staat meteen in de nota ---------- */
+const BRONSLEUTELS = new Set(TOOLS.map(t => t.key).concat(['oc.share.project-realisme', 'oc.project']));
+window.addEventListener('storage', e => {
+  if (e.key === KEY) { state = load(); render(); return; }
+  if (e.key === null || BRONSLEUTELS.has(e.key)) afgeleidSoon();
+});
+window.addEventListener('focus', afgeleidSoon);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) afgeleidSoon(); });
+{ let rt = 0; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => document.querySelectorAll('#nota textarea').forEach(autosize), 120); }); }
+try { document.fonts.ready.then(() => document.querySelectorAll('#nota textarea').forEach(autosize)); } catch {}
+// Een nog onaangeroerd dossier met een standaardnaam krijgt de naam van het actieve project uit de app.
+(() => { const p = ocProject(''), d = cur(); if (p && !begun(d) && !d.voorbeeld && isStd(d.name)) d.name = p; })();
+render();
+</script>
+<script>
+/* Opnieuw beginnen: zichtbaar zodra er echt iets ingevuld is; start de eigen 'Alles wissen' van de tool.
+   'Leeg' = wat de tool zelf bewaart zonder inbreng van de gebruiker (na een eerste bezoek of na wissen). */
+(() => {
+  const meta = document.querySelector('meta[name="oc:opslag"]');
+  const keys = meta ? meta.content.split(',').map(s => s.trim()).filter(k => k && !k.startsWith('oc.share.') && !k.endsWith('*')) : [];
+  const BASE = 'oc.leeg.' + location.pathname;   // niet onder oc-app.*: dat wist het gegevensscherm apart
+  const get = k => { try { return localStorage.getItem(k); } catch { return null; } };
+  const vals = () => Object.fromEntries(keys.map(k => [k, get(k)]));
+  const has = v => Array.isArray(v) ? v.length > 0 : v && typeof v === 'object' ? Object.values(v).some(has) : typeof v === 'string' && v.trim().length > 0;
+  const content = raw => { try { return has(JSON.parse(raw)); } catch { return !!raw; } };
+  let base = null; try { base = JSON.parse(get(BASE) || 'null'); } catch {}
+  const setBase = () => { base = vals(); try { localStorage.setItem(BASE, JSON.stringify(base)); } catch {} sync(); };
+  const filled = () => { const v = vals(); return keys.some(k => v[k] != null && content(v[k]) && !(base && v[k] === base[k])); };
+  const row = document.getElementById('oc-restart-row');
+  function sync() { row.hidden = !filled() || !document.querySelector('[data-act="wipe"]'); }
+  let t; const later = () => { clearTimeout(t); t = setTimeout(sync, 350); };
+  ['click', 'input', 'change', 'keyup'].forEach(ev => document.addEventListener(ev, later, true));
+  window.addEventListener('storage', later); window.addEventListener('focus', later);
+  // Eerste bezoek: wat de tool zelf meteen bewaart, telt als leeg. Een tool die nog niets klaarlegde
+  // voor andere tools (oc.share.*), heeft nog geen echte inhoud.
+  const share = meta ? meta.content.split(',').map(s => s.trim()).find(k => k.startsWith('oc.share.')) : null;
+  if (!base && share && get(share) == null) setBase();
+  else if (keys.every(k => get(k) == null)) setTimeout(setBase, 900);
+  // Na wissen (via deze knop of het menu): de nieuwe toestand is de lege toestand.
+  document.addEventListener('click', e => {
+    if (!e.target.closest('[data-act="wipe"]')) return;
+    const before = JSON.stringify(vals()); let n = 0;
+    const iv = setInterval(() => {
+      if (++n > 40) return clearInterval(iv);
+      if (document.querySelector('.ocw-back')) return;               // bevestiging staat nog open
+      if (JSON.stringify(vals()) !== before) { clearInterval(iv); setTimeout(setBase, 400); }
+      else if (n > 5) clearInterval(iv);                              // geannuleerd
+    }, 150);
+  }, true);
+  document.getElementById('oc-restart-btn').addEventListener('click', () => { const w = document.querySelector('[data-act="wipe"]'); w && w.click(); });
+  sync();
+})();
+</script>
+<script>
+/* Soepel: de hulpbibliotheken voor Afbeelding en PDF alvast ophalen zodra iemand naar een downloadknop gaat (niet bij het laden). */
+(() => {
+  let warm = false;
+  const go = () => {
+    warm = true;
+    ['/lib/html2canvas-1.4.1.min.js', '/lib/jspdf-2.5.1.umd.min.js'].forEach(h => {
+      const l = document.createElement('link');
+      if (l.relList && l.relList.supports && l.relList.supports('prefetch')) { l.rel = 'prefetch'; l.as = 'script'; l.href = h; document.head.appendChild(l); }
+      else try { fetch(h).catch(() => {}); } catch (e) {}
+    });
+  };
+  const SEL = '[data-exp], #menu-btn';
+  ['pointerdown', 'focusin', 'mouseover'].forEach(t => document.addEventListener(t, e => { if (!warm && e.target.closest && e.target.closest(SEL)) go(); }, { passive:true, capture:true }));
+})();
+</script>
+<input type="file" id="oc-bestand-in" accept=".json,application/json" hidden>
+<script>
+/* oc-bestand: je werk in deze tool bewaren als bestand en later (of op een ander toestel) weer openen.
+   Formaat = dat van de reservekopie in de app: { app:'Onder Constructie', version:1, created, tool, data:{ sleutel: tekst } }.
+   Een reservekopie uit de app kan je hier ook openen: de tool neemt er alleen zijn eigen deel uit. */
+window.ocBestand = (function () {
+  function patronen() {
+    var m = document.querySelector('meta[name="oc:opslag"]');
+    return m ? m.content.split(',').map(function (s) { return s.trim(); }).filter(Boolean) : [];
+  }
+  function past(k, p) { return p.slice(-1) === '*' ? k.indexOf(p.slice(0, -1)) === 0 : k === p; }
+  function eigen(k) { return patronen().some(function (p) { return past(k, p); }); }
+  function sleutels() {
+    var uit = [];
+    try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k && eigen(k)) uit.push(k); } } catch (e) {}
+    return uit;
+  }
+  function naam() {
+    var m = document.querySelector('meta[name="oc:titel"]') || document.querySelector('meta[name="application-name"]');
+    return (m && m.content) || (document.title.split(/\s[–-]\s/)[0] || 'tool').trim();
+  }
+  function slug(s) { return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
+  /* bewaar(): downloadt het bestand. Geeft het aantal bewaarde sleutels terug (0 = niets om te bewaren). */
+  function bewaar(extraNaam) {
+    var keys = sleutels(); if (!keys.length) return 0;
+    var data = {}; keys.forEach(function (k) { try { data[k] = localStorage.getItem(k); } catch (e) {} });
+    var id = location.pathname.replace(/\/index\.html$/, '').split('/').filter(Boolean).pop() || 'tool';
+    var blob = new Blob([JSON.stringify({ app: 'Onder Constructie', version: 1, created: new Date().toISOString(), tool: id, data: data }, null, 1)], { type: 'application/json' });
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    var stuk = slug(naam()) + (extraNaam ? '-' + slug(extraNaam) : '');
+    a.download = stuk + '-' + new Date().toISOString().slice(0, 10) + '.json';
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+    return keys.length;
+  }
+  /* lees(file): Promise met { data: {sleutel: tekst} } van alleen de eigen sleutels.
+     Fout 'vorm' = geen bestand van Onder Constructie; fout 'leeg' = niets van deze tool in het bestand. */
+  function lees(file) {
+    return file.text().then(function (t) {
+      var d; try { d = JSON.parse(t); } catch (e) { throw new Error('vorm'); }
+      if (!d || d.app !== 'Onder Constructie' || typeof d.data !== 'object' || !d.data) throw new Error('vorm');
+      var uit = {}, n = 0;
+      Object.keys(d.data).forEach(function (k) { if (eigen(k) && typeof d.data[k] === 'string') { uit[k] = d.data[k]; n++; } });
+      if (!n) throw new Error('leeg');
+      return { data: uit, aantal: n, created: d.created || null };
+    });
+  }
+  /* zetTerug(gelezen): vervangt het huidige werk van deze tool door wat in het bestand staat, en laat andere tabbladen herladen. */
+  function zetTerug(g) {
+    sleutels().forEach(function (k) { try { localStorage.removeItem(k); } catch (e) {} });
+    Object.keys(g.data).forEach(function (k) { try { localStorage.setItem(k, g.data[k]); } catch (e) {} });
+  }
+  function melding(err) {
+    return err && err.message === 'leeg' ? 'In dit bestand staat niets van ' + naam() + '.'
+      : 'Dit bestand kan ik niet openen. Kies een bestand dat je met "Bewaar als bestand" of als reservekopie maakte.';
+  }
+  return { bewaar: bewaar, lees: lees, zetTerug: zetTerug, melding: melding, sleutels: sleutels, naam: naam };
+})();
+</script>
+<script>
+/* Bewaar als bestand / Open bestand */
+(() => {
+  const heeftWerk = () => { try { return !document.getElementById('oc-restart-row').hidden; } catch (e) { return true; } };
+  const extraNaam = () => { try { return String((L => Array.isArray(L) && L.length === 1 ? L[0].name : '')(state.dossiers) || '').trim(); } catch (e) { return ''; } };
+  const inp = document.getElementById('oc-bestand-in');
+  // Een lange melding blijft langer staan (minstens 4,5 s): toon ze opnieuw voor ze verdwijnt.
+  const lang = msg => { toast(msg); setTimeout(() => { const t = document.getElementById('toast-text'); if (t && t.textContent === msg) toast(msg); }, 2300); };
+  const sluit = () => { const m = document.getElementById('menu'), b = document.getElementById('menu-btn'); if (m) m.classList.remove('open'); if (b) b.setAttribute('aria-expanded', 'false'); };
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-bestand]'); if (!b) return;
+    sluit();
+    if (b.dataset.bestand === 'bewaar') {
+      if (!heeftWerk() || !ocBestand.bewaar(extraNaam())) { toast('Er is nog niets om te bewaren.'); return; }
+      toast('Bestand gedownload');
+    } else { inp.value = ''; inp.click(); }
+  });
+  inp.addEventListener('change', async () => {
+    const f = inp.files && inp.files[0]; if (!f) return;
+    let g; try { g = await ocBestand.lees(f); } catch (err) { lang(ocBestand.melding(err)); return; }
+    if (heeftWerk() && !await ocConfirm('Bestand openen?', 'Dit vervangt wat nu in ' + ocBestand.naam() + ' staat. Doorgaan?', 'Vervang')) return;
+    // Tot de herlaadbeurt mag niets het teruggezette werk nog overschrijven (uitgestelde bewaring, pagehide, ander tabblad).
+    const pat = (document.querySelector('meta[name="oc:opslag"]') || {}).content || '';
+    const eigen = k => pat.split(',').map(s => s.trim()).filter(Boolean).some(p => p.slice(-1) === '*' ? String(k).indexOf(p.slice(0, -1)) === 0 : k === p);
+    ocBestand.zetTerug(g);
+    try {
+      const set = Storage.prototype.setItem, rem = Storage.prototype.removeItem;
+      Storage.prototype.setItem = function (k, v) { if (this === localStorage && eigen(k)) return; return set.call(this, k, v); };
+      Storage.prototype.removeItem = function (k) { if (this === localStorage && eigen(k)) return; return rem.call(this, k); };
+    } catch (e) {}
+    location.reload();
+  });
+})();
+</script>
+<script>
+/* oc-sync: reageert op "Wissen" in de app (ook in andere tabbladen) en geeft Esc door aan de app */
+(function () {
+  if (window.__ocSync) return; window.__ocSync = true;
+  var gewist = false;
+  function wis() {
+    if (gewist) return; gewist = true;
+    try { var orig = Storage.prototype.setItem; Storage.prototype.setItem = function (k, v) { if (k === 'oc.wis') return orig.call(this, k, v); }; } catch (e) {}
+    try { document.body.innerHTML = '<p role="status" style="font-family:\'DM Sans\',system-ui,sans-serif;padding:3rem 1.5rem;text-align:center;color:#475569;font-size:1.0625rem">Er is iets veranderd op dit toestel. Deze pagina laadt opnieuw…</p>'; } catch (e) {}
+    setTimeout(function () { location.reload(); }, 400);
+  }
+  try { var bc = new BroadcastChannel('oc-sync'); bc.onmessage = function (e) { if (e.data && e.data.type === 'wis') wis(); }; } catch (e) {}
+  addEventListener('storage', function (e) { if (e.key === 'oc.wis' || e.key === null) wis(); });
+  /* Gebruikerstest november 2026, voor alle tools:
+     Ctrl/Cmd+Z doet "Ongedaan" zolang die melding zichtbaar is (in een tekstveld doet de browser zijn eigen ongedaan);
+     een rij keuzeknoppen (role="radiogroup") is één Tab-stop, de pijltjes gaan naar een andere keuze, Spatie of Enter kiest;
+     een naamveld met data-oc-titel ziet eruit als een veld (potloodje, onderlijn bij aanwijzen of typen);
+     een naam getypt in een veld met data-oc-projectnaam wordt de projectnaam van de app, als die nog leeg is. */
+  var STANDAARD = /^((mijn|nieuwe?) )?(project|analyse|lijst|keuze|kaart|ideeënkaart|doelgroep|matrix|plan|groep|team|tabel|informatietabel|log|retro|sprint|scan|proces)( \d+)?$|^naamloos$|^hele organisatie$/i;
+  window.ocStandaardNaam = function (v) { v = String(v || '').trim(); return !v || STANDAARD.test(v); };
+  function typt(a) { return a && (a.isContentEditable || a.tagName === 'TEXTAREA' || a.tagName === 'SELECT' || (a.tagName === 'INPUT' && !/^(checkbox|radio|button|submit|reset|range|color|file)$/i.test(a.type))); }
+  function zichtbaar(x) {
+    if (x.disabled || x.hidden || !x.getClientRects().length) return false;
+    for (var el = x; el && el.nodeType === 1; el = el.parentElement) { var cs = getComputedStyle(el); if (cs.display === 'none' || cs.visibility === 'hidden' || +cs.opacity < 0.1) return false; }
+    var r = x.getBoundingClientRect(); return r.bottom > 0 && r.right > 0 && r.top < innerHeight && r.left < innerWidth;
+  }
+  addEventListener('keydown', function (e) {
+    if (e.defaultPrevented || !(e.ctrlKey || e.metaKey) || e.shiftKey || e.altKey || String(e.key).toLowerCase() !== 'z' || typt(document.activeElement)) return;
+    var b = [].filter.call(document.querySelectorAll('[role="status"] button, [aria-live] button'), function (x) { return /^\s*ongedaan/i.test(x.textContent) && zichtbaar(x); }).pop();
+    if (b) { e.preventDefault(); b.click(); }
+  });
+  function radios(g) { return [].filter.call(g.querySelectorAll('[role="radio"]'), function (x) { return x.closest('[role="radiogroup"]') === g; }); }
+  function bruikbaar(x) { return !x.disabled && x.getAttribute('aria-disabled') !== 'true' && x.getClientRects().length; }
+  // Kiezen met Spatie of Enter laat de tool vaak opnieuw tekenen: de focus blijft dan op de gekozen keuze.
+  var terug = null;
+  document.addEventListener('click', function (e) {
+    var x = e.detail === 0 && e.target && e.target.closest && e.target.closest('[role="radio"]'); if (!x || x.tagName === 'INPUT') return;
+    var s = [].map.call(x.attributes, function (a) { return a.name === 'id' || /^data-/.test(a.name) ? '[' + a.name + '="' + (window.CSS && CSS.escape ? CSS.escape(a.value) : a.value) + '"]' : ''; }).join('');
+    terug = s ? { s: '[role="radio"]' + s, t: Date.now() } : null;
+  }, true);
+  function roving() {
+    var a0 = document.activeElement;
+    if (terug && Date.now() - terug.t < 2000 && (!a0 || a0 === document.body)) { var y = document.querySelector(terug.s); if (y) try { y.focus({ preventScroll: true }); } catch (e) {} terug = null; }
+    [].forEach.call(document.querySelectorAll('[role="radiogroup"]'), function (g) {
+      var r = radios(g); if (!r.length || r.some(function (x) { return x.tagName === 'INPUT'; })) return;
+      var a = document.activeElement, keep = r.indexOf(a) >= 0 ? a : r.filter(function (x) { return x.getAttribute('aria-checked') === 'true' && bruikbaar(x); })[0] || r.filter(bruikbaar)[0] || r[0];
+      r.forEach(function (x) { var t = x === keep ? '0' : '-1'; if (x.getAttribute('tabindex') !== t) x.setAttribute('tabindex', t); });
+    });
+  }
+  document.addEventListener('keydown', function (e) {
+    var x = e.target, d = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1, Home: -2, End: 2 }[e.key];
+    if (!d || e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || !x.getAttribute || x.getAttribute('role') !== 'radio' || x.tagName === 'INPUT') return;
+    var g = x.closest('[role="radiogroup"]'); if (!g) return;
+    var r = radios(g).filter(bruikbaar), i = r.indexOf(x); if (i < 0) return;
+    var n = r[d === -2 ? 0 : d === 2 ? r.length - 1 : (i + d + r.length) % r.length];
+    e.preventDefault(); r.forEach(function (y) { y.setAttribute('tabindex', y === n ? '0' : '-1'); }); n.focus();
+  });
+  var meet = null;
+  function titels() {
+    [].forEach.call(document.querySelectorAll('input[data-oc-titel]'), function (el) {
+      if (!el.offsetParent) return;
+      var cs = getComputedStyle(el), t = el.value || el.placeholder || '';
+      if (!meet) { meet = document.createElement('span'); meet.setAttribute('aria-hidden', 'true'); meet.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden;white-space:pre'; document.body.appendChild(meet); }
+      meet.style.font = cs.font; meet.style.letterSpacing = cs.letterSpacing; meet.textContent = t;
+      var w = meet.getBoundingClientRect().width;
+      var px = Math.ceil(w + parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight) + parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth) + 8) + 'px';
+      if (el.style.width !== px) el.style.width = px;
+    });
+  }
+  function opmaak() {
+    if (!document.getElementById('oc-sync-stijl') && document.querySelector('[data-oc-titel]')) {
+      var s = document.createElement('style'); s.id = 'oc-sync-stijl';
+      s.textContent = 'input[data-oc-titel]{flex:0 1 auto!important;max-width:100%;min-width:5.5em;box-sizing:border-box;text-overflow:ellipsis;cursor:text;border-radius:6px 6px 0 0;padding-right:26px!important;'
+        + 'border-bottom:1.5px dashed transparent!important;background-repeat:no-repeat!important;background-position:right 4px center!important;background-size:15px 15px!important;'
+        + 'background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%2394a3b8%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M12 20h9%27/%3E%3Cpath d=%27M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z%27/%3E%3C/svg%3E")!important}'
+        + 'input[data-oc-titel]:hover{border-bottom-color:#cbd5e1!important}'
+        + 'input[data-oc-titel]:focus{border-bottom:1.5px solid #047857!important;background-image:none!important}'
+        + 'input[data-oc-titel]::placeholder{color:#94a3b8;opacity:1}'
+        + 'input[data-oc-titel]+*{margin-left:auto}';
+      document.head.appendChild(s);
+    }
+    titels();
+  }
+  var gepland = false;
+  function later() { if (gepland) return; gepland = true; requestAnimationFrame(function () { gepland = false; roving(); opmaak(); }); }
+  function start() {
+    later();
+    try { new MutationObserver(later).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['aria-checked', 'hidden', 'class'] }); } catch (e) {}
+    document.addEventListener('input', function (e) { if (e.target.hasAttribute && e.target.hasAttribute('data-oc-titel')) titels(); }, true);
+    addEventListener('resize', later);
+    try { document.fonts.ready.then(titels); document.fonts.addEventListener('loadingdone', titels); } catch (e) {}   // de letters komen soms pas later binnen
+    setInterval(function () { if (!document.hidden) titels(); }, 700);   // een tool kan de waarde zetten zonder de pagina te wijzigen
+  }
+  document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', start) : start();
+  var eigenNaam = null, naamT = null;
+  function projectNu() { try { var p = JSON.parse(localStorage.getItem('oc.project')); return p && typeof p.name === 'string' ? p.name.trim() : ''; } catch (e) { return ''; } }
+  function deelNaam(el) {
+    var v = String(el.value || '').trim().slice(0, 80), nu = projectNu();
+    if (ocStandaardNaam(v) || (nu && nu !== eigenNaam)) return;
+    if ([].some.call(document.querySelectorAll('.vb-bar'), function (b) { return b.getClientRects().length; })) return;   // in het voorbeeld niet
+    if (v === nu) return;
+    try { localStorage.setItem('oc.project', JSON.stringify({ name: v, since: Date.now() })); eigenNaam = v; } catch (e) {}
+  }
+  document.addEventListener('input', function (e) { var el = e.target; if (!el.hasAttribute || !el.hasAttribute('data-oc-projectnaam')) return; clearTimeout(naamT); naamT = setTimeout(function () { deelNaam(el); }, 900); }, true);
+  ['change', 'focusout'].forEach(function (ev) { document.addEventListener(ev, function (e) { var el = e.target; if (el.hasAttribute && el.hasAttribute('data-oc-projectnaam')) { clearTimeout(naamT); deelNaam(el); } }, true); });
+  if (window.parent === window) return;
+  addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape' || e.defaultPrevented) return;
+    var a = document.activeElement;
+    if (a && (a.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) return;
+    if (document.querySelector('dialog[open], [role="dialog"]:not([hidden]):not([aria-hidden="true"]), [aria-modal="true"]:not([hidden]), [aria-expanded="true"], .open, .show, .active.modal, .is-open')) return;
+    try { parent.postMessage({ type: 'oc-esc' }, location.origin); } catch (err) {}
+  }, true);
+})();
+</script>
+<script>
+/* Eenheid: "Begin met ..." zet de cursor in het eerste veld; staat er een standaardnaam, dan is die geselecteerd zodat je meteen overtypt */
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-oc-begin]'); if (!b) return;
+  const el = [...document.querySelectorAll(b.dataset.ocBegin)].find(x => x.offsetParent !== null); if (!el) return;
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  el.scrollIntoView({ block:'center', behavior: still ? 'auto' : 'smooth' });
+  el.focus({ preventScroll:true });
+  if (el.select && /^(INPUT|TEXTAREA)$/.test(el.tagName) && el.value.trim() && /^((mijn|nieuwe?) )?(project|analyse|lijst|keuze|kaart|ideeënkaart|doelgroep|matrix|plan|groep|team|tabel|informatietabel|log|retro|sprint|scan|proces)( \d+)?$|^naamloos$|^hele organisatie$/i.test(el.value.trim())) el.select();
+});
+</script>
+<script>
+/* oc-uitleg v1 begin */
+/* "Hoe werkt dit?": zet de gewone uitleg in <details class="explain"><div class="inner"> om tot een kaart met
+   inleiding, genummerde stappen, tip en verwijzingen naar andere tools. De tekst zelf blijft in de HTML staan,
+   dus zonder JavaScript is alles nog gewoon leesbaar. Sturen per tool kan met data-uitleg op een lijst of alinea:
+   "stappen" (genummerd), "begrippen" (zonder nummers), "lijst" (laten zoals hij is), "tip", "noot", "stil". */
+(function () {
+  var d = document.querySelector('details.explain');
+  if (!d || d.classList.contains('oc-u')) return;
+  var sum = d.querySelector(':scope > summary'), inner = d.querySelector(':scope > .inner');
+  if (!sum || !inner) return;
+  var SLUG = 'hoe-werkt-dit';
+  var SVG = function (b, w) { return '<svg viewBox="0 0 ' + (w || 24) + ' ' + (w || 24) + '" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' + b + '</svg>'; };
+  var ICO = {
+    kaart: '<svg viewBox="0 0 28 28" fill="none" aria-hidden="true" focusable="false">'
+      + '<circle cx="7" cy="6.5" r="2.25" fill="#047857"/><circle cx="7" cy="14" r="2.25" fill="#10b981"/><circle cx="7" cy="21.5" r="2.25" fill="#10b981"/>'
+      + '<path d="M13 6.5h9.5M13 14h6.5M13 21.5h8" stroke="#10b981" stroke-width="2.25" stroke-linecap="round"/></svg>',
+    pijl: SVG('<path d="M6 9l6 6 6-6"/>'),
+    tip: SVG('<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.7.6 1.1 1.3 1.1 2.2h5c0-.9.4-1.6 1.1-2.2A6 6 0 0 0 12 3z"/>'),
+    stil: SVG('<rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>'),
+    naar: SVG('<path d="M8 16L16 8M9.5 8H16v6.5"/>')
+  };
+  var maak = function (tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
+  var tekst = function (e) { return (e.textContent || '').replace(/\s+/g, ' ').trim(); };
+  var soort = function (e) { return (e.getAttribute('data-uitleg') || '').toLowerCase(); };
+
+  // eerste tekst van een stuk DOM netjes laten beginnen: leestekens weg, hoofdletter
+  function netjesBegin(node) {
+    var w = document.createTreeWalker(node, NodeFilter.SHOW_TEXT), t;
+    while ((t = w.nextNode())) {
+      var s = t.nodeValue.replace(/^[\s:.,;]+/, '');
+      if (!s) { t.nodeValue = ''; continue; }
+      t.nodeValue = s.charAt(0).toUpperCase() + s.slice(1);
+      return true;
+    }
+    return false;
+  }
+  // toetsen als toets tonen
+  var TOETS = /(^|[^\wÀ-ÿ+])(Shift\+Tab|Alt\+↑|Alt\+↓|Enter|Escape|Esc|Backspace|Delete|F2|Tab)(?![\wÀ-ÿ])/g;
+  function toetsen(root) {
+    var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), lijst = [], t;
+    while ((t = w.nextNode())) { TOETS.lastIndex = 0; if (TOETS.test(t.nodeValue) && !t.parentNode.closest('a, kbd, code')) lijst.push(t); }
+    lijst.forEach(function (t) {
+      var s = t.nodeValue, frag = document.createDocumentFragment(), van = 0, m;
+      TOETS.lastIndex = 0;
+      while ((m = TOETS.exec(s))) {
+        var start = m.index + m[1].length;
+        frag.appendChild(document.createTextNode(s.slice(van, start)));
+        var k = document.createElement('kbd'); k.textContent = m[2]; frag.appendChild(k);
+        van = start + m[2].length;
+      }
+      frag.appendChild(document.createTextNode(s.slice(van)));
+      t.parentNode.replaceChild(frag, t);
+    });
+  }
+  // begint dit lijstitem met een vetgedrukte titel?
+  function kopVan(li) {
+    for (var n = li.firstChild; n; n = n.nextSibling) {
+      if (n.nodeType === 3 && !n.nodeValue.trim()) continue;
+      return n.nodeType === 1 && /^(B|STRONG)$/.test(n.tagName) ? n : null;
+    }
+    return null;
+  }
+
+  var kids = Array.prototype.slice.call(inner.children);
+  var lijsten = kids.filter(function (k) { return /^(UL|OL)$/.test(k.tagName) && soort(k) !== 'lijst'; });
+  var metKop = lijsten.filter(function (l) { var li = l.querySelectorAll(':scope > li'); return li.length > 1 && Array.prototype.every.call(li, kopVan); });
+  // stappen: uitdrukkelijk gevraagd, of de enige lijst waarvan elk item met een vette titel begint
+  var stapLijst = lijsten.filter(function (l) { return soort(l) === 'stappen'; })[0]
+    || (metKop.length === 1 && soort(metKop[0]) !== 'begrippen' ? metKop[0] : null);
+
+  var raam = maak('div', 'oc-u-raam'), lees = maak('div', 'oc-u-lees'), doe = maak('div', 'oc-u-doe'), aantal = 0;
+  kids.forEach(function (k, i) {
+    var s = soort(k), t = tekst(k);
+    if (i === 0 && k.tagName === 'P' && !/^Tip\b/.test(t) && !/^(tip|noot|stil)$/.test(s)) { k.classList.add('oc-u-intro'); lees.appendChild(k); return; }
+    if (k === stapLijst) {
+      var ol = maak('ol', 'oc-u-stappen');
+      Array.prototype.forEach.call(k.querySelectorAll(':scope > li'), function (li) {
+        var b = kopVan(li), stap = maak('li', 'oc-u-stap'), tx = maak('div', 'oc-u-stap-tekst');
+        aantal++;
+        stap.appendChild(maak('span', 'oc-u-nr', String(aantal))).setAttribute('aria-hidden', 'true');
+        var titel = maak('span', 'oc-u-stap-titel'), rest = maak('span', 'oc-u-stap-uitleg');
+        if (b) { titel.innerHTML = b.innerHTML.replace(/\s*[.:]\s*$/, ''); b.remove(); }
+        while (li.firstChild) rest.appendChild(li.firstChild);
+        if (b) tx.appendChild(titel); else rest.classList.add('oc-u-enkel');
+        if (netjesBegin(rest)) tx.appendChild(rest);
+        stap.appendChild(tx); ol.appendChild(stap);
+      });
+      doe.appendChild(ol); k.remove(); return;
+    }
+    if (/^(UL|OL)$/.test(k.tagName) && s !== 'lijst' && (s === 'begrippen' || metKop.indexOf(k) > -1)) {
+      k.className = 'oc-u-begrippen';
+      Array.prototype.forEach.call(k.children, function (li) { var w = maak('span', 'oc-u-begrip-tekst'); while (li.firstChild) w.appendChild(li.firstChild); li.className = 'oc-u-begrip'; li.appendChild(w); });
+      doe.appendChild(k); return;
+    }
+    var tip = k.tagName === 'P' && (s === 'tip' || /^Tip\b[^:.]{0,40}:/.test(t));
+    if (tip) {
+      var kaart = maak('div', 'oc-u-tip'), m = t.match(/^(Tip\b[^:.]{0,40}):/);
+      kaart.setAttribute('role', 'note');
+      kaart.innerHTML = ICO.tip;
+      var tt = maak('div'), tk = maak('span', 'oc-u-tip-titel', m ? m[1] : 'Tip'), tb = maak('span', 'oc-u-tip-tekst');
+      while (k.firstChild) tb.appendChild(k.firstChild);
+      if (m) { // "Tip:" of "Tip voor ...:" weghalen uit de tekst zelf
+        var w = document.createTreeWalker(tb, NodeFilter.SHOW_TEXT), n, weg = m[0].length;
+        while (weg > 0 && (n = w.nextNode())) { var l = n.nodeValue.replace(/^\s+/, '').length, voor = n.nodeValue.length - l; var x = Math.min(weg, l); n.nodeValue = n.nodeValue.slice(voor + x); weg -= x; }
+        netjesBegin(tb);
+      }
+      tt.appendChild(tk); tt.appendChild(tb); kaart.appendChild(tt);
+      doe.appendChild(kaart); k.remove(); return;
+    }
+    if (s === 'stil' || (k.tagName === 'P' && /^Alles blijft op dit toestel/.test(t))) {
+      k.className = 'oc-u-stil'; var sp = maak('span'); while (k.firstChild) sp.appendChild(k.firstChild);
+      k.innerHTML = ICO.stil; k.appendChild(sp); doe.appendChild(k); return;
+    }
+    if (k.tagName === 'P') k.classList.add('oc-u-noot');
+    doe.appendChild(k);
+  });
+
+  // verwijzingen naar andere tools als chips, elk één keer
+  var hier = location.pathname.replace(/index\.html$/, ''), gezien = {}, chips = [];
+  Array.prototype.forEach.call(doe.querySelectorAll('a[href]'), function (a) {
+    var u; try { u = new URL(a.getAttribute('href'), location.href); } catch (e) { return; }
+    var thuis = u.host === location.host || /(^|\.)onderconstructie\.github\.io$/.test(u.host);
+    var pad = u.pathname.replace(/index\.html$/, '');
+    if (!thuis || pad === hier || pad === '/' || gezien[pad] || u.hash) return;
+    gezien[pad] = 1;
+    var c = maak('a', 'oc-u-chip'); c.href = a.getAttribute('href');
+    c.innerHTML = '<span class="oc-u-chip-ico">' + ICO.naar + '</span>';
+    c.appendChild(document.createTextNode(tekst(a)));
+    chips.push(c);
+  });
+  if (lees.firstChild) raam.appendChild(lees); else raam.classList.add('oc-u-zonder-intro');
+  // een lange inleiding krijgt pas naast de stappen plaats op een echt breed scherm
+  if (lees.firstChild && tekst(lees.firstChild).split(' ').length > 50) raam.classList.add('oc-u-lang');
+  raam.appendChild(doe);
+  if (chips.length) {
+    var samen = maak('div', 'oc-u-samen'), id = 'oc-u-samen-' + Math.random().toString(36).slice(2, 7);
+    samen.appendChild(maak('span', 'oc-u-samen-titel', 'Werkt samen met')).id = id;
+    var rij = maak('div', 'oc-u-chips'); rij.setAttribute('role', 'group'); rij.setAttribute('aria-labelledby', id);
+    chips.forEach(function (c) { rij.appendChild(c); });
+    samen.appendChild(rij); raam.appendChild(samen);
+  }
+  toetsen(raam);
+  inner.innerHTML = ''; inner.appendChild(raam);
+
+  // kop: icoon, titel, belofte, pijl
+  var titel = tekst(sum) || 'Hoe werkt dit?';
+  var woorden = tekst(raam).split(' ').length, min = Math.max(1, Math.round(woorden / 180));
+  var belofte = (aantal ? aantal + ' stappen, ' : '') + min + (min === 1 ? ' minuut' : ' minuten') + ' lezen';
+  sum.innerHTML = '<span class="oc-u-ico" aria-hidden="true">' + ICO.kaart + '</span>'
+    + '<span class="oc-u-kop"><span class="oc-u-titel"></span><span class="oc-u-meta"></span></span>'
+    + (aantal > 1 && aantal < 10 ? '<span class="oc-u-route" aria-hidden="true">' + Array.apply(null, Array(aantal)).map(function (x, i) { return '<i>' + (i + 1) + '</i>'; }).join('') + '</span>' : '')
+    + '<span class="oc-u-pijl" aria-hidden="true">' + ICO.pijl + '</span>';
+  sum.querySelector('.oc-u-titel').textContent = titel;
+  sum.querySelector('.oc-u-meta').textContent = belofte;
+  if (!d.id) d.id = SLUG;
+  d.classList.add('oc-u');
+
+  // vloeiend openen en sluiten (niet bij minder beweging)
+  var rustig = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : { matches: true };
+  var ease = 'cubic-bezier(0.2, 0.7, 0.2, 1)', loopt = null, staat = d.open;
+  function klaar() { loopt = null; inner.style.overflow = ''; inner.style.height = ''; }
+  function zet(open, vloeiend) {
+    staat = open;
+    if (!vloeiend || rustig.matches || !inner.animate) { if (loopt) loopt.cancel(); klaar(); d.open = open; return; }
+    var nu = d.open ? inner.getBoundingClientRect().height : 0;
+    if (loopt) loopt.cancel();
+    d.open = true; inner.style.overflow = 'hidden';
+    var doel = open ? inner.scrollHeight : 0;
+    loopt = inner.animate([{ height: nu + 'px', opacity: open ? (nu ? 1 : 0) : 1 }, { height: doel + 'px', opacity: open ? 1 : 0 }],
+      { duration: open ? 420 : 260, easing: ease });
+    loopt.onfinish = function () { klaar(); if (!open) d.open = false; };
+    loopt.oncancel = function () { inner.style.overflow = ''; };
+    if (open && !nu) {
+      var stukken = raam.querySelectorAll('.oc-u-intro, .oc-u-stap, .oc-u-begrip, .oc-u-tip, .oc-u-noot, .oc-u-stil, .oc-u-samen');
+      Array.prototype.forEach.call(stukken, function (e, i) {
+        e.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 380, delay: 80 + Math.min(i, 8) * 55, easing: ease, fill: 'backwards' });
+      });
+      Array.prototype.forEach.call(raam.querySelectorAll('.oc-u-stap'), function (e, i) {
+        try { e.animate([{ transform: 'scaleY(0)' }, { transform: 'scaleY(1)' }], { pseudoElement: '::before', duration: 360, delay: 200 + i * 55, easing: ease, fill: 'backwards' }); } catch (x) {}
+      });
+    }
+  }
+  sum.addEventListener('click', function (e) { e.preventDefault(); zet(!staat, true); });
+  d.addEventListener('toggle', function () { if (!loopt) staat = d.open; });
+
+  // #hoe-werkt-dit opent het blok
+  function vanAdres(vloeiend) {
+    var h = decodeURIComponent(location.hash.slice(1));
+    if (h !== SLUG && h !== d.id) return;
+    if (!staat) zet(true, vloeiend);
+    requestAnimationFrame(function () { d.scrollIntoView({ behavior: vloeiend && !rustig.matches ? 'smooth' : 'auto', block: 'start' }); });
+  }
+  window.addEventListener('hashchange', function () { vanAdres(true); });
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[href="#' + SLUG + '"]');
+    if (a && location.hash === '#' + SLUG) { e.preventDefault(); vanAdres(true); }
+  });
+  vanAdres(false);
+})();
+/* oc-uitleg v1 einde */
+</script>
+</body>
+</html>
