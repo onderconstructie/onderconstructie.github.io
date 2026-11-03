@@ -183,6 +183,7 @@ select.field { appearance:none; -webkit-appearance:none; padding-right:1.75rem; 
 
 .stand { margin-top:0.75rem; border:1px solid var(--slate-200); background:var(--wit); border-radius:12px; padding:0.75rem; }
 .stand-words { font-size:1rem; font-weight:700; color:var(--slate-800); line-height:1.35; }
+.stand-tijd { font-size:0.875rem; color:var(--slate-600); margin-top:0.125rem; }
 .stand-sub { font-size:0.8125rem; color:var(--slate-500); margin-top:0.125rem; font-variant-numeric:tabular-nums; }
 .chart { margin-top:0.5rem; }
 .chart svg { display:block; width:100%; height:auto; overflow:visible; }
@@ -1014,15 +1015,18 @@ const cur = () => state.plans.find(p => p.id === state.current) || state.plans[0
 const doelById = id => cur().doelen.find(d => d.id === id);
 
 /* ---------- Getallen en datums ---------- */
-// Leest getallen zoals je ze schrijft: 1.240 (duizendtal), 1,5 en 1.5 (komma of punt), 85%.
+// Leest getallen zoals je ze schrijft: 1.240 (duizendtal), 1,5 en 1.5 (komma of punt), 85%, −3, +5, 0.250 en "24 minuten".
 function num(v) {
   if (v == null) return NaN;
-  let s = String(v).trim().replace(/[\s %€]/g, '');
-  if (/^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(s)) s = s.replace(/\./g, '');
-  else if (/^-?\d{1,3}(,\d{3})+\.\d+$/.test(s)) s = s.replace(/,/g, '');
+  let s = String(v).trim().replace(/[−‒–—]/g, '-');
+  const m = s.match(/^([-+]?[\d.,\s  ]*\d)\s*[a-zà-ÿ][a-zà-ÿ .\/]*$/i); if (m) s = m[1];   // een maat achter het getal
+  s = s.replace(/[\s  %€]/g, '').replace(/^\+/, '');
+  if (/^-?[1-9]\d{0,2}(\.\d{3})+(,\d+)?$/.test(s)) s = s.replace(/\./g, '');
+  else if (/^-?[1-9]\d{0,2}(,\d{3})+\.\d+$/.test(s)) s = s.replace(/,/g, '');
   s = s.replace(',', '.');
   return s === '' || !/^-?\d*\.?\d+$/.test(s) ? NaN : parseFloat(s);
 }
+const has = v => String(v == null ? '' : v).trim() !== '';
 const nf = (n, d = 1) => n.toLocaleString('nl-BE', { maximumFractionDigits:d });
 const isoToday = () => { const t = new Date(); return new Date(t.getTime() - t.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
 const okDate = s => /^\d{4}-\d{2}-\d{2}$/.test(s || '');
@@ -1036,22 +1040,39 @@ function addMonths(iso, m) {
 }
 
 /* ---------- Berekeningen ---------- */
-const isPct = i => i.vorm === 'pct' || /%/.test(i.nul.v + i.streef.v) || /^\s*(%|procent)/i.test(i.eenheid);
+// Een gekozen vorm wint; anders herkent de tool een percentage aan het %-teken of de maat.
+const isPct = i => i.vorm ? i.vorm === 'pct' : /%/.test(i.nul.v + i.streef.v) || /^\s*(%|procent)/i.test(i.eenheid);
 const unitOf = i => isPct(i) ? '%' : i.eenheid.trim() ? ' ' + i.eenheid.trim() : '';
 const fmtV = (i, v) => v == null || isNaN(v) ? '' : nf(v, 2) + unitOf(i);
+// Een waarde zoals je ze toont: als getal met maat, of letterlijk als het geen getal is (bv. "nee" en "ja" bij Iets anders).
+const shownV = (i, raw, v) => v != null && !isNaN(v) ? fmtV(i, v) : String(raw || '').trim();
+const byDate = (a, b) => a.d < b.d ? -1 : a.d > b.d ? 1 : 0;
 function calc(i) {
   const nul = num(i.nul.v), streef = num(i.streef.v);
-  const mets = i.metingen.map(m => ({ id:m.id, d:m.d, v:num(m.v) })).filter(m => !isNaN(m.v) && okDate(m.d)).sort((a, b) => a.d < b.d ? -1 : a.d > b.d ? 1 : 0);
-  const c = { nul: isNaN(nul) ? null : nul, streef: isNaN(streef) ? null : streef, mets, last: mets.length ? mets[mets.length - 1] : null };
+  // Een meting met een datum voor de nulmeting telt niet mee (er komt een signaal bij).
+  const alle = i.metingen.filter(m => okDate(m.d) && has(m.v) && !(okDate(i.nul.d) && m.d < i.nul.d)).map(m => ({ id:m.id, d:m.d, raw:m.v.trim(), v:num(m.v) })).sort(byDate);
+  const mets = alle.filter(m => !isNaN(m.v));
+  const c = { nul: isNaN(nul) ? null : nul, streef: isNaN(streef) ? null : streef, mets, last: mets.length ? mets[mets.length - 1] : null,
+    hasNul: has(i.nul.v), hasStreef: has(i.streef.v), lastAny: alle.length ? alle[alle.length - 1] : null };
+  c.tekst = c.hasNul && c.nul == null;   // de nulmeting is geen getal: dan geen lijn en geen percentage
   c.dir = i.richting || (c.nul != null && c.streef != null ? (c.streef > c.nul ? 'hoger' : c.streef < c.nul ? 'lager' : '') : '');
   c.reachedAtStart = c.nul != null && c.streef != null && (c.nul === c.streef || (c.dir === 'hoger' && c.nul > c.streef) || (c.dir === 'lager' && c.nul < c.streef));
   c.prog = !c.reachedAtStart && c.last && c.nul != null && c.streef != null ? (c.last.v - c.nul) / (c.streef - c.nul) : null;
   return c;
 }
+// Hoeveel van de tijd tussen nulmeting en streefdatum om was bij de laatste meting. Zo lees je "op 60% van de weg" naast de klok.
+function tijdOm(i, c = calc(i)) {
+  if (c.prog == null || c.prog >= 1 || !c.last || !okDate(i.nul.d) || !okDate(i.streef.d)) return null;
+  const t = s => Date.parse(s + 'T00:00:00Z'), tot = t(i.streef.d) - t(i.nul.d);
+  if (tot <= 0) return null;
+  const f = (t(c.last.d) - t(i.nul.d)) / tot;
+  return !isFinite(f) || f < 0 || f > 1 ? null : Math.round(f * 100);
+}
+const tijdZin = r => r == null ? '' : `Bij de laatste meting was ${r}% van de tijd tot je streefdatum om.`;
 // De eerstvolgende meting volgt uit hoe vaak je meet, gerekend vanaf de laatste meting (of de nulmeting), tot de streefdatum.
 function nextMeting(i, c = calc(i)) {
-  const f = FREQ.find(x => x.id === i.freq); if (!f || c.nul == null) return null;
-  const base = c.last ? c.last.d : okDate(i.nul.d) ? i.nul.d : '', end = okDate(i.streef.d) ? i.streef.d : '';
+  const f = FREQ.find(x => x.id === i.freq); if (!f || !c.hasNul) return null;
+  const base = c.lastAny ? c.lastAny.d : okDate(i.nul.d) ? i.nul.d : '', end = okDate(i.streef.d) ? i.streef.d : '';
   if (!f.m) return end && (!base || end > base) ? { date:end, eind:true } : null;
   if (!base) return null;
   const d = addMonths(base, f.m);
@@ -1059,17 +1080,28 @@ function nextMeting(i, c = calc(i)) {
   return { date:d, eind:false };
 }
 function meetTaken(d, i) {
-  const name = (i.name.trim() || d.text.trim()).slice(0, 200); if (!name) return [];
-  const note = d.text.trim() && i.name.trim() ? 'Doel: ' + d.text.trim().slice(0, 190) : undefined, who = i.wie.trim() || undefined;
+  const name = i.name.trim().slice(0, 200); if (!name) return [];   // zonder indicator valt er nog niets te meten
+  const note = d.text.trim() ? 'Doel: ' + d.text.trim().slice(0, 190) : undefined, who = i.wie.trim() || undefined;
   const c = calc(i);
-  if (c.nul == null) return [{ type:'taak', text:`Nulmeting doen: ${name}`, who, note }];
+  if (!c.hasNul) return [{ type:'taak', text:`Nulmeting doen: ${name}`, who, note }];
   const nx = nextMeting(i, c);
   return nx ? [{ type:'taak', text:`${nx.eind ? 'Eindmeting' : 'Meting'} ${fmtMonth(nx.date)}: ${name}`, who, when:nx.date, note }] : [];
 }
 function standOf(i, c = calc(i)) {
-  if (c.nul == null) return { short:'geen nulmeting', words:'', pct:null };
+  if (!c.hasNul) return { short:'geen nulmeting', words:'', pct:null };
+  if (c.tekst || (c.nul != null && c.hasStreef && c.streef == null)) {   // geen getallen: toon wat er staat, het oordeel is aan jou
+    const L = c.lastAny;
+    if (!L) return { short:'nog geen meting', words:'Nog geen meting na de nulmeting.', pct:null };
+    if (c.hasStreef && L.raw.toLowerCase() === i.streef.v.trim().toLowerCase()) return { short:'gehaald', words:'Streefwaarde gehaald', pct:100 };
+    return { short:L.raw.slice(0, 24), words:`Laatste meting: ${L.raw}`, pct:null };
+  }
   if (c.streef == null) return { short:'geen streefwaarde', words:'Geef een streefwaarde, dan zie je hoe ver je staat.', pct:null };
-  if (c.reachedAtStart) return { short:'al gehaald bij de start', words:'De streefwaarde is al gehaald bij de nulmeting.', pct:null };
+  if (c.reachedAtStart) {
+    if (!c.last) return { short:'al gehaald bij de start', words:'De streefwaarde is al gehaald bij de nulmeting.', pct:null };
+    const ok = c.dir === 'lager' ? c.last.v <= c.streef : c.dir === 'hoger' ? c.last.v >= c.streef : c.last.v === c.streef;
+    return ok ? { short:'gehaald', words:'Streefwaarde gehaald, ook bij de laatste meting', pct:100 }
+      : { short:'niet meer gehaald', words:'Bij de start was de streefwaarde gehaald, bij de laatste meting niet meer', pct:0 };
+  }
   if (!c.last) return { short:'nog geen meting', words:'Nog geen meting na de nulmeting.', pct:0 };
   const p = c.prog;
   if (p >= 1) return { short:'gehaald', words:'Streefwaarde gehaald', pct:100 };
@@ -1081,7 +1113,8 @@ function standOf(i, c = calc(i)) {
 // Eerlijke waarschuwingen: weinig metingen of kleine aantallen. Geen ingewikkelde statistiek.
 function cautions(i, c = calc(i)) {
   const w = [];
-  if (c.nul == null || !c.mets.length) return w;
+  // Wat je zelf doet (inspanning) schommelt niet toevallig: daar past deze waarschuwing niet.
+  if (c.nul == null || !c.mets.length || i.soort === 'inspanning') return w;
   const k = c.mets.length;
   if (k < 3) w.push(`Nog maar ${k === 1 ? 'één meting' : k + ' metingen'} na de nulmeting. Eén meting kan toevallig hoog of laag uitvallen. Besluit pas na een paar metingen dat het werkt.`);
   const n = num(i.n), all = [c.nul, ...c.mets.map(m => m.v)];
@@ -1110,13 +1143,21 @@ function doelSignals(d) {
     if (!i.name.trim()) add('Waaraan zie je het?', 'name');
     if (!i.soort) add('Wat meet je: wat je doet, wat mensen ermee doen of wat er beter wordt?', 'soort');
     if (isPct(i) && !i.noemer.trim()) add('Een percentage van wie?', 'noemer');
-    if (!i.bron && !i.bronNaam.trim()) add('Waar haal je het cijfer?', 'bron');
+    if (!i.bron && !i.bronNaam.trim()) add('Waar haal je het? Kies een bron.', 'bron');
     else if (!i.beheerder.trim()) add('Wie beheert de bron? Zonder beheerder valt ze stil.', 'beheerder');
-    if (c.nul == null) add('Zonder vertrekpunt kan je later geen verschil tonen. Meet eerst.', 'nul.v');
+    const getal = i.vorm !== 'anders';   // bij Iets anders mag een waarde ook een woord zijn, zoals nee of ja
+    if (!c.hasNul) add('Zonder vertrekpunt kan je later geen verschil tonen. Meet eerst.', 'nul.v');
+    else if (getal && c.nul == null) add('Schrijf de nulmeting als getal, bv. 1.240. Is het geen getal, kies dan Iets anders.', 'nul.v');
     else if (!okDate(i.nul.d)) add('Wanneer mat je de nulmeting?', 'nul.d');
-    if (c.streef == null) add('Welke streefwaarde wil je halen?', 'streef.v');
+    if (!c.hasStreef) add('Welke streefwaarde wil je halen?', 'streef.v');
+    else if (getal && c.streef == null) add('Schrijf de streefwaarde als getal, bv. 600. Is het geen getal, kies dan Iets anders.', 'streef.v');
     else if (!okDate(i.streef.d)) add('Tegen wanneer wil je de streefwaarde halen?', 'streef.d');
-    if (c.reachedAtStart) add('De streefwaarde is al gehaald bij de nulmeting. Kies een scherpere.', 'streef.v');
+    else if (okDate(i.nul.d) && i.streef.d <= i.nul.d) add('De streefdatum ligt voor de nulmeting. Klopt de datum?', 'streef.d');
+    if (c.reachedAtStart) add('De streefwaarde is al gehaald bij de nulmeting. Wil je vooruitgang zien, kies dan een scherpere.', 'streef.v');
+    const fout = i.metingen.find(m => getal && has(m.v) && isNaN(num(m.v)));
+    if (fout) add('Schrijf elke meting als getal, bv. 1.240.', `met:${fout.id}:v`);
+    const vroeg = okDate(i.nul.d) && i.metingen.find(m => okDate(m.d) && has(m.v) && m.d < i.nul.d);
+    if (vroeg) add('Een meting ligt voor de nulmeting. Klopt de datum?', `met:${vroeg.id}:d`);
     if (!i.freq || !i.wie.trim()) add('Spreek af wanneer je meet en wie meet.', !i.freq ? 'freq' : 'wie');
   });
   return s;
@@ -1145,7 +1186,7 @@ function headInner(d) {
   const sig = doelSignals(d).length;
   const rows = d.inds.filter(i => i.name.trim()).slice(0, 4).map(i => {
     const c = calc(i), st = standOf(i, c);
-    const vals = c.nul != null ? `${fmtV(i, c.nul)}${c.streef != null ? ' → ' + fmtV(i, c.streef) : ''}` : '';
+    const vals = c.hasNul ? `${shownV(i, i.nul.v, c.nul)}${c.hasStreef ? ' → ' + shownV(i, i.streef.v, c.streef) : ''}` : '';
     return `<span class="sum-row">${pillHTML(i)}<span class="nm">${esc(i.name.trim())}</span>${vals ? `<span class="num">${esc(vals)}</span>` : ''}<span>${esc(st.short)}</span></span>`;
   }).join('');
   return `${ICON.chev}
@@ -1179,22 +1220,24 @@ function bronNote(i) {
 function nextHTML(i) {
   if (!i.freq) return '';
   const c = calc(i);
-  if (c.nul == null) return `<p class="next">Eerst: <b>de nulmeting</b>${i.wie.trim() ? ', door ' + esc(i.wie.trim()) : ''}.</p>`;
+  if (!c.hasNul) return `<p class="next">Eerst: <b>de nulmeting</b>${i.wie.trim() ? ', door ' + esc(i.wie.trim()) : ''}.</p>`;
   const nx = nextMeting(i, c);
-  if (!nx) return okDate(i.streef.d) && c.last && c.last.d >= i.streef.d ? '<p class="next">Alle metingen tot de streefdatum zijn gedaan.</p>' : '';
+  if (!nx) return okDate(i.streef.d) && c.lastAny && c.lastAny.d >= i.streef.d ? '<p class="next">Alle metingen tot de streefdatum zijn gedaan.</p>' : '';
   const late = nx.date < isoToday();
   return `<p class="next${late ? ' late' : ''}">${late ? 'Nog open: de meting van ' : nx.eind ? 'Eindmeting: ' : 'Volgende meting: '}<b>${esc(fmtMonth(nx.date))}</b>${i.wie.trim() ? ', door ' + esc(i.wie.trim()) : ''}.</p>`;
 }
 function standHTML(i) {
   const c = calc(i);
-  if (c.nul == null) return `<div class="note">${ICON.info}<div><p>Vul de nulmeting in. Dan zie je hier de lijn naar je streefwaarde.</p></div></div>`;
-  const st = standOf(i, c), cw = cautions(i, c);
-  const sub = c.last ? `Laatste meting: ${fmtV(i, c.last.v)} op ${fmtDate(c.last.d)}` : `Nulmeting: ${fmtV(i, c.nul)}${okDate(i.nul.d) ? ' op ' + fmtDate(i.nul.d) : ''}`;
+  if (!c.hasNul) return `<div class="note">${ICON.info}<div><p>Vul de nulmeting in. Dan zie je hier de lijn naar je streefwaarde.</p></div></div>`;
+  const st = standOf(i, c), cw = cautions(i, c), tz = tijdZin(tijdOm(i, c));
+  const L = c.nul != null ? c.last : c.lastAny;
+  const sub = L && /^Laatste meting/.test(st.words) ? `Gemeten op ${fmtDate(L.d)}` : L ? `Laatste meting: ${shownV(i, L.raw, L.v)} op ${fmtDate(L.d)}` : `Nulmeting: ${shownV(i, i.nul.v, c.nul)}${okDate(i.nul.d) ? ' op ' + fmtDate(i.nul.d) : ''}`;
   return `<div class="stand">
     <div class="stand-words">${esc(st.words)}</div>
-    <div class="stand-sub">${esc(sub)}${c.streef != null ? ` · streefwaarde ${esc(fmtV(i, c.streef))}${okDate(i.streef.d) ? ' tegen ' + esc(fmtDate(i.streef.d)) : ''}` : ''}</div>
-    ${c.mets.length || c.streef != null ? `<div class="chart" data-chart-svg="${esc(i.id)}"></div>
-    <div class="legend" aria-hidden="true"><span><i class="lg-nul"></i>nulmeting</span>${c.mets.length ? '<span><i class="lg-met"></i>meting</span>' : ''}${c.streef != null ? '<span><i class="lg-doel"></i>streefwaarde</span>' : ''}${c.streef != null && okDate(i.streef.d) ? '<span><i class="lg-weg"></i>rechte weg naar je streefwaarde</span>' : ''}</div>` : ''}
+    ${tz ? `<div class="stand-tijd">${esc(tz)}</div>` : ''}
+    <div class="stand-sub">${esc(sub)}${c.hasStreef ? ` · streefwaarde ${esc(shownV(i, i.streef.v, c.streef))}${okDate(i.streef.d) ? ' tegen ' + esc(fmtDate(i.streef.d)) : ''}` : ''}</div>
+    ${c.nul != null && (c.mets.length || c.streef != null) ? `<div class="chart" data-chart-svg="${esc(i.id)}"></div>
+    <div class="legend" aria-hidden="true"><span><i class="lg-nul"></i>nulmeting</span>${c.mets.length ? '<span><i class="lg-met"></i>meting</span>' : ''}${c.streef != null ? '<span><i class="lg-doel"></i>streefwaarde</span>' : ''}${c.streef != null && okDate(i.streef.d) && okDate(i.nul.d) ? '<span><i class="lg-weg"></i>rechte weg naar je streefwaarde</span>' : ''}</div>` : ''}
     ${cw.map(t => `<div class="note warn">${ICON.warn}<div><p>${esc(t)}</p></div></div>`).join('')}
   </div>`;
 }
@@ -1235,7 +1278,7 @@ function chartSVG(i, W, opts = {}) {
   xl.forEach(([d, a]) => { g += `<text x="${X(d).toFixed(1)}" y="${H - 6}" text-anchor="${a}" fill="#64748b" ${F}>${esc(fmtShort(d))}</text>`; });
   if (c.streef != null) {
     const ys = Y(c.streef).toFixed(1);
-    if (end) g += `<line x1="${X(d0).toFixed(1)}" y1="${Y(c.nul).toFixed(1)}" x2="${X(end).toFixed(1)}" y2="${ys}" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="2 4" stroke-linecap="round"/>`;
+    if (end && okDate(i.nul.d)) g += `<line x1="${X(d0).toFixed(1)}" y1="${Y(c.nul).toFixed(1)}" x2="${X(end).toFixed(1)}" y2="${ys}" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="2 4" stroke-linecap="round"/>`;
     g += `<line x1="${L}" x2="${W - R}" y1="${ys}" y2="${ys}" stroke="#047857" stroke-width="1.5" stroke-dasharray="6 4"/>`;
     const above = Y(c.streef) - T > 14;
     g += `<text x="${W - R - (end ? 12 : 0)}" y="${(+ys + (above ? -8 : 17)).toFixed(1)}" text-anchor="end" fill="#047857" font-weight="600" ${F}>streefwaarde ${esc(fmtV(i, c.streef))}</text>`;
@@ -1261,8 +1304,14 @@ function drawCharts(root = document) {
   });
 }
 
+// Hoger of lager is beter: alleen zinvol bij getallen. Bij "nee" en "ja" laat de tool de keuze weg.
+function richtingHTML(i, c = calc(i)) {
+  if (c.tekst || (c.nul != null && c.hasStreef && c.streef == null)) return '';
+  return `<span class="mini" id="f-${esc(i.id)}-richting">Wat is beter?</span>${radios('richting', RICHTING, i, `f-${esc(i.id)}-richting`, c.dir, true)}`;
+}
 function indHTML(d, i, k) {
-  const id = i.id, many = d.inds.length > 1, L = f => `f-${id}-${f}`, pct = isPct(i);
+  const id = i.id, many = d.inds.length > 1, L = f => `f-${id}-${f}`, pct = isPct(i), anders = i.vorm === 'anders';
+  const im = anders ? 'inputmode="text"' : 'inputmode="decimal"';   // bij Iets anders mag je ook een woord typen
   const fld = (f, label, val, ph, extra = '') => `<label class="mini" for="${L(f)}">${label}</label><input class="field" id="${L(f)}" data-f="${f}" value="${esc(val)}" placeholder="${esc(ph)}" ${extra}>`;
   const c = calc(i);
   return `<div class="ind" data-ind="${esc(id)}">
@@ -1280,8 +1329,8 @@ function indHTML(d, i, k) {
         ${pct ? `${fld('teller', 'Wie of wat tel je?', i.teller, 'Bv. aanvragen die online binnenkomen', 'maxlength="160"')}
           ${fld('noemer', 'Van wie? Het geheel waarvan je het deel neemt', i.noemer, 'Bv. van alle aanvragen in die maand', 'maxlength="160"')}
           ${fld('n', 'Over hoeveel gaat het ongeveer? (optioneel)', i.n, 'Bv. 900 per maand', 'inputmode="decimal" maxlength="20"')}`
-        : `<label class="mini" for="${L('def')}">Wat tel je precies?</label><textarea class="field" rows="1" id="${L('def')}" data-f="def" placeholder="${i.vorm === 'gem' ? 'Bv. werkdagen van indiening tot beslissing, gemiddeld per aanvraag' : 'Bv. telefoontjes aan het loket over de stand van een aanvraag, per maand'}" maxlength="300">${esc(i.def)}</textarea>
-          ${fld('eenheid', 'In welke maat? (optioneel)', i.eenheid, 'Bv. per maand, werkdagen, op 10', 'maxlength="30"')}`}
+        : `<label class="mini" for="${L('def')}">${anders ? 'Wat kijk je precies na?' : 'Wat tel je precies?'}</label><textarea class="field" rows="1" id="${L('def')}" data-f="def" placeholder="${anders ? 'Bv. alle loketdiensten staan in de online agenda' : i.vorm === 'gem' ? 'Bv. werkdagen van indiening tot beslissing, gemiddeld per aanvraag' : 'Bv. telefoontjes aan het loket over de stand van een aanvraag, per maand'}" maxlength="300">${esc(i.def)}</textarea>
+          ${anders ? '' : fld('eenheid', 'In welke maat? (optioneel)', i.eenheid, 'Bv. per maand, werkdagen, op 10', 'maxlength="30"')}`}
       </div>
       <div class="sec"><span class="sec-label"><span class="nr" aria-hidden="true">4</span>Waar haal je het?</span>
         <span class="mini" id="${L('bron')}">Welke soort bron?</span>
@@ -1291,14 +1340,13 @@ function indHTML(d, i, k) {
         ${bronNote(i)}
       </div>
       <div class="sec"><span class="sec-label"><span class="nr" aria-hidden="true">5</span>Nulmeting <span class="hint">waar sta je nu?</span></span>
-        <div class="row2"><div>${fld('nul.v', 'Waarde nu', i.nul.v, pct ? 'Bv. 58%' : 'Bv. 1.240', 'inputmode="decimal" maxlength="20"')}</div>
+        <div class="row2"><div>${fld('nul.v', 'Waarde nu', i.nul.v, pct ? 'Bv. 58%' : anders ? 'Bv. nee' : 'Bv. 1.240', im + ' maxlength="20"')}</div>
           <div><label class="mini" for="${L('nul.d')}">Gemeten op</label><input class="field" type="date" id="${L('nul.d')}" data-f="nul.d" value="${esc(i.nul.d)}"></div></div>
       </div>
       <div class="sec"><span class="sec-label"><span class="nr" aria-hidden="true">6</span>Streefwaarde <span class="hint">waar wil je heen?</span></span>
-        <div class="row2"><div>${fld('streef.v', 'Streefwaarde', i.streef.v, pct ? 'Bv. 80%' : 'Bv. 600', 'inputmode="decimal" maxlength="20"')}</div>
+        <div class="row2"><div>${fld('streef.v', 'Streefwaarde', i.streef.v, pct ? 'Bv. 80%' : anders ? 'Bv. ja' : 'Bv. 600', im + ' maxlength="20"')}</div>
           <div><label class="mini" for="${L('streef.d')}">Tegen</label><input class="field" type="date" id="${L('streef.d')}" data-f="streef.d" value="${esc(i.streef.d)}"></div></div>
-        <span class="mini" id="${L('richting')}">Wat is beter?</span>
-        <div data-richting>${radios('richting', RICHTING, i, L('richting'), c.dir, true)}</div>
+        <div data-richting>${richtingHTML(i, c)}</div>
       </div>
       <div class="sec wide"><span class="sec-label"><span class="nr" aria-hidden="true">7</span>Wanneer meet je, en wie meet?</span>
         <div class="row2"><div><label class="mini" for="${L('freq')}">Hoe vaak?</label><select class="field" id="${L('freq')}" data-f="freq"><option value="">Kies…</option>${FREQ.map(f => `<option value="${f.id}"${f.id === i.freq ? ' selected' : ''}>${esc(f.name)}</option>`).join('')}</select></div>
@@ -1308,7 +1356,7 @@ function indHTML(d, i, k) {
       <div class="sec wide"><span class="sec-label"><span class="nr" aria-hidden="true">8</span>Metingen <span class="hint">optioneel: vul ze in als je gemeten hebt</span></span>
         ${i.metingen.length ? `<div class="mets">${i.metingen.map((m, j) => `<div class="met" data-met="${esc(m.id)}">
           <input class="field" type="date" data-mf="d" value="${esc(m.d)}" aria-label="Meting ${j + 1}: datum">
-          <input class="field" data-mf="v" value="${esc(m.v)}" placeholder="Waarde" inputmode="decimal" maxlength="20" aria-label="Meting ${j + 1}: waarde">
+          <input class="field" data-mf="v" value="${esc(m.v)}" placeholder="Waarde" ${im} maxlength="20" aria-label="Meting ${j + 1}: waarde">
           <button type="button" class="x" data-del-met aria-label="Meting ${j + 1} verwijderen">${ICON.x}</button></div>`).join('')}</div>` : ''}
         <button type="button" class="add-link" data-add-met>${ICON.plus}Meting toevoegen</button>
         <div data-stand>${standHTML(i)}</div>
@@ -1360,7 +1408,7 @@ function refreshDoel(id) {
     const box = el.querySelector(`[data-ind="${i.id}"]`); if (!box) return;
     const n = box.querySelector('[data-next]'); if (n) n.innerHTML = nextHTML(i);
     const s = box.querySelector('[data-stand]'); if (s) s.innerHTML = standHTML(i);
-    const r = box.querySelector('[data-richting]'); if (r && !r.contains(document.activeElement)) r.innerHTML = radios('richting', RICHTING, i, `f-${i.id}-richting`, calc(i).dir, true);
+    const r = box.querySelector('[data-richting]'); if (r && !r.contains(document.activeElement)) r.innerHTML = richtingHTML(i);
   });
   drawCharts(el);
 }
@@ -1370,8 +1418,8 @@ function renderEmpty() {
   let html = '';
   if (leeg && !p.voorbeeld) {
     const o = opdrachtBron(), g = o ? null : gapBron();
-    if (o) html = `<p>Je projectopdracht heeft ${o.n} ${o.n === 1 ? 'doel' : 'doelen'}.</p><button type="button" class="btn-take" data-take="opdracht">${ICON.take}Neem de doelen over uit je projectopdracht</button>`;
-    else if (g) html = `<p>Je Gap-analyse "${esc(g.name)}" heeft ${g.items.length} ${g.items.length === 1 ? 'thema' : 'thema\'s'}, met wat je nu meet en wat je wil halen.</p><button type="button" class="btn-take" data-take="gap">${ICON.take}Neem de thema's over uit je Gap-analyse</button>`;
+    if (o) html = `<p>Je projectopdracht heeft ${o.n} ${o.n === 1 ? 'doel' : 'doelen'}.</p><button type="button" class="btn-take" data-take="opdracht">${ICON.take}${o.n === 1 ? 'Neem het doel' : 'Neem de doelen'} over uit je projectopdracht</button>`;
+    else if (g) html = `<p>Je Gap-analyse "${esc(g.name)}" heeft ${g.items.length} ${g.items.length === 1 ? 'thema' : 'thema\'s'}, met wat je nu meet en wat je wil halen.</p><button type="button" class="btn-take" data-take="gap">${ICON.take}${g.items.length === 1 ? 'Neem het thema' : 'Neem de thema\'s'} over uit je Gap-analyse</button>`;
   }
   $('from-src').innerHTML = html; $('from-src').hidden = !html;
   document.body.classList.toggle('mp-bron', !!html);
@@ -1395,7 +1443,7 @@ function renderAside() {
   const p = cur(), ds = p.doelen, inds = ds.flatMap(d => d.inds.filter(i => i.name.trim()));
   $('aside').closest('.layout').classList.toggle('solo', !ds.length);
   if (!ds.length) { $('aside').innerHTML = ''; return; }
-  const effect = ds.filter(d => d.inds.some(i => i.soort === 'effect')).length, nul = inds.filter(i => calc(i).nul != null).length;
+  const effect = ds.filter(d => d.inds.some(i => i.soort === 'effect')).length, nul = inds.filter(i => calc(i).hasNul).length;
   const wide = matchMedia('(min-width:1000px)').matches;
   $('aside').innerHTML = `<div class="card">
     <div class="ov-title">Overzicht</div>
@@ -1479,6 +1527,7 @@ function jumpTo(doelId, indId, f) {
   let el = null, mark = null;
   if (f === 'doel') el = card.querySelector('[data-df="text"]');
   else if (box && ['soort', 'vorm', 'bron', 'richting'].includes(f)) { mark = box.querySelector(`[data-group="${f}"]`); el = mark && (mark.querySelector('[aria-checked="true"]') || mark.querySelector('[role="radio"]')); }
+  else if (box && f.startsWith('met:')) { const [, mid, k] = f.split(':'); el = box.querySelector(`[data-met="${mid}"] [data-mf="${k}"]`); }
   else if (box) el = box.querySelector(`[data-f="${f}"]`);
   if (!el) el = card.querySelector('[data-df="text"]');
   mark = mark || el;
@@ -1645,11 +1694,12 @@ function indPairs(i) {
   if (isPct(i)) { add('Wie of wat tel je', i.teller); add('Van wie', i.noemer); add('Over ongeveer', i.n); }
   else { add('Wat tel je', i.def); add('Maat', i.eenheid); }
   const b = BRON.find(x => x.id === i.bron); add('Bron', [b ? b.name : '', i.bronNaam.trim()].filter(Boolean).join(': ')); add('Beheerd door', i.beheerder);
-  add('Nulmeting', v(c.nul != null ? fmtV(i, c.nul) : '', i.nul.d));
-  add('Streefwaarde', c.streef != null ? fmtV(i, c.streef) + (okDate(i.streef.d) ? ` tegen ${fmtDate(i.streef.d)}` : '') + (c.dir ? ` (${c.dir} is beter)` : '') : '');
+  add('Nulmeting', v(shownV(i, i.nul.v, c.nul), i.nul.d));
+  add('Streefwaarde', c.hasStreef ? shownV(i, i.streef.v, c.streef) + (okDate(i.streef.d) ? ` tegen ${fmtDate(i.streef.d)}` : '') + (c.streef != null && c.dir ? ` (${c.dir} is beter)` : '') : '');
   const f = FREQ.find(x => x.id === i.freq); add('Meten', [f ? f.name.toLowerCase() : '', i.wie.trim() ? 'door ' + i.wie.trim() : ''].filter(Boolean).join(', '));
   const nx = nextMeting(i, c); if (nx) add(nx.date < isoToday() ? 'Nog open' : nx.eind ? 'Eindmeting' : 'Volgende meting', (nx.date < isoToday() ? 'meting van ' : '') + fmtMonth(nx.date));
-  if (c.mets.length) add('Metingen', c.mets.map(m => `${fmtDate(m.d)}: ${fmtV(i, m.v)}`).join(' · '));
+  const ms = i.metingen.filter(m => okDate(m.d) && has(m.v)).slice().sort(byDate);
+  if (ms.length) add('Metingen', ms.map(m => `${fmtDate(m.d)}: ${shownV(i, m.v, num(m.v))}`).join(' · '));
   return out;
 }
 function asText() {
@@ -1662,7 +1712,7 @@ function asText() {
     named.forEach(i => {
       t += `   Waaraan zie je het: ${i.name.trim() || '(nog leeg)'}\n`;
       indPairs(i).forEach(([a, b]) => { t += `   ${a}: ${b}\n`; });
-      const st = standOf(i); if (st.words && calc(i).nul != null) t += `   Stand: ${st.words}\n`;
+      const st = standOf(i); if (st.words && calc(i).hasNul) t += `   Stand: ${st.words}${tijdOm(i) != null ? '. ' + tijdZin(tijdOm(i)) : ''}\n`;
     });
     const s = doelSignals(d); if (s.length) t += `   Nog open: ${s.map(x => x.text).join('; ')}\n`;
     t += '\n';
@@ -1680,7 +1730,7 @@ function buildExport() {
     const c = calc(i), st = standOf(i, c);
     return `<tr><td style="padding:6px 8px 6px 0;border-top:1px solid #eef2f6;vertical-align:top;color:#64748b">${k + 1}</td>
       <td style="padding:6px 8px;border-top:1px solid #eef2f6;vertical-align:top;color:#1e293b">${e(i.name.trim())}<div style="margin-top:2px">${pill(i)}</div></td>
-      <td style="padding:6px 8px;border-top:1px solid #eef2f6;vertical-align:top;white-space:nowrap;font-variant-numeric:tabular-nums">${c.nul != null ? e(fmtV(i, c.nul)) : '<span style="color:#b45309">geen nulmeting</span>'}${c.streef != null ? ' → ' + e(fmtV(i, c.streef)) : ''}</td>
+      <td style="padding:6px 8px;border-top:1px solid #eef2f6;vertical-align:top;white-space:nowrap;font-variant-numeric:tabular-nums">${c.hasNul ? e(shownV(i, i.nul.v, c.nul)) : '<span style="color:#b45309">geen nulmeting</span>'}${c.hasStreef ? ' → ' + e(shownV(i, i.streef.v, c.streef)) : ''}</td>
       <td style="padding:6px 0 6px 8px;border-top:1px solid #eef2f6;vertical-align:top">${e((st.words || st.short).replace(/\.$/, ''))}</td></tr>`; })).join('');
   let html = rows ? `<div data-oc-keep style="margin-bottom:22px"><div style="${H}">Stand</div><table style="width:100%;border-collapse:collapse;font-size:12.5px;line-height:1.4;color:#334155">
     <tr style="color:#64748b;font-size:11px;text-align:left"><th style="padding:0 8px 4px 0;font-weight:600">Doel</th><th style="padding:0 8px 4px;font-weight:600">Waaraan zie je het?</th><th style="padding:0 8px 4px;font-weight:600">Nu → streefwaarde</th><th style="padding:0 0 4px 8px;font-weight:600">Stand</th></tr>${rows}</table></div>` : '';
@@ -1697,8 +1747,9 @@ function buildExport() {
       html += `<div data-oc-keep>${j ? '' : kop}<div style="margin:8px 0 14px;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px">
         <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px"><div style="font-size:14px;font-weight:700;color:#1e293b">${e(i.name.trim() || 'Indicator zonder naam')}</div>${pill(i)}</div>
         <div style="display:grid;grid-template-columns:130px 1fr;gap:3px 12px;font-size:12.5px;line-height:1.45;margin-top:8px">${indPairs(i).map(([a, b]) => `<div style="color:#64748b">${e(a)}</div><div style="color:#1e293b">${e(b)}</div>`).join('')}</div>
-        ${c.nul != null ? `<div style="margin-top:10px;font-size:14px;font-weight:700;color:#1e293b">${e(st.words)}</div>
-          ${c.mets.length || c.streef != null ? `<div style="margin-top:6px">${chartSVG(i, 690, { h:200 })}</div>` : ''}
+        ${c.hasNul ? `<div style="margin-top:10px;font-size:14px;font-weight:700;color:#1e293b">${e(st.words)}</div>
+          ${tijdOm(i, c) != null ? `<div style="font-size:12.5px;color:#475569;margin-top:2px">${e(tijdZin(tijdOm(i, c)))}</div>` : ''}
+          ${c.nul != null && (c.mets.length || c.streef != null) ? `<div style="margin-top:6px">${chartSVG(i, 690, { h:200 })}</div>` : ''}
           ${cw.map(x => `<div style="font-size:11.5px;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:4px 8px;margin-top:6px">${e(x)}</div>`).join('')}` : ''}
       </div></div>`;
     });
@@ -1708,6 +1759,21 @@ function buildExport() {
   const n = p.doelen.length;
   return { node, title: p.name || 'Meetplan', subtitle: `Meetplan · ${n} ${n === 1 ? 'doel' : 'doelen'}` };
 }
+/* Veiligheidsnet voor een lang meetplan: een browser tekent geen canvas boven een maximale grootte
+   (Chrome: 65.535 px hoog; iPad en iPhone: ongeveer 16 miljoen pixels). Daarboven wordt elke pagina zwart.
+   Is de export groter, dan tekent deze tool ze iets minder scherp, zodat alles leesbaar blijft.
+   Het gedeelde exportblok blijft ongewijzigd: dit vangt alleen de oproep naar html2canvas op. */
+(() => {
+  let echt = null;
+  const ios = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const MAX_AREA = ios ? 16e6 : 120e6, MAX_DIM = 32000;
+  const veilig = (node, o = {}) => {
+    const w = node.offsetWidth || 800, h = node.offsetHeight || 1, s = o.scale || 2;
+    const kan = Math.min(s, Math.sqrt(MAX_AREA / (w * h)), MAX_DIM / h, MAX_DIM / w);
+    return echt(node, Object.assign({}, o, { scale: Math.max(0.5, Math.floor(kan * 100) / 100) }));
+  };
+  try { Object.defineProperty(window, 'html2canvas', { configurable:true, get: () => echt && veilig, set: f => { echt = f; } }); } catch {}
+})();
 async function doExport(act) {
   const p = cur();
   if (!p.doelen.length) { toast('Het meetplan is nog leeg'); return; }
