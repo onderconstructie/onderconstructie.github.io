@@ -540,7 +540,7 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
 
   <section class="card" aria-label="Keuze">
     <div class="card-head">
-      <input class="project" id="k-name" autocomplete="off" enterkeyhint="next" maxlength="80" placeholder="Waarover beslis je?" aria-label="Waarover beslis je?" spellcheck="false">
+      <input class="project" id="k-name" data-oc-titel autocomplete="off" enterkeyhint="next" maxlength="80" placeholder="Waarover beslis je?" aria-label="Waarover beslis je?" spellcheck="false">
       <div class="menu-wrap">
         <button class="icon-btn" id="menu-btn" aria-label="Meer acties" aria-haspopup="true" aria-expanded="false">
           <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
@@ -1931,6 +1931,98 @@ window.ocBestand = (function () {
   }
   try { var bc = new BroadcastChannel('oc-sync'); bc.onmessage = function (e) { if (e.data && e.data.type === 'wis') wis(); }; } catch (e) {}
   addEventListener('storage', function (e) { if (e.key === 'oc.wis' || e.key === null) wis(); });
+  /* Gebruikerstest november 2026, voor alle tools:
+     Ctrl/Cmd+Z doet "Ongedaan" zolang die melding zichtbaar is (in een tekstveld doet de browser zijn eigen ongedaan);
+     een rij keuzeknoppen (role="radiogroup") is één Tab-stop, de pijltjes gaan naar een andere keuze, Spatie of Enter kiest;
+     een naamveld met data-oc-titel ziet eruit als een veld (potloodje, onderlijn bij aanwijzen of typen);
+     een naam getypt in een veld met data-oc-projectnaam wordt de projectnaam van de app, als die nog leeg is. */
+  var STANDAARD = /^((mijn|nieuwe?) )?(project|analyse|lijst|keuze|kaart|ideeënkaart|doelgroep|matrix|plan|groep|team|tabel|informatietabel|log|retro|sprint|scan|proces)( \d+)?$|^naamloos$|^hele organisatie$/i;
+  window.ocStandaardNaam = function (v) { v = String(v || '').trim(); return !v || STANDAARD.test(v); };
+  function typt(a) { return a && (a.isContentEditable || a.tagName === 'TEXTAREA' || a.tagName === 'SELECT' || (a.tagName === 'INPUT' && !/^(checkbox|radio|button|submit|reset|range|color|file)$/i.test(a.type))); }
+  function zichtbaar(x) {
+    if (x.disabled || x.hidden || !x.getClientRects().length) return false;
+    for (var el = x; el && el.nodeType === 1; el = el.parentElement) { var cs = getComputedStyle(el); if (cs.display === 'none' || cs.visibility === 'hidden' || +cs.opacity < 0.1) return false; }
+    var r = x.getBoundingClientRect(); return r.bottom > 0 && r.right > 0 && r.top < innerHeight && r.left < innerWidth;
+  }
+  addEventListener('keydown', function (e) {
+    if (e.defaultPrevented || !(e.ctrlKey || e.metaKey) || e.shiftKey || e.altKey || String(e.key).toLowerCase() !== 'z' || typt(document.activeElement)) return;
+    var b = [].filter.call(document.querySelectorAll('[role="status"] button, [aria-live] button'), function (x) { return /^\s*ongedaan/i.test(x.textContent) && zichtbaar(x); }).pop();
+    if (b) { e.preventDefault(); b.click(); }
+  });
+  function radios(g) { return [].filter.call(g.querySelectorAll('[role="radio"]'), function (x) { return x.closest('[role="radiogroup"]') === g; }); }
+  function bruikbaar(x) { return !x.disabled && x.getAttribute('aria-disabled') !== 'true' && x.getClientRects().length; }
+  // Kiezen met Spatie of Enter laat de tool vaak opnieuw tekenen: de focus blijft dan op de gekozen keuze.
+  var terug = null;
+  document.addEventListener('click', function (e) {
+    var x = e.detail === 0 && e.target && e.target.closest && e.target.closest('[role="radio"]'); if (!x || x.tagName === 'INPUT') return;
+    var s = [].map.call(x.attributes, function (a) { return a.name === 'id' || /^data-/.test(a.name) ? '[' + a.name + '="' + (window.CSS && CSS.escape ? CSS.escape(a.value) : a.value) + '"]' : ''; }).join('');
+    terug = s ? { s: '[role="radio"]' + s, t: Date.now() } : null;
+  }, true);
+  function roving() {
+    var a0 = document.activeElement;
+    if (terug && Date.now() - terug.t < 2000 && (!a0 || a0 === document.body)) { var y = document.querySelector(terug.s); if (y) try { y.focus({ preventScroll: true }); } catch (e) {} terug = null; }
+    [].forEach.call(document.querySelectorAll('[role="radiogroup"]'), function (g) {
+      var r = radios(g); if (!r.length || r.some(function (x) { return x.tagName === 'INPUT'; })) return;
+      var a = document.activeElement, keep = r.indexOf(a) >= 0 ? a : r.filter(function (x) { return x.getAttribute('aria-checked') === 'true' && bruikbaar(x); })[0] || r.filter(bruikbaar)[0] || r[0];
+      r.forEach(function (x) { var t = x === keep ? '0' : '-1'; if (x.getAttribute('tabindex') !== t) x.setAttribute('tabindex', t); });
+    });
+  }
+  document.addEventListener('keydown', function (e) {
+    var x = e.target, d = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1, Home: -2, End: 2 }[e.key];
+    if (!d || e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || !x.getAttribute || x.getAttribute('role') !== 'radio' || x.tagName === 'INPUT') return;
+    var g = x.closest('[role="radiogroup"]'); if (!g) return;
+    var r = radios(g).filter(bruikbaar), i = r.indexOf(x); if (i < 0) return;
+    var n = r[d === -2 ? 0 : d === 2 ? r.length - 1 : (i + d + r.length) % r.length];
+    e.preventDefault(); r.forEach(function (y) { y.setAttribute('tabindex', y === n ? '0' : '-1'); }); n.focus();
+  });
+  var meet = null;
+  function titels() {
+    [].forEach.call(document.querySelectorAll('input[data-oc-titel]'), function (el) {
+      if (!el.offsetParent) return;
+      var cs = getComputedStyle(el), t = el.value || el.placeholder || '';
+      if (!meet) { meet = document.createElement('span'); meet.setAttribute('aria-hidden', 'true'); meet.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden;white-space:pre'; document.body.appendChild(meet); }
+      meet.style.font = cs.font; meet.style.letterSpacing = cs.letterSpacing; meet.textContent = t;
+      var w = meet.getBoundingClientRect().width;
+      var px = Math.ceil(w + parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight) + parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth) + 8) + 'px';
+      if (el.style.width !== px) el.style.width = px;
+    });
+  }
+  function opmaak() {
+    if (!document.getElementById('oc-sync-stijl') && document.querySelector('[data-oc-titel]')) {
+      var s = document.createElement('style'); s.id = 'oc-sync-stijl';
+      s.textContent = 'input[data-oc-titel]{flex:0 1 auto!important;max-width:100%;min-width:5.5em;box-sizing:border-box;text-overflow:ellipsis;cursor:text;border-radius:6px 6px 0 0;padding-right:26px!important;'
+        + 'border-bottom:1.5px dashed transparent!important;background-repeat:no-repeat!important;background-position:right 4px center!important;background-size:15px 15px!important;'
+        + 'background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%2394a3b8%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M12 20h9%27/%3E%3Cpath d=%27M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z%27/%3E%3C/svg%3E")!important}'
+        + 'input[data-oc-titel]:hover{border-bottom-color:#cbd5e1!important}'
+        + 'input[data-oc-titel]:focus{border-bottom:1.5px solid #047857!important;background-image:none!important}'
+        + 'input[data-oc-titel]::placeholder{color:#94a3b8;opacity:1}'
+        + 'input[data-oc-titel]+*{margin-left:auto}';
+      document.head.appendChild(s);
+    }
+    titels();
+  }
+  var gepland = false;
+  function later() { if (gepland) return; gepland = true; requestAnimationFrame(function () { gepland = false; roving(); opmaak(); }); }
+  function start() {
+    later();
+    try { new MutationObserver(later).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['aria-checked', 'hidden', 'class'] }); } catch (e) {}
+    document.addEventListener('input', function (e) { if (e.target.hasAttribute && e.target.hasAttribute('data-oc-titel')) titels(); }, true);
+    addEventListener('resize', later);
+    try { document.fonts.ready.then(titels); document.fonts.addEventListener('loadingdone', titels); } catch (e) {}   // de letters komen soms pas later binnen
+    setInterval(function () { if (!document.hidden) titels(); }, 700);   // een tool kan de waarde zetten zonder de pagina te wijzigen
+  }
+  document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', start) : start();
+  var eigenNaam = null, naamT = null;
+  function projectNu() { try { var p = JSON.parse(localStorage.getItem('oc.project')); return p && typeof p.name === 'string' ? p.name.trim() : ''; } catch (e) { return ''; } }
+  function deelNaam(el) {
+    var v = String(el.value || '').trim().slice(0, 80), nu = projectNu();
+    if (ocStandaardNaam(v) || (nu && nu !== eigenNaam)) return;
+    if ([].some.call(document.querySelectorAll('.vb-bar'), function (b) { return b.getClientRects().length; })) return;   // in het voorbeeld niet
+    if (v === nu) return;
+    try { localStorage.setItem('oc.project', JSON.stringify({ name: v, since: Date.now() })); eigenNaam = v; } catch (e) {}
+  }
+  document.addEventListener('input', function (e) { var el = e.target; if (!el.hasAttribute || !el.hasAttribute('data-oc-projectnaam')) return; clearTimeout(naamT); naamT = setTimeout(function () { deelNaam(el); }, 900); }, true);
+  ['change', 'focusout'].forEach(function (ev) { document.addEventListener(ev, function (e) { var el = e.target; if (el.hasAttribute && el.hasAttribute('data-oc-projectnaam')) { clearTimeout(naamT); deelNaam(el); } }, true); });
   if (window.parent === window) return;
   addEventListener('keydown', function (e) {
     if (e.key !== 'Escape' || e.defaultPrevented) return;
@@ -1942,13 +2034,14 @@ window.ocBestand = (function () {
 })();
 </script>
 <script>
-/* Eenheid: "Begin met ..." zet de cursor in het eerste veld */
+/* Eenheid: "Begin met ..." zet de cursor in het eerste veld; staat er een standaardnaam, dan is die geselecteerd zodat je meteen overtypt */
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-oc-begin]'); if (!b) return;
   const el = [...document.querySelectorAll(b.dataset.ocBegin)].find(x => x.offsetParent !== null); if (!el) return;
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
   el.scrollIntoView({ block:'center', behavior: still ? 'auto' : 'smooth' });
   el.focus({ preventScroll:true });
+  if (el.select && /^(INPUT|TEXTAREA)$/.test(el.tagName) && el.value.trim() && /^((mijn|nieuwe?) )?(project|analyse|lijst|keuze|kaart|ideeënkaart|doelgroep|matrix|plan|groep|team|tabel|informatietabel|log|retro|sprint|scan|proces)( \d+)?$|^naamloos$|^hele organisatie$/i.test(el.value.trim())) el.select();
 });
 </script>
 <script>
