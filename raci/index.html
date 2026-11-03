@@ -509,11 +509,10 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
   <div class="legend" aria-label="Legenda">
     <div class="leg" title="R: Voert uit"><span class="cell R" aria-hidden="true">R</span><div><strong>Voert uit</strong><span>Doet het werk. Minstens één per taak.</span></div></div>
     <div class="leg" title="A: Beslist en is verantwoordelijk"><span class="cell A" aria-hidden="true">A</span><div><strong>Beslist en is verantwoordelijk</strong><span>Keurt goed en draagt het resultaat. Precies één per taak.</span></div></div>
-    <div class="leg" title="A+R: Beslist en voert zelf uit"><span class="cell AR" aria-hidden="true">A+R</span><div><strong>Beslist en voert zelf uit</strong><span>Wie zelf beslist én het werk doet. Telt als de A en als een R.</span></div></div>
     <div class="leg" title="C: Denkt vooraf mee"><span class="cell C" aria-hidden="true">C</span><div><strong>Denkt vooraf mee</strong><span>Je vraagt het vóór je beslist. Gesprek in twee richtingen.</span></div></div>
     <div class="leg" title="I: Hoort het achteraf"><span class="cell I" aria-hidden="true">I</span><div><strong>Hoort het achteraf</strong><span>Je laat weten wat beslist is. Eén richting.</span></div></div>
   </div>
-  <p class="tip">Tik op een vak om door R, A, A+R, C en I te wisselen. Met het toetsenbord typ je de letter (+ is A+R). Lang drukken of rechtsklikken maakt het vak leeg. Tik op een naam om die te wijzigen. Plak meerdere regels om in één keer taken of rollen toe te voegen.</p>
+  <p class="tip">Tik op een vak om door R, A, C en I te wisselen. Met het toetsenbord typ je de letter. Lang drukken of rechtsklikken maakt het vak leeg. Tik op een naam om die te wijzigen. Plak meerdere regels om in één keer taken of rollen toe te voegen.</p>
 <div class="oc-restart-row" id="oc-restart-row" hidden><button type="button" class="oc-restart" id="oc-restart-btn">Opnieuw beginnen</button></div>
 
   <details class="explain">
@@ -522,11 +521,11 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
       <p>Met de RACI-matrix leg je per taak vast wie het werk doet, wie beslist, wie vooraf meedenkt en wie het achteraf hoort.</p>
       <ul>
         <li><b>Zet de taken en de mensen erin.</b> Taken worden rijen, personen of rollen worden kolommen. Plak je een lijst, dan wordt elke regel een aparte taak of rol.</li>
-        <li><b>Kies per vak een letter.</b> R voert het werk uit. A beslist en draagt het resultaat. A+R beslist en doet het ook zelf, zoals een diensthoofd dat zelf het budget goedkeurt. C denkt vooraf mee: je vraagt het voor je beslist. I hoort achteraf wat er beslist is.</li>
-        <li><b>De tool kijkt elke taak na.</b> Elke taak heeft precies één beslisser nodig (A of A+R) en minstens één uitvoerder (R of A+R). Ontbreekt er een, of beslissen er twee, dan krijgt de taak een oranje label. Bovenaan staat hoeveel taken een probleem hebben. Tik erop en je springt naar het eerste.</li>
-        <li><b>Kijk naar de belasting.</b> Onderaan elke kolom staat hoe vaak die rol uitvoert (R) en beslist (A). Een A+R telt bij allebei. Vanaf drie rollen krijg je een signaal als één rol minstens vier keer uitvoert of beslist en dubbel zo vaak als de anderen, of als ze bij bijna elke taak betrokken is. Een rol zonder enige letter valt ook op. Dat zijn punten om te bespreken, geen vaste regels.</li>
+        <li><b>Kies per vak een letter.</b> R voert het werk uit. A beslist en draagt het resultaat. C denkt vooraf mee: je vraagt het voor je beslist. I hoort achteraf wat er beslist is.</li>
+        <li><b>De tool kijkt elke taak na.</b> Elke taak heeft precies één beslisser nodig (A) en minstens één uitvoerder (R). Ontbreekt er een, of beslissen er twee, dan krijgt de taak een oranje label. Bovenaan staat hoeveel taken een probleem hebben. Tik erop en je springt naar het eerste.</li>
+        <li><b>Kijk naar de belasting.</b> Onderaan elke kolom staat hoe vaak die rol uitvoert (R) en beslist (A). Vanaf drie rollen krijg je een signaal als één rol minstens vier keer uitvoert of beslist en dubbel zo vaak als de anderen, of als ze bij bijna elke taak betrokken is. Een rol zonder enige letter valt ook op. Dat zijn punten om te bespreken, geen vaste regels.</li>
       </ul>
-      <p>Tip: kies een vak en typ <kbd>R</kbd>, <kbd>A</kbd>, <kbd>C</kbd> of <kbd>I</kbd>, of <kbd>+</kbd> voor A+R. Delete maakt het vak leeg.</p>
+      <p>Tip: kies een vak en typ <kbd>R</kbd>, <kbd>A</kbd>, <kbd>C</kbd> of <kbd>I</kbd>. Delete maakt het vak leeg.</p>
       <p>Taken haal je binnen met "Taken overnemen uit…", bijvoorbeeld uit het <a href="../kanban/">Takenbord</a> of <a href="../prioriteit/">Prioriteren</a>. De rollen gaan op hun beurt mee naar het <a href="../communicatie/">Communicatieplan</a> en het <a href="../schildpad/">Schildpaddiagram</a>, met wat ze doen erbij.</p>
     </div>
   </details>
@@ -757,7 +756,7 @@ function roleNote(m, r) {
 function ocPublish() {
   ocShare.publish(OC_ID, OC_TOOL, state.mats.filter(m => !m.voorbeeld).map(m => ({ name:m.name, items:[
     ...m.roles.map(r => ({ type:'betrokkene', text:r.name, note:roleNote(m, r) })), ...m.tasks.map(t => {
-      // Wie het werk doet (R of A+R) gaat mee als eigenaar; wie beslist (A) staat in de notitie.
+      // Wie het werk doet (R) gaat mee als eigenaar; wie beslist (A) staat in de notitie.
       const who = m.roles.filter(r => IS_R(t.cells[r.id])).map(r => r.name.trim()).filter(Boolean);
       const acc = m.roles.filter(r => t.cells[r.id] === 'A').map(r => r.name.trim()).filter(Boolean);
       return { type:'taak', text:t.name, who: who.length ? who.join(', ') : undefined, note: acc.length ? 'Beslist: ' + acc.join(', ') : undefined };
@@ -926,8 +925,9 @@ const ocExport = (() => {
 /* ---------- Opslag ---------- */
 const KEY = 'raci.v1';
 let undoFn = null, toastTimer = null;
-// 'AR' = A+R: beslist en voert zelf uit. Telt overal als beslisser én als uitvoerder. Oude matrices kennen alleen R, A, C en I.
-const CYCLE = ['', 'R', 'A', 'AR', 'C', 'I'];
+// Oude matrices kunnen nog 'AR' (A+R) bevatten: die wordt bij het laden een A. IS_A en IS_R lezen het voor de zekerheid nog.
+// A+R kan je niet meer kiezen: een oud A+R-vak wordt bij het laden een A (de beslisser blijft dezelfde).
+const CYCLE = ['', 'R', 'A', 'C', 'I'];
 const IS_A = v => v === 'A' || v === 'AR', IS_R = v => v === 'R' || v === 'AR';
 const SHOW = v => v === 'AR' ? 'A+R' : v;
 const uid = () => Math.random().toString(36).slice(2, 10);
@@ -946,7 +946,7 @@ function ocGapMigrate(items) {
     const n = ocGapText(x.name).slice(0, 120); if (have.has(n.toLowerCase())) return; have.add(n.toLowerCase()); x.name = n; });
 }
 function load() {
-  try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && Array.isArray(d.mats) && d.mats.length) { d.mats.forEach(m => ocGapMigrate(m && m.tasks)); return d; } } catch {}
+  try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && Array.isArray(d.mats) && d.mats.length) { d.mats.forEach(m => { ocGapMigrate(m && m.tasks); (m && Array.isArray(m.tasks) ? m.tasks : []).forEach(t => { if (t && t.cells) Object.keys(t.cells).forEach(k => { if (t.cells[k] === 'AR') t.cells[k] = 'A'; }); }); }); return d; } } catch {}
   const m = blank();
   return { mats:[m], current:m.id };
 }
@@ -1014,7 +1014,7 @@ function signalLines(m) {
 const X = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const FLAG_TEXT = { 'geen A':'niemand beslist', 'geen R':'niemand voert uit', 'meer dan één A':'meer dan één beslist' };
 const LABEL = { R:'voert uit', A:'beslist en is verantwoordelijk', AR:'beslist en voert zelf uit', C:'denkt vooraf mee', I:'hoort het achteraf' };
-const TIP = v => v ? `${SHOW(v)}: ${LABEL[v].charAt(0).toUpperCase()}${LABEL[v].slice(1)}` : 'Leeg. Tik om R, A, A+R, C of I te kiezen';
+const TIP = v => v ? `${SHOW(v)}: ${LABEL[v].charAt(0).toUpperCase()}${LABEL[v].slice(1)}` : 'Leeg. Tik om R, A, C of I te kiezen';
 
 function renderTabs() {
   $('lists').innerHTML = state.mats.map(m => {
@@ -1129,7 +1129,7 @@ function buildExport() {
         ${plist.map(t => `<div style="font-size:13px;line-height:1.5;">· ${esc(t)}</div>`).join('')}</div>`
     : `<div style="margin-bottom:14px;font-size:13px;font-weight:600;color:#059669;">Alles klopt: elke taak heeft één A en minstens één R</div>`;
   const legend = `<div style="display:flex;flex-wrap:wrap;gap:22px;margin-top:18px;font-size:12.5px;color:#475569;">${
-    ['R', 'A', 'AR', 'C', 'I'].map(v => `<span style="display:inline-flex;align-items:center;gap:8px;">${xbox(v, 24)}<span><strong style="color:#1e293b">${SHOW(v)}</strong> ${LABEL[v]}</span></span>`).join('')}</div>`;
+    ['R', 'A', 'C', 'I'].map(v => `<span style="display:inline-flex;align-items:center;gap:8px;">${xbox(v, 24)}<span><strong style="color:#1e293b">${SHOW(v)}</strong> ${LABEL[v]}</span></span>`).join('')}</div>`;
   const sl = signalLines(m);
   const sig = sl.length ? `<div data-oc-keep style="margin-top:14px;padding:10px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;color:#475569;font-size:13px;line-height:1.5;">
       <div style="font-weight:700;color:#b45309;margin-bottom:2px;">${sl.length === 1 ? 'Aandachtspunt' : 'Aandachtspunten'}</div>
@@ -1258,12 +1258,11 @@ document.addEventListener('pointerdown', e => {
   pressTimer = setTimeout(() => { longPressed = true; setCell(cell.dataset.t, cell.dataset.r, ''); if (navigator.vibrate) try { navigator.vibrate(18); } catch {} }, 500);
 });
 ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => document.addEventListener(ev, () => clearTimeout(pressTimer)));
-// Toetsenbord: R, A, C, I, + (A+R) of Delete op een gefocust vak
+// Toetsenbord: R, A, C, I of Delete op een gefocust vak
 document.addEventListener('keydown', e => {
   const cell = e.target.closest && e.target.closest('.cell[data-t]'); if (!cell) return;
   const k = e.key.toUpperCase();
   if (['R', 'A', 'C', 'I'].includes(k)) { e.preventDefault(); setCell(cell.dataset.t, cell.dataset.r, k); }
-  if (e.key === '+') { e.preventDefault(); setCell(cell.dataset.t, cell.dataset.r, 'AR'); }
   if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); setCell(cell.dataset.t, cell.dataset.r, ''); }
 });
 const short = s => s.length > 28 ? s.slice(0, 28) + '…' : s;
@@ -1390,7 +1389,7 @@ $('menu').addEventListener('click', async e => {
   if ((act === 'md' || act === 'csv') && (!m.tasks.length || !m.roles.length)) { toast('Voeg eerst taken en rollen toe'); return; }
   if (act === 'md') {
     // Opgemaakte tabel voor Word en Outlook, tabs voor Excel en platte tekst.
-    const legend = 'R = voert uit · A = beslist en is verantwoordelijk · A+R = beslist en voert zelf uit · C = denkt vooraf mee · I = hoort het achteraf';
+    const legend = 'R = voert uit · A = beslist en is verantwoordelijk · C = denkt vooraf mee · I = hoort het achteraf';
     const txt = `${m.name}\n\n${[['Taak', ...m.roles.map(r => r.name)], ...m.tasks.map(t => [t.name, ...m.roles.map(r => SHOW(t.cells[r.id] || ''))])].map(r => r.join('\t')).join('\n')}\n\n${legend}`;
     const TD = 'border:1px solid #cbd5e1;padding:4px 8px;vertical-align:top';
     const html = `<div style="font-family:'DM Sans',Calibri,Arial,sans-serif;font-size:11pt;color:#1e293b"><p style="font-size:14pt;font-weight:bold;margin:0 0 6pt">${esc(m.name)}</p>
