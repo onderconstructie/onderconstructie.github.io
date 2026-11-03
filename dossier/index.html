@@ -92,6 +92,8 @@ button { background:none; border:0; cursor:pointer; }
 .meer-chips { min-height:44px; padding:0 0.625rem; border-radius:999px; font-size:0.8125rem; font-weight:600; color:var(--accent-dark); }
 .meer-chips:hover { background:var(--accent-50); }
 .zacht { font-size:0.875rem; color:var(--slate-500); }
+.besl-keus { margin:0 0 0.375rem; }
+.besl-uitleg { font-size:0.8125rem; line-height:1.45; margin:0 0 0.625rem; }
 .hint-geen { font-size:0.875rem; color:#78350f; background:var(--oranje-50); border:1px solid var(--oranje-200); border-radius:10px; padding:0.5rem 0.75rem; margin-top:0.5rem; }
 .rij2 { display:flex; flex-wrap:wrap; align-items:flex-end; gap:0.75rem 1.25rem; }
 .field {
@@ -578,7 +580,7 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
         <li><b>Kies je project.</b> Bovenaan staat het project uit de app. Bij "Gevonden op dit toestel" kies je een ander. Het dossier zoekt in elke tool de lijst of tab met dezelfde naam.</li>
         <li><b>Schrijf je vraag.</b> Vul in wat je aan de stuurgroep vraagt, één vraag per regel. Daar draait de vergadering om.</li>
         <li><b>Kies wat erin komt.</b> Zet een onderdeel uit met de schakelaar "In de nota". Klopt de bron niet, kies dan een andere lijst onder de titel. Bovenaan zet het dossier wat aandacht vraagt, zoals werk dat te laat is.</li>
-        <li><b>Deel de nota.</b> Download ze als PDF of afbeelding, of kopieer ze als tekst voor een mail.</li>
+        <li><b>Deel de nota.</b> Download ze als PDF of afbeelding, of kopieer ze als tekst voor een mail. Een PDF of een gekopieerde tekst telt als nota: de volgende nota toont bij Besluiten alleen wat erna beslist werd.</li>
       </ul>
       <p>Tip: stel een vraag waarop de stuurgroep ja of nee kan zeggen. Die krijgt sneller een antwoord dan een open vraag.</p>
       <p>De inhoud komt uit de <a href="https://onderconstructie.github.io/opdracht/">Projectopdracht</a>, <a href="https://onderconstructie.github.io/project-radar/">Project Radar</a>, het <a href="https://onderconstructie.github.io/meetplan/">Meetplan</a>, de <a href="https://onderconstructie.github.io/risico/">Risicomatrix</a>, het <a href="https://onderconstructie.github.io/beslissingen/">Beslissingslog</a>, het <a href="https://onderconstructie.github.io/kanban/">Takenbord</a> en de <a href="https://onderconstructie.github.io/raci/">RACI-matrix</a>. Pas je daar iets aan, dan toont het dossier het meteen.</p>
@@ -607,6 +609,10 @@ function ocPickProject(st, arr, cur = 'current') { const p = ocProject(''); if (
      'taak'        iets dat gedaan moet worden                     { text, note? }
      'actie'       taak met eigenaar en/of termijn                 { text, who?, when? }
      'risico'      risico met kans en impact                       { text, note? }
+     'besluit'     beslissing (Beslissingslog)                     { text, note?, who?, when? }
+     'doel'        wat er beter moet worden (Projectopdracht)      { text, note? }
+                   Andere tools kiezen zelf welke soorten ze tonen (types in pick/count/sources) en slaan onbekende soorten dus over.
+   'when' is bij voorkeur een datum als JJJJ-MM-DD; in "Overnemen uit…" staat die als 15 februari 2027.
 
    Gebruik:
      ocShare.publish('raci', 'RACI-matrix', [
@@ -618,8 +624,11 @@ function ocPickProject(st, arr, cur = 'current') { const p = ocProject(''); if (
 */
 const ocShare = (() => {
   const PREFIX = 'oc.share.';
-  const LABEL = { betrokkene:'betrokkenen', taak:'taken', actie:'acties', risico:"risico's" };
+  const LABEL = { betrokkene:'betrokkenen', taak:'taken', actie:'acties', risico:"risico's", besluit:'besluiten', doel:'doelen' };
   const esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+  // Een datum als JJJJ-MM-DD tonen we zoals in de tools: 15 februari 2027. Andere tekst blijft zoals ze is.
+  const datum = v => { const s = String(v || '').trim(), d = /^\d{4}-\d{2}-\d{2}$/.test(s) ? new Date(s + 'T12:00:00') : null;
+    return d && !isNaN(d) ? d.toLocaleDateString('nl-BE', { day:'numeric', month:'long', year:'numeric' }) : s; };
 
   function publish(id, tool, lists) {
     try {
@@ -705,7 +714,7 @@ const ocShare = (() => {
           <div class="ocs-src"><div class="ocs-src-head"><b>${esc(s.tool)}</b><span>${esc(s.list)} · ${s.items.length}</span>
             <button class="ocs-all" type="button" data-all="${si}">alles</button></div>
             ${s.items.map((it, ii) => `<label class="ocs-item"><input type="checkbox" data-s="${si}" data-i="${ii}">
-              <span>${esc(it.text)}${it.who || it.when || it.note ? `<small>${esc([it.who, it.when, it.note].filter(Boolean).join(' · '))}</small>` : ''}</span></label>`).join('')}
+              <span>${esc(it.text)}${it.who || it.when || it.note ? `<small>${esc([it.who, datum(it.when), it.note].filter(Boolean).join(' · '))}</small>` : ''}</span></label>`).join('')}
           </div>`).join('') : `<p class="ocs-empty">Er zijn nog geen ${esc(what)} om over te nemen. Vul ze eerst in een andere tool van Onder Constructie in, dan verschijnen ze hier.</p>`}
         </div>
         <div class="ocs-foot"><button class="ocs-btn ocs-cancel" type="button">Annuleer</button>
@@ -797,7 +806,7 @@ async function ocWipeAll() {
 }
 document.addEventListener('click', e => { if (e.target.closest('[data-act="wipe"]')) ocWipeAll(); });
 
-/* ---------- Download als afbeelding of PDF (gedeeld door de Onder Constructie-tools, v2) ----------
+/* ---------- Download als afbeelding of PDF (gedeeld door de Onder Constructie-tools, v3) ----------
    Gebruik:
      ocExport.png(bouwFn, 'bestandsnaam', { landscape:true })
      ocExport.pdf(bouwFn, 'bestandsnaam', { landscape:true })
@@ -805,6 +814,10 @@ document.addEventListener('click', e => { if (e.target.closest('[data-act="wipe"
    Die komt buiten beeld op een witte pagina met kop (titel, ondertitel, datum) en voet.
    Zet data-oc-keep op blokken die in een PDF niet over twee pagina's gesplitst mogen worden
    (een beslissing, een kaartje, een rij); ze schuiven dan door naar de volgende pagina.
+   Een browser tekent geen canvas boven een maximale grootte (Chrome: 65.535 px hoog of breed; iPad en iPhone:
+   ongeveer 16 miljoen pixels). Daarboven wordt de PDF of afbeelding zwart of leeg. Daarom tekent de PDF
+   telkens een paar hele pagina's tegelijk, op volle scherpte, en wordt een heel lange afbeelding net zo
+   scherp getekend als binnen die grens kan.
    html2canvas en jsPDF worden pas geladen bij de eerste download, van dezelfde adressen als de
    andere tools, zodat de app ze offline kan bewaren. */
 const ocExport = (() => {
@@ -813,6 +826,12 @@ const ocExport = (() => {
     pdf: '/lib/jspdf-2.5.1.umd.min.js'
   };
   const A4 = { w: 210, h: 297 }, MARGIN = 10;   // mm
+  // Grenzen van een canvas: iPad en iPhone ongeveer 16 miljoen pixels; Chrome en Edge tot 65.535 px hoog of breed; andere browsers 32.767 px.
+  const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const CHROME = !IOS && /Chrome\//.test(navigator.userAgent);
+  const SCALE = 2, MAX_SIDE = CHROME ? 65000 : 32000, MAX_AREA = IOS ? 16e6 : 120e6;   // scherpte; langste zijde en oppervlakte in pixels
+  // Grootste schaal (tot SCALE) waarbij een canvas van w × h CSS-pixels nog getekend wordt.
+  const fit = (w, h, area = MAX_AREA) => Math.floor(Math.min(SCALE, Math.sqrt(area / (w * h)), MAX_SIDE / h, MAX_SIDE / w) * 100) / 100;
   const loaded = {};
   function load(url) {
     if (!loaded[url]) loaded[url] = new Promise((ok, fail) => {
@@ -855,16 +874,20 @@ const ocExport = (() => {
       }
     }
   }
-  async function canvasOf(build, opts) {
-    await load(LIBS.h2c);
+  // Zet de exportpagina buiten beeld, wacht op de lettertypes en geeft ze aan fn; ruimt daarna op.
+  async function withPage(build, width, fn) {
     const built = build();
-    const node = page(built.node, { title: built.title, subtitle: built.subtitle, width: opts.width });
+    const node = page(built.node, { title: built.title, subtitle: built.subtitle, width });
     try {
       if (document.fonts && document.fonts.ready) await document.fonts.ready;
-      if (opts.pageH) keepTogether(node, opts.pageH);
-      return await window.html2canvas(node, { scale: 2, backgroundColor: '#ffffff', logging: false, useCORS: true });
+      return await fn(node);
     } finally { node.remove(); }
   }
+  const heightOf = node => Math.ceil(node.getBoundingClientRect().height);
+  // Alleen de exportpagina gaat mee in de kopie die html2canvas maakt: de rest van de tool overslaan scheelt veel tijd.
+  const draw = (node, o) => window.html2canvas(node, Object.assign({ scale: SCALE, backgroundColor: '#ffffff', logging: false, useCORS: true,
+    ignoreElements: el => el.parentNode === document.body && el !== node && !/^(STYLE|LINK)$/.test(el.tagName) }, o));
+  const free = c => { c.width = c.height = 0; };     // geheugen meteen vrijgeven (iPad)
   function save(blob, name) {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob); a.download = name;
@@ -873,24 +896,45 @@ const ocExport = (() => {
   }
   const widthFor = opts => opts.width || (opts.landscape ? 1120 : 800);
   async function png(build, name, opts = {}) {
-    const c = await canvasOf(build, { width: widthFor(opts) });
-    await new Promise(ok => c.toBlob(b => { save(b, name + '.png'); ok(); }, 'image/png'));
+    const width = widthFor(opts);
+    await load(LIBS.h2c);
+    const c = await withPage(build, width, node => draw(node, { scale: fit(width, heightOf(node)) }));
+    await new Promise(ok => c.toBlob(b => { save(b, name + '.png'); free(c); ok(); }, 'image/png'));
   }
   async function pdf(build, name, opts = {}) {
     const landscape = !!opts.landscape, width = widthFor(opts);
     const pw = landscape ? A4.h : A4.w, ph = landscape ? A4.w : A4.h, w = pw - 2 * MARGIN;
     const pageCss = (ph - 2 * MARGIN) / w * width;       // paginahoogte in CSS-pixels van de exportknoop
-    const [c] = await Promise.all([canvasOf(build, { width, pageH: pageCss }), load(LIBS.pdf)]);
+    await Promise.all([load(LIBS.h2c), load(LIBS.pdf)]);
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: landscape ? 'landscape' : 'portrait', unit: 'mm', format: 'a4' });
-    const scale = w / c.width, pageH = (ph - 2 * MARGIN) / scale;   // paginahoogte in canvaspixels
-    for (let y = 0, i = 0; y < c.height - 2; y += pageH, i++) {
-      const h = Math.min(pageH, c.height - y);
-      const part = document.createElement('canvas'); part.width = c.width; part.height = h;
-      part.getContext('2d').drawImage(c, 0, y, c.width, h, 0, 0, c.width, h);
-      if (i) doc.addPage();
-      doc.addImage(part.toDataURL('image/jpeg', 0.92), 'JPEG', MARGIN, MARGIN, w, h * scale);
-    }
+    await withPage(build, width, async node => {
+      const H0 = heightOf(node);
+      // Net te hoog voor één pagina (bv. alleen de voettekst): verkleinen tot het past, geen lege tweede pagina.
+      if (H0 > pageCss && H0 <= pageCss * 1.2) {
+        const c = await draw(node, { scale: fit(width, H0) }), ww = w * pageCss / H0;
+        doc.addImage(c.toDataURL('image/jpeg', 0.92), 'JPEG', MARGIN + (w - ww) / 2, MARGIN, ww, ph - 2 * MARGIN);
+        free(c); return;
+      }
+      keepTogether(node, pageCss);
+      const H = heightOf(node), s = fit(width, pageCss), pagePx = pageCss * s;
+      const n = Math.max(1, Math.ceil((H - 1) / pageCss));                       // aantal pagina's
+      const per = Math.max(1, Math.floor(Math.min(MAX_AREA / (width * s * pagePx), MAX_SIDE / pagePx)));   // pagina's per stuk
+      for (let i = 0; i < n; i += per) {
+        const y = i * pageCss, k = Math.min(per, n - i);
+        const c = await draw(node, { scale: s, y, height: Math.ceil(Math.min(k * pageCss, H - y)) });
+        for (let j = 0; j < k; j++) {
+          const top = Math.round(j * pagePx), h = Math.min(Math.round((j + 1) * pagePx), c.height) - top;
+          if (h < 1) break;
+          const part = document.createElement('canvas'); part.width = c.width; part.height = h;
+          part.getContext('2d').drawImage(c, 0, top, c.width, h, 0, 0, c.width, h);
+          if (i + j) doc.addPage();
+          doc.addImage(part.toDataURL('image/jpeg', 0.92), 'JPEG', MARGIN, MARGIN, w, h * w / c.width);
+          free(part);
+        }
+        free(c);
+      }
+    });
     save(doc.output('blob'), name + '.pdf');
   }
   return { png, pdf };
@@ -967,7 +1011,9 @@ function opWaarde(o, k) {
   return String(o[k] || '').trim();
 }
 const opSectie = (o, id) => OP_SEC[id].map(k => opWaarde(o, k));
-const opGetekend = o => !!(o.teken.naam.trim() && o.teken.datum);
+// Afgetekend: naam en datum staan er, en die datum is vandaag of voorbij. Een datum later is een gepland aftekenen (zoals in de Projectopdracht).
+const opGetekend = o => !!(o.teken.naam.trim() && o.teken.datum) && o.teken.datum <= vandaag();
+const opGepland = o => !!(o.teken.naam.trim() && o.teken.datum) && o.teken.datum > vandaag();
 function opGewijzigd(o) {
   if (!opGetekend(o) || !o.teken.kopie) return [];
   return Object.keys(OP_SEC).filter(id => o.teken.kopie[id] && JSON.stringify(opSectie(o, id)) !== JSON.stringify(o.teken.kopie[id]));
@@ -1163,7 +1209,8 @@ const LEES = {
   risico: d => {
     if (!obj(d)) return null;
     const oud = d.schaal !== 5, c = v => oud ? Math.max(1, Math.min(5, Math.ceil(Math.max(1, Math.min(10, Math.round(+v) || 1)) / 2))) : Math.max(1, Math.min(5, Math.round(+v) || 1));
-    const items = l => arr(l).filter(x => obj(x) && typeof x.name === 'string' && x.name.trim()).map(x => ({ name:x.name.trim().slice(0, 300), kans:c(x.probability), impact:c(x.impact),
+    // nieuw:true = overgenomen in de Risicomatrix, kans en impact nog niet ingeschat: telt hier nog niet mee
+    const items = l => arr(l).filter(x => obj(x) && typeof x.name === 'string' && x.name.trim() && x.nieuw !== true).map(x => ({ name:x.name.trim().slice(0, 300), kans:c(x.probability), impact:c(x.impact),
       maatregel:str(x.measure, 500).trim(), eigenaar:str(x.owner, 80).trim(), status: RI_STATUS[x.status] ? x.status : '' }));
     const ps = Array.isArray(d.projects) ? d.projects.filter(obj) : Array.isArray(d.items) ? [{ name:d.project, items:d.items, voorbeeld:d.voorbeeld }] : null;
     if (!ps) return null;
@@ -1347,7 +1394,9 @@ function VOORBEELD() {
   return vbCache;
 }
 
-/* ---------- Het dossier zelf: dossier.v1 = { dossiers:[{ id, name, datum, vraag, toelichting, aan:{}, keuze:{}, voorbeeld? }], current } ---------- */
+/* ---------- Het dossier zelf: dossier.v1 = { dossiers:[{ id, name, datum, vraag, toelichting, aan:{}, keuze:{}, notas?, besluiten?, voorbeeld? }], current } ----------
+   notas: de datums van de nota's die je al maakte (PDF of Kopieer als tekst), oud naar nieuw. Zo weet de nota welke besluiten nieuw zijn.
+   besluiten: 'alle' als je bij Besluiten "Alle recente besluiten" koos; anders alleen wat sinds de vorige nota beslist werd. */
 const SECS = [
   { id:'vraag',     titel:'Wat vragen we aan de stuurgroep?', tools:[] },
   { id:'oog',       titel:'In één oogopslag',          tools:['radar', 'meetplan'] },
@@ -1371,6 +1420,8 @@ function norm(x) {
   n.vraag = str(x.vraag, 1500); n.toelichting = str(x.toelichting, 1500);
   if (obj(x.aan)) SECS.forEach(s => { if (typeof x.aan[s.id] === 'boolean') n.aan[s.id] = x.aan[s.id]; });
   if (obj(x.keuze)) TOOLS.forEach(t => { if (typeof x.keuze[t.id] === 'string' && x.keuze[t.id]) n.keuze[t.id] = x.keuze[t.id].slice(0, 80); });
+  const notas = [...new Set(arr(x.notas).filter(okDate))].sort().slice(-24); if (notas.length) n.notas = notas;
+  if (x.besluiten === 'alle') n.besluiten = 'alle';
   return n;
 }
 function load() {
@@ -1389,7 +1440,20 @@ ocPickProject(state, 'dossiers');
 let version = 0;
 function save() { ocAfterSave(); version++; try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
 const cur = () => state.dossiers.find(x => x.id === state.current) || state.dossiers[0];
-const isAan = (d, id) => typeof d.aan[id] === 'boolean' ? d.aan[id] : !SEC[id].opt;
+// Realistische duur staat standaard aan zodra de Project Realisme Monitor een schatting heeft voor dit project. Wie het zelf uitzette, houdt die keuze.
+const isAan = (d, id) => typeof d.aan[id] === 'boolean' ? d.aan[id] : id === 'realisme' ? !!(M && M.d === d && M.bron.realisme.item) : !SEC[id].opt;
+// De vorige nota: de laatst gemaakte nota met een datum vóór die van deze nota.
+const vorigeNota = d => arr(d.notas).filter(x => x < notaDatum(d)).pop() || '';
+// Maak je een PDF of kopieer je de nota als tekst, dan telt ze als gemaakt (een voorbeeld ook, maar dat blijft bij het voorbeeld).
+function notaGemaakt(d) { const n = notaDatum(d); if (arr(d.notas).includes(n)) return; d.notas = [...arr(d.notas), n].sort().slice(-24); save(); }
+// Besluiten voor deze nota: sinds de vorige nota, of de laatste 4 als er nog geen vorige is (of als je "Alle recente besluiten" koos).
+function besluitenVoorNota(d, b) {
+  const genomen = b.items.filter(x => x.status === 'genomen').sort((a, c) => (c.date || '').localeCompare(a.date || '') || c.created - a.created);
+  const grens = vorigeNota(d), dag = x => x.date || (x.created > 864e5 ? isoVan(new Date(x.created)) : '');
+  if (!grens || d.besluiten === 'alle') return { grens, alle:true, lijst:genomen.slice(0, 4), rest:Math.max(0, genomen.length - 4), totaal:genomen.length };
+  const sinds = genomen.filter(x => dag(x) >= grens);
+  return { grens, alle:false, lijst:sinds.slice(0, 8), rest:Math.max(0, sinds.length - 8), totaal:genomen.length };
+}
 const begun = d => !!(d.vraag.trim() || d.toelichting.trim() || d.datum || Object.keys(d.keuze).length || Object.keys(d.aan).length);
 const notaDatum = d => d.datum || vandaag();
 
@@ -1462,6 +1526,7 @@ function signalen() {
     if (c && o && okDate(o.einddatum)) { const w = Math.round((new Date(c.eind + 'T00:00:00') - new Date(o.einddatum + 'T00:00:00')) / (7 * 864e5));
       if (w > 0) uit.push(`Realistisch klaar op ${fmtLang(c.eind)}: ${meer(w, 'week', 'weken')} na de geplande einddatum.`); } }
   if (aan('opdracht') && o) {
+    if (opGepland(o)) uit.push(`De opdracht is nog niet afgetekend. Aftekenen gepland op ${fmtLang(o.teken.datum)}.`);
     const vv = opVelden(o); if (opGewijzigd(o).length) uit.push(`De opdracht veranderde na het akkoord${vv.length ? ` (${vv.slice(0, 3).map(k => lc(OP_VELD[k])).join(', ')}${vv.length > 3 ? ' en meer' : ''})` : ''}.`);
     const ml = o.mijlpalen.filter(m => m.text.trim() && mijlpaalStand(m).laat).length;
     if (ml) uit.push(`${meer(ml, 'mijlpaal is', 'mijlpalen zijn')} voorbij de datum en niet als klaar gemeld.`);
@@ -1506,6 +1571,7 @@ const INHOUD = {
     const gew = opGewijzigd(o), wijz = gew.length ? opWijzigingen(o) : [];
     const teken = opGetekend(o) && gew.length ? pil('Gewijzigd na akkoord', 'amber') + ` <span class="stand-noot">Afgetekend op ${esc(fmtLang(o.teken.datum))} door ${esc(o.teken.naam.trim())}.</span>`
       : opGetekend(o) ? pil('Afgetekend', 'groen') + ` <span class="stand-noot">op ${esc(fmtLang(o.teken.datum))} door ${esc(o.teken.naam.trim())}</span>`
+      : opGepland(o) ? pil('Aftekenen gepland', '') + ` <span class="stand-noot">op ${esc(fmtLang(o.teken.datum))} door ${esc(o.teken.naam.trim())}</span>`
       : pil('Nog niet afgetekend', '') + ' <span class="stand-noot">De opdrachtgever gaf nog geen akkoord.</span>';
     let h = `<div data-oc-keep><div class="sub-t">Akkoord van de opdrachtgever</div><div class="stand">${teken}</div>${wijz.length
       ? `<div class="sub-t" style="margin-top:0.5rem">Wat veranderde sinds het akkoord</div>${lijstHTML(wijz.slice(0, 6).map(esc), '•')}${wijz.length > 6 ? `<p class="meer-tekst">En nog ${wijz.length - 6} wijzigingen in de Projectopdracht.</p>` : ''}` : ''}</div>`;
@@ -1538,11 +1604,18 @@ const INHOUD = {
   },
   besluit(ex) {
     const b = M.data('besluit'); if (!b) return '';
-    const nu = vandaag(), genomen = b.items.filter(x => x.status === 'genomen').sort((a, c) => (c.date || '').localeCompare(a.date || '') || c.created - a.created);
+    const nu = vandaag(), d = M.d, bv = besluitenVoorNota(d, b), genomen = bv.lijst;
     const laat = b.items.filter(x => x.status !== 'ingetrokken').flatMap(x => x.acties.filter(a => !a.done && a.when && a.when < nu).map(a => ({ ...a, besluit:x.what }))).sort((a, c) => a.when < c.when ? -1 : 1);
     let h = '';
-    if (genomen.length) h += `<div class="sub-t">Laatste besluiten</div><div class="rijen">${genomen.slice(0, 4).map(x => `<div class="rij datum-links" data-oc-keep><span class="d">${x.date ? esc(fmtDate(x.date)) : ''}</span><span>${esc(x.what)}${x.why ? `<small>${esc(kort(x.why, 140))}</small>` : ''}</span><span class="r">${esc(x.who)}</span></div>`).join('')}</div>${meerTekst(genomen.length - 4, ['besluit', 'besluiten'], 'het Beslissingslog')}`;
-    h += `<div class="sub-t"${genomen.length ? ' style="margin-top:0.875rem"' : ''}>Acties die te laat zijn</div>` + (laat.length
+    // Op het scherm: kiezen tussen de nieuwe besluiten en alle recente, met één zin uitleg. Niet in de PDF.
+    if (!ex && bv.grens && bv.totaal) h += `<div class="chips besl-keus" role="radiogroup" aria-label="Welke besluiten in de nota?">${[['sinds', 'Sinds de vorige nota'], ['alle', 'Alle recente besluiten']].map(([k, l]) => { const on = (k === 'alle') === bv.alle;
+      return `<button type="button" class="chip" role="radio" aria-checked="${on}" data-besl="${k}">${on ? ICON.ok : ''}<span class="t">${l}</span></button>`; }).join('')}</div>
+      <p class="zacht besl-uitleg">De vorige nota is de laatste die je als PDF downloadde of als tekst kopieerde.</p>`;
+    else if (!ex && bv.totaal) h += `<p class="zacht besl-uitleg">Download je deze nota als PDF of kopieer je ze als tekst, dan toont de volgende nota alleen wat erna beslist werd.</p>`;
+    const kop = bv.alle ? 'Laatste besluiten' : `Sinds de vorige nota van ${fmtLang(bv.grens)}`;
+    if (genomen.length) h += `<div class="sub-t">${esc(kop)}</div><div class="rijen">${genomen.map(x => `<div class="rij datum-links" data-oc-keep><span class="d">${x.date ? esc(fmtDate(x.date)) : ''}</span><span>${esc(x.what)}${x.why ? `<small>${esc(kort(x.why, 140))}</small>` : ''}</span><span class="r">${esc(x.who)}</span></div>`).join('')}</div>${meerTekst(bv.rest, ['besluit', 'besluiten'], 'het Beslissingslog')}`;
+    else if (!bv.alle) h += `<div class="sub-t">${esc(kop)}</div><p class="p">Geen nieuwe besluiten.</p>`;
+    h += `<div class="sub-t"${genomen.length || !bv.alle ? ' style="margin-top:0.875rem"' : ''}>Acties die te laat zijn</div>` + (laat.length
       ? `<div class="rijen">${laat.slice(0, 6).map(a => `<div class="rij" data-oc-keep><span>${esc(a.text)}<small>${esc([a.who, 'bij: ' + kort(a.besluit, 70)].filter(Boolean).join(' · '))}</small></span><span>${pil('te laat sinds ' + fmtDate(a.when), 'amber')}</span></div>`).join('')}</div>${meerTekst(laat.length - 6, ['actie', 'acties'], 'het Beslissingslog')}`
       : `<p class="p">Geen enkele actie is te laat.</p>`);
     return h;
@@ -1789,6 +1862,8 @@ document.addEventListener('click', e => {
     toast(`Dossier voor ${kort(d.name, 40)}`, restore); return;
   }
   if (t.closest('#gev-meer')) { gevondenAlle = !gevondenAlle; renderGevonden(); return; }
+  const bk = t.closest('[data-besl]');
+  if (bk) { if (bk.dataset.besl === 'alle') d.besluiten = 'alle'; else delete d.besluiten; save(); renderNota(); const n = document.querySelector(`[data-besl="${bk.dataset.besl}"]`); if (n) n.focus({ preventScroll:true }); return; }
   const sw = t.closest('[data-aan]');
   if (sw) { const id = sw.dataset.aan; d.aan[id] = !isAan(d, id); save(); renderNota(); const n = document.querySelector(`[data-aan="${id}"]`); if (n) n.focus({ preventScroll:true }); return; }
   const ja = t.closest('[data-vs-ja]');
@@ -1827,7 +1902,7 @@ $('example').addEventListener('click', () => {
   if (bestaand) { state.current = bestaand.id; save(); render(); toast('Dit is het voorbeeld'); return; }
   let d = cur();
   if (begun(d)) { d = nieuw(''); state.dossiers.push(d); state.current = d.id; }
-  Object.assign(d, { name:VBN, voorbeeld:true, datum:'', aan:{ gap:true, realisme:true }, keuze:{},
+  Object.assign(d, { name:VBN, voorbeeld:true, datum:'', aan:{ gap:true, realisme:true }, keuze:{}, notas:[plus(-30)],
     vraag:'Gaan jullie akkoord om de opleiding van de dossierbeheerders te verschuiven naar januari?\nKrijgt de dienst ICT tot de zomer 2 dagen per week extra voor de koppeling?',
     toelichting:'De koppeling met het dossierbeheer loopt vier weken uit. Met de opleiding in januari halen we de einddatum nog.' });
   toelOpen = false; save(); render();
@@ -1887,22 +1962,6 @@ function buildExport() {
   return { node, title: d.name.trim() || 'Projectdossier', subtitle: 'Nota voor de stuurgroep' + (d.datum ? ' van ' + datumTekst : '') + (d.voorbeeld ? ' (voorbeeld)' : ''), datum: datumTekst };
 }
 
-/* Veiligheidsnet voor een lang dossier (zelfde aanpak als het Meetplan): een browser tekent geen canvas boven een maximale grootte
-   (Chrome: 65.535 px hoog; iPad en iPhone: ongeveer 16 miljoen pixels). Daarboven wordt elke pagina zwart.
-   Is de export groter, dan tekent het dossier ze iets minder scherp, zodat alles leesbaar blijft.
-   Het gedeelde exportblok blijft ongewijzigd: dit vangt alleen de oproep naar html2canvas op. */
-(() => {
-  let echt = null;
-  const ios = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  const MAX_AREA = ios ? 16e6 : 120e6, MAX_DIM = 32000;
-  const veilig = (node, o = {}) => {
-    const w = node.offsetWidth || 800, h = node.offsetHeight || 1, s = o.scale || 2;
-    const kan = Math.min(s, Math.sqrt(MAX_AREA / (w * h)), MAX_DIM / h, MAX_DIM / w);
-    return echt(node, Object.assign({}, o, { scale: Math.max(0.5, Math.floor(kan * 100) / 100) }));
-  };
-  try { Object.defineProperty(window, 'html2canvas', { configurable:true, get: () => echt && veilig, set: f => { echt = f; } }); } catch {}
-})();
-
 /* PDF op A4 met in de voet de projectnaam en het paginanummer. Zelfde bibliotheken en kop als ocExport;
    alleen de voet staat hier op elke pagina, daarom een eigen versie. */
 const pdfVoet = (() => {
@@ -1935,7 +1994,7 @@ const pdfVoet = (() => {
   }
   async function voetBeeld(breedte, links, rechts) {
     try { await document.fonts.load('400 22px "DM Sans"'); } catch {}
-    // de voet schaalt mee met het canvas: zo blijft ze even groot op papier, ook als een lang dossier minder scherp getekend wordt
+    // de voet schaalt mee met het canvas: zo blijft ze even groot op papier
     const k = breedte / 1600, c = document.createElement('canvas'); c.width = breedte; c.height = Math.round(44 * k);
     const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height);
     x.fillStyle = '#e2e8f0'; x.fillRect(0, 0, c.width, Math.max(1, Math.round(2 * k)));
@@ -1949,20 +2008,33 @@ const pdfVoet = (() => {
     await Promise.all([laad('/lib/html2canvas-1.4.1.min.js'), laad('/lib/jspdf-2.5.1.umd.min.js')]);
     const b = build(), w = 210 - 2 * MARGE, hInhoud = 297 - 2 * MARGE - VOET, pageCss = hInhoud / w * W;
     const wrap = blad(b);
-    let c;
-    try { if (document.fonts && document.fonts.ready) await document.fonts.ready; samen(wrap, pageCss); c = await window.html2canvas(wrap, { scale:2, backgroundColor:'#ffffff', logging:false }); }
-    finally { wrap.remove(); }
     const { jsPDF } = window.jspdf, doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
-    const scale = w / c.width, pageH = hInhoud / scale, n = Math.max(1, Math.ceil((c.height - 2) / pageH));
-    for (let i = 0; i < n; i++) {
-      const y = i * pageH, h = Math.min(pageH, c.height - y);
-      const part = document.createElement('canvas'); part.width = c.width; part.height = h;
-      part.getContext('2d').drawImage(c, 0, y, c.width, h, 0, 0, c.width, h);
-      if (i) doc.addPage();
-      doc.addImage(part.toDataURL('image/jpeg', 0.92), 'JPEG', MARGE, MARGE, w, h * scale);
-      const voet = await voetBeeld(c.width, `${b.title} · Projectdossier · Onder Constructie`, `pagina ${i + 1} van ${n}`);
-      doc.addImage(voet, 'PNG', MARGE, 297 - MARGE - 6, w, Math.round(44 * c.width / 1600) * scale);
-    }
+    // Een browser tekent geen canvas boven een maximale grootte (Chrome: 65.535 px; iPad en iPhone: ongeveer 16 miljoen pixels).
+    // Daarom tekent het dossier telkens een paar hele pagina's tegelijk, op volle scherpte (zoals ocExport).
+    try {
+      if (document.fonts && document.fonts.ready) await document.fonts.ready;
+      samen(wrap, pageCss);
+      const H = Math.ceil(wrap.getBoundingClientRect().height), S = 2, pagePx = pageCss * S;
+      const n = Math.max(1, Math.ceil((H - 1) / pageCss)), per = Math.max(1, Math.floor(16e6 / (W * S * pagePx)));
+      for (let i = 0; i < n; i += per) {
+        const y0 = i * pageCss, k = Math.min(per, n - i);
+        const c = await window.html2canvas(wrap, { scale:S, backgroundColor:'#ffffff', logging:false, y:y0, height:Math.ceil(Math.min(k * pageCss, H - y0)),
+          ignoreElements: el => el.parentNode === document.body && el !== wrap && !/^(STYLE|LINK)$/.test(el.tagName) });
+        const scale = w / c.width;
+        for (let j = 0; j < k; j++) {
+          const top = Math.round(j * pagePx), h = Math.min(Math.round((j + 1) * pagePx), c.height) - top;
+          if (h < 1) break;
+          const part = document.createElement('canvas'); part.width = c.width; part.height = h;
+          part.getContext('2d').drawImage(c, 0, top, c.width, h, 0, 0, c.width, h);
+          if (i + j) doc.addPage();
+          doc.addImage(part.toDataURL('image/jpeg', 0.92), 'JPEG', MARGE, MARGE, w, h * scale);
+          part.width = part.height = 0;
+          const voet = await voetBeeld(c.width, `${b.title} · Projectdossier · Onder Constructie`, `pagina ${i + j + 1} van ${n}`);
+          doc.addImage(voet, 'PNG', MARGE, 297 - MARGE - 6, w, Math.round(44 * c.width / 1600) * scale);
+        }
+        c.width = c.height = 0;
+      }
+    } finally { wrap.remove(); }
     const blob = doc.output('blob'), a = document.createElement('a');
     a.href = URL.createObjectURL(blob); a.download = name + '.pdf'; document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 4000);
@@ -1990,7 +2062,7 @@ function alsTekst() {
   if (aan('opdracht') && o) {
     const ms = o.mijlpalen.filter(m => m.text.trim()).slice().sort((a, b) => (a.date || '9999') < (b.date || '9999') ? -1 : 1), gew = opGewijzigd(o);
     const doelen = isAan(d, 'oog') && M.data('meetplan') ? [] : vol(o.doelen);
-    blok('Opdracht', [opGetekend(o) ? `${gew.length ? 'Gewijzigd na akkoord. ' : ''}Afgetekend op ${fmtLang(o.teken.datum)} door ${o.teken.naam.trim()}.` : 'Nog niet afgetekend.',
+    blok('Opdracht', [opGetekend(o) ? `${gew.length ? 'Gewijzigd na akkoord. ' : ''}Afgetekend op ${fmtLang(o.teken.datum)} door ${o.teken.naam.trim()}.` : opGepland(o) ? `Aftekenen gepland op ${fmtLang(o.teken.datum)} door ${o.teken.naam.trim()}.` : 'Nog niet afgetekend.',
       ...(gew.length ? opWijzigingen(o).map(x => '- ' + x) : []), '\n',
       o.opleveren.trim() && 'Wat we opleveren: ' + o.opleveren.trim(), doelen.length && 'Wat er beter wordt:', ...doelen.map(x => '- ' + x),
       vol(o.binnen).length && 'Valt erbinnen: ' + vol(o.binnen).join('; '), vol(o.buiten).length && 'Valt erbuiten: ' + vol(o.buiten).join('; '),
@@ -1999,9 +2071,9 @@ function alsTekst() {
   if (aan('risico')) { const r = M.data('risico'), open = r.items.filter(x => x.status !== 'klaar').sort((a, b) => (b.kans * b.impact - a.kans * a.impact) || (b.impact - a.impact));
     blok("Risico's", open.length ? open.slice(0, 5).map(x => `- ${x.name} (${riNiveau(x.kans * x.impact).naam.toLowerCase()}, score ${x.kans * x.impact})${x.maatregel ? '. Maatregel: ' + x.maatregel : '. Nog geen maatregel'}${x.eigenaar ? '. Eigenaar: ' + x.eigenaar : ''}`) : ["Alle risico's staan onder controle."]); }
   if (aan('besluit')) { const b = M.data('besluit'), nu = vandaag();
-    const gen = b.items.filter(x => x.status === 'genomen').sort((a, c) => (c.date || '').localeCompare(a.date || '') || c.created - a.created).slice(0, 4);
+    const bv = besluitenVoorNota(d, b), gen = bv.lijst;
     const laat = b.items.filter(x => x.status !== 'ingetrokken').flatMap(x => x.acties.filter(a => !a.done && a.when && a.when < nu));
-    blok('Besluiten', [...gen.map(x => `- ${x.date ? fmtDate(x.date) + ': ' : ''}${x.what}${x.who ? ' (' + x.who + ')' : ''}`), laat.length ? 'Te laat:' : 'Geen enkele actie is te laat.', ...laat.slice(0, 6).map(a => `- ${a.text}${a.who ? ' (' + a.who + ')' : ''}, te laat sinds ${fmtDate(a.when)}`)]); }
+    blok('Besluiten', [!bv.alle && `Sinds de vorige nota van ${fmtLang(bv.grens)}:`, !bv.alle && !gen.length && 'Geen nieuwe besluiten.', ...gen.map(x => `- ${x.date ? fmtDate(x.date) + ': ' : ''}${x.what}${x.who ? ' (' + x.who + ')' : ''}`), laat.length ? 'Te laat:' : 'Geen enkele actie is te laat.', ...laat.slice(0, 6).map(a => `- ${a.text}${a.who ? ' (' + a.who + ')' : ''}, te laat sinds ${fmtDate(a.when)}`)]); }
   if (aan('werk')) { const k = M.data('kanban'), nu = vandaag(), laat = k.cards.filter(c => c.status !== 'klaar' && c.dueDate && c.dueDate < nu);
     blok('Werk', [KOLOMMEN.map(c => `${c.naam}: ${k.cards.filter(x => x.status === c.id).length}`).join(' · '), laat.length ? 'Te laat:' : 'Geen enkele taak is te laat.', ...laat.slice(0, 6).map(c => `- ${c.title}, te laat sinds ${fmtDate(c.dueDate)}`)]); }
   if (aan('rollen')) { const r = M.data('raci'), nm = (t, f) => r.roles.filter(x => f(t.cells[x.id])).map(x => x.name).filter(Boolean).join(', ') || 'nog niemand';
@@ -2017,11 +2089,12 @@ function alsTekst() {
 
 async function doe(act) {
   if (!heeftNota()) { toast('De nota is nog leeg'); return; }
-  if (act === 'copy') { (await copy(alsTekst())) ? toast('Gekopieerd als tekst. Plak het in je mail.') : toast('Kopiëren lukt hier niet'); return; }
+  if (act === 'copy') { if (await copy(alsTekst())) { notaGemaakt(cur()); toast('Gekopieerd als tekst. Plak het in je mail.'); } else toast('Kopiëren lukt hier niet'); return; }
   const base = `projectdossier-${slug(cur().name)}-${notaDatum(cur())}`;
   toast('Bezig…');
   try {
     await (act === 'pdf' ? pdfVoet(buildExport, base) : ocExport.png(buildExport, base));
+    if (act === 'pdf') notaGemaakt(cur());
     toast(act === 'pdf' ? 'PDF gedownload' : 'Afbeelding gedownload');
   } catch { toast('Downloaden lukt nu niet: geen verbinding?'); }
 }

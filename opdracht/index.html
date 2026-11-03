@@ -530,7 +530,7 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
         <li><b>Aftekenen.</b> Kijk bij "Klaar om te laten aftekenen?" wat nog ontbreekt. Vul dan de naam van de opdrachtgever en de datum in. Wijzig je daarna iets, dan zie je dat meteen.</li>
       </ul>
       <p>Tip: begin bij wat er niet bij hoort. Wat het project moet doen, weet iedereen. Over wat het niet doet, is men het zelden eens.</p>
-      <p>De mijlpalen zet je in het <a href="https://onderconstructie.github.io/kanban/">Takenbord</a>. De opdrachtgever en wie akkoord geeft, neem je over in de <a href="https://onderconstructie.github.io/stakeholders/">Betrokkenenradar</a>. Hoe je meet of de doelen gehaald zijn, werk je uit in het <a href="https://onderconstructie.github.io/meetplan/">Meetplan</a>. Waar je vandaag staat, staat in de <a href="https://onderconstructie.github.io/gap/">Gap-analyse</a>.</p>
+      <p>De mijlpalen zet je in het <a href="https://onderconstructie.github.io/kanban/">Takenbord</a>. De risico's schat je in met de <a href="https://onderconstructie.github.io/risico/">Risicomatrix</a>. De opdrachtgever en wie akkoord geeft, neem je over in de <a href="https://onderconstructie.github.io/stakeholders/">Betrokkenenradar</a>. Hoe je meet of de doelen gehaald zijn, werk je uit in het <a href="https://onderconstructie.github.io/meetplan/">Meetplan</a>. Waar je vandaag staat, staat in de <a href="https://onderconstructie.github.io/gap/">Gap-analyse</a>.</p>
     </div>
   </details>
 <div class="oc-restart-row" id="oc-restart-row" hidden><button type="button" class="oc-restart" id="oc-restart-btn">Opnieuw beginnen</button></div>
@@ -556,6 +556,10 @@ function ocPickProject(st, arr, cur = 'current') { const p = ocProject(''); if (
      'taak'        iets dat gedaan moet worden                     { text, note? }
      'actie'       taak met eigenaar en/of termijn                 { text, who?, when? }
      'risico'      risico met kans en impact                       { text, note? }
+     'besluit'     beslissing (Beslissingslog)                     { text, note?, who?, when? }
+     'doel'        wat er beter moet worden (Projectopdracht)      { text, note? }
+                   Andere tools kiezen zelf welke soorten ze tonen (types in pick/count/sources) en slaan onbekende soorten dus over.
+   'when' is bij voorkeur een datum als JJJJ-MM-DD; in "Overnemen uit…" staat die als 15 februari 2027.
 
    Gebruik:
      ocShare.publish('raci', 'RACI-matrix', [
@@ -567,8 +571,11 @@ function ocPickProject(st, arr, cur = 'current') { const p = ocProject(''); if (
 */
 const ocShare = (() => {
   const PREFIX = 'oc.share.';
-  const LABEL = { betrokkene:'betrokkenen', taak:'taken', actie:'acties', risico:"risico's" };
+  const LABEL = { betrokkene:'betrokkenen', taak:'taken', actie:'acties', risico:"risico's", besluit:'besluiten', doel:'doelen' };
   const esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+  // Een datum als JJJJ-MM-DD tonen we zoals in de tools: 15 februari 2027. Andere tekst blijft zoals ze is.
+  const datum = v => { const s = String(v || '').trim(), d = /^\d{4}-\d{2}-\d{2}$/.test(s) ? new Date(s + 'T12:00:00') : null;
+    return d && !isNaN(d) ? d.toLocaleDateString('nl-BE', { day:'numeric', month:'long', year:'numeric' }) : s; };
 
   function publish(id, tool, lists) {
     try {
@@ -654,7 +661,7 @@ const ocShare = (() => {
           <div class="ocs-src"><div class="ocs-src-head"><b>${esc(s.tool)}</b><span>${esc(s.list)} · ${s.items.length}</span>
             <button class="ocs-all" type="button" data-all="${si}">alles</button></div>
             ${s.items.map((it, ii) => `<label class="ocs-item"><input type="checkbox" data-s="${si}" data-i="${ii}">
-              <span>${esc(it.text)}${it.who || it.when || it.note ? `<small>${esc([it.who, it.when, it.note].filter(Boolean).join(' · '))}</small>` : ''}</span></label>`).join('')}
+              <span>${esc(it.text)}${it.who || it.when || it.note ? `<small>${esc([it.who, datum(it.when), it.note].filter(Boolean).join(' · '))}</small>` : ''}</span></label>`).join('')}
           </div>`).join('') : `<p class="ocs-empty">Er zijn nog geen ${esc(what)} om over te nemen. Vul ze eerst in een andere tool van Onder Constructie in, dan verschijnen ze hier.</p>`}
         </div>
         <div class="ocs-foot"><button class="ocs-btn ocs-cancel" type="button">Annuleer</button>
@@ -747,7 +754,7 @@ function ocUndoable(restore) {
      { type:'taak',       text:'Mijlpaal: <resultaat>', when:'JJJJ-MM-DD' }                           voor het Takenbord
      { type:'risico',     text:'<risico of aanname>' }
      { type:'betrokkene', text:'<naam>', note:'Opdrachtgever' of 'Moet akkoord geven' }              voor de Betrokkenenradar
-   Het type 'doel' is nieuw: het gedeelde blok neemt elk type met een tekst over, en toont als naam gewoon 'doel'. */
+   Het type 'doel' staat in het gedeelde blok (LABEL: doelen). */
 function ocPublish() {
   ocShare.publish(OC_ID, OC_TOOL, state.opdrachten.filter(o => !o.voorbeeld).map(o => {
     // Het project is klaar tegen de einddatum; het effect komt vaak later. Daarom geen 'tegen' bij het doel zelf.
@@ -786,7 +793,7 @@ document.addEventListener('click', async e => {
   toast(n ? `${n} ${n === 1 ? 'doel' : 'doelen'} overgenomen` : 'Die doelen stonden er al', n ? restore : undefined);
 });
 
-/* ---------- Download als afbeelding of PDF (gedeeld door de Onder Constructie-tools, v2) ----------
+/* ---------- Download als afbeelding of PDF (gedeeld door de Onder Constructie-tools, v3) ----------
    Gebruik:
      ocExport.png(bouwFn, 'bestandsnaam', { landscape:true })
      ocExport.pdf(bouwFn, 'bestandsnaam', { landscape:true })
@@ -794,6 +801,10 @@ document.addEventListener('click', async e => {
    Die komt buiten beeld op een witte pagina met kop (titel, ondertitel, datum) en voet.
    Zet data-oc-keep op blokken die in een PDF niet over twee pagina's gesplitst mogen worden
    (een beslissing, een kaartje, een rij); ze schuiven dan door naar de volgende pagina.
+   Een browser tekent geen canvas boven een maximale grootte (Chrome: 65.535 px hoog of breed; iPad en iPhone:
+   ongeveer 16 miljoen pixels). Daarboven wordt de PDF of afbeelding zwart of leeg. Daarom tekent de PDF
+   telkens een paar hele pagina's tegelijk, op volle scherpte, en wordt een heel lange afbeelding net zo
+   scherp getekend als binnen die grens kan.
    html2canvas en jsPDF worden pas geladen bij de eerste download, van dezelfde adressen als de
    andere tools, zodat de app ze offline kan bewaren. */
 const ocExport = (() => {
@@ -802,6 +813,12 @@ const ocExport = (() => {
     pdf: '/lib/jspdf-2.5.1.umd.min.js'
   };
   const A4 = { w: 210, h: 297 }, MARGIN = 10;   // mm
+  // Grenzen van een canvas: iPad en iPhone ongeveer 16 miljoen pixels; Chrome en Edge tot 65.535 px hoog of breed; andere browsers 32.767 px.
+  const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const CHROME = !IOS && /Chrome\//.test(navigator.userAgent);
+  const SCALE = 2, MAX_SIDE = CHROME ? 65000 : 32000, MAX_AREA = IOS ? 16e6 : 120e6;   // scherpte; langste zijde en oppervlakte in pixels
+  // Grootste schaal (tot SCALE) waarbij een canvas van w × h CSS-pixels nog getekend wordt.
+  const fit = (w, h, area = MAX_AREA) => Math.floor(Math.min(SCALE, Math.sqrt(area / (w * h)), MAX_SIDE / h, MAX_SIDE / w) * 100) / 100;
   const loaded = {};
   function load(url) {
     if (!loaded[url]) loaded[url] = new Promise((ok, fail) => {
@@ -844,16 +861,20 @@ const ocExport = (() => {
       }
     }
   }
-  async function canvasOf(build, opts) {
-    await load(LIBS.h2c);
+  // Zet de exportpagina buiten beeld, wacht op de lettertypes en geeft ze aan fn; ruimt daarna op.
+  async function withPage(build, width, fn) {
     const built = build();
-    const node = page(built.node, { title: built.title, subtitle: built.subtitle, width: opts.width });
+    const node = page(built.node, { title: built.title, subtitle: built.subtitle, width });
     try {
       if (document.fonts && document.fonts.ready) await document.fonts.ready;
-      if (opts.pageH) keepTogether(node, opts.pageH);
-      return await window.html2canvas(node, { scale: 2, backgroundColor: '#ffffff', logging: false, useCORS: true });
+      return await fn(node);
     } finally { node.remove(); }
   }
+  const heightOf = node => Math.ceil(node.getBoundingClientRect().height);
+  // Alleen de exportpagina gaat mee in de kopie die html2canvas maakt: de rest van de tool overslaan scheelt veel tijd.
+  const draw = (node, o) => window.html2canvas(node, Object.assign({ scale: SCALE, backgroundColor: '#ffffff', logging: false, useCORS: true,
+    ignoreElements: el => el.parentNode === document.body && el !== node && !/^(STYLE|LINK)$/.test(el.tagName) }, o));
+  const free = c => { c.width = c.height = 0; };     // geheugen meteen vrijgeven (iPad)
   function save(blob, name) {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob); a.download = name;
@@ -862,24 +883,45 @@ const ocExport = (() => {
   }
   const widthFor = opts => opts.width || (opts.landscape ? 1120 : 800);
   async function png(build, name, opts = {}) {
-    const c = await canvasOf(build, { width: widthFor(opts) });
-    await new Promise(ok => c.toBlob(b => { save(b, name + '.png'); ok(); }, 'image/png'));
+    const width = widthFor(opts);
+    await load(LIBS.h2c);
+    const c = await withPage(build, width, node => draw(node, { scale: fit(width, heightOf(node)) }));
+    await new Promise(ok => c.toBlob(b => { save(b, name + '.png'); free(c); ok(); }, 'image/png'));
   }
   async function pdf(build, name, opts = {}) {
     const landscape = !!opts.landscape, width = widthFor(opts);
     const pw = landscape ? A4.h : A4.w, ph = landscape ? A4.w : A4.h, w = pw - 2 * MARGIN;
     const pageCss = (ph - 2 * MARGIN) / w * width;       // paginahoogte in CSS-pixels van de exportknoop
-    const [c] = await Promise.all([canvasOf(build, { width, pageH: pageCss }), load(LIBS.pdf)]);
+    await Promise.all([load(LIBS.h2c), load(LIBS.pdf)]);
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: landscape ? 'landscape' : 'portrait', unit: 'mm', format: 'a4' });
-    const scale = w / c.width, pageH = (ph - 2 * MARGIN) / scale;   // paginahoogte in canvaspixels
-    for (let y = 0, i = 0; y < c.height - 2; y += pageH, i++) {
-      const h = Math.min(pageH, c.height - y);
-      const part = document.createElement('canvas'); part.width = c.width; part.height = h;
-      part.getContext('2d').drawImage(c, 0, y, c.width, h, 0, 0, c.width, h);
-      if (i) doc.addPage();
-      doc.addImage(part.toDataURL('image/jpeg', 0.92), 'JPEG', MARGIN, MARGIN, w, h * scale);
-    }
+    await withPage(build, width, async node => {
+      const H0 = heightOf(node);
+      // Net te hoog voor één pagina (bv. alleen de voettekst): verkleinen tot het past, geen lege tweede pagina.
+      if (H0 > pageCss && H0 <= pageCss * 1.2) {
+        const c = await draw(node, { scale: fit(width, H0) }), ww = w * pageCss / H0;
+        doc.addImage(c.toDataURL('image/jpeg', 0.92), 'JPEG', MARGIN + (w - ww) / 2, MARGIN, ww, ph - 2 * MARGIN);
+        free(c); return;
+      }
+      keepTogether(node, pageCss);
+      const H = heightOf(node), s = fit(width, pageCss), pagePx = pageCss * s;
+      const n = Math.max(1, Math.ceil((H - 1) / pageCss));                       // aantal pagina's
+      const per = Math.max(1, Math.floor(Math.min(MAX_AREA / (width * s * pagePx), MAX_SIDE / pagePx)));   // pagina's per stuk
+      for (let i = 0; i < n; i += per) {
+        const y = i * pageCss, k = Math.min(per, n - i);
+        const c = await draw(node, { scale: s, y, height: Math.ceil(Math.min(k * pageCss, H - y)) });
+        for (let j = 0; j < k; j++) {
+          const top = Math.round(j * pagePx), h = Math.min(Math.round((j + 1) * pagePx), c.height) - top;
+          if (h < 1) break;
+          const part = document.createElement('canvas'); part.width = c.width; part.height = h;
+          part.getContext('2d').drawImage(c, 0, top, c.width, h, 0, 0, c.width, h);
+          if (i + j) doc.addPage();
+          doc.addImage(part.toDataURL('image/jpeg', 0.92), 'JPEG', MARGIN, MARGIN, w, h * w / c.width);
+          free(part);
+        }
+        free(c);
+      }
+    });
     save(doc.output('blob'), name + '.pdf');
   }
   return { png, pdf };
@@ -971,7 +1013,7 @@ function load() {
 let state = load();
 ocPickProject(state, 'opdrachten');
 let version = 0;
-function save() { ocAfterSave(); version++; try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
+function save() { state.opdrachten.forEach(o => { if (gepland(o)) o.teken.kopie = kopie(o); }); ocAfterSave(); version++; try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
 const cur = () => state.opdrachten.find(o => o.id === state.current) || state.opdrachten[0];
 const isStd = v => window.ocStandaardNaam ? ocStandaardNaam(v) : /^((mijn|nieuwe?) )?project( \d+)?$|^naamloos$/i.test(String(v || '').trim());
 
@@ -993,13 +1035,17 @@ const sectieWaarde = (o, id) => SEC[id].velden.map(k => waarde(o, k));
 const gevuld = (o, id) => sectieWaarde(o, id).some(v => Array.isArray(v) ? v.length : !!v);
 function begun(o) { return SECTIES.some(s => s.id !== 'naam' && gevuld(o, s.id)) || !!(o.teken.naam.trim() || o.teken.datum); }
 function kopie(o) { const c = {}; SECTIES.forEach(s => { c[s.id] = sectieWaarde(o, s.id); }); return c; }
-const getekend = o => !!(o.teken.naam.trim() && o.teken.datum);
+const ingevuld = o => !!(o.teken.naam.trim() && o.teken.datum);
+// Akkoord gegeven: naam en datum staan er, en die datum is vandaag of voorbij. Een datum later is een gepland aftekenen.
+const getekend = o => ingevuld(o) && o.teken.datum <= vandaag();
+const gepland = o => ingevuld(o) && o.teken.datum > vandaag();
 function gewijzigd(o) {
   if (!getekend(o) || !o.teken.kopie) return [];
   return SECTIES.filter(s => o.teken.kopie[s.id] && JSON.stringify(sectieWaarde(o, s.id)) !== JSON.stringify(o.teken.kopie[s.id])).map(s => s.id);
 }
 // Akkoord gegeven of aangepast: wat er nu staat, is wat afgetekend is.
-function herijk(o) { o.teken.kopie = getekend(o) ? kopie(o) : null; }
+// Bij een gepland aftekenen volgt de kopie elke wijziging tot die dag (zie save): "gewijzigd na akkoord" telt pas daarna.
+function herijk(o) { o.teken.kopie = ingevuld(o) ? kopie(o) : null; }
 function zetTerugZoalsAfgetekend(o) {
   const c = o.teken.kopie; if (!c) return;
   SECTIES.forEach(s => { const v = c[s.id]; if (!Array.isArray(v)) return;
@@ -1053,6 +1099,7 @@ const ICON = {
   pen:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20c2.5-3 4.5-3 5.5-.5s3 2.5 4.5-.5 3-3 4.5-.5"/><path d="M14 4l3 3-8 8H6v-3z"/></svg>',
   let:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L1.8 18.5A2 2 0 0 0 3.5 21.5h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>',
   info:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>',
+  ri:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 12h18M12 3v18"/><circle cx="16.5" cy="7.5" r="1.25" fill="currentColor"/></svg>',
   tb:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="11" rx="1.5"/><rect x="17" y="4" width="4" height="7" rx="1.5"/></svg>',
   radar:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/><circle cx="17.5" cy="9.5" r="2.25"/><path d="M16 20h5a4.5 4.5 0 0 0-5.5-4.4"/></svg>',
   import:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v11M7.5 9.5L12 14l4.5-4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>',
@@ -1177,6 +1224,7 @@ function formHTML(o) {
     ${secHead('risicos')}
     <p class="sec-q">2 à 4 korte regels. Wat kan het project doen ontsporen? Wat neem je aan zonder dat het zeker is?</p>
     ${lijstHTML(o, 'risicos', 'Risico of aanname', 'Bv. De leverancier levert de koppeling te laat', 'stip')}
+    <div class="oc-tb" id="oc-ri" hidden><a class="oc-tb-btn" href="../risico/?van=opdracht">${ICON.ri}Zet in Risicomatrix</a><p>Risicomatrix opent. Vink daar de risico's aan die je wil overnemen. Daarna schat je kans en impact in.</p></div>
   </section>
 
   <section class="card sec-card" id="s-afspraken" aria-labelledby="t-afspraken">
@@ -1247,9 +1295,9 @@ function tijdlijnHTML(o) {
 let sigAlle = false;
 function renderControle() {
   const o = cur(), el = $('controle');
-  const sec = SECTIES.filter(s => s.id !== 'naam'), vol9 = sec.filter(s => gevuld(o, s.id)).length + (getekend(o) ? 1 : 0);
+  const sec = SECTIES.filter(s => s.id !== 'naam'), vol9 = sec.filter(s => gevuld(o, s.id)).length + (ingevuld(o) ? 1 : 0);
   const sig = signalen(o), hard = sig.filter(x => !x.zacht), zacht = sig.filter(x => x.zacht), gew = gewijzigd(o);
-  const balk = `<div class="voortgang" aria-hidden="true">${sec.map(s => `<i class="${gevuld(o, s.id) ? 'vol' : ''}"></i>`).join('')}<i class="${getekend(o) ? 'vol' : ''}"></i></div>
+  const balk = `<div class="voortgang" aria-hidden="true">${sec.map(s => `<i class="${gevuld(o, s.id) ? 'vol' : ''}"></i>`).join('')}<i class="${ingevuld(o) ? 'vol' : ''}"></i></div>
     <div class="voortgang-tekst">${vol9} van 9 vakken ingevuld</div>`;
   const rij = x => `<li><button type="button" class="sig${x.zacht ? ' zacht' : ''}" data-sig="${esc(x.veld)}" data-sec="${x.sectie}"><span class="dot" aria-hidden="true"></span><span>${esc(x.tekst)}<small>${SEC[x.sectie].n}. ${esc(SEC[x.sectie].titel)}</small></span>${ICON.pijl}</button></li>`;
   let body = '';
@@ -1258,13 +1306,14 @@ function renderControle() {
     const lijst = hard.concat(zacht), max = 6, toon = sigAlle ? lijst : lijst.slice(0, max);
     if (getekend(o) && !gew.length) body += `<div class="ctl-ok">${ICON.ok}<span>Afgetekend op ${esc(fmtLang(o.teken.datum))} door ${esc(o.teken.naam)}.</span></div>`;
     else if (gew.length) body += `<div class="ctl-ok" style="background:#fffbeb;border-color:#fde68a;color:#78350f">${ICON.let}<span>Gewijzigd na akkoord: ${esc(gew.map(id => SEC[id].kort).join(', '))}.</span></div>`;
+    else if (gepland(o)) body += `<div class="ctl-ok" style="background:#f8fafc;border-color:#e2e8f0;color:#334155">${ICON.pen}<span>Aftekenen gepland op ${esc(fmtLang(o.teken.datum))} door ${esc(o.teken.naam)}.</span></div>`;
     else if (!hard.length) body += `<div class="ctl-ok">${ICON.ok}<span>Alles staat erin. Laat de opdracht aftekenen.</span></div>`;
     if (hard.length) body += `<div class="sig-kop">Nog ${hard.length} ${hard.length === 1 ? 'punt' : 'punten'}</div>`;
     const tH = toon.filter(x => !x.zacht), tZ = toon.filter(x => x.zacht);
     if (tH.length) body += `<ul class="sigs">${tH.map(rij).join('')}</ul>`;
     if (tZ.length) body += `<div class="sig-kop">Om over na te denken</div><ul class="sigs">${tZ.map(rij).join('')}</ul>`;
     if (lijst.length > max) body += `<button type="button" class="meer" data-meer>${sigAlle ? 'Toon minder' : `Toon alle ${lijst.length}`}</button>`;
-    if (!hard.length && !getekend(o)) body += `<div class="add-row"><button type="button" class="add-link" data-naar-teken>${ICON.pen}Naar aftekenen</button></div>`;
+    if (!hard.length && !ingevuld(o)) body += `<div class="add-row"><button type="button" class="add-link" data-naar-teken>${ICON.pen}Naar aftekenen</button></div>`;
   }
   el.innerHTML = `<h2 class="ctl-title" id="ctl-title">Klaar om te laten aftekenen?</h2>${balk}${body}
     <div class="exp-btns"><button type="button" class="btn-s" data-exp="png"${begun(o) ? '' : ' disabled'}>Afbeelding</button><button type="button" class="btn-s" data-exp="pdf"${begun(o) ? '' : ' disabled'}>PDF</button></div>`;
@@ -1278,6 +1327,7 @@ function renderStatus() {
   let html;
   if (getekend(o) && gew.length) html = `<button type="button" class="status gewijzigd" data-status>${ICON.let}Gewijzigd na akkoord</button>`;
   else if (getekend(o)) html = `<button type="button" class="status getekend" data-status>${ICON.ok}Afgetekend op ${esc(fmtDate(o.teken.datum))}</button>`;
+  else if (gepland(o)) html = `<button type="button" class="status" data-status>${ICON.pen}Aftekenen gepland op ${esc(fmtDate(o.teken.datum))}</button>`;
   else if (!hard.length) html = `<button type="button" class="status klaar" data-status>${ICON.ok}Klaar om af te tekenen</button>`;
   else html = `<button type="button" class="status" data-status><span class="dot" aria-hidden="true"></span>Nog ${hard.length} ${hard.length === 1 ? 'punt' : 'punten'} voor het aftekenen</button>`;
   row.innerHTML = html;
@@ -1297,6 +1347,9 @@ function renderTeken() {
   } else if (getekend(o)) {
     box.className = 'teken-status ok';
     box.innerHTML = `${ICON.ok}<div><b>Afgetekend op ${esc(fmtLang(o.teken.datum))}</b> door ${esc(o.teken.naam)}.</div>`;
+  } else if (gepland(o)) {
+    box.className = 'teken-status nog';
+    box.innerHTML = `${ICON.pen}<div><b>Aftekenen gepland op ${esc(fmtLang(o.teken.datum))}</b> door ${esc(o.teken.naam)}. Tot die dag is de opdracht nog niet afgetekend.${hard.length ? ` Er ${hard.length === 1 ? 'staat nog 1 punt' : `staan nog ${hard.length} punten`} open bij ‘Klaar om te laten aftekenen?’.` : ''}</div>`;
   } else {
     box.className = 'teken-status nog';
     box.innerHTML = `${ICON.info}<div>${!begun(o) ? 'Nog niet afgetekend.' : hard.length ? `Nog niet afgetekend. Er ${hard.length === 1 ? 'staat nog 1 punt' : `staan nog ${hard.length} punten`} open bij ‘Klaar om te laten aftekenen?’.` : 'Nog niet afgetekend. Alles staat erin: vul de naam en de datum in.'}</div>`;
@@ -1309,7 +1362,7 @@ function afgeleid() {
   renderTabs(); renderStart(); renderStatus(); renderControle(); renderTeken();
   document.querySelectorAll('[data-gew]').forEach(t => { t.hidden = !gew.has(t.dataset.gew); });
   SECTIES.forEach(s => { const c = $('s-' + s.id); if (c) c.classList.toggle('vol', gevuld(o, s.id)); });
-  const tc = $('s-teken'); if (tc) tc.classList.toggle('vol', getekend(o));
+  const tc = $('s-teken'); if (tc) tc.classList.toggle('vol', ingevuld(o));
   const zinnen = (o.waarom.match(/[.!?](\s|$)/g) || []).length, hw = document.querySelector('[data-hint-waarom]');
   if (hw) { hw.hidden = zinnen < 5; hw.textContent = `Al ${zinnen} zinnen. Kort leest beter: hou het bij 2 à 3.`; }
   o.mijlpalen.forEach(m => {
@@ -1322,6 +1375,7 @@ function afgeleid() {
   const tl = document.querySelector('[data-tijdlijn]'); if (tl) tl.innerHTML = tijdlijnHTML(o);
   // Volgende stap: wat klaarligt voor andere tools (een voorbeeld legt niets klaar)
   const tb = $('oc-tb'); if (tb) tb.hidden = !!o.voorbeeld || !o.mijlpalen.some(m => m.text.trim());
+  const ri = $('oc-ri'); if (ri) ri.hidden = !!o.voorbeeld || !vol(o.risicos).length;
   const br = $('oc-br'); if (br) br.hidden = !!o.voorbeeld || !(o.opdrachtgever.trim() || vol(o.akkoord).length);
   ocRefreshImports();
 }
@@ -1420,7 +1474,7 @@ document.addEventListener('click', async e => {
   if (t.closest('[data-meer]')) { sigAlle = !sigAlle; renderControle(); return; }
   if (t.closest('[data-naar-teken]')) { springNaar('teken', o.teken.naam.trim() ? '#f-tdatum' : '#f-tnaam'); return; }
   if (t.closest('[data-naar-controle]') || t.closest('[data-status]')) {
-    if (t.closest('[data-status]') && getekend(o)) { springNaar('teken'); return; }
+    if (t.closest('[data-status]') && ingevuld(o)) { springNaar('teken'); return; }
     const c = $('controle');
     if (!matchMedia('(min-width:1000px)').matches) c.scrollIntoView({ behavior: rustig() ? 'auto' : 'smooth', block:'start' });
     c.focus({ preventScroll:true }); knipper(c); return;
@@ -1577,6 +1631,7 @@ function alsTekst() {
   blok('Afspraken', [(o.freq.trim() || o.aanWie.trim()) && 'Rapporteren: ' + [o.freq.trim(), o.aanWie.trim() && 'aan ' + o.aanWie.trim()].filter(Boolean).join(', '), o.escaleren.trim() && 'Stoppen of escaleren: ' + o.escaleren.trim()]);
   const gew = gewijzigd(o);
   if (getekend(o)) L.push(`Afgetekend op ${fmtLang(o.teken.datum)} door ${o.teken.naam.trim()}.` + (gew.length ? ` Gewijzigd na akkoord: ${gew.map(id => SEC[id].kort).join(', ')}.` : ''));
+  else if (gepland(o)) L.push(`Aftekenen gepland op ${fmtLang(o.teken.datum)} door ${o.teken.naam.trim()}.`);
   else L.push('Nog niet afgetekend.');
   return L.join('\n');
 }
@@ -1618,7 +1673,7 @@ function buildExport() {
   const nieuwAkkoord = !getekend(o) || gew.length;
   if (sig.length && nieuwAkkoord) h += vak('Nog open voor het aftekenen', sig.map(x => `<div style="${P};color:#92400e;margin-bottom:2px">• ${e(x.tekst)}</div>`).join(''));
   if (!nieuwAkkoord) h += vak('Akkoord', `<p style="${P}">Afgetekend door <b>${e(o.teken.naam)}</b> op <b>${e(fmtLang(o.teken.datum))}</b>.</p>`);
-  else h += vak(gew.length ? 'Nieuw akkoord van de opdrachtgever' : 'Akkoord van de opdrachtgever', `<div style="display:grid;grid-template-columns:1.3fr 1fr 1.3fr;gap:18px;margin-top:14px">
+  else h += vak(gew.length ? 'Nieuw akkoord van de opdrachtgever' : 'Akkoord van de opdrachtgever', `${gepland(o) ? `<p style="${P}">Aftekenen gepland op <b>${e(fmtLang(o.teken.datum))}</b>.</p>` : ''}<div style="display:grid;grid-template-columns:1.3fr 1fr 1.3fr;gap:18px;margin-top:14px">
       ${['Naam', 'Datum', 'Handtekening'].map((x, i) => `<div><div style="height:22px;font-size:13px;color:#1e293b">${i === 0 ? e(o.teken.naam.trim() || o.opdrachtgever.trim()) : ''}</div><div style="border-top:1px solid #94a3b8;padding-top:3px;font-size:11px;color:#64748b">${x}</div></div>`).join('')}</div>`);
   const node = document.createElement('div'); node.innerHTML = h;
   return { node, title:o.name || 'Projectopdracht', subtitle:'Projectopdracht' + (o.voorbeeld ? ' (voorbeeld)' : '') };

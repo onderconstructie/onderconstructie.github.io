@@ -423,6 +423,10 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
      'taak'        iets dat gedaan moet worden                     { text, note? }
      'actie'       taak met eigenaar en/of termijn                 { text, who?, when? }
      'risico'      risico met kans en impact                       { text, note? }
+     'besluit'     beslissing (Beslissingslog)                     { text, note?, who?, when? }
+     'doel'        wat er beter moet worden (Projectopdracht)      { text, note? }
+                   Andere tools kiezen zelf welke soorten ze tonen (types in pick/count/sources) en slaan onbekende soorten dus over.
+   'when' is bij voorkeur een datum als JJJJ-MM-DD; in "Overnemen uit…" staat die als 15 februari 2027.
 
    Gebruik:
      ocShare.publish('raci', 'RACI-matrix', [
@@ -434,8 +438,11 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
 */
 const ocShare = (() => {
   const PREFIX = 'oc.share.';
-  const LABEL = { betrokkene:'betrokkenen', taak:'taken', actie:'acties', risico:"risico's" };
+  const LABEL = { betrokkene:'betrokkenen', taak:'taken', actie:'acties', risico:"risico's", besluit:'besluiten', doel:'doelen' };
   const esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+  // Een datum als JJJJ-MM-DD tonen we zoals in de tools: 15 februari 2027. Andere tekst blijft zoals ze is.
+  const datum = v => { const s = String(v || '').trim(), d = /^\d{4}-\d{2}-\d{2}$/.test(s) ? new Date(s + 'T12:00:00') : null;
+    return d && !isNaN(d) ? d.toLocaleDateString('nl-BE', { day:'numeric', month:'long', year:'numeric' }) : s; };
 
   function publish(id, tool, lists) {
     try {
@@ -521,7 +528,7 @@ const ocShare = (() => {
           <div class="ocs-src"><div class="ocs-src-head"><b>${esc(s.tool)}</b><span>${esc(s.list)} · ${s.items.length}</span>
             <button class="ocs-all" type="button" data-all="${si}">alles</button></div>
             ${s.items.map((it, ii) => `<label class="ocs-item"><input type="checkbox" data-s="${si}" data-i="${ii}">
-              <span>${esc(it.text)}${it.who || it.when || it.note ? `<small>${esc([it.who, it.when, it.note].filter(Boolean).join(' · '))}</small>` : ''}</span></label>`).join('')}
+              <span>${esc(it.text)}${it.who || it.when || it.note ? `<small>${esc([it.who, datum(it.when), it.note].filter(Boolean).join(' · '))}</small>` : ''}</span></label>`).join('')}
           </div>`).join('') : `<p class="ocs-empty">Er zijn nog geen ${esc(what)} om over te nemen. Vul ze eerst in een andere tool van Onder Constructie in, dan verschijnen ze hier.</p>`}
         </div>
         <div class="ocs-foot"><button class="ocs-btn ocs-cancel" type="button">Annuleer</button>
@@ -556,7 +563,7 @@ const ocShare = (() => {
   return { publish, clear, pick, count, sources, esc };
 })();
 
-/* ---------- Download als afbeelding of PDF (gedeeld door de Onder Constructie-tools, v2) ----------
+/* ---------- Download als afbeelding of PDF (gedeeld door de Onder Constructie-tools, v3) ----------
    Gebruik:
      ocExport.png(bouwFn, 'bestandsnaam', { landscape:true })
      ocExport.pdf(bouwFn, 'bestandsnaam', { landscape:true })
@@ -564,6 +571,10 @@ const ocShare = (() => {
    Die komt buiten beeld op een witte pagina met kop (titel, ondertitel, datum) en voet.
    Zet data-oc-keep op blokken die in een PDF niet over twee pagina's gesplitst mogen worden
    (een beslissing, een kaartje, een rij); ze schuiven dan door naar de volgende pagina.
+   Een browser tekent geen canvas boven een maximale grootte (Chrome: 65.535 px hoog of breed; iPad en iPhone:
+   ongeveer 16 miljoen pixels). Daarboven wordt de PDF of afbeelding zwart of leeg. Daarom tekent de PDF
+   telkens een paar hele pagina's tegelijk, op volle scherpte, en wordt een heel lange afbeelding net zo
+   scherp getekend als binnen die grens kan.
    html2canvas en jsPDF worden pas geladen bij de eerste download, van dezelfde adressen als de
    andere tools, zodat de app ze offline kan bewaren. */
 const ocExport = (() => {
@@ -572,6 +583,12 @@ const ocExport = (() => {
     pdf: '/lib/jspdf-2.5.1.umd.min.js'
   };
   const A4 = { w: 210, h: 297 }, MARGIN = 10;   // mm
+  // Grenzen van een canvas: iPad en iPhone ongeveer 16 miljoen pixels; Chrome en Edge tot 65.535 px hoog of breed; andere browsers 32.767 px.
+  const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const CHROME = !IOS && /Chrome\//.test(navigator.userAgent);
+  const SCALE = 2, MAX_SIDE = CHROME ? 65000 : 32000, MAX_AREA = IOS ? 16e6 : 120e6;   // scherpte; langste zijde en oppervlakte in pixels
+  // Grootste schaal (tot SCALE) waarbij een canvas van w × h CSS-pixels nog getekend wordt.
+  const fit = (w, h, area = MAX_AREA) => Math.floor(Math.min(SCALE, Math.sqrt(area / (w * h)), MAX_SIDE / h, MAX_SIDE / w) * 100) / 100;
   const loaded = {};
   function load(url) {
     if (!loaded[url]) loaded[url] = new Promise((ok, fail) => {
@@ -614,16 +631,20 @@ const ocExport = (() => {
       }
     }
   }
-  async function canvasOf(build, opts) {
-    await load(LIBS.h2c);
+  // Zet de exportpagina buiten beeld, wacht op de lettertypes en geeft ze aan fn; ruimt daarna op.
+  async function withPage(build, width, fn) {
     const built = build();
-    const node = page(built.node, { title: built.title, subtitle: built.subtitle, width: opts.width });
+    const node = page(built.node, { title: built.title, subtitle: built.subtitle, width });
     try {
       if (document.fonts && document.fonts.ready) await document.fonts.ready;
-      if (opts.pageH) keepTogether(node, opts.pageH);
-      return await window.html2canvas(node, { scale: 2, backgroundColor: '#ffffff', logging: false, useCORS: true });
+      return await fn(node);
     } finally { node.remove(); }
   }
+  const heightOf = node => Math.ceil(node.getBoundingClientRect().height);
+  // Alleen de exportpagina gaat mee in de kopie die html2canvas maakt: de rest van de tool overslaan scheelt veel tijd.
+  const draw = (node, o) => window.html2canvas(node, Object.assign({ scale: SCALE, backgroundColor: '#ffffff', logging: false, useCORS: true,
+    ignoreElements: el => el.parentNode === document.body && el !== node && !/^(STYLE|LINK)$/.test(el.tagName) }, o));
+  const free = c => { c.width = c.height = 0; };     // geheugen meteen vrijgeven (iPad)
   function save(blob, name) {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob); a.download = name;
@@ -632,24 +653,45 @@ const ocExport = (() => {
   }
   const widthFor = opts => opts.width || (opts.landscape ? 1120 : 800);
   async function png(build, name, opts = {}) {
-    const c = await canvasOf(build, { width: widthFor(opts) });
-    await new Promise(ok => c.toBlob(b => { save(b, name + '.png'); ok(); }, 'image/png'));
+    const width = widthFor(opts);
+    await load(LIBS.h2c);
+    const c = await withPage(build, width, node => draw(node, { scale: fit(width, heightOf(node)) }));
+    await new Promise(ok => c.toBlob(b => { save(b, name + '.png'); free(c); ok(); }, 'image/png'));
   }
   async function pdf(build, name, opts = {}) {
     const landscape = !!opts.landscape, width = widthFor(opts);
     const pw = landscape ? A4.h : A4.w, ph = landscape ? A4.w : A4.h, w = pw - 2 * MARGIN;
     const pageCss = (ph - 2 * MARGIN) / w * width;       // paginahoogte in CSS-pixels van de exportknoop
-    const [c] = await Promise.all([canvasOf(build, { width, pageH: pageCss }), load(LIBS.pdf)]);
+    await Promise.all([load(LIBS.h2c), load(LIBS.pdf)]);
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: landscape ? 'landscape' : 'portrait', unit: 'mm', format: 'a4' });
-    const scale = w / c.width, pageH = (ph - 2 * MARGIN) / scale;   // paginahoogte in canvaspixels
-    for (let y = 0, i = 0; y < c.height - 2; y += pageH, i++) {
-      const h = Math.min(pageH, c.height - y);
-      const part = document.createElement('canvas'); part.width = c.width; part.height = h;
-      part.getContext('2d').drawImage(c, 0, y, c.width, h, 0, 0, c.width, h);
-      if (i) doc.addPage();
-      doc.addImage(part.toDataURL('image/jpeg', 0.92), 'JPEG', MARGIN, MARGIN, w, h * scale);
-    }
+    await withPage(build, width, async node => {
+      const H0 = heightOf(node);
+      // Net te hoog voor één pagina (bv. alleen de voettekst): verkleinen tot het past, geen lege tweede pagina.
+      if (H0 > pageCss && H0 <= pageCss * 1.2) {
+        const c = await draw(node, { scale: fit(width, H0) }), ww = w * pageCss / H0;
+        doc.addImage(c.toDataURL('image/jpeg', 0.92), 'JPEG', MARGIN + (w - ww) / 2, MARGIN, ww, ph - 2 * MARGIN);
+        free(c); return;
+      }
+      keepTogether(node, pageCss);
+      const H = heightOf(node), s = fit(width, pageCss), pagePx = pageCss * s;
+      const n = Math.max(1, Math.ceil((H - 1) / pageCss));                       // aantal pagina's
+      const per = Math.max(1, Math.floor(Math.min(MAX_AREA / (width * s * pagePx), MAX_SIDE / pagePx)));   // pagina's per stuk
+      for (let i = 0; i < n; i += per) {
+        const y = i * pageCss, k = Math.min(per, n - i);
+        const c = await draw(node, { scale: s, y, height: Math.ceil(Math.min(k * pageCss, H - y)) });
+        for (let j = 0; j < k; j++) {
+          const top = Math.round(j * pagePx), h = Math.min(Math.round((j + 1) * pagePx), c.height) - top;
+          if (h < 1) break;
+          const part = document.createElement('canvas'); part.width = c.width; part.height = h;
+          part.getContext('2d').drawImage(c, 0, top, c.width, h, 0, 0, c.width, h);
+          if (i + j) doc.addPage();
+          doc.addImage(part.toDataURL('image/jpeg', 0.92), 'JPEG', MARGIN, MARGIN, w, h * w / c.width);
+          free(part);
+        }
+        free(c);
+      }
+    });
     save(doc.output('blob'), name + '.pdf');
   }
   return { png, pdf };
