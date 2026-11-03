@@ -237,8 +237,9 @@ input[type="date"].field { font-variant-numeric:tabular-nums; }
 .btn-s:disabled { color:var(--slate-400); cursor:not-allowed; }
 
 /* Startscherm */
-.vb-start.oc-start { display:block; text-align:center; padding:0.25rem 0 1.25rem; font-size:0.9375rem; color:var(--slate-600); }
-.vb-start.oc-start > span { display:block; max-width:36rem; margin:0 auto; }
+.vb-start.oc-start { display:block; text-align:center; padding:1.75rem 1.25rem 1.25rem; font-size:0.9375rem; color:var(--slate-500); }
+.vb-start.oc-start > strong { display:block; color:var(--slate-700); font-weight:600; margin-bottom:0.25rem; }
+.vb-start.oc-start > span { display:block; max-width:34rem; margin:0 auto; }
 
 /* Menu */
 .menu-wrap { position:relative; }
@@ -472,7 +473,6 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
 </header>
 
 <main class="main">
-  <div class="vb-start oc-start" id="vb-start" hidden><span>Leg op één pagina vast wat het project moet opleveren, en wat niet. Kort en scherp, zodat de opdrachtgever kan aftekenen.</span><div class="oc-start-btns"><button type="button" class="oc-begin" id="begin-btn" data-oc-begin="#name">Begin met de opdracht</button><button type="button" class="oc-vb" id="example">Voorbeeld bekijken</button></div><p class="oc-open-row"><button type="button" class="oc-open-link" data-bestand="open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 16v-5M9.5 13.5 12 11l2.5 2.5"/></svg>Open bestand</button></p></div>
 
   <nav class="lists" id="lists" aria-label="Opdrachten"></nav>
 
@@ -507,6 +507,7 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
         </div>
         <div class="status-row" id="status-row"></div>
       </section>
+      <div class="card vb-start oc-start" id="vb-start" hidden><strong>Nog geen opdracht</strong><span>Leg op één pagina vast wat het project moet opleveren, en wat niet. Kort en scherp, zodat de opdrachtgever kan aftekenen.</span><div class="oc-start-btns"><button type="button" class="oc-begin" id="begin-btn" data-oc-begin="#name">Begin met de opdracht</button><button type="button" class="oc-vb" id="example">Voorbeeld bekijken</button></div><p class="oc-open-row"><button type="button" class="oc-open-link" data-bestand="open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 16v-5M9.5 13.5 12 11l2.5 2.5"/></svg>Open bestand</button></p></div>
       <div id="form" class="content"></div>
     </div>
 
@@ -742,14 +743,15 @@ function ocUndoable(restore) {
 }
 
 /* Wat de Projectopdracht klaarlegt in oc.share.opdracht (een voorbeeld nooit):
-     { type:'doel',       text:'<wat er beter wordt>', note:'<optioneel, bv. tegen 31 dec. 2027>' }   voor het Meetplan
+     { type:'doel',       text:'<wat er beter wordt>', note:'<optioneel, bv. project klaar tegen 31 dec. 2027>' }   voor het Meetplan
      { type:'taak',       text:'Mijlpaal: <resultaat>', when:'JJJJ-MM-DD' }                           voor het Takenbord
      { type:'risico',     text:'<risico of aanname>' }
      { type:'betrokkene', text:'<naam>', note:'Opdrachtgever' of 'Moet akkoord geven' }              voor de Betrokkenenradar
    Het type 'doel' is nieuw: het gedeelde blok neemt elk type met een tekst over, en toont als naam gewoon 'doel'. */
 function ocPublish() {
   ocShare.publish(OC_ID, OC_TOOL, state.opdrachten.filter(o => !o.voorbeeld).map(o => {
-    const tegen = o.einddatum ? 'tegen ' + fmtDate(o.einddatum) : undefined;
+    // Het project is klaar tegen de einddatum; het effect komt vaak later. Daarom geen 'tegen' bij het doel zelf.
+    const tegen = o.einddatum && !raarJaar(o.einddatum) ? 'project klaar tegen ' + fmtDate(o.einddatum) : undefined;
     return { name:o.name, items:[
       ...vol(o.doelen).map(t => ({ type:'doel', text:t, note:tegen })),
       ...o.mijlpalen.filter(m => m.text.trim()).map(m => ({ type:'taak', text:'Mijlpaal: ' + m.text.trim(), when:m.date || undefined })),
@@ -906,13 +908,20 @@ const SECTIES = [
   { id:'afspraken', n:8, kort:'Afspraken',        titel:'Afspraken', velden:['freq', 'aanWie', 'escaleren'] },
 ];
 const SEC = Object.fromEntries(SECTIES.map(s => [s.id, s]));
-// Een doel is meetbaar als er een getal of een duidelijke maat in staat.
-const MEETBAAR = /\d|%|procent|\bhelft\b|halver|verdubbel/i;
+// Een doel is meetbaar als er een getal of een duidelijke maat in staat. Een jaartal of een datum ('tegen 2027', 'op 31 december') is geen maat.
+const MEETBAAR = /\d|%|procent|\bhelft\b|halver|verdubbel|\bnul\b|geen enkele?\b/i;
+const MAAND = 'jan(uari)?|feb(ruari)?|maart|mrt|apr(il)?|mei|jun(i)?|jul(i)?|aug(ustus)?|sep(t|tember)?|okt(ober)?|nov(ember)?|dec(ember)?';
+const meetbaar = t => MEETBAAR.test(String(t)
+  .replace(new RegExp(`\\b\\d{1,2}\\s*(${MAAND})\\b\\.?`, 'gi'), ' ')
+  .replace(/\b\d{1,2}[\/.-]\d{1,2}([\/.-]\d{2,4})?\b/g, ' ')
+  .replace(/\b(19|20)\d{2}\b/g, ' '));
 // Een mijlpaal is een resultaat. Begint of eindigt hij met een werkwoord van bezig zijn, dan is het waarschijnlijk een activiteit.
 const DOEN = new Set(('ontwerpen maken uitwerken opstellen schrijven bouwen ontwikkelen testen analyseren onderzoeken verzamelen organiseren plannen '
   + 'voorbereiden bespreken overleggen werken zoeken bekijken starten beginnen opzetten uitvoeren programmeren communiceren informeren regelen '
   + 'opvolgen evalueren aanpassen herwerken verbeteren opmaken inventariseren nagaan uitzoeken invoeren opleiden trainen selecteren vergaderen '
-  + 'contacteren uitnodigen verwerken migreren installeren uitrollen afstemmen nadenken bijwerken voorstellen uitschrijven').split(' '));
+  + 'contacteren uitnodigen verwerken migreren installeren uitrollen afstemmen nadenken bijwerken voorstellen uitschrijven '
+  + 'kiezen kopen aankopen bestellen aanbesteden aanwerven implementeren lanceren publiceren goedkeuren afronden opleveren leveren '
+  + 'koppelen valideren controleren inrichten renoveren vervangen verhuizen begeleiden rapporteren beslissen plaatsen aanleggen afbreken').split(' '));
 const KLAAR = /\b(klaar|af|goedgekeurd|afgetekend|beslist|getest|opgeleverd|ondertekend|gekozen|bekend|beschikbaar|live|online|open|gestart|werkt|opgeleid|gelanceerd|aanvaard|vastgelegd|gepubliceerd|afgerond|voltooid|in gebruik)\b/i;
 function activiteit(t) {
   const s = String(t || '').trim().toLowerCase(); if (!s || KLAAR.test(s)) return false;
@@ -929,19 +938,23 @@ const nieuwMs = () => ({ id:uid(), text:'', date:'' });
 const nieuw = name => ({ id:uid(), name:name || ocProject('Mijn project'), waarom:'', opleveren:'', doelen:[''], binnen:[''], buiten:[''],
   opdrachtgever:'', projectleider:'', kernteam:'', akkoord:[''], einddatum:'', budget:'', mensen:'', knelt:'',
   mijlpalen:[nieuwMs()], risicos:[''], freq:'', aanWie:'', escaleren:'', teken:{ naam:'', datum:'', kopie:null } });
+// Een datum zoals het datumveld hem geeft (JJJJ-MM-DD, ook met een jaar van meer dan 4 cijfers); al de rest wordt leeg.
+const datumOk = s => { const m = typeof s === 'string' && /^(\d{4,6})-(\d{2})-(\d{2})$/.exec(s); return m && +m[2] >= 1 && +m[2] <= 12 && +m[3] >= 1 && +m[3] <= 31 ? s : ''; };
 // Elke opdracht krijgt alle velden, ook als het bestand van een oudere versie komt.
 function norm(o) {
   const n = nieuw(typeof o.name === 'string' ? o.name : 'Naamloos');
   if (typeof o.id === 'string') n.id = o.id;
   if (o.voorbeeld) n.voorbeeld = true;
   TEKST.forEach(k => { if (typeof o[k] === 'string') n[k] = o[k]; });
+  n.einddatum = datumOk(n.einddatum);
+  if (!KNELT.some(k => k.id === n.knelt)) n.knelt = '';
   LIJST.forEach(k => { if (Array.isArray(o[k])) { const a = o[k].filter(x => typeof x === 'string'); n[k] = a.length ? a : ['']; } });
   if (Array.isArray(o.mijlpalen)) {
-    const ms = o.mijlpalen.filter(m => m && typeof m === 'object').map(m => ({ id: typeof m.id === 'string' ? m.id : uid(), text:String(m.text || ''), date: typeof m.date === 'string' ? m.date : '' }));
+    const ms = o.mijlpalen.filter(m => m && typeof m === 'object').map(m => ({ id: typeof m.id === 'string' ? m.id : uid(), text:String(m.text == null ? '' : m.text), date:datumOk(m.date) }));
     n.mijlpalen = ms.length ? ms : [nieuwMs()];
   }
   const t = o.teken && typeof o.teken === 'object' ? o.teken : {};
-  n.teken = { naam:String(t.naam || ''), datum: typeof t.datum === 'string' ? t.datum : '', kopie: t.kopie && typeof t.kopie === 'object' ? t.kopie : null };
+  n.teken = { naam:String(t.naam || ''), datum:datumOk(t.datum), kopie: t.kopie && typeof t.kopie === 'object' && !Array.isArray(t.kopie) ? t.kopie : null };
   return n;
 }
 function load() {
@@ -968,6 +981,8 @@ const fmtDate = s => { if (!s) return ''; const d = new Date(s + 'T00:00:00'); r
 const fmtLang = s => { if (!s) return ''; const d = new Date(s + 'T00:00:00'); return isNaN(d) ? s : d.toLocaleDateString('nl-BE', { day:'numeric', month:'long', year:'numeric' }); };
 const kort = (t, n = 42) => { t = String(t).trim(); return t.length > n ? t.slice(0, n - 1).trimEnd() + '…' : t; };
 const vandaag = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
+// Een jaar als 0027 of 2207 is bijna altijd een tikfout in het datumveld.
+const raarJaar = s => { const j = +String(s).split('-')[0]; return !(j >= 2000 && j <= new Date().getFullYear() + 30); };
 function waarde(o, k) {
   if (k === 'name') return String(o.name || '').trim();
   if (k === 'mijlpalen') return o.mijlpalen.filter(m => m.text.trim() || m.date).map(m => ({ text:m.text.trim(), date:m.date }));
@@ -1005,15 +1020,17 @@ function signalen(o) {
   if (!o.opleveren.trim()) add('einde', '#f-opleveren', 'Schrijf wat je oplevert.');
   const doelen = o.doelen.map((t, i) => [t.trim(), i]).filter(x => x[0]);
   if (!doelen.length) add('einde', '[data-list="doelen"] [data-i="0"]', 'Nog geen doel: wat wordt er beter?');
-  doelen.forEach(([t, i]) => { if (!MEETBAAR.test(t)) add('einde', `[data-list="doelen"] [data-i="${i}"]`, `Doel zonder iets meetbaars: ‘${kort(t, 34)}’`); });
+  doelen.forEach(([t, i]) => { if (!meetbaar(t)) add('einde', `[data-list="doelen"] [data-i="${i}"]`, `Doel zonder iets meetbaars: ‘${kort(t, 34)}’`); });
   if (!vol(o.buiten).length) add('scope', '[data-list="buiten"] [data-i="0"]', 'Niets valt erbuiten. Wat doen we niet, ook al zal iemand het vragen?');
   if (!o.opdrachtgever.trim()) add('wie', '#f-opdrachtgever', 'Nog geen opdrachtgever: wie beslist en tekent af?');
   if (!o.einddatum) add('middelen', '#f-einddatum', 'Nog geen einddatum.');
+  else if (raarJaar(o.einddatum)) add('middelen', '#f-einddatum', `Klopt het jaar van de einddatum? ${fmtDate(o.einddatum)}`);
   const ms = o.mijlpalen.filter(m => m.text.trim());
   if (!ms.length) add('mijlpalen', '[data-msf="text"]', 'Nog geen mijlpalen.');
   ms.forEach(m => {
     const sel = `[data-ms="${m.id}"] [data-msf="date"]`;
     if (!m.date) add('mijlpalen', sel, `Mijlpaal zonder datum: ‘${kort(m.text)}’`);
+    else if (raarJaar(m.date)) add('mijlpalen', sel, `Klopt het jaar? ‘${kort(m.text, 30)}’ op ${fmtDate(m.date)}`);
     else if (o.einddatum && m.date > o.einddatum) add('mijlpalen', sel, `Mijlpaal na de einddatum: ‘${kort(m.text)}’`);
   });
   ms.forEach(m => { if (activiteit(m.text)) add('mijlpalen', `[data-ms="${m.id}"] [data-msf="text"]`, `Klinkt als werk, niet als resultaat: ‘${kort(m.text)}’`, true); });
@@ -1046,6 +1063,9 @@ function renderTabs() {
     const ok = getekend(o) && !gewijzigd(o).length;
     return `<button class="tab${o.id === state.current ? ' active' : ''}" data-tab="${esc(o.id)}"${o.id === state.current ? ' aria-current="true"' : ''}>${ok ? `<svg class="ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="afgetekend"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>` : ''}${esc(o.name || 'Naamloos')}${o.voorbeeld ? '<span class="vb-tag">voorbeeld</span>' : ''}</button>`;
   }).join('') + '<button class="tab add" id="new-op" aria-label="Nieuwe opdracht">+ Opdracht</button>';
+  // De actieve opdracht staat altijd in beeld, ook als de rij tabs breder is dan het scherm.
+  const l = $('lists'), a = l.querySelector('.tab.active');
+  if (a) { const lr = l.getBoundingClientRect(), ar = a.getBoundingClientRect(); if (ar.left < lr.left || ar.right > lr.right) l.scrollLeft += ar.left - lr.left - 16; }
 }
 
 function secHead(id) {
@@ -1057,7 +1077,7 @@ function lijstHTML(o, key, label, ph, mk) {
   const items = o[key].length ? o[key] : [''];
   const max = MAX[key];
   return `<ul class="lijst" data-list="${key}" aria-label="${esc(label)}">${items.map((v, i) => `<li class="li-row">${ICON[mk] || ICON.stip}<textarea class="field" rows="1" data-i="${i}" placeholder="${i === 0 ? esc(ph) : ''}" aria-label="${esc(label)} ${i + 1}" maxlength="200" enterkeyhint="enter" autocomplete="off">${esc(v)}</textarea><button type="button" class="x${items.length === 1 && !v.trim() ? ' leeg' : ''}" data-del="${i}" aria-label="Verwijder ${esc(label.toLowerCase())} ${i + 1}"${items.length === 1 && !v.trim() ? ' tabindex="-1" aria-hidden="true"' : ''}>${ICON.x}</button></li>`).join('')}</ul>
-    <div class="add-row"><button type="button" class="add-link" data-add-list="${key}"${items.length >= max ? ' disabled' : ''}>${ICON.plus}Voeg toe</button></div>`;
+    <div class="add-row"><button type="button" class="add-link" data-add-list="${key}"${items.length >= max ? ' disabled' : ''}>${items.length >= max ? `Maximaal ${max}: hou het kort` : ICON.plus + 'Voeg toe'}</button></div>`;
 }
 
 function msHTML(m, i) {
@@ -1134,7 +1154,7 @@ function formHTML(o) {
         <input class="field" type="date" id="f-einddatum" data-f="einddatum" value="${esc(o.einddatum)}"></div>
       <div><label class="fld-label" for="f-budget">Budget</label>
         <input class="field" id="f-budget" data-f="budget" value="${esc(o.budget)}" placeholder="Bv. € 450.000" maxlength="80" autocomplete="off"></div>
-      <div><label class="fld-label" for="f-mensen">Mensen, in tijd</label>
+      <div><label class="fld-label" for="f-mensen">Inzet van mensen</label>
         <textarea class="field" rows="1" id="f-mensen" data-f="mensen" placeholder="Bv. 3 voltijds, 15 maanden" maxlength="160" autocomplete="off">${esc(o.mensen)}</textarea></div>
     </div>
     <div class="sub">
@@ -1148,7 +1168,7 @@ function formHTML(o) {
     ${secHead('mijlpalen')}
     <p class="sec-q">3 à 6 tussenresultaten, elk met een datum. Schrijf wat er dan ligt, niet wat je doet: ‘Ontwerp goedgekeurd’, niet ‘Ontwerpen’.</p>
     <ol class="ms-lijst" aria-label="Mijlpalen">${o.mijlpalen.map(msHTML).join('')}</ol>
-    <div class="add-row"><button type="button" class="add-link" data-add-ms${o.mijlpalen.length >= MAX_MS ? ' disabled' : ''}>${ICON.plus}Mijlpaal</button></div>
+    <div class="add-row"><button type="button" class="add-link" data-add-ms${o.mijlpalen.length >= MAX_MS ? ' disabled' : ''}>${o.mijlpalen.length >= MAX_MS ? `Maximaal ${MAX_MS} mijlpalen` : ICON.plus + 'Mijlpaal'}</button></div>
     <div data-tijdlijn></div>
     <div class="oc-tb" id="oc-tb" hidden><a class="oc-tb-btn" href="../kanban/?van=opdracht">${ICON.tb}Zet in Takenbord</a><p>Takenbord opent. Vink daar de mijlpalen aan die je wil overnemen. Ze komen in Te doen.</p></div>
   </section>
@@ -1209,9 +1229,9 @@ function renderStart() {
 }
 
 function tijdlijnHTML(o) {
-  const ms = o.mijlpalen.map((m, i) => ({ ...m, nr:i + 1 })).filter(m => m.text.trim() && m.date && !isNaN(new Date(m.date + 'T00:00:00')));
+  const ms = o.mijlpalen.map((m, i) => ({ ...m, nr:i + 1 })).filter(m => m.text.trim() && m.date && !raarJaar(m.date) && !isNaN(new Date(m.date + 'T00:00:00')));
   if (!ms.length) return '';
-  const t = s => +new Date(s + 'T00:00:00'), eind = o.einddatum ? t(o.einddatum) : null;
+  const t = s => +new Date(s + 'T00:00:00'), eind = o.einddatum && !raarJaar(o.einddatum) ? t(o.einddatum) : null;
   const all = ms.map(m => t(m.date)).concat(eind ? [eind] : []);
   const lo = Math.min(...all), hi = Math.max(...all), span = hi - lo || 1, pos = v => 2 + (v - lo) / span * 96;
   const first = ms.reduce((a, b) => a.date < b.date ? a : b);
@@ -1220,7 +1240,7 @@ function tijdlijnHTML(o) {
   return `<div class="tl-wrap"><div class="tl" role="img" aria-label="${esc(label)}"><span class="tl-lijn"></span>
     ${eind ? `<span class="tl-eind" style="left:${pos(eind)}%"></span>` : ''}
     ${ms.map(m => `<span class="tl-dot${eind && t(m.date) > eind ? ' laat' : ''}" style="left:${pos(t(m.date))}%" title="${esc(m.nr + '. ' + m.text + ', ' + fmtDate(m.date))}"></span>`).join('')}</div>
-    <div class="tl-labels"><span>eerste mijlpaal <b>${fmtDate(first.date)}</b></span>${eind ? `<span>einddatum <b>${fmtDate(o.einddatum)}</b></span>` : '<span>nog geen einddatum</span>'}</div>
+    <div class="tl-labels"><span>eerste mijlpaal <b>${fmtDate(first.date)}</b></span>${eind ? `<span>einddatum <b>${fmtDate(o.einddatum)}</b></span>` : o.einddatum ? '' : '<span>nog geen einddatum</span>'}</div>
     ${laat ? `<p class="veld-hint">${laat === 1 ? 'Eén mijlpaal valt' : laat + ' mijlpalen vallen'} na de einddatum (gestippeld).</p>` : ''}</div>`;
 }
 
@@ -1269,7 +1289,6 @@ function renderTeken() {
   const neem = document.querySelector('[data-teken="neem"]'), og = o.opdrachtgever.trim();
   if (neem) { neem.hidden = !og || !!o.teken.naam.trim(); neem.textContent = `Neem ‘${kort(og, 30)}’ over`; }
   const vd = document.querySelector('[data-teken="vandaag"]'); if (vd) vd.hidden = !!o.teken.datum;
-  const fn = $('f-tnaam'); if (fn) fn.placeholder = og ? kort(og, 40) : 'Wie tekent af?';
   if (getekend(o) && gew.length) {
     box.className = 'teken-status gew';
     box.innerHTML = `${ICON.let}<div><b>Gewijzigd na akkoord.</b> ${esc(o.teken.naam)} tekende af op ${esc(fmtLang(o.teken.datum))}. Sindsdien veranderde:
@@ -1295,10 +1314,10 @@ function afgeleid() {
   if (hw) { hw.hidden = zinnen < 5; hw.textContent = `Al ${zinnen} zinnen. Kort leest beter: hou het bij 2 à 3.`; }
   o.mijlpalen.forEach(m => {
     const row = document.querySelector(`[data-ms="${m.id}"]`); if (!row) return;
-    const h = row.querySelector('[data-ms-hint]'), act = activiteit(m.text), laat = m.text.trim() && m.date && o.einddatum && m.date > o.einddatum;
-    const tekst = act ? 'Klinkt als werk dat je doet. Wat ligt er als het klaar is? Bv. ‘Ontwerp goedgekeurd’.' : laat ? 'Deze datum valt na de einddatum van het project.' : '';
+    const h = row.querySelector('[data-ms-hint]'), act = activiteit(m.text), raar = !!m.date && raarJaar(m.date), laat = !raar && m.text.trim() && m.date && o.einddatum && m.date > o.einddatum;
+    const tekst = raar ? `Klopt het jaar? Nu staat er ${m.date.split('-')[0]}.` : act ? 'Klinkt als werk dat je doet. Wat ligt er als het klaar is? Bv. ‘Ontwerp goedgekeurd’.' : laat ? 'Deze datum valt na de einddatum van het project.' : '';
     h.hidden = !tekst; h.textContent = tekst;
-    row.querySelector('[data-msf="date"]').classList.toggle('let-op', !!laat);
+    row.querySelector('[data-msf="date"]').classList.toggle('let-op', !!(laat || raar));
   });
   const tl = document.querySelector('[data-tijdlijn]'); if (tl) tl.innerHTML = tijdlijnHTML(o);
   // Volgende stap: wat klaarligt voor andere tools (een voorbeeld legt niets klaar)
@@ -1452,7 +1471,8 @@ document.addEventListener('click', async e => {
 
 /* ---------- Opdrachten ---------- */
 function nieuweOpdracht() {
-  const o = nieuw('Nieuw project'); state.opdrachten.push(o); state.current = o.id; save(); render();
+  // Heeft nog geen enkele opdracht de naam van het actieve project uit de app, dan krijgt deze die naam.
+  const p = ocProject(''), o = nieuw(p && !state.opdrachten.some(x => x.name === p) ? p : 'Nieuw project'); state.opdrachten.push(o); state.current = o.id; save(); render();
   $('name').focus(); $('name').select();
 }
 function dupliceer() {
@@ -1493,7 +1513,7 @@ $('example').addEventListener('click', () => {
     escaleren:'Dreigt een mijlpaal meer dan 4 weken uit te lopen, of het budget meer dan 10% te stijgen, dan beslist de opdrachtgever binnen de week. Blijkt de koppeling niet haalbaar, dan stoppen we en kiezen we opnieuw.',
   }));
   save(); render();
-  toast('Voorbeeld geladen. Rechts zie je wat nog openstaat.');
+  toast('Voorbeeld geladen. Eén punt staat nog open.');
 });
 
 /* ---------- Voorbeeld wissen of houden, één opdracht verwijderen ---------- */
@@ -1551,7 +1571,7 @@ function alsTekst() {
   blok('Valt erbinnen', vol(o.binnen).map(x => '- ' + x));
   blok('Valt uitdrukkelijk buiten', vol(o.buiten).map(x => '- ' + x));
   blok('Wie', [o.opdrachtgever.trim() && 'Opdrachtgever: ' + o.opdrachtgever.trim(), o.projectleider.trim() && 'Projectleider: ' + o.projectleider.trim(), o.kernteam.trim() && 'Kernteam: ' + o.kernteam.trim(), vol(o.akkoord).length && 'Geeft akkoord: ' + vol(o.akkoord).join(', ')]);
-  blok('Middelen en grenzen', [o.einddatum && 'Einddatum: ' + fmtLang(o.einddatum), o.budget.trim() && 'Budget: ' + o.budget.trim(), o.mensen.trim() && 'Mensen: ' + o.mensen.trim(), o.knelt && 'Als het knelt, geven we eerst toe op: ' + kneltTekst(o)]);
+  blok('Middelen en grenzen', [o.einddatum && 'Einddatum: ' + fmtLang(o.einddatum), o.budget.trim() && 'Budget: ' + o.budget.trim(), o.mensen.trim() && 'Inzet van mensen: ' + o.mensen.trim(), o.knelt && 'Als het knelt, geven we eerst toe op: ' + kneltTekst(o)]);
   blok('Mijlpalen', msGesorteerd(o).map(m => `- ${m.date ? fmtDate(m.date) : 'zonder datum'}: ${m.text.trim()}`));
   blok("Grootste risico's en aannames", vol(o.risicos).map(x => '- ' + x));
   blok('Afspraken', [(o.freq.trim() || o.aanWie.trim()) && 'Rapporteren: ' + [o.freq.trim(), o.aanWie.trim() && 'aan ' + o.aanWie.trim()].filter(Boolean).join(', '), o.escaleren.trim() && 'Stoppen of escaleren: ' + o.escaleren.trim()]);
@@ -1582,7 +1602,7 @@ function buildExport() {
     ${bi.length ? `<div style="padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px"><div style="${H}">Valt erbinnen</div>${lijst(bi, '#047857', '✓')}</div>` : ''}
     ${bu.length ? `<div style="padding:10px 12px;border:1.5px dashed #94a3b8;border-radius:8px"><div style="${H}">Valt uitdrukkelijk buiten</div>${lijst(bu, '#64748b', '×')}</div>` : ''}</div>`;
   const wie = rijen([['Opdrachtgever', e(o.opdrachtgever.trim())], ['Projectleider', e(o.projectleider.trim())], ['Kernteam', e(o.kernteam.trim())], ['Geeft akkoord', e(vol(o.akkoord).join(', '))]]);
-  const mid = rijen([['Einddatum', e(fmtLang(o.einddatum))], ['Budget', e(o.budget.trim())], ['Mensen, in tijd', e(o.mensen.trim())], ['Als het knelt', o.knelt ? `geven we eerst toe op <b>${e(kneltTekst(o))}</b>` : '']]);
+  const mid = rijen([['Einddatum', e(fmtLang(o.einddatum))], ['Budget', e(o.budget.trim())], ['Inzet van mensen', e(o.mensen.trim())], ['Als het knelt', o.knelt ? `geven we eerst toe op <b>${e(kneltTekst(o))}</b>` : '']]);
   if (wie || mid) h += `<div data-oc-keep style="display:grid;grid-template-columns:${wie && mid ? '1fr 1fr' : '1fr'};gap:20px;padding:12px 0 14px;border-top:1px solid #e2e8f0">
     ${wie ? `<div><div style="${H}">Wie</div>${wie}</div>` : ''}${mid ? `<div><div style="${H}">Middelen en grenzen</div>${mid}</div>` : ''}</div>`;
   const ms = msGesorteerd(o);
@@ -1594,9 +1614,11 @@ function buildExport() {
   if (ri.length) h += vak("Grootste risico's en aannames", lijst(ri, '#b45309', '!'));
   const af = rijen([['Rapporteren', e([o.freq.trim(), o.aanWie.trim() && 'aan ' + o.aanWie.trim()].filter(Boolean).join(', '))], ['Stoppen of escaleren', e(o.escaleren.trim())]]);
   if (af) h += vak('Afspraken', af);
-  if (sig.length && !getekend(o)) h += vak('Nog open voor het aftekenen', sig.map(x => `<div style="${P};color:#92400e;margin-bottom:2px">• ${e(x.tekst)}</div>`).join(''));
-  if (getekend(o)) h += vak('Akkoord', `<p style="${P}">Afgetekend door <b>${e(o.teken.naam)}</b> op <b>${e(fmtLang(o.teken.datum))}</b>.</p>`);
-  else h += vak('Akkoord van de opdrachtgever', `<div style="display:grid;grid-template-columns:1.3fr 1fr 1.3fr;gap:18px;margin-top:14px">
+  // Gewijzigd na akkoord: bovenaan staat het vorige akkoord, onderaan is er plaats voor een nieuw.
+  const nieuwAkkoord = !getekend(o) || gew.length;
+  if (sig.length && nieuwAkkoord) h += vak('Nog open voor het aftekenen', sig.map(x => `<div style="${P};color:#92400e;margin-bottom:2px">• ${e(x.tekst)}</div>`).join(''));
+  if (!nieuwAkkoord) h += vak('Akkoord', `<p style="${P}">Afgetekend door <b>${e(o.teken.naam)}</b> op <b>${e(fmtLang(o.teken.datum))}</b>.</p>`);
+  else h += vak(gew.length ? 'Nieuw akkoord van de opdrachtgever' : 'Akkoord van de opdrachtgever', `<div style="display:grid;grid-template-columns:1.3fr 1fr 1.3fr;gap:18px;margin-top:14px">
       ${['Naam', 'Datum', 'Handtekening'].map((x, i) => `<div><div style="height:22px;font-size:13px;color:#1e293b">${i === 0 ? e(o.teken.naam.trim() || o.opdrachtgever.trim()) : ''}</div><div style="border-top:1px solid #94a3b8;padding-top:3px;font-size:11px;color:#64748b">${x}</div></div>`).join('')}</div>`);
   const node = document.createElement('div'); node.innerHTML = h;
   return { node, title:o.name || 'Projectopdracht', subtitle:'Projectopdracht' + (o.voorbeeld ? ' (voorbeeld)' : '') };
