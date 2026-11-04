@@ -51,7 +51,7 @@ button { background:none; border:0; cursor:pointer; }
 .main { flex:1; width:100%; max-width:1100px; margin:0 auto; padding:1.25rem 1rem 3rem; }
 
 /* Matrixkeuze */
-.lists { display:flex; gap:0.5rem; overflow-x:auto; scrollbar-width:none; margin:0 -1rem 1rem; padding:0.125rem 1rem; }
+.lists { display:flex; gap:0.5rem; overflow-x:auto; scrollbar-width:none; margin:-0.25rem -1rem 0.75rem; padding:0.375rem 1rem; }
 .lists::-webkit-scrollbar { display:none; }
 .tab {
   flex-shrink:0; padding:0.4375rem 0.875rem; border-radius:999px; font-size:0.875rem; font-weight:600;
@@ -187,8 +187,8 @@ tfoot .sticky { background:var(--slate-50); }
 .menu button:hover { background:var(--slate-100); }
 .menu button svg { width:18px; height:18px; color:var(--slate-500); flex-shrink:0; }
 .menu .sep { height:1px; background:var(--slate-100); margin:0.25rem 0.375rem; }
-.menu .danger { color:var(--rood); }
-.menu .danger svg { color:var(--rood); }
+.menu .danger { color:#dc2626; }
+.menu .danger svg { color:#dc2626; }
 
 /* Melding */
 .toast {
@@ -1266,6 +1266,20 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); setCell(cell.dataset.t, cell.dataset.r, ''); }
 });
 const short = s => s.length > 28 ? s.slice(0, 28) + '…' : s;
+
+/* Met Tab door de matrix: een cel mag niet verdwijnen achter de vaste takenkolom of buiten de rand. */
+document.addEventListener('focusin', e => {
+  const wrap = e.target.closest && e.target.closest('.table-wrap'); if (!wrap) return;
+  const cel = e.target.closest('td, th'); if (!cel || cel.classList.contains('sticky')) return;
+  const doel = e.target;
+  requestAnimationFrame(() => {   // na het eigen schuiven van de browser
+    const vast = wrap.querySelector('tbody .sticky') || wrap.querySelector('thead .sticky');
+    const links = vast ? vast.getBoundingClientRect().right : wrap.getBoundingClientRect().left;
+    const r = doel.getBoundingClientRect(), rechts = wrap.getBoundingClientRect().right;
+    if (r.left < links + 4) wrap.scrollLeft -= links + 8 - r.left;
+    else if (r.right > rechts - 4) wrap.scrollLeft += r.right - rechts + 8;
+  });
+});
 
 /* ---------- Namen aanpassen ---------- */
 document.addEventListener('keydown', e => {

@@ -59,7 +59,7 @@ a { color:var(--accent-dark); }
 .menu button:hover { background:var(--slate-100); }
 .menu button svg { width:18px; height:18px; color:var(--slate-500); flex-shrink:0; }
 .menu .sep { height:1px; background:var(--slate-100); margin:0.25rem 0.375rem; }
-.menu .danger, .menu .danger svg { color:var(--rood); }
+.menu .danger, .menu .danger svg { color:#dc2626; }
 .warn { margin:0 1.125rem 1rem; font-size:0.8125rem; color:#92400e; background:var(--oranje-50); border:1px solid #fde68a; border-radius:10px; padding:0.5rem 0.75rem; }
 
 /* Aanpak */
@@ -423,6 +423,7 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
       <ul data-uitleg="begrippen">
         <li><b>Enter</b>: een nieuw idee op hetzelfde niveau. Heeft het idee al subtakken, dan komt het nieuwe idee erbij als eerste subtak.</li>
         <li><b>Tab</b>: een niveau dieper (onder het idee erboven). <b>Shift+Tab</b>: een niveau terug. Op een telefoon doen de pijlknoppen hetzelfde.</li>
+        <li><b>Esc</b>: uit de lijst, naar wat eronder staat.</li>
         <li><b>Backspace</b> in een leeg veld: het idee verdwijnt.</li>
         <li><b>Alt+↑ / Alt+↓</b>: een idee met zijn subtakken verschuiven.</li>
         <li>Plak je een lijst met inspringingen (uit een mail, notities of een ander programma), dan komt de hele structuur in één keer mee.</li>
@@ -1274,6 +1275,14 @@ document.addEventListener('keydown', e => {
     if (m.nodes[i].hint && !plaats(m.nodes[i]) && i > 0) { const x = addChild(m, i); save(); render(); focusNode(x.id); return; }   // sjabloonvraag: antwoord eronder
     const x = insertAfter(m, i); save(); render(); focusNode(x.id); }
   else if (e.key === 'Tab') { e.preventDefault(); if (i > 0 && shift(m, i, e.shiftKey ? -1 : 1)) { save(); render(); focusNode(m.nodes[m.nodes.findIndex(n => n.id === el.dataset.id)].id, false); } }
+  else if (e.key === 'Escape') {
+    // Tab verschuift hier een idee; met Escape verlaat je de lijst naar wat erna komt.
+    e.preventDefault();
+    const lijst = el.closest('.mrows'), alles = [...document.querySelectorAll('a[href], button, input, select, textarea, summary, [tabindex]:not([tabindex="-1"])')]
+      .filter(x => !x.disabled && x.offsetParent !== null && !(lijst && lijst.contains(x)));
+    const na = alles.find(x => lijst && (lijst.compareDocumentPosition(x) & Node.DOCUMENT_POSITION_FOLLOWING));
+    if (na) { na.focus(); say('Uit de lijst. Shift+Tab gaat terug.'); }
+  }
   else if (e.key === 'Backspace' && !el.value && i > 0 && !hasKids(m.nodes, i)) {
     e.preventDefault(); const prev = m.nodes[i - 1]; m.nodes.splice(i, 1); normalize(m.nodes); save(); render(); focusNode(prev.id);
   }
