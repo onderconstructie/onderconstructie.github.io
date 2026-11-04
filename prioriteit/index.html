@@ -99,11 +99,6 @@ button { background:none; border:0; cursor:pointer; }
 .input:focus { border-color:var(--accent); background:var(--wit); }
 .input::placeholder { color:var(--slate-400); }
 
-.slider { margin-top:1rem; background:var(--slate-50); border-radius:12px; padding:0.75rem 0.875rem 0.625rem; }
-.slider-top { display:flex; align-items:baseline; justify-content:space-between; }
-.slider-name { font-size:0.9375rem; font-weight:600; color:var(--slate-700); }
-.slider-val { font-size:1.25rem; font-weight:700; color:var(--accent-dark); font-variant-numeric:tabular-nums; }
-.slider-hint { display:flex; justify-content:space-between; font-size:0.75rem; color:var(--slate-500); margin-top:0.125rem; }
 input[type=range] {
   -webkit-appearance:none; appearance:none; width:100%; height:28px; margin-top:0.375rem; background:transparent; cursor:pointer;
   --p:50%;
@@ -182,11 +177,26 @@ input[type=range]:focus-visible::-webkit-slider-thumb { box-shadow:0 0 0 4px var
 .item.done .item-name { color:var(--slate-500); text-decoration:line-through; text-decoration-color:var(--slate-300); }
 .scores { font-size:0.75rem; color:var(--slate-500); white-space:nowrap; font-variant-numeric:tabular-nums; padding-right:0.25rem; }
 .scores b { font-weight:600; color:var(--slate-700); }
-.todo-item { display:flex; flex-wrap:wrap; align-items:center; gap:0.375rem; padding:0.5rem 0.25rem 0.625rem; }
-.todo-item .item-name { flex:1 1 100%; padding-left:0.25rem; }
-.pick { display:flex; flex-wrap:wrap; gap:0.25rem; flex:1; }
-.pick-btn { min-height:40px; padding:0 0.625rem; border-radius:999px; border:1px solid var(--slate-200); background:var(--wit); font-size:0.8125rem; font-weight:600; color:var(--c); }
-.pick-btn:hover, .pick-btn:focus-visible { background:var(--b); border-color:var(--c); }
+.todo-item { display:grid; grid-template-columns:minmax(0, 1fr) 36px; align-items:start; gap:0.25rem 0.375rem; padding:0.5rem 0.25rem 0.75rem; }
+.todo-item .item-name { padding:0.5rem 0.25rem 0.125rem; }
+.todo-item .del { grid-column:2; grid-row:1; }
+.todo-schalen { grid-column:1 / -1; display:grid; gap:0.375rem; padding-left:0.25rem; }
+.ts-rij { display:grid; grid-template-columns:5.75rem minmax(0, 1fr); align-items:center; gap:0.5rem; }
+.ts-lbl { font-size:0.8125rem; font-weight:600; color:var(--slate-600); line-height:1.2; }
+.ts-lbl small { display:block; font-weight:400; font-size:0.75rem; color:var(--slate-500); }
+.ts-uit { grid-column:1 / -1; font-size:0.8125rem; color:var(--slate-500); padding-left:0.25rem; min-height:1.25rem; }
+.ts-uit b { font-weight:700; }
+/* Schaal van 1 tot 4: in het formulier en bij wat nog in te schatten is */
+.schaal-blok { margin-top:1rem; background:var(--slate-50); border-radius:12px; padding:0.75rem 0.875rem 0.5rem; }
+.schaal-kop { display:flex; align-items:baseline; justify-content:space-between; gap:0.5rem; margin-bottom:0.5rem; }
+.schaal-kop b { font-size:0.9375rem; font-weight:600; color:var(--slate-700); }
+.schaal-kop span { font-size:0.8125rem; color:var(--slate-500); }
+.schaal { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:0.375rem; }
+.schaal [role="radio"] { min-height:44px; border-radius:10px; border:1.5px solid var(--slate-200); background:var(--wit); font-size:0.9375rem; font-weight:700; color:var(--slate-700); font-variant-numeric:tabular-nums; transition:background 0.12s, border-color 0.12s, color 0.12s; }
+.schaal [role="radio"]:hover { border-color:var(--accent); color:var(--accent-dark); }
+.schaal [role="radio"][aria-checked="true"] { background:var(--accent-dark); border-color:var(--accent-dark); color:#fff; }
+.schaal-eind { display:flex; justify-content:space-between; font-size:0.75rem; color:var(--slate-500); margin-top:0.25rem; }
+@media (prefers-reduced-motion:reduce) { .schaal [role="radio"] { transition:none; } }
 .todo-item .del { opacity:1 !important; }
 .del { width:36px; height:44px; display:flex; align-items:center; justify-content:center; color:var(--slate-300); border-radius:8px; }
 .del:hover { color:var(--rood); }
@@ -282,7 +292,6 @@ button.oc-import { color:#047857; min-height:44px; }
 .matrix-empty[hidden] { display:none; }
 .ex-btn { pointer-events:auto; min-height:44px; padding:0.5625rem 1rem; border-radius:10px; border:1.5px solid var(--accent); background:var(--wit); color:var(--accent-dark); font-weight:600; box-shadow:0 4px 14px rgba(15,23,42,0.08); }
 .ex-btn:hover { background:var(--accent-50); }
-.pick-btn { min-height:44px; }
 .list-name { min-height:44px; }
 
 /* Opnieuw beginnen (zelfde knop in elke tool) */
@@ -498,15 +507,17 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
       <div class="label"><span id="form-title">Item toevoegen</span></div>
       <form id="form" autocomplete="off">
         <input class="input" id="name" placeholder="bv. Veelgestelde vragen op de website" aria-label="Naam van het item" maxlength="120" enterkeyhint="done" autocomplete="off">
-        <div class="slider">
-          <div class="slider-top"><span class="slider-name">Impact</span><span class="slider-val" id="impact-val">3</span></div>
-          <input type="range" id="impact" min="1" max="4" step="1" value="3" aria-label="Impact">
-          <div class="slider-hint"><span>weinig effect</span><span>groot effect</span></div>
+        <div class="schaal-blok">
+          <div class="schaal-kop" id="lbl-impact"><b>Impact</b><span>Wat levert het op?</span></div>
+          <div class="schaal" role="radiogroup" aria-labelledby="lbl-impact" data-form-schaal><button type="button" role="radio" aria-checked="false" data-f="impact" data-v="1">1</button><button type="button" role="radio" aria-checked="false" data-f="impact" data-v="2">2</button><button type="button" role="radio" aria-checked="false" data-f="impact" data-v="3">3</button><button type="button" role="radio" aria-checked="false" data-f="impact" data-v="4">4</button></div>
+          <div class="schaal-eind" aria-hidden="true"><span>weinig</span><span>veel</span></div>
+          <input type="hidden" id="impact" value="">
         </div>
-        <div class="slider">
-          <div class="slider-top"><span class="slider-name">Inspanning</span><span class="slider-val" id="effort-val">3</span></div>
-          <input type="range" id="effort" min="1" max="4" step="1" value="3" aria-label="Inspanning">
-          <div class="slider-hint"><span>snel gedaan</span><span>veel werk</span></div>
+        <div class="schaal-blok">
+          <div class="schaal-kop" id="lbl-effort"><b>Inspanning</b><span>Hoeveel werk is het?</span></div>
+          <div class="schaal" role="radiogroup" aria-labelledby="lbl-effort" data-form-schaal><button type="button" role="radio" aria-checked="false" data-f="effort" data-v="1">1</button><button type="button" role="radio" aria-checked="false" data-f="effort" data-v="2">2</button><button type="button" role="radio" aria-checked="false" data-f="effort" data-v="3">3</button><button type="button" role="radio" aria-checked="false" data-f="effort" data-v="4">4</button></div>
+          <div class="schaal-eind" aria-hidden="true"><span>snel gedaan</span><span>veel werk</span></div>
+          <input type="hidden" id="effort" value="">
         </div>
         <p class="q-preview" id="q-preview" aria-live="polite"></p>
         <button class="btn-primary" type="submit" id="submit">
@@ -549,7 +560,7 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
     <div class="inner">
       <p>Met Prioriteren zie je welke taken veel opleveren voor weinig moeite, en welke je beter laat liggen.</p>
       <ul>
-        <li><b>Zet je items erin.</b> Typ een taak of idee, of plak een lijst: elke regel wordt een item. Met "Overnemen uit…" haal je taken, acties of risico's uit andere tools. Wat nog niet ingeschat is, staat bovenaan het overzicht. Eén tik zet het in een vak.</li>
+        <li><b>Zet je items erin.</b> Typ een taak of idee, of plak een lijst: elke regel wordt een item. Met "Overnemen uit…" haal je taken, acties of risico's uit andere tools. Wat nog niet ingeschat is, staat bovenaan het overzicht. Kies daar impact en inspanning: dan schuift het in zijn vak.</li>
         <li><b>Schat impact en inspanning.</b> Beide gaan van 1 tot 4. Impact is wat het oplevert, inspanning is hoeveel werk het vraagt. Er is geen midden: je kiest altijd een kant.</li>
         <li><b>Zo kiest de tool het vak.</b> Impact 3 of 4 met inspanning 1 of 2 is Snelle winst: veel opbrengst voor weinig moeite, dus nu doen. Impact 3 of 4 met inspanning 3 of 4 is een Grote klus: die plan je. Impact 1 of 2 met weinig inspanning is een Opvuller, voor als er tijd is. Impact 1 of 2 met veel inspanning is een Tijdverspiller: laat die liggen.</li>
         <li><b>Werk de lijst af.</b> In elk vak staat bovenaan wat het meest oplevert in verhouding tot het werk. Versleep een punt in de matrix om het bij te stellen, en vink af wat gedaan is.</li>
@@ -1168,8 +1179,8 @@ const QUITLEG = {
   verspil: { t:'Tijdverspillers', s:'laten liggen', b:'Veel werk voor weinig resultaat. Schrap ze of laat ze liggen. Moet het toch, bijvoorbeeld omdat het verplicht is, zoek dan een eenvoudigere manier.', r:'Impact 1 of 2, inspanning 3 of 4.' },
 };
 const quadOf = it => it.nieuw ? null : Q.find(q => q.test(it));
-// Snel inschatten: één tik zet een item midden in het gekozen kwadrant; fijnregelen kan daarna
-const PRESET = { quick:{ impact:3, effort:2 }, groot:{ impact:3, effort:3 }, vul:{ impact:2, effort:2 }, verspil:{ impact:2, effort:3 } };
+// Bij een item dat nog in te schatten is: welke as koos je al?
+const gekozen = (it, f) => !it.nieuw || !!(it.gekozen && it.gekozen[f]);
 
 /* ---------- Opslag ---------- */
 const KEY = 'prioriteit.v1';
@@ -1344,12 +1355,17 @@ function renderList() {
     return;
   }
   const todo = l.items.filter(i => i.nieuw), nr = numbers(l);
-  $('list').innerHTML = (todo.length ? `<div class="q-head"><i style="background:#cbd5e1"></i>Nog in te schatten<span class="q-sub">· één tik per item</span><span class="q-n">${todo.length}</span></div>
+  $('list').innerHTML = (todo.length ? `<div class="q-head"><i style="background:#cbd5e1"></i>Nog in te schatten<span class="q-sub">· 1 is weinig, 4 is veel</span><span class="q-n">${todo.length}</span></div>
       <ul class="items todo">${todo.map(it => `
         <li class="item todo-item" data-id="${it.id}">
-          <span class="item-name">${esc(it.name)}</span>
-          <span class="pick" role="group" aria-label="Kwadrant voor ${esc(it.name)}">${Q.map(q => `<button type="button" class="pick-btn" data-pick="${q.id}" style="--c:${q.ink};--b:${q.bg}">${({ quick:'Snelle winst', groot:'Grote klus', vul:'Opvuller', verspil:'Tijdverspiller' })[q.id]}</button>`).join('')}</span>
+          <span class="item-name" id="tn-${it.id}">${esc(it.name)}</span>
           <button class="del" aria-label="Verwijder ${esc(it.name)}">${ICON_DEL}</button>
+          <div class="todo-schalen">
+            ${[['impact', 'Impact', 'wat levert het op?'], ['effort', 'Inspanning', 'hoeveel werk?']].map(([f, naam, vraag]) => `<div class="ts-rij">
+              <span class="ts-lbl" id="t${f}-${it.id}">${naam}<small>${vraag}</small></span>
+              <div class="schaal" role="radiogroup" aria-labelledby="t${f}-${it.id} tn-${it.id}">${[1, 2, 3, 4].map(v => `<button type="button" role="radio" aria-checked="${gekozen(it, f) && it[f] === v}" data-todo="${it.id}" data-f="${f}" data-v="${v}">${v}</button>`).join('')}</div>
+            </div>`).join('')}
+          </div>
         </li>`).join('')}</ul>` : '') + Q.map(q => {
     const items = sorted(l.items.filter(i => quadOf(i) === q));
     if (!items.length) return '';
@@ -1358,7 +1374,7 @@ function renderList() {
         <li class="item${it.done ? ' done' : ''}${it.id === editing ? ' selected' : ''}" data-id="${it.id}" tabindex="0">
           <button class="check" aria-label="${it.done ? 'Niet meer gedaan' : 'Markeer als gedaan'}"><span class="box">${ICON_CHECK}</span></button>
           <span class="item-name"><span class="nr" style="--c:${q.ink}" aria-hidden="true">${nr[it.id]}</span>${esc(it.name)}</span>
-          <span class="scores" title="Effect · werk">effect <b>${it.impact}</b> · werk <b>${it.effort}</b></span>
+          <span class="scores" title="Impact · inspanning">impact <b>${it.impact}</b> · inspanning <b>${it.effort}</b></span>
           <button class="del" aria-label="Verwijder">${ICON_DEL}</button>
         </li>`).join('')}</ul>`;
   }).join('');
@@ -1380,17 +1396,19 @@ function syncForm() {
   $('hint').hidden = !!it;
   if (it) {
     if (document.activeElement !== $('name')) $('name').value = it.name;
-    $('impact').value = it.impact; $('effort').value = it.effort;
+    $('impact').value = gekozen(it, 'impact') ? it.impact : ''; $('effort').value = gekozen(it, 'effort') ? it.effort : '';
   }
   paintSliders();
 }
 function paintSliders() {
   ['impact', 'effort'].forEach(k => {
-    const el = $(k); el.style.setProperty('--p', ((el.value - 1) / (N - 1) * 100) + '%');
-    $(k + '-val').textContent = el.value;
+    const v = $(k).value;
+    document.querySelectorAll(`[data-form-schaal] [data-f="${k}"]`).forEach(b => b.setAttribute('aria-checked', String(b.dataset.v === v)));
   });
   // vooraf tonen in welk kwadrant het item komt
-  const q = Q.find(x => x.test({ impact:+$('impact').value, effort:+$('effort').value }));
+  const i = +$('impact').value, w = +$('effort').value;
+  if (!i || !w) { $('q-preview').innerHTML = `<span>${!i && !w ? 'Kies impact en inspanning.' : !i ? 'Kies nog de impact.' : 'Kies nog de inspanning.'} Of voeg toe en schat later in.</span>`; return; }
+  const q = Q.find(x => x.test({ impact:i, effort:w }));
   $('q-preview').innerHTML = `${editing ? 'Staat bij' : 'Komt bij'}: <b style="color:${q.ink}"><i style="background:${q.color}"></i>${q.name}</b><span>· ${q.sub}</span>`;
 }
 
@@ -1431,20 +1449,27 @@ $('form').addEventListener('submit', e => {
   e.preventDefault();
   const name = $('name').value.trim();
   const impact = +$('impact').value, effort = +$('effort').value;
+  // Wat je koos, telt; wat nog leeg is, schat je later in (bovenaan het overzicht)
+  const zet = it => {
+    it.impact = impact || it.impact || 3; it.effort = effort || it.effort || 3;
+    if (impact && effort) { delete it.nieuw; delete it.gekozen; }
+    else { it.nieuw = true; it.gekozen = { impact:!!impact, effort:!!effort }; }
+  };
   if (editing) {
     const it = cur().items.find(i => i.id === editing);
-    if (it) { if (name) it.name = name.slice(0, 120); it.impact = impact; it.effort = effort; delete it.nieuw; }
+    if (it) { if (name) it.name = name.slice(0, 120); zet(it); }
     editing = null; $('name').value = '';
-    $('impact').value = 3; $('effort').value = 3;
+    $('impact').value = ''; $('effort').value = '';
     save(); render(); return;
   }
   if (!name) { $('name').focus(); return; }
-  const it = { id:uid(), name:name.slice(0, 120), impact, effort, done:false };
+  const it = { id:uid(), name:name.slice(0, 120), done:false };
+  zet(it);
   cur().items.push(it);
-  $('name').value = ''; $('impact').value = 3; $('effort').value = 3;
+  $('name').value = ''; $('impact').value = ''; $('effort').value = '';
   save(); render();
   const q = quadOf(it);
-  toast(`Toegevoegd bij ${q.name.toLowerCase()}`);
+  toast(q ? `Toegevoegd bij ${q.name.toLowerCase()}` : 'Toegevoegd bij Nog in te schatten');
   $('name').focus();
 });
 $('name').addEventListener('paste', e => {
@@ -1463,7 +1488,11 @@ $('name').addEventListener('paste', e => {
   paintSliders();
   if (editing) {
     const it = cur().items.find(i => i.id === editing);
-    if (it) { it[k] = +$(k).value; delete it.nieuw; save(); renderMatrix(); renderList(); }
+    if (it && +$(k).value) {
+      it[k] = +$(k).value;
+      if (it.nieuw) { it.gekozen = Object.assign({}, it.gekozen, { [k]:true }); if (it.gekozen.impact && it.gekozen.effort) { delete it.nieuw; delete it.gekozen; } }
+      save(); renderMatrix(); renderList();
+    }
   }
 }));
 $('name').addEventListener('input', () => {
@@ -1473,17 +1502,30 @@ $('name').addEventListener('input', () => {
   if (it && v) { it.name = v.slice(0, 120); save(); renderMatrix(); renderList(); }
 });
 $('cancel-edit').addEventListener('click', () => {
-  editing = null; $('name').value = ''; $('impact').value = 3; $('effort').value = 3; render(); $('name').focus();
+  editing = null; $('name').value = ''; $('impact').value = ''; $('effort').value = ''; render(); $('name').focus();
 });
 document.addEventListener('click', e => {
-  const b = e.target.closest('.pick-btn'); if (!b) return;
+  const b = e.target.closest('.schaal [role="radio"]'); if (!b) return;
   e.stopPropagation();
-  const id = b.closest('[data-id]').dataset.id, it = cur().items.find(i => i.id === id); if (!it) return;
-  Object.assign(it, PRESET[b.dataset.pick]); delete it.nieuw;
+  const f = b.dataset.f, v = +b.dataset.v;
+  // In het formulier: de waarde zetten, de rest gebeurt zoals bij typen
+  if (b.closest('[data-form-schaal]')) { $(f).value = v; $(f).dispatchEvent(new Event('input')); return; }
+  const it = cur().items.find(i => i.id === b.dataset.todo); if (!it) return;
+  it[f] = v; it.gekozen = Object.assign({}, it.gekozen, { [f]:true });
+  const klaar = it.gekozen.impact && it.gekozen.effort;
+  if (klaar) { delete it.nieuw; delete it.gekozen; }
   save(); render();
-  const left = cur().items.filter(i => i.nieuw).length;
-  toast(left ? `${it.name.slice(0, 40)}: ${Q.find(q => q.id === b.dataset.pick).name.toLowerCase()}. Nog ${left}.` : 'Alles ingeschat. Versleep een punt om fijn te regelen.');
-  const nx = document.querySelector('.todo-item .pick-btn'); if (nx) nx.focus({ preventScroll:true });
+  const viaToets = e.detail === 0;
+  if (!klaar) {
+    // nog de andere as: daar meteen verder
+    const ander = f === 'impact' ? 'effort' : 'impact';
+    const g = document.querySelector(`[data-todo="${it.id}"][data-f="${ander}"]`);
+    if (g && viaToets) g.focus({ preventScroll:true });
+    return;
+  }
+  const q = quadOf(it), left = cur().items.filter(i => i.nieuw).length;
+  toast(`${it.name.slice(0, 40)}: ${q.name.toLowerCase()}. ${left ? `Nog ${left} in te schatten.` : 'Alles ingeschat.'}`);
+  if (viaToets) { const nx = document.querySelector('.todo-item [data-f="impact"]'); if (nx) nx.focus({ preventScroll:true }); }
 }, true);
 function startEdit(id, viaKey) {
   editing = id; $('name').value = '';
@@ -2088,6 +2130,65 @@ window.ocBestand = (function () {
       });
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', zet); else zet();
+  }());
+  /* oc-overnemen: de knop "Overnemen uit…" valt op als knop en zegt wat er klaarligt ("5 taken uit Retro en Risicomatrix"). */
+  (function () {
+    var VEEL = { taak: 'taken', actie: 'acties', risico: "risico's", betrokkene: 'betrokkenen', besluit: 'besluiten', doel: 'doelen' };
+    var EEN = { taak: 'taak', actie: 'actie', risico: 'risico', betrokkene: 'betrokkene', besluit: 'besluit', doel: 'doel' };
+    var zelf = '';
+    try { var mt = document.querySelector('meta[name="oc:opslag"]'), mz = mt && /oc\.share\.([\w-]+)/.exec(mt.content); zelf = mz ? mz[1] : ''; } catch (e) {}
+    function esc(v) { return String(v).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+    function samenvatting(types) {
+      var tools = [], perType = {}, n = 0, keys = [];
+      try { for (var i = 0; i < localStorage.length; i++) keys.push(localStorage.key(i)); } catch (e) { return ''; }
+      keys.forEach(function (k) {
+        if (!k || k.indexOf('oc.share.') !== 0 || k === 'oc.share.' + zelf) return;
+        try {
+          var d = JSON.parse(localStorage.getItem(k)), m = 0; if (!d || !Array.isArray(d.lists)) return;
+          d.lists.forEach(function (l) { (l && Array.isArray(l.items) ? l.items : []).forEach(function (it) {
+            if (it && types.indexOf(it.type) >= 0 && typeof it.text === 'string') { m++; perType[it.type] = (perType[it.type] || 0) + 1; }
+          }); });
+          if (m) { n += m; tools.push({ naam: String(d.tool || d.id || k.slice(9)), t: +d.updated || 0 }); }
+        } catch (e) {}
+      });
+      if (!n) return '';
+      tools.sort(function (a, b) { return b.t - a.t; });
+      var nm = tools.map(function (x) { return x.naam; }), soort = Object.keys(perType);
+      var wat = soort.length === 1 && VEEL[soort[0]] ? n + ' ' + (n === 1 ? EEN[soort[0]] : VEEL[soort[0]]) : n + (n === 1 ? ' punt' : ' punten');
+      var uit = nm.length === 1 ? nm[0] : nm.length === 2 ? nm[0] + ' en ' + nm[1] : nm[0] + ', ' + nm[1] + ' en ' + (nm.length - 2) + ' andere';
+      return wat + ' uit ' + uit;
+    }
+    var stijl = false;
+    function css() {
+      if (stijl || document.getElementById('oc-imp-stijl')) return; stijl = true;
+      var s = document.createElement('style'); s.id = 'oc-imp-stijl';
+      s.textContent = 'button.oc-import.oc-imp2{display:inline-flex;align-items:center;gap:.625rem;max-width:100%;min-height:52px;margin:0;padding:.4375rem .75rem .4375rem .4375rem;border:1.5px solid #a7f3d0;border-radius:12px;background:#ecfdf5;color:#065f46;font:inherit;text-align:left;white-space:normal;cursor:pointer;box-shadow:none;transition:background .12s,border-color .12s}'
+        + 'button.oc-import.oc-imp2:hover{background:#d1fae5;border-color:#10b981}button.oc-import.oc-imp2[hidden]{display:none}'
+        + '.oc-imp2 .oc-imp-ico{flex:none;width:34px;height:34px;border-radius:9px;background:#fff;color:#047857;display:grid;place-items:center;box-shadow:inset 0 0 0 1px #a7f3d0}'
+        + '.oc-imp2 .oc-imp-ico svg{width:18px;height:18px}.oc-imp2 .oc-imp-t{display:flex;flex-direction:column;min-width:0;line-height:1.25}'
+        + '.oc-imp2 .oc-imp-t b{font-size:.875rem;font-weight:700;color:#065f46}'
+        + '.oc-imp2 .oc-imp-t small{font-size:.8125rem;font-weight:500;color:#047857;overflow-wrap:anywhere}'
+        + '.oc-imp2 .oc-imp-pijl{flex:none;width:18px;height:18px;margin-left:auto;color:#047857}'
+        + '@media (prefers-reduced-motion:reduce){button.oc-import.oc-imp2{transition:none}}';
+      document.head.appendChild(s);
+    }
+    var ICO = '<span class="oc-imp-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11M7.5 9.5L12 14l4.5-4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg></span>';
+    var PIJL = '<svg class="oc-imp-pijl" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
+    function versier() {
+      var bs = document.querySelectorAll('button.oc-import[data-oc-types]'); if (!bs.length) return;
+      css();
+      [].forEach.call(bs, function (b) {
+        var sam = samenvatting(String(b.dataset.ocTypes).split(',').map(function (x) { return x.trim(); }));
+        if (b.dataset.ocSam === sam && b.querySelector('.oc-imp-t')) return;
+        b.dataset.ocSam = sam; b.classList.add('oc-imp2');
+        b.innerHTML = ICO + '<span class="oc-imp-t"><b>Overnemen uit andere tools</b>' + (sam ? '<small>' + esc(sam) + '</small>' : '') + '</span>' + PIJL;
+      });
+    }
+    var gepland = false;
+    function plan() { if (gepland) return; gepland = true; (window.requestAnimationFrame || setTimeout)(function () { gepland = false; versier(); }); }
+    try { new MutationObserver(plan).observe(document.documentElement, { childList: true, subtree: true }); } catch (e) {}
+    addEventListener('storage', plan); addEventListener('focus', plan); addEventListener('pageshow', plan);
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', plan); else plan();
   }());
   if (window.parent === window) return;
   addEventListener('keydown', function (e) {

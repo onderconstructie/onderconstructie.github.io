@@ -1464,6 +1464,65 @@ window.ocBestand = (function () {
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', zet); else zet();
   }());
+  /* oc-overnemen: de knop "Overnemen uit…" valt op als knop en zegt wat er klaarligt ("5 taken uit Retro en Risicomatrix"). */
+  (function () {
+    var VEEL = { taak: 'taken', actie: 'acties', risico: "risico's", betrokkene: 'betrokkenen', besluit: 'besluiten', doel: 'doelen' };
+    var EEN = { taak: 'taak', actie: 'actie', risico: 'risico', betrokkene: 'betrokkene', besluit: 'besluit', doel: 'doel' };
+    var zelf = '';
+    try { var mt = document.querySelector('meta[name="oc:opslag"]'), mz = mt && /oc\.share\.([\w-]+)/.exec(mt.content); zelf = mz ? mz[1] : ''; } catch (e) {}
+    function esc(v) { return String(v).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+    function samenvatting(types) {
+      var tools = [], perType = {}, n = 0, keys = [];
+      try { for (var i = 0; i < localStorage.length; i++) keys.push(localStorage.key(i)); } catch (e) { return ''; }
+      keys.forEach(function (k) {
+        if (!k || k.indexOf('oc.share.') !== 0 || k === 'oc.share.' + zelf) return;
+        try {
+          var d = JSON.parse(localStorage.getItem(k)), m = 0; if (!d || !Array.isArray(d.lists)) return;
+          d.lists.forEach(function (l) { (l && Array.isArray(l.items) ? l.items : []).forEach(function (it) {
+            if (it && types.indexOf(it.type) >= 0 && typeof it.text === 'string') { m++; perType[it.type] = (perType[it.type] || 0) + 1; }
+          }); });
+          if (m) { n += m; tools.push({ naam: String(d.tool || d.id || k.slice(9)), t: +d.updated || 0 }); }
+        } catch (e) {}
+      });
+      if (!n) return '';
+      tools.sort(function (a, b) { return b.t - a.t; });
+      var nm = tools.map(function (x) { return x.naam; }), soort = Object.keys(perType);
+      var wat = soort.length === 1 && VEEL[soort[0]] ? n + ' ' + (n === 1 ? EEN[soort[0]] : VEEL[soort[0]]) : n + (n === 1 ? ' punt' : ' punten');
+      var uit = nm.length === 1 ? nm[0] : nm.length === 2 ? nm[0] + ' en ' + nm[1] : nm[0] + ', ' + nm[1] + ' en ' + (nm.length - 2) + ' andere';
+      return wat + ' uit ' + uit;
+    }
+    var stijl = false;
+    function css() {
+      if (stijl || document.getElementById('oc-imp-stijl')) return; stijl = true;
+      var s = document.createElement('style'); s.id = 'oc-imp-stijl';
+      s.textContent = 'button.oc-import.oc-imp2{display:inline-flex;align-items:center;gap:.625rem;max-width:100%;min-height:52px;margin:0;padding:.4375rem .75rem .4375rem .4375rem;border:1.5px solid #a7f3d0;border-radius:12px;background:#ecfdf5;color:#065f46;font:inherit;text-align:left;white-space:normal;cursor:pointer;box-shadow:none;transition:background .12s,border-color .12s}'
+        + 'button.oc-import.oc-imp2:hover{background:#d1fae5;border-color:#10b981}button.oc-import.oc-imp2[hidden]{display:none}'
+        + '.oc-imp2 .oc-imp-ico{flex:none;width:34px;height:34px;border-radius:9px;background:#fff;color:#047857;display:grid;place-items:center;box-shadow:inset 0 0 0 1px #a7f3d0}'
+        + '.oc-imp2 .oc-imp-ico svg{width:18px;height:18px}.oc-imp2 .oc-imp-t{display:flex;flex-direction:column;min-width:0;line-height:1.25}'
+        + '.oc-imp2 .oc-imp-t b{font-size:.875rem;font-weight:700;color:#065f46}'
+        + '.oc-imp2 .oc-imp-t small{font-size:.8125rem;font-weight:500;color:#047857;overflow-wrap:anywhere}'
+        + '.oc-imp2 .oc-imp-pijl{flex:none;width:18px;height:18px;margin-left:auto;color:#047857}'
+        + '@media (prefers-reduced-motion:reduce){button.oc-import.oc-imp2{transition:none}}';
+      document.head.appendChild(s);
+    }
+    var ICO = '<span class="oc-imp-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11M7.5 9.5L12 14l4.5-4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg></span>';
+    var PIJL = '<svg class="oc-imp-pijl" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
+    function versier() {
+      var bs = document.querySelectorAll('button.oc-import[data-oc-types]'); if (!bs.length) return;
+      css();
+      [].forEach.call(bs, function (b) {
+        var sam = samenvatting(String(b.dataset.ocTypes).split(',').map(function (x) { return x.trim(); }));
+        if (b.dataset.ocSam === sam && b.querySelector('.oc-imp-t')) return;
+        b.dataset.ocSam = sam; b.classList.add('oc-imp2');
+        b.innerHTML = ICO + '<span class="oc-imp-t"><b>Overnemen uit andere tools</b>' + (sam ? '<small>' + esc(sam) + '</small>' : '') + '</span>' + PIJL;
+      });
+    }
+    var gepland = false;
+    function plan() { if (gepland) return; gepland = true; (window.requestAnimationFrame || setTimeout)(function () { gepland = false; versier(); }); }
+    try { new MutationObserver(plan).observe(document.documentElement, { childList: true, subtree: true }); } catch (e) {}
+    addEventListener('storage', plan); addEventListener('focus', plan); addEventListener('pageshow', plan);
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', plan); else plan();
+  }());
   if (window.parent === window) return;
   addEventListener('keydown', function (e) {
     if (e.key !== 'Escape' || e.defaultPrevented) return;
