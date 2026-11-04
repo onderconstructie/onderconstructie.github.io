@@ -1773,7 +1773,7 @@ let current = null;
 let stapel = [];
 
 // Een kader voor een tool. Onzichtbaar tot de tool geladen is: geen witte flits, geen half getekende tool.
-function makeFrame(id) {
+function makeFrame(id, zoek) {
   const t = byId[id], f = document.createElement('iframe');
   f.title = t.title;
   f.allow = 'camera; microphone; fullscreen; screen-wake-lock; web-share; clipboard-write; autoplay';
@@ -1784,7 +1784,7 @@ function makeFrame(id) {
     wire(f, id);
     if (frames.get(current) === f) { setLoading(false); prefetchNext(id); }
   });
-  f.src = t.path;
+  f.src = t.path + (zoek || '');
   $('frames').appendChild(f);
   return f;
 }
@@ -1810,11 +1810,13 @@ function prefetchNext(id) {
   'requestIdleCallback' in window ? requestIdleCallback(run, { timeout: 3000 }) : setTimeout(run, 1200);
 }
 
-function openTool(id, fromHistory, van) {
+function openTool(id, fromHistory, van, zoek) {
   const t = byId[id]; if (!t) return;
   let f = frames.get(id);
   if (!f && pre && pre.id === id) { f = pre.f; pre = null; f.inert = false; }
-  if (!f) f = makeFrame(id);
+  // Een link met ?van=<tool> ("Zet in Takenbord"): de tool opnieuw laden met die vraag, dan opent ze meteen de kiezer
+  if (f && zoek && /[?&]van=/.test(zoek)) { delete f.dataset.loaded; f.classList.add('loading-frame'); f.src = t.path + zoek; }
+  if (!f) f = makeFrame(id, zoek);
   else frames.delete(id);   // opnieuw achteraan zetten
   setLoading(!f.dataset.loaded);
   frames.set(id, f);
@@ -1936,7 +1938,7 @@ function wire(f, id) {
     const p = norm(u.pathname);
     if (HUBS.includes(p)) { e.preventDefault(); showHome(); return; }
     const t = toolForPath(p);
-    if (t && t.id !== id) { e.preventDefault(); openTool(t.id, false, id); }
+    if (t && t.id !== id) { e.preventDefault(); openTool(t.id, false, id, /[?&]van=/.test(u.search) ? u.search : ''); }
   }, true);
 }
 
@@ -2071,7 +2073,8 @@ function sizeOf(keys) { let n = 0; try { keys.forEach(k => n += k.length + (loca
 const kb = n => n < 1024 ? `${n} bytes` : `${(n / 1024).toFixed(n < 10240 ? 1 : 0).replace('.', ',')} kB`;
 function dataEntries() {
   const all = lsKeys();
-  return [...TOOLS, APP_ENTRY].map(t => ({ t, keys: keysFor(t.storage || [], all) })).filter(e => e.keys.length);
+  // Ook wat de tool aan andere tools aanbiedt (oc.share.<id>): wissen of bewaren gaat dan samen
+  return [...TOOLS, APP_ENTRY].map(t => ({ t, keys: keysFor((t.storage || []).concat(t.id && t.id !== '__app' && !(t.storage || []).includes('oc.share.' + t.id) ? ['oc.share.' + t.id] : []), all) })).filter(e => e.keys.length);
 }
 function renderData() {
   const entries = dataEntries();
