@@ -551,7 +551,9 @@ body { overflow-wrap:break-word; }
      ]);                                   // aanroepen na elke bewaring
      ocShare.clear('raci');                // bij "Alles wissen"
      const gekozen = await ocShare.pick({ types:['betrokkene'], self:'weerstand', title:'Doelgroepen overnemen' });
-     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source en .list erbij)
+     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source, .bronId en .list erbij)
+     // Afspraak: een tool geeft wat ze overnam (bronId) NIET opnieuw door, tenzij ze er een eigen oordeel aan toevoegde
+     // (een score, een eigenaar, een datum). Zo blijft de bron de baas en komt wat daar verwijderd is niet terug.
      ocShare.pick({ ..., have:['Budget goedkeuren'] })  // optioneel: wat de tool al heeft, staat uitgegrijsd ("staat er al")
      ocShare.pick({ ..., vink:false })    // niets vooraf aanvinken;  notes:false  toont geen notities (voor wie alleen namen neemt)
      window.ocHave = types => [...]       // optioneel per tool: dan telt de knop "Overnemen uit andere tools" alleen wat nieuw is
@@ -707,7 +709,7 @@ const ocShare = (() => {
       document.addEventListener('keydown', onKey, true);
       back.querySelector('.ocs-cancel').addEventListener('click', () => close([]));
       ok.addEventListener('click', () => close(boxes().filter(b => b.checked).map(b => {
-        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, list: s.list };
+        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, bronId: s.id, list: s.list };
       })));
       const first = back.querySelector('input:not(:disabled),.ocs-cancel'); first && first.focus();
     });
@@ -924,6 +926,7 @@ function valid(s) {
         const o = { id:id(i.id), text:str(i.text, 200), note:str(i.note, 300), st:STS.includes(i.st) ? i.st : '', actie:str(i.actie, 200), wie:str(i.wie, 80), tegen:isoD(i.tegen) };
         if (k === 'meet') { o.streef = str(i.streef, 40); o.nu = str(i.nu, 40); }
         if (k === 'regels') o.ref = str(i.ref, 120);
+        if (typeof i.van === 'string' && i.van) o.van = str(i.van, 40);   // herkomst: overgenomen uit die tool
         return o;
       });
     });
@@ -1159,7 +1162,7 @@ document.addEventListener('input', e => {
   }
   const li = el.closest('.it'); if (!li) return;
   const f = findItem(p, li.dataset.id); if (!f) return;
-  if (el.classList.contains('ed-text')) { if (/\n/.test(el.value)) el.value = el.value.replace(/\s*\n\s*/g, ' '); grow(el); const v = el.value.trim(); if (v) f.it.text = v.slice(0, 300); }
+  if (el.classList.contains('ed-text')) { if (/\n/.test(el.value)) el.value = el.value.replace(/\s*\n\s*/g, ' '); grow(el); const v = el.value.trim(); if (v) { f.it.text = v.slice(0, 300); delete f.it.van; } }
   else if (el.classList.contains('ed-note')) f.it.note = el.value.slice(0, 300);
   else if (el.classList.contains('ed-streef')) f.it.streef = el.value.slice(0, 40);
   else if (el.classList.contains('ed-nu')) f.it.nu = el.value.slice(0, 40);
@@ -1253,7 +1256,7 @@ async function impWie() {
   const picked = await ocShare.pick({ types:['betrokkene'], self:OC_ID, title:'Rollen overnemen', intro:'Kies wie het werk doet. Elk komt als item in het vak "Met wie?"', have:al });
   const p = cur(); if (!picked.length || !p) { focusF('imp:wie'); return; }
   const have = new Set(p.vak.wie.map(it => ocSleutel(it.text))), undo = snapshot(); let n = 0, dubbel = 0;
-  picked.forEach(x => { const t = ocNaam(x.text), k = ocSleutel(t); if (!k) return; if (have.has(k)) { dubbel++; return; } have.add(k); p.vak.wie.push(newItem('wie', t)); n++; });
+  picked.forEach(x => { const t = ocNaam(x.text), k = ocSleutel(t); if (!k) return; if (have.has(k)) { dubbel++; return; } have.add(k); p.vak.wie.push({ ...newItem('wie', t), van:x.bronId || x.source || 'ander' }); n++; });
   if (!n) { toast(ocOvergenomen(0, alTel + dubbel, 'rol', 'rollen')); focusF('add:wie'); return; }
   save(); render(); focusF('add:wie');
   toast(ocOvergenomen(n, alTel + dubbel, 'rol', 'rollen'), undo);
@@ -1301,7 +1304,9 @@ document.addEventListener('pointerup', endDrag);
 document.addEventListener('pointercancel', endDrag);
 document.addEventListener('touchmove', e => { if (drag && e.cancelable) e.preventDefault(); }, { passive:false });
 
-/* ---------- Klaarleggen voor andere tools: wat je aan de aandachtspunten doet (voorbeelden niet) ---------- */
+/* ---------- Klaarleggen voor andere tools: wat je aan de aandachtspunten doet (voorbeelden niet) ----------
+   Een overgenomen rol (van) gaat alleen mee als je er hier een aandachtspunt van maakte: die status, de actie,
+   wie en tegen wanneer zijn eigen oordeel. Een overgenomen rol zonder status gaat nooit mee (zoals elk item zonder status). */
 function publish() {
   const lists = state.procs.filter(p => !p.voorbeeld).map(p => ({
     name: title(p).slice(0, 80),

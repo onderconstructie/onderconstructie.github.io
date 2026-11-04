@@ -635,7 +635,9 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
      ]);                                   // aanroepen na elke bewaring
      ocShare.clear('raci');                // bij "Alles wissen"
      const gekozen = await ocShare.pick({ types:['betrokkene'], self:'weerstand', title:'Doelgroepen overnemen' });
-     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source en .list erbij)
+     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source, .bronId en .list erbij)
+     // Afspraak: een tool geeft wat ze overnam (bronId) NIET opnieuw door, tenzij ze er een eigen oordeel aan toevoegde
+     // (een score, een eigenaar, een datum). Zo blijft de bron de baas en komt wat daar verwijderd is niet terug.
      ocShare.pick({ ..., have:['Budget goedkeuren'] })  // optioneel: wat de tool al heeft, staat uitgegrijsd ("staat er al")
      ocShare.pick({ ..., vink:false })    // niets vooraf aanvinken;  notes:false  toont geen notities (voor wie alleen namen neemt)
      window.ocHave = types => [...]       // optioneel per tool: dan telt de knop "Overnemen uit andere tools" alleen wat nieuw is
@@ -791,7 +793,7 @@ const ocShare = (() => {
       document.addEventListener('keydown', onKey, true);
       back.querySelector('.ocs-cancel').addEventListener('click', () => close([]));
       ok.addEventListener('click', () => close(boxes().filter(b => b.checked).map(b => {
-        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, list: s.list };
+        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, bronId: s.id, list: s.list };
       })));
       const first = back.querySelector('input:not(:disabled),.ocs-cancel'); first && first.focus();
     });
@@ -869,9 +871,10 @@ function ocOvergenomen(n, al, een, veel) {
 }
 
 // Doelgroepen uit het voorbeeld worden niet klaargelegd.
+// Een overgenomen doelgroep (g.van) geven we niet opnieuw door: de bron blijft de baas. Zijn acties zijn wel eigen werk.
 function ocPublish() {
   const echt = state.groups.filter(g => !g.voorbeeld);
-  const lists = [{ name:'Doelgroepen', items: echt.map(g => {
+  const lists = [{ name:'Doelgroepen', items: echt.filter(g => !g.van).map(g => {
     const d = dominant(levelScores(lastScan(g))), br = bronScores(lastScan(g));
     const note = [d.length ? 'dominant: ' + d.map(x => x.L.stem.toLowerCase()).join(', ') : '', br.top.length ? 'knelpunt: ' + topNames(br) : ''].filter(Boolean).join(' · ');
     return { type:'betrokkene', text:ocNaam(g.name), note: note || undefined };
@@ -901,7 +904,7 @@ document.addEventListener('click', async e => {
   const have = new Set(al.map(ocSleutel)), restore = snapshot();
   let n = 0, dubbel = 0, first = null;
   picked.forEach(p => { const name = ocNaam(p.text), k = ocSleutel(name); if (!k) return; if (have.has(k)) { dubbel++; return; } have.add(k);
-    const g = newGroup(name); state.groups.push(g); if (!first) first = g; n++; });
+    const g = { ...newGroup(name), van: p.bronId || p.source || 'ander' }; state.groups.push(g); if (!first) first = g; n++; });
   if (first) { state.current = first.id; state.view = 'scan'; state.step = 0; }
   if (n) { save(); render(); }
   toast(ocOvergenomen(n, alTel + dubbel, 'doelgroep', 'doelgroepen'), n ? restore : undefined);
@@ -1597,7 +1600,7 @@ function addGroup(name) {
   if (!name) { $('group-name').focus(); $('group-name').select(); }
   requestAnimationFrame(() => { const a = document.querySelector('.tab.active'); a && a.scrollIntoView({ inline:'nearest', block:'nearest' }); });
 }
-$('group-name').addEventListener('input', () => { const g = cur(); if (!g) return; g.name = $('group-name').value.slice(0, 300); save(); renderTabs(); unitLabel(g); });
+$('group-name').addEventListener('input', () => { const g = cur(); if (!g) return; g.name = $('group-name').value.slice(0, 300); delete g.van; save(); renderTabs(); unitLabel(g); });
 $('group-name').addEventListener('blur', () => { const g = cur(); if (g && !g.name.trim()) { g.name = 'Naamloos'; save(); render(); toast('Geen naam ingevuld: de groep heet nu "Naamloos"'); } });
 document.addEventListener('input', e => { const t = e.target; if (t.getAttribute && t.getAttribute('aria-invalid') === 'true') { t.removeAttribute('aria-invalid'); const er = t.form && t.form.querySelector('.err'); if (er) er.textContent = ''; } });
 $('group-project').addEventListener('input', () => { const g = cur(); if (!g) return; g.project = $('group-project').value.slice(0, 80); save(); });

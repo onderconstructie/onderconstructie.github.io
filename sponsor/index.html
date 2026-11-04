@@ -506,7 +506,9 @@ function ocProject(fb) { try { const p = JSON.parse(localStorage.getItem('oc.pro
      ]);                                   // aanroepen na elke bewaring
      ocShare.clear('raci');                // bij "Alles wissen"
      const gekozen = await ocShare.pick({ types:['betrokkene'], self:'weerstand', title:'Doelgroepen overnemen' });
-     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source en .list erbij)
+     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source, .bronId en .list erbij)
+     // Afspraak: een tool geeft wat ze overnam (bronId) NIET opnieuw door, tenzij ze er een eigen oordeel aan toevoegde
+     // (een score, een eigenaar, een datum). Zo blijft de bron de baas en komt wat daar verwijderd is niet terug.
      ocShare.pick({ ..., have:['Budget goedkeuren'] })  // optioneel: wat de tool al heeft, staat uitgegrijsd ("staat er al")
      ocShare.pick({ ..., vink:false })    // niets vooraf aanvinken;  notes:false  toont geen notities (voor wie alleen namen neemt)
      window.ocHave = types => [...]       // optioneel per tool: dan telt de knop "Overnemen uit andere tools" alleen wat nieuw is
@@ -662,7 +664,7 @@ const ocShare = (() => {
       document.addEventListener('keydown', onKey, true);
       back.querySelector('.ocs-cancel').addEventListener('click', () => close([]));
       ok.addEventListener('click', () => close(boxes().filter(b => b.checked).map(b => {
-        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, list: s.list };
+        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, bronId: s.id, list: s.list };
       })));
       const first = back.querySelector('input:not(:disabled),.ocs-cancel'); first && first.focus();
     });
@@ -1069,7 +1071,8 @@ function ocOvergenomen(n, al, een, veel) {
 function publish() {
   if (state.voorbeeld) { ocShare.clear(OC_ID); return; }
   const r = compute(), lists = [];
-  if (state.name.trim()) lists.push({ name:'Sponsor', items:[{ type:'betrokkene', text: ocNaam(state.name), note: ['sponsor', state.role.trim()].filter(Boolean).join(' · ') }] });
+  // Een overgenomen naam (state.nameVan) geven we niet opnieuw door: de bron blijft de baas. Wie hem hier aanpast, maakt hem eigen werk.
+  if (state.name.trim() && !state.nameVan) lists.push({ name:'Sponsor', items:[{ type:'betrokkene', text: ocNaam(state.name), note: ['sponsor', state.role.trim()].filter(Boolean).join(' · ') }] });
   // De vraag naar één eindverantwoordelijke telt ook zonder ingevulde stellingen.
   const kc = [
     { type:'kerncijfer', text:'sponsor.duidelijk', note: state.clear || '' },
@@ -1116,7 +1119,7 @@ document.addEventListener('click', e => {
 });
 document.addEventListener('input', e => {
   const map = { project:'project', 'sp-name':'name', 'sp-role':'role', notes:'notes' };
-  if (map[e.target.id]) { state[map[e.target.id]] = e.target.value; save(); if (e.target.id === 'sp-name') { clearTimeout(render.t); render.t = setTimeout(render, 200); } }
+  if (map[e.target.id]) { state[map[e.target.id]] = e.target.value; if (e.target.id === 'sp-name') delete state.nameVan; save(); if (e.target.id === 'sp-name') { clearTimeout(render.t); render.t = setTimeout(render, 200); } }
 });
 
 
@@ -1139,9 +1142,9 @@ $('oc-imp').addEventListener('click', async () => {
   const al = ocAlSponsor();
   const picked = await ocShare.pick({ types:['betrokkene'], self:OC_ID, title:'Sponsor overnemen', intro:'Kies de sponsor uit de betrokkenen of rollen in een andere tool.', have:al });
   if (!picked.length) return;
-  const vorige = state.name;
-  state.name = ocNaam(picked[0].text); save(); render(); refreshImports();
-  toast(picked.length > 1 ? 'De eerste gekozen persoon is overgenomen als sponsor' : 'Sponsor overgenomen', () => { state.name = vorige; save(); render(); refreshImports(); });
+  const vorige = state.name, vorigeVan = state.nameVan;
+  state.name = ocNaam(picked[0].text); state.nameVan = picked[0].bronId || picked[0].source || 'ander'; save(); render(); refreshImports();
+  toast(picked.length > 1 ? 'De eerste gekozen persoon is overgenomen als sponsor' : 'Sponsor overgenomen', () => { state.name = vorige; if (vorigeVan) state.nameVan = vorigeVan; else delete state.nameVan; save(); render(); refreshImports(); });
 });
 
 /* Menu */

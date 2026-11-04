@@ -498,7 +498,9 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
      ]);                                   // aanroepen na elke bewaring
      ocShare.clear('raci');                // bij "Alles wissen"
      const gekozen = await ocShare.pick({ types:['betrokkene'], self:'weerstand', title:'Doelgroepen overnemen' });
-     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source en .list erbij)
+     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source, .bronId en .list erbij)
+     // Afspraak: een tool geeft wat ze overnam (bronId) NIET opnieuw door, tenzij ze er een eigen oordeel aan toevoegde
+     // (een score, een eigenaar, een datum). Zo blijft de bron de baas en komt wat daar verwijderd is niet terug.
      ocShare.pick({ ..., have:['Budget goedkeuren'] })  // optioneel: wat de tool al heeft, staat uitgegrijsd ("staat er al")
      ocShare.pick({ ..., vink:false })    // niets vooraf aanvinken;  notes:false  toont geen notities (voor wie alleen namen neemt)
      window.ocHave = types => [...]       // optioneel per tool: dan telt de knop "Overnemen uit andere tools" alleen wat nieuw is
@@ -654,7 +656,7 @@ const ocShare = (() => {
       document.addEventListener('keydown', onKey, true);
       back.querySelector('.ocs-cancel').addEventListener('click', () => close([]));
       ok.addEventListener('click', () => close(boxes().filter(b => b.checked).map(b => {
-        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, list: s.list };
+        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, bronId: s.id, list: s.list };
       })));
       const first = back.querySelector('input:not(:disabled),.ocs-cancel'); first && first.focus();
     });
@@ -945,6 +947,7 @@ function valid(s) {
     id: /^[\w-]+$/.test(u.id) ? u.id : uid(), voorbeeld: !!u.voorbeeld,
     project: str(u.project == null ? (u.voorbeeld ? '' : ocProject('')) : u.project, 80),   // oudere gegevens: de projectnaam uit de app
     wie: str(u.wie, 300), wat: str(u.wat, 240), waar: str(u.waar, 160),
+    ...(typeof u.wieVan === 'string' && u.wieVan ? { wieVan: str(u.wieVan, 40) } : {}),   // herkomst van 'wie': overgenomen uit die tool
     scores: migScores(u.scores),
     notes: migNotes(u.notes),
     acts: (Array.isArray(u.acts) ? u.acts : []).filter(a => a && /^[\w-]+$/.test(a.id)).map(a => { const part = OUD[a.part] || (PARTS.some(p => p.id === a.part) ? a.part : ''), pp = PARTS.find(p => p.id === part); return { id:a.id, text:str(a.text, 240), part, help: pp && pp.helps.some(h => h[0] === a.help) ? a.help : '', who:str(a.who, 80), when:str(a.when, 40), done:!!a.done }; }),
@@ -1285,7 +1288,7 @@ document.addEventListener('input', e => {
   if (el.dataset.f) {
     const f = el.dataset.f;
     if (f === 'note') { u.notes[el.dataset.id] = el.value; save(); return; }
-    u[f] = el.value; save();
+    u[f] = el.value; if (f === 'wie') delete u.wieVan; save();
     if (['wie', 'wat', 'waar'].includes(f)) { clearTimeout(render.t); render.t = setTimeout(render, 250); const tb = document.querySelector(`[data-unit="${u.id}"] .nm`); if (tb) tb.textContent = title(u); }
     return;
   }
@@ -1328,11 +1331,11 @@ document.addEventListener('click', async e => {
       if (!picked.length) return;
       const undo = snapshot(), have = new Set(al.map(ocSleutel)), nieuw = [];
       let dubbel = 0;
-      picked.forEach(p => { const t = ocNaam(p.text), k = ocSleutel(t); if (!k) return; if (have.has(k)) { dubbel++; return; } have.add(k); nieuw.push(t); });
+      picked.forEach(p => { const t = ocNaam(p.text), k = ocSleutel(t); if (!k) return; if (have.has(k)) { dubbel++; return; } have.add(k); nieuw.push({ t, van:p.bronId || p.source || 'ander' }); });
       if (!nieuw.length) { toast(ocOvergenomen(0, alTel + dubbel, 'doelgroep', 'doelgroepen')); return; }
       const hier = !u.voorbeeld && !u.wie.trim() ? nieuw.shift() : null;
-      if (hier) u.wie = hier;
-      const extra = nieuw.map(t => newUnit(t)); state.units.push(...extra);
+      if (hier) { u.wie = hier.t; u.wieVan = hier.van; }
+      const extra = nieuw.map(x => ({ ...newUnit(x.t), wieVan:x.van })); state.units.push(...extra);
       if (!hier) state.current = extra[0].id;
       save(); render();
       toast(ocOvergenomen((hier ? 1 : 0) + extra.length, alTel + dubbel, 'doelgroep', 'doelgroepen'), undo); return; }
@@ -1366,12 +1369,14 @@ function actNote(u, a) {
   if (wat) return 'Gedrag: ' + [zelfde ? '' : wie, wat].filter(Boolean).join(' ');
   return wie && !zelfde ? 'Doelgroep: ' + wie : undefined;
 }
-/* Klaarleggen: de doelgroep en de acties (voorbeelden niet) */
+/* Klaarleggen: de doelgroep en de acties (voorbeelden niet).
+   Een overgenomen doelgroep (wieVan) geven we niet opnieuw door: de bron blijft de baas. Wie de naam hier aanpast,
+   maakt hem eigen werk. De acties en het gedrag zijn altijd eigen werk. */
 function publish() {
   const lists = state.units.filter(u => !u.voorbeeld && (u.wie.trim() || u.wat.trim() || u.acts.length)).map(u => ({
     name: title(u).slice(0, 80),
     items: [
-      ...(u.wie.trim() ? [{ type:'betrokkene', text:ocNaam(u.wie), note:u.wat.trim() ? 'moet ' + u.wat.trim() : undefined }] : []),
+      ...(u.wie.trim() && !u.wieVan ? [{ type:'betrokkene', text:ocNaam(u.wie), note:u.wat.trim() ? 'moet ' + u.wat.trim() : undefined }] : []),
       ...u.acts.filter(a => a.text.trim() && !a.done).map(a => ({ type:'actie', text:a.text.trim(), who:a.who || undefined, when:a.when || undefined, note:actNote(u, a) }))
     ]
   }));

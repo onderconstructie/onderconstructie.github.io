@@ -392,7 +392,9 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor:pointer; opacity:
      ]);                                   // aanroepen na elke bewaring
      ocShare.clear('raci');                // bij "Alles wissen"
      const gekozen = await ocShare.pick({ types:['betrokkene'], self:'weerstand', title:'Doelgroepen overnemen' });
-     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source en .list erbij)
+     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source, .bronId en .list erbij)
+     // Afspraak: een tool geeft wat ze overnam (bronId) NIET opnieuw door, tenzij ze er een eigen oordeel aan toevoegde
+     // (een score, een eigenaar, een datum). Zo blijft de bron de baas en komt wat daar verwijderd is niet terug.
      ocShare.pick({ ..., have:['Budget goedkeuren'] })  // optioneel: wat de tool al heeft, staat uitgegrijsd ("staat er al")
      ocShare.pick({ ..., vink:false })    // niets vooraf aanvinken;  notes:false  toont geen notities (voor wie alleen namen neemt)
      window.ocHave = types => [...]       // optioneel per tool: dan telt de knop "Overnemen uit andere tools" alleen wat nieuw is
@@ -548,7 +550,7 @@ const ocShare = (() => {
       document.addEventListener('keydown', onKey, true);
       back.querySelector('.ocs-cancel').addEventListener('click', () => close([]));
       ok.addEventListener('click', () => close(boxes().filter(b => b.checked).map(b => {
-        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, list: s.list };
+        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, bronId: s.id, list: s.list };
       })));
       const first = back.querySelector('input:not(:disabled),.ocs-cancel'); first && first.focus();
     });
@@ -612,10 +614,15 @@ function ocUndoable(restore) {
   };
 }
 
+/* Herkomst: een item dat je overnam (van = de tool waar het vandaan komt) geeft Vinkje alleen door als jij hier
+   een eigenaar of datum gaf die niet uit de bron kwam (vanWas). Afvinken of verwijderen doe je in de bron zelf:
+   zo blijft de bron de baas. Pas je de tekst aan, dan is het je eigen item. Oude items zonder herkomst gelden als eigen werk. */
+const ocWieWanneer = i => (i.who || '') + '|' + (i.when || '');
+const ocEigen = i => !i.van || (ocWieWanneer(i) !== (i.vanWas || '') && !!(i.who || i.when));
 function ocPublish() {
   // Komma's tussen namen ("Fatima, Pieter") worden "; ": zo maakt het Takenbord er aparte mensen van. Het veld zelf blijft zoals je het typte.
   function ocWie(w) { return typeof w === 'string' && w.trim() ? w.split(/\s*[,;]\s*/).map(x => x.trim()).filter(Boolean).join('; ') || undefined : undefined; }
-  ocShare.publish(OC_ID, OC_TOOL, state.lists.filter(l => !l.voorbeeld).map(l => ({ name:l.name, items:l.items.filter(i => !i.done).map(i => (i.who || i.when) ? ({ type:'actie', text:i.text, who:ocWie(i.who), when:i.when || undefined }) : ({ type:'taak', text:i.text })) })));
+  ocShare.publish(OC_ID, OC_TOOL, state.lists.filter(l => !l.voorbeeld).map(l => ({ name:l.name, items:l.items.filter(i => !i.done && ocEigen(i)).map(i => (i.who || i.when) ? ({ type:'actie', text:i.text, who:ocWie(i.who), when:i.when || undefined }) : ({ type:'taak', text:i.text })) })));
 }
 
 async function ocWipeAll() {
@@ -650,6 +657,7 @@ document.addEventListener('click', async e => {
     const who = cleanWho(p.who), when = cleanWhen(p.when);
     if (who) it.who = who;
     if (when) it.when = when;
+    if (typeof p.bronId === 'string' && p.bronId) { it.van = p.bronId.slice(0, 40); it.vanWas = ocWieWanneer(it); }   // herkomst
     if (it.who || it.when) l.fields = true;
     l.items.push(it); n++;
   });
@@ -837,6 +845,7 @@ function load() {
           const who = cleanWho(it.who), when = cleanWhen(it.when);
           if (who) it.who = who; else delete it.who;
           if (when) it.when = when; else delete it.when;
+          if (typeof it.van === 'string' && it.van) it.vanWas = typeof it.vanWas === 'string' ? it.vanWas : ''; else { delete it.van; delete it.vanWas; }
           return it;
         })
       }));
@@ -1058,7 +1067,8 @@ document.addEventListener('focusout', e => {
   const v = e.target.textContent.replace(/\s+/g, ' ').trim();
   if (v === it.text) return;
   if (!v) { const restore = snapshot(); l.items.splice(idx, 1); save(); render(); toast('Item verwijderd', restore); return; }
-  it.text = v.slice(0, 500); save(); renderTabs();
+  it.text = v.slice(0, 500); delete it.van; delete it.vanWas;   // eigen tekst: nu je eigen item
+  save(); renderTabs();
 });
 // Plakken van meerdere regels in een bestaand item: voeg ze eronder in
 document.addEventListener('paste', e => {
@@ -1180,7 +1190,7 @@ $('menu').addEventListener('click', async e => {
   }
   if (act === 'share') shareList(l);
   if (act === 'duplicate') {
-    const copyL = newList(l.name + ' (kopie)', l.items.map(i => Object.assign({ id:uid(), text:i.text, done:false }, i.who ? { who:i.who } : {}, i.when ? { when:i.when } : {})));
+    const copyL = newList(l.name + ' (kopie)', l.items.map(i => Object.assign({ id:uid(), text:i.text, done:false }, i.who ? { who:i.who } : {}, i.when ? { when:i.when } : {}, i.van ? { van:i.van, vanWas:i.vanWas || '' } : {})));
     if (l.fields) { copyL.fields = true; save(); render(); }
     toast('Kopie gemaakt, alle vinkjes open');
   }

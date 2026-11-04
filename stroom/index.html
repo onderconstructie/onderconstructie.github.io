@@ -445,7 +445,9 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
      ]);                                   // aanroepen na elke bewaring
      ocShare.clear('raci');                // bij "Alles wissen"
      const gekozen = await ocShare.pick({ types:['betrokkene'], self:'weerstand', title:'Doelgroepen overnemen' });
-     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source en .list erbij)
+     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source, .bronId en .list erbij)
+     // Afspraak: een tool geeft wat ze overnam (bronId) NIET opnieuw door, tenzij ze er een eigen oordeel aan toevoegde
+     // (een score, een eigenaar, een datum). Zo blijft de bron de baas en komt wat daar verwijderd is niet terug.
      ocShare.pick({ ..., have:['Budget goedkeuren'] })  // optioneel: wat de tool al heeft, staat uitgegrijsd ("staat er al")
      ocShare.pick({ ..., vink:false })    // niets vooraf aanvinken;  notes:false  toont geen notities (voor wie alleen namen neemt)
      window.ocHave = types => [...]       // optioneel per tool: dan telt de knop "Overnemen uit andere tools" alleen wat nieuw is
@@ -601,7 +603,7 @@ const ocShare = (() => {
       document.addEventListener('keydown', onKey, true);
       back.querySelector('.ocs-cancel').addEventListener('click', () => close([]));
       ok.addEventListener('click', () => close(boxes().filter(b => b.checked).map(b => {
-        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, list: s.list };
+        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, bronId: s.id, list: s.list };
       })));
       const first = back.querySelector('input:not(:disabled),.ocs-cancel'); first && first.focus();
     });
@@ -781,14 +783,16 @@ const ICON = {
 const node = (type, text = '', lane = null) => ({ id:uid(), type, text, lane, to:'auto', no: type === 'keuze' ? 'none' : undefined, yesLabel:'ja', noLabel:'nee' });
 function newFlow(name) { return { id:uid(), name: name || 'Nieuwe stroom', lanes:[], nodes:[node('start', 'Start'), node('stap', ''), node('einde', 'Einde')] }; }
 function fresh() { return { flows:[], current:null, view:'draw', viewV:2, fit:null }; }
+// Herkomst: een rol of stap die uit een andere tool overgenomen werd, draagt van:'<id van die tool>'.
+const vanVan = x => typeof x.van === 'string' && x.van ? { van:x.van.slice(0, 40) } : {};
 function valid(s) {
   if (!s || !Array.isArray(s.flows)) return fresh();
   s.flows = s.flows.filter(f => f && Array.isArray(f.nodes)).map(f => ({
     id: /^[\w-]+$/.test(f.id) ? f.id : uid(), name: String(f.name || 'Stroom').slice(0, 80), voorbeeld: !!f.voorbeeld,
-    lanes: (Array.isArray(f.lanes) ? f.lanes : []).filter(l => l && /^[\w-]+$/.test(l.id)).map(l => ({ id:l.id, name:String(l.name || '').slice(0, 300) })),
+    lanes: (Array.isArray(f.lanes) ? f.lanes : []).filter(l => l && /^[\w-]+$/.test(l.id)).map(l => ({ id:l.id, name:String(l.name || '').slice(0, 300), ...vanVan(l) })),
     nodes: f.nodes.filter(n => n && /^[\w-]+$/.test(n.id) && TYPES[n.type]).map(n => ({ id:n.id, type:n.type, text:String(n.text || '').slice(0, 300),
       lane: /^[\w-]+$/.test(n.lane || '') ? n.lane : null, to: typeof n.to === 'string' ? n.to : 'auto', no: typeof n.no === 'string' ? n.no : (n.type === 'keuze' ? 'none' : undefined),
-      yesLabel: String(n.yesLabel ?? 'ja').slice(0, 20), noLabel: String(n.noLabel ?? 'nee').slice(0, 20) }))
+      yesLabel: String(n.yesLabel ?? 'ja').slice(0, 20), noLabel: String(n.noLabel ?? 'nee').slice(0, 20), ...vanVan(n) }))
   }));
   // Vanaf nu opent Stroom eerst op de stroom zelf, ook voor wie eerder de lijst open had.
   if (s.viewV !== 2) { s.view = 'draw'; s.viewV = 2; }
@@ -1169,13 +1173,15 @@ function renderDrawingOnly() {
   const hl = $('hints'); if (hl) hl.innerHTML = hintsHTML(f);
 }
 
-/* Klaarleggen voor andere tools: rollen als betrokkenen, stappen als taken (voorbeelden niet) */
+/* Klaarleggen voor andere tools: rollen als betrokkenen, stappen als taken (voorbeelden niet).
+   Wat uit een andere tool overgenomen werd (van), geven we niet opnieuw door: de bron blijft de baas.
+   Een rol of stap waarvan je de tekst hier aanpast, is eigen werk. */
 function publish() {
   const lists = [];
   state.flows.filter(f => !f.voorbeeld).forEach(f => {
     const items = [
-      ...f.lanes.filter(l => l.name.trim()).map(l => ({ type:'betrokkene', text:ocNaam(l.name), note:'rol in ' + f.name })),
-      ...f.nodes.filter(n => n.type === 'stap' && n.text.trim()).map(n => ({ type:'taak', text:n.text.trim(), note: (f.lanes.find(l => l.id === n.lane) || {}).name || undefined }))
+      ...f.lanes.filter(l => !l.van && l.name.trim()).map(l => ({ type:'betrokkene', text:ocNaam(l.name), note:'rol in ' + f.name })),
+      ...f.nodes.filter(n => !n.van && n.type === 'stap' && n.text.trim()).map(n => ({ type:'taak', text:n.text.trim(), note: (f.lanes.find(l => l.id === n.lane) || {}).name || undefined }))
     ];
     if (items.length) lists.push({ name:f.name, items });
   });
@@ -1260,7 +1266,7 @@ document.addEventListener('click', async e => {
       const picked = await ocShare.pick({ types:['betrokkene'], self:OC_ID, title:'Rollen overnemen', intro:'Kies rollen of betrokkenen. Elk wordt een baan in de tekening.', have:al });
       if (!picked.length) return;
       const undo = snapshot(), have = new Set(al.map(ocSleutel)); let k = 0, dubbel = 0;
-      picked.forEach(p => { const nm = ocNaam(p.text), s = ocSleutel(nm); if (!s) return; if (have.has(s)) { dubbel++; return; } have.add(s); f.lanes.push({ id:uid(), name:nm }); k++; });
+      picked.forEach(p => { const nm = ocNaam(p.text), s = ocSleutel(nm); if (!s) return; if (have.has(s)) { dubbel++; return; } have.add(s); f.lanes.push({ id:uid(), name:nm, van:p.bronId || p.source || 'ander' }); k++; });
       if (f.lanes.length && f.nodes.every(m => !m.lane)) f.nodes.forEach(m => m.lane = f.lanes[0].id);
       if (k) { save(); render(); }
       toast(ocOvergenomen(k, alTel + dubbel, 'rol', 'rollen'), k ? undo : undefined); return; }
@@ -1270,9 +1276,9 @@ document.addEventListener('click', async e => {
       if (!picked.length) return;
       const undo = snapshot(), have = new Set(al.map(ocSleutel)), nieuw = [];
       let dubbel = 0;
-      picked.forEach(p => { const t = ocNaam(p.text), s = ocSleutel(t); if (!s) return; if (have.has(s)) { dubbel++; return; } have.add(s); nieuw.push(t); });
+      picked.forEach(p => { const t = ocNaam(p.text), s = ocSleutel(t); if (!s) return; if (have.has(s)) { dubbel++; return; } have.add(s); nieuw.push({ t, van:p.bronId || p.source || 'ander' }); });
       const last = f.nodes[f.nodes.length - 1], at = last && last.type === 'einde' ? f.nodes.length - 1 : f.nodes.length;
-      f.nodes.splice(at, 0, ...nieuw.map(t => node('stap', t, (f.nodes[at - 1] || {}).lane || null)));
+      f.nodes.splice(at, 0, ...nieuw.map(x => ({ ...node('stap', x.t, (f.nodes[at - 1] || {}).lane || null), van:x.van })));
       if (nieuw.length) { save(); render(); }
       toast(ocOvergenomen(nieuw.length, alTel + dubbel, 'stap', 'stappen'), nieuw.length ? undo : undefined); return; }
   }
@@ -1281,9 +1287,9 @@ document.addEventListener('input', e => {
   const el = e.target, k = el.dataset && el.dataset.f; if (!k) return;
   const f = cur(); if (!f) return;
   if (k === 'name') { if (/\n/.test(el.value)) el.value = el.value.replace(/\s*\n\s*/g, ' '); f.name = el.value; growName(); save(); const tb = document.querySelector(`[data-flow="${f.id}"] .nm`); tb && (tb.textContent = el.value || 'Stroom'); return; }
-  if (k === 'lane-name') { const l = f.lanes.find(x => x.id === el.dataset.id); if (l) { l.name = el.value; el.size = laneSize(el.value); save(); drawSoon(); } return; }
+  if (k === 'lane-name') { const l = f.lanes.find(x => x.id === el.dataset.id); if (l) { l.name = el.value; delete l.van; el.size = laneSize(el.value); save(); drawSoon(); } return; }
   const n = f.nodes.find(x => x.id === el.dataset.id); if (!n) return;
-  if (k === 'text' || k === 'yesLabel' || k === 'noLabel') { n[k] = el.value; save(); drawSoon();
+  if (k === 'text' || k === 'yesLabel' || k === 'noLabel') { n[k] = el.value; if (k === 'text') delete n.van; save(); drawSoon();
     document.querySelectorAll(`[data-f="${k}"][data-id="${n.id}"]`).forEach(o => { if (o !== el) o.value = el.value; }); }
 });
 // Bij elke toets de hele tekening opnieuw maken kost op een gsm merkbaar tijd: pas tekenen als je even stopt met typen.

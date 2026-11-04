@@ -473,7 +473,9 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
      ]);                                   // aanroepen na elke bewaring
      ocShare.clear('raci');                // bij "Alles wissen"
      const gekozen = await ocShare.pick({ types:['betrokkene'], self:'weerstand', title:'Doelgroepen overnemen' });
-     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source en .list erbij)
+     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source, .bronId en .list erbij)
+     // Afspraak: een tool geeft wat ze overnam (bronId) NIET opnieuw door, tenzij ze er een eigen oordeel aan toevoegde
+     // (een score, een eigenaar, een datum). Zo blijft de bron de baas en komt wat daar verwijderd is niet terug.
      ocShare.pick({ ..., have:['Budget goedkeuren'] })  // optioneel: wat de tool al heeft, staat uitgegrijsd ("staat er al")
      ocShare.pick({ ..., vink:false })    // niets vooraf aanvinken;  notes:false  toont geen notities (voor wie alleen namen neemt)
      window.ocHave = types => [...]       // optioneel per tool: dan telt de knop "Overnemen uit andere tools" alleen wat nieuw is
@@ -629,7 +631,7 @@ const ocShare = (() => {
       document.addEventListener('keydown', onKey, true);
       back.querySelector('.ocs-cancel').addEventListener('click', () => close([]));
       ok.addEventListener('click', () => close(boxes().filter(b => b.checked).map(b => {
-        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, list: s.list };
+        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, bronId: s.id, list: s.list };
       })));
       const first = back.querySelector('input:not(:disabled),.ocs-cancel'); first && first.focus();
     });
@@ -824,7 +826,7 @@ function valid(s) {
   s.maps = s.maps.filter(m => m && Array.isArray(m.nodes) && m.nodes.length).map(m => ({
     id: /^[\w-]+$/.test(m.id) ? m.id : uid(), name: String(m.name || 'Ideeënkaart').slice(0, 80), voorbeeld: !!m.voorbeeld,
     ...(m.vorm === 'boom' ? { vorm:'boom' } : {}),   // vorm van de tekening: 'kaart' (standaard, niet bewaard) of 'boom'
-    nodes: normalize(m.nodes.filter(n => n && /^[\w-]+$/.test(n.id)).map(n => ({ id:n.id, text:String(n.text || '').slice(0, 300), level: Math.max(0, Math.min(12, parseInt(n.level) || 0)), collapsed: !!n.collapsed, ...(n.hint ? { hint: n.hint === 'plaats' ? 'plaats' : true } : {}) })))
+    nodes: normalize(m.nodes.filter(n => n && /^[\w-]+$/.test(n.id)).map(n => ({ id:n.id, text:String(n.text || '').slice(0, 300), level: Math.max(0, Math.min(12, parseInt(n.level) || 0)), collapsed: !!n.collapsed, ...(n.hint ? { hint: n.hint === 'plaats' ? 'plaats' : true } : {}), ...(typeof n.van === 'string' && n.van ? { van: n.van.slice(0, 40) } : {}) })))
   })).filter(m => m.nodes.length);
   return { ...fresh(), ...s, maps:s.maps, fit: typeof s.fit === 'boolean' ? s.fit : null };
 }
@@ -1214,6 +1216,7 @@ function finishEdit(next = null, cancel = false) {
   sel = { id, bar:true, edit:null };
   if (fresh && !val && i > 0 && !hasKids(m.nodes, i)) {   // leeg nieuw idee: laat geen lege vakjes achter
     m.nodes.splice(i, 1); normalize(m.nodes); sel.id = m.nodes[i - 1].id; save(); render(); reveal(); const c = $('canvas'); c && c.focus({ preventScroll:true }); return; }
+  if (n.text !== val.slice(0, 300)) delete n.van;   // tekst aangepast: eigen werk
   n.text = val.slice(0, 300); save(); render();
   if (next && val) { const x = next === 'child' || i === 0 ? addChild(m, i) : addSibling(m, i); save(); render(); startEdit(x.id, true); }
   else { reveal(); const c = $('canvas'); c && c.focus({ preventScroll:true }); }
@@ -1381,14 +1384,14 @@ document.addEventListener('input', e => {
   const el = e.target, m = cur(); if (!m) return;
   if (el.classList.contains('mm-edit')) {
     const n = m.nodes.find(x => x.id === el.dataset.id); if (!n) return;
-    n.text = el.value; delete n.hint; save(); drawSoon();
+    n.text = el.value; delete n.hint; delete n.van; save(); drawSoon();
     const li = document.querySelector(`.mtxt[data-id="${n.id}"]`); if (li) li.value = el.value;
     if (n.level === 0) { const tb = document.querySelector(`[data-map="${m.id}"] .nm`); if (tb) tb.textContent = title(m); }
     return;
   }
   if (!el.classList.contains('mtxt')) return;
   const n = m.nodes.find(x => x.id === el.dataset.id); if (!n) return;
-  n.text = el.value; delete n.hint; save(); drawSoon();
+  n.text = el.value; delete n.hint; delete n.van; save(); drawSoon();
   if (n.level === 0) { const tb = document.querySelector(`[data-map="${m.id}"] .nm`); if (tb) tb.textContent = title(m); }
 });
 // Bij elke toets de hele kaart opnieuw schikken kost op een gsm merkbaar tijd: pas tekenen als je even stopt met typen.
@@ -1444,7 +1447,7 @@ document.addEventListener('click', async e => {
       const picked = await ocShare.pick({ types:T, self:OC_ID, title:'Ideeën overnemen', intro:'Kies items uit andere tools. Ze komen als nieuwe hoofdtakken in de ideeënkaart.', have:al });
       if (!picked.length) return;
       const undo = snapshot(), have = new Set(al.map(ocSleutel)); let k = 0, dubbel = 0;
-      picked.forEach(p => { const t = ocNaam(p.text), s = ocSleutel(t); if (!s) return; if (have.has(s)) { dubbel++; return; } have.add(s); m.nodes.push(idea(t, 1)); k++; });
+      picked.forEach(p => { const t = ocNaam(p.text), s = ocSleutel(t); if (!s) return; if (have.has(s)) { dubbel++; return; } have.add(s); m.nodes.push({ ...idea(t, 1), van:p.bronId || p.source || 'ander' }); k++; });
       if (k) { save(); render(); }
       toast(ocOvergenomen(k, alTel + dubbel, 'idee', 'ideeën'), k ? undo : undefined); return; }
   }
@@ -1470,6 +1473,8 @@ const soortVan = tak => { const t = String(tak || '').trim();
   if (/^wie\b|betrokken|doelgroep|belanghebbend|partners|gebruikers|klanten/i.test(t)) return 'betrokkene';
   if (/risico|gevaren|bedreiging/i.test(t)) return 'risico';
   return 'taak'; };
+// Een idee dat uit een andere tool overgenomen werd (van), geven we niet opnieuw door: de bron blijft de baas.
+// Pas je de tekst hier aan, dan is het eigen werk. Een kerncijfer telt alle ideeën, ook de overgenomen.
 function publish() {
   const lists = [];
   state.maps.filter(m => !m.voorbeeld).forEach(m => {
@@ -1478,7 +1483,7 @@ function publish() {
     // ideeën zonder subtakken zijn de concrete punten; de hoofdtak gaat mee als notitie.
     // De hoofdtak zegt ook wat het is: onder "Wie" of "Betrokkenen" staan mensen, onder "Risico's" risico's. De rest is werk.
     const kop = [];   // de tak boven elk niveau
-    m.nodes.forEach((n, i) => { kop[n.level] = n.text.trim(); if (n.level === 1) main = n.text.trim(); if (n.level >= 1 && n.text.trim() && !n.hint && !hasKids(m.nodes, i)) items.push({ type: n.level > 1 ? soortVan(kop[n.level - 1]) : 'taak', text:n.text.trim(), note: n.level > 1 ? main || undefined : undefined }); });
+    m.nodes.forEach((n, i) => { kop[n.level] = n.text.trim(); if (n.level === 1) main = n.text.trim(); if (n.level >= 1 && n.text.trim() && !n.hint && !n.van && !hasKids(m.nodes, i)) items.push({ type: n.level > 1 ? soortVan(kop[n.level - 1]) : 'taak', text:n.text.trim(), note: n.level > 1 ? main || undefined : undefined }); });
     // ook een kaart met alleen sjabloonvragen telt als werk: een kerncijfer met het aantal ideeën
     items.push({ type:'kerncijfer', text:'mindmap.ideeen', note:String(m.nodes.length - 1) });
     if (m.nodes.length > 1 || m.nodes[0].text.trim()) lists.push({ name: title(m), items });

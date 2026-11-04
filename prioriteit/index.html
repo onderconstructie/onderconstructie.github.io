@@ -805,7 +805,9 @@ function ocPickProject(st, arr, cur = 'current') { const p = ocProject(''); if (
      ]);                                   // aanroepen na elke bewaring
      ocShare.clear('raci');                // bij "Alles wissen"
      const gekozen = await ocShare.pick({ types:['betrokkene'], self:'weerstand', title:'Doelgroepen overnemen' });
-     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source en .list erbij)
+     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source, .bronId en .list erbij)
+     // Afspraak: een tool geeft wat ze overnam (bronId) NIET opnieuw door, tenzij ze er een eigen oordeel aan toevoegde
+     // (een score, een eigenaar, een datum). Zo blijft de bron de baas en komt wat daar verwijderd is niet terug.
      ocShare.pick({ ..., have:['Budget goedkeuren'] })  // optioneel: wat de tool al heeft, staat uitgegrijsd ("staat er al")
      ocShare.pick({ ..., vink:false })    // niets vooraf aanvinken;  notes:false  toont geen notities (voor wie alleen namen neemt)
      window.ocHave = types => [...]       // optioneel per tool: dan telt de knop "Overnemen uit andere tools" alleen wat nieuw is
@@ -961,7 +963,7 @@ const ocShare = (() => {
       document.addEventListener('keydown', onKey, true);
       back.querySelector('.ocs-cancel').addEventListener('click', () => close([]));
       ok.addEventListener('click', () => close(boxes().filter(b => b.checked).map(b => {
-        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, list: s.list };
+        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, bronId: s.id, list: s.list };
       })));
       const first = back.querySelector('input:not(:disabled),.ocs-cancel'); first && first.focus();
     });
@@ -1027,8 +1029,13 @@ function ocUndoable(restore) {
 
 // Een overgenomen risico blijft een risico (soort:'risico'), een actie blijft een actie met haar eigenaar en datum (soort:'actie').
 // De rest gaat als taak. De notitie is het vak: "Snelle winst", …
+// De bron blijft de baas: wat we overnamen (i.van = id van de bron), geven we pas door als het een vak heeft. Het vak is ons eigen oordeel.
+// Zolang het "nog in te schatten" is, geeft alleen de bron het door. Eigen werk (zonder van) gaat altijd mee.
+const ocDoorgeven = i => !i.van || !!quadOf(i);
+// Pas je de tekst van een overgenomen punt aan, dan wordt het eigen werk: de herkomst valt weg.
+const ocEigen = (it, tekst) => { if (it && it.van && ocNorm(tekst) !== ocNorm(it.name)) delete it.van; };
 function ocPublish() {
-  ocShare.publish(OC_ID, OC_TOOL, state.lists.filter(l => !l.voorbeeld).map(l => ({ name:l.name, items:l.items.filter(i => !i.done).map(i => {
+  ocShare.publish(OC_ID, OC_TOOL, state.lists.filter(l => !l.voorbeeld).map(l => ({ name:l.name, items:l.items.filter(i => !i.done && ocDoorgeven(i)).map(i => {
     const note = (quadOf(i) || { name:'Nog in te schatten' }).name;
     if (i.soort === 'risico') return { type:'risico', text:ocKaal(i.name) || i.name, note };
     if (i.soort === 'actie') return { type:'actie', text:i.name, note, who:i.who, when:i.when };
@@ -1079,6 +1086,8 @@ document.addEventListener('click', async e => {
     const it = est ? { id:uid(), name, impact:est.impact, effort:est.effort, done:false } : { id:uid(), name, impact:3, effort:3, done:false, nieuw:true };
     if (risico) it.soort = 'risico';
     else if (p.type === 'actie') { it.soort = 'actie'; if (p.who) it.who = String(p.who).slice(0, 120); if (p.when) it.when = String(p.when).slice(0, 40); }
+    // Herkomst: de id van de bron-tool. Zo geven we dit niet opnieuw door zolang er geen vak bij staat.
+    if (p.bronId) it.van = String(p.bronId).slice(0, 60);
     l.items.push(it); have.set(k, it); if (est) fromGap++;
     n++; });
   const stond = ocAlAangeboden(types, al) + dubbel;
@@ -1536,7 +1545,7 @@ $('form').addEventListener('submit', e => {
   };
   if (editing) {
     const it = cur().items.find(i => i.id === editing);
-    if (it) { if (name) it.name = name.slice(0, 120); zet(it); }
+    if (it) { if (name) { ocEigen(it, name); it.name = name.slice(0, 120); } zet(it); }
     editing = null; $('name').value = '';
     $('impact').value = ''; $('effort').value = '';
     save(); render(); return;
@@ -1578,7 +1587,7 @@ $('name').addEventListener('input', () => {
   if (!editing) return;
   const it = cur().items.find(i => i.id === editing);
   const v = $('name').value.trim();
-  if (it && v) { it.name = v.slice(0, 120); save(); renderMatrix(); renderList(); }
+  if (it && v) { ocEigen(it, v); it.name = v.slice(0, 120); save(); renderMatrix(); renderList(); }
 });
 $('cancel-edit').addEventListener('click', () => {
   editing = null; $('name').value = ''; $('impact').value = ''; $('effort').value = ''; render(); $('name').focus();

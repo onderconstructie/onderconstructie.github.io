@@ -563,7 +563,9 @@ function ocPickProject(st, arr, cur = 'current') { const p = ocProject(''); if (
      ]);                                   // aanroepen na elke bewaring
      ocShare.clear('raci');                // bij "Alles wissen"
      const gekozen = await ocShare.pick({ types:['betrokkene'], self:'weerstand', title:'Doelgroepen overnemen' });
-     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source en .list erbij)
+     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source, .bronId en .list erbij)
+     // Afspraak: een tool geeft wat ze overnam (bronId) NIET opnieuw door, tenzij ze er een eigen oordeel aan toevoegde
+     // (een score, een eigenaar, een datum). Zo blijft de bron de baas en komt wat daar verwijderd is niet terug.
      ocShare.pick({ ..., have:['Budget goedkeuren'] })  // optioneel: wat de tool al heeft, staat uitgegrijsd ("staat er al")
      ocShare.pick({ ..., vink:false })    // niets vooraf aanvinken;  notes:false  toont geen notities (voor wie alleen namen neemt)
      window.ocHave = types => [...]       // optioneel per tool: dan telt de knop "Overnemen uit andere tools" alleen wat nieuw is
@@ -719,7 +721,7 @@ const ocShare = (() => {
       document.addEventListener('keydown', onKey, true);
       back.querySelector('.ocs-cancel').addEventListener('click', () => close([]));
       ok.addEventListener('click', () => close(boxes().filter(b => b.checked).map(b => {
-        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, list: s.list };
+        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, bronId: s.id, list: s.list };
       })));
       const first = back.querySelector('input:not(:disabled),.ocs-cancel'); first && first.focus();
     });
@@ -792,9 +794,13 @@ function roleNote(m, r) {
   if (l.i) bits.push(`hoort ${l.i} achteraf`);
   return bits.length ? bits.join(', ') : undefined;
 }
+/* De bron blijft de baas. Wat we overnamen (van = id van de bron), geven we niet opnieuw door, behalve met ons eigen oordeel:
+   - een overgenomen rol (persoon) nooit: wie in de Betrokkenenradar verdwijnt, mag niet via deze matrix terugkomen;
+   - een overgenomen taak alleen als er iemand R of A is: de eigenaar is ons oordeel, en het Takenbord en de Sprint gebruiken hem. */
+const ocEigenaar = (m, t) => m.roles.some(r => IS_R(t.cells[r.id]) || IS_A(t.cells[r.id]));
 function ocPublish() {
   ocShare.publish(OC_ID, OC_TOOL, state.mats.filter(m => !m.voorbeeld).map(m => ({ name:m.name, items:[
-    ...m.roles.map(r => ({ type:'betrokkene', text:r.name, note:roleNote(m, r) })), ...m.tasks.map(t => {
+    ...m.roles.filter(r => !r.van).map(r => ({ type:'betrokkene', text:r.name, note:roleNote(m, r) })), ...m.tasks.filter(t => !t.van || ocEigenaar(m, t)).map(t => {
       // Alles wat de matrix weet, gaat mee. Eigenaar: wie het werk doet (R); is er geen R, dan wie beslist (A);
       // is er geen van beide, dan de eigenaar uit de tool waar de taak vandaan kwam. A, C en I staan in de notitie.
       // Een datum uit de bron (bv. een mijlpaal uit de Projectopdracht) gaat ook weer mee.
@@ -838,7 +844,9 @@ document.addEventListener('click', async e => {
     // Bij een taak bewaren we ook de eigenaar en de datum uit de bron: zo geeft de matrix ze weer door.
     const t = { id:uid(), name, cells:{} };
     if (!roles) { if (p.who) t.who = String(p.who).slice(0, 120); if (p.when) t.when = String(p.when).slice(0, 40); }
-    list.push(roles ? { id:uid(), name } : t); n++; });
+    const x = roles ? { id:uid(), name } : t;
+    if (p.bronId) x.van = String(p.bronId).slice(0, 60);   // herkomst: zie ocPublish
+    list.push(x); n++; });
   const stond = ocAlAangeboden(types, al) + dubbel;
   save(); render();
   const alZin = stond ? `. ${stond} ${stond === 1 ? 'stond' : 'stonden'} er al.` : '';
@@ -1365,7 +1373,8 @@ document.addEventListener('focusout', e => {
   if (!obj) return;
   const v = el.textContent.replace(/\s+/g, ' ').trim().slice(0, 120);
   if (el.dataset.cancel || !v) { delete el.dataset.cancel; el.textContent = obj.name; return; }
-  if (v !== obj.name) { obj.name = v; save(); render(); }
+  // Pas je de naam van iets overgenomens aan, dan wordt het eigen werk: de herkomst valt weg.
+  if (v !== obj.name) { if (obj.van && ocNorm(v) !== ocNorm(obj.name)) delete obj.van; obj.name = v; save(); render(); }
 });
 
 /* ---------- Naar het eerste probleem springen ---------- */

@@ -588,7 +588,9 @@ function ocPickProject(st, arr, cur = 'current') { const p = ocProject(''); if (
      ]);                                   // aanroepen na elke bewaring
      ocShare.clear('raci');                // bij "Alles wissen"
      const gekozen = await ocShare.pick({ types:['betrokkene'], self:'weerstand', title:'Doelgroepen overnemen' });
-     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source en .list erbij)
+     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source, .bronId en .list erbij)
+     // Afspraak: een tool geeft wat ze overnam (bronId) NIET opnieuw door, tenzij ze er een eigen oordeel aan toevoegde
+     // (een score, een eigenaar, een datum). Zo blijft de bron de baas en komt wat daar verwijderd is niet terug.
      ocShare.pick({ ..., have:['Budget goedkeuren'] })  // optioneel: wat de tool al heeft, staat uitgegrijsd ("staat er al")
      ocShare.pick({ ..., vink:false })    // niets vooraf aanvinken;  notes:false  toont geen notities (voor wie alleen namen neemt)
      window.ocHave = types => [...]       // optioneel per tool: dan telt de knop "Overnemen uit andere tools" alleen wat nieuw is
@@ -744,7 +746,7 @@ const ocShare = (() => {
       document.addEventListener('keydown', onKey, true);
       back.querySelector('.ocs-cancel').addEventListener('click', () => close([]));
       ok.addEventListener('click', () => close(boxes().filter(b => b.checked).map(b => {
-        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, list: s.list };
+        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, bronId: s.id, list: s.list };
       })));
       const first = back.querySelector('input:not(:disabled),.ocs-cancel'); first && first.focus();
     });
@@ -810,12 +812,19 @@ function ocUndoable(restore) {
 
 // Een overgenomen risico blijft een risico (soort:'risico'), een actie blijft een actie met haar eigenaar en datum (soort:'actie').
 // De rest gaat als taak. De notitie is het vak: "Snelle winst", …
+// De bron blijft de baas: wat we overnamen (i.van = id van de bron), geven we pas door als het een vak heeft. Het vak is ons eigen oordeel.
+// Zolang het "nog in te schatten" is, geeft alleen de bron het door. Eigen werk (zonder van) gaat altijd mee.
+const ocDoorgeven = i => !i.van || !!quadOf(i);
+// Pas je de tekst van een overgenomen punt aan, dan wordt het eigen werk: de herkomst valt weg.
+const ocEigen = (it, tekst) => { if (it && it.van && ocNorm(tekst) !== ocNorm(it.name)) delete it.van; };
 
 // Klaarleggen voor andere tools: de doelen (type 'doel') en per indicator de eerstvolgende meetactie (type 'taak', met wie en wanneer).
 // Een voorbeeld wordt nooit klaargelegd.
+// De bron blijft de baas: een overgenomen doel (d.van = id van de bron) geven we niet opnieuw door. De meetacties erbij zijn wel
+// eigen werk (met een eigenaar en een datum): die gaan altijd mee.
 function ocPublish() {
   ocShare.publish(OC_ID, OC_TOOL, state.plans.filter(p => !p.voorbeeld).map(p => ({ name:p.name, items:[
-    ...p.doelen.filter(d => d.text.trim()).map(d => ({ type:'doel', text:d.text.trim(), note:d.inds.map(i => i.name.trim()).filter(Boolean).join(' · ') || undefined })),
+    ...p.doelen.filter(d => d.text.trim() && !d.van).map(d => ({ type:'doel', text:d.text.trim(), note:d.inds.map(i => i.name.trim()).filter(Boolean).join(' · ') || undefined })),
     ...p.doelen.flatMap(d => d.inds.flatMap(i => meetTaken(d, i))) ] })));
 }
 
@@ -856,6 +865,7 @@ function addImported(list, label, alVooraf = 0) {
     if (x.note) d.note = String(x.note).slice(0, 200);
     if (x.from) d.from = String(x.from).slice(0, 60);
     if (x.gapId) d.gapId = x.gapId;
+    if (x.van) d.van = String(x.van).slice(0, 60);   // herkomst: zie ocPublish
     if (x.ind) d.inds = [Object.assign(newInd(), x.ind)];
     p.doelen.push(d); fresh.push(d);
   });
@@ -893,7 +903,7 @@ function gapBron() {
 function fromGapTheme(x) {
   const as = x.asis || {}, tb = x.tobe || {}, unit = String(as.unit || '').trim();
   const pct = /^\s*(%|procent)/i.test(unit) || /%/.test(String(as.value || ''));
-  return { text: String(tb.text || '').trim() || String(x.theme).trim(), note: String(x.theme).trim(), from:'Gap-analyse', gapId: x.id,
+  return { text: String(tb.text || '').trim() || String(x.theme).trim(), note: String(x.theme).trim(), from:'Gap-analyse', gapId: x.id, van:'gap',
     ind: { name: String(as.indicator || '').trim().slice(0, 120), vorm: pct ? 'pct' : '', eenheid: pct ? '' : unit.slice(0, 30),
       nul: { v: String(as.value || '').slice(0, 20), d:'' }, streef: { v: String(tb.value || '').slice(0, 20), d: /^\d{4}-\d{2}-\d{2}$/.test(tb.by || '') ? tb.by : '' } } };
 }
@@ -904,11 +914,11 @@ async function pickDoelen(ander) {
   // Doelen van een ander project staan nooit vooraf aangevinkt: de kiezer staat er al (pick tekent hem meteen), dus hier alles uitvinken.
   if (ander) { const k = document.querySelector('.ocs-back'); if (k) { k.querySelectorAll('input[type=checkbox]:checked').forEach(b => { b.checked = false; }); k.dispatchEvent(new Event('change')); } }
   const picked = await wacht;
-  if (picked.length) addImported(picked.map(p => ({ text:p.text, note:p.note, from:p.source })), '', ocAlAangeboden(['doel'], have));
+  if (picked.length) addImported(picked.map(p => ({ text:p.text, note:p.note, from:p.source, van:p.bronId })), '', ocAlAangeboden(['doel'], have));
 }
 async function takeOpdracht() {
   const b = opdrachtBron(); if (!b) { toast('Je projectopdracht heeft nog geen doelen'); return; }
-  if (b.one) { addImported(b.one.items.map(it => ({ text:it.text, note:it.note, from:'Projectopdracht' })), 'je projectopdracht'); return; }
+  if (b.one) { addImported(b.one.items.map(it => ({ text:it.text, note:it.note, from:'Projectopdracht', van:'opdracht' })), 'je projectopdracht'); return; }
   pickDoelen(true);   // geen opdracht met deze naam: zelf kiezen, nooit stil een ander project nemen
 }
 function takeGap() {
@@ -1612,7 +1622,8 @@ document.addEventListener('input', e => {
   const card = t.closest('[data-doel]'); if (!card) return;
   const d = doelById(card.dataset.doel); if (!d) return;
   let wasPct = null, i0 = null;
-  if (t.dataset.df === 'text') d.text = t.value;
+  // Pas je de tekst van een overgenomen doel aan, dan wordt het eigen werk: de herkomst valt weg.
+  if (t.dataset.df === 'text') { if (d.van && ocNorm(t.value) !== ocNorm(d.text)) delete d.van; d.text = t.value; }
   else if (t.dataset.f) { const i = i0 = indOf(d, t); if (!i) return; wasPct = isPct(i); setPath(i, t.dataset.f, t.value); }
   else if (t.dataset.mf) { const i = indOf(d, t), m = i && i.metingen.find(x => x.id === t.closest('[data-met]').dataset.met); if (!m) return; m[t.dataset.mf] = t.value; }
   else return;
