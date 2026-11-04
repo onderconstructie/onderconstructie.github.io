@@ -625,7 +625,9 @@ function ocPickProject(st, arr, cur = 'current') { const p = ocProject(''); if (
      ]);                                   // aanroepen na elke bewaring
      ocShare.clear('raci');                // bij "Alles wissen"
      const gekozen = await ocShare.pick({ types:['betrokkene'], self:'weerstand', title:'Doelgroepen overnemen' });
-     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source en .list erbij)
+     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source, .bronId en .list erbij)
+     // Afspraak: een tool geeft wat ze overnam (bronId) NIET opnieuw door, tenzij ze er een eigen oordeel aan toevoegde
+     // (een score, een eigenaar, een datum). Zo blijft de bron de baas en komt wat daar verwijderd is niet terug.
      ocShare.pick({ ..., have:['Budget goedkeuren'] })  // optioneel: wat de tool al heeft, staat uitgegrijsd ("staat er al")
      ocShare.pick({ ..., vink:false })    // niets vooraf aanvinken;  notes:false  toont geen notities (voor wie alleen namen neemt)
      window.ocHave = types => [...]       // optioneel per tool: dan telt de knop "Overnemen uit andere tools" alleen wat nieuw is
@@ -781,7 +783,7 @@ const ocShare = (() => {
       document.addEventListener('keydown', onKey, true);
       back.querySelector('.ocs-cancel').addEventListener('click', () => close([]));
       ok.addEventListener('click', () => close(boxes().filter(b => b.checked).map(b => {
-        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, list: s.list };
+        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, bronId: s.id, list: s.list };
       })));
       const first = back.querySelector('input:not(:disabled),.ocs-cancel'); first && first.focus();
     });
@@ -857,10 +859,11 @@ function ocOvergenomen(n, al, een, veel) {
 
 // Per analyse: teams als betrokkenen en de gekozen acties. Daarnaast de kerncijfers van de actieve analyse.
 // Een voorbeeld wordt niet klaargelegd, ook niet in de kerncijfers.
+// Een overgenomen team (u.van) geven we niet opnieuw door: de bron blijft de baas. Zijn acties zijn wel eigen werk.
 function ocPublish() {
   const echt = state.analyses.filter(a => !a.voorbeeld);
   const lists = echt.map(a => ({ name:a.name, items:[
-    ...a.units.filter(u => u.name.trim() && !(isBlank(u) && u.name === DEFAULT_UNIT)).map(u => { const r = result(u); return { type:'betrokkene', text:ocNaam(u.name), note:'klimaat: ' + (r ? CLIM[r.cid].name : pendingOf(u) ? 'nog onzeker' : 'nog niet ingevuld') }; }),
+    ...a.units.filter(u => !u.van && u.name.trim() && !(isBlank(u) && u.name === DEFAULT_UNIT)).map(u => { const r = result(u); return { type:'betrokkene', text:ocNaam(u.name), note:'klimaat: ' + (r ? CLIM[r.cid].name : pendingOf(u) ? 'nog onzeker' : 'nog niet ingevuld') }; }),
     ...a.units.flatMap(u => u.plan.filter(p => p.text.trim()).map(p => ({ type:'actie', text:p.text, who:p.who, when:p.when }))) ] }));
   const kern = cur().voorbeeld ? echt.find(a => kerncijfers(a)) : cur();
   const k = kern ? kerncijfers(kern) : null;
@@ -895,7 +898,7 @@ document.addEventListener('click', async e => {
   if (a.units.length === 1 && isBlank(a.units[0]) && a.units[0].name === DEFAULT_UNIT) { a.units = []; have.clear(); }
   let n = 0, dubbel = 0;
   picked.forEach(p => { const t = ocNaam(p.text), k = ocSleutel(t); if (!k) return; if (have.has(k)) { dubbel++; return; } have.add(k);
-    const u = newUnit(t); u.open = false; a.units.push(u); n++; });
+    const u = newUnit(t); u.open = false; u.van = p.bronId || p.source || 'ander'; a.units.push(u); n++; });
   if (!a.units.length) a.units.push(newUnit());
   save(); render();
   toast(ocOvergenomen(n, alTel + dubbel, 'team', 'teams'), n ? restore : undefined);
@@ -1545,7 +1548,7 @@ document.addEventListener('input', e => {
   const f = t.dataset.f; if (!f || t.tagName === 'SELECT') return;
   const { u, p } = ctx(t); if (!u) return;
   if (t.tagName === 'TEXTAREA') grow(t);
-  if (f === 'u.name') { u.name = t.value; save(); clearTimeout(renderMatrix.t); renderMatrix.t = setTimeout(() => renderMatrix(), 150); return; }
+  if (f === 'u.name') { u.name = t.value; delete u.van; save(); clearTimeout(renderMatrix.t); renderMatrix.t = setTimeout(() => renderMatrix(), 150); return; }
   if (f === 'u.reason') { u.reason = t.value; save(); return; }
   if (f === 'note') { u.notes[t.dataset.q] = t.value; save(); return; }
   if (f.startsWith('plan.')) { const pl = u.plan.find(x => x.text === t.dataset.text); if (pl) { pl[f.slice(5)] = t.value; save(); } return; }

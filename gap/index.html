@@ -660,7 +660,9 @@ function ocPickProject(st, arr, cur = 'current') { const p = ocProject(''); if (
      ]);                                   // aanroepen na elke bewaring
      ocShare.clear('raci');                // bij "Alles wissen"
      const gekozen = await ocShare.pick({ types:['betrokkene'], self:'weerstand', title:'Doelgroepen overnemen' });
-     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source en .list erbij)
+     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source, .bronId en .list erbij)
+     // Afspraak: een tool geeft wat ze overnam (bronId) NIET opnieuw door, tenzij ze er een eigen oordeel aan toevoegde
+     // (een score, een eigenaar, een datum). Zo blijft de bron de baas en komt wat daar verwijderd is niet terug.
      ocShare.pick({ ..., have:['Budget goedkeuren'] })  // optioneel: wat de tool al heeft, staat uitgegrijsd ("staat er al")
      ocShare.pick({ ..., vink:false })    // niets vooraf aanvinken;  notes:false  toont geen notities (voor wie alleen namen neemt)
      window.ocHave = types => [...]       // optioneel per tool: dan telt de knop "Overnemen uit andere tools" alleen wat nieuw is
@@ -816,7 +818,7 @@ const ocShare = (() => {
       document.addEventListener('keydown', onKey, true);
       back.querySelector('.ocs-cancel').addEventListener('click', () => close([]));
       ok.addEventListener('click', () => close(boxes().filter(b => b.checked).map(b => {
-        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, list: s.list };
+        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, bronId: s.id, list: s.list };
       })));
       const first = back.querySelector('input:not(:disabled),.ocs-cancel'); first && first.focus();
     });
@@ -891,7 +893,8 @@ function ocPublish() {
     ...a.gaps.flatMap(g => g.actions.filter(x => !x.done && x.text && x.text.trim()).map(x => ({ type:'actie', text:x.text, who:x.who, when:x.by,
       note:[ocSchatting(g), g.theme.trim() && 'thema: ' + g.theme.trim()].filter(Boolean).join(' · ') || undefined }))),
     // Elk thema gaat mee, ook als het al acties heeft (anders verdwijnt het uit Prioriteren). Het aantal acties staat in de notitie.
-    ...a.gaps.filter(g => g.theme && g.theme.trim()).map(g => {
+    // De bron blijft de baas: een overgenomen thema (g.van = id van de bron) gaat pas mee als het ingeschat is. De inschatting is ons oordeel.
+    ...a.gaps.filter(g => g.theme && g.theme.trim() && (!g.van || rated(g))).map(g => {
       const k = g.actions.filter(x => !x.done && x.text && x.text.trim()).length;
       const note = [ocSchatting(g), k ? `${k} ${k === 1 ? 'actie' : 'acties'}` : ''].filter(Boolean).join(' · ') || undefined;
       return ocRisico(g) ? { type:'risico', text:ocRisicoTekst(g), note } : { type:'taak', text:'Verschil wegwerken: ' + g.theme.trim(), note };
@@ -927,6 +930,8 @@ document.addEventListener('click', async e => {
     const g = newGap(t); g.open = false;
     // Een risico blijft een risico: we onthouden de tekst, zodat het niet als "Verschil wegwerken: …" verder gaat en geen doel wordt in het Meetplan.
     if (p.type === 'risico') g.risico = p.text.trim().slice(0, 300);
+    // Herkomst: zolang het thema niet ingeschat is, geeft alleen de bron het door.
+    if (p.bronId) g.van = String(p.bronId).slice(0, 60);
     a.gaps.push(g); n++; });
   const stond = ocAlAangeboden(types, al) + dubbel;
   save(); render();
@@ -1508,7 +1513,11 @@ document.addEventListener('input', e => {
   if (t.id === 'new-gap') return;
   const card = t.closest('[data-gap]'); if (!card) return;
   const g = gapById(card.dataset.gap); if (!g) return;
-  if (t.dataset.f) setPath(g, t.dataset.f, t.value);
+  if (t.dataset.f) {
+    // Pas je de naam van een overgenomen thema aan, dan wordt het eigen werk: de herkomst valt weg.
+    if (t.dataset.f === 'theme' && g.van && ocNorm(t.value) !== ocNorm(g.theme)) delete g.van;
+    setPath(g, t.dataset.f, t.value);
+  }
   else if (t.dataset.why != null) g.whys[+t.dataset.why] = t.value;
   else if (t.dataset.ef) { const ev = g.evidence.find(x => x.id === t.closest('[data-ev]').dataset.ev); if (ev) ev[t.dataset.ef] = t.value; }
   else if (t.dataset.af) { const a = g.actions.find(x => x.id === t.closest('[data-act-id]').dataset.actId); if (a) a[t.dataset.af] = t.value; }

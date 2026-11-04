@@ -566,7 +566,9 @@ function ocPickProject(st, arr, cur = 'current') { const p = ocProject(''); if (
      ]);                                   // aanroepen na elke bewaring
      ocShare.clear('raci');                // bij "Alles wissen"
      const gekozen = await ocShare.pick({ types:['betrokkene'], self:'weerstand', title:'Doelgroepen overnemen' });
-     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source en .list erbij)
+     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source, .bronId en .list erbij)
+     // Afspraak: een tool geeft wat ze overnam (bronId) NIET opnieuw door, tenzij ze er een eigen oordeel aan toevoegde
+     // (een score, een eigenaar, een datum). Zo blijft de bron de baas en komt wat daar verwijderd is niet terug.
      ocShare.pick({ ..., have:['Budget goedkeuren'] })  // optioneel: wat de tool al heeft, staat uitgegrijsd ("staat er al")
      ocShare.pick({ ..., vink:false })    // niets vooraf aanvinken;  notes:false  toont geen notities (voor wie alleen namen neemt)
      window.ocHave = types => [...]       // optioneel per tool: dan telt de knop "Overnemen uit andere tools" alleen wat nieuw is
@@ -722,7 +724,7 @@ const ocShare = (() => {
       document.addEventListener('keydown', onKey, true);
       back.querySelector('.ocs-cancel').addEventListener('click', () => close([]));
       ok.addEventListener('click', () => close(boxes().filter(b => b.checked).map(b => {
-        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, list: s.list };
+        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, bronId: s.id, list: s.list };
       })));
       const first = back.querySelector('input:not(:disabled),.ocs-cancel'); first && first.focus();
     });
@@ -790,9 +792,14 @@ function ocUndoable(restore) {
    Een voorbeeld-log wordt nooit klaargelegd. */
 // Komma's tussen namen ("Fatima, Pieter") worden "; ": zo maakt het Takenbord er aparte mensen van. Het veld zelf blijft zoals je het typte.
 function ocWie(w) { return typeof w === 'string' && w.trim() ? w.split(/\s*[,;]\s*/).map(x => x.trim()).filter(Boolean).join('; ') || undefined : undefined; }
+/* Herkomst: een beslissing die je overnam (van = de tool waar ze vandaan komt) geeft de log alleen door als jij hier
+   wie of datum aanpaste (vanWas is wat binnenkwam). Zo blijft de bron de baas. Acties die je hier aan een beslissing
+   hangt, zijn je eigen werk en gaan wel mee. Pas je de beslissing zelf aan, dan is ze van jou. Oude beslissingen zonder herkomst gelden als eigen werk. */
+const ocWieDatum = it => String(it.who || '').trim() + '|' + String(it.date || '');
+const ocEigen = it => !it.van || ocWieDatum(it) !== (it.vanWas || '');
 function ocPublish() {
   ocShare.publish(OC_ID, OC_TOOL, state.logs.filter(l => !l.voorbeeld).map(l => ({ name:l.name, items:[
-    ...sorted(l.items).filter(it => it.status === 'genomen').map(it => ({ type:'besluit', text:it.what, note:it.why || undefined, who:ocWie(it.who), when:it.date || undefined })),
+    ...sorted(l.items).filter(it => it.status === 'genomen' && ocEigen(it)).map(it => ({ type:'besluit', text:it.what, note:it.why || undefined, who:ocWie(it.who), when:it.date || undefined })),
     ...sorted(l.items).filter(it => it.status !== 'ingetrokken').flatMap(it => (it.actions || []).filter(a => !a.done && a.text && a.text.trim())
       .map(a => ({ type:'actie', text:a.text, who:ocWie(a.who), when:a.when || undefined })))
   ] })));
@@ -837,6 +844,8 @@ document.addEventListener('click', async e => {
     l.items.push({ id:uid(), what, why:p.note ? String(p.note).slice(0, 2000) : '', who:typeof p.who === 'string' ? p.who.slice(0, 120) : '',
       date:ocDatum(p.when) || today(), alt:'', status:'genomen', note:'',
       created:Date.now() + n, bron:String(p.source || '').slice(0, 60) || undefined });
+    const nw = l.items[l.items.length - 1];
+    if (typeof p.bronId === 'string' && p.bronId) { nw.van = p.bronId.slice(0, 40); nw.vanWas = ocWieDatum(nw); }   // herkomst
     n++;
   });
   save(); render();
@@ -1003,6 +1012,7 @@ function load() {
       items: (Array.isArray(l.items) ? l.items : []).filter(it => it && typeof it === 'object').map(it => {
         const o = Object.assign({}, it, { id: str(it.id) || uid(), what: str(it.what).trim() || 'Zonder titel', why: str(it.why), who: str(it.who), date: str(it.date),
           alt: str(it.alt), note: str(it.note), status: ['genomen', 'herzien', 'ingetrokken'].includes(it.status) ? it.status : 'genomen', created: +it.created || 0 });
+        if (typeof it.van === 'string' && it.van) o.vanWas = str(it.vanWas); else { delete o.van; delete o.vanWas; }
         if (Array.isArray(it.actions)) o.actions = it.actions.filter(a => a && typeof a === 'object')
           .map(a => Object.assign({}, a, { id: str(a.id) || uid(), text: str(a.text), who: str(a.who), when: str(a.when), done: !!a.done }));
         else delete o.actions;
@@ -1337,6 +1347,8 @@ $('decs').addEventListener('input', e => {
   const f = e.target.dataset && e.target.dataset.f; if (!f) return;
   const { it } = findIt(e.target); if (!it) return;
   it[f] = e.target.value;
+  // een overgenomen beslissing die je herschrijft, is nu je eigen beslissing
+  if (f === 'what' && it.van && ocNorm(it.what) && ocNorm(it.what) !== ocNorm(e.target.defaultValue)) { delete it.van; delete it.vanWas; }
   if (f === 'who' && it.who.trim()) state.lastWho = it.who.trim();
   save(); renderTabs();
 });

@@ -783,7 +783,9 @@ const ocExport = (() => {
      ]);                                   // aanroepen na elke bewaring
      ocShare.clear('raci');                // bij "Alles wissen"
      const gekozen = await ocShare.pick({ types:['betrokkene'], self:'weerstand', title:'Doelgroepen overnemen' });
-     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source en .list erbij)
+     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source, .bronId en .list erbij)
+     // Afspraak: een tool geeft wat ze overnam (bronId) NIET opnieuw door, tenzij ze er een eigen oordeel aan toevoegde
+     // (een score, een eigenaar, een datum). Zo blijft de bron de baas en komt wat daar verwijderd is niet terug.
      ocShare.pick({ ..., have:['Budget goedkeuren'] })  // optioneel: wat de tool al heeft, staat uitgegrijsd ("staat er al")
      ocShare.pick({ ..., vink:false })    // niets vooraf aanvinken;  notes:false  toont geen notities (voor wie alleen namen neemt)
      window.ocHave = types => [...]       // optioneel per tool: dan telt de knop "Overnemen uit andere tools" alleen wat nieuw is
@@ -939,7 +941,7 @@ const ocShare = (() => {
       document.addEventListener('keydown', onKey, true);
       back.querySelector('.ocs-cancel').addEventListener('click', () => close([]));
       ok.addEventListener('click', () => close(boxes().filter(b => b.checked).map(b => {
-        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, list: s.list };
+        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, bronId: s.id, list: s.list };
       })));
       const first = back.querySelector('input:not(:disabled),.ocs-cancel'); first && first.focus();
     });
@@ -1388,7 +1390,7 @@ document.addEventListener('input', e => {
   if (t.id === 'a-name') { a.name = t.value.slice(0, 70); save(); renderTabs(); unitLabel(a); return; }
   if (t.id === 'a-change') { a.change = t.value; delete a.changeFrom; autosize(t); save(); renderEmpty(); return; }
   if (!p) return;
-  if (t.id === 'p-name') { p.name = t.value.slice(0, 300); save(); renderProfiles(); return; }
+  if (t.id === 'p-name') { p.name = t.value.slice(0, 300); delete p.van; save(); renderProfiles(); return; }
   if (t.dataset.what) { p.dims[t.dataset.what].what = t.value; autosize(t); save(); return; }
   if (t.dataset.af) {
     const x = findAct(p, t.dataset.dim, t.dataset.aid); if (!x) return;
@@ -1545,11 +1547,12 @@ function ocOvergenomen(n, al, een, veel) {
 }
 
 // Een voorbeeld wordt niet klaargelegd, ook niet in de kerncijfers.
+// Een overgenomen doelgroep (p.van) geven we niet opnieuw door: de bron blijft de baas. Wie de naam hier aanpast, maakt hem eigen werk.
 function ocPublish() {
   const echt = state.analyses.filter(a => !a.voorbeeld);
   const kern = cur().voorbeeld ? echt.find(a => a.profiles.some(touched)) : cur();
   ocShare.publish(OC_ID, OC_TOOL, echt.map(a => ({ name:a.name, items:[
-    ...a.profiles.filter(p => p.name && p.name.trim() && (touched(p) || !START_NAME.test(p.name.trim()))).map(p => {
+    ...a.profiles.filter(p => !p.van && p.name && p.name.trim() && (touched(p) || !START_NAME.test(p.name.trim()))).map(p => {
       const sc = scores(p), max = Math.max(...sc);
       return { type:'betrokkene', text:ocNaam(p.name), note: max > 0 ? `zwaarste impact: ${DIMS[sc.indexOf(max)].name.toLowerCase()}` : undefined };
     }),
@@ -1648,7 +1651,7 @@ $('oc-imp').addEventListener('click', async () => {
   let n = 0, dubbel = 0;
   picked.forEach(it => {
     const name = ocNaam(it.text), k = ocSleutel(name); if (!k) return; if (have.has(k)) { dubbel++; return; }
-    have.add(k); a.profiles.push(newProfile(name)); n++;
+    have.add(k); a.profiles.push({ ...newProfile(name), van: it.bronId || it.source || 'ander' }); n++;
   });
   if (!a.profiles.length) a.profiles.push(newProfile('Doelgroep 1'));
   if (n) a.current = a.profiles[a.profiles.length - n].id;

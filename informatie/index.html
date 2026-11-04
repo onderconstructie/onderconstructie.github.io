@@ -835,7 +835,9 @@ const ocExport = (() => {
      ]);                                   // aanroepen na elke bewaring
      ocShare.clear('raci');                // bij "Alles wissen"
      const gekozen = await ocShare.pick({ types:['betrokkene'], self:'weerstand', title:'Doelgroepen overnemen' });
-     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source en .list erbij)
+     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source, .bronId en .list erbij)
+     // Afspraak: een tool geeft wat ze overnam (bronId) NIET opnieuw door, tenzij ze er een eigen oordeel aan toevoegde
+     // (een score, een eigenaar, een datum). Zo blijft de bron de baas en komt wat daar verwijderd is niet terug.
      ocShare.pick({ ..., have:['Budget goedkeuren'] })  // optioneel: wat de tool al heeft, staat uitgegrijsd ("staat er al")
      ocShare.pick({ ..., vink:false })    // niets vooraf aanvinken;  notes:false  toont geen notities (voor wie alleen namen neemt)
      window.ocHave = types => [...]       // optioneel per tool: dan telt de knop "Overnemen uit andere tools" alleen wat nieuw is
@@ -991,7 +993,7 @@ const ocShare = (() => {
       document.addEventListener('keydown', onKey, true);
       back.querySelector('.ocs-cancel').addEventListener('click', () => close([]));
       ok.addEventListener('click', () => close(boxes().filter(b => b.checked).map(b => {
-        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, list: s.list };
+        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, bronId: s.id, list: s.list };
       })));
       const first = back.querySelector('input:not(:disabled),.ocs-cancel'); first && first.focus();
     });
@@ -1043,7 +1045,7 @@ function normProject(p) {
   const q = {
     id: str(p.id, 20) || uid(), name: str(p.name, 80) || 'Project',
     uses: (Array.isArray(p.uses) ? p.uses : []).filter(u => u && typeof u.name === 'string').map(u => ({ id: str(u.id, 20) || uid(), name: u.name.slice(0, 120), kind: pick(KINDS, u.kind, 'beslissing'), ...(str(u.grond, 160).trim() ? { grond: str(u.grond, 160) } : {}) })),
-    roles: (Array.isArray(p.roles) ? p.roles : []).filter(r => r && typeof r.name === 'string').map(r => ({ id: str(r.id, 20) || uid(), name: r.name.slice(0, 300) })),
+    roles: (Array.isArray(p.roles) ? p.roles : []).filter(r => r && typeof r.name === 'string').map(r => ({ id: str(r.id, 20) || uid(), name: r.name.slice(0, 300), ...(str(r.van, 40) ? { van: str(r.van, 40) } : {}) })),   // van: overgenomen uit die tool
     subjects: (Array.isArray(p.subjects) ? p.subjects : []).filter(s => s && typeof s.name === 'string').map(s => ({ id: str(s.id, 20) || uid(), name: s.name.slice(0, 80), desc: str(s.desc, 400), plural: str(s.plural, 80), fields: (Array.isArray(s.fields) ? s.fields : []).filter(f => f && typeof f === 'object').map(normField) })),
     links: (Array.isArray(p.links) ? p.links : []).filter(l => l && typeof l === 'object').map(l => ({ id: str(l.id, 20) || uid(), a: str(l.a, 20), b: str(l.b, 20), verb: typeof l.verb === 'string' ? l.verb.slice(0, 40) : 'heeft', q: pick(QTY, l.q, 'meer') }))
   };
@@ -1782,7 +1784,7 @@ $('view').addEventListener('input', e => {
   if (s && k === 'subj-plural') { s.plural = t.value.slice(0, 80); save(); renderSchema(); return; }
   if (k === 'use-grond') { const u = p.uses.find(x => x.id === t.dataset.use); if (u) { u.grond = t.value.slice(0, 160); t.closest('.grond').classList.toggle('leeg', !u.grond.trim()); save(); } return; }
   if (k === 'use-name') { const u = p.uses.find(x => x.id === t.closest('.use').dataset.use); if (u) { u.name = t.value.slice(0, 120); save(); } return; }
-  if (k === 'role-name') { const r = p.roles.find(x => x.id === t.closest('.role').dataset.role); if (r) { r.name = t.value.slice(0, 300); save(); } return; }
+  if (k === 'role-name') { const r = p.roles.find(x => x.id === t.closest('.role').dataset.role); if (r) { r.name = t.value.slice(0, 300); delete r.van; save(); } return; }
   if (k === 'link-verb') { const l = p.links.find(x => x.id === t.closest('.ln').dataset.l); if (l) { l.verb = t.value.slice(0, 40); save(); renderSchema(); } return; }
 });
 // Na het typen: elders tonen wat veranderde (zonder de klik die volgt te breken: pas na het loslaten van de muis).
@@ -2137,7 +2139,7 @@ $('view').addEventListener('click', async e => {
   if (!picked.length) { b.focus(); return; }
   const p = cur(), restore = snapshot(), have = new Set(p.roles.map(r => normName(r.name)));
   let n = 0, dubbel = 0;
-  picked.forEach(x => { const name = ocNaam(x.text), k = normName(name); if (!k) return; if (have.has(k)) { dubbel++; return; } have.add(k); p.roles.push({ id:uid(), name }); n++; });
+  picked.forEach(x => { const name = ocNaam(x.text), k = normName(name); if (!k) return; if (have.has(k)) { dubbel++; return; } have.add(k); p.roles.push({ id:uid(), name, van:x.bronId || x.source || 'ander' }); n++; });
   save(); render();
   toast(ocOvergenomen(n, alTel + dubbel, 'rol', 'rollen'), n ? restore : undefined);
 });

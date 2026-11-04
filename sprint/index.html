@@ -650,7 +650,9 @@ window.OC_KAART = document.documentElement.classList.contains('kaart');
      ]);                                   // aanroepen na elke bewaring
      ocShare.clear('raci');                // bij "Alles wissen"
      const gekozen = await ocShare.pick({ types:['betrokkene'], self:'weerstand', title:'Doelgroepen overnemen' });
-     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source en .list erbij)
+     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source, .bronId en .list erbij)
+     // Afspraak: een tool geeft wat ze overnam (bronId) NIET opnieuw door, tenzij ze er een eigen oordeel aan toevoegde
+     // (een score, een eigenaar, een datum). Zo blijft de bron de baas en komt wat daar verwijderd is niet terug.
      ocShare.pick({ ..., have:['Budget goedkeuren'] })  // optioneel: wat de tool al heeft, staat uitgegrijsd ("staat er al")
      ocShare.pick({ ..., vink:false })    // niets vooraf aanvinken;  notes:false  toont geen notities (voor wie alleen namen neemt)
      window.ocHave = types => [...]       // optioneel per tool: dan telt de knop "Overnemen uit andere tools" alleen wat nieuw is
@@ -806,7 +808,7 @@ const ocShare = (() => {
       document.addEventListener('keydown', onKey, true);
       back.querySelector('.ocs-cancel').addEventListener('click', () => close([]));
       ok.addEventListener('click', () => close(boxes().filter(b => b.checked).map(b => {
-        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, list: s.list };
+        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, bronId: s.id, list: s.list };
       })));
       const first = back.querySelector('input:not(:disabled),.ocs-cancel'); first && first.focus();
     });
@@ -1038,7 +1040,8 @@ function norm(s) {
   s.buffer = num(s.buffer, 20, 0, 90);
   s.team = Array.isArray(s.team) ? s.team.filter(m => m && typeof m === 'object').map(m => ({ id:m.id || uid(), name:String(m.name || '').slice(0, 60), days:num(m.days, s.days, 0, s.days), pct:num(m.pct, 100, 0, 100) })) : [];
   s.stories = Array.isArray(s.stories) ? s.stories.filter(x => x && typeof x.title === 'string').map(x => ({ id:x.id || uid(), title:x.title.slice(0, 160), note:String(x.note || '').slice(0, 300), est:estOk(x.est), rounds:+x.rounds || 0, ...(x.src ? { src:String(x.src).slice(0, 120) } : {}),
-    ...(typeof x.who === 'string' && x.who.trim() ? { who:x.who.trim().slice(0, 60) } : {}), ...(typeof x.when === 'string' && x.when.trim() ? { when:x.when.trim().slice(0, 40) } : {}) })) : [];
+    ...(typeof x.who === 'string' && x.who.trim() ? { who:x.who.trim().slice(0, 60) } : {}), ...(typeof x.when === 'string' && x.when.trim() ? { when:x.when.trim().slice(0, 40) } : {}),
+    ...(typeof x.van === 'string' && x.van ? { van:x.van.slice(0, 40) } : {}) })) : [];
   s.voorbeeld = !!s.voorbeeld || undefined;
   return s;
 }
@@ -1349,7 +1352,7 @@ $('stories').addEventListener('click', e => {
 $('stories').addEventListener('input', e => {
   const li = e.target.closest('.st'); if (!li) return;
   const x = cur().stories.find(y => y.id === li.dataset.id); if (!x) return;
-  if (e.target.classList.contains('ed-title')) { const v = e.target.value.trim(); if (v) x.title = v.slice(0, 160); }
+  if (e.target.classList.contains('ed-title')) { const v = e.target.value.trim(); if (v) { if (x.van && ocNorm(v) !== ocNorm(x.title)) delete x.van; x.title = v.slice(0, 160); } }   // eigen tekst: nu je eigen story
   if (e.target.classList.contains('ed-note')) x.note = e.target.value.slice(0, 300);
   if (e.target.classList.contains('ed-who')) { const v = e.target.value.trim().slice(0, 60); if (v) x.who = v; else delete x.who; }
   save();
@@ -1572,7 +1575,8 @@ document.addEventListener('click', async e => {
   picked.forEach(p => { const t = String(p.text || '').trim().slice(0, 160); if (!t) return; if (have.has(ocNorm(t))) { dubbel++; return; } have.add(ocNorm(t));
     // Wie het doet en tegen wanneer: uit de bron, zodat de sprint ze weer doorgeeft
     s.stories.push({ id:uid(), title:t, note:'', est:null, rounds:0, src:[p.source, p.list].filter(Boolean).join(' · ').slice(0, 120),
-      ...(p.who ? { who:String(p.who).trim().slice(0, 60) } : {}), ...(p.when ? { when:String(p.when).trim().slice(0, 40) } : {}) }); n++; });
+      ...(p.who ? { who:String(p.who).trim().slice(0, 60) } : {}), ...(p.when ? { when:String(p.when).trim().slice(0, 40) } : {}),
+      ...(typeof p.bronId === 'string' && p.bronId ? { van:p.bronId.slice(0, 40) } : {}) }); n++; });   // herkomst
   const stond = ocAlAangeboden(types, al) + dubbel;
   save(); render();
   toast(n ? `${n} ${n === 1 ? 'story' : 'stories'} overgenomen${stond ? `. ${stond} ${stond === 1 ? 'stond' : 'stonden'} er al` : ''}. Schat ze nu in.` : 'Die staan al in de lijst', n ? restore : undefined);
@@ -1581,6 +1585,8 @@ document.addEventListener('click', async e => {
 /* ---------- Afronden: Takenbord en volgende sprint ---------- */
 const estNote = x => `Schatting: ${hd(x.est)} (${dagen(x.est)})` + (x.note ? ` · ${x.note}` : '');
 // Klaarleggen voor Takenbord: de open sprint eerst, dan de twee jongste andere sprints.
+// Herkomst: ook een overgenomen story (van) gaat mee, want alleen wat in de sprint past en dus een schatting kreeg, gaat mee.
+// Die schatting is ons eigen oordeel, en het Takenbord gebruikt ze. Een story die nog in te schatten is, blijft hier.
 // Zo blijft een geplande sprint ophaalbaar, ook na "Volgende sprint" of als je een andere sprint bekijkt.
 function ocPublish() {
   const own = state.sprints.filter(s => !s.voorbeeld), c = cur();

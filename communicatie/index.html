@@ -694,7 +694,9 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor:pointer; opacity:
      ]);                                   // aanroepen na elke bewaring
      ocShare.clear('raci');                // bij "Alles wissen"
      const gekozen = await ocShare.pick({ types:['betrokkene'], self:'weerstand', title:'Doelgroepen overnemen' });
-     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source en .list erbij)
+     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source, .bronId en .list erbij)
+     // Afspraak: een tool geeft wat ze overnam (bronId) NIET opnieuw door, tenzij ze er een eigen oordeel aan toevoegde
+     // (een score, een eigenaar, een datum). Zo blijft de bron de baas en komt wat daar verwijderd is niet terug.
      ocShare.pick({ ..., have:['Budget goedkeuren'] })  // optioneel: wat de tool al heeft, staat uitgegrijsd ("staat er al")
      ocShare.pick({ ..., vink:false })    // niets vooraf aanvinken;  notes:false  toont geen notities (voor wie alleen namen neemt)
      window.ocHave = types => [...]       // optioneel per tool: dan telt de knop "Overnemen uit andere tools" alleen wat nieuw is
@@ -850,7 +852,7 @@ const ocShare = (() => {
       document.addEventListener('keydown', onKey, true);
       back.querySelector('.ocs-cancel').addEventListener('click', () => close([]));
       ok.addEventListener('click', () => close(boxes().filter(b => b.checked).map(b => {
-        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, list: s.list };
+        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, bronId: s.id, list: s.list };
       })));
       const first = back.querySelector('input:not(:disabled),.ocs-cancel'); first && first.focus();
     });
@@ -1780,7 +1782,8 @@ function publish() {
   const ms = sortedMoments().filter(m => !m.done);
   ocShare.publish(OC_ID, OC_TOOL, [
     { name:'Momenten', items: ms.map(m => ({ type:'actie', text:`${chanLabel(m.channel)}: ${groupNames(m)} – ${(m.msg || 'moment').trim()}`, who: momentSender(m) || undefined, when: dmy(m.date) || undefined })) },
-    { name:'Doelgroepen', items: state.groups.map(g => ({ type:'betrokkene', text:g.name })) },
+    // Een overgenomen doelgroep (g.van) geven we niet opnieuw door: de bron blijft de baas. Wie de naam hier aanpast, maakt hem eigen werk.
+    { name:'Doelgroepen', items: state.groups.filter(g => !g.van).map(g => ({ type:'betrokkene', text:g.name })) },
     { name:'Kerncijfers', items: state.what.trim() && !autoWhat ? [{ type:'kerncijfer', text:'verandering', note: state.what.trim() }] : [] }
   ]);
 }
@@ -1803,7 +1806,7 @@ document.addEventListener('input', e => {
     if (d.f === 'ident.color') document.querySelectorAll('[data-swatch]').forEach(b => b.setAttribute('aria-pressed', b.dataset.swatch === t.value));
     return;
   }
-  if (d.g) { const g = G(d.g); if (g) { g[d.gf] = t.value; save(); live(); } return; }
+  if (d.g) { const g = G(d.g); if (g) { g[d.gf] = t.value; if (d.gf === 'name') delete g.van; save(); live(); } return; }
   if (d.m) { const m = M(d.m); if (m) { m[d.mf] = t.value; save(); live(); } return; }
   if (d.ms) { const x = state.measures.find(y => y.id === d.ms); if (x) { x[d.msf] = t.value; save(); } }
 });
@@ -1899,7 +1902,7 @@ async function importGroups() {
   picked.forEach(it => {
     const n = String(it.text || '').trim();
     if (!n || state.groups.some(g => g.name.trim().toLowerCase() === n.toLowerCase())) { skipped++; return; }
-    const g = newGroup(n); g.hint = it.note || ''; g.source = it.source || ''; state.groups.push(g); added++;
+    const g = newGroup(n); g.hint = it.note || ''; g.source = it.source || ''; g.van = it.bronId || it.source || 'ander'; state.groups.push(g); added++;
   });
   const al = skipped ? ` ${skipped === 1 ? 'Eén doelgroep stond' : skipped + ' doelgroepen stonden'} er al.` : '';
   if (!added) { toast(`Geen nieuwe doelgroepen.${al}`); return; }

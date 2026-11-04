@@ -582,7 +582,9 @@ function ocPickProject(st, arr, cur = 'current') { const p = ocProject(''); if (
      ]);                                   // aanroepen na elke bewaring
      ocShare.clear('raci');                // bij "Alles wissen"
      const gekozen = await ocShare.pick({ types:['betrokkene'], self:'weerstand', title:'Doelgroepen overnemen' });
-     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source en .list erbij)
+     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source, .bronId en .list erbij)
+     // Afspraak: een tool geeft wat ze overnam (bronId) NIET opnieuw door, tenzij ze er een eigen oordeel aan toevoegde
+     // (een score, een eigenaar, een datum). Zo blijft de bron de baas en komt wat daar verwijderd is niet terug.
      ocShare.pick({ ..., have:['Budget goedkeuren'] })  // optioneel: wat de tool al heeft, staat uitgegrijsd ("staat er al")
      ocShare.pick({ ..., vink:false })    // niets vooraf aanvinken;  notes:false  toont geen notities (voor wie alleen namen neemt)
      window.ocHave = types => [...]       // optioneel per tool: dan telt de knop "Overnemen uit andere tools" alleen wat nieuw is
@@ -738,7 +740,7 @@ const ocShare = (() => {
       document.addEventListener('keydown', onKey, true);
       back.querySelector('.ocs-cancel').addEventListener('click', () => close([]));
       ok.addEventListener('click', () => close(boxes().filter(b => b.checked).map(b => {
-        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, list: s.list };
+        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, bronId: s.id, list: s.list };
       })));
       const first = back.querySelector('input:not(:disabled),.ocs-cancel'); first && first.focus();
     });
@@ -812,8 +814,9 @@ function ocPublish() {
   ocShare.publish(OC_ID, OC_TOOL, state.opdrachten.filter(o => !o.voorbeeld).map(o => {
     // Het project is klaar tegen de einddatum; het effect komt vaak later. Daarom geen 'tegen' bij het doel zelf.
     const tegen = o.einddatum && !raarJaar(o.einddatum) ? 'project klaar tegen ' + fmtDate(o.einddatum) : undefined;
+    // De bron blijft de baas: een overgenomen doel (in o.doelVan) geven we niet opnieuw door. Er komt hier geen oordeel bij.
     return { name:o.name, items:[
-      ...vol(o.doelen).map(t => ({ type:'doel', text:t, note:tegen })),
+      ...vol(o.doelen).filter(t => !ocDoelVan(o, t)).map(t => ({ type:'doel', text:t, note:tegen })),
       ...o.mijlpalen.filter(m => m.text.trim()).map(m => ({ type:'taak', text:'Mijlpaal: ' + m.text.trim(), when:m.date || undefined })),
       ...vol(o.risicos).map(t => ({ type:'risico', text:t })),
       ...(o.opdrachtgever.trim() ? [{ type:'betrokkene', text:o.opdrachtgever.trim(), note:'Opdrachtgever' }] : []),
@@ -838,6 +841,15 @@ const ocNorm = v => String(v || '').normalize('NFC').toLowerCase().replace(/\s+/
 const ocAlAangeboden = (types, have) => { const h = new Set(have.map(ocNorm)); return ocShare.sources(types, OC_ID).reduce((n, s) => n + s.items.filter(i => h.has(ocNorm(i.text))).length, 0); };
 // Wat er al bij "Wat wordt er daardoor beter?" staat: de kiezer grijst het uit, en de knop telt het niet als nieuw
 const ocAlDoelen = () => vol(cur().doelen);
+// Herkomst van overgenomen doelen: { <tekst zoals ocNorm>: <id van de bron> }. Een doel is een gewone tekst; pas je die aan,
+// dan staat ze niet meer in deze lijst en is ze eigen werk. Wat niet meer in de doelen staat, valt bij het bewaren weg.
+const ocDoelVan = (o, t) => !!(o.doelVan && Object.prototype.hasOwnProperty.call(o.doelVan, ocNorm(t)));
+function ocDoelVanOpruimen(o) {
+  if (!o.doelVan) return;
+  const nu = new Set(vol(o.doelen).map(ocNorm));
+  Object.keys(o.doelVan).forEach(k => { if (!nu.has(k)) delete o.doelVan[k]; });
+  if (!Object.keys(o.doelVan).length) delete o.doelVan;
+}
 window.ocHave = types => { try { return types.includes('doel') ? ocAlDoelen() : []; } catch { return []; } };
 document.addEventListener('click', async e => {
   if (!e.target.closest('#imp-doel')) return;
@@ -849,7 +861,8 @@ document.addEventListener('click', async e => {
   const o = cur(), restore = snapshot(), have = new Set(vol(o.doelen).map(ocNorm));
   o.doelen = vol(o.doelen);
   let n = 0, dubbel = 0, vol_ = 0;
-  picked.forEach(p => { const t = String(p.text).trim().slice(0, 200); if (!t) return; if (have.has(ocNorm(t))) { dubbel++; return; } if (o.doelen.length >= MAX.doelen) { vol_++; return; } have.add(ocNorm(t)); o.doelen.push(t); n++; });
+  picked.forEach(p => { const t = String(p.text).trim().slice(0, 200); if (!t) return; if (have.has(ocNorm(t))) { dubbel++; return; } if (o.doelen.length >= MAX.doelen) { vol_++; return; } have.add(ocNorm(t)); o.doelen.push(t); n++;
+    if (p.bronId) (o.doelVan = o.doelVan || {})[ocNorm(t)] = String(p.bronId).slice(0, 60); });
   if (!o.doelen.length) o.doelen = [''];
   const stond = ocAlAangeboden(['doel'], al) + dubbel;
   save(); renderForm(); afgeleid();
@@ -1059,6 +1072,11 @@ function norm(o) {
     const ms = o.mijlpalen.filter(m => m && typeof m === 'object').map(m => ({ id: typeof m.id === 'string' ? m.id : uid(), text:String(m.text == null ? '' : m.text), date:datumOk(m.date) }));
     n.mijlpalen = ms.length ? ms : [nieuwMs()];
   }
+  // Herkomst van overgenomen doelen (zie ocDoelVan). Oude opdrachten hebben die niet: hun doelen zijn eigen werk.
+  if (o.doelVan && typeof o.doelVan === 'object' && !Array.isArray(o.doelVan)) {
+    const dv = {}; Object.keys(o.doelVan).forEach(k => { if (typeof o.doelVan[k] === 'string') dv[k] = o.doelVan[k]; });
+    if (Object.keys(dv).length) n.doelVan = dv;
+  }
   const t = o.teken && typeof o.teken === 'object' ? o.teken : {};
   n.teken = { naam:String(t.naam || ''), datum:datumOk(t.datum), kopie: t.kopie && typeof t.kopie === 'object' && !Array.isArray(t.kopie) ? t.kopie : null };
   return n;
@@ -1077,7 +1095,7 @@ function load() {
 let state = load();
 ocPickProject(state, 'opdrachten');
 let version = 0;
-function save() { state.opdrachten.forEach(o => { if (gepland(o)) o.teken.kopie = kopie(o); }); ocAfterSave(); version++; try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
+function save() { state.opdrachten.forEach(o => { ocDoelVanOpruimen(o); if (gepland(o)) o.teken.kopie = kopie(o); }); ocAfterSave(); version++; try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
 const cur = () => state.opdrachten.find(o => o.id === state.current) || state.opdrachten[0];
 const isStd = v => window.ocStandaardNaam ? ocStandaardNaam(v) : /^((mijn|nieuwe?) )?project( \d+)?$|^naamloos$/i.test(String(v || '').trim());
 
