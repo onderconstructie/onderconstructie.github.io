@@ -412,6 +412,13 @@ body.filtering #groups, body.filtering #list-tools { display:none; }
 .back-grid { display:none; }
 .topbar.has-path .back-arrow { display:none; }
 .topbar.has-path .back-grid { display:block; width:22px; height:22px; }
+/* Terug naar de tool waar je vandaan kwam: altijd met pijltje en naam */
+.back.naar-tool .back-lbl { max-width:11rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.topbar.has-path .back.naar-tool { width:auto; padding:0.5rem 0.5rem 0.5rem 0.25rem; }
+.topbar.has-path .back.naar-tool .back-lbl { display:inline; }
+@media (max-width:699.98px) { .topbar.has-path .back.naar-tool .back-lbl { max-width:6.5rem; } }
+.topbar.has-path .back.naar-tool .back-arrow { display:block; }
+.topbar.has-path .back.naar-tool .back-grid { display:none; }
 .topbar.has-path::after { content:''; position:absolute; left:0; bottom:-1px; height:2px; width:var(--pb, 0%); background:var(--accent); border-radius:0 2px 2px 0; transition:width 0.2s ease; }
 @media (prefers-reduced-motion: reduce) { .topbar.has-path::after { transition:none; } }
 .pb-plan { display:none; }
@@ -1195,7 +1202,7 @@ body.searching #cycle, body.searching #vs-note { display:none !important; }
     <span class="sep" aria-hidden="true">·</span>
     <button class="footer-link fb-link" id="fb-open" type="button" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/></svg>Suggestie of fout?</button>
     <span class="sep" aria-hidden="true">·</span>
-    <span class="app-version" title="Versie van de app">v76</span>
+    <span class="app-version" title="Versie van de app">v77</span>
   </footer>
 </div>
 
@@ -1762,6 +1769,8 @@ let lastOpener = null;
 // Ook als de focus nergens staat (na een tik op de balk); niet als je in de tool zelf zit of een vraag open staat.
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !e.defaultPrevented && $('viewer').classList.contains('open') && document.activeElement.tagName !== 'IFRAME' && $('app-dlg').hidden) { e.preventDefault(); showHome(); } });
 let current = null;
+// Tools waar je via een link in een tool vandaan kwam: de knop linksboven brengt je daar terug.
+let stapel = [];
 
 // Een kader voor een tool. Onzichtbaar tot de tool geladen is: geen witte flits, geen half getekende tool.
 function makeFrame(id) {
@@ -1801,7 +1810,7 @@ function prefetchNext(id) {
   'requestIdleCallback' in window ? requestIdleCallback(run, { timeout: 3000 }) : setTimeout(run, 1200);
 }
 
-function openTool(id, fromHistory) {
+function openTool(id, fromHistory, van) {
   const t = byId[id]; if (!t) return;
   let f = frames.get(id);
   if (!f && pre && pre.id === id) { f = pre.f; pre = null; f.inert = false; }
@@ -1809,7 +1818,7 @@ function openTool(id, fromHistory) {
   else frames.delete(id);   // opnieuw achteraan zetten
   setLoading(!f.dataset.loaded);
   frames.set(id, f);
-  if (current && current !== id && byId[current] && !byId[current].keep) autoDrop(current);
+  if (current && current !== id && current !== van && byId[current] && !byId[current].keep) autoDrop(current);
   trimFrames(id);
   current = id;
   for (const [k, el] of frames) el.classList.toggle('active', k === id);
@@ -1825,7 +1834,15 @@ function openTool(id, fromHistory) {
   if (f.dataset.loaded) { setTimeout(focusTool, 0); prefetchNext(id); } else f.addEventListener('load', focusTool, { once:true });
   syncTitle();
   // van tool naar tool (stappenplan, link): de geschiedenis vervangen, zodat "terug" altijd naar het startscherm gaat
-  if (!fromHistory) { (history.state && history.state.tool ? history.replaceState : history.pushState).call(history, { tool:id }, '', '#' + id); logUse(id); }
+  // Uit de lijst, zoekveld of stappenplan: de geschiedenis vervangen, zodat "Tools" naar het startscherm gaat.
+  // Via een link in een tool: een stap erbij, zodat terug (knop of Android) je naar die tool brengt.
+  if (!fromHistory) {
+    const d = history.state && history.state.tool ? (history.state.d || 1) : 0;
+    if (van && byId[van] && d) { stapel = [...stapel.filter(x => x !== id), van].slice(-8); history.pushState({ tool:id, stapel, d:d + 1 }, '', '#' + id); }
+    else { stapel = []; (d ? history.replaceState : history.pushState).call(history, { tool:id, stapel, d:d || 1 }, '', '#' + id); }
+    logUse(id);
+  }
+  renderBack();
   const recent = [id, ...store.get('recent', []).filter(x => x !== id)].slice(0, 5);
   store.set('recent', recent);
 }
@@ -1887,7 +1904,8 @@ function showHome(fromHistory) {
   $('viewer').inert = true; $('home').inert = false;
   document.documentElement.classList.remove('in-tool');
   syncTitle();
-  if (!fromHistory && history.state && history.state.tool) history.back();
+  stapel = []; renderBack();
+  if (!fromHistory && history.state && history.state.tool) history.go(-(history.state.d || 1));
   const opener = lastOpener;
   requestAnimationFrame(() => setTimeout(() => {
     if (current) return;   // intussen alweer een tool geopend
@@ -1918,13 +1936,22 @@ function wire(f, id) {
     const p = norm(u.pathname);
     if (HUBS.includes(p)) { e.preventDefault(); showHome(); return; }
     const t = toolForPath(p);
-    if (t && t.id !== id) { e.preventDefault(); openTool(t.id); }
+    if (t && t.id !== id) { e.preventDefault(); openTool(t.id, false, id); }
   }, true);
 }
 
 $('all-open').addEventListener('click', () => { GROUPS.forEach(g => setCollapsed(g.id, false)); saveCollapsed(); });
 $('all-closed').addEventListener('click', () => { GROUPS.forEach(g => setCollapsed(g.id, true)); saveCollapsed(); });
-$('back').addEventListener('click', () => showHome());
+function renderBack() {
+  const prev = stapel.length ? byId[stapel[stapel.length - 1]] : null, b = $('back');
+  b.classList.toggle('naar-tool', !!prev);
+  b.querySelector('.back-lbl').textContent = prev ? prev.title : 'Tools';
+  b.setAttribute('aria-label', prev ? 'Terug naar ' + prev.title : 'Terug naar alle tools');
+}
+$('back').addEventListener('click', () => {
+  if (stapel.length && history.state && history.state.tool && (history.state.d || 1) > 1) history.back();
+  else showHome();
+});
 $('close').addEventListener('click', async () => {
   const id = current;
   if (busy.has(id) && !await appConfirm(`${byId[id].title} loopt nog`, 'Als je de tool sluit, stopt wat er loopt. Ga je terug met "Tools", dan loopt het verder.', 'Toch sluiten')) return;
@@ -1943,7 +1970,7 @@ window.addEventListener('popstate', e => {
   if (!$('exit-sheet').hidden && !s.exit) { closeExit(true); if (!$('data-sheet').hidden && !s.sheet) closeData(true); return; }
   if (!$('data-sheet').hidden && !s.sheet) { closeData(true); return; }
   const id = s.tool || location.hash.slice(1);
-  if (byId[id]) openTool(id, true);
+  if (byId[id]) { stapel = Array.isArray(s.stapel) ? s.stapel.filter(x => byId[x]) : []; openTool(id, true); }
   else if ($('viewer').classList.contains('open')) showHome(true);
 });
 

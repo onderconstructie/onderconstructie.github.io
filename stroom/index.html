@@ -1624,6 +1624,42 @@ window.ocBestand = (function () {
   }
   document.addEventListener('input', function (e) { var el = e.target; if (!el.hasAttribute || !el.hasAttribute('data-oc-projectnaam')) return; clearTimeout(naamT); naamT = setTimeout(function () { deelNaam(el); }, 900); }, true);
   ['change', 'focusout'].forEach(function (ev) { document.addEventListener(ev, function (e) { var el = e.target; if (el.hasAttribute && el.hasAttribute('data-oc-projectnaam')) { clearTimeout(naamT); deelNaam(el); } }, true); });
+  /* oc-terug: kom je uit een andere tool, dan brengt de terugknop linksboven je daar terug ("← Prioriteren").
+     Anders blijft hij naar de groep gaan (Projectmanagement, Zakmes, Reset). In de app regelt de app dit zelf. */
+  (function () {
+    if (window.__ocTerug) return; window.__ocTerug = true;
+    var ss; try { ss = window.sessionStorage; ss.getItem('x'); } catch (e) { return; }
+    var hier = location.pathname, vorige = null;
+    try { vorige = ss.getItem('oc.hier'); ss.setItem('oc.hier', location.href); } catch (e) {}
+    addEventListener('pageshow', function () { try { ss.setItem('oc.hier', location.href); } catch (e) {} });
+    var naam = (document.title || '').split(/\s+[–-]\s+Onder Constructie/)[0].trim();
+    try { if (naam && naam.length < 60) ss.setItem('oc.naam:' + hier, naam); } catch (e) {}
+    if (window.top !== window) return;
+    function zet() {
+      var a = document.querySelector('a.back-link, a.crumb'); if (!a || a.dataset.ocTerug) return;
+      var ref = document.referrer, u; if (!ref) return;
+      try { u = new URL(ref); } catch (e) { return; }
+      if (u.origin !== location.origin || u.pathname === hier) return;
+      try { if (new URL(a.href, location.href).pathname === u.pathname) return; } catch (e) { return; }
+      var bron = null; try { bron = ss.getItem('oc.naam:' + u.pathname); } catch (e) {}
+      if (!bron) return;
+      a.dataset.ocTerug = '1';
+      var sp = a.querySelector('span');
+      if (sp) sp.textContent = bron;
+      else {
+        var eerste = true;
+        [].slice.call(a.childNodes).forEach(function (n) { if (n.nodeType === 3 && n.nodeValue.trim()) { n.nodeValue = eerste ? ' ' + bron + ' ' : ''; eerste = false; } });
+      }
+      a.setAttribute('aria-label', 'Terug naar ' + bron);
+      a.href = ref;
+      var terug = vorige === ref;   // de vorige pagina in dit tabblad is die tool: echt teruggaan, dan staat alles nog zoals je het liet
+      a.addEventListener('click', function (e) {
+        if (!terug || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button) return;
+        e.preventDefault(); history.back();
+      });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', zet); else zet();
+  }());
   if (window.parent === window) return;
   addEventListener('keydown', function (e) {
     if (e.key !== 'Escape' || e.defaultPrevented) return;
