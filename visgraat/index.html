@@ -216,6 +216,17 @@ body { overflow-wrap:break-word; }
 .uit button[aria-checked="true"] { border-color:#047857; background:#ecfdf5; color:#047857; }
 .uit button[data-v="nee"][aria-checked="true"] { border-color:var(--slate-400); background:var(--slate-100); color:var(--slate-700); }
 .toets li.u-nee b { color:var(--slate-500); text-decoration:line-through; }
+.why { display:flex; flex-direction:column; gap:0.375rem; padding-left:0.75rem; border-left:2px solid var(--mint-3, #a7f3d0); }
+.why-row { display:flex; align-items:center; gap:0.5rem; }
+.why-n { flex:none; font-size:0.75rem; font-weight:700; color:#047857; }
+.toets .why-row input { flex:1; min-width:0; min-height:40px; }
+.why-x { flex:none; width:36px; height:36px; }
+.why-add { align-self:flex-start; display:inline-flex; align-items:center; gap:0.375rem; min-height:40px; padding:0.375rem 0.75rem; border:1.5px dashed #a7f3d0; border-radius:10px; background:var(--wit, #fff); color:#047857; font:inherit; font-size:0.875rem; font-weight:600; cursor:pointer; }
+.why-add svg { width:16px; height:16px; flex:none; }
+.why-add:hover { background:#ecfdf5; border-color:#10b981; }
+.why-add:focus-visible { outline:2px solid #047857; outline-offset:2px; }
+.why-root { font-size:0.8125rem; color:var(--slate-600); margin:0.125rem 0 0; overflow-wrap:anywhere; }
+.why-root b { color:var(--slate-800); font-size:inherit; }
 .toets { gap:1.125rem; }
 .pick-c.on.nee { border-color:var(--slate-300); background:var(--slate-50); font-weight:500; } .pick-c.on.nee span { color:var(--slate-500); text-decoration:line-through; } .pick-c.on.nee svg { color:var(--slate-400); }
 .okmsg { margin-top:0.75rem; font-size:0.875rem; color:#047857; background:#ecfdf5; border:1px solid #a7f3d0; border-radius:10px; padding:0.5rem 0.75rem; }
@@ -401,6 +412,7 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
         <li><b>Kies de soorten oorzaken.</b> Je start met zes vragen: wie doet het, hoe loopt het, wat komt binnen, waarmee werken we, wie beslist en volgt op, en wat speelt van buitenaf. Hernoem ze, haal er weg of voeg er toe, zodat ze passen bij jouw werk.</li>
         <li><b>Verzamel oorzaken</b> per soort, liefst met de mensen die het werk doen. Vraag bij elke oorzaak "en waarom gebeurt dat?": het antwoord wordt een suboorzaak.</li>
         <li><b>Kies de waarschijnlijkste oorzaken.</b> Vraag bij elke: als we dit wegnemen, is het probleem dan grotendeels weg? Kies er liefst niet meer dan drie, en schrijf op hoe je ze nagaat voor je ze aanpakt.</li>
+        <li><b>Vraag door.</b> Vraag bij elke gekozen oorzaak tot drie keer "waarom gebeurt dat?", tot je bij iets komt waar je zelf iets aan kan doen. Dat is wat je nagaat en aanpakt.</li>
         <li><b>Ga na en noteer wat je vond.</b> Klopt de oorzaak, dan pak je ze aan. Klopt ze niet, dan valt ze weg en kies je een andere.</li>
       </ul>
       <p>Tip: Enter geeft meteen een nieuwe oorzaak, en een lijst plakken in een veld zet elke regel als aparte oorzaak.</p>
@@ -762,11 +774,13 @@ const DEFAULT_CATS = [
   ['Hoe loopt het?', 'Stappen, overdrachten, wachttijd en dubbel werk'],
   ['Wat komt binnen?', 'Aanvragen, gegevens en stukken die je van anderen krijgt'],
   ['Waarmee werken we?', 'Systemen, toestellen, formulieren en sjablonen'],
-  ['Wie beslist en volgt op?', 'Doelen, voorrang, afspraken en opvolging'],
+  ['Wie beslist en volgt op?', 'Doelen, voorrang, afspraken, opvolging en cijfers'],
   ['Wat speelt van buitenaf?', 'Regels, piekmomenten, partners en de plek zelf']
 ];
 const cat = (name, hint = '') => ({ id:uid(), name, hint });
-const cause = (catId, text = '', parent = null) => ({ id:uid(), cat:catId, text, parent, likely:false, toets:'', uit:'' });
+const cause = (catId, text = '', parent = null) => ({ id:uid(), cat:catId, text, parent, likely:false, waarom:[], toets:'', uit:'' });
+// Doorvragen bij een gekozen oorzaak: de diepste vraag waarop je een antwoord hebt, is wat je nagaat en aanpakt.
+const diepst = c => { const w = (c.waarom || []).map(x => String(x).trim()).filter(Boolean); return w.length ? w[w.length - 1] : c.text.trim(); };
 // Uitkomst van het nagaan: '' nog na te gaan, 'ja' klopt, 'nee' klopt niet. Een oorzaak die niet klopt, telt niet meer als waarschijnlijk.
 const UIT = [['', 'Nog na te gaan'], ['ja', 'Klopt'], ['nee', 'Klopt niet']];
 const hot = c => c.likely && c.uit !== 'nee';
@@ -778,7 +792,7 @@ function valid(s) {
   s.units = s.units.filter(u => u && Array.isArray(u.cats)).map(u => {
     const cats = u.cats.filter(c => c && okId(c.id)).slice(0, 10).map(c => ({ id:c.id, name:str(c.name, 40), hint:str(c.hint, 120) }));
     const ids = new Set(cats.map(c => c.id));
-    let causes = (Array.isArray(u.causes) ? u.causes : []).filter(c => c && okId(c.id) && ids.has(c.cat)).map(c => ({ id:c.id, cat:c.cat, text:str(c.text, 160), parent: okId(c.parent) ? c.parent : null, likely:!!c.likely, toets:str(c.toets, 240), uit:['ja', 'nee'].includes(c.uit) ? c.uit : '' }));
+    let causes = (Array.isArray(u.causes) ? u.causes : []).filter(c => c && okId(c.id) && ids.has(c.cat)).map(c => ({ id:c.id, cat:c.cat, text:str(c.text, 160), parent: okId(c.parent) ? c.parent : null, likely:!!c.likely, waarom:(Array.isArray(c.waarom) ? c.waarom : []).slice(0, 3).map(x => str(x, 160)), toets:str(c.toets, 240), uit:['ja', 'nee'].includes(c.uit) ? c.uit : '' }));
     const cids = new Set(causes.map(c => c.id));
     causes = causes.map(c => ({ ...c, parent: c.parent && cids.has(c.parent) ? c.parent : null }));
     return { id: okId(u.id) ? u.id : uid(), voorbeeld:!!u.voorbeeld, probleem:str(u.probleem, 200), cats, causes };
@@ -943,8 +957,10 @@ function render() {
       <p class="lead">Duid de oorzaken aan die het probleem het meest waarschijnlijk verklaren: als je die wegneemt, is het probleem dan grotendeels weg? Kies er liefst niet meer dan drie.</p>
       ${!n ? '<p class="empty">Vul eerst oorzaken in bij stap 3.</p>' : `<div class="pick">${u.cats.map(c => { const ls = ordered(u, c.id).filter(x => x.text.trim()); return ls.length ? `<div class="pick-cat"><b>${esc(c.name)}</b>${ls.map(l => `<button type="button" class="pick-c${l.likely ? ' on' : ''}${l.likely && l.uit === 'nee' ? ' nee' : ''}${l.parent ? ' sub' : ''}" data-act="likely" data-id="${l.id}" aria-pressed="${l.likely}">${l.likely ? ICON.starOn : ICON.star}<span>${esc(l.text)}</span></button>`).join('')}</div>` : ''; }).join('')}</div>`}
       ${likely.length > 3 ? '<p class="warn">Je koos er meer dan drie. Kan je er een paar laten vallen? Focus maakt het nagaan haalbaar.</p>' : ''}
-      ${likely.length ? `<h3 class="sub-h">Hoe ga je na of het klopt?</h3><p class="lead">Ga het na met feiten, en noteer wat je vond. Alleen wat klopt, pak je aan.</p><ul class="toets">${likely.map(l => `<li class="${l.uit ? 'u-' + l.uit : ''}"><b>${esc(l.text)}</b><input data-cid="${l.id}" data-k="toets" value="${esc(l.toets)}" maxlength="240" placeholder="Bv. 20 dossiers nakijken, met het loket praten, cijfers opvragen" aria-label="Hoe ga je na of ${esc(l.text)} klopt?">
-        <div class="uit" role="radiogroup" aria-label="${esc('Uitkomst: ' + l.text)}">${UIT.map(([v, t]) => `<button type="button" role="radio" data-act="uit" data-id="${l.id}" data-v="${v}" aria-checked="${l.uit === v}">${t}</button>`).join('')}</div></li>`).join('')}</ul>
+      ${likely.length ? `<h3 class="sub-h">Vraag door en ga het na</h3><p class="lead">Vraag bij elke gekozen oorzaak waarom ze gebeurt, tot je bij iets komt waar je zelf iets aan kan doen. Ga dat na met feiten. Alleen wat klopt, pak je aan.</p><ul class="toets">${likely.map(l => { const w = l.waarom || [], d = diepst(l); return `<li class="${l.uit ? 'u-' + l.uit : ''}"><b>${esc(l.text)}</b>
+        <div class="why">${w.map((x, i) => `<div class="why-row"><span class="why-n" aria-hidden="true">Waarom?</span><input data-cid="${l.id}" data-k="waarom" data-i="${i}" value="${esc(x)}" maxlength="160" enterkeyhint="next" placeholder="${i ? 'En waarom gebeurt dat?' : 'Waarom gebeurt dat?'}" aria-label="${esc((i ? 'En waarom gebeurt dat? Stap ' + (i + 1) : 'Waarom gebeurt dat?') + ' (' + l.text + ')')}"><button type="button" class="icon-btn why-x" data-act="why-del" data-id="${l.id}" data-i="${i}" aria-label="${esc('Haal deze stap weg (' + (x || 'leeg') + ')')}">${ICON.x}</button></div>`).join('')}${w.length < 3 ? `<button type="button" class="why-add" data-act="why-add" data-id="${l.id}">${ICON.sub}${w.length ? 'Waarom nog?' : 'Vraag door: waarom gebeurt dat?'}</button>` : ''}</div>
+        ${d !== l.text.trim() ? `<p class="why-root">Wat je nagaat: <b>${esc(d)}</b></p>` : ''}<input data-cid="${l.id}" data-k="toets" value="${esc(l.toets)}" maxlength="240" placeholder="Hoe ga je het na? Bv. 20 dossiers nakijken, cijfers opvragen" aria-label="${esc('Hoe ga je na of dit klopt: ' + d)}">
+        <div class="uit" role="radiogroup" aria-label="${esc('Uitkomst: ' + l.text)}">${UIT.map(([v, t]) => `<button type="button" role="radio" data-act="uit" data-id="${l.id}" data-v="${v}" aria-checked="${l.uit === v}">${t}</button>`).join('')}</div></li>`; }).join('')}</ul>
       ${weg && weg === likely.length ? '<p class="warn">Geen van de gekozen oorzaken klopt. Kies een andere oorzaak hierboven, of vul de oorzaken aan bij stap 3.</p>' : ok ? `<p class="okmsg">${ok === 1 ? 'Eén oorzaak klopt' : ok + ' oorzaken kloppen'}. Die pak je nu aan.</p>` : ''}` : ''}
       ${likely.some(hot) ? `<div class="to-board"><button type="button" class="btn btn-ghost" data-act="to-board" aria-describedby="to-board-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="11" rx="1.5"/><rect x="17" y="4" width="4" height="7" rx="1.5"/></svg>Zet in Takenbord</button><p id="to-board-hint">Takenbord opent. Vink daar aan wat je overneemt: eerst nagaan, en wat klopt, aanpakken.</p></div>` : ''}
     </div>
@@ -973,7 +989,7 @@ document.addEventListener('input', e => {
   const el = e.target, u = cur(); if (!u) return;
   if (el.dataset.f === 'probleem') { u.probleem = el.value; save(); drawSoon(); const tb = document.querySelector(`[data-unit="${u.id}"] .nm`); if (tb) tb.textContent = title(u); return; }
   if (el.dataset.catname) { const c = u.cats.find(x => x.id === el.dataset.catname); if (c) { c.name = el.value; save(); drawSoon(); } return; }
-  if (el.dataset.cid) { const c = u.causes.find(x => x.id === el.dataset.cid); if (!c) return; if (el.dataset.k === 'toets') c.toets = el.value; else c.text = el.value; save(); if (!el.dataset.k) drawSoon(); }
+  if (el.dataset.cid) { const c = u.causes.find(x => x.id === el.dataset.cid); if (!c) return; if (el.dataset.k === 'toets') c.toets = el.value; else if (el.dataset.k === 'waarom') { (c.waarom = c.waarom || [])[+el.dataset.i] = el.value; } else c.text = el.value; save(); if (!el.dataset.k) drawSoon(); }
 });
 // Bij elke toets het hele diagram opnieuw tekenen kost op een gsm merkbaar tijd: pas tekenen als je even stopt met typen.
 function drawSoon() { clearTimeout(drawSoon.t); drawSoon.t = setTimeout(renderDiagram, 200); }
@@ -987,6 +1003,13 @@ document.addEventListener('keydown', e => {
   if (el.dataset.add && e.key === 'Enter') {
     e.preventDefault(); const v = el.value.trim(); if (!v) return;
     addLines(u, el.dataset.add, [v], null); save(); render(); focusSel(`[data-add="${el.dataset.add}"]`); return;
+  }
+  if (el.dataset.cid && el.dataset.k === 'waarom' && e.key === 'Enter') {
+    e.preventDefault(); const c = u.causes.find(x => x.id === el.dataset.cid); if (!c || !el.value.trim()) return;
+    const i = +el.dataset.i;
+    if (i === c.waarom.length - 1 && c.waarom.length < 3) { c.waarom.push(''); save(); render(); focusSel(`[data-cid="${c.id}"][data-k="waarom"][data-i="${i + 1}"]`); }
+    else { render(); focusSel(`[data-cid="${c.id}"][data-k="toets"]`); }
+    return;
   }
   if (el.dataset.cid && !el.dataset.k) {
     const c = u.causes.find(x => x.id === el.dataset.cid); if (!c) return;
@@ -1017,6 +1040,8 @@ document.addEventListener('click', e => {
     case 'fit': zoomZ = null; fitPref = !fitShown; sizeSvg(); return;
     case 'add-sub': { const p = u.causes.find(x => x.id === id), subs = u.causes.filter(x => x.parent === id), last = subs[subs.length - 1] || p, x = cause(p.cat, '', id); u.causes.splice(u.causes.indexOf(last) + 1, 0, x); save(); render(); focusSel(`[data-cid="${x.id}"]:not([data-k])`); return; }
     case 'del': { const undo = snapshot(), c = u.causes.find(x => x.id === id), gone = u.causes.filter(x => x.id === id || x.parent === id).length; u.causes = u.causes.filter(x => x.id !== id && x.parent !== id); save(); render(); toast(gone > 1 ? `Oorzaak en ${gone - 1} ${gone === 2 ? 'suboorzaak' : 'suboorzaken'} verwijderd` : `${(c && c.text) || 'Oorzaak'} verwijderd`, undo); return; }
+    case 'why-add': { const c = u.causes.find(x => x.id === id); if (!c) return; c.waarom = c.waarom || []; if (c.waarom.length >= 3) return; c.waarom.push(''); save(); render(); focusSel(`[data-cid="${id}"][data-k="waarom"][data-i="${c.waarom.length - 1}"]`); return; }
+    case 'why-del': { const c = u.causes.find(x => x.id === id); if (!c) return; c.waarom.splice(+t.dataset.i, 1); save(); render(); focusSel(c.waarom.length ? `[data-cid="${id}"][data-k="waarom"][data-i="${c.waarom.length - 1}"]` : `[data-act="why-add"][data-id="${id}"]`); return; }
     case 'likely': { const c = u.causes.find(x => x.id === id); c.likely = !c.likely; save(); render(); const b = document.querySelector(`[data-act="likely"][data-id="${id}"]`); if (b) b.focus({ preventScroll:true }); return; }
     case 'uit': { const c = u.causes.find(x => x.id === id); if (!c) return; c.uit = t.dataset.v || ''; save(); render(); const b = document.querySelector(`[data-act="uit"][data-id="${id}"][data-v="${c.uit}"]`); if (b) b.focus({ preventScroll:true }); return; }
     case 'add-cat': { if (u.cats.length >= 10) { toast('Tien soorten is het maximum'); return; } const c = cat('Nieuwe soort'); u.cats.push(c); save(); render(); const i = document.querySelector(`[data-catname="${c.id}"]`); if (i) { i.focus(); i.select(); } return; }
@@ -1038,8 +1063,8 @@ function publish() {
     // Een oorzaak is geen taak: wat je wel kan doen, is nagaan of ze klopt.
     // Na het nagaan: wat klopt, pak je aan; wat niet klopt, gaat niet mee.
     items: u.causes.filter(c => hot(c) && c.text.trim()).map(c => c.uit === 'ja'
-      ? { type:'taak', text:'Oorzaak aanpakken: ' + c.text.trim(), note:'nagegaan, klopt' + (c.toets.trim() ? ': ' + c.toets.trim() : '') }
-      : { type:'taak', text: c.toets.trim() || 'Nagaan of dit klopt: ' + c.text.trim(), note: c.toets.trim() ? 'oorzaak: ' + c.text.trim() : 'waarschijnlijke oorzaak' })
+      ? { type:'taak', text:'Oorzaak aanpakken: ' + diepst(c), note:'nagegaan, klopt' + (c.toets.trim() ? ': ' + c.toets.trim() : '') + (diepst(c) !== c.text.trim() ? ' · vertrekpunt: ' + c.text.trim() : '') }
+      : { type:'taak', text: c.toets.trim() || 'Nagaan of dit klopt: ' + diepst(c), note: c.toets.trim() ? 'oorzaak: ' + diepst(c) : 'waarschijnlijke oorzaak' })
   }));
   ocShare.publish(OC_ID, OC_TOOL, lists);
 }
@@ -1059,7 +1084,7 @@ function example() {
   add(waarmee, 'Aanvraagformulier vraagt dubbele gegevens');
   add(sturing, 'Er wordt niet bijgehouden welk stuk het vaakst ontbreekt');
   add(buiten, 'Piek aan aanvragen vlak voor de deadline');
-  Object.assign(u.causes.find(c => c.text.startsWith('Burgers weten')), { toets:'20 onvolledige dossiers nakijken: welk stuk ontbreekt?', uit:'ja' });
+  Object.assign(u.causes.find(c => c.text.startsWith('Burgers weten')), { waarom:['De lijst met bewijsstukken staat pas onderaan de pagina', 'Niemand heeft de pagina ooit met burgers getest'], toets:'5 burgers de pagina laten gebruiken en 20 onvolledige dossiers nakijken', uit:'ja' });
   state.units.push(u); state.current = u.id; save(); render();
 }
 
@@ -1113,13 +1138,13 @@ function asList(u) {
   const L = [title(u), ''];
   u.cats.forEach(c => { const ls = ordered(u, c.id).filter(x => x.text.trim()); if (!ls.length) return; L.push(c.name); ls.forEach(l => L.push(`${l.parent ? '    - ' : '  - '}${l.text}${l.likely ? (l.uit === 'ja' ? ' (klopt)' : l.uit === 'nee' ? ' (klopt niet)' : ' (waarschijnlijk)') : ''}`)); });
   const lk = u.causes.filter(c => c.likely && c.text.trim());
-  if (lk.length) { L.push('', 'Waarschijnlijke oorzaken'); lk.forEach(c => L.push(`- ${c.text}${c.uit === 'ja' ? ' (klopt)' : c.uit === 'nee' ? ' (klopt niet)' : ''}${c.toets ? ': nagaan door ' + c.toets : ''}`)); }
+  if (lk.length) { L.push('', 'Waarschijnlijke oorzaken'); lk.forEach(c => { L.push(`- ${c.text}${c.uit === 'ja' ? ' (klopt)' : c.uit === 'nee' ? ' (klopt niet)' : ''}${c.toets ? ': nagaan door ' + c.toets : ''}`); (c.waarom || []).filter(x => x.trim()).forEach(x => L.push(`    waarom? ${x.trim()}`)); }); }
   return L.join('\n');
 }
 function buildExport() {
   const u = cur(), node = document.createElement('div');
   const lk = u.causes.filter(c => c.likely && c.text.trim());
-  node.innerHTML = `<div style="display:flex;justify-content:center">${svgOf(u)}</div>${lk.length ? `<div style="font-family:'DM Sans',system-ui,sans-serif;margin-top:22px"><div style="font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b;margin-bottom:8px">Waarschijnlijke oorzaken</div>${lk.map(c => `<div style="padding:7px 0;border-bottom:1px solid #f1f5f9;font-size:14px;color:#1e293b"><b>${esc(c.text)}</b>${c.toets ? `<span style="color:#475569"> · nagaan: ${esc(c.toets)}</span>` : ''}${c.uit ? ` <span style="display:inline-block;font-size:12px;font-weight:600;padding:1px 8px;border-radius:999px;${c.uit === 'ja' ? 'background:#d1fae5;color:#047857' : 'background:#f1f5f9;color:#64748b'}">${c.uit === 'ja' ? 'klopt' : 'klopt niet'}</span>` : ''}</div>`).join('')}</div>` : ''}`;
+  node.innerHTML = `<div style="display:flex;justify-content:center">${svgOf(u)}</div>${lk.length ? `<div style="font-family:'DM Sans',system-ui,sans-serif;margin-top:22px"><div style="font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b;margin-bottom:8px">Waarschijnlijke oorzaken</div>${lk.map(c => `<div style="padding:7px 0;border-bottom:1px solid #f1f5f9;font-size:14px;color:#1e293b"><b>${esc(c.text)}</b>${(c.waarom || []).filter(x => x.trim()).map(x => `<span style="color:#475569"> › ${esc(x.trim())}</span>`).join('')}${c.toets ? `<span style="color:#475569"> · nagaan: ${esc(c.toets)}</span>` : ''}${c.uit ? ` <span style="display:inline-block;font-size:12px;font-weight:600;padding:1px 8px;border-radius:999px;${c.uit === 'ja' ? 'background:#d1fae5;color:#047857' : 'background:#f1f5f9;color:#64748b'}">${c.uit === 'ja' ? 'klopt' : 'klopt niet'}</span>` : ''}</div>`).join('')}</div>` : ''}`;
   const s = node.querySelector('svg'); s.style.maxWidth = '100%'; s.style.height = 'auto';
   const p = u.voorbeeld ? '' : ocProject('');
   return { node, title:'Visgraatdiagram', subtitle: p && p !== title(u) ? `${p} · ${title(u)}` : title(u) };
