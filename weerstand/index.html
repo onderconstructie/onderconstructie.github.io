@@ -614,6 +614,8 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
 <div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-text"></span><button id="toast-btn" hidden>Ongedaan</button></div>
 
 <script>
+/* Een cel die begint met = + - of @ zou Excel als formule uitvoeren: zet er een ' voor (gewone getallen blijven). */
+function ocCsvVeilig(s) { s = String(s == null ? '' : s); return /^[=+\-@\t\r]/.test(s) && !/^[+-]?\d+([.,]\d+)*%?$/.test(s) ? "'" + s : s; }
 /* ---------- Overnemen tussen tools (gedeeld door de Onder Constructie-tools, v2) ----------
    Alle tools draaien op hetzelfde domein en delen dus localStorage. Elke tool legt wat hij te bieden
    heeft klaar onder 'oc.share.<tool-id>', in een vaste vorm, zodat andere tools het kunnen overnemen
@@ -1051,7 +1053,7 @@ const ocRich = (() => {
   const inl = s => e(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/(^|[\s(])_(.+?)_(?=[\s).,:;!?]|$)/g, '$1<i>$2</i>');
   const bare = s => String(s).replace(/\*\*(.+?)\*\*/g, '$1').replace(/(^|[\s(])_(.+?)_(?=[\s).,:;!?]|$)/g, '$1$2');
   const TD = 'border:1px solid #cbd5e1;padding:4px 8px;text-align:left;vertical-align:top';
-  const tableHTML = rows => `<table style="border-collapse:collapse;margin:4pt 0">${rows.map((r, i) => `<tr>${r.map(c => i ? `<td style="${TD}">${inl(c)}</td>` : `<th style="${TD};background:#f1f5f9">${inl(c)}</th>`).join('')}</tr>`).join('')}</table>`;
+  const tableHTML = rows => `<table style="border-collapse:collapse;margin:4pt 0">${rows.map((r, i) => `<tr>${r.map(c => i ? `<td style="${escA(TD)}">${inl(c)}</td>` : `<th style="${escA(TD)};background:#f1f5f9">${inl(c)}</th>`).join('')}</tr>`).join('')}</table>`;
   function convert(src) {
     const T = [], H = []; let list = false, table = null;
     const flush = () => { if (list) { H.push('</ul>'); list = false; } if (table) { H.push(tableHTML(table)); table = null; } };
@@ -1183,6 +1185,7 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 const today = () => new Date().toISOString().slice(0, 10);
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const escA = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));   // waarde in een attribuut: ook ids, statussen, datums en getallen
 const fmtDate = d => { try { const x = new Date(d + 'T12:00:00'); return isNaN(x) ? String(d || '') : x.toLocaleDateString('nl-BE', { day:'numeric', month:'short', year:'numeric' }); } catch { return String(d || ''); } };
 const newScan = () => ({ id:uid(), date:today(), a:{} });
 const newGroup = name => { const c = ocSharedChange('weerstand'); return { id:uid(), name:name || 'Nieuwe doelgroep', size:'', change:c ? c.text.slice(0, 200) : '', project:ocProject(''), scans:[newScan()], plan:[] }; };
@@ -1234,8 +1237,17 @@ function migrate(d) {
   if (d.current && !d.groups.some(g => g.id === d.current)) d.current = d.groups[0] ? d.groups[0].id : null;
   return d;
 }
+/* Een bestand van iemand anders kan in elk veld tekst zetten. Bij het inlezen: datums moeten op een datum lijken en getallen een getal zijn. */
+function ocVeilig(v, k, getal) {
+  if (Array.isArray(v)) return v.map(x => ocVeilig(x, k, getal));
+  if (v && typeof v === 'object') { Object.keys(v).forEach(x => { const r = ocVeilig(v[x], x, getal); if (r === undefined) delete v[x]; else v[x] = r; }); return v; }
+  if (/^(when|by|date|datum|due|deadline)$/.test(k) && typeof v === 'string' && v && !/^\d{4}-\d{2}-\d{2}(T[\d:.]+Z?)?$/.test(v)) return '';
+  if (getal.test(k) && v != null && typeof v !== 'number') { const n = typeof v === 'string' && v.trim() !== '' ? Number(v) : NaN; return Number.isFinite(n) ? n : undefined; }
+  if (typeof v === 'number' && !Number.isFinite(v)) return undefined;
+  return v;
+}
 function load() {
-  try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && Array.isArray(d.groups)) return migrate(d); } catch {}
+  try { const d = ocVeilig(JSON.parse(localStorage.getItem(KEY)), '', /^(size)$/); if (d && Array.isArray(d.groups)) return migrate(d); } catch {}
   return { groups:[], current:null, view:'scan', step:0 };
 }
 let state = load();
@@ -1326,7 +1338,7 @@ function renderTabs() {
   $('lists').innerHTML = state.groups.map(g => {
     const d = dominant(levelScores(lastScan(g)));
     const col = d.length ? (d[0].pct >= 60 ? '#ef4444' : '#f59e0b') : '#cbd5e1';
-    return `<button class="tab${g.id === (cur() || {}).id ? ' active' : ''}" aria-current="${g.id === (cur() || {}).id}" data-group="${esc(g.id)}"><span class="n" style="background:${col}"></span>${esc(g.name || 'Naamloos')}${g.voorbeeld ? '<span class="vb-tag">voorbeeld</span>' : ''}</button>`;
+    return `<button class="tab${escA(g.id === (cur() || {}).id ? ' active' : '')}" aria-current="${escA(g.id === (cur() || {}).id)}" data-group="${esc(g.id)}"><span class="n" style="background:${escA(col)}"></span>${esc(g.name || 'Naamloos')}${g.voorbeeld ? '<span class="vb-tag">voorbeeld</span>' : ''}</button>`;
   }).join('') + (state.groups.length ? '' : '<span class="tab active" aria-current="true">Nog geen doelgroep</span>')
     + '<button class="tab add" id="new-group" aria-label="Nieuwe doelgroep">+ Doelgroep</button>';
 }
@@ -1367,8 +1379,8 @@ const isWide = () => matchMedia('(min-width:820px)').matches;
 // Eén vraag = één groep keuzes (ook "Weet ik niet"): één Tab-stop, de pijltjes kiezen een ander antwoord.
 function scaleHTML(key, val, labels, q) {
   return `<div class="scale-wrap" role="radiogroup"${q ? ` aria-label="${esc(q)}"` : ''}><div class="scale">${labels.map((t, v) =>
-    `<button type="button" data-key="${key}" data-v="${v}" role="radio" aria-pressed="${val === v}" aria-checked="${val === v}">${t}</button>`).join('')}</div>
-    <button type="button" class="dk" data-key="${key}" data-v="?" role="radio" aria-pressed="${val === '?'}" aria-checked="${val === '?'}">Weet ik niet</button></div>`;
+    `<button type="button" data-key="${escA(key)}" data-v="${escA(v)}" role="radio" aria-pressed="${escA(val === v)}" aria-checked="${escA(val === v)}">${t}</button>`).join('')}</div>
+    <button type="button" class="dk" data-key="${escA(key)}" data-v="?" role="radio" aria-pressed="${escA(val === '?')}" aria-checked="${escA(val === '?')}">Weet ik niet</button></div>`;
 }
 function scanTop(g, pre, total) {
   const s = lastScan(g), n = answeredCount(s, pre);
@@ -1380,7 +1392,7 @@ function renderScan(g) {
   const step = Math.min(state.step || 0, LEVELS.length - 1);
   let h = scanTop(g, 'w', 15);
   h += `<p class="hint">Hoe sterk herken je elk signaal bij deze groep? Geen zicht op iets? Kies “Weet ik niet”: dat telt niet mee, maar je krijgt een seintje om het na te vragen.</p>`;
-  if (!wide) h += `<div class="progress" aria-label="Vorm ${step + 1} van 5">${LEVELS.map((_, i) => `<span class="${i < step ? 'done' : i === step ? 'now' : ''}"></span>`).join('')}</div>`;
+  if (!wide) h += `<div class="progress" aria-label="Vorm ${escA(step + 1)} van 5">${LEVELS.map((_, i) => `<span class="${escA(i < step ? 'done' : i === step ? 'now' : '')}"></span>`).join('')}</div>`;
   h += LEVELS.map((L, li) => (wide || li === step) ? `
     <div class="lvl">
       <div class="lvl-head"><span class="lvl-num">${li + 1}/5</span><span class="lvl-stem">${esc(L.stem)}</span><span class="voice">“${esc(L.voice)}”</span></div>
@@ -1401,9 +1413,9 @@ function renderScan(g) {
 function bronBars(br) {
   return `<div class="bars bron-bars">${br.sorted.map(e => {
     const top = br.top.includes(e);
-    return `<div class="bar-row${top ? ' top' : ''}">
+    return `<div class="bar-row${escA(top ? ' top' : '')}">
       <span class="bar-label" title="${esc(e.B.name)}">${esc(e.B.name)}</span>
-      <span class="bar-track"><span class="bar-fill" style="width:${e.pct || 0}%;display:block"></span></span>
+      <span class="bar-track"><span class="bar-fill" style="width:${escA(e.pct || 0)}%;display:block"></span></span>
       <span class="bar-val">${e.pct === null ? (e.unknown ? '?' : '–') : e.pct + '%'}</span></div>`;
   }).join('')}</div>`;
 }
@@ -1426,7 +1438,7 @@ function renderBronnen(g) {
       <div class="lvl-head"><span class="lvl-stem">${esc(B.name)}</span><span class="voice">“${esc(B.voice)}”</span></div>
       <p class="lvl-sub">${esc(B.vraag)}</p>
       ${B.q.map((q, i) => { const k = 'b' + B.id + i;
-        if (LINK[k]) { const v = bronVal(s, k); return `<div class="q"><p class="q-text">${esc(q)}</p><p class="q-linked">Al gevraagd in de scan: <b>${v === undefined ? 'nog niet beantwoord' : v === '?' ? 'weet ik niet' : esc(SCALE[v].toLowerCase())}</b><button type="button" class="lnk" data-do="to-scan" data-step="${+LINK[k][1] - 1}">Wijzig in de scan</button></p></div>`; }
+        if (LINK[k]) { const v = bronVal(s, k); return `<div class="q"><p class="q-text">${esc(q)}</p><p class="q-linked">Al gevraagd in de scan: <b>${v === undefined ? 'nog niet beantwoord' : v === '?' ? 'weet ik niet' : esc(SCALE[v].toLowerCase())}</b><button type="button" class="lnk" data-do="to-scan" data-step="${escA(+LINK[k][1] - 1)}">Wijzig in de scan</button></p></div>`; }
         return `<div class="q"><p class="q-text">${esc(q)}</p>${scaleHTML(k, s.a[k], SCALE, q)}</div>`; }).join('')}
     </div>`).join('');
   h += `<div class="step-nav" style="display:flex"><button class="btn btn-ghost" data-do="to-scan">Terug naar de scan</button><button class="btn btn-primary" data-do="to-res">Bekijk het resultaat</button></div>`;
@@ -1438,14 +1450,14 @@ function deltaHTML(now, prev) {
   if (now === null || prev === null || prev === undefined) return '';
   const d = now - prev;
   if (Math.abs(d) < 1) return '<small class="same">=</small>';
-  return `<small class="${d > 0 ? 'up' : 'down'}">${d > 0 ? '▲' : '▼'} ${Math.abs(d)}</small>`;
+  return `<small class="${escA(d > 0 ? 'up' : 'down')}">${d > 0 ? '▲' : '▼'} ${Math.abs(d)}</small>`;
 }
 function spark(scan) {
   const sc = levelScores(scan);
-  return `<svg viewBox="0 0 46 18" aria-hidden="true">${sc.map((s, i) => `<rect x="${i * 9.5}" y="${18 - Math.max(1.5, (s.pct || 0) / 100 * 18)}" width="7" height="${Math.max(1.5, (s.pct || 0) / 100 * 18)}" rx="1.5" fill="${s.L.id === 5 ? '#1e293b' : '#94a3b8'}" opacity="${s.pct === null ? 0.25 : 0.9}"/>`).join('')}</svg>`;
+  return `<svg viewBox="0 0 46 18" aria-hidden="true">${sc.map((s, i) => `<rect x="${escA(i * 9.5)}" y="${escA(18 - Math.max(1.5, (s.pct || 0) / 100 * 18))}" width="7" height="${escA(Math.max(1.5, (s.pct || 0) / 100 * 18))}" rx="1.5" fill="${escA(s.L.id === 5 ? '#1e293b' : '#94a3b8')}" opacity="${escA(s.pct === null ? 0.25 : 0.9)}"/>`).join('')}</svg>`;
 }
 function inPlan(g, text) { return g.plan.some(p => p.text === text); }
-const planBtn = (g, text, src, label = 'Neem op in plan') => inPlan(g, text) ? '<span class="add-plan in">In plan ✓</span>' : `<button class="add-plan" data-plan="${esc(text)}" data-src="${src}">${label}</button>`;
+const planBtn = (g, text, src, label = 'Neem op in plan') => inPlan(g, text) ? '<span class="add-plan in">In plan ✓</span>' : `<button class="add-plan" data-plan="${esc(text)}" data-src="${escA(src)}">${label}</button>`;
 function renderResult(g) {
   const s = lastScan(g), sc = levelScores(s), dom = dominant(sc), br = bronScores(s);
   const prev = g.scans.length > 1 ? g.scans[g.scans.length - 2] : null;
@@ -1471,9 +1483,9 @@ function renderResult(g) {
   if (ag && ag.kind === 'diff') h += `<div class="banner diff">${ICON.arrows}<span><b>Scan en bronnen wijzen elk een andere kant op.</b> Bespreek dit met de groep: het blijft een inschatting.</span></div>`;
 
   h += `<h3 class="sec-title">Profiel van de weerstand${prev ? ` <span style="text-transform:none;letter-spacing:0;font-weight:500">· vergeleken met ${fmtDate(prev.date)}</span>` : ''}</h3><div class="bars">`;
-  h += sc.map((x, i) => `<div class="bar-row${dom.some(d => d.L.id === x.L.id) ? ' dom' : ''}${x.L.id === 5 ? ' trustlvl' : ''}">
+  h += sc.map((x, i) => `<div class="bar-row${escA(dom.some(d => d.L.id === x.L.id) ? ' dom' : '')}${x.L.id === 5 ? ' trustlvl' : ''}">
       <span class="bar-label" title="${esc(x.L.stem)}">${esc(x.L.stem)}</span>
-      <span class="bar-track"><span class="bar-fill" style="width:${x.pct || 0}%;display:block"></span></span>
+      <span class="bar-track"><span class="bar-fill" style="width:${escA(x.pct || 0)}%;display:block"></span></span>
       <span class="bar-val">${x.pct === null ? '–' : x.pct + '%'}${psc ? deltaHTML(x.pct, psc[i].pct) : ''}</span></div>`).join('') + '</div>';
 
   const was = pbr && pbr.top.length && topNames(pbr) !== topNames(br) ? ` <span style="text-transform:none;letter-spacing:0;font-weight:500">· vorige keer: ${esc(topNames(pbr))}</span>` : '';
@@ -1487,7 +1499,7 @@ function renderResult(g) {
     const ordered = (trust ? [LEVELS[4], ...focus.filter(L => L.id !== 5)] : focus).slice(0, dom.diffuse ? 2 : 3);   // diffuus beeld: hooguit twee kaarten
     const top = dom.find(d => d.L.id === ordered[0].id);
     h += `<p class="why-first">${trust && ordered[0].id === 5 && dom[0].L.id !== 5 ? `Vertrouwen staat eerst: het scoort bijna even hoog als ${esc(lc(dom[0].L.stem))}, en het bepaalt hoe de rest aankomt.` : `Eerst ${esc(lc(ordered[0].stem))}: dat scoort het hoogst${top ? ` (${top.pct}%)` : ''}.`}</p>`;
-    h += ordered.map((L, i) => `<div class="lv-card${i === 0 ? ' top' : ''}" data-oc-keep>
+    h += ordered.map((L, i) => `<div class="lv-card${escA(i === 0 ? ' top' : '')}" data-oc-keep>
         <div class="lv-stem">${esc(L.stem)} <span class="voice">“${esc(L.voice)}”</span></div>
         <p class="lv-meta"><b>Oorzaak:</b> ${esc(L.cause)} · <b>Onderliggend:</b> ${esc(L.under)}</p>
         <span class="lv-link">Past bij de bron: ${esc(lc(BRON(L.bron).name))}</span>
@@ -1510,7 +1522,7 @@ function renderResult(g) {
   if (g.scans.length > 1) {
     h += `<h3 class="sec-title">Metingen</h3><div class="history">${g.scans.map((m, i) => {
       const b = bronScores(m);
-      return `<span class="hist${i === g.scans.length - 1 ? ' cur' : ''}">${spark(m)}${fmtDate(m.date)}${b.top.length ? ' · ' + esc(topNames(b)) : ''}</span>`;
+      return `<span class="hist${escA(i === g.scans.length - 1 ? ' cur' : '')}">${spark(m)}${fmtDate(m.date)}${b.top.length ? ' · ' + esc(topNames(b)) : ''}</span>`;
     }).join('')}</div>`;
   }
   $('view').innerHTML = h;
@@ -1521,10 +1533,10 @@ const isBronSrc = p => typeof p.src === 'string' && p.src.startsWith('bron:');
 function planItemHTML(p) {
   const src = p.src && p.src.startsWith('lvl') && LEVELS[+p.src.slice(3) - 1] ? LEVELS[+p.src.slice(3) - 1].stem
             : p.src === 'preventie' ? 'Voorkomen' : p.src === 'reageren' ? 'Reageren' : p.src === 'algemeen' ? 'Algemene tip' : isBronSrc(p) ? '' : 'Eigen actie';
-  return `<div class="plan-item${p.done ? ' done' : ''}" data-id="${p.id}">
-    <button class="chk" data-do="toggle" aria-label="${p.done ? 'Niet meer afgevinkt' : 'Afvinken'}">${ICON.check}</button>
+  return `<div class="plan-item${escA(p.done ? ' done' : '')}" data-id="${escA(p.id)}">
+    <button class="chk" data-do="toggle" aria-label="${escA(p.done ? 'Niet meer afgevinkt' : 'Afvinken')}">${ICON.check}</button>
     <div><div class="p-text">${esc(p.text)}</div>${src ? `<div class="p-src">${esc(src)}</div>` : ''}
-      ${isBronSrc(p) ? `<div class="when" role="radiogroup" aria-label="Wanneer: ${esc(p.text)}">${Object.entries(WHEN).map(([k, t]) => `<button type="button" role="radio" data-do="when" data-when="${k}" aria-pressed="${p.when === k}" aria-checked="${p.when === k}">${t}</button>`).join('')}</div>` : ''}
+      ${isBronSrc(p) ? `<div class="when" role="radiogroup" aria-label="Wanneer: ${esc(p.text)}">${Object.entries(WHEN).map(([k, t]) => `<button type="button" role="radio" data-do="when" data-when="${escA(k)}" aria-pressed="${escA(p.when === k)}" aria-checked="${escA(p.when === k)}">${t}</button>`).join('')}</div>` : ''}
       <div class="p-fields"><input class="field" data-f="who" autocomplete="off" enterkeyhint="next" value="${esc(p.who)}" placeholder="Wie?" aria-label="Wie: ${esc(p.text)}" maxlength="80"><input class="field" data-f="due" autocomplete="off" enterkeyhint="done" value="${esc(p.due)}" placeholder="Tegen wanneer?" aria-label="Tegen wanneer: ${esc(p.text)}" maxlength="40"></div>
     </div>
     <button class="del" data-do="del" aria-label="Verwijder: ${esc(p.text)}">${ICON.del}</button></div>`;
@@ -1541,10 +1553,10 @@ function renderPlan(g) {
   h += `<h3 class="sec-title">Acties per bron van weerstand</h3>`;
   h += br.sorted.map(e => {
     const B = e.B, items = g.plan.filter(p => p.src === 'bron:' + B.id), top = br.top.includes(e);
-    return `<div class="bron-plan${top ? ' top' : ''}" data-oc-keep>
+    return `<div class="bron-plan${escA(top ? ' top' : '')}" data-oc-keep>
       <div class="bron-plan-h"><b>${esc(B.name)}</b><span>${esc(B.vraag)}</span>${top ? '<span class="tagb">knelpunt</span>' : ''}</div>
       ${items.map(planItemHTML).join('')}
-      ${items.length < 3 ? `<form class="add-row" data-form="bron" data-el="${B.id}"><input class="field" name="t" autocomplete="off" enterkeyhint="done" placeholder="Actie tegen ${esc(lc(B.name))} (max. 3)" aria-label="Actie tegen ${esc(lc(B.name))}" maxlength="200"><button class="btn btn-ghost">Voeg toe</button></form>` : ''}
+      ${items.length < 3 ? `<form class="add-row" data-form="bron" data-el="${escA(B.id)}"><input class="field" name="t" autocomplete="off" enterkeyhint="done" placeholder="Actie tegen ${esc(lc(B.name))} (max. 3)" aria-label="Actie tegen ${esc(lc(B.name))}" maxlength="200"><button class="btn btn-ghost">Voeg toe</button></form>` : ''}
     </div>`;
   }).join('');
 
@@ -1563,11 +1575,11 @@ function renderAll() {
     return { g, s, d, br, max, trust:trustFirst(sc, d) };
   }).sort((a, b) => b.max - a.max);
   $('view').innerHTML = `<p class="hint">Gerangschikt op de sterkste weerstand. Tik op een groep om ze te openen.</p>` + rows.map(r => `
-    <button class="cmp" data-open="${r.g.id}">
+    <button class="cmp" data-open="${escA(r.g.id)}">
       <span class="cmp-name">${esc(r.g.name)}${r.g.size ? ` <span style="font-weight:500;color:var(--slate-500)">· ${esc(r.g.size)} pers.</span>` : ''}</span>
       <span class="cmp-score">${r.max}%<small>${fmtDate(r.s.date)}</small></span>
       <span class="cmp-sub">${r.d.length ? r.d.map(x => esc(x.L.stem)).join(', ') : 'Weinig zichtbare weerstand'}${r.br.top.length ? ' · knelpunt: ' + esc(topNames(r.br)) : ''}${r.trust ? ' · vertrouwen eerst' : ''}</span>
-      <span class="cmp-bar"><i style="width:${r.max}%;background:${r.max >= 60 ? '#c2410c' : r.max >= 25 ? '#f59e0b' : '#cbd5e1'}"></i></span>
+      <span class="cmp-bar"><i style="width:${r.max}%;background:${escA(r.max >= 60 ? '#c2410c' : r.max >= 25 ? '#f59e0b' : '#cbd5e1')}"></i></span>
     </button>`).join('');
 }
 
@@ -1668,7 +1680,7 @@ document.addEventListener('submit', e => {
     g.plan.push({ id:uid(), text:t.slice(0, 200), src:'bron:' + el, when:'', who:'', due:'', done:false });
   }
   save(); const y = window.scrollY; render(); window.scrollTo(0, y);
-  const again = document.querySelector(form.dataset.form === 'plan' ? '[data-form="plan"] input' : `[data-form="bron"][data-el="${form.dataset.el}"] input`);
+  const again = document.querySelector(form.dataset.form === 'plan' ? '[data-form="plan"] input' : `[data-form="bron"][data-el="${escA(form.dataset.el)}"] input`);
   again && again.focus();
 });
 
@@ -1711,7 +1723,7 @@ function asText(g) {
   return t;
 }
 function asCSV() {
-  const q = v => { v = String(v ?? ''); return /[;"\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+  const q = v => { v = ocCsvVeilig(v); return /[;"\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
   const rows = [['doelgroep', 'personen', 'meting', 'soort', 'onderdeel', 'score_pct', 'weet_ik_niet', 'opmerking']];
   state.groups.forEach(g => g.scans.forEach(m => {
     const sc = levelScores(m), dom = dominant(sc), br = bronScores(m);
@@ -1724,8 +1736,8 @@ function asCSV() {
 /* Exportweergave (staand) */
 function exportBar(label, pct, color, bold, extra = '') {
   return `<div style="display:grid;grid-template-columns:230px 1fr 90px;gap:12px;align-items:center;margin:7px 0;font-size:14px">
-      <span style="color:${bold ? '#0f172a' : '#475569'};font-weight:${bold ? 700 : 400}">${esc(label)}</span>
-      <span style="height:12px;background:#f1f5f9;border-radius:99px;overflow:hidden;display:block"><span style="display:block;height:100%;width:${pct || 0}%;background:${color};border-radius:99px"></span></span>
+      <span style="color:${escA(bold ? '#0f172a' : '#475569')};font-weight:${escA(bold ? 700 : 400)}">${esc(label)}</span>
+      <span style="height:12px;background:#f1f5f9;border-radius:99px;overflow:hidden;display:block"><span style="display:block;height:100%;width:${escA(pct || 0)}%;background:${escA(color)};border-radius:99px"></span></span>
       <span style="text-align:right;font-weight:600">${pct === null ? '–' : pct + '%'}${extra}</span></div>`;
 }
 function buildExport() {
@@ -1738,7 +1750,7 @@ function buildExport() {
   h += `<div data-oc-keep>${H('Profiel van de weerstand' + (prev ? ' · vergeleken met ' + fmtDate(g.scans[g.scans.length - 2].date) : ''))}` + sc.map((x, i) => {
     const on = dom.some(d => d.L.id === x.L.id), d = prev && x.pct !== null && prev[i].pct !== null ? x.pct - prev[i].pct : null;
     return exportBar(x.L.stem, x.pct, on ? (x.L.id === 5 ? '#1e293b' : '#c2410c') : '#cbd5e1', on,
-      d !== null && d !== 0 ? ` <span style="font-size:11px;color:${d > 0 ? '#dc2626' : '#059669'}">${d > 0 ? '▲' : '▼'}${Math.abs(d)}</span>` : '');
+      d !== null && d !== 0 ? ` <span style="font-size:11px;color:${escA(d > 0 ? '#dc2626' : '#059669')}">${d > 0 ? '▲' : '▼'}${Math.abs(d)}</span>` : '');
   }).join('') + '</div>';
   if (br.any) {
     h += `<div data-oc-keep>${H('Bronnen van weerstand')}` + br.sorted.map(e => { const top = br.top.includes(e); return exportBar(e.B.name, e.pct, top ? '#c2410c' : '#94a3b8', top); }).join('');
@@ -1761,8 +1773,8 @@ function buildExport() {
   }
   if (g.plan.length) {
     h += H('Plan');
-    const box = done => `<span style="display:inline-block;width:14px;height:14px;border-radius:4px;${done ? 'background:#10b981' : 'border:2px solid #94a3b8;box-sizing:border-box'};margin-right:10px;vertical-align:-2px"></span>`;
-    h += g.plan.map(p => `<div data-oc-keep style="font-size:14px;padding:6px 0;border-bottom:1px solid #f1f5f9;color:${p.done ? '#94a3b8' : '#1e293b'}">${box(p.done)}${esc(p.text)}
+    const box = done => `<span style="display:inline-block;width:14px;height:14px;border-radius:4px;${escA(done ? 'background:#10b981' : 'border:2px solid #94a3b8;box-sizing:border-box')};margin-right:10px;vertical-align:-2px"></span>`;
+    h += g.plan.map(p => `<div data-oc-keep style="font-size:14px;padding:6px 0;border-bottom:1px solid #f1f5f9;color:${escA(p.done ? '#94a3b8' : '#1e293b')}">${box(p.done)}${esc(p.text)}
       <span style="font-size:12px;color:#94a3b8"> · ${esc(planSrcLabel(p))}${p.when && WHEN[p.when] ? ' · ' + WHEN[p.when] : ''}${p.who ? ' · ' + esc(p.who) : ''}${p.due ? ' · tegen ' + esc(p.due) : ''}</span></div>`).join('');
   }
   if (g.scans.length > 1) {
@@ -1792,7 +1804,7 @@ $('menu').addEventListener('click', async e => {
   }
   if (act === 'delete') deleteGroup(g);
 });
-document.addEventListener('click', e => { const x = e.target.closest('[data-exp]'); if (x && !x.disabled) { const m = document.querySelector(`#menu [data-act="${x.dataset.exp}"]`); m && m.click(); } });
+document.addEventListener('click', e => { const x = e.target.closest('[data-exp]'); if (x && !x.disabled) { const m = document.querySelector(`#menu [data-act="${escA(x.dataset.exp)}"]`); m && m.click(); } });
 
 /* ---------- Voorbeeld wissen of houden, één doelgroep verwijderen ---------- */
 $('vb-wis').addEventListener('click', () => {
@@ -2408,7 +2420,7 @@ document.addEventListener('click', e => {
 
   // #hoe-werkt-dit opent het blok
   function vanAdres(vloeiend) {
-    var h = decodeURIComponent(location.hash.slice(1));
+    var h = location.hash.slice(1); try { h = decodeURIComponent(h); } catch (x) {}
     if (h !== SLUG && h !== d.id) return;
     if (!staat) zet(true, vloeiend);
     requestAnimationFrame(function () { d.scrollIntoView({ behavior: vloeiend && !rustig.matches ? 'smooth' : 'auto', block: 'start' }); });

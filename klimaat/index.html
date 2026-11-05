@@ -601,6 +601,8 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
 <div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-text"></span><button id="toast-btn" hidden>Ongedaan</button></div>
 
 <script>
+/* Een cel die begint met = + - of @ zou Excel als formule uitvoeren: zet er een ' voor (gewone getallen blijven). */
+function ocCsvVeilig(s) { s = String(s == null ? '' : s); return /^[=+\-@\t\r]/.test(s) && !/^[+-]?\d+([.,]\d+)*%?$/.test(s) ? "'" + s : s; }
 /* Het actieve project uit de app (oc.project): nieuwe projecten, analyses en lijsten krijgen die naam. */
 function ocProject(fb) { try { const p = JSON.parse(localStorage.getItem('oc.project')); return p && typeof p.name === 'string' && p.name.trim() ? p.name.trim().slice(0, 80) : fb; } catch { return fb; } }
 function ocPickProject(st, arr, cur = 'current') { const p = ocProject(''); if (!p || !st || !Array.isArray(st[arr])) return; const u = st[arr].find(x => x && x.name === p); if (u) st[cur] = u.id; }   // open het actieve project uit de app
@@ -1044,6 +1046,7 @@ const DEFAULT_UNIT = 'Hele organisatie';
 const uid = () => Math.random().toString(36).slice(2, 10);
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const escA = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));   // waarde in een attribuut: ook ids, statussen, datums en getallen
 /* Kopiëren met opmaak: dezelfde inhoud als nette platte tekst én als opgemaakte tekst (Word, Outlook).
    Zet de interne opbouw (koppen, lijsten, tabellen) om; de platte tekst bevat geen #, ** of ==. */
 const ocRich = (() => {
@@ -1051,7 +1054,7 @@ const ocRich = (() => {
   const inl = s => e(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/(^|[\s(])_(.+?)_(?=[\s).,:;!?]|$)/g, '$1<i>$2</i>');
   const bare = s => String(s).replace(/\*\*(.+?)\*\*/g, '$1').replace(/(^|[\s(])_(.+?)_(?=[\s).,:;!?]|$)/g, '$1$2');
   const TD = 'border:1px solid #cbd5e1;padding:4px 8px;text-align:left;vertical-align:top';
-  const tableHTML = rows => `<table style="border-collapse:collapse;margin:4pt 0">${rows.map((r, i) => `<tr>${r.map(c => i ? `<td style="${TD}">${inl(c)}</td>` : `<th style="${TD};background:#f1f5f9">${inl(c)}</th>`).join('')}</tr>`).join('')}</table>`;
+  const tableHTML = rows => `<table style="border-collapse:collapse;margin:4pt 0">${rows.map((r, i) => `<tr>${r.map(c => i ? `<td style="${escA(TD)}">${inl(c)}</td>` : `<th style="${escA(TD)};background:#f1f5f9">${inl(c)}</th>`).join('')}</tr>`).join('')}</table>`;
   function convert(src) {
     const T = [], H = []; let list = false, table = null;
     const flush = () => { if (list) { H.push('</ul>'); list = false; } if (table) { H.push(tableHTML(table)); table = null; } };
@@ -1272,28 +1275,28 @@ function matrixStatic() {
   const { L, T, W, H } = M, R = L + W, B = T + H, cx = L + W / 2, cy = T + H / 2;
   const z = [[L, T, 'verz'], [cx, T, 'moe'], [L, cy, 'afw'], [cx, cy, 'vrucht']];
   let s = `<rect x="0" y="0" width="400" height="400" fill="#ffffff"/>`;
-  z.forEach(([x, y, k]) => { s += `<rect x="${x}" y="${y}" width="${W / 2}" height="${H / 2}" fill="${CLIM[k].soft}"/>`; });
+  z.forEach(([x, y, k]) => { s += `<rect x="${escA(x)}" y="${escA(y)}" width="${escA(W / 2)}" height="${escA(H / 2)}" fill="${escA(CLIM[k].soft)}"/>`; });
   for (let i = 1; i < 4; i++) {
     if (i === 2) continue;
     const gx = L + i / 4 * W, gy = T + i / 4 * H;
-    s += `<line x1="${gx}" y1="${T}" x2="${gx}" y2="${B}" stroke="#e2e8f0" stroke-width="0.6" stroke-dasharray="2 3"/>`;
-    s += `<line x1="${L}" y1="${gy}" x2="${R}" y2="${gy}" stroke="#e2e8f0" stroke-width="0.6" stroke-dasharray="2 3"/>`;
+    s += `<line x1="${escA(gx)}" y1="${escA(T)}" x2="${escA(gx)}" y2="${escA(B)}" stroke="#e2e8f0" stroke-width="0.6" stroke-dasharray="2 3"/>`;
+    s += `<line x1="${escA(L)}" y1="${escA(gy)}" x2="${escA(R)}" y2="${escA(gy)}" stroke="#e2e8f0" stroke-width="0.6" stroke-dasharray="2 3"/>`;
   }
-  s += `<line x1="${cx}" y1="${T}" x2="${cx}" y2="${B}" stroke="#cbd5e1" stroke-width="1.2"/>`;
-  s += `<line x1="${L}" y1="${cy}" x2="${R}" y2="${cy}" stroke="#cbd5e1" stroke-width="1.2"/>`;
-  s += `<rect x="${L}" y="${T}" width="${W}" height="${H}" fill="none" stroke="#cbd5e1" stroke-width="1.5" rx="2"/>`;
+  s += `<line x1="${escA(cx)}" y1="${escA(T)}" x2="${escA(cx)}" y2="${escA(B)}" stroke="#cbd5e1" stroke-width="1.2"/>`;
+  s += `<line x1="${escA(L)}" y1="${escA(cy)}" x2="${escA(R)}" y2="${escA(cy)}" stroke="#cbd5e1" stroke-width="1.2"/>`;
+  s += `<rect x="${escA(L)}" y="${escA(T)}" width="${escA(W)}" height="${escA(H)}" fill="none" stroke="#cbd5e1" stroke-width="1.5" rx="2"/>`;
   const qf = fs(10.5), ls = mScale < 0.85 ? 0 : 0.8, lh = qf * 1.15;
   // Een naam die niet in zijn kwadrant past, loopt over twee regels in plaats van over de middenlijn.
-  const lab = (x, k, anchor, top) => { const ln = qLines(k); return `<text ${F} font-size="${qf}" font-weight="700" letter-spacing="${ls}" fill="${CLIM[k].color}" text-anchor="${anchor}">${ln.map((l, i) =>
-    `<tspan x="${x}" y="${(top ? T + 6 + qf + i * lh : B - 8 - (ln.length - 1 - i) * lh).toFixed(1)}">${l}</tspan>`).join('')}</text>`; };
+  const lab = (x, k, anchor, top) => { const ln = qLines(k); return `<text ${F} font-size="${escA(qf)}" font-weight="700" letter-spacing="${escA(ls)}" fill="${escA(CLIM[k].color)}" text-anchor="${escA(anchor)}">${ln.map((l, i) =>
+    `<tspan x="${escA(x)}" y="${escA((top ? T + 6 + qf + i * lh : B - 8 - (ln.length - 1 - i) * lh).toFixed(1))}">${l}</tspan>`).join('')}</text>`; };
   s += lab(L + 6, 'verz', 'start', true) + lab(R - 6, 'moe', 'end', true) + lab(L + 6, 'afw', 'start', false) + lab(R - 6, 'vrucht', 'end', false);
   const af = fs(10), tf = fs(11);
-  s += `<text x="${L}" y="${B + 4 + af}" ${F} font-size="${af}" fill="#64748b">negatief</text>`;
-  s += `<text x="${R}" y="${B + 4 + af}" ${F} font-size="${af}" fill="#64748b" text-anchor="end">positief</text>`;
-  s += `<text x="${cx}" y="${Math.min(398, B + 8 + af + tf)}" ${F} font-size="${tf}" font-weight="600" fill="#64748b" text-anchor="middle">Hoe liepen eerdere veranderingen?</text>`;
-  s += `<text transform="translate(${L - 5} ${B}) rotate(-90)" ${F} font-size="${af}" fill="#64748b">weinig</text>`;
-  s += `<text transform="translate(${L - 5} ${T}) rotate(-90)" ${F} font-size="${af}" fill="#64748b" text-anchor="end">veel</text>`;
-  s += `<text transform="translate(${Math.max(tf - 2, L - 24)} ${cy}) rotate(-90)" ${F} font-size="${tf}" font-weight="600" fill="#64748b" text-anchor="middle">${'Hoeveel verandering kwam er al?'.length * tf * 0.56 > H - 8 ? 'Hoeveel verandering al?' : 'Hoeveel verandering kwam er al?'}</text>`;
+  s += `<text x="${escA(L)}" y="${escA(B + 4 + af)}" ${F} font-size="${escA(af)}" fill="#64748b">negatief</text>`;
+  s += `<text x="${escA(R)}" y="${escA(B + 4 + af)}" ${F} font-size="${escA(af)}" fill="#64748b" text-anchor="end">positief</text>`;
+  s += `<text x="${escA(cx)}" y="${escA(Math.min(398, B + 8 + af + tf))}" ${F} font-size="${escA(tf)}" font-weight="600" fill="#64748b" text-anchor="middle">Hoe liepen eerdere veranderingen?</text>`;
+  s += `<text transform="translate(${escA(L - 5)} ${escA(B)}) rotate(-90)" ${F} font-size="${escA(af)}" fill="#64748b">weinig</text>`;
+  s += `<text transform="translate(${escA(L - 5)} ${escA(T)}) rotate(-90)" ${F} font-size="${escA(af)}" fill="#64748b" text-anchor="end">veel</text>`;
+  s += `<text transform="translate(${escA(Math.max(tf - 2, L - 24))} ${escA(cy)}) rotate(-90)" ${F} font-size="${escA(tf)}" font-weight="600" fill="#64748b" text-anchor="middle">${'Hoeveel verandering kwam er al?'.length * tf * 0.56 > H - 8 ? 'Hoeveel verandering al?' : 'Hoeveel verandering kwam er al?'}</text>`;
   return s;
 }
 
@@ -1317,8 +1320,8 @@ function renderMatrix(svgEl = $('matrix'), forExport = false) {
     const px = inX(xOf(r.x)), py = inY(yOf(r.y)), c = CLIM[r.cid];
     if (r.adjusted && r.has) {
       const gx = inX(xOf(r.calcX)), gy = inY(yOf(r.calcY));
-      ghosts += `<line x1="${gx}" y1="${gy}" x2="${px}" y2="${py}" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3 3"/>
-        <circle cx="${gx}" cy="${gy}" r="4.5" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>`;
+      ghosts += `<line x1="${escA(gx)}" y1="${escA(gy)}" x2="${escA(px)}" y2="${escA(py)}" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3 3"/>
+        <circle cx="${escA(gx)}" cy="${escA(gy)}" r="4.5" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>`;
     }
     const lf = fs(10.5), lh = lf * 1.1;
     const lines = narrow ? wrapLabel(u.name || 'Naamloos', 14) : [shortLabel(u.name || 'Naamloos', 18)];
@@ -1334,11 +1337,11 @@ function renderMatrix(svgEl = $('matrix'), forExport = false) {
     const lx = clamp(px, M.L + w / 2, M.L + M.W - w / 2);
     placed.push({ x:lx, top, w, h });
     const uns = r.unsure && !r.adjusted;
-    dots += `<g class="pt${dragging && dragging.id === u.id ? ' dragging' : ''}" data-id="${u.id}" ${forExport ? '' : 'tabindex="0" role="button"'} aria-label="${esc(u.name)}: ${c.name}${uns ? ', onzeker' : ''}${r.adjusted ? ', bijgesteld' : ''}. Pijltjes om te verplaatsen.">
-      <circle cx="${px}" cy="${py}" r="${Math.max(18, 22.5 / mScale).toFixed(1)}" fill="transparent"/>
-      <circle class="ring" cx="${px}" cy="${py}" r="11" fill="none" stroke="${c.color}" stroke-width="1.5" opacity="0"/>
-      <circle cx="${px}" cy="${py}" r="7.5" fill="${uns ? '#ffffff' : c.color}" stroke="${uns ? c.color : '#ffffff'}" stroke-width="${uns ? 2 : 2}" ${uns ? 'stroke-dasharray="3 2.2"' : ''}/>
-      <text ${F} font-size="${lf}" font-weight="600" fill="#1e293b" text-anchor="middle" stroke="#ffffff" stroke-width="3" stroke-linejoin="round" paint-order="stroke">${lines.map((l, i) => `<tspan x="${lx}" y="${(top + lf * 0.85 + i * lh).toFixed(1)}">${esc(l)}</tspan>`).join('')}</text>
+    dots += `<g class="pt${escA(dragging && dragging.id === u.id ? ' dragging' : '')}" data-id="${escA(u.id)}" ${forExport ? '' : 'tabindex="0" role="button"'} aria-label="${esc(u.name)}: ${escA(c.name)}${escA(uns ? ', onzeker' : '')}${escA(r.adjusted ? ', bijgesteld' : '')}. Pijltjes om te verplaatsen.">
+      <circle cx="${escA(px)}" cy="${escA(py)}" r="${escA(Math.max(18, 22.5 / mScale).toFixed(1))}" fill="transparent"/>
+      <circle class="ring" cx="${escA(px)}" cy="${escA(py)}" r="11" fill="none" stroke="${escA(c.color)}" stroke-width="1.5" opacity="0"/>
+      <circle cx="${escA(px)}" cy="${escA(py)}" r="7.5" fill="${escA(uns ? '#ffffff' : c.color)}" stroke="${escA(uns ? c.color : '#ffffff')}" stroke-width="${escA(uns ? 2 : 2)}" ${uns ? 'stroke-dasharray="3 2.2"' : ''}/>
+      <text ${F} font-size="${escA(lf)}" font-weight="600" fill="#1e293b" text-anchor="middle" stroke="#ffffff" stroke-width="3" stroke-linejoin="round" paint-order="stroke">${lines.map((l, i) => `<tspan x="${escA(lx)}" y="${escA((top + lf * 0.85 + i * lh).toFixed(1))}">${esc(l)}</tspan>`).join('')}</text>
     </g>`;
   });
   svgEl.innerHTML = matrixStatic() + ghosts + `<g id="points">${dots}</g>`;
@@ -1347,8 +1350,8 @@ function renderMatrix(svgEl = $('matrix'), forExport = false) {
 // De vraag bij elke keuzerij, zodat een schermlezer weet waarover "ja" of "3" gaat
 const SEG_VRAAG = { goal:'Doel gehaald?', support:'Hoe werd het begeleid?', time:'Op tijd?', budget:'Binnen budget?', weight:'Hoe zwaar was het voor de mensen?', workload:'Hoe voelt de werkdruk nu?' };
 function seg(name, value, opts, cls = '') {
-  return `<div class="seg ${cls}" role="radiogroup"${SEG_VRAAG[name] ? ` aria-label="${SEG_VRAAG[name]}"` : ''}>${opts.map(([v, l, t]) =>
-    `<button type="button" role="radio" aria-checked="${value === v}" class="${value === v ? 'on' : ''}" data-seg="${name}" data-v="${v}" data-key="${name}-${v}"${t ? ` title="${esc(t)}" aria-label="${esc(l + ', ' + t)}"` : ''}>${esc(l)}</button>`).join('')}</div>`;
+  return `<div class="seg ${escA(cls)}" role="radiogroup"${SEG_VRAAG[name] ? ` aria-label="${escA(SEG_VRAAG[name])}"` : ''}>${opts.map(([v, l, t]) =>
+    `<button type="button" role="radio" aria-checked="${escA(value === v)}" class="${escA(value === v ? 'on' : '')}" data-seg="${escA(name)}" data-v="${escA(v)}" data-key="${escA(name)}-${escA(v)}"${t ? ` title="${esc(t)}" aria-label="${esc(l + ', ' + t)}"` : ''}>${esc(l)}</button>`).join('')}</div>`;
 }
 const CHEV = '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
@@ -1357,8 +1360,8 @@ const ICON_PLUS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 function projSummary(p) {
   const bits = [];
   const w = whenText(p); if (w) bits.push(esc(w));
-  if (p.goal) bits.push(`<span class="${p.goal === 'ja' ? 'ok' : p.goal === 'nee' ? 'bad' : 'mid'}">doel ${p.goal === 'ja' ? 'gehaald' : p.goal === 'deels' ? 'deels gehaald' : 'niet gehaald'}</span>`);
-  if (p.support in SUPPORT) bits.push(`<span class="${p.support === 'goed' ? 'ok' : p.support === 'slecht' ? 'bad' : 'mid'}">${p.support === 'goed' ? 'goed begeleid' : p.support === 'deels' ? 'deels goed begeleid' : 'slecht begeleid'}</span>`);
+  if (p.goal) bits.push(`<span class="${escA(p.goal === 'ja' ? 'ok' : p.goal === 'nee' ? 'bad' : 'mid')}">doel ${p.goal === 'ja' ? 'gehaald' : p.goal === 'deels' ? 'deels gehaald' : 'niet gehaald'}</span>`);
+  if (p.support in SUPPORT) bits.push(`<span class="${escA(p.support === 'goed' ? 'ok' : p.support === 'slecht' ? 'bad' : 'mid')}">${p.support === 'goed' ? 'goed begeleid' : p.support === 'deels' ? 'deels goed begeleid' : 'slecht begeleid'}</span>`);
   if (p.time === 'nee') bits.push('<span class="bad">te laat</span>');
   if (p.budget === 'nee') bits.push('<span class="bad">over budget</span>');
   if (p.weight) bits.push(HEAVY[p.weight - 1]);
@@ -1366,23 +1369,23 @@ function projSummary(p) {
 }
 function yearOptions(sel) {
   const now = new Date().getFullYear(); let s = '<option value="">jaar</option>';
-  for (let y = now + 1; y >= now - 12; y--) s += `<option value="${y}"${String(y) === String(sel) ? ' selected' : ''}>${y}</option>`;
-  if (sel && (sel > now + 1 || sel < now - 12)) s += `<option value="${sel}" selected>${sel}</option>`;
+  for (let y = now + 1; y >= now - 12; y--) s += `<option value="${escA(y)}"${String(y) === String(sel) ? ' selected' : ''}>${y}</option>`;
+  if (sel && (sel > now + 1 || sel < now - 12)) s += `<option value="${escA(sel)}" selected>${sel}</option>`;
   return s;
 }
 function projectHTML(p) {
-  return `<div class="proj${p.open ? ' open' : ''}" data-p="${p.id}">
+  return `<div class="proj${escA(p.open ? ' open' : '')}" data-p="${escA(p.id)}">
     <div class="proj-top">
-      <button type="button" class="proj-head" data-act="toggle-proj" aria-expanded="${p.open}" data-key="ph-${p.id}">${CHEV}
-        <span><span class="p-name${p.name.trim() ? '' : ' empty'}">${esc(p.name.trim() || 'Naamloze verandering')}</span><span class="p-sum">${projSummary(p)}</span></span></button>
+      <button type="button" class="proj-head" data-act="toggle-proj" aria-expanded="${escA(p.open)}" data-key="ph-${escA(p.id)}">${CHEV}
+        <span><span class="p-name${escA(p.name.trim() ? '' : ' empty')}">${esc(p.name.trim() || 'Naamloze verandering')}</span><span class="p-sum">${projSummary(p)}</span></span></button>
       <button type="button" class="x" data-act="del-proj" aria-label="Verandering verwijderen">${ICON_X}</button>
     </div>
     ${p.open ? `<div class="p-body">
-      <label class="mini" for="pn-${p.id}">Welke verandering?</label>
-      <input class="field" autocomplete="off" enterkeyhint="done" id="pn-${p.id}" data-f="p.name" data-key="pn-${p.id}" value="${esc(p.name)}" maxlength="80" placeholder="Bv. Verhuis naar flexwerkplekken">
+      <label class="mini" for="pn-${escA(p.id)}">Welke verandering?</label>
+      <input class="field" autocomplete="off" enterkeyhint="done" id="pn-${escA(p.id)}" data-f="p.name" data-key="pn-${escA(p.id)}" value="${esc(p.name)}" maxlength="80" placeholder="Bv. Verhuis naar flexwerkplekken">
       <span class="mini">Wanneer? <span class="mini-hint">maand mag je openlaten</span></span>
       <div class="p-row">
-        <select class="field sm" data-f="p.month" aria-label="Maand, mag je openlaten"><option value="">maand</option>${MONTHS.map((m, i) => `<option value="${i + 1}"${String(i + 1) === String(p.month) ? ' selected' : ''}>${m}</option>`).join('')}</select>
+        <select class="field sm" data-f="p.month" aria-label="Maand, mag je openlaten"><option value="">maand</option>${MONTHS.map((m, i) => `<option value="${escA(i + 1)}"${String(i + 1) === String(p.month) ? ' selected' : ''}>${m}</option>`).join('')}</select>
         <select class="field sm" data-f="p.year" aria-label="Jaar">${yearOptions(p.year)}</select>
       </div>
       <div class="p-grid">
@@ -1393,15 +1396,15 @@ function projectHTML(p) {
         <div><span class="mini">Hoe zwaar was het voor de mensen?</span>${seg('weight', p.weight == null ? '' : String(p.weight), [1, 2, 3, 4].map(v => [String(v), String(v), HEAVY[v - 1]]))}
           <div class="seg-ends"><span>licht</span><span>zeer zwaar</span></div></div>
       </div>
-      <label class="mini" for="pl-${p.id}">Wat we meenemen</label>
-      <textarea class="field" id="pl-${p.id}" data-f="p.lesson" data-key="pl-${p.id}" rows="1" maxlength="300" placeholder="Bv. Vroeg testen met een paar collega's werkte goed">${esc(p.lesson)}</textarea>
+      <label class="mini" for="pl-${escA(p.id)}">Wat we meenemen</label>
+      <textarea class="field" id="pl-${escA(p.id)}" data-f="p.lesson" data-key="pl-${escA(p.id)}" rows="1" maxlength="300" placeholder="Bv. Vroeg testen met een paar collega's werkte goed">${esc(p.lesson)}</textarea>
     </div>` : ''}
   </div>`;
 }
 function actionHTML(u, text, link) {
   const pl = u.plan.find(p => p.text === text), on = !!pl;
   const k = 'a-' + u.id + '-' + text.length + '-' + text.slice(0, 12).replace(/\W/g, '');
-  return `<div class="act${on ? ' on' : ''}">
+  return `<div class="act${escA(on ? ' on' : '')}">
     <label><input type="checkbox" data-act="plan" data-text="${esc(text)}" ${on ? 'checked' : ''} data-key="${esc(k)}">
       <span>${esc(text)}${link ? ` · <a href="https://onderconstructie.github.io/weerstand/">naar Weerstand</a>` : ''}${on ? ' <span class="plan-tag">· in het plan</span>' : ''}</span></label>
     ${on ? `<div class="act-meta">
@@ -1419,30 +1422,30 @@ function verdictHTML(u, r) {
   </div>`;
   if (!r) return `<div class="v-empty">Vul hieronder eerdere veranderingen of de werkdruk in. Dan verschijnt dit team op de kaart.</div>`;
   const c = CLIM[r.cid];
-  return `<div class="verdict" style="background:${c.bg};border-color:${c.border}">
-    <div class="v-top"><b style="color:${c.color}">${c.name}</b>
+  return `<div class="verdict" style="background:${escA(c.bg)};border-color:${escA(c.border)}">
+    <div class="v-top"><b style="color:${escA(c.color)}">${c.name}</b>
       ${r.unsure && !r.adjusted ? '<span class="chip uns" title="Minder dan twee veranderingen ingevuld">onzeker</span>' : ''}
       ${r.adjusted ? '<span class="chip adj">bijgesteld</span>' : ''}</div>
     <p class="v-text">${c.text}</p>
     <div class="v-nums">Ervaring ${signed(r.x)} · veranderlast ${nf(r.y)}${r.adjusted && r.has ? ` (berekend: ${signed(r.calcX)} · ${nf(r.calcY)})` : ''} · ${r.n} ${r.n === 1 ? 'verandering' : 'veranderingen'} met resultaat</div>
-    ${r.adjusted ? `<div class="v-adj"><label class="mini" for="rs-${u.id}" style="margin-top:0.25rem">Waarom bijgesteld?</label>
-      <textarea class="field" id="rs-${u.id}" data-f="u.reason" data-key="rs-${u.id}" rows="1" maxlength="300" placeholder="Bv. In de gesprekken klonk het een stuk positiever">${esc(u.reason)}</textarea>
+    ${r.adjusted ? `<div class="v-adj"><label class="mini" for="rs-${escA(u.id)}" style="margin-top:0.25rem">Waarom bijgesteld?</label>
+      <textarea class="field" id="rs-${escA(u.id)}" data-f="u.reason" data-key="rs-${escA(u.id)}" rows="1" maxlength="300" placeholder="Bv. In de gesprekken klonk het een stuk positiever">${esc(u.reason)}</textarea>
       <div><button type="button" class="add-link quiet" data-act="reset-pos">Terug naar de berekening</button></div></div>` : ''}
   </div>`;
 }
 function unitHTML(u) {
   const r = result(u), c = r ? CLIM[r.cid] : null;
   const head = `<div class="u-head">
-    <span class="u-dot${r && r.unsure && !r.adjusted ? ' uns' : ''}" style="background:${c ? c.color : '#cbd5e1'};color:${c ? c.color : '#cbd5e1'}"></span>
-    <input class="u-name" data-oc-titel placeholder="Naam van het team" autocomplete="off" enterkeyhint="done" data-f="u.name" data-key="un-${u.id}" value="${esc(u.name)}" maxlength="300" aria-label="Naam van het team">
-    ${c && !u.open ? `<span class="pill" style="color:${c.color};background:${c.bg}">${c.name}</span>` : !u.open && pendingOf(u) ? '<span class="pill" style="color:#475569;background:#f1f5f9">nog onzeker</span>' : '<span></span>'}
-    <button type="button" class="icon-btn u-toggle" data-act="toggle-unit" aria-expanded="${u.open}" aria-label="${u.open ? 'Inklappen' : 'Openklappen'}" data-key="ut-${u.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+    <span class="u-dot${escA(r && r.unsure && !r.adjusted ? ' uns' : '')}" style="background:${escA(c ? c.color : '#cbd5e1')};color:${escA(c ? c.color : '#cbd5e1')}"></span>
+    <input class="u-name" data-oc-titel placeholder="Naam van het team" autocomplete="off" enterkeyhint="done" data-f="u.name" data-key="un-${escA(u.id)}" value="${esc(u.name)}" maxlength="300" aria-label="Naam van het team">
+    ${c && !u.open ? `<span class="pill" style="color:${escA(c.color)};background:${escA(c.bg)}">${c.name}</span>` : !u.open && pendingOf(u) ? '<span class="pill" style="color:#475569;background:#f1f5f9">nog onzeker</span>' : '<span></span>'}
+    <button type="button" class="icon-btn u-toggle" data-act="toggle-unit" aria-expanded="${escA(u.open)}" aria-label="${escA(u.open ? 'Inklappen' : 'Openklappen')}" data-key="ut-${escA(u.id)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
   </div>`;
-  if (!u.open) return `<section class="card unit" data-u="${u.id}">${head}</section>`;
+  if (!u.open) return `<section class="card unit" data-u="${escA(u.id)}">${head}</section>`;
   const lessons = lessonsOf(u);
   const chosen = r ? c.acts : [];
   const others = u.plan.filter(p => !chosen.includes(p.text));
-  return `<section class="card unit open" data-u="${u.id}">${head}
+  return `<section class="card unit open" data-u="${escA(u.id)}">${head}
     <div class="u-body">
       ${verdictHTML(u, r)}
       <div class="sec"><div class="sec-label">Hoe voelt de werkdruk nu?<span class="hint">${u.workload ? 'nu: ' + WORK[u.workload - 1] : 'eigen inschatting'}</span></div>
@@ -1450,7 +1453,7 @@ function unitHTML(u) {
         <div class="seg-ends"><span>rustig</span><span>te zwaar</span></div></div>
       <div class="sec"><div class="sec-label">Eerdere veranderingen<span class="hint">${u.projects.length ? u.projects.length + ' ingevuld' : 'de voorbije jaren'}</span></div>
         <div class="projs">${u.projects.map(projectHTML).join('')}</div>
-        <button type="button" class="add-link" data-act="add-proj" data-key="ap-${u.id}">${ICON_PLUS}Verandering toevoegen</button></div>
+        <button type="button" class="add-link" data-act="add-proj" data-key="ap-${escA(u.id)}">${ICON_PLUS}Verandering toevoegen</button></div>
       ${r ? `<div class="sec"><div class="sec-label">Aanpak<span class="hint">vink aan wat je opneemt in het plan</span></div>
         <div class="acts">${c.acts.map((t, i) => actionHTML(u, t, r.cid === 'verz' && i === 3)).join('')}</div>
         ${others.length ? `<p class="other-plan">Ook in het plan, van een eerdere inschatting:</p><div class="acts">${others.map(p => actionHTML(u, p.text)).join('')}</div>` : ''}</div>` : ''}
@@ -1459,7 +1462,7 @@ function unitHTML(u) {
           : '<p class="lessons-empty">Nog niets. Noteer per verandering wat je meeneemt.</p>'}</div>
       ${u.guide ? guideHTML(u) : ''}
       <div class="u-foot">
-        <button type="button" class="btn btn-ghost${u.guide ? ' on' : ''}" data-act="guide" aria-expanded="${u.guide}" data-key="gd-${u.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>${u.guide ? 'Leidraad sluiten' : 'Gespreksleidraad'}</button>
+        <button type="button" class="btn btn-ghost${escA(u.guide ? ' on' : '')}" data-act="guide" aria-expanded="${escA(u.guide)}" data-key="gd-${escA(u.id)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>${u.guide ? 'Leidraad sluiten' : 'Gespreksleidraad'}</button>
         <button type="button" class="del-unit" data-act="del-unit">Team verwijderen</button>
       </div>
     </div>
@@ -1469,7 +1472,7 @@ function guideHTML(u) {
   return `<div class="guide">
     <p class="guide-intro">Open vragen voor een gesprek met ${esc(u.name || 'dit team')}. Luister vooral; je notities blijven bij dit team.</p>
     <ol>${QUESTIONS.map(q => `<li><span class="q">${esc(q.text)}</span>
-      <textarea class="field" data-f="note" data-q="${q.id}" data-key="nt-${u.id}-${q.id}" rows="1" maxlength="1000" placeholder="Notities" aria-label="Notities bij vraag">${esc(u.notes[q.id] || '')}</textarea></li>`).join('')}</ol>
+      <textarea class="field" data-f="note" data-q="${escA(q.id)}" data-key="nt-${escA(u.id)}-${escA(q.id)}" rows="1" maxlength="1000" placeholder="Notities" aria-label="Notities bij vraag">${esc(u.notes[q.id] || '')}</textarea></li>`).join('')}</ol>
     <div class="guide-acts">
       <button type="button" class="btn btn-ghost" data-act="guide-copy">Kopieer (met opmaak)</button>
       <button type="button" class="btn btn-ghost" data-act="guide-pdf-unit">Download als PDF</button>
@@ -1478,7 +1481,7 @@ function guideHTML(u) {
 }
 
 function renderTabs() {
-  $('lists').innerHTML = state.analyses.map(a => `<button class="tab${a.id === cur().id ? ' active' : ''}" aria-current="${a.id === cur().id}" data-tab="${esc(a.id)}">${esc(a.name || 'Analyse')}${a.voorbeeld ? '<span class="vb-tag">voorbeeld</span>' : ''}<span class="n">${a.units.length}</span></button>`).join('')
+  $('lists').innerHTML = state.analyses.map(a => `<button class="tab${escA(a.id === cur().id ? ' active' : '')}" aria-current="${escA(a.id === cur().id)}" data-tab="${esc(a.id)}">${esc(a.name || 'Analyse')}${a.voorbeeld ? '<span class="vb-tag">voorbeeld</span>' : ''}<span class="n">${a.units.length}</span></button>`).join('')
     + `<button class="tab add" data-tab="new" aria-label="Nieuwe analyse">+ Analyse</button>`;
 }
 function grow(t) { t.style.height = 'auto'; t.style.height = t.scrollHeight + 'px'; }
@@ -1496,7 +1499,7 @@ function render() {
   growAll($('units'));
   $('empty').hidden = !(a.units.every(isBlank));
   renderMatrix();
-  if (keep) { const el = document.querySelector(`[data-key="${CSS.escape(keep)}"]`); if (el) el.focus({ preventScroll:true }); }
+  if (keep) { const el = document.querySelector(`[data-key="${escA(CSS.escape(keep))}"]`); if (el) el.focus({ preventScroll:true }); }
 }
 // Na typen: alleen de delen die van de invoer afhangen opnieuw tekenen, zodat de cursor blijft staan.
 function unitLabel(a) {
@@ -1504,7 +1507,7 @@ function unitLabel(a) {
   const dl = `Verwijder ${a.name || 'analyse'}`; $('del-unit').setAttribute('aria-label', dl); $('del-unit').title = dl;
 }
 function refreshUnit(u, full) {
-  const el = document.querySelector(`.unit[data-u="${u.id}"]`);
+  const el = document.querySelector(`.unit[data-u="${escA(u.id)}"]`);
   if (full || !el) { render(); return; }
   renderMatrix(); renderTabs();
 }
@@ -1577,7 +1580,7 @@ document.addEventListener('click', e => {
       const t = document.createElement('template'); t.innerHTML = unitHTML(u); const nu = t.content.firstElementChild;
       el.replaceWith(nu); growAll(nu); renderMatrix(); renderTabs();
       const a = cur(); document.querySelectorAll('[data-exp]').forEach(b => { b.disabled = a.units.every(isBlank); }); $('empty').hidden = !(a.units.every(isBlank));
-      const f = nu.querySelector(`[data-key="${CSS.escape(key)}"]`); if (f) f.focus({ preventScroll:true });
+      const f = nu.querySelector(`[data-key="${escA(CSS.escape(key))}"]`); if (f) f.focus({ preventScroll:true });
     } else render();
     const after = result(u);
     if (after && (!before || before.cid !== after.cid)) toast(`${u.name || 'Dit team'}: ${CLIM[after.cid].name.toLowerCase()}`);
@@ -1658,7 +1661,7 @@ function endDrag(e) {
   const u = unitById(d.id); if (!u) return;
   if (!d.moved) {   // tikken: naar dat team springen
     u.open = true; save(); render();
-    const el = document.querySelector(`.unit[data-u="${u.id}"]`); if (el) el.scrollIntoView({ behavior:matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block:'start' });
+    const el = document.querySelector(`.unit[data-u="${escA(u.id)}"]`); if (el) el.scrollIntoView({ behavior:matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block:'start' });
     return;
   }
   u.open = true; save(); render();
@@ -1675,10 +1678,10 @@ svg.addEventListener('keydown', e => {
     const r = result(u);
     u.manual = { x:Math.round(clamp(r.x + mv[0], -1, 1) * 100) / 100, y:Math.round(clamp(r.y + mv[1], 0, 1) * 100) / 100 };
     save(); render();
-    const again = svg.querySelector(`.pt[data-id="${u.id}"]`); if (again) again.focus();
+    const again = svg.querySelector(`.pt[data-id="${escA(u.id)}"]`); if (again) again.focus();
   } else if (e.key === 'Enter' || e.key === ' ') {
     e.preventDefault(); u.open = true; save(); render();
-    const f = document.querySelector(`.unit[data-u="${u.id}"] .u-name`); if (f) f.focus();
+    const f = document.querySelector(`.unit[data-u="${escA(u.id)}"] .u-name`); if (f) f.focus();
   }
 });
 
@@ -1782,7 +1785,7 @@ function asMarkdown() {
   return md.trim() + '\n';
 }
 function asCSV() {
-  const cell = v => { const s = String(v == null ? '' : v); return /[;"\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  const cell = v => { const s = ocCsvVeilig(v); return /[;"\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
   const rows = [['Team', 'Klimaat', 'Verandering', 'Maand', 'Jaar', 'Doel gehaald', 'Begeleiding', 'Op tijd', 'Binnen budget', 'Zwaarte (1-4)', 'Wat we meenemen']];
   cur().units.forEach(u => {
     const r = result(u), k = r ? CLIM[r.cid].name : pendingOf(u) ? 'nog onzeker' : '';
@@ -1810,23 +1813,23 @@ function buildExport(withUnits = true) {
     top.style.cssText = 'display:grid;grid-template-columns:400px 1fr;gap:28px;align-items:center';
     const left = document.createElement('div'); left.appendChild(matrixClone(400));
     const right = document.createElement('div');
-    right.innerHTML = (a.change.trim() ? `<div style="${S.lab};margin-top:0">Geplande verandering</div><div style="${S.p};font-size:14px">${esc(a.change.trim())}</div>` : '') +
-      `<div style="${S.lab}">Per team</div>` + a.units.map(u => { const r = result(u), c = r && CLIM[r.cid];
+    right.innerHTML = (a.change.trim() ? `<div style="${escA(S.lab)};margin-top:0">Geplande verandering</div><div style="${escA(S.p)};font-size:14px">${esc(a.change.trim())}</div>` : '') +
+      `<div style="${escA(S.lab)}">Per team</div>` + a.units.map(u => { const r = result(u), c = r && CLIM[r.cid];
         return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:13px;color:#1e293b">
-          <span style="width:9px;height:9px;border-radius:50%;flex:none;background:${c ? c.color : '#cbd5e1'}"></span><span style="flex:1">${esc(u.name)}</span>
-          <span style="font-weight:600;color:${c ? c.color : '#64748b'}">${c ? c.name : pendingOf(u) ? 'nog onzeker' : 'nog niet ingevuld'}${r && r.unsure && !r.adjusted ? ' · onzeker' : ''}${r && r.adjusted ? ' · bijgesteld' : ''}</span></div>`; }).join('');
+          <span style="width:9px;height:9px;border-radius:50%;flex:none;background:${escA(c ? c.color : '#cbd5e1')}"></span><span style="flex:1">${esc(u.name)}</span>
+          <span style="font-weight:600;color:${escA(c ? c.color : '#64748b')}">${c ? c.name : pendingOf(u) ? 'nog onzeker' : 'nog niet ingevuld'}${r && r.unsure && !r.adjusted ? ' · onzeker' : ''}${r && r.adjusted ? ' · bijgesteld' : ''}</span></div>`; }).join('');
     top.append(left, right); node.appendChild(top);
     if (withUnits) a.units.forEach(u => {
       const r = result(u), c = r && CLIM[r.cid], ls = lessonsOf(u);
       const b = document.createElement('div'); b.setAttribute('data-oc-keep', '');
       b.style.cssText = `margin-top:22px;padding:16px 18px;border:1px solid #e2e8f0;border-left:4px solid ${c ? c.color : '#cbd5e1'};border-radius:10px`;
-      b.innerHTML = `<div style="display:flex;justify-content:space-between;gap:12px;align-items:baseline"><span style="${S.h}">${esc(u.name)}</span>
-          <span style="font-size:14px;font-weight:700;color:${c ? c.color : '#64748b'}">${c ? c.name : pendingOf(u) ? 'nog onzeker' : 'nog niet ingevuld'}</span></div>
-        ${r ? `<div style="${S.p};margin-top:4px">${c.text}</div><div style="font-size:12px;color:#64748b;margin-top:4px">Ervaring ${signed(r.x)} · veranderlast ${nf(r.y)}${u.workload ? ` · werkdruk ${WORK[u.workload - 1]}` : ''}${r.unsure && !r.adjusted ? ' · onzeker' : ''}${r.adjusted ? ' · bijgesteld' + (u.reason.trim() ? ': ' + esc(u.reason.trim()) : '') : ''}</div>` : ''}
-        ${u.projects.length ? `<div style="${S.lab}">Eerdere veranderingen</div>${u.projects.map(p => `<div style="display:flex;justify-content:space-between;gap:12px;font-size:13px;padding:3px 0;color:#334155"><span>${esc(p.name || 'Naamloos')}${whenText(p) ? ` <span style="color:#94a3b8">· ${esc(whenText(p))}</span>` : ''}</span><span style="color:#64748b;white-space:nowrap">doel ${ANS[p.goal] || '—'} · begeleiding ${ANS[p.support || ''] || '—'} · tijd ${ANS[p.time] || '—'} · budget ${ANS[p.budget] || '—'} · zwaarte ${p.weight || '—'}</span></div>`).join('')}` : ''}
-        ${ls.length ? `<div style="${S.lab}">Wat we meenemen</div>${ls.map(l => `<div style="${S.p}">• ${esc(l.text)}</div>`).join('')}` : ''}
-        ${u.plan.length ? `<div style="${S.lab}">In het plan</div>${u.plan.map(p => `<div style="${S.p}">☐ ${esc(p.text)}${p.who || p.when ? ` <span style="color:#64748b">(${esc([p.who, p.when].filter(Boolean).join(', '))})</span>` : ''}</div>`).join('')}`
-          : c ? `<div style="${S.lab}">Mogelijke aanpak</div>${c.acts.map(t => `<div style="${S.p}">• ${esc(t)}</div>`).join('')}` : ''}`;
+      b.innerHTML = `<div style="display:flex;justify-content:space-between;gap:12px;align-items:baseline"><span style="${escA(S.h)}">${esc(u.name)}</span>
+          <span style="font-size:14px;font-weight:700;color:${escA(c ? c.color : '#64748b')}">${c ? c.name : pendingOf(u) ? 'nog onzeker' : 'nog niet ingevuld'}</span></div>
+        ${r ? `<div style="${escA(S.p)};margin-top:4px">${c.text}</div><div style="font-size:12px;color:#64748b;margin-top:4px">Ervaring ${signed(r.x)} · veranderlast ${nf(r.y)}${u.workload ? ` · werkdruk ${WORK[u.workload - 1]}` : ''}${r.unsure && !r.adjusted ? ' · onzeker' : ''}${r.adjusted ? ' · bijgesteld' + (u.reason.trim() ? ': ' + esc(u.reason.trim()) : '') : ''}</div>` : ''}
+        ${u.projects.length ? `<div style="${escA(S.lab)}">Eerdere veranderingen</div>${u.projects.map(p => `<div style="display:flex;justify-content:space-between;gap:12px;font-size:13px;padding:3px 0;color:#334155"><span>${esc(p.name || 'Naamloos')}${whenText(p) ? ` <span style="color:#94a3b8">· ${esc(whenText(p))}</span>` : ''}</span><span style="color:#64748b;white-space:nowrap">doel ${ANS[p.goal] || '—'} · begeleiding ${ANS[p.support || ''] || '—'} · tijd ${ANS[p.time] || '—'} · budget ${ANS[p.budget] || '—'} · zwaarte ${p.weight || '—'}</span></div>`).join('')}` : ''}
+        ${ls.length ? `<div style="${escA(S.lab)}">Wat we meenemen</div>${ls.map(l => `<div style="${escA(S.p)}">• ${esc(l.text)}</div>`).join('')}` : ''}
+        ${u.plan.length ? `<div style="${escA(S.lab)}">In het plan</div>${u.plan.map(p => `<div style="${escA(S.p)}">☐ ${esc(p.text)}${p.who || p.when ? ` <span style="color:#64748b">(${esc([p.who, p.when].filter(Boolean).join(', '))})</span>` : ''}</div>`).join('')}`
+          : c ? `<div style="${escA(S.lab)}">Mogelijke aanpak</div>${c.acts.map(t => `<div style="${escA(S.p)}">• ${esc(t)}</div>`).join('')}` : ''}`;
       node.appendChild(b);
     });
     return { node, title:'Veranderklimaat', subtitle:`${a.name} · ${a.units.length} ${a.units.length === 1 ? 'team' : 'teams'}` };
@@ -1835,7 +1838,7 @@ function buildExport(withUnits = true) {
 function buildGuide(units) {
   return () => {
     const node = document.createElement('div'), a = cur();
-    if (a.change.trim()) node.innerHTML = `<div style="${S.lab};margin-top:0">Geplande verandering</div><div style="${S.p};font-size:14px;margin-bottom:6px">${esc(a.change.trim())}</div>`;
+    if (a.change.trim()) node.innerHTML = `<div style="${escA(S.lab)};margin-top:0">Geplande verandering</div><div style="${escA(S.p)};font-size:14px;margin-bottom:6px">${esc(a.change.trim())}</div>`;
     units.forEach(u => {
       const h = document.createElement('div'); h.style.cssText = `${S.h};margin:18px 0 6px`; h.textContent = u.name || 'Team'; node.appendChild(h);
       QUESTIONS.forEach((q, i) => {
@@ -1843,7 +1846,7 @@ function buildGuide(units) {
         const note = (u.notes[q.id] || '').trim();
         b.style.cssText = 'padding:10px 0 12px;border-top:1px solid #f1f5f9';
         b.innerHTML = `<div style="font-size:14px;font-weight:600;color:#1e293b"><span style="color:#059669">${i + 1}.</span> ${esc(q.text)}</div>` +
-          (note ? `<div style="${S.p};margin-top:4px;white-space:pre-wrap">${esc(note)}</div>` : `<div style="height:58px;margin-top:6px;border-bottom:1px dashed #cbd5e1"></div>`);
+          (note ? `<div style="${escA(S.p)};margin-top:4px;white-space:pre-wrap">${esc(note)}</div>` : `<div style="height:58px;margin-top:6px;border-bottom:1px dashed #cbd5e1"></div>`);
         node.appendChild(b);
       });
     });
@@ -1856,7 +1859,7 @@ async function exportGuide(units) {
   catch { toast('Downloaden lukt nu niet. Probeer opnieuw.'); }
 }
 
-document.addEventListener('click', e => { const b = e.target.closest('[data-exp]'); if (b && !b.disabled) document.querySelector(`#menu [data-act="${b.dataset.exp}"]`).click(); });
+document.addEventListener('click', e => { const b = e.target.closest('[data-exp]'); if (b && !b.disabled) document.querySelector(`#menu [data-act="${escA(b.dataset.exp)}"]`).click(); });
 $('menu').addEventListener('click', async e => {
   const b = e.target.closest('[data-act]'); if (!b) return;
   closeMenu();
@@ -2435,7 +2438,7 @@ document.addEventListener('click', e => {
 
   // #hoe-werkt-dit opent het blok
   function vanAdres(vloeiend) {
-    var h = decodeURIComponent(location.hash.slice(1));
+    var h = location.hash.slice(1); try { h = decodeURIComponent(h); } catch (x) {}
     if (h !== SLUG && h !== d.id) return;
     if (!staat) zet(true, vloeiend);
     requestAnimationFrame(function () { d.scrollIntoView({ behavior: vloeiend && !rustig.matches ? 'smooth' : 'auto', block: 'start' }); });

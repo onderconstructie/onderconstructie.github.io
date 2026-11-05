@@ -998,6 +998,7 @@ const SHOW = v => v === 'AR' ? 'A+R' : v;
 const uid = () => Math.random().toString(36).slice(2, 10);
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const escA = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));   // waarde in een attribuut: ook ids, statussen, datums en getallen
 
 function blank(name) { return { id:uid(), name:name || ocProject('Mijn project'), roles:[], tasks:[] }; }
 // De Gap-analyse noemde een thema vroeger "Kloof dichten: …", nu "Verschil wegwerken: …". Beide tellen als dezelfde taak.
@@ -1096,7 +1097,7 @@ const TIP = v => v ? `${SHOW(v)}: ${LABEL[v].charAt(0).toUpperCase()}${LABEL[v].
 function renderTabs() {
   $('lists').innerHTML = state.mats.map(m => {
     const n = problems(m).length;
-    return `<button class="tab${m.id === state.current ? ' active' : ''}" data-mat="${esc(m.id)}">${esc(m.name || 'Naamloos')}${m.voorbeeld ? '<span class="vb-tag">voorbeeld</span>' : ''}${n ? `<span class="n">${n} ⚠︎</span>` : ''}</button>`;
+    return `<button class="tab${escA(m.id === state.current ? ' active' : '')}" data-mat="${esc(m.id)}">${esc(m.name || 'Naamloos')}${m.voorbeeld ? '<span class="vb-tag">voorbeeld</span>' : ''}${n ? `<span class="n">${n} ⚠︎</span>` : ''}</button>`;
   }).join('') + '<button class="tab add" id="new-mat" aria-label="Nieuwe matrix">+ Matrix</button>';
 }
 
@@ -1127,23 +1128,23 @@ function render() {
     return;
   }
   const head = `<thead><tr><th class="sticky corner" scope="col">Taak</th>${m.roles.map(r => `
-      <th scope="col" data-role="${r.id}"><div class="role-head">
+      <th scope="col" data-role="${escA(r.id)}"><div class="role-head">
         <span class="name" contenteditable="plaintext-only" spellcheck="false" data-edit="role" role="textbox" aria-label="Naam van de rol" title="Klik om de naam te wijzigen">${esc(r.name)}</span>
-        <button class="x" data-del-role="${r.id}" aria-label="Verwijder ${esc(r.name)}">${X}</button>
+        <button class="x" data-del-role="${escA(r.id)}" aria-label="Verwijder ${esc(r.name)}">${X}</button>
       </div></th>`).join('')}${m.roles.length ? '' : '<th class="c" style="color:var(--slate-500);font-weight:500">Voeg een rol toe</th>'}</tr></thead>`;
   const body = `<tbody>${m.tasks.map(t => {
       const flags = rowFlags(m, t);
-      return `<tr data-task="${t.id}"><th class="sticky" scope="row"><div class="task-cell">
+      return `<tr data-task="${escA(t.id)}"><th class="sticky" scope="row"><div class="task-cell">
         <div class="task-main"><span class="name" contenteditable="plaintext-only" spellcheck="false" data-edit="task" role="textbox" aria-label="Naam van de taak" title="Klik om de naam te wijzigen">${esc(t.name)}</span>
         ${t.when ? `<div class="when">Tegen ${esc(ocDatum(t.when))}</div>` : ''}${flags.length ? `<div class="flags">${flags.map(f => `<span class="flag">${FLAG_TEXT[f] || f}</span>`).join('')}</div>` : ''}</div>
-        <button class="x" data-del-task="${t.id}" aria-label="Verwijder ${esc(t.name)}">${X}</button></div></th>
+        <button class="x" data-del-task="${escA(t.id)}" aria-label="Verwijder ${esc(t.name)}">${X}</button></div></th>
         ${m.roles.map(r => { const v = t.cells[r.id] || '';
-          return `<td class="c"><button class="cell ${v}" data-t="${t.id}" data-r="${r.id}" title="${TIP(v)}" aria-label="${esc(t.name)}, ${esc(r.name)}: ${v ? SHOW(v) + ', ' + LABEL[v] : 'leeg'}">${SHOW(v) || '·'}</button></td>`; }).join('')}
+          return `<td class="c"><button class="cell ${escA(v)}" data-t="${escA(t.id)}" data-r="${escA(r.id)}" title="${escA(TIP(v))}" aria-label="${esc(t.name)}, ${esc(r.name)}: ${escA(v ? SHOW(v) + ', ' + LABEL[v] : 'leeg')}">${SHOW(v) || '·'}</button></td>`; }).join('')}
         ${m.roles.length ? '' : '<td></td>'}</tr>`;
     }).join('')}${m.tasks.length ? '' : `<tr><th class="sticky" style="color:var(--slate-500);font-weight:500">Voeg een taak toe</th>${m.roles.map(() => '<td></td>').join('')}</tr>`}</tbody>`;
   const foot = m.tasks.length && m.roles.length ? `<tfoot><tr><th class="sticky" scope="row">Belasting</th>${m.roles.map(r => {
       const l = roleLoad(m, r);
-      return `<td class="load${l.sig.length ? ' sig' : ''}" data-load="${r.id}" title="R ${l.r} · A ${l.a}${l.ar ? ` (waarvan ${l.ar} A+R)` : ''} · C ${l.c} · I ${l.i}${l.sig.length ? ' · ' + l.sig.map(s => SIG_LONG[s]).join(' · ') : ''}">${l.r} R · ${l.a} A${l.sig.map(s => `<span class="warn">${SIG_SHORT[s]}</span>`).join('')}</td>`;
+      return `<td class="load${escA(l.sig.length ? ' sig' : '')}" data-load="${escA(r.id)}" title="R ${l.r} · A ${l.a}${l.ar ? ` (waarvan ${l.ar} A+R)` : ''} · C ${l.c} · I ${l.i}${l.sig.length ? ' · ' + l.sig.map(s => SIG_LONG[s]).join(' · ') : ''}">${l.r} R · ${l.a} A${l.sig.map(s => `<span class="warn">${SIG_SHORT[s]}</span>`).join('')}</td>`;
     }).join('')}</tr></tfoot>` : '';
   const sl = $('table-wrap').scrollLeft;
   const sigs = m.tasks.length ? signalLines(m) : [];
@@ -1163,7 +1164,7 @@ function scrollHint() {
   w.classList.toggle('more', more);
   // zichtbare aanwijzing op een smal scherm: er staan nog rollen rechts
   const hint = $('scroll-hint');
-  if (hint) { const hidden = cur().roles.filter((r, i) => { const th = w.querySelector(`th[data-role="${r.id}"]`); if (!th) return false; const a = th.getBoundingClientRect(), b = w.getBoundingClientRect(); return a.right > b.right + 2; }).length;
+  if (hint) { const hidden = cur().roles.filter((r, i) => { const th = w.querySelector(`th[data-role="${escA(r.id)}"]`); if (!th) return false; const a = th.getBoundingClientRect(), b = w.getBoundingClientRect(); return a.right > b.right + 2; }).length;
     hint.hidden = !more || !hidden; hint.querySelector('span').textContent = hidden === 1 ? 'Nog 1 rol rechts. Schuif opzij.' : `Nog ${hidden} rollen rechts. Schuif opzij.`; }
   w.classList.toggle('scrolled', w.scrollLeft > 2);
 }
@@ -1179,25 +1180,25 @@ const XC = {
   C:'background:#ecfdf5;border:1.5px solid #10b981;color:#059669;',
   I:'background:#ffffff;border:1.5px solid #cbd5e1;color:#64748b;'
 };
-const xbox = (v, size = 34) => `<span style="display:inline-flex;align-items:center;justify-content:center;width:${v === 'AR' ? Math.round(size * 1.25) : size}px;height:${size}px;border-radius:9px;font-weight:700;font-size:${Math.max(11, Math.round(size * (v === 'AR' ? 0.36 : 0.44)))}px;line-height:1;${v ? XC[v] : 'color:#cbd5e1;'}">${SHOW(v) || '·'}</span>`;
+const xbox = (v, size = 34) => `<span style="display:inline-flex;align-items:center;justify-content:center;width:${escA(v === 'AR' ? Math.round(size * 1.25) : size)}px;height:${escA(size)}px;border-radius:9px;font-weight:700;font-size:${escA(Math.max(11, Math.round(size * (v === 'AR' ? 0.36 : 0.44))))}px;line-height:1;${escA(v ? XC[v] : 'color:#cbd5e1;')}">${SHOW(v) || '·'}</span>`;
 function exportWidth(m) { return Math.max(1120, 320 + 165 * m.roles.length + 80); }
 function buildExport() {
   const m = cur();
   const node = document.createElement('div');
   const th = 'padding:10px 6px;font-size:12.5px;line-height:1.3;font-weight:600;color:#475569;text-align:center;vertical-align:bottom;border-bottom:2px solid #e2e8f0;';
-  const head = `<tr><th style="${th}text-align:left;width:320px;color:#94a3b8;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;">Taak</th>${
-    m.roles.map(r => `<th style="${th}overflow-wrap:break-word;">${esc(r.name)}</th>`).join('')}</tr>`;
+  const head = `<tr><th style="${escA(th)}text-align:left;width:320px;color:#94a3b8;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;">Taak</th>${
+    m.roles.map(r => `<th style="${escA(th)}overflow-wrap:break-word;">${esc(r.name)}</th>`).join('')}</tr>`;
   const body = m.tasks.map((t, i) => {
     const flags = rowFlags(m, t);
     const bg = i % 2 ? '#f8fafc' : '#ffffff';
-    return `<tr style="background:${bg}"><td style="padding:10px 12px;border-bottom:1px solid #f1f5f9;vertical-align:middle;">
+    return `<tr style="background:${escA(bg)}"><td style="padding:10px 12px;border-bottom:1px solid #f1f5f9;vertical-align:middle;">
         <div style="font-size:14px;font-weight:600;color:#1e293b;line-height:1.35;">${esc(t.name)}</div>
         ${flags.length ? `<div style="margin-top:4px;">${flags.map(f => `<span style="display:inline-block;margin-right:4px;font-size:11px;font-weight:600;color:#c2410c;background:#fff7ed;border-radius:999px;padding:1px 8px;">${f}</span>`).join('')}</div>` : ''}
       </td>${m.roles.map(r => `<td style="padding:8px;text-align:center;border-bottom:1px solid #f1f5f9;vertical-align:middle;">${xbox(t.cells[r.id] || '')}</td>`).join('')}</tr>`;
   }).join('');
   const foot = `<tr><td style="padding:12px 12px 4px;font-size:12px;font-weight:600;color:#64748b;border-top:2px solid #e2e8f0;">Belasting</td>${
     m.roles.map(r => { const l = roleLoad(m, r);
-      return `<td style="padding:12px 8px 4px;text-align:center;font-size:12px;border-top:2px solid #e2e8f0;color:${l.sig.length ? '#b45309' : '#64748b'};font-weight:${l.sig.length ? 700 : 500};">${l.r} R · ${l.a} A${l.sig.map(s => `<div style="font-size:11px;margin-top:2px;">${SIG_SHORT[s]}</div>`).join('')}</td>`; }).join('')}</tr>`;
+      return `<td style="padding:12px 8px 4px;text-align:center;font-size:12px;border-top:2px solid #e2e8f0;color:${escA(l.sig.length ? '#b45309' : '#64748b')};font-weight:${escA(l.sig.length ? 700 : 500)};">${l.r} R · ${l.a} A${l.sig.map(s => `<div style="font-size:11px;margin-top:2px;">${SIG_SHORT[s]}</div>`).join('')}</td>`; }).join('')}</tr>`;
   const p = problems(m).length;
   const plist = problemTexts(m);
   const status = p
@@ -1292,7 +1293,7 @@ function setCell(tId, rId, v) {
   const t = cur().tasks.find(x => x.id === tId); if (!t) return;
   if (v) t.cells[rId] = v; else delete t.cells[rId];
   save(); render();
-  const btn = document.querySelector(`.cell[data-t="${tId}"][data-r="${rId}"]`);
+  const btn = document.querySelector(`.cell[data-t="${escA(tId)}"][data-r="${escA(rId)}"]`);
   if (btn) btn.focus({ preventScroll:true });
 }
 document.addEventListener('click', e => {
@@ -1322,7 +1323,7 @@ document.addEventListener('click', e => {
   if (e.target.closest('#example')) { loadExample(); return; }
   if (e.target.closest('#first-task')) { $('task-input').focus(); return; }
   const xb = e.target.closest('[data-exp]');
-  if (xb) { if (!xb.disabled) { const mi = document.querySelector(`#menu [data-act="${xb.dataset.exp}"]`); if (mi) mi.click(); } return; }
+  if (xb) { if (!xb.disabled) { const mi = document.querySelector(`#menu [data-act="${escA(xb.dataset.exp)}"]`); if (mi) mi.click(); } return; }
   if (e.target.closest('#jump')) { jump(); return; }
 });
 document.addEventListener('contextmenu', e => {
@@ -1381,12 +1382,12 @@ document.addEventListener('focusout', e => {
 function jump() {
   const p = problems(cur())[0]; if (!p) return;
   if (p.kind === 'task') {
-    const tr = document.querySelector(`tr[data-task="${p.id}"]`); if (!tr) return;
+    const tr = document.querySelector(`tr[data-task="${escA(p.id)}"]`); if (!tr) return;
     tr.scrollIntoView({ behavior:'smooth', block:'center' });
     tr.classList.remove('flash'); void tr.offsetWidth; tr.classList.add('flash');
     const cell = tr.querySelector('.cell'); if (cell) cell.focus({ preventScroll:true });
   } else {
-    const td = document.querySelector(`[data-load="${p.id}"]`); if (!td) return;
+    const td = document.querySelector(`[data-load="${escA(p.id)}"]`); if (!td) return;
     td.scrollIntoView({ behavior:'smooth', block:'center', inline:'center' });
     td.classList.remove('flash'); void td.offsetWidth; td.parentElement.classList.add('flash');
   }
@@ -1463,7 +1464,9 @@ $('menu-btn').addEventListener('click', e => {
 document.addEventListener('click', e => { if (!e.target.closest('.menu-wrap')) closeMenu(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
 
-const csvCell = v => /[";\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+/* Een cel die begint met = + - of @ zou Excel als formule uitvoeren: zet er een ' voor (gewone getallen blijven). */
+function ocCsvVeilig(s) { s = String(s == null ? '' : s); return /^[=+\-@\t\r]/.test(s) && !/^[+-]?\d+([.,]\d+)*%?$/.test(s) ? "'" + s : s; }
+const csvCell = v => { v = ocCsvVeilig(v); return /[";\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
 $('menu').addEventListener('click', async e => {
   const b = e.target.closest('[data-act]'); if (!b) return;
   closeMenu();
@@ -1485,8 +1488,8 @@ $('menu').addEventListener('click', async e => {
     const txt = `${m.name}\n\n${[['Taak', ...m.roles.map(r => r.name)], ...m.tasks.map(t => [t.name, ...m.roles.map(r => SHOW(t.cells[r.id] || ''))])].map(r => r.join('\t')).join('\n')}\n\n${legend}`;
     const TD = 'border:1px solid #cbd5e1;padding:4px 8px;vertical-align:top';
     const html = `<div style="font-family:'DM Sans',Calibri,Arial,sans-serif;font-size:11pt;color:#1e293b"><p style="font-size:14pt;font-weight:bold;margin:0 0 6pt">${esc(m.name)}</p>
-      <table style="border-collapse:collapse"><tr><th style="${TD};text-align:left;background:#f1f5f9">Taak</th>${m.roles.map(r => `<th style="${TD};background:#f1f5f9">${esc(r.name)}</th>`).join('')}</tr>
-      ${m.tasks.map(t => `<tr><td style="${TD}">${esc(t.name)}</td>${m.roles.map(r => `<td style="${TD};text-align:center;font-weight:bold">${SHOW(t.cells[r.id] || '')}</td>`).join('')}</tr>`).join('')}</table>
+      <table style="border-collapse:collapse"><tr><th style="${escA(TD)};text-align:left;background:#f1f5f9">Taak</th>${m.roles.map(r => `<th style="${escA(TD)};background:#f1f5f9">${esc(r.name)}</th>`).join('')}</tr>
+      ${m.tasks.map(t => `<tr><td style="${escA(TD)}">${esc(t.name)}</td>${m.roles.map(r => `<td style="${escA(TD)};text-align:center;font-weight:bold">${SHOW(t.cells[r.id] || '')}</td>`).join('')}</tr>`).join('')}</table>
       <p style="margin:6pt 0 0;font-size:9pt;color:#475569">${legend}</p></div>`;
     await copyRich(html, txt) ? toast('Gekopieerd, met opmaak') : toast('Kopiëren lukt hier niet');
   }
@@ -2102,7 +2105,7 @@ document.addEventListener('click', e => {
 
   // #hoe-werkt-dit opent het blok
   function vanAdres(vloeiend) {
-    var h = decodeURIComponent(location.hash.slice(1));
+    var h = location.hash.slice(1); try { h = decodeURIComponent(h); } catch (x) {}
     if (h !== SLUG && h !== d.id) return;
     if (!staat) zet(true, vloeiend);
     requestAnimationFrame(function () { d.scrollIntoView({ behavior: vloeiend && !rustig.matches ? 'smooth' : 'auto', block: 'start' }); });

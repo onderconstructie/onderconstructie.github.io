@@ -625,6 +625,8 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor:pointer; opacity:
 <div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-text"></span><button id="toast-btn" type="button" hidden>Ongedaan</button></div>
 
 <script>
+/* Een cel die begint met = + - of @ zou Excel als formule uitvoeren: zet er een ' voor (gewone getallen blijven). */
+function ocCsvVeilig(s) { s = String(s == null ? '' : s); return /^[=+\-@\t\r]/.test(s) && !/^[+-]?\d+([.,]\d+)*%?$/.test(s) ? "'" + s : s; }
 /* Het actieve project uit de app (oc.project): nieuwe projecten, analyses en lijsten krijgen die naam. */
 function ocProject(fb) { try { const p = JSON.parse(localStorage.getItem('oc.project')); return p && typeof p.name === 'string' && p.name.trim() ? p.name.trim().slice(0, 80) : fb; } catch { return fb; } }
 function ocPickProject(st, arr, cur = 'current') { const p = ocProject(''); if (!p || !st || !Array.isArray(st[arr])) return; const u = st[arr].find(x => x && x.name === p); if (u) st[cur] = u.id; }   // open het actieve project uit de app
@@ -1016,7 +1018,7 @@ const ocRich = (() => {
   const inl = s => e(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/(^|[\s(])_(.+?)_(?=[\s).,:;!?]|$)/g, '$1<i>$2</i>');
   const bare = s => String(s).replace(/\*\*(.+?)\*\*/g, '$1').replace(/(^|[\s(])_(.+?)_(?=[\s).,:;!?]|$)/g, '$1$2');
   const TD = 'border:1px solid #cbd5e1;padding:4px 8px;text-align:left;vertical-align:top';
-  const tableHTML = rows => `<table style="border-collapse:collapse;margin:4pt 0">${rows.map((r, i) => `<tr>${r.map(c => i ? `<td style="${TD}">${inl(c)}</td>` : `<th style="${TD};background:#f1f5f9">${inl(c)}</th>`).join('')}</tr>`).join('')}</table>`;
+  const tableHTML = rows => `<table style="border-collapse:collapse;margin:4pt 0">${rows.map((r, i) => `<tr>${r.map(c => i ? `<td style="${escA(TD)}">${inl(c)}</td>` : `<th style="${escA(TD)};background:#f1f5f9">${inl(c)}</th>`).join('')}</tr>`).join('')}</table>`;
   function convert(src) {
     const T = [], H = []; let list = false, table = null;
     const flush = () => { if (list) { H.push('</ul>'); list = false; } if (table) { H.push(tableHTML(table)); table = null; } };
@@ -1075,6 +1077,7 @@ function ocSharedChange(self) {
 const uid = () => Math.random().toString(36).slice(2, 10);
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const escA = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));   // waarde in een attribuut: ook ids, statussen, datums en getallen
 function newProfile(name) {
   return { id:uid(), name:name || 'Nieuwe doelgroep', dims:Object.fromEntries(DIMS.map(d => [d.id, { score:0, what:'', actions:[] }])) };
 }
@@ -1088,9 +1091,18 @@ function newAnalysis(name, change) {
 const sharedChangeText = () => { const c = ocSharedChange(OC_ID); return c ? c.text.slice(0, 300) : ''; };
 function fresh() { const a = newAnalysis('', sharedChangeText()); return { analyses:[a], current:a.id }; }
 function valid(d) { return d && Array.isArray(d.analyses) && d.analyses.length && d.analyses.every(a => Array.isArray(a.profiles)); }
+/* Een bestand van iemand anders kan in elk veld tekst zetten. Bij het inlezen: datums moeten op een datum lijken en getallen een getal zijn. */
+function ocVeilig(v, k, getal) {
+  if (Array.isArray(v)) return v.map(x => ocVeilig(x, k, getal));
+  if (v && typeof v === 'object') { Object.keys(v).forEach(x => { const r = ocVeilig(v[x], x, getal); if (r === undefined) delete v[x]; else v[x] = r; }); return v; }
+  if (/^(when|by|date|datum|due|deadline)$/.test(k) && typeof v === 'string' && v && !/^\d{4}-\d{2}-\d{2}(T[\d:.]+Z?)?$/.test(v)) return '';
+  if (getal.test(k) && v != null && typeof v !== 'number') { const n = typeof v === 'string' && v.trim() !== '' ? Number(v) : NaN; return Number.isFinite(n) ? n : undefined; }
+  if (typeof v === 'number' && !Number.isFinite(v)) return undefined;
+  return v;
+}
 function load() {
   try {
-    const d = JSON.parse(localStorage.getItem(KEY));
+    const d = ocVeilig(JSON.parse(localStorage.getItem(KEY)), '', /^(score)$/);
     if (valid(d)) {
       d.analyses.forEach(a => a.profiles.forEach(p => DIMS.forEach(dm => {
         p.dims[dm.id] = Object.assign({ score:0, what:'', actions:[] }, p.dims[dm.id] || {});
@@ -1153,18 +1165,18 @@ function pentagon(shapes, { size = 'full', highlight = null, px = 0 } = {}) {
   }
   const lh = Math.max(13.5, f1 * 1.08);
   const Hs = full ? Math.max(H, Math.ceil(cy + (R + 20) * 0.809 + 6 + 2 * lh + f2 * 0.35 + 2)) : H;
-  let s = `<svg viewBox="${-pad} 0 ${W + 2 * pad} ${Hs}" xmlns="http://www.w3.org/2000/svg" role="img" font-family="DM Sans, system-ui, sans-serif">`;
-  for (let k = 1; k <= 4; k++) s += `<polygon points="${g.ring(k)}" fill="${k === 4 ? '#f8fafc' : 'none'}" stroke="${k === 4 ? '#cbd5e1' : '#e2e8f0'}" stroke-width="${k === 4 ? 1.4 : 1}"/>`;
-  DIMS.forEach((_, i) => { const [x, y] = g.pt(i, R); s += `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="#e2e8f0" stroke-width="1"/>`; });
+  let s = `<svg viewBox="${escA(-pad)} 0 ${escA(W + 2 * pad)} ${escA(Hs)}" xmlns="http://www.w3.org/2000/svg" role="img" font-family="DM Sans, system-ui, sans-serif">`;
+  for (let k = 1; k <= 4; k++) s += `<polygon points="${escA(g.ring(k))}" fill="${escA(k === 4 ? '#f8fafc' : 'none')}" stroke="${escA(k === 4 ? '#cbd5e1' : '#e2e8f0')}" stroke-width="${escA(k === 4 ? 1.4 : 1)}"/>`;
+  DIMS.forEach((_, i) => { const [x, y] = g.pt(i, R); s += `<line x1="${escA(cx)}" y1="${escA(cy)}" x2="${escA(x.toFixed(1))}" y2="${escA(y.toFixed(1))}" stroke="#e2e8f0" stroke-width="1"/>`; });
   shapes.forEach(sh => {
     const pts = sh.scores.map((v, i) => g.pt(i, R * v / 4).map(n => n.toFixed(1)).join(',')).join(' ');
-    s += `<polygon class="shape-poly" points="${pts}" fill="${sh.color}" fill-opacity="${sh.fillOpacity ?? 0.28}" stroke="${sh.color}" stroke-width="${full ? 2.2 : 1.8}" stroke-linejoin="round"/>`;
+    s += `<polygon class="shape-poly" points="${escA(pts)}" fill="${escA(sh.color)}" fill-opacity="${escA(sh.fillOpacity ?? 0.28)}" stroke="${escA(sh.color)}" stroke-width="${escA(full ? 2.2 : 1.8)}" stroke-linejoin="round"/>`;
   });
   if (highlight) {
     highlight.forEach((v, i) => {
       if (v < HOT) return;
       const [x, y] = g.pt(i, R * v / 4);
-      s += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${full ? 5.5 : 3.6}" fill="#f97316" stroke="#fff" stroke-width="1.6"/>`;
+      s += `<circle cx="${escA(x.toFixed(1))}" cy="${escA(y.toFixed(1))}" r="${escA(full ? 5.5 : 3.6)}" fill="#f97316" stroke="#fff" stroke-width="1.6"/>`;
     });
   }
   if (full) {
@@ -1175,11 +1187,11 @@ function pentagon(shapes, { size = 'full', highlight = null, px = 0 } = {}) {
       const lines = words.length > 2 ? [words.slice(0, 1).join(' '), words.slice(1).join(' ')] : [d.name];
       const hot = highlight && highlight[i] >= HOT;
       const dy0 = i === 0 ? -14 - (lines.length - 1) * lh : i >= 2 && i <= 3 ? 6 : -4;
-      s += `<text x="${x.toFixed(1)}" y="${(y + dy0).toFixed(1)}" text-anchor="${anchor}" font-size="${f1.toFixed(1)}" font-weight="${hot ? 700 : 600}" fill="${hot ? '#c2410c' : '#334155'}">`
-        + lines.map((l, k) => `<tspan x="${x.toFixed(1)}" dy="${k ? lh.toFixed(1) : 0}">${esc(l)}</tspan>`).join('') + '</text>';
+      s += `<text x="${escA(x.toFixed(1))}" y="${escA((y + dy0).toFixed(1))}" text-anchor="${escA(anchor)}" font-size="${escA(f1.toFixed(1))}" font-weight="${escA(hot ? 700 : 600)}" fill="${escA(hot ? '#c2410c' : '#334155')}">`
+        + lines.map((l, k) => `<tspan x="${escA(x.toFixed(1))}" dy="${escA(k ? lh.toFixed(1) : 0)}">${esc(l)}</tspan>`).join('') + '</text>';
       if (highlight) {
         const v = highlight[i];
-        s += `<text x="${x.toFixed(1)}" y="${(y + dy0 + lines.length * lh).toFixed(1)}" text-anchor="${anchor}" font-size="${f2.toFixed(1)}" fill="${hot ? '#c2410c' : '#64748b'}">${v ? `${v} · ${LEVELS[v]}` : 'niet gescoord'}</text>`;
+        s += `<text x="${escA(x.toFixed(1))}" y="${escA((y + dy0 + lines.length * lh).toFixed(1))}" text-anchor="${escA(anchor)}" font-size="${escA(f2.toFixed(1))}" fill="${escA(hot ? '#c2410c' : '#64748b')}">${v ? `${v} · ${LEVELS[v]}` : 'niet gescoord'}</text>`;
       }
     });
   }
@@ -1189,13 +1201,13 @@ function pentagon(shapes, { size = 'full', highlight = null, px = 0 } = {}) {
 /* ---------- Tekenen ---------- */
 function renderTabs() {
   $('tabs').innerHTML = state.analyses.map(a =>
-    `<button class="tab${a.id === state.current ? ' active' : ''}" aria-current="${a.id === state.current}" data-tab="${esc(a.id)}">${esc(a.name || 'Naamloos')}${a.voorbeeld ? '<span class="vb-tag">voorbeeld</span>' : ''}<span class="n">${a.profiles.length}</span></button>`).join('')
+    `<button class="tab${escA(a.id === state.current ? ' active' : '')}" aria-current="${escA(a.id === state.current)}" data-tab="${esc(a.id)}">${esc(a.name || 'Naamloos')}${a.voorbeeld ? '<span class="vb-tag">voorbeeld</span>' : ''}<span class="n">${a.profiles.length}</span></button>`).join('')
     + '<button class="tab add" id="tab-add" type="button" aria-label="Nieuwe analyse">+ Analyse</button>';
 }
 function renderProfiles() {
   const a = cur();
   $('profiles').innerHTML = a.profiles.map(p =>
-    `<button class="pchip${p.id === a.current ? ' active' : ''}" aria-current="${p.id === a.current}" data-profile="${p.id}"><span class="sw" style="background:${colorOf(a, p)}"></span>${esc(p.name || 'Naamloos')}<span class="avg">${touched(p) ? fmt(avgOf(p)) : '–'}</span></button>`).join('')
+    `<button class="pchip${escA(p.id === a.current ? ' active' : '')}" aria-current="${escA(p.id === a.current)}" data-profile="${escA(p.id)}"><span class="sw" style="background:${escA(colorOf(a, p))}"></span>${esc(p.name || 'Naamloos')}<span class="avg">${touched(p) ? fmt(avgOf(p)) : '–'}</span></button>`).join('')
     + '<button class="pchip add" id="profile-add" type="button">+ Doelgroep</button>';
 }
 const ICON_DEL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
@@ -1206,11 +1218,11 @@ const CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-
 
 function summaryHTML(p) {
   const hs = hotDims(p), w = weightOf(p);
-  const sig = signals(p).map(x => `<div class="sig${x.kind === 'tip' ? ' tip' : x.kind === 'calm' ? ' calm' : ''}">${x.kind === 'tip' ? ICON_TIP : ICON_WARN}<span>${x.html || esc(x.text)}</span></div>`).join('');
-  return `<div class="verdict"><span class="big">${touched(p) ? fmt(avgOf(p)) : '–'}</span><span class="of">gemiddeld op 4</span>${touched(p) ? `<span class="weight ${w}">${w}</span>` : ''}</div>
+  const sig = signals(p).map(x => `<div class="sig${escA(x.kind === 'tip' ? ' tip' : x.kind === 'calm' ? ' calm' : '')}">${x.kind === 'tip' ? ICON_TIP : ICON_WARN}<span>${x.html || esc(x.text)}</span></div>`).join('');
+  return `<div class="verdict"><span class="big">${touched(p) ? fmt(avgOf(p)) : '–'}</span><span class="of">gemiddeld op 4</span>${touched(p) ? `<span class="weight ${escA(w)}">${w}</span>` : ''}</div>
     ${touched(p) && weightWhy(p) ? `<p class="weight-why">Zwaarder dan het gemiddelde, ${weightWhy(p)}.</p>` : ''}
     <p class="hotspots">${hs.length ? `Zwaartepunten: <b>${hs.map(d => esc(d.name)).join(', ')}</b>` : touched(p) ? 'Geen zwaartepunten: niets scoort 3 of meer.' : 'Scoor de vijf dimensies om de vorm te zien.'}</p>
-    ${touched(p) ? `<p class="redesign r-${redesignOf(hs.length).lvl}"><b>Organisatie</b> ${esc(redesignOf(hs.length).text)}</p>` : ''}
+    ${touched(p) ? `<p class="redesign r-${escA(redesignOf(hs.length).lvl)}"><b>Organisatie</b> ${esc(redesignOf(hs.length).text)}</p>` : ''}
     <div class="signals">${sig}</div>`;
 }
 // Open of dicht blijft zoals de gebruiker het zette, ook na het hertekenen.
@@ -1222,40 +1234,40 @@ document.addEventListener('toggle', e => {
 function highHTML(d, v) {
   const h = HIGH[d.id], have = new Set(v.actions.map(x => x.text.trim()));
   const open = highOpen.has(d.id) || (!highClosed.has(d.id) && !v.actions.length);
-  return `<details class="high" data-high="${d.id}"${open ? ' open' : ''}><summary>${CHEV}Grote impact: zo pak je het aan</summary>
+  return `<details class="high" data-high="${escA(d.id)}"${open ? ' open' : ''}><summary>${CHEV}Grote impact: zo pak je het aan</summary>
     <p class="high-why">${esc(h.why)}</p>
-    <ul class="high-how">${h.how.map((t, i) => `<li><span>${esc(t)}</span>${have.has(t) ? '<em>maatregel</em>' : `<button type="button" class="high-add" data-hadd="${d.id}" data-hi="${i}" aria-label="Neem over als maatregel">+ maatregel</button>`}</li>`).join('')}</ul>
+    <ul class="high-how">${h.how.map((t, i) => `<li><span>${esc(t)}</span>${have.has(t) ? '<em>maatregel</em>' : `<button type="button" class="high-add" data-hadd="${escA(d.id)}" data-hi="${escA(i)}" aria-label="Neem over als maatregel">+ maatregel</button>`}</li>`).join('')}</ul>
     <p class="high-watch"><b>Let op:</b> ${h.watch.map(esc).join(' · ')}</p>
-    <a class="high-tool" href="https://onderconstructie.github.io${h.tool.path}" aria-label="Open ${esc(h.tool.name)}${h.tool.what ? ' ' + esc(h.tool.what) : ''}">Open ${esc(h.tool.name)}${h.tool.what ? ' ' + esc(h.tool.what) : ''} →</a>
+    <a class="high-tool" href="https://onderconstructie.github.io${escA(h.tool.path)}" aria-label="Open ${esc(h.tool.name)}${escA(h.tool.what ? ' ' + esc(h.tool.what) : '')}">Open ${esc(h.tool.name)}${h.tool.what ? ' ' + esc(h.tool.what) : ''} →</a>
   </details>`;
 }
 function dimHTML(p, d, i) {
   const v = p.dims[d.id];
   const hot = v.score >= HOT;
-  return `<article class="card dim${hot ? ' hot' : ''}" data-dimcard="${d.id}">
+  return `<article class="card dim${escA(hot ? ' hot' : '')}" data-dimcard="${escA(d.id)}">
     <div class="dim-head"><span class="dim-ico">${d.short}</span>
       <div><h3 class="dim-title">${esc(d.name)}</h3><p class="dim-sub">${esc(d.sub)}</p>
         <details class="dim-help"><summary>${CHEV}Voorbeelden en vragen</summary>
           <ul>${d.ex.map(x => `<li>${esc(x)}</li>`).join('')}</ul>
           <p class="qs">${d.qs.map(esc).join(' ')}</p></details></div></div>
     <div class="scores" role="radiogroup" aria-label="Impact op ${esc(d.name)}">
-      ${LEVELS.slice(1).map((l, i) => { const k = i + 1; return `<button type="button" class="sc s${k}" role="radio" aria-checked="${v.score === k}" data-score="${k}" data-dim="${d.id}" title="${v.score === k ? 'Tik opnieuw om te wissen' : ''}"><b>${k}</b><span>${l}</span></button>`; }).join('')}
+      ${LEVELS.slice(1).map((l, i) => { const k = i + 1; return `<button type="button" class="sc s${escA(k)}" role="radio" aria-checked="${escA(v.score === k)}" data-score="${escA(k)}" data-dim="${escA(d.id)}" title="${escA(v.score === k ? 'Tik opnieuw om te wissen' : '')}"><b>${k}</b><span>${l}</span></button>`; }).join('')}
     </div>
     ${hot ? highHTML(d, v) : ''}
-    <label class="f-label" for="what-${d.id}">Wat verandert er voor deze groep?</label>
-    <textarea class="field" id="what-${d.id}" rows="1" maxlength="400" data-what="${d.id}" placeholder="Concreet en in gewone woorden">${esc(v.what)}</textarea>
+    <label class="f-label" for="what-${escA(d.id)}">Wat verandert er voor deze groep?</label>
+    <textarea class="field" id="what-${escA(d.id)}" rows="1" maxlength="400" data-what="${escA(d.id)}" placeholder="Concreet en in gewone woorden">${esc(v.what)}</textarea>
     <p class="f-label">Maatregel${v.actions.length > 1 ? 'en' : ''}</p>
     <div class="acts">${v.actions.map((x, n) => `
-      <div class="act${x.done ? ' done' : ''}" data-aid="${x.id}">
-        <label class="chk-hit"><input type="checkbox" class="chk" data-done="${x.id}" data-dim="${d.id}" ${x.done ? 'checked' : ''} aria-label="Maatregel ${n + 1} gedaan"></label>
-        <textarea class="field a-text" rows="1" maxlength="300" data-af="text" data-aid="${x.id}" data-dim="${d.id}" placeholder="Wat ga je doen?" aria-label="Maatregel ${n + 1} bij ${esc(d.name.toLowerCase())}">${esc(x.text)}</textarea>
-        <button class="del" type="button" data-adel="${x.id}" data-dim="${d.id}" aria-label="Verwijder maatregel ${n + 1}">${ICON_DEL}</button>
+      <div class="act${escA(x.done ? ' done' : '')}" data-aid="${escA(x.id)}">
+        <label class="chk-hit"><input type="checkbox" class="chk" data-done="${escA(x.id)}" data-dim="${escA(d.id)}" ${x.done ? 'checked' : ''} aria-label="Maatregel ${escA(n + 1)} gedaan"></label>
+        <textarea class="field a-text" rows="1" maxlength="300" data-af="text" data-aid="${escA(x.id)}" data-dim="${escA(d.id)}" placeholder="Wat ga je doen?" aria-label="Maatregel ${escA(n + 1)} bij ${esc(d.name.toLowerCase())}">${esc(x.text)}</textarea>
+        <button class="del" type="button" data-adel="${escA(x.id)}" data-dim="${escA(d.id)}" aria-label="Verwijder maatregel ${escA(n + 1)}">${ICON_DEL}</button>
         <div class="act-meta">
-          <input class="field" maxlength="60" autocomplete="off" enterkeyhint="done" data-af="who" data-aid="${x.id}" data-dim="${d.id}" placeholder="Wie?" aria-label="Wie, maatregel ${n + 1}" value="${esc(x.who)}">
-          <input class="field" type="date" data-af="by" data-aid="${x.id}" data-dim="${d.id}" value="${esc(x.by)}" aria-label="Tegen wanneer, maatregel ${n + 1}">
+          <input class="field" maxlength="60" autocomplete="off" enterkeyhint="done" data-af="who" data-aid="${escA(x.id)}" data-dim="${escA(d.id)}" placeholder="Wie?" aria-label="Wie, maatregel ${escA(n + 1)}" value="${esc(x.who)}">
+          <input class="field" type="date" data-af="by" data-aid="${escA(x.id)}" data-dim="${escA(d.id)}" value="${esc(x.by)}" aria-label="Tegen wanneer, maatregel ${escA(n + 1)}">
         </div>
       </div>`).join('')}</div>
-    <button class="add-act" type="button" data-aadd="${d.id}">${ICON_PLUS}Maatregel toevoegen</button>
+    <button class="add-act" type="button" data-aadd="${escA(d.id)}">${ICON_PLUS}Maatregel toevoegen</button>
   </article>`;
 }
 function renderProfileArea() {
@@ -1298,10 +1310,10 @@ function renderCompare() {
   document.querySelectorAll('[data-cmp]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.cmp === a.cmp)));
   if (a.cmp === 'over') {
     $('cmp-body').innerHTML = `<div class="overlay-wrap"><div id="overlay-shape">${pentagon(a.profiles.map(p => ({ scores:scores(p), color:colorOf(a, p), fillOpacity:0.12 })), { px:overlayPx })}</div>
-      <div class="legend">${a.profiles.map(p => `<div><span class="sw" style="background:${colorOf(a, p)}"></span>${esc(p.name)}<span class="avg">${touched(p) ? fmt(avgOf(p)) : '–'}</span></div>`).join('')}</div></div>`;
+      <div class="legend">${a.profiles.map(p => `<div><span class="sw" style="background:${escA(colorOf(a, p))}"></span>${esc(p.name)}<span class="avg">${touched(p) ? fmt(avgOf(p)) : '–'}</span></div>`).join('')}</div></div>`;
   } else {
     $('cmp-body').innerHTML = `<div class="series">${a.profiles.map(p => `
-      <div class="mini" data-goto="${p.id}" role="button" tabindex="0" aria-label="Open doelgroep ${esc(p.name)}">
+      <div class="mini" data-goto="${escA(p.id)}" role="button" tabindex="0" aria-label="Open doelgroep ${esc(p.name)}">
         ${pentagon([{ scores:scores(p), color:colorOf(a, p) }], { size:'mini', highlight:scores(p) })}
         <div class="mini-name">${esc(p.name)}</div>
         <div class="mini-sub">${touched(p) ? `${fmt(avgOf(p))} · ${weightOf(p)}` : 'niet gescoord'}</div></div>`).join('')}</div>`;
@@ -1315,10 +1327,10 @@ function cellStyle(v) {
 }
 function tableHTML(a) {
   const ps = a.profiles;
-  const head = `<thead><tr><th>Dimensie</th>${ps.map(p => `<th><span style="display:inline-block;width:9px;height:9px;border-radius:3px;background:${colorOf(a, p)};margin-right:5px"></span>${esc(p.name)}</th>`).join('')}</tr></thead>`;
+  const head = `<thead><tr><th>Dimensie</th>${ps.map(p => `<th><span style="display:inline-block;width:9px;height:9px;border-radius:3px;background:${escA(colorOf(a, p))};margin-right:5px"></span>${esc(p.name)}</th>`).join('')}</tr></thead>`;
   const rows = DIMS.map(d => {
     const vals = ps.map(p => p.dims[d.id].score), max = Math.max(...vals);
-    return `<tr><td>${esc(d.name)}</td>${vals.map(v => `<td><span class="cell${ps.length > 1 && v === max && v > 0 ? ' top' : ''}" style="${cellStyle(v)}">${sv(v)}</span></td>`).join('')}</tr>`;
+    return `<tr><td>${esc(d.name)}</td>${vals.map(v => `<td><span class="cell${escA(ps.length > 1 && v === max && v > 0 ? ' top' : '')}" style="${escA(cellStyle(v))}">${sv(v)}</span></td>`).join('')}</tr>`;
   }).join('');
   const foot = `<tr><td>Gemiddeld</td>${ps.map(p => `<td>${touched(p) ? fmt(avgOf(p)) : '–'}</td>`).join('')}</tr>`;
   return head + '<tbody>' + rows + foot + '</tbody>';
@@ -1439,24 +1451,24 @@ document.addEventListener('click', e => {
   if (s) {
     const p = curProfile(a), dv = p.dims[s.dataset.dim]; dv.score = dv.score === +s.dataset.score ? 0 : +s.dataset.score; save();
     const dim = s.dataset.dim, val = s.dataset.score;
-    const card = document.querySelector(`[data-dimcard="${dim}"]`), di = DIMS.findIndex(x => x.id === dim);
-    if (card && di >= 0) { card.outerHTML = dimHTML(p, DIMS[di], di); autosizeAll(document.querySelector(`[data-dimcard="${dim}"]`)); refreshLight(); }
+    const card = document.querySelector(`[data-dimcard="${escA(dim)}"]`), di = DIMS.findIndex(x => x.id === dim);
+    if (card && di >= 0) { card.outerHTML = dimHTML(p, DIMS[di], di); autosizeAll(document.querySelector(`[data-dimcard="${escA(dim)}"]`)); refreshLight(); }
     else { renderProfileArea(); renderProfiles(); renderTabs(); renderEmpty(); }
-    const back = document.querySelector(`[data-score="${val}"][data-dim="${dim}"]`); back && back.focus({ preventScroll:true });
+    const back = document.querySelector(`[data-score="${escA(val)}"][data-dim="${escA(dim)}"]`); back && back.focus({ preventScroll:true });
     return;
   }
   const ha = e.target.closest('[data-hadd]');
   if (ha) {
     const p = curProfile(a), x = { id:uid(), text: HIGH[ha.dataset.hadd].how[+ha.dataset.hi], who:'', by:'', done:false };
     p.dims[ha.dataset.hadd].actions.push(x); save(); renderProfileArea(); renderProfiles();
-    const f = document.querySelector(`[data-af="who"][data-aid="${x.id}"]`); f && f.focus({ preventScroll:true });
+    const f = document.querySelector(`[data-af="who"][data-aid="${escA(x.id)}"]`); f && f.focus({ preventScroll:true });
     toast('Overgenomen als maatregel: vul wie en wanneer in'); return;
   }
   const add = e.target.closest('[data-aadd]');
   if (add) {
     const p = curProfile(a), x = { id:uid(), text:'', who:'', by:'', done:false };
     p.dims[add.dataset.aadd].actions.push(x); save(); renderProfileArea();
-    const f = document.querySelector(`[data-af="text"][data-aid="${x.id}"]`); f && f.focus(); return;
+    const f = document.querySelector(`[data-af="text"][data-aid="${escA(x.id)}"]`); f && f.focus(); return;
   }
   const del = e.target.closest('[data-adel]');
   if (del) {
@@ -1476,7 +1488,7 @@ document.addEventListener('keydown', e => {
   if (s && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
     e.preventDefault();
     const k = Math.max(1, Math.min(4, +s.dataset.score + (e.key === 'ArrowRight' ? 1 : -1)));
-    const b = document.querySelector(`[data-score="${k}"][data-dim="${s.dataset.dim}"]`); b && b.click();
+    const b = document.querySelector(`[data-score="${escA(k)}"][data-dim="${escA(s.dataset.dim)}"]`); b && b.click();
   }
 });
 
@@ -1699,7 +1711,7 @@ function asMarkdown(a) {
   return md;
 }
 function asCSV(a) {
-  const q = v => { const s = String(v == null ? '' : v); return /[;"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+  const q = v => { const s = ocCsvVeilig(v); return /[;"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
   const rows = [['Analyse', 'Doelgroep', 'Dimensie', 'Score', 'Betekenis', 'Wat verandert', 'Maatregelen', 'Open maatregelen']];
   a.profiles.forEach(p => DIMS.forEach(d => {
     const v = p.dims[d.id], acts = v.actions.filter(x => x.text.trim());
@@ -1712,13 +1724,13 @@ function asCSV(a) {
 function buildExport() {
   const a = cur();
   const node = document.createElement('div');
-  const block = (inner, extra = '') => `<div data-oc-keep style="border-top:1px solid #e2e8f0;padding:18px 0 6px;${extra}">${inner}</div>`;
+  const block = (inner, extra = '') => `<div data-oc-keep style="border-top:1px solid #e2e8f0;padding:18px 0 6px;${escA(extra)}">${inner}</div>`;
   const multi = a.profiles.length > 1;
-  const swatch = p => `<span style="width:12px;height:12px;border-radius:4px;background:${colorOf(a, p)};display:inline-block;flex-shrink:0"></span>`;
-  const badge = (v, mark) => `<span style="display:inline-block;min-width:26px;text-align:center;border-radius:6px;padding:0 5px;font-weight:700;border:2px solid ${mark ? '#f97316' : 'transparent'};${cellStyle(v)}">${sv(v)}</span>`;
+  const swatch = p => `<span style="width:12px;height:12px;border-radius:4px;background:${escA(colorOf(a, p))};display:inline-block;flex-shrink:0"></span>`;
+  const badge = (v, mark) => `<span style="display:inline-block;min-width:26px;text-align:center;border-radius:6px;padding:0 5px;font-weight:700;border:2px solid ${escA(mark ? '#f97316' : 'transparent')};${escA(cellStyle(v))}">${sv(v)}</span>`;
   // 1. Impactkaart: vorm, heatmap en zwaartepunten op één blad
   const heat = `<table style="border-collapse:collapse;width:100%;font-size:13px">
-      <tr><th style="text-align:left;padding:6px 8px 6px 0;color:#64748b;font-weight:600">Dimensie</th>${a.profiles.map(p => `<th style="padding:6px 4px;color:#64748b;font-weight:600;font-size:12px;line-height:1.3;vertical-align:bottom"><div style="display:flex;flex-direction:column;align-items:center;gap:4px">${swatch(p)}<span style="overflow-wrap:${a.profiles.length > 3 ? 'anywhere' : 'normal'}">${esc(p.name)}</span></div></th>`).join('')}</tr>
+      <tr><th style="text-align:left;padding:6px 8px 6px 0;color:#64748b;font-weight:600">Dimensie</th>${a.profiles.map(p => `<th style="padding:6px 4px;color:#64748b;font-weight:600;font-size:12px;line-height:1.3;vertical-align:bottom"><div style="display:flex;flex-direction:column;align-items:center;gap:4px">${swatch(p)}<span style="overflow-wrap:${escA(a.profiles.length > 3 ? 'anywhere' : 'normal')}">${esc(p.name)}</span></div></th>`).join('')}</tr>
       ${DIMS.map(d => { const vals = a.profiles.map(p => p.dims[d.id].score), max = Math.max(...vals);
         return `<tr><td style="padding:6px 8px 6px 0;border-top:1px solid #f1f5f9">${esc(d.name)}</td>${vals.map(v => `<td style="text-align:center;padding:6px 8px;border-top:1px solid #f1f5f9">${badge(v, multi && v === max && v > 0)}</td>`).join('')}</tr>`; }).join('')}
       <tr><td style="padding:6px 8px 6px 0;border-top:2px solid #e2e8f0;font-weight:700">Gemiddeld</td>${a.profiles.map(p => `<td style="text-align:center;padding:6px 8px;border-top:2px solid #e2e8f0;font-weight:700">${touched(p) ? fmt(avgOf(p)) : '–'}</td>`).join('')}</tr></table>`;
@@ -1749,7 +1761,7 @@ function buildExport() {
     html += block(`<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">${swatch(p)}
         <span style="font-size:17px;font-weight:700;color:#1e293b">${esc(p.name)}</span>
         <span style="font-size:13px;color:#64748b">gemiddeld ${fmt(avgOf(p))} op 4${touched(p) ? ` · ${weightOf(p)}` : ''}</span></div>
-      <div style="display:grid;grid-template-columns:${multi ? '170px ' : ''}1fr;gap:18px;align-items:start">
+      <div style="display:grid;grid-template-columns:${escA(multi ? '170px ' : '')}1fr;gap:18px;align-items:start">
         ${multi ? `<div style="width:170px">${pentagon([{ scores:sc, color:colorOf(a, p) }], { size:'mini', highlight:sc, px:170 })}</div>` : ''}
         <table style="border-collapse:collapse;width:100%;font-size:13px">${rows}</table></div>`);
   });
@@ -2350,7 +2362,7 @@ document.addEventListener('click', e => {
 
   // #hoe-werkt-dit opent het blok
   function vanAdres(vloeiend) {
-    var h = decodeURIComponent(location.hash.slice(1));
+    var h = location.hash.slice(1); try { h = decodeURIComponent(h); } catch (x) {}
     if (h !== SLUG && h !== d.id) return;
     if (!staat) zet(true, vloeiend);
     requestAnimationFrame(function () { d.scrollIntoView({ behavior: vloeiend && !rustig.matches ? 'smooth' : 'auto', block: 'start' }); });

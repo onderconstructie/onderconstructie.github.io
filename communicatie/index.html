@@ -673,6 +673,8 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor:pointer; opacity:
 <div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-text"></span><button id="toast-btn" hidden>Ongedaan</button></div>
 
 <script>
+/* Een cel die begint met = + - of @ zou Excel als formule uitvoeren: zet er een ' voor (gewone getallen blijven). */
+function ocCsvVeilig(s) { s = String(s == null ? '' : s); return /^[=+\-@\t\r]/.test(s) && !/^[+-]?\d+([.,]\d+)*%?$/.test(s) ? "'" + s : s; }
 /* ---------- Overnemen tussen tools (gedeeld door de Onder Constructie-tools, v2) ----------
    Alle tools draaien op hetzelfde domein en delen dus localStorage. Elke tool legt wat hij te bieden
    heeft klaar onder 'oc.share.<tool-id>', in een vaste vorm, zodat andere tools het kunnen overnemen
@@ -1001,6 +1003,7 @@ const ocExport = (() => {
 const OC_ID = 'communicatie', OC_TOOL = 'Communicatieplan', KEY = 'communicatie.v1';
 const $ = id => document.getElementById(id);
 const esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const escA = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));   // waarde in een attribuut: ook ids, statussen, datums en getallen
 const uid = () => Math.random().toString(36).slice(2, 9);
 const ICON = {
   trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>',
@@ -1236,7 +1239,7 @@ function signals(t) {
   if (!out.length) out.push({ t:`${w} woorden, zonder vakjargon`, ok:true });
   return out;
 }
-const sigHTML = t => signals(t).map(s => `<span class="sig ${s.ok ? 'ok' : ''}">${esc(s.t)}</span>`).join('');
+const sigHTML = t => signals(t).map(s => `<span class="sig ${escA(s.ok ? 'ok' : '')}">${esc(s.t)}</span>`).join('');
 const toetsScore = () => TOETS.filter(x => chk(x.id)).length;
 
 function timingIssues() {
@@ -1337,7 +1340,7 @@ function focusKey(el) {
   if (!el || el === document.body || !el.attributes) return null;
   const at = [...el.attributes].filter(a => a.name.startsWith('data-') || a.name === 'id');
   if (!at.length) return null;
-  return { sel: el.tagName.toLowerCase() + at.map(a => `[${a.name}="${CSS.escape(a.value)}"]`).join(''), start: el.selectionStart, end: el.selectionEnd };
+  return { sel: el.tagName.toLowerCase() + at.map(a => `[${a.name}="${escA(CSS.escape(a.value))}"]`).join(''), start: el.selectionStart, end: el.selectionEnd };
 }
 function renderKeepFocus() {
   const k = focusKey(document.activeElement); render();
@@ -1356,7 +1359,7 @@ function flushRender() {
   const fid = pendingFlash; pendingFlash = null;
   renderKeepFocus();
   if (bad) toast('Kies een jaar tussen 2000 en 2100');
-  if (fid) { const r = document.querySelector(`[data-mrow="${fid}"]`); if (r) { r.classList.add('flash'); r.scrollIntoView({ block:'nearest' }); setTimeout(() => r.classList.remove('flash'), 900); } }
+  if (fid) { const r = document.querySelector(`[data-mrow="${escA(fid)}"]`); if (r) { r.classList.add('flash'); r.scrollIntoView({ block:'nearest' }); setTimeout(() => r.classList.remove('flash'), 900); } }
 }
 document.addEventListener('pointerdown', () => { pointerDown = true; }, true);
 document.addEventListener('pointerup', () => { pointerDown = false; if (pendingRender) setTimeout(flushRender, 0); }, true);
@@ -1376,17 +1379,17 @@ function stepperHTML() {
   const cur = state.step, doneN = STEPS.slice(0, 8).filter((s, i) => stepDone(i)).length;
   return `<nav class="stepper" aria-label="Stappen">${STEPS.map((s, i) => {
       const d = stepDone(i);
-      return `<button type="button" data-go="${i}" class="${i === cur ? 'cur' : ''} ${d ? 'done' : ''}" aria-current="${i === cur ? 'step' : 'false'}" aria-label="Stap ${i + 1}: ${s.name}${d ? ' (in orde)' : ''}" title="${s.name}"><span class="sn">${d && i !== cur ? '✓' : i + 1}</span><span class="sl">${s.short}</span></button>`;
+      return `<button type="button" data-go="${escA(i)}" class="${escA(i === cur ? 'cur' : '')} ${escA(d ? 'done' : '')}" aria-current="${escA(i === cur ? 'step' : 'false')}" aria-label="Stap ${escA(i + 1)}: ${escA(s.name)}${escA(d ? ' (in orde)' : '')}" title="${escA(s.name)}"><span class="sn">${d && i !== cur ? '✓' : i + 1}</span><span class="sl">${s.short}</span></button>`;
     }).join('')}</nav>
-    <div class="stepbar" aria-hidden="true"><span style="width:${Math.round(doneN / 8 * 100)}%"></span></div>
+    <div class="stepbar" aria-hidden="true"><span style="width:${escA(Math.round(doneN / 8 * 100))}%"></span></div>
     <p class="stepnow">Stap ${cur + 1} van ${STEPS.length} · <b>${STEPS[cur].name}</b></p>`;
 }
 
 function wizardHTML() {
   const i = state.step, s = STEPS[i];
   const body = [stepVertrek, stepGroepen, stepBoodschap, stepAfzender, stepKanalen, stepTiming, stepMeten, stepHerkenbaar, stepKlaar][i]();
-  const prev = i > 0 ? `<button class="btn prev" type="button" data-go="${i - 1}" aria-label="Vorige: ${STEPS[i - 1].name}">${ICON.left}<span>Vorige</span></button>` : '<span></span>';
-  const next = i < 8 ? `<button class="btn primary" type="button" data-go="${i + 1}"><span>${i === 7 ? 'Afronden' : `Volgende<span class="nx-name">: ${STEPS[i + 1].name}</span>`}</span>${ICON.right}</button>`
+  const prev = i > 0 ? `<button class="btn prev" type="button" data-go="${escA(i - 1)}" aria-label="Vorige: ${escA(STEPS[i - 1].name)}">${ICON.left}<span>Vorige</span></button>` : '<span></span>';
+  const next = i < 8 ? `<button class="btn primary" type="button" data-go="${escA(i + 1)}"><span>${i === 7 ? 'Afronden' : `Volgende<span class="nx-name">: ${STEPS[i + 1].name}</span>`}</span>${ICON.right}</button>`
     : `<button class="btn primary" type="button" data-view="plan"><span>Bekijk het plan</span>${ICON.right}</button>`;
   return `<div class="layout">
     <section class="card step" aria-labelledby="step-h">
@@ -1406,17 +1409,17 @@ function asideHTML() {
   return `<div class="aside-h"><span>Je plan, live</span><button class="lnk" type="button" data-view="plan" style="text-transform:none;letter-spacing:0;font-size:0.75rem">Bekijk</button></div>
     <div class="aside-name">${esc(state.name.trim() || 'Nog geen projectnaam')}</div>
     ${state.what.trim() ? `<div class="aside-what">${esc(state.what.trim())}</div>` : ''}
-    <div class="aside-core ${state.core.trim() ? '' : 'none'}">${state.core.trim() ? '“' + esc(state.core.trim()) + '”' : 'Nog geen kernboodschap'}</div>
+    <div class="aside-core ${escA(state.core.trim() ? '' : 'none')}">${state.core.trim() ? '“' + esc(state.core.trim()) + '”' : 'Nog geen kernboodschap'}</div>
     <div class="aside-gs">${state.groups.length ? state.groups.map(g => {
       const n = momentsFor(g).length;
-      return `<div class="ag"><div class="ag-n"><i class="gdot ${g.lead ? 'lead' : ''}"></i><span>${esc(g.name)}</span></div>
+      return `<div class="ag"><div class="ag-n"><i class="gdot ${escA(g.lead ? 'lead' : '')}"></i><span>${esc(g.name)}</span></div>
         <div class="ag-r">${g.goals.length ? g.goals.map(x => `<i class="ok">${GOALS.find(y => y.id === x).label}</i>`).join('') : '<i class="miss">geen doel</i>'}
           <i>${esc(gSender(g))}</i>
-          ${g.channels.length ? `<i class="${channelWarn(g) ? 'miss' : 'ok'}">${g.channels.length} ${g.channels.length === 1 ? 'kanaal' : 'kanalen'}</i>` : '<i class="miss">geen kanaal</i>'}
-          <i class="${n ? 'ok' : 'miss'}">${n} ${n === 1 ? 'moment' : 'momenten'}</i></div></div>`;
+          ${g.channels.length ? `<i class="${escA(channelWarn(g) ? 'miss' : 'ok')}">${g.channels.length} ${g.channels.length === 1 ? 'kanaal' : 'kanalen'}</i>` : '<i class="miss">geen kanaal</i>'}
+          <i class="${escA(n ? 'ok' : 'miss')}">${n} ${n === 1 ? 'moment' : 'momenten'}</i></div></div>`;
     }).join('') : '<div class="aside-what">Nog geen doelgroepen.</div>'}</div>
     ${up ? `<div class="aside-next">Eerstvolgend: <b>${nice(up.date)}</b> · ${esc(chanLabel(up.channel))} voor ${esc(groupNames(up))}</div>` : ''}
-    <div class="aside-prog">${doneN} van 8 stappen in orde<div class="stepbar"><span style="width:${Math.round(doneN / 8 * 100)}%"></span></div></div>`;
+    <div class="aside-prog">${doneN} van 8 stappen in orde<div class="stepbar"><span style="width:${escA(Math.round(doneN / 8 * 100))}%"></span></div></div>`;
 }
 
 /* Stap 1 */
@@ -1455,17 +1458,17 @@ function stepGroepen() {
     ${sugg.length ? `<div class="chips">${sugg.map(n => `<button type="button" class="chip add" data-addgroup="${esc(n)}">+ ${esc(n)}</button>`).join('')}</div>` : ''}`;
   const cards = state.groups.length ? state.groups.map(g => {
     const s = suggestIntens(g), cur = intens(g);
-    return `<div class="gcard" data-gcard="${g.id}">
-      <div class="gcard-h"><i class="gdot ${g.lead ? 'lead' : ''}"></i><input class="gname" data-g="${g.id}" data-gf="name" maxlength="80" value="${esc(g.name)}" aria-label="Naam van de doelgroep">
-        <button class="del" type="button" data-delgroup="${g.id}" aria-label="Verwijder ${esc(g.name)}">${ICON.trash}</button></div>
+    return `<div class="gcard" data-gcard="${escA(g.id)}">
+      <div class="gcard-h"><i class="gdot ${escA(g.lead ? 'lead' : '')}"></i><input class="gname" data-g="${escA(g.id)}" data-gf="name" maxlength="80" value="${esc(g.name)}" aria-label="Naam van de doelgroep">
+        <button class="del" type="button" data-delgroup="${escA(g.id)}" aria-label="Verwijder ${esc(g.name)}">${ICON.trash}</button></div>
       ${g.hint ? `<div class="hint"><span class="tag auto">uit ${esc(g.source || 'andere tool')}</span><span>${esc(g.hint)}</span></div>` : ''}
-      <label class="check"><input type="checkbox" data-lead="${g.id}" ${g.lead ? 'checked' : ''}><span>Dit zijn leidinggevenden of sleutelfiguren <small style="color:var(--slate-500)">(zij horen het eerst)</small></span></label>
+      <label class="check"><input type="checkbox" data-lead="${escA(g.id)}" ${g.lead ? 'checked' : ''}><span>Dit zijn leidinggevenden of sleutelfiguren <small style="color:var(--slate-500)">(zij horen het eerst)</small></span></label>
       <label class="field"><span class="lbl">Wat verandert er voor hen?</span>
-        <input class="inp" data-g="${g.id}" data-gf="change" maxlength="200" value="${esc(g.change)}" placeholder="bv. ze werken voortaan in een nieuw systeem"></label>
+        <input class="inp" data-g="${escA(g.id)}" data-gf="change" maxlength="200" value="${esc(g.change)}" placeholder="bv. ze werken voortaan in een nieuw systeem"></label>
       <div><span class="lbl">Wat wil je bereiken? <small>Eén of meer</small></span>
-        <div class="seg" role="group" aria-label="Doel voor ${esc(g.name)}">${GOALS.map(x => `<button type="button" data-goal="${g.id}:${x.id}" aria-pressed="${g.goals.includes(x.id)}">${x.label}<small>${x.sub}</small></button>`).join('')}</div></div>
+        <div class="seg" role="group" aria-label="Doel voor ${esc(g.name)}">${GOALS.map(x => `<button type="button" data-goal="${escA(g.id)}:${escA(x.id)}" aria-pressed="${escA(g.goals.includes(x.id))}">${x.label}<small>${x.sub}</small></button>`).join('')}</div></div>
       <div><span class="lbl">Hoe intensief?</span>
-        <div class="seg" role="radiogroup" aria-label="Intensiteit voor ${esc(g.name)}">${Object.entries(INTENS).map(([k, x]) => `<button type="button" role="radio" data-intens="${g.id}:${k}" aria-checked="${cur === k}" class="${!g.intens && s.v === k ? 'sugg' : ''}">${x.label}<small>${x.sub}</small></button>`).join('')}</div>
+        <div class="seg" role="radiogroup" aria-label="Intensiteit voor ${esc(g.name)}">${Object.entries(INTENS).map(([k, x]) => `<button type="button" role="radio" data-intens="${escA(g.id)}:${escA(k)}" aria-checked="${escA(cur === k)}" class="${escA(!g.intens && s.v === k ? 'sugg' : '')}">${x.label}<small>${x.sub}</small></button>`).join('')}</div>
         <p class="why">${g.intens ? (g.intens !== s.v ? `Eigen keuze. Voorstel was ${INTENS[s.v].label.toLowerCase()}, omdat ${esc(s.why)}.` : 'Eigen keuze.') : `Voorstel, omdat ${esc(s.why)}. Kies een optie om te bevestigen of te wijzigen.`}</p></div>
     </div>`;
   }).join('') : `<div class="empty"><b>Nog geen doelgroepen</b>Typ er een, kies een suggestie hierboven${ocShare.count(['betrokkene'], OC_ID) ? ', of neem ze over uit een andere tool' : ''}.</div>`;
@@ -1481,26 +1484,26 @@ function stepBoodschap() {
     <div class="toets" id="toets">${toetsHTML()}</div>
     ${state.groups.length ? `<div><span class="lbl" style="margin-bottom:0.5rem">Per doelgroep: wat betekent het voor jou?</span>
       <div class="blocks" style="margin-top:0">${state.groups.map(g => `<div class="gcard">
-        <div class="gcard-h"><i class="gdot ${g.lead ? 'lead' : ''}"></i><span class="gtitle">${esc(g.name)}</span></div>
+        <div class="gcard-h"><i class="gdot ${escA(g.lead ? 'lead' : '')}"></i><span class="gtitle">${esc(g.name)}</span></div>
         ${g.change.trim() ? `<div class="gctx">Wat verandert er voor hen: <b>${esc(g.change)}</b></div>` : ''}
-        <label class="field"><textarea class="inp" data-g="${g.id}" data-gf="msg" maxlength="400" rows="2" aria-label="Boodschap voor ${esc(g.name)}" placeholder="In hun woorden: wat merken ze ervan, en wat vraag je van hen?">${esc(g.msg)}</textarea>
-          <div class="sigs" data-sig="g:${g.id}">${sigHTML(g.msg)}</div></label>
+        <label class="field"><textarea class="inp" data-g="${escA(g.id)}" data-gf="msg" maxlength="400" rows="2" aria-label="Boodschap voor ${esc(g.name)}" placeholder="In hun woorden: wat merken ze ervan, en wat vraag je van hen?">${esc(g.msg)}</textarea>
+          <div class="sigs" data-sig="g:${escA(g.id)}">${sigHTML(g.msg)}</div></label>
       </div>`).join('')}</div></div>` : `<div class="warn">Voeg eerst <button type="button" class="lnk" data-go="1">doelgroepen</button> toe om per groep een boodschap te schrijven.</div>`}`;
 }
 
 function toetsHTML() {
   const sc = toetsScore(), w = words(state.core);
-  return `<div class="toets-h"><b>Check je boodschap</b><span class="score" id="toets-score"><span class="dots" aria-hidden="true">${TOETS.map((x, i) => `<i class="${i < sc ? 'on' : ''}"></i>`).join('')}</span>${sc} van ${TOETS.length}</span></div>
+  return `<div class="toets-h"><b>Check je boodschap</b><span class="score" id="toets-score"><span class="dots" aria-hidden="true">${TOETS.map((x, i) => `<i class="${escA(i < sc ? 'on' : '')}"></i>`).join('')}</span>${sc} van ${TOETS.length}</span></div>
       <p class="toets-sub">Vink zelf aan wat klopt. Wat de tool herkent, staat al aangevinkt.</p>
       ${TOETS.map(x => { const on = chk(x.id), a = autoCheck(x.id, state.core), own = typeof state.checks[x.id] === 'boolean';
-        return `<label class="titem ${on ? 'on' : ''}"><input type="checkbox" data-check="${x.id}" ${on ? 'checked' : ''}>
+        return `<label class="titem ${escA(on ? 'on' : '')}"><input type="checkbox" data-check="${escA(x.id)}" ${on ? 'checked' : ''}>
         <div><b>${x.label}</b><span>${x.sub}</span>${a.why && (!own || a.on === on || !a.on) ? `<span class="found">${a.on && !own ? 'Herkend: ' : ''}${esc(a.why)}</span>` : ''}${x.id === 'taal' && on && (w > 30 || jargonIn(state.core).length) ? `<span class="ttip" style="display:block">Aangevinkt, maar ${w > 30 ? 'de boodschap telt meer dan 30 woorden' : 'er staat nog vakjargon in'}.</span>` : ''}<span class="ttip">${x.tip}</span></div></label>`; }).join('')}`;
 }
 
 /* Stap 4 */
 function stepAfzender() {
   const sp = sponsorFound();
-  const segFor = (key, cur, sugg, g) => `<div class="seg wide" role="radiogroup" aria-label="Afzender">${sendersFor(g).map(s => `<button type="button" role="radio" data-sender="${key}:${s.id}" aria-checked="${cur === s.id}" class="${sugg === s.id && cur !== s.id ? 'sugg' : ''}">${s.id === 'sponsor' && sponsorName() ? esc(sponsorName()) : s.label}<small>${s.id === 'sponsor' && sponsorName() ? 'sponsor' : s.sub}</small></button>`).join('')}</div>`;
+  const segFor = (key, cur, sugg, g) => `<div class="seg wide" role="radiogroup" aria-label="Afzender">${sendersFor(g).map(s => `<button type="button" role="radio" data-sender="${escA(key)}:${escA(s.id)}" aria-checked="${escA(cur === s.id)}" class="${escA(sugg === s.id && cur !== s.id ? 'sugg' : '')}">${s.id === 'sponsor' && sponsorName() ? esc(sponsorName()) : s.label}<small>${s.id === 'sponsor' && sponsorName() ? 'sponsor' : s.sub}</small></button>`).join('')}</div>`;
   return `<div class="tip">${ICON.bulb}<span>Het <b>waarom</b> komt het best van de sponsor of de top: zij staan voor de richting. Wat het voor iemands <b>eigen werk</b> betekent, hoort men het liefst van de directe leidinggevende. Burgers en klanten horen het van de dienst of organisatie.</span></div>
     <label class="field"><span class="lbl">Wie is de sponsor? ${state.sponsorFrom && sp && state.sponsor === sp.name ? `<span class="tag auto">uit ${esc(state.sponsorFrom)}</span>` : ''}</span>
       <input class="inp" data-f="sponsor" maxlength="80" value="${esc(state.sponsor)}" placeholder="Naam van de opdrachtgever of sponsor"></label>
@@ -1510,9 +1513,9 @@ function stepAfzender() {
       <p class="why" style="margin-top:0">${state.coreSender ? (state.coreSender === 'sponsor' ? 'Bevestigd.' : 'Eigen keuze. Voorstel: sponsor.') : 'Voorstel: sponsor, want die staat voor het waarom. Kies het om te bevestigen.'}</p></div>
     ${state.groups.map(g => {
       const sugg = suggestSender(g);
-      return `<div class="gcard"><div class="gcard-h"><i class="gdot ${g.lead ? 'lead' : ''}"></i><span class="gtitle">${esc(g.name)}</span></div>
+      return `<div class="gcard"><div class="gcard-h"><i class="gdot ${escA(g.lead ? 'lead' : '')}"></i><span class="gtitle">${esc(g.name)}</span></div>
         ${segFor(g.id, g.sender, sugg, g)}
-        ${senderOf(g) === 'ander' ? `<input class="inp" data-g="${g.id}" data-gf="senderOther" maxlength="80" value="${esc(g.senderOther)}" placeholder="Wie brengt het?">` : ''}
+        ${senderOf(g) === 'ander' ? `<input class="inp" data-g="${escA(g.id)}" data-gf="senderOther" maxlength="80" value="${esc(g.senderOther)}" placeholder="Wie brengt het?">` : ''}
         <p class="why" style="margin-top:0">${g.sender ? (g.sender === sugg ? 'Bevestigd.' : `Eigen keuze. Voorstel: ${SENDERS.find(s => s.id === sugg).label.toLowerCase()}.`) : `Voorstel: ${SENDERS.find(s => s.id === sugg).label.toLowerCase()}, ${g.lead ? 'want leidinggevenden horen het waarom best van hogerop' : sugg === 'dienst' ? 'want burgers en klanten kennen de dienst, niet de mensen erachter' : 'want zij vertalen het naar het werk van elke dag'}. Nog niet gekozen: kies het om te bevestigen.`}</p></div>`;
     }).join('') || `<div class="warn">Voeg eerst <button type="button" class="lnk" data-go="1">doelgroepen</button> toe.</div>`}`;
 }
@@ -1521,9 +1524,9 @@ function stepAfzender() {
 function stepKanalen() {
   if (!state.groups.length) return `<div class="warn">Voeg eerst <button type="button" class="lnk" data-go="1">doelgroepen</button> toe.</div>`;
   return state.groups.map(g => `<div class="gcard">
-      <div class="gcard-h"><i class="gdot ${g.lead ? 'lead' : ''}"></i><span class="gtitle">${esc(g.name)}</span><span class="tag ${intens(g) === 'sterk' ? 'mine' : ''}">${INTENS[intens(g)].label}</span></div>
-      ${CHANNEL_GROUPS.map(cg => `<div><span class="lbl">${cg.label}</span><div class="chips">${cg.items.map(([id, label]) => `<button type="button" class="chip" data-chan="${g.id}:${id}" aria-pressed="${g.channels.includes(id)}">${label}</button>`).join('')}</div></div>`).join('')}
-      ${g.channels.includes('ander') ? `<input class="inp" data-g="${g.id}" data-gf="channelOther" maxlength="80" value="${esc(g.channelOther)}" placeholder="Welk kanaal?">` : ''}
+      <div class="gcard-h"><i class="gdot ${escA(g.lead ? 'lead' : '')}"></i><span class="gtitle">${esc(g.name)}</span><span class="tag ${escA(intens(g) === 'sterk' ? 'mine' : '')}">${INTENS[intens(g)].label}</span></div>
+      ${CHANNEL_GROUPS.map(cg => `<div><span class="lbl">${cg.label}</span><div class="chips">${cg.items.map(([id, label]) => `<button type="button" class="chip" data-chan="${escA(g.id)}:${escA(id)}" aria-pressed="${escA(g.channels.includes(id))}">${label}</button>`).join('')}</div></div>`).join('')}
+      ${g.channels.includes('ander') ? `<input class="inp" data-g="${escA(g.id)}" data-gf="channelOther" maxlength="80" value="${esc(g.channelOther)}" placeholder="Welk kanaal?">` : ''}
       ${channelWarn(g) ? `<div class="warn">Bij weerstand of grote impact: kies minstens één persoonlijk kanaal, met ruimte voor vragen. Een mail beantwoordt geen bezorgdheid.</div>` : ''}
       ${heavy(g) && !g.channels.length ? `<p class="why" style="margin-top:0">Voor deze groep is een persoonlijk kanaal aangewezen: ${g.goals.includes('willen') ? 'je wil dat ze erachter staan' : 'de impact is groot'}.</p>` : ''}
     </div>`).join('');
@@ -1533,7 +1536,7 @@ function stepKanalen() {
 function stepTiming() {
   const base = baseDate(), ms = sortedMoments(), ti = timingIssues(), today = todayIso();
   const opts = [['', 'Kies…'], ...SENDERS.map(s => [s.id, senderLabel(s.id)])];
-  const chanOpts = (cur) => CHANNEL_GROUPS.map(cg => `<optgroup label="${cg.label}">${cg.items.map(([id, l]) => `<option value="${id}" ${cur === id ? 'selected' : ''}>${l}</option>`).join('')}</optgroup>`).join('');
+  const chanOpts = (cur) => CHANNEL_GROUPS.map(cg => `<optgroup label="${escA(cg.label)}">${cg.items.map(([id, l]) => `<option value="${escA(id)}" ${cur === id ? 'selected' : ''}>${l}</option>`).join('')}</optgroup>`).join('');
   return `<div class="grid2">
       <label class="field"><span class="lbl">Start van het project</span><input class="inp" type="date" data-f="start" value="${esc(state.start)}"></label>
       <label class="field"><span class="lbl">Lancering <small>wanneer het nieuwe ingaat</small></span><input class="inp" type="date" data-f="launch" value="${esc(state.launch)}"></label>
@@ -1550,26 +1553,26 @@ function stepTiming() {
         <button type="button" class="chip add" data-qm="leeg">+ Leeg moment</button>
       </div></div>
     ${ti.length ? `<div>${ti.map(x => `<div class="warn">${esc(x.t)}</div>`).join('')}</div>` : ''}
-    ${state.groups.length ? `<div class="cover" aria-label="Momenten per doelgroep">${state.groups.map(g => { const n = momentsFor(g).length; return `<span class="${n ? '' : 'none'}">${esc(g.name)} · ${n}</span>`; }).join('')}</div>` : ''}
-    <div class="mlist">${ms.length ? ms.map(m => `<div class="mrow ${m.date && m.date < today ? 'past' : ''}" data-mrow="${m.id}">
-        <div class="mrow-top"><input class="inp" type="date" data-m="${m.id}" data-mf="date" value="${esc(m.date)}" aria-label="Datum">
+    ${state.groups.length ? `<div class="cover" aria-label="Momenten per doelgroep">${state.groups.map(g => { const n = momentsFor(g).length; return `<span class="${escA(n ? '' : 'none')}">${esc(g.name)} · ${n}</span>`; }).join('')}</div>` : ''}
+    <div class="mlist">${ms.length ? ms.map(m => `<div class="mrow ${escA(m.date && m.date < today ? 'past' : '')}" data-mrow="${escA(m.id)}">
+        <div class="mrow-top"><input class="inp" type="date" data-m="${escA(m.id)}" data-mf="date" value="${esc(m.date)}" aria-label="Datum">
           <span class="rel">${relLabel(m.date)}</span>
-          <button class="del" type="button" data-delm="${m.id}" aria-label="Verwijder moment">${ICON.trash}</button></div>
+          <button class="del" type="button" data-delm="${escA(m.id)}" aria-label="Verwijder moment">${ICON.trash}</button></div>
         ${whoHTML(m)}
         <div class="grid2">
-          <select class="inp" data-m="${m.id}" data-mf="channel" aria-label="Kanaal">${chanOpts(m.channel)}</select>
-          <select class="inp" data-m="${m.id}" data-mf="sender" aria-label="Afzender">${opts.map(([v, l]) => `<option value="${v}" ${m.sender === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>
+          <select class="inp" data-m="${escA(m.id)}" data-mf="channel" aria-label="Kanaal">${chanOpts(m.channel)}</select>
+          <select class="inp" data-m="${escA(m.id)}" data-mf="sender" aria-label="Afzender">${opts.map(([v, l]) => `<option value="${escA(v)}" ${m.sender === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>
         </div>
-        <input class="inp" data-m="${m.id}" data-mf="msg" maxlength="400" value="${esc(m.msg)}" placeholder="Wat zeg je, in een paar woorden?" aria-label="Korte boodschap">
+        <input class="inp" data-m="${escA(m.id)}" data-mf="msg" maxlength="400" value="${esc(m.msg)}" placeholder="Wat zeg je, in een paar woorden?" aria-label="Korte boodschap">
       </div>`).join('') : `<div class="empty"><b>Nog geen momenten</b>Laat een reeks voorstellen en pas ze aan, of voeg ze een voor een toe.</div>`}</div>`;
 }
 function whoHTML(m) {
   const chips = `<div class="chips" role="group" aria-label="Voor wie">
-      <button type="button" class="chip" data-mall="${m.id}" aria-pressed="${!m.groups.length}">Iedereen</button>
-      ${state.groups.map(g => `<button type="button" class="chip" data-mg="${m.id}:${g.id}" aria-pressed="${m.groups.includes(g.id)}">${esc(g.name)}</button>`).join('')}</div>`;
+      <button type="button" class="chip" data-mall="${escA(m.id)}" aria-pressed="${escA(!m.groups.length)}">Iedereen</button>
+      ${state.groups.map(g => `<button type="button" class="chip" data-mg="${escA(m.id)}:${escA(g.id)}" aria-pressed="${escA(m.groups.includes(g.id))}">${esc(g.name)}</button>`).join('')}</div>`;
   if (state.groups.length <= 4) return chips;
   const gs = groupsOf(m), sum = !m.groups.length ? 'Iedereen' : gs.length === 1 ? gs[0].name : `${gs.length} groepen`;
-  return `<details class="who" data-who="${m.id}" ${whoOpen.has(m.id) ? 'open' : ''}><summary>Voor wie: <b title="${esc(groupNames(m))}">${esc(sum)}</b></summary>${chips}</details>`;
+  return `<details class="who" data-who="${escA(m.id)}" ${whoOpen.has(m.id) ? 'open' : ''}><summary>Voor wie: <b title="${esc(groupNames(m))}">${esc(sum)}</b></summary>${chips}</details>`;
 }
 document.addEventListener('toggle', e => { const w = e.target.dataset && e.target.dataset.who; if (w) e.target.open ? whoOpen.add(w) : whoOpen.delete(w); }, true);
 function relLabel(s) {
@@ -1620,18 +1623,18 @@ function quickMoments(kind) {
 
 /* Stap 7 */
 function stepMeten() {
-  const gOpts = cur => `<option value="">Iedereen</option>` + state.groups.map(g => `<option value="${g.id}" ${cur === g.id ? 'selected' : ''}>${esc(g.name)}</option>`).join('');
-  return `<div><span class="lbl">Voeg toe hoe je het nagaat</span><div class="chips">${MEAS.map(x => `<button type="button" class="chip add" data-addmeas="${x.id}">+ ${x.label}</button>`).join('')}</div></div>
+  const gOpts = cur => `<option value="">Iedereen</option>` + state.groups.map(g => `<option value="${escA(g.id)}" ${cur === g.id ? 'selected' : ''}>${esc(g.name)}</option>`).join('');
+  return `<div><span class="lbl">Voeg toe hoe je het nagaat</span><div class="chips">${MEAS.map(x => `<button type="button" class="chip add" data-addmeas="${escA(x.id)}">+ ${x.label}</button>`).join('')}</div></div>
     ${state.measures.length ? state.measures.map(ms => { const x = MEAS.find(y => y.id === ms.kind) || MEAS[5];
       return `<div class="gcard">
-        <div class="gcard-h"><span class="gtitle">${x.id === 'ander' ? `<input class="gname" data-ms="${ms.id}" data-msf="label" maxlength="80" value="${esc(ms.label || '')}" placeholder="Wat meet je?" aria-label="Wat meet je?">` : esc(x.label)}</span>
-          <button class="del" type="button" data-delmeas="${ms.id}" aria-label="Verwijder">${ICON.trash}</button></div>
-        ${x.link ? `<p class="why" style="margin-top:0">Doe de scan met de <a href="${x.link}">Weerstand-scan</a>, eens vóór en eens na de lancering.</p>` : ''}
+        <div class="gcard-h"><span class="gtitle">${x.id === 'ander' ? `<input class="gname" data-ms="${escA(ms.id)}" data-msf="label" maxlength="80" value="${esc(ms.label || '')}" placeholder="Wat meet je?" aria-label="Wat meet je?">` : esc(x.label)}</span>
+          <button class="del" type="button" data-delmeas="${escA(ms.id)}" aria-label="Verwijder">${ICON.trash}</button></div>
+        ${x.link ? `<p class="why" style="margin-top:0">Doe de scan met de <a href="${escA(x.link)}">Weerstand-scan</a>, eens vóór en eens na de lancering.</p>` : ''}
         <div class="grid2">
-          <label class="field"><span class="lbl">Voor wie</span><select class="inp" data-ms="${ms.id}" data-msf="group">${gOpts(ms.group)}</select></label>
-          <label class="field"><span class="lbl">Wanneer</span><input class="inp" type="date" data-ms="${ms.id}" data-msf="date" value="${esc(ms.date)}"></label>
+          <label class="field"><span class="lbl">Voor wie</span><select class="inp" data-ms="${escA(ms.id)}" data-msf="group">${gOpts(ms.group)}</select></label>
+          <label class="field"><span class="lbl">Wanneer</span><input class="inp" type="date" data-ms="${escA(ms.id)}" data-msf="date" value="${esc(ms.date)}"></label>
         </div>
-        <label class="field"><span class="lbl">Streefwaarde <small>wat is goed genoeg?</small></span><input class="inp" data-ms="${ms.id}" data-msf="target" maxlength="160" value="${esc(ms.target)}" placeholder="${esc(x.ph)}"></label>
+        <label class="field"><span class="lbl">Streefwaarde <small>wat is goed genoeg?</small></span><input class="inp" data-ms="${escA(ms.id)}" data-msf="target" maxlength="160" value="${esc(ms.target)}" placeholder="${esc(x.ph)}"></label>
       </div>`; }).join('') : `<div class="empty"><b>Nog niets gekozen</b>Eén of twee manieren volstaan. Spreek af wanneer je kijkt en wat goed genoeg is.</div>`}
     <div class="tip">${ICON.bulb}<span>Plan je meting ook als moment op de tijdlijn, zodat ze niet vergeten wordt. Kom je onder je streefwaarde uit, herhaal dan de boodschap via een ander kanaal of een andere afzender.</span></div>`;
 }
@@ -1641,7 +1644,7 @@ function stepHerkenbaar() {
   const id = state.ident, col = id.color || '#10b981';
   return `<label class="field"><span class="lbl">Naam of slogan <small>kort, en altijd dezelfde</small></span>
       <input class="inp" data-f="ident.slogan" maxlength="60" value="${esc(id.slogan)}" placeholder="bv. Alles op één plek"></label>
-    <div class="field"><span class="lbl">Kleur</span><div class="swatches">${SWATCHES.map(c => `<button type="button" data-swatch="${c}" aria-pressed="${id.color === c}" style="background:${c}" aria-label="Kleur ${c}"></button>`).join('')}
+    <div class="field"><span class="lbl">Kleur</span><div class="swatches">${SWATCHES.map(c => `<button type="button" data-swatch="${escA(c)}" aria-pressed="${escA(id.color === c)}" style="background:${escA(c)}" aria-label="Kleur ${escA(c)}"></button>`).join('')}
       <input type="color" data-f="ident.color" value="${esc(col)}" aria-label="Eigen kleur"></div></div>
     <label class="field"><span class="lbl">Beeld of logo <small>optioneel</small></span>
       <input class="inp" data-f="ident.image" maxlength="120" value="${esc(id.image)}" placeholder="bv. een map met een vinkje, altijd rechtsboven"></label>
@@ -1659,7 +1662,7 @@ function inkOn(hex) {
 function identHTML() {
   const id = state.ident, col = /^#[0-9a-f]{3,8}$/i.test(id.color || '') ? id.color : '#10b981', t = id.slogan.trim() || state.name.trim() || 'Je project';
   const place = id.place.trim();
-  return `<div class="badge-prev"><span class="bp-mark" style="background:${esc(col)};color:${inkOn(col)}">${esc(t.charAt(0).toUpperCase())}</span>
+  return `<div class="badge-prev"><span class="bp-mark" style="background:${esc(col)};color:${escA(inkOn(col))}">${esc(t.charAt(0).toUpperCase())}</span>
     <span style="min-width:0"><span class="bp-t" style="display:block">${esc(t)}</span><span class="bp-s" style="display:block">${place ? 'Alles op: ' + linkOr(place) : 'Nog geen vaste plek'}</span></span></div>`;
 }
 const linkOr = p => /^https?:\/\//i.test(p) ? `<a href="${esc(p)}" target="_blank" rel="noopener">${esc(p)}</a>` : esc(p);
@@ -1675,8 +1678,8 @@ function stepKlaar() {
       <div class="stat"><b>${toetsScore()}/${TOETS.length}</b><span>boodschaptoets</span></div>
     </div>
     ${!must.length ? `<div class="allgood">${ICON.ok}<span><b>Je plan staat.</b> ${soft.length ? 'Hieronder nog wat punten om het sterker te maken.' : 'Alles is ingevuld.'} ${open ? (open === 1 ? 'Het open moment ligt klaar voor het Takenbord en Vinkje.' : `De ${open} momenten liggen klaar voor het Takenbord en Vinkje.`) : ''}</span></div>` : ''}
-    ${must.length ? `<div><span class="lbl">Wat nog ontbreekt</span><ul class="issues">${must.map(x => `<li><span>${esc(x.t)}</span><button type="button" data-go="${x.step}">${STEPS[x.step].name} →</button></li>`).join('')}</ul></div>` : ''}
-    ${soft.length ? `<div><span class="lbl">Om sterker te maken</span><ul class="issues">${soft.map(x => `<li class="soft"><span>${esc(x.t)}</span><button type="button" data-go="${x.step}">${STEPS[x.step].name} →</button></li>`).join('')}</ul></div>` : ''}
+    ${must.length ? `<div><span class="lbl">Wat nog ontbreekt</span><ul class="issues">${must.map(x => `<li><span>${esc(x.t)}</span><button type="button" data-go="${escA(x.step)}">${STEPS[x.step].name} →</button></li>`).join('')}</ul></div>` : ''}
+    ${soft.length ? `<div><span class="lbl">Om sterker te maken</span><ul class="issues">${soft.map(x => `<li class="soft"><span>${esc(x.t)}</span><button type="button" data-go="${escA(x.step)}">${STEPS[x.step].name} →</button></li>`).join('')}</ul></div>` : ''}
     <div class="btnrow"><button class="btn primary" type="button" data-view="plan">Bekijk het plan</button><button class="btn" type="button" data-view="kal">Naar de kalender</button><button class="btn" type="button" data-act="png"${hasPlan() ? '' : ' disabled'}>Afbeelding</button><button class="btn" type="button" data-act="pdf"${hasPlan() ? '' : ' disabled'}>PDF</button></div>`;
 }
 
@@ -1697,18 +1700,18 @@ function planHTML() {
       <div class="tracks-legend"><span>● gedaan</span><span>○ gepland</span><span>Per kolom één week</span></div></div></section>` : ''}
     <section class="card"><div class="card-head"><h2 class="card-title">Per doelgroep</h2></div>
       <div class="gplan">${state.groups.map(g => { const gm = momentsFor(g);
-        return `<div class="gp"><div class="gcard-h"><i class="gdot ${g.lead ? 'lead' : ''}"></i><span class="gtitle">${esc(g.name)}</span><span class="tag ${intens(g) === 'sterk' ? 'mine' : ''}">${INTENS[intens(g)].label}</span></div>
-          <div class="gmsg ${g.msg.trim() ? '' : 'none'}">${g.msg.trim() ? esc(g.msg.trim()) : 'Nog geen eigen boodschap'}</div>
+        return `<div class="gp"><div class="gcard-h"><i class="gdot ${escA(g.lead ? 'lead' : '')}"></i><span class="gtitle">${esc(g.name)}</span><span class="tag ${escA(intens(g) === 'sterk' ? 'mine' : '')}">${INTENS[intens(g)].label}</span></div>
+          <div class="gmsg ${escA(g.msg.trim() ? '' : 'none')}">${g.msg.trim() ? esc(g.msg.trim()) : 'Nog geen eigen boodschap'}</div>
           <dl><dt>Doel</dt><dd>${g.goals.length ? g.goals.map(x => GOALS.find(y => y.id === x).label).join(', ') : '–'}</dd>
             ${g.change.trim() ? `<dt>Verandert</dt><dd>${esc(g.change)}</dd>` : ''}
             <dt>Afzender</dt><dd>${esc(gSender(g))}</dd>
             <dt>Kanalen</dt><dd>${g.channels.length ? esc(g.channels.map(c => chanLabel(c, g)).join(', ')) : '–'}</dd></dl>
           ${channelWarn(g) ? '<div class="warn">Geen persoonlijk kanaal, terwijl je veel van hen vraagt.</div>' : ''}
-          ${gm.length ? `<ol>${gm.map(m => `<li class="${m.done ? 'done' : ''}"><b>${m.date ? nice(m.date) : '—'}</b><span>${esc(chanLabel(m.channel))}${m.msg ? ': ' + esc(m.msg) : ''}</span></li>`).join('')}</ol>` : '<div class="warn">Nog geen momenten.</div>'}
+          ${gm.length ? `<ol>${gm.map(m => `<li class="${escA(m.done ? 'done' : '')}"><b>${m.date ? nice(m.date) : '—'}</b><span>${esc(chanLabel(m.channel))}${m.msg ? ': ' + esc(m.msg) : ''}</span></li>`).join('')}</ol>` : '<div class="warn">Nog geen momenten.</div>'}
         </div>`; }).join('')}</div></section>
     ${ms.length ? `<section class="card"><div class="card-head"><h2 class="card-title">Wie hoort wat, wanneer</h2></div>
       <div class="tablewrap"><table class="matrix"><thead><tr><th>Datum</th>${state.groups.map(g => `<th>${esc(g.name)}</th>`).join('')}<th>Afzender</th><th>Boodschap</th></tr></thead>
-        <tbody>${ms.map(m => `<tr class="${m.done ? 'done' : ''}"><td class="d">${m.date ? nice(m.date) : '—'}</td>${state.groups.map(g => `<td class="c">${!m.groups.length || m.groups.includes(g.id) ? `<span class="pill">${esc(chanLabel(m.channel, g))}</span>` : '<span class="no" aria-hidden="true"></span>'}</td>`).join('')}<td>${esc(momentSender(m))}</td><td class="m">${esc(m.msg)}</td></tr>`).join('')}</tbody></table></div></section>` : ''}
+        <tbody>${ms.map(m => `<tr class="${escA(m.done ? 'done' : '')}"><td class="d">${m.date ? nice(m.date) : '—'}</td>${state.groups.map(g => `<td class="c">${!m.groups.length || m.groups.includes(g.id) ? `<span class="pill">${esc(chanLabel(m.channel, g))}</span>` : '<span class="no" aria-hidden="true"></span>'}</td>`).join('')}<td>${esc(momentSender(m))}</td><td class="m">${esc(m.msg)}</td></tr>`).join('')}</tbody></table></div></section>` : ''}
     ${state.measures.length ? `<section class="card"><div class="card-head"><h2 class="card-title">Hoe we weten dat het aankwam</h2></div>
       <ul class="meas">${state.measures.map(ms => `<li><b>${esc(measLabel(ms))}</b> · ${esc(ms.group && G(ms.group) ? G(ms.group).name : 'iedereen')}${ms.date ? ' · ' + nice(ms.date, { day:'numeric', month:'long' }) : ''}${ms.target ? `<br><small>Goed genoeg: ${esc(ms.target)}</small>` : ''}</li>`).join('')}</ul></section>` : ''}`;
 }
@@ -1732,7 +1735,7 @@ function calHTML() {
     inMonth.forEach(m => {
       if (!placed && m.date >= today) { rows += todayRow; placed = true; }
       const late = !m.done && m.date < today;
-      rows += `<div class="ev ${m.done ? 'done' : ''}"><label class="donebox" title="Gedaan"><input type="checkbox" data-done="${m.id}" ${m.done ? 'checked' : ''} aria-label="Gedaan: ${esc(m.msg || chanLabel(m.channel))}"></label>
+      rows += `<div class="ev ${escA(m.done ? 'done' : '')}"><label class="donebox" title="Gedaan"><input type="checkbox" data-done="${escA(m.id)}" ${m.done ? 'checked' : ''} aria-label="Gedaan: ${esc(m.msg || chanLabel(m.channel))}"></label>
         <div class="ev-d"><b>${D(m.date).getDate()}</b><span>${nice(m.date, { weekday:'short' })}</span></div>
         <div><div class="ev-t">${esc(m.msg || chanLabel(m.channel))}${late ? '<span class="late">nog niet gedaan?</span>' : ''}</div>
           <div class="ev-s">${esc(chanLabel(m.channel))} · ${esc(groupNames(m))}${m.sender ? ' · ' + esc(momentSender(m)) : ''}</div></div></div>`;
@@ -1876,7 +1879,7 @@ document.addEventListener('click', async e => {
     const copy = snapshot(), add = kinds.flatMap(quickMoments).filter(m => d.qm === 'leeg' || !have.has(sig(m)));
     if (!add.length) { toast(d.qm === 'uitleg' && !state.groups.length ? 'Voeg eerst doelgroepen toe' : 'Die momenten staan er al'); return; }
     state.moments.push(...add); save(); render();
-    if (d.qm === 'leeg') { const r = document.querySelector(`[data-mrow="${add[0].id}"] input[type=date]`); r && r.focus(); }
+    if (d.qm === 'leeg') { const r = document.querySelector(`[data-mrow="${escA(add[0].id)}"] input[type=date]`); r && r.focus(); }
     toast(add.length === 1 ? 'Moment toegevoegd' : `${add.length} momenten toegevoegd`, undoable(copy)); return;
   }
   if (d.mall) { const m = M(d.mall); m.groups = []; save(); render(); return; }
@@ -2027,7 +2030,7 @@ function asHTML() {
     b.p ? `<p>${esc(b.p)}</p>` :
     b.kv ? `<p>${b.kv.map(([k, v]) => `<b>${esc(k)}:</b> ${esc(v)}`).join('<br>')}</p>` :
     b.ul ? `<ul>${b.ul.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` :
-    b.table ? `<table style="border-collapse:collapse"><thead><tr>${b.table[0].map(h => `<th style="${td};background:#f1f5f9">${esc(h)}</th>`).join('')}</tr></thead><tbody>${b.table.slice(1).map(r => `<tr>${r.map(c => `<td style="${td}">${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>` : ''
+    b.table ? `<table style="border-collapse:collapse"><thead><tr>${b.table[0].map(h => `<th style="${escA(td)};background:#f1f5f9">${esc(h)}</th>`).join('')}</tr></thead><tbody>${b.table.slice(1).map(r => `<tr>${r.map(c => `<td style="${escA(td)}">${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>` : ''
   ).join('') + '</div>';
 }
 // Kopiëren met opmaak (text/html) én als nette platte tekst; lukt opmaak niet, dan alleen tekst.
@@ -2059,7 +2062,7 @@ function ics() {
   return L.map(fold).join('\r\n') + '\r\n';
 }
 function csv() {
-  const q = v => { const s = String(v == null ? '' : v); return /[;"\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  const q = v => { const s = ocCsvVeilig(v); return /[;"\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
   const rows = [['Datum', 'Doelgroepen', 'Kanaal', 'Afzender', 'Boodschap', 'Gedaan']];
   sortedMoments().forEach(m => rows.push([dmy(m.date), groupNames(m), chanLabel(m.channel), momentSender(m), m.msg, m.done ? 'ja' : 'nee']));
   return '﻿' + rows.map(r => r.map(q).join(';')).join('\r\n');
@@ -2072,20 +2075,20 @@ function buildExport() {
   const gcols = state.groups.length >= 3 ? 3 : Math.max(1, state.groups.length);
   node.innerHTML = `
     <div data-oc-keep style="display:grid;grid-template-columns:1.7fr 1fr;gap:12px;margin-bottom:14px">
-      <div style="${box}background:#ecfdf5;border-color:#a7f3d0"><div style="${lbl};color:#059669">Kernboodschap</div>
+      <div style="${escA(box)}background:#ecfdf5;border-color:#a7f3d0"><div style="${escA(lbl)};color:#059669">Kernboodschap</div>
         <div style="font-size:20px;font-weight:700;color:#1e293b;margin-top:4px;line-height:1.3">${state.core.trim() ? '“' + esc(state.core.trim()) + '”' : '–'}</div>
         ${state.core.trim() ? `<div style="font-size:12px;color:#047857;font-weight:600;margin-top:6px">Check je boodschap: ${toetsScore()} van ${TOETS.length} · ${TOETS.map(x => (chk(x.id) ? '✓ ' : '○ ') + esc(x.label.replace(/\?$/, ''))).join(' · ')}</div>` : ''}
         <div style="font-size:12px;color:#475569;margin-top:6px">Gebracht door ${esc(coreSenderText())}${state.why.trim() ? ' · ' + esc(state.why.trim()) : ''}</div></div>
-      <div style="${box}"><div style="${lbl}">Herkenbaarheid</div>
-        <div style="display:flex;align-items:center;gap:10px;margin-top:6px"><span style="width:34px;height:34px;border-radius:9px;background:${esc(col)};color:${inkOn(col)};font-weight:700;font-size:16px;display:flex;align-items:center;justify-content:center">${esc((id.slogan.trim() || state.name.trim() || '?').charAt(0).toUpperCase())}</span>
+      <div style="${escA(box)}"><div style="${escA(lbl)}">Herkenbaarheid</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:6px"><span style="width:34px;height:34px;border-radius:9px;background:${esc(col)};color:${escA(inkOn(col))};font-weight:700;font-size:16px;display:flex;align-items:center;justify-content:center">${esc((id.slogan.trim() || state.name.trim() || '?').charAt(0).toUpperCase())}</span>
           <span style="font-size:15px;font-weight:700;color:#1e293b">${esc(id.slogan.trim() || state.name.trim() || '–')}</span></div>
         <div style="font-size:12px;color:#475569;margin-top:6px;line-height:1.5">${id.image.trim() ? esc(id.image.trim()) + '<br>' : ''}${id.place.trim() ? 'Alle info: ' + esc(id.place.trim()) + '<br>' : ''}${state.start ? 'Start ' + kort(state.start) : ''}${state.start && state.launch ? ' · ' : ''}${state.launch ? '<b>Lancering ' + kort(state.launch) + '</b>' : ''}</div></div>
     </div>
     ${tracksHTML() ? `<div data-oc-keep style="margin-bottom:16px"><div style="font-size:15px;font-weight:700;color:#1e293b;margin-bottom:6px">Tijdlijn per doelgroep</div>${tracksHTML()}
       <div style="font-size:11px;color:#64748b;margin-top:6px">● gedaan · ○ gepland${state.launch ? ' · <span style="color:#047857;font-weight:700">| lancering</span>' : ''} · per kolom één week</div></div>` : ''}
-    <div style="display:grid;grid-template-columns:repeat(${gcols},1fr);gap:12px;margin-bottom:16px">${state.groups.map(g => `
-      <div data-oc-keep style="${box}">
-        <div style="display:flex;align-items:center;gap:6px"><span style="width:9px;height:9px;border-radius:50%;background:${g.lead ? '#334155' : '#10b981'}"></span><span style="font-size:15px;font-weight:700;color:#1e293b;flex:1">${esc(g.name)}</span><span style="font-size:11px;font-weight:600;color:${intens(g) === 'sterk' ? '#b45309' : '#64748b'}">intensiteit: ${INTENS[intens(g)].label.toLowerCase()}</span></div>
+    <div style="display:grid;grid-template-columns:repeat(${escA(gcols)},1fr);gap:12px;margin-bottom:16px">${state.groups.map(g => `
+      <div data-oc-keep style="${escA(box)}">
+        <div style="display:flex;align-items:center;gap:6px"><span style="width:9px;height:9px;border-radius:50%;background:${escA(g.lead ? '#334155' : '#10b981')}"></span><span style="font-size:15px;font-weight:700;color:#1e293b;flex:1">${esc(g.name)}</span><span style="font-size:11px;font-weight:600;color:${escA(intens(g) === 'sterk' ? '#b45309' : '#64748b')}">intensiteit: ${INTENS[intens(g)].label.toLowerCase()}</span></div>
         <div style="font-size:13px;color:#1e293b;margin:6px 0 8px;font-weight:500">${esc(g.msg.trim() || '–')}</div>
         <div style="font-size:12px;color:#475569;line-height:1.6">
           <div><b style="color:#64748b">Doel</b> ${g.goals.map(x => GOALS.find(y => y.id === x).label).join(', ') || '–'}</div>
@@ -2095,9 +2098,9 @@ function buildExport() {
       </div>`).join('')}</div>
     ${ms.length ? `<div style="font-size:15px;font-weight:700;color:#1e293b;margin-bottom:6px">Tijdlijn</div>
     <div style="display:grid;grid-template-columns:90px 1.2fr 1fr 1.1fr 2.2fr 40px;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;background:#f8fafc;border-radius:8px;padding:6px 10px"><span>Datum</span><span>Voor wie</span><span>Kanaal</span><span>Afzender</span><span>Boodschap</span><span>Klaar</span></div>
-    ${ms.map(m => `<div data-oc-keep style="display:grid;grid-template-columns:90px 1.2fr 1fr 1.1fr 2.2fr 40px;font-size:12px;color:#334155;padding:7px 10px;border-bottom:1px solid #f1f5f9;${m.done ? 'opacity:.55;' : ''}">
+    ${ms.map(m => `<div data-oc-keep style="display:grid;grid-template-columns:90px 1.2fr 1fr 1.1fr 2.2fr 40px;font-size:12px;color:#334155;padding:7px 10px;border-bottom:1px solid #f1f5f9;${escA(m.done ? 'opacity:.55;' : '')}">
       <span style="font-weight:600">${kort(m.date) || '–'}</span><span>${esc(groupNames(m))}</span><span>${esc(chanLabel(m.channel))}</span><span>${esc(momentSender(m))}</span><span>${esc(m.msg)}</span><span style="color:#059669;font-weight:700">${m.done ? '✓' : ''}</span></div>`).join('')}` : ''}
-    ${state.measures.length ? `<div data-oc-keep style="margin-top:16px;${box}"><div style="${lbl};margin-bottom:4px">Hoe we weten dat het aankwam</div>
+    ${state.measures.length ? `<div data-oc-keep style="margin-top:16px;${escA(box)}"><div style="${escA(lbl)};margin-bottom:4px">Hoe we weten dat het aankwam</div>
       ${state.measures.map(x => `<div style="font-size:12px;color:#334155;padding:3px 0"><b>${esc(measLabel(x))}</b> · ${esc(x.group && G(x.group) ? G(x.group).name : 'iedereen')}${x.date ? ' · ' + kort(x.date) : ''}${x.target ? ' · goed genoeg: ' + esc(x.target) : ''}</div>`).join('')}</div>` : ''}`;
   return { node, title: 'Communicatieplan' + (state.name.trim() ? ' – ' + state.name.trim() : ''), subtitle: state.what.trim() || 'Wie hoort wat, wanneer en van wie' };
 }
@@ -2120,22 +2123,22 @@ function tracksHTML() {
   const pctOf = s => Math.max(0, Math.min(100, (D(s).getTime() + DAY / 2 - t0) / span * 100));
   const wkPct = s => (Math.floor((D(s).getTime() - t0) / (7 * DAY)) + 0.5) / nW * 100;
   const lp = state.launch && D(state.launch) ? pctOf(state.launch) : null;
-  const line = lp == null ? '' : `<span style="position:absolute;top:0;bottom:0;left:${lp}%;width:2px;margin-left:-1px;background:#10b981"></span>`;
+  const line = lp == null ? '' : `<span style="position:absolute;top:0;bottom:0;left:${escA(lp)}%;width:2px;margin-left:-1px;background:#10b981"></span>`;
   // maanden en weken boven de sporen
   let head = '', last = -9;
   for (let i = 0; i < nW; i++) {
     const d = new Date(t0 + i * 7 * DAY), left = i / nW * 100;
-    head += `<span style="position:absolute;left:${left}%;top:16px;bottom:0;width:1px;background:#e2e8f0"></span>`;
-    if ((i === 0 || d.getDate() <= 7) && i - last >= 3) { head += `<span style="position:absolute;left:${left}%;top:0;font-size:12px;font-weight:700;color:#64748b;padding-left:3px;white-space:nowrap">${d.toLocaleDateString('nl-BE', { month:'short' }).replace('.', '')}</span>`; last = i; }
+    head += `<span style="position:absolute;left:${escA(left)}%;top:16px;bottom:0;width:1px;background:#e2e8f0"></span>`;
+    if ((i === 0 || d.getDate() <= 7) && i - last >= 3) { head += `<span style="position:absolute;left:${escA(left)}%;top:0;font-size:12px;font-weight:700;color:#64748b;padding-left:3px;white-space:nowrap">${d.toLocaleDateString('nl-BE', { month:'short' }).replace('.', '')}</span>`; last = i; }
   }
-  const foot = lp == null ? '' : `<div></div><div style="position:relative;height:18px"><span style="position:absolute;left:${lp}%;top:2px;transform:translateX(${lp > 55 ? 'calc(-100% - 4px)' : '4px'});font-size:12px;font-weight:700;color:#047857;white-space:nowrap">lancering ${esc(nice(state.launch))}</span></div>`;
+  const foot = lp == null ? '' : `<div></div><div style="position:relative;height:18px"><span style="position:absolute;left:${lp}%;top:2px;transform:translateX(${escA(lp > 55 ? 'calc(-100% - 4px)' : '4px')});font-size:12px;font-weight:700;color:#047857;white-space:nowrap">lancering ${esc(nice(state.launch))}</span></div>`;
   const rows = gs.map(g => {
     const mine = ms.filter(m => !m.groups.length || m.groups.includes(g.id)), seen = {};
     const dots = mine.map(m => {
       const k = Math.floor((D(m.date).getTime() - t0) / (7 * DAY)), n = seen[k] = (seen[k] || 0) + 1;
-      return `<span title="${esc(nice(m.date) + ': ' + (m.msg || chanLabel(m.channel)))}" style="position:absolute;top:50%;left:${wkPct(m.date)}%;width:12px;height:12px;margin:-6px 0 0 ${-6 + (n - 1) * 5}px;border-radius:50%;box-sizing:border-box;border:2px solid #334155;background:${m.done ? '#334155' : '#ffffff'}"></span>`;
+      return `<span title="${esc(nice(m.date) + ': ' + (m.msg || chanLabel(m.channel)))}" style="position:absolute;top:50%;left:${escA(wkPct(m.date))}%;width:12px;height:12px;margin:-6px 0 0 ${escA(-6 + (n - 1) * 5)}px;border-radius:50%;box-sizing:border-box;border:2px solid #334155;background:${escA(m.done ? '#334155' : '#ffffff')}"></span>`;
     }).join('');
-    return `<div style="display:flex;align-items:center;min-height:32px;padding-right:8px;font-size:12px;font-weight:${g.lead ? 700 : 500};color:#1e293b;border-top:1px solid #f1f5f9;overflow:hidden"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(g.name)}</span></div>
+    return `<div style="display:flex;align-items:center;min-height:32px;padding-right:8px;font-size:12px;font-weight:${escA(g.lead ? 700 : 500)};color:#1e293b;border-top:1px solid #f1f5f9;overflow:hidden"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(g.name)}</span></div>
       <div style="position:relative;min-height:32px;border-top:1px solid #f1f5f9;background:linear-gradient(#e2e8f0,#e2e8f0) left 50%/100% 1px no-repeat">${line}${dots}</div>`;
   }).join('');
   return `<div style="display:grid;grid-template-columns:minmax(80px,140px) minmax(0,1fr);font-family:inherit">
@@ -2738,7 +2741,7 @@ document.addEventListener('click', e => {
 
   // #hoe-werkt-dit opent het blok
   function vanAdres(vloeiend) {
-    var h = decodeURIComponent(location.hash.slice(1));
+    var h = location.hash.slice(1); try { h = decodeURIComponent(h); } catch (x) {}
     if (h !== SLUG && h !== d.id) return;
     if (!staat) zet(true, vloeiend);
     requestAnimationFrame(function () { d.scrollIntoView({ behavior: vloeiend && !rustig.matches ? 'smooth' : 'auto', block: 'start' }); });

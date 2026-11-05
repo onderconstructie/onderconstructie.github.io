@@ -877,6 +877,7 @@ function save() { ocAfterSave(); version++; try { localStorage.setItem(KEY, JSON
 const cur = () => state.lists.find(l => l.id === state.current) || state.lists[0];
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const escA = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));   // waarde in een attribuut: ook ids, statussen, datums en getallen
 
 /* ---------- Plakken: elke regel wordt een item ---------- */
 // Haalt opsommingstekens, nummering en markdown-vakjes weg; "[x]" wordt meteen afgevinkt.
@@ -914,10 +915,10 @@ function itemHTML(it) {
   const meta = !fields && (it.who || it.when) ? `<div class="item-meta">${esc(metaText(it))}${late ? ' · <b class="late">te laat</b>' : ''}</div>` : '';
   const edit = fields ? `<div class="item-fields">
       <label title="Wie">${ICON_USER}<input type="text" data-f="who" value="${esc(it.who || '')}" placeholder="wie" aria-label="Wie" maxlength="80"></label>
-      <label title="${late ? 'Te laat' : 'Tegen wanneer'}"${late ? ' class="late"' : ''}>${ICON_CAL}<input type="date" data-f="when" value="${esc(it.when || '')}" aria-label="${late ? 'Tegen wanneer, te laat' : 'Tegen wanneer'}"></label>
+      <label title="${escA(late ? 'Te laat' : 'Tegen wanneer')}"${late ? ' class="late"' : ''}>${ICON_CAL}<input type="date" data-f="when" value="${esc(it.when || '')}" aria-label="${escA(late ? 'Tegen wanneer, te laat' : 'Tegen wanneer')}"></label>
     </div>` : '';
-  return `<li class="item${it.done ? ' done' : ''}" data-id="${it.id}">
-    <button class="check" aria-label="${it.done ? 'Niet meer afgevinkt' : 'Afvinken'}" aria-describedby="it-${esc(String(it.id))}"><span class="box">${ICON_CHECK}</span></button>
+  return `<li class="item${escA(it.done ? ' done' : '')}" data-id="${escA(it.id)}">
+    <button class="check" aria-label="${escA(it.done ? 'Niet meer afgevinkt' : 'Afvinken')}" aria-describedby="it-${esc(String(it.id))}"><span class="box">${ICON_CHECK}</span></button>
     <div class="body"><div class="text" id="it-${esc(String(it.id))}" contenteditable="plaintext-only" spellcheck="false" enterkeyhint="done" role="textbox" aria-label="Item">${esc(it.text)}</div>${meta}${edit}</div>
     <div class="item-actions">
       <button class="del" aria-label="Verwijder" aria-describedby="it-${esc(String(it.id))}">${ICON_DEL}</button>
@@ -929,7 +930,7 @@ function itemHTML(it) {
 function renderTabs() {
   $('lists').innerHTML = state.lists.map(l => {
     const open = l.items.filter(i => !i.done).length;
-    return `<button class="tab${l.id === state.current ? ' active' : ''}" data-list="${l.id}">${esc(l.name || 'Naamloos')}${l.voorbeeld ? '<span class="vb-tag">voorbeeld</span>' : ''}<span class="n">${open || ''}</span></button>`;
+    return `<button class="tab${escA(l.id === state.current ? ' active' : '')}" data-list="${escA(l.id)}">${esc(l.name || 'Naamloos')}${l.voorbeeld ? '<span class="vb-tag">voorbeeld</span>' : ''}<span class="n">${open || ''}</span></button>`;
   }).join('') + `<button class="tab add" id="new-list" aria-label="Nieuwe lijst">+ Lijst</button>`;
 }
 
@@ -1224,7 +1225,7 @@ function exportName(l) { return ocFileName('vinkje', l.name || ocProject('')); }
 
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-exp]'); if (!b) return;
-  const m = document.querySelector(`#menu [data-act="${b.dataset.exp}"]`); if (m) m.click();
+  const m = document.querySelector(`#menu [data-act="${escA(b.dataset.exp)}"]`); if (m) m.click();
 });
 /* Voorbeeld: een eigen lijst, gemarkeerd, telt niet mee in andere tools */
 document.addEventListener('click', e => {

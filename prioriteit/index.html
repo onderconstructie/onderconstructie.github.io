@@ -766,7 +766,7 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
 
   // #hoe-werkt-dit opent het blok
   function vanAdres(vloeiend) {
-    var h = decodeURIComponent(location.hash.slice(1));
+    var h = location.hash.slice(1); try { h = decodeURIComponent(h); } catch (x) {}
     if (h !== SLUG && h !== d.id) return;
     if (!staat) zet(true, vloeiend);
     requestAnimationFrame(function () { d.scrollIntoView({ behavior: vloeiend && !rustig.matches ? 'smooth' : 'auto', block: 'start' }); });
@@ -1308,6 +1308,7 @@ function save() { ocAfterSave(); try { localStorage.setItem(KEY, JSON.stringify(
 const cur = () => state.lists.find(l => l.id === state.current) || state.lists[0];
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const escA = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));   // waarde in een attribuut: ook ids, statussen, datums en getallen
 let editing = null;   // id van het item in de schuiven
 const SOORT_RISICO = '<span class="soort">risico</span>';
 
@@ -1337,39 +1338,39 @@ function matrixStatic() {
   ];
   let s = `<rect x="0" y="0" width="400" height="400" fill="#ffffff"/>`;
   zones.forEach(([x, y, w, h, q]) => {
-    s += `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${q.bg}"/>`;
+    s += `<rect x="${escA(x)}" y="${escA(y)}" width="${escA(w)}" height="${escA(h)}" fill="${escA(q.bg)}"/>`;
   });
   // fijne rasterlijnen per waarde
   for (let v = 1; v < N; v++) {
     const gx = L + v / N * W, gy = T + v / N * H;
-    s += `<line x1="${gx}" y1="${T}" x2="${gx}" y2="${B}" stroke="#e2e8f0" stroke-width="0.6" stroke-dasharray="2 3"/>`;
-    s += `<line x1="${L}" y1="${gy}" x2="${R}" y2="${gy}" stroke="#e2e8f0" stroke-width="0.6" stroke-dasharray="2 3"/>`;
+    s += `<line x1="${escA(gx)}" y1="${escA(T)}" x2="${escA(gx)}" y2="${escA(B)}" stroke="#e2e8f0" stroke-width="0.6" stroke-dasharray="2 3"/>`;
+    s += `<line x1="${escA(L)}" y1="${escA(gy)}" x2="${escA(R)}" y2="${escA(gy)}" stroke="#e2e8f0" stroke-width="0.6" stroke-dasharray="2 3"/>`;
   }
-  s += `<line x1="${splitX}" y1="${T}" x2="${splitX}" y2="${B}" stroke="#cbd5e1" stroke-width="1.2"/>`;
-  s += `<line x1="${L}" y1="${splitY}" x2="${R}" y2="${splitY}" stroke="#cbd5e1" stroke-width="1.2"/>`;
-  s += `<rect x="${L}" y="${T}" width="${W}" height="${H}" fill="none" stroke="#cbd5e1" stroke-width="1.5" rx="2"/>`;
+  s += `<line x1="${escA(splitX)}" y1="${escA(T)}" x2="${escA(splitX)}" y2="${escA(B)}" stroke="#cbd5e1" stroke-width="1.2"/>`;
+  s += `<line x1="${escA(L)}" y1="${escA(splitY)}" x2="${escA(R)}" y2="${escA(splitY)}" stroke="#cbd5e1" stroke-width="1.2"/>`;
+  s += `<rect x="${escA(L)}" y="${escA(T)}" width="${escA(W)}" height="${escA(H)}" fill="none" stroke="#cbd5e1" stroke-width="1.5" rx="2"/>`;
   // kwadrantnamen
   const f = `font-family="'DM Sans', system-ui, sans-serif"`;
   const qf = fs(10.5), ls = tight() ? 0 : 0.8, qy = T + 7 + qf;
-  s += `<text x="${L + 6}" y="${qy}" ${f} font-size="${qf}" font-weight="700" letter-spacing="${ls}" fill="${Q[0].ink}">SNELLE WINST</text>`;
-  s += `<text x="${R - 6}" y="${qy}" ${f} font-size="${qf}" font-weight="700" letter-spacing="${ls}" fill="${Q[1].ink}" text-anchor="end">GROTE KLUSSEN</text>`;
-  s += `<text x="${L + 6}" y="${B - 8}" ${f} font-size="${qf}" font-weight="700" letter-spacing="${ls}" fill="#475569">OPVULLERS</text>`;
-  s += `<text x="${R - 6}" y="${B - 8}" ${f} font-size="${qf}" font-weight="700" letter-spacing="${ls}" fill="${Q[3].ink}" text-anchor="end">TIJDVERSPILLERS</text>`;
+  s += `<text x="${escA(L + 6)}" y="${escA(qy)}" ${f} font-size="${escA(qf)}" font-weight="700" letter-spacing="${escA(ls)}" fill="${escA(Q[0].ink)}">SNELLE WINST</text>`;
+  s += `<text x="${escA(R - 6)}" y="${escA(qy)}" ${f} font-size="${escA(qf)}" font-weight="700" letter-spacing="${escA(ls)}" fill="${escA(Q[1].ink)}" text-anchor="end">GROTE KLUSSEN</text>`;
+  s += `<text x="${escA(L + 6)}" y="${escA(B - 8)}" ${f} font-size="${escA(qf)}" font-weight="700" letter-spacing="${escA(ls)}" fill="#475569">OPVULLERS</text>`;
+  s += `<text x="${escA(R - 6)}" y="${escA(B - 8)}" ${f} font-size="${escA(qf)}" font-weight="700" letter-spacing="${escA(ls)}" fill="${escA(Q[3].ink)}" text-anchor="end">TIJDVERSPILLERS</text>`;
   // onzichtbare vlakken over de namen: aanwijzen of tikken toont de uitleg van het vak
   const hw = (W / 2) * 0.8, hh = qf + 12;
-  s += `<rect class="qlab" data-q="quick" x="${L}" y="${T}" width="${hw}" height="${hh}" fill="transparent"/>`;
-  s += `<rect class="qlab" data-q="groot" x="${R - hw}" y="${T}" width="${hw}" height="${hh}" fill="transparent"/>`;
-  s += `<rect class="qlab" data-q="vul" x="${L}" y="${B - hh}" width="${hw}" height="${hh}" fill="transparent"/>`;
-  s += `<rect class="qlab" data-q="verspil" x="${R - hw}" y="${B - hh}" width="${hw}" height="${hh}" fill="transparent"/>`;
+  s += `<rect class="qlab" data-q="quick" x="${escA(L)}" y="${escA(T)}" width="${escA(hw)}" height="${escA(hh)}" fill="transparent"/>`;
+  s += `<rect class="qlab" data-q="groot" x="${escA(R - hw)}" y="${escA(T)}" width="${escA(hw)}" height="${escA(hh)}" fill="transparent"/>`;
+  s += `<rect class="qlab" data-q="vul" x="${escA(L)}" y="${escA(B - hh)}" width="${escA(hw)}" height="${escA(hh)}" fill="transparent"/>`;
+  s += `<rect class="qlab" data-q="verspil" x="${escA(R - hw)}" y="${escA(B - hh)}" width="${escA(hw)}" height="${escA(hh)}" fill="transparent"/>`;
   // assen
   const af = fs(10);
   for (let v = 1; v <= N; v++) {
-    s += `<text x="${xOf(v)}" y="${B + 6 + af}" ${f} font-size="${af}" fill="#64748b" text-anchor="middle">${v}</text>`;
-    s += `<text x="${L - 9}" y="${yOf(v) + af / 3}" ${f} font-size="${af}" fill="#64748b" text-anchor="end">${v}</text>`;
+    s += `<text x="${escA(xOf(v))}" y="${escA(B + 6 + af)}" ${f} font-size="${escA(af)}" fill="#64748b" text-anchor="middle">${v}</text>`;
+    s += `<text x="${escA(L - 9)}" y="${escA(yOf(v) + af / 3)}" ${f} font-size="${escA(af)}" fill="#64748b" text-anchor="end">${v}</text>`;
   }
   const lf = fs(11);
-  s += `<text x="${L + W / 2}" y="${Math.min(399, B + 9 + af + lf)}" ${f} font-size="${lf}" font-weight="600" fill="#64748b" text-anchor="middle">Inspanning →</text>`;
-  s += `<text transform="translate(${Math.max(lf - 2, L - 27)} ${T + H / 2}) rotate(-90)" ${f} font-size="${lf}" font-weight="600" fill="#64748b" text-anchor="middle">Impact →</text>`;
+  s += `<text x="${escA(L + W / 2)}" y="${escA(Math.min(399, B + 9 + af + lf))}" ${f} font-size="${escA(lf)}" font-weight="600" fill="#64748b" text-anchor="middle">Inspanning →</text>`;
+  s += `<text transform="translate(${escA(Math.max(lf - 2, L - 27))} ${escA(T + H / 2)}) rotate(-90)" ${f} font-size="${escA(lf)}" font-weight="600" fill="#64748b" text-anchor="middle">Impact →</text>`;
   return s;
 }
 
@@ -1414,11 +1415,11 @@ function renderMatrix() {
     const op = it.done ? 0.4 : 1;
     // Geen naam in de matrix (die werd afgekapt): een nummer in de stip, met de naam in de lijst ernaast.
     const r = dotR() + (sel ? 1 : 0), nf = +(r * 1.12).toFixed(1);
-    pts += `<g class="pt${sel ? ' sel' : ''}" data-id="${it.id}" tabindex="0" role="button" aria-label="${nr[it.id]}. ${esc(it.name)}: impact ${it.impact}, inspanning ${it.effort}" opacity="${op}">
-      <circle cx="${p.x}" cy="${p.y}" r="${Math.max(18, 22.5 / mScale).toFixed(1)}" fill="transparent"/>
-      ${sel ? `<circle cx="${p.x}" cy="${p.y}" r="${(r + 4).toFixed(1)}" fill="none" stroke="${q.color}" stroke-width="2" opacity="0.35"/>` : ''}
-      <circle class="dot" cx="${p.x}" cy="${p.y}" r="${r}" fill="${q.ink}" stroke="#ffffff" stroke-width="1.5"/>
-      <text x="${p.x}" y="${(p.y + nf * 0.36).toFixed(1)}" ${f} font-size="${nf}" font-weight="700" fill="#ffffff" text-anchor="middle" style="font-variant-numeric:tabular-nums" pointer-events="none">${nr[it.id]}</text>
+    pts += `<g class="pt${escA(sel ? ' sel' : '')}" data-id="${escA(it.id)}" tabindex="0" role="button" aria-label="${escA(nr[it.id])}. ${esc(it.name)}: impact ${escA(it.impact)}, inspanning ${escA(it.effort)}" opacity="${escA(op)}">
+      <circle cx="${escA(p.x)}" cy="${escA(p.y)}" r="${escA(Math.max(18, 22.5 / mScale).toFixed(1))}" fill="transparent"/>
+      ${sel ? `<circle cx="${escA(p.x)}" cy="${escA(p.y)}" r="${escA((r + 4).toFixed(1))}" fill="none" stroke="${escA(q.color)}" stroke-width="2" opacity="0.35"/>` : ''}
+      <circle class="dot" cx="${escA(p.x)}" cy="${escA(p.y)}" r="${escA(r)}" fill="${escA(q.ink)}" stroke="#ffffff" stroke-width="1.5"/>
+      <text x="${escA(p.x)}" y="${escA((p.y + nf * 0.36).toFixed(1))}" ${f} font-size="${escA(nf)}" font-weight="700" fill="#ffffff" text-anchor="middle" style="font-variant-numeric:tabular-nums" pointer-events="none">${nr[it.id]}</text>
       <title>${nr[it.id]}. ${esc(it.name)} (impact ${it.impact}, inspanning ${it.effort})</title>
     </g>`;
   });
@@ -1445,23 +1446,23 @@ function renderList() {
   const todo = l.items.filter(i => i.nieuw), nr = numbers(l);
   $('list').innerHTML = (todo.length ? `<div class="q-head"><i style="background:#cbd5e1"></i>Nog in te schatten<span class="q-sub">· 1 is weinig, 4 is veel</span><span class="q-n">${todo.length}</span></div>
       <ul class="items todo">${todo.map(it => `
-        <li class="item todo-item" data-id="${it.id}">
-          <span class="item-name" id="tn-${it.id}">${esc(it.name)}${it.soort === 'risico' ? SOORT_RISICO : ''}</span>
+        <li class="item todo-item" data-id="${escA(it.id)}">
+          <span class="item-name" id="tn-${escA(it.id)}">${esc(it.name)}${it.soort === 'risico' ? SOORT_RISICO : ''}</span>
           <button class="del" aria-label="Verwijder ${esc(it.name)}">${ICON_DEL}</button>
           <div class="todo-schalen">
             ${[['impact', 'Impact', 'wat levert het op?'], ['effort', 'Inspanning', 'hoeveel werk?']].map(([f, naam, vraag]) => `<div class="ts-rij">
-              <span class="ts-lbl" id="t${f}-${it.id}">${naam}<small>${vraag}</small></span>
-              <div class="schaal" role="radiogroup" aria-labelledby="t${f}-${it.id} tn-${it.id}">${[1, 2, 3, 4].map(v => `<button type="button" role="radio" aria-checked="${gekozen(it, f) && it[f] === v}" data-todo="${it.id}" data-f="${f}" data-v="${v}">${v}</button>`).join('')}</div>
+              <span class="ts-lbl" id="t${escA(f)}-${escA(it.id)}">${naam}<small>${vraag}</small></span>
+              <div class="schaal" role="radiogroup" aria-labelledby="t${escA(f)}-${escA(it.id)} tn-${escA(it.id)}">${[1, 2, 3, 4].map(v => `<button type="button" role="radio" aria-checked="${escA(gekozen(it, f) && it[f] === v)}" data-todo="${escA(it.id)}" data-f="${escA(f)}" data-v="${escA(v)}">${v}</button>`).join('')}</div>
             </div>`).join('')}
           </div>
         </li>`).join('')}</ul>` : '') + Q.map(q => {
     const items = sorted(l.items.filter(i => quadOf(i) === q));
     if (!items.length) return '';
-    return `<div class="q-head"><i style="background:${q.color}"></i>${q.name}<span class="q-sub">· ${q.sub}</span><span class="q-n">${items.length}</span></div>
+    return `<div class="q-head"><i style="background:${escA(q.color)}"></i>${q.name}<span class="q-sub">· ${q.sub}</span><span class="q-n">${items.length}</span></div>
       <ul class="items">${items.map(it => `
-        <li class="item${it.done ? ' done' : ''}${it.id === editing ? ' selected' : ''}" data-id="${it.id}" tabindex="0">
-          <button class="check" aria-label="${it.done ? 'Niet meer gedaan' : 'Markeer als gedaan'}"><span class="box">${ICON_CHECK}</span></button>
-          <span class="item-name"><span class="nr" style="--c:${q.ink}" aria-hidden="true">${nr[it.id]}</span>${esc(it.name)}${it.soort === 'risico' ? SOORT_RISICO : ''}</span>
+        <li class="item${escA(it.done ? ' done' : '')}${escA(it.id === editing ? ' selected' : '')}" data-id="${escA(it.id)}" tabindex="0">
+          <button class="check" aria-label="${escA(it.done ? 'Niet meer gedaan' : 'Markeer als gedaan')}"><span class="box">${ICON_CHECK}</span></button>
+          <span class="item-name"><span class="nr" style="--c:${escA(q.ink)}" aria-hidden="true">${nr[it.id]}</span>${esc(it.name)}${it.soort === 'risico' ? SOORT_RISICO : ''}</span>
           <span class="scores" title="Impact · inspanning">impact <b>${it.impact}</b> · inspanning <b>${it.effort}</b></span>
           <button class="del" aria-label="Verwijder">${ICON_DEL}</button>
         </li>`).join('')}</ul>`;
@@ -1470,7 +1471,7 @@ function renderList() {
 
 function renderTabs() {
   $('lists').innerHTML = state.lists.map(l =>
-    `<button class="tab${l.id === state.current ? ' active' : ''}" data-list="${esc(l.id)}">${esc(l.name || 'Naamloos')}${l.voorbeeld ? '<span class="vb-tag">voorbeeld</span>' : ''}<span class="n">${l.items.filter(i => !i.done).length || ''}</span></button>`
+    `<button class="tab${escA(l.id === state.current ? ' active' : '')}" data-list="${esc(l.id)}">${esc(l.name || 'Naamloos')}${l.voorbeeld ? '<span class="vb-tag">voorbeeld</span>' : ''}<span class="n">${l.items.filter(i => !i.done).length || ''}</span></button>`
   ).join('') + `<button class="tab add" id="new-list" aria-label="Nieuwe lijst">+ Lijst</button>`;
 }
 
@@ -1491,13 +1492,13 @@ function syncForm() {
 function paintSliders() {
   ['impact', 'effort'].forEach(k => {
     const v = $(k).value;
-    document.querySelectorAll(`[data-form-schaal] [data-f="${k}"]`).forEach(b => b.setAttribute('aria-checked', String(b.dataset.v === v)));
+    document.querySelectorAll(`[data-form-schaal] [data-f="${escA(k)}"]`).forEach(b => b.setAttribute('aria-checked', String(b.dataset.v === v)));
   });
   // vooraf tonen in welk kwadrant het item komt
   const i = +$('impact').value, w = +$('effort').value;
   if (!i || !w) { $('q-preview').innerHTML = `<span>${!i && !w ? 'Kies impact en inspanning.' : !i ? 'Kies nog de impact.' : 'Kies nog de inspanning.'} Of voeg toe en schat later in.</span>`; return; }
   const q = Q.find(x => x.test({ impact:i, effort:w }));
-  $('q-preview').innerHTML = `${editing ? 'Staat bij' : 'Komt bij'}: <b style="color:${q.ink}"><i style="background:${q.color}"></i>${q.name}</b><span>· ${q.sub}</span>`;
+  $('q-preview').innerHTML = `${editing ? 'Staat bij' : 'Komt bij'}: <b style="color:${escA(q.ink)}"><i style="background:${escA(q.color)}"></i>${q.name}</b><span>· ${q.sub}</span>`;
 }
 
 function unitLabel(l) {
@@ -1607,7 +1608,7 @@ document.addEventListener('click', e => {
   if (!klaar) {
     // nog de andere as: daar meteen verder
     const ander = f === 'impact' ? 'effort' : 'impact';
-    const g = document.querySelector(`[data-todo="${it.id}"][data-f="${ander}"]`);
+    const g = document.querySelector(`[data-todo="${escA(it.id)}"][data-f="${escA(ander)}"]`);
     if (g && viaToets) g.focus({ preventScroll:true });
     return;
   }
@@ -1630,7 +1631,7 @@ document.addEventListener('click', e => {
     return;
   }
   const x = e.target.closest('.exp-btn'); if (!x || x.disabled) return;
-  const m = document.querySelector(`#menu [data-act="${x.dataset.exp}"]`); m && m.click();
+  const m = document.querySelector(`#menu [data-act="${escA(x.dataset.exp)}"]`); m && m.click();
 });
 
 /* ---------- Lijst: afvinken, verwijderen, kiezen ---------- */
@@ -1705,7 +1706,7 @@ svg.addEventListener('pointerup', endDrag);
 const qHTML = id => { const u = QUITLEG[id]; return `<b>${u.t}</b> · ${u.s}<br>${u.b}<span class="q-r">${u.r}</span>`; };
 const qColor = id => (Q.find(q => q.id === id) || Q[0]).color;
 function toonTip(id) {
-  const tip = $('qtip'), lab = svg.querySelector(`.qlab[data-q="${id}"]`); if (!lab) return;
+  const tip = $('qtip'), lab = svg.querySelector(`.qlab[data-q="${escA(id)}"]`); if (!lab) return;
   tip.innerHTML = qHTML(id); tip.style.setProperty('--qc', qColor(id)); tip.hidden = false; tip.dataset.q = id;
   const w = svg.parentElement.getBoundingClientRect(), r = lab.getBoundingClientRect(), t = tip.getBoundingClientRect();
   const onder = id === 'quick' || id === 'groot';
@@ -1744,7 +1745,7 @@ svg.addEventListener('keydown', e => {
     e.preventDefault();
     const [k, d] = moves[e.key]; it[k] = clamp(it[k] + d, 1, N); editing = it.id;
     save(); render();
-    const again = svg.querySelector(`.pt[data-id="${it.id}"]`); again && again.focus();
+    const again = svg.querySelector(`.pt[data-id="${escA(it.id)}"]`); again && again.focus();
   } else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startEdit(it.id, true); }
 });
 
@@ -1846,8 +1847,10 @@ function asText() {
     return `\n${q.name} (${q.sub})\n` + items.map(i => `- [${i.done ? 'x' : ' '}] ${i.name} (impact ${i.impact}, inspanning ${i.effort})`).join('\n');
   }).join('\n').replace(/\n{3,}/g, '\n\n') + (l.items.some(i => i.nieuw) ? '\nNog in te schatten\n' + l.items.filter(i => i.nieuw).map(i => `- ${i.name}`).join('\n') + '\n' : '\n');
 }
+/* Een cel die begint met = + - of @ zou Excel als formule uitvoeren: zet er een ' voor (gewone getallen blijven). */
+function ocCsvVeilig(s) { s = String(s == null ? '' : s); return /^[=+\-@\t\r]/.test(s) && !/^[+-]?\d+([.,]\d+)*%?$/.test(s) ? "'" + s : s; }
 function asCSV() {
-  const cell = v => /[;"\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v);
+  const cell = v => { v = ocCsvVeilig(v); return /[;"\n\r]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v; };
   const rows = [['Kwadrant', 'Item', 'Impact', 'Inspanning', 'Gedaan']];
   Q.forEach(q => sorted(cur().items.filter(i => quadOf(i) === q)).forEach(i => rows.push([q.name, i.name, i.impact, i.effort, i.done ? 'ja' : 'nee'])));
   cur().items.filter(i => i.nieuw).forEach(i => rows.push(['Nog in te schatten', i.name, '', '', i.done ? 'ja' : 'nee']));
@@ -1867,11 +1870,11 @@ function buildExport() {
     const items = sorted(l.items.filter(i => quadOf(i) === q));
     if (!items.length) return '';
     return `<div style="margin-bottom:18px">
-      <div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:${q.ink}">
-        <span style="width:9px;height:9px;border-radius:50%;background:${q.color}"></span>${esc(q.name)}
+      <div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:${escA(q.ink)}">
+        <span style="width:9px;height:9px;border-radius:50%;background:${escA(q.color)}"></span>${esc(q.name)}
         <span style="font-weight:500;letter-spacing:0;text-transform:none;color:#94a3b8">· ${esc(q.sub)}</span></div>
-      ${items.map(i => `<div style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #f1f5f9;font-size:14px;${i.done ? 'color:#94a3b8;text-decoration:line-through;' : 'color:#1e293b;'}">
-        <span style="display:flex;gap:8px;align-items:baseline"><span style="flex-shrink:0;min-width:20px;height:20px;padding:0 4px;border-radius:10px;background:${q.ink};color:#fff;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;font-variant-numeric:tabular-nums;text-decoration:none">${nr[i.id]}</span><span>${esc(i.name)}</span></span><span style="white-space:nowrap;font-size:12px;color:#64748b;text-decoration:none">impact ${i.impact} · inspanning ${i.effort}</span></div>`).join('')}
+      ${items.map(i => `<div style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #f1f5f9;font-size:14px;${escA(i.done ? 'color:#94a3b8;text-decoration:line-through;' : 'color:#1e293b;')}">
+        <span style="display:flex;gap:8px;align-items:baseline"><span style="flex-shrink:0;min-width:20px;height:20px;padding:0 4px;border-radius:10px;background:${escA(q.ink)};color:#fff;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;font-variant-numeric:tabular-nums;text-decoration:none">${nr[i.id]}</span><span>${esc(i.name)}</span></span><span style="white-space:nowrap;font-size:12px;color:#64748b;text-decoration:none">impact ${i.impact} · inspanning ${i.effort}</span></div>`).join('')}
     </div>`;
   }).join('');
   node.append(left, right);

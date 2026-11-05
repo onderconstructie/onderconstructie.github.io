@@ -638,6 +638,8 @@ body { overflow-wrap:break-word; }
 <div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-text"></span><button id="toast-btn" hidden>Ongedaan</button></div>
 
 <script>
+/* Een cel die begint met = + - of @ zou Excel als formule uitvoeren: zet er een ' voor (gewone getallen blijven). */
+function ocCsvVeilig(s) { s = String(s == null ? '' : s); return /^[=+\-@\t\r]/.test(s) && !/^[+-]?\d+([.,]\d+)*%?$/.test(s) ? "'" + s : s; }
 // Bevestiging in de pagina (geen pop-up van de browser).
 // Stijl van de bevestiging en de knoppen 'Overnemen uit…': meteen laden.
 function ocStyle() {
@@ -2014,7 +2016,7 @@ $('menu').addEventListener('click', e => {
 });
 
 /* ---------- CSV ---------- */
-const csvCell = v => { v = String(v == null ? '' : v); return /[";\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+const csvCell = v => { v = ocCsvVeilig(v); return /[";\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
 function downloadCsv(rows, name) {
   const csv = '﻿' + rows.map(r => r.map(csvCell).join(';')).join('\r\n');
   const a = document.createElement('a');
@@ -2722,7 +2724,7 @@ document.addEventListener('click', e => {
 
   // #hoe-werkt-dit opent het blok
   function vanAdres(vloeiend) {
-    var h = decodeURIComponent(location.hash.slice(1));
+    var h = location.hash.slice(1); try { h = decodeURIComponent(h); } catch (x) {}
     if (h !== SLUG && h !== d.id) return;
     if (!staat) zet(true, vloeiend);
     requestAnimationFrame(function () { d.scrollIntoView({ behavior: vloeiend && !rustig.matches ? 'smooth' : 'auto', block: 'start' }); });

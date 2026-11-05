@@ -818,6 +818,7 @@ const ocDoorgeven = i => !i.van || !!quadOf(i);
 // Pas je de tekst van een overgenomen punt aan, dan wordt het eigen werk: de herkomst valt weg.
 const ocEigen = (it, tekst) => { if (it && it.van && ocNorm(tekst) !== ocNorm(it.name)) delete it.van; };
 
+const escA = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));   // waarde in een attribuut: ook ids, statussen, datums en getallen
 // Klaarleggen voor andere tools: de doelen (type 'doel') en per indicator de eerstvolgende meetactie (type 'taak', met wie en wanneer).
 // Een voorbeeld wordt nooit klaargelegd.
 // De bron blijft de baas: een overgenomen doel (d.van = id van de bron) geven we niet opnieuw door. De meetacties erbij zijn wel
@@ -873,7 +874,7 @@ function addImported(list, label, alVooraf = 0) {
   save(); render();
   toast(fresh.length ? `${fresh.length} ${fresh.length === 1 ? 'doel' : 'doelen'} overgenomen${label ? ' uit ' + label : ''}${al ? '. ' + alZin(al) + '.' : ''}`
     : al === 1 ? 'Dat doel stond er al' : 'Die doelen stonden er al', fresh.length ? restore : undefined);
-  if (fresh.length) setTimeout(() => { const el = document.querySelector(`[data-doel="${fresh[0].id}"]`); if (el) el.scrollIntoView({ block:'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); }, 50);
+  if (fresh.length) setTimeout(() => { const el = document.querySelector(`[data-doel="${escA(fresh[0].id)}"]`); if (el) el.scrollIntoView({ block:'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); }, 50);
 }
 /* De Projectopdracht van DIT project: alleen de lijst met dezelfde naam (soepel vergeleken).
    Heeft de opdracht alleen doelen voor andere projecten, dan nemen we niets stil over: de gebruiker kiest zelf in de kiezer. */
@@ -1300,10 +1301,10 @@ const ICON = {
   take:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v11M7.5 9.5L12 14l4.5-4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>',
 };
 const soortOf = id => SOORT.find(s => s.id === id);
-const pillHTML = i => { const s = soortOf(i.soort); return s ? `<span class="pill s-${s.id}">${s.kort}</span>` : ''; };
+const pillHTML = i => { const s = soortOf(i.soort); return s ? `<span class="pill s-${escA(s.id)}">${s.kort}</span>` : ''; };
 
 function renderTabs() {
-  $('lists').innerHTML = state.plans.map(p => `<button class="tab${p.id === state.current ? ' active' : ''}" data-list="${esc(p.id)}">${esc(p.name || 'Naamloos')}${p.voorbeeld ? '<span class="vb-tag">voorbeeld</span>' : ''}<span class="n">${p.doelen.length || ''}</span></button>`).join('')
+  $('lists').innerHTML = state.plans.map(p => `<button class="tab${escA(p.id === state.current ? ' active' : '')}" data-list="${esc(p.id)}">${esc(p.name || 'Naamloos')}${p.voorbeeld ? '<span class="vb-tag">voorbeeld</span>' : ''}<span class="n">${p.doelen.length || ''}</span></button>`).join('')
     + '<button class="tab add" id="new-plan" aria-label="Nieuw meetplan">+ Meetplan</button>';
 }
 
@@ -1316,7 +1317,7 @@ function headInner(d) {
   }).join('');
   return `${ICON.chev}
     <span>
-      <span class="doel-title${d.text.trim() ? '' : ' empty'}">${esc(d.text.trim() || 'Doel zonder naam')}</span>
+      <span class="doel-title${escA(d.text.trim() ? '' : ' empty')}">${esc(d.text.trim() || 'Doel zonder naam')}</span>
       <span class="doel-sum">${rows || '<span>nog geen indicator</span>'}</span>
     </span>
     <span class="doel-right">${sig ? `<span class="sigcount">${sig} ${sig === 1 ? 'aandachtspunt' : 'aandachtspunten'}</span>` : ''}</span>`;
@@ -1325,7 +1326,7 @@ function chipsHTML(d) {
   return doelSignals(d).map(s => `<button type="button" class="chip-sig" data-jump="${esc(s.ind)}|${esc(s.f)}">${esc(s.text)}${ICON.go}</button>`).join('');
 }
 function radios(key, opts, i, labelId, val = i[key], small = false) {
-  return `<div class="opts${small ? ' small' : ''}" role="radiogroup" aria-labelledby="${labelId}" data-group="${key}">${opts.map(o => `<button type="button" class="opt" role="radio" aria-checked="${val === o.id}" data-pick="${key}" data-v="${o.id}" data-i="${esc(i.id)}"><b><span class="rd" aria-hidden="true"></span>${esc(o.name)}</b>${o.sub ? `<small>${esc(o.sub)}</small>` : ''}</button>`).join('')}</div>`;
+  return `<div class="opts${escA(small ? ' small' : '')}" role="radiogroup" aria-labelledby="${escA(labelId)}" data-group="${escA(key)}">${opts.map(o => `<button type="button" class="opt" role="radio" aria-checked="${escA(val === o.id)}" data-pick="${escA(key)}" data-v="${escA(o.id)}" data-i="${esc(i.id)}"><b><span class="rd" aria-hidden="true"></span>${esc(o.name)}</b>${o.sub ? `<small>${esc(o.sub)}</small>` : ''}</button>`).join('')}</div>`;
 }
 function soortNote(i) {
   if (i.soort === 'inspanning') return `<div class="note warn">${ICON.warn}<div><p><b>Dit telt wat je doet, niet wat er beter wordt.</b> Zoek er een indicator bij die toont wat er voor mensen verandert.</p></div></div>`;
@@ -1337,10 +1338,10 @@ function bronNote(i) {
   const t = {
     register:'<p>Vraag na of de manier van registreren niet verandert tijdens je project. Anders vergelijk je straks appels met peren.</p>',
     telling:'<p>Tel altijd op dezelfde manier en over dezelfde periode, liefst door dezelfde mensen.</p>',
-    bevraging:`<p>Hoeveel antwoorden heb je nodig? Reken het uit met de <a href="${CALC}" target="_blank" rel="noopener">Steekproefcalculator</a>.</p><p>Let op de respons. Wie antwoordt, denkt vaak anders dan wie zwijgt. Stel bij elke meting dezelfde vragen, op dezelfde manier.</p>`,
+    bevraging:`<p>Hoeveel antwoorden heb je nodig? Reken het uit met de <a href="${escA(CALC)}" target="_blank" rel="noopener">Steekproefcalculator</a>.</p><p>Let op de respons. Wie antwoordt, denkt vaak anders dan wie zwijgt. Stel bij elke meting dezelfde vragen, op dezelfde manier.</p>`,
     observatie:'<p>Spreek vooraf af wat je precies noteert, zodat twee mensen hetzelfde zien.</p>',
   }[i.bron];
-  return t ? `<div class="note${i.bron === 'bevraging' ? ' warn' : ''}">${i.bron === 'bevraging' ? ICON.warn : ICON.info}<div>${t}</div></div>` : '';
+  return t ? `<div class="note${escA(i.bron === 'bevraging' ? ' warn' : '')}">${i.bron === 'bevraging' ? ICON.warn : ICON.info}<div>${t}</div></div>` : '';
 }
 function nextHTML(i) {
   if (!i.freq) return '';
@@ -1349,7 +1350,7 @@ function nextHTML(i) {
   const nx = nextMeting(i, c);
   if (!nx) return okDate(i.streef.d) && c.lastAny && c.lastAny.d >= i.streef.d ? '<p class="next">Alle metingen tot de streefdatum zijn gedaan.</p>' : '';
   const late = nx.date < isoToday();
-  return `<p class="next${late ? ' late' : ''}">${late ? 'Nog open: de meting van ' : nx.eind ? 'Eindmeting: ' : 'Volgende meting: '}<b>${esc(fmtMonth(nx.date))}</b>${i.wie.trim() ? ', door ' + esc(i.wie.trim()) : ''}.</p>`;
+  return `<p class="next${escA(late ? ' late' : '')}">${late ? 'Nog open: de meting van ' : nx.eind ? 'Eindmeting: ' : 'Volgende meting: '}<b>${esc(fmtMonth(nx.date))}</b>${i.wie.trim() ? ', door ' + esc(i.wie.trim()) : ''}.</p>`;
 }
 function standHTML(i) {
   const c = calc(i);
@@ -1397,29 +1398,29 @@ function chartSVG(i, W, opts = {}) {
   const X = v => L + (t(v) - x0) / (x1 - x0) * (W - L - R), Y = v => T + (1 - (v - lo) / (hi - lo)) * (H - T - B);
   const F = `font-family="DM Sans, system-ui, sans-serif" font-size="12" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round"`;
   let g = '';
-  ticks.forEach(v => { const y = Y(v).toFixed(1); g += `<line x1="${L}" x2="${W - R}" y1="${y}" y2="${y}" stroke="${v === lo ? '#cbd5e1' : '#eef2f6'}" stroke-width="1"/><text x="${L - 8}" y="${(+y + 4).toFixed(1)}" text-anchor="end" fill="#64748b" ${F}>${esc(lab(v))}</text>`; });
+  ticks.forEach(v => { const y = Y(v).toFixed(1); g += `<line x1="${escA(L)}" x2="${escA(W - R)}" y1="${escA(y)}" y2="${escA(y)}" stroke="${escA(v === lo ? '#cbd5e1' : '#eef2f6')}" stroke-width="1"/><text x="${escA(L - 8)}" y="${escA((+y + 4).toFixed(1))}" text-anchor="end" fill="#64748b" ${F}>${esc(lab(v))}</text>`; });
   // datums onderaan: begin en einde, en de laatste meting als er plaats is
   const xl = [[d0, 'start']]; if (end) xl.push([end, 'end']); else if (c.last && c.last.d !== d0) xl.push([c.last.d, 'end']);
-  xl.forEach(([d, a]) => { g += `<text x="${X(d).toFixed(1)}" y="${H - 6}" text-anchor="${a}" fill="#64748b" ${F}>${esc(fmtShort(d))}</text>`; });
+  xl.forEach(([d, a]) => { g += `<text x="${escA(X(d).toFixed(1))}" y="${escA(H - 6)}" text-anchor="${escA(a)}" fill="#64748b" ${F}>${esc(fmtShort(d))}</text>`; });
   if (c.streef != null) {
     const ys = Y(c.streef).toFixed(1);
-    if (end && okDate(i.nul.d)) g += `<line x1="${X(d0).toFixed(1)}" y1="${Y(c.nul).toFixed(1)}" x2="${X(end).toFixed(1)}" y2="${ys}" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="2 4" stroke-linecap="round"/>`;
-    g += `<line x1="${L}" x2="${W - R}" y1="${ys}" y2="${ys}" stroke="#047857" stroke-width="1.5" stroke-dasharray="6 4"/>`;
+    if (end && okDate(i.nul.d)) g += `<line x1="${escA(X(d0).toFixed(1))}" y1="${escA(Y(c.nul).toFixed(1))}" x2="${escA(X(end).toFixed(1))}" y2="${escA(ys)}" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="2 4" stroke-linecap="round"/>`;
+    g += `<line x1="${escA(L)}" x2="${escA(W - R)}" y1="${escA(ys)}" y2="${escA(ys)}" stroke="#047857" stroke-width="1.5" stroke-dasharray="6 4"/>`;
     const above = Y(c.streef) - T > 14;
-    g += `<text x="${W - R - (end ? 12 : 0)}" y="${(+ys + (above ? -8 : 17)).toFixed(1)}" text-anchor="end" fill="#047857" font-weight="600" ${F}>streefwaarde ${esc(fmtV(i, c.streef))}</text>`;
-    if (end) g += `<circle cx="${X(end).toFixed(1)}" cy="${ys}" r="5" fill="#ffffff" stroke="#047857" stroke-width="2"/>`;
+    g += `<text x="${escA(W - R - (end ? 12 : 0))}" y="${escA((+ys + (above ? -8 : 17)).toFixed(1))}" text-anchor="end" fill="#047857" font-weight="600" ${F}>streefwaarde ${esc(fmtV(i, c.streef))}</text>`;
+    if (end) g += `<circle cx="${escA(X(end).toFixed(1))}" cy="${escA(ys)}" r="5" fill="#ffffff" stroke="#047857" stroke-width="2"/>`;
   }
   const pts = [[d0, c.nul], ...c.mets.map(m => [m.d, m.v])];
-  if (pts.length > 1) g += `<polyline points="${pts.map(([d, v]) => X(d).toFixed(1) + ',' + Y(v).toFixed(1)).join(' ')}" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
-  c.mets.forEach((m, k) => { const last = k === c.mets.length - 1; g += `<circle cx="${X(m.d).toFixed(1)}" cy="${Y(m.v).toFixed(1)}" r="${last ? 6 : 4.5}" fill="#10b981" stroke="#ffffff" stroke-width="1.5"/>`; });
-  g += `<circle cx="${X(d0).toFixed(1)}" cy="${Y(c.nul).toFixed(1)}" r="5" fill="#ffffff" stroke="#64748b" stroke-width="2"/>`;
+  if (pts.length > 1) g += `<polyline points="${escA(pts.map(([d, v]) => X(d).toFixed(1) + ',' + Y(v).toFixed(1)).join(' '))}" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+  c.mets.forEach((m, k) => { const last = k === c.mets.length - 1; g += `<circle cx="${escA(X(m.d).toFixed(1))}" cy="${escA(Y(m.v).toFixed(1))}" r="${escA(last ? 6 : 4.5)}" fill="#10b981" stroke="#ffffff" stroke-width="1.5"/>`; });
+  g += `<circle cx="${escA(X(d0).toFixed(1))}" cy="${escA(Y(c.nul).toFixed(1))}" r="5" fill="#ffffff" stroke="#64748b" stroke-width="2"/>`;
   // waarde bij de nulmeting en bij de laatste meting
-  const valLabel = (d, v, col, anchor) => { const y = Y(v), up = y - T > 16; return `<text x="${(X(d) + (anchor === 'start' ? 8 : 0)).toFixed(1)}" y="${(up ? y - 10 : y + 20).toFixed(1)}" text-anchor="${anchor}" fill="${col}" font-weight="700" ${F}>${esc(nf(v, 2) + u)}</text>`; };
+  const valLabel = (d, v, col, anchor) => { const y = Y(v), up = y - T > 16; return `<text x="${escA((X(d) + (anchor === 'start' ? 8 : 0)).toFixed(1))}" y="${escA((up ? y - 10 : y + 20).toFixed(1))}" text-anchor="${escA(anchor)}" fill="${escA(col)}" font-weight="700" ${F}>${esc(nf(v, 2) + u)}</text>`; };
   g += valLabel(d0, c.nul, '#475569', 'start');
   if (c.last) g += valLabel(c.last.d, c.last.v, '#1e293b', X(c.last.d) > W - R - 40 ? 'end' : 'middle');
   const st = standOf(i, c);
   const aria = `Meetlijn. Nulmeting ${fmtV(i, c.nul)}${c.last ? `, laatste meting ${fmtV(i, c.last.v)}` : ''}${c.streef != null ? `, streefwaarde ${fmtV(i, c.streef)}` : ''}. ${st.words}`;
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(aria)}">${g}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${escA(W)}" height="${escA(H)}" viewBox="0 0 ${escA(W)} ${escA(H)}" role="img" aria-label="${esc(aria)}">${g}</svg>`;
 }
 function drawCharts(root = document) {
   root.querySelectorAll('[data-chart-svg]').forEach(el => {
@@ -1437,28 +1438,28 @@ function richtingHTML(i, c = calc(i)) {
 function indHTML(d, i, k) {
   const id = i.id, many = d.inds.length > 1, L = f => `f-${id}-${f}`, pct = isPct(i), anders = i.vorm === 'anders';
   const im = anders ? 'inputmode="text"' : 'inputmode="decimal"';   // bij Iets anders mag je ook een woord typen
-  const fld = (f, label, val, ph, extra = '') => `<label class="mini" for="${L(f)}">${label}</label><input class="field" id="${L(f)}" data-f="${f}" value="${esc(val)}" placeholder="${esc(ph)}" ${extra}>`;
+  const fld = (f, label, val, ph, extra = '') => `<label class="mini" for="${escA(L(f))}">${label}</label><input class="field" id="${escA(L(f))}" data-f="${escA(f)}" value="${esc(val)}" placeholder="${esc(ph)}" ${extra}>`;
   const c = calc(i);
   return `<div class="ind" data-ind="${esc(id)}">
-    <div class="ind-top" data-f="top" tabindex="-1"><span class="ind-n">${many ? `Indicator ${k + 1}` : 'Indicator'}</span>${many || indBegun(i) ? `<button type="button" class="x" data-del-ind aria-label="${many ? `Indicator ${k + 1}` : 'Indicator'} verwijderen">${ICON.x}</button>` : ''}</div>
+    <div class="ind-top" data-f="top" tabindex="-1"><span class="ind-n">${many ? `Indicator ${k + 1}` : 'Indicator'}</span>${many || indBegun(i) ? `<button type="button" class="x" data-del-ind aria-label="${escA(many ? `Indicator ${k + 1}` : 'Indicator')} verwijderen">${ICON.x}</button>` : ''}</div>
     <div class="sec" style="margin-top:0.25rem"><span class="sec-label"><span class="nr" aria-hidden="true">2</span>Waaraan zie je het? <span class="hint">een cijfer of een duidelijk teken</span></span>
-      <input class="field" id="${L('name')}" data-f="name" value="${esc(i.name)}" placeholder="Bv. telefoontjes over de stand van een aanvraag" aria-label="Waaraan zie je het?" maxlength="120">
-      <span class="mini" id="${L('soort')}">Wat meet je hiermee?</span>
+      <input class="field" id="${escA(L('name'))}" data-f="name" value="${esc(i.name)}" placeholder="Bv. telefoontjes over de stand van een aanvraag" aria-label="Waaraan zie je het?" maxlength="120">
+      <span class="mini" id="${escA(L('soort'))}">Wat meet je hiermee?</span>
       ${radios('soort', SOORT, i, L('soort'))}
       <div data-soortnote>${soortNote(i)}</div>
     </div>
     <div class="grid2">
       <div class="sec"><span class="sec-label"><span class="nr" aria-hidden="true">3</span>Hoe reken je het uit?</span>
-        <span class="mini" id="${L('vorm')}">Wat voor cijfer is het?</span>
+        <span class="mini" id="${escA(L('vorm'))}">Wat voor cijfer is het?</span>
         ${radios('vorm', VORM, i, L('vorm'), i.vorm || (pct ? 'pct' : ''), true)}
         ${pct ? `${fld('teller', 'Wie of wat tel je?', i.teller, 'Bv. aanvragen die online binnenkomen', 'maxlength="160"')}
           ${fld('noemer', 'Van wie? Het geheel waarvan je het deel neemt', i.noemer, 'Bv. van alle aanvragen in die maand', 'maxlength="160"')}
           ${fld('n', 'Over hoeveel gaat het ongeveer? (optioneel)', i.n, 'Bv. 900 per maand', 'inputmode="decimal" maxlength="20"')}`
-        : `<label class="mini" for="${L('def')}">${anders ? 'Wat kijk je precies na?' : 'Wat tel je precies?'}</label><textarea class="field" rows="1" id="${L('def')}" data-f="def" placeholder="${anders ? 'Bv. alle loketdiensten staan in de online agenda' : i.vorm === 'gem' ? 'Bv. werkdagen van indiening tot beslissing, gemiddeld per aanvraag' : 'Bv. telefoontjes aan het loket over de stand van een aanvraag, per maand'}" maxlength="300">${esc(i.def)}</textarea>
+        : `<label class="mini" for="${escA(L('def'))}">${anders ? 'Wat kijk je precies na?' : 'Wat tel je precies?'}</label><textarea class="field" rows="1" id="${escA(L('def'))}" data-f="def" placeholder="${escA(anders ? 'Bv. alle loketdiensten staan in de online agenda' : i.vorm === 'gem' ? 'Bv. werkdagen van indiening tot beslissing, gemiddeld per aanvraag' : 'Bv. telefoontjes aan het loket over de stand van een aanvraag, per maand')}" maxlength="300">${esc(i.def)}</textarea>
           ${anders ? '' : fld('eenheid', 'In welke maat? (optioneel)', i.eenheid, 'Bv. per maand, werkdagen, op 10', 'maxlength="30"')}`}
       </div>
       <div class="sec"><span class="sec-label"><span class="nr" aria-hidden="true">4</span>Waar haal je het?</span>
-        <span class="mini" id="${L('bron')}">Welke soort bron?</span>
+        <span class="mini" id="${escA(L('bron'))}">Welke soort bron?</span>
         ${radios('bron', BRON, i, L('bron'))}
         ${fld('bronNaam', 'Welke bron precies?', i.bronNaam, 'Bv. registratie van het contactcenter', 'maxlength="120"')}
         ${fld('beheerder', 'Wie beheert de bron?', i.beheerder, 'Naam of team', 'maxlength="80"')}
@@ -1466,23 +1467,23 @@ function indHTML(d, i, k) {
       </div>
       <div class="sec"><span class="sec-label"><span class="nr" aria-hidden="true">5</span>Nulmeting <span class="hint">waar sta je nu?</span></span>
         <div class="row2"><div>${fld('nul.v', 'Waarde nu', i.nul.v, pct ? 'Bv. 58%' : anders ? 'Bv. nee' : 'Bv. 1.240', im + ' maxlength="20"')}</div>
-          <div><label class="mini" for="${L('nul.d')}">Gemeten op</label><input class="field" type="date" id="${L('nul.d')}" data-f="nul.d" value="${esc(i.nul.d)}"></div></div>
+          <div><label class="mini" for="${escA(L('nul.d'))}">Gemeten op</label><input class="field" type="date" id="${escA(L('nul.d'))}" data-f="nul.d" value="${esc(i.nul.d)}"></div></div>
       </div>
       <div class="sec"><span class="sec-label"><span class="nr" aria-hidden="true">6</span>Streefwaarde <span class="hint">waar wil je heen?</span></span>
         <div class="row2"><div>${fld('streef.v', 'Streefwaarde', i.streef.v, pct ? 'Bv. 80%' : anders ? 'Bv. ja' : 'Bv. 600', im + ' maxlength="20"')}</div>
-          <div><label class="mini" for="${L('streef.d')}">Tegen</label><input class="field" type="date" id="${L('streef.d')}" data-f="streef.d" value="${esc(i.streef.d)}"></div></div>
+          <div><label class="mini" for="${escA(L('streef.d'))}">Tegen</label><input class="field" type="date" id="${escA(L('streef.d'))}" data-f="streef.d" value="${esc(i.streef.d)}"></div></div>
         <div data-richting>${richtingHTML(i, c)}</div>
       </div>
       <div class="sec wide"><span class="sec-label"><span class="nr" aria-hidden="true">7</span>Wanneer meet je, en wie meet?</span>
-        <div class="row2"><div><label class="mini" for="${L('freq')}">Hoe vaak?</label><select class="field" id="${L('freq')}" data-f="freq"><option value="">Kies…</option>${FREQ.map(f => `<option value="${f.id}"${f.id === i.freq ? ' selected' : ''}>${esc(f.name)}</option>`).join('')}</select></div>
+        <div class="row2"><div><label class="mini" for="${escA(L('freq'))}">Hoe vaak?</label><select class="field" id="${escA(L('freq'))}" data-f="freq"><option value="">Kies…</option>${FREQ.map(f => `<option value="${escA(f.id)}"${f.id === i.freq ? ' selected' : ''}>${esc(f.name)}</option>`).join('')}</select></div>
           <div>${fld('wie', 'Wie meet?', i.wie, 'Naam', 'maxlength="60"')}</div></div>
         <div data-next>${nextHTML(i)}</div>
       </div>
       <div class="sec wide"><span class="sec-label"><span class="nr" aria-hidden="true">8</span>Metingen <span class="hint">optioneel: vul ze in als je gemeten hebt</span></span>
         ${i.metingen.length ? `<div class="mets">${i.metingen.map((m, j) => `<div class="met" data-met="${esc(m.id)}">
-          <input class="field" type="date" data-mf="d" value="${esc(m.d)}" aria-label="Meting ${j + 1}: datum">
-          <input class="field" data-mf="v" value="${esc(m.v)}" placeholder="Waarde" ${im} maxlength="20" aria-label="Meting ${j + 1}: waarde">
-          <button type="button" class="x" data-del-met aria-label="Meting ${j + 1} verwijderen">${ICON.x}</button></div>`).join('')}</div>` : ''}
+          <input class="field" type="date" data-mf="d" value="${esc(m.d)}" aria-label="Meting ${escA(j + 1)}: datum">
+          <input class="field" data-mf="v" value="${esc(m.v)}" placeholder="Waarde" ${im} maxlength="20" aria-label="Meting ${escA(j + 1)}: waarde">
+          <button type="button" class="x" data-del-met aria-label="Meting ${escA(j + 1)} verwijderen">${ICON.x}</button></div>`).join('')}</div>` : ''}
         <button type="button" class="add-link" data-add-met>${ICON.plus}Meting toevoegen</button>
         <div data-stand>${standHTML(i)}</div>
       </div>
@@ -1492,8 +1493,8 @@ function indHTML(d, i, k) {
 
 function doelHTML(d) {
   const src = d.from ? `<p class="mini">Overgenomen uit ${esc(d.from)}${d.note ? ': ' + esc(d.note) : ''}</p>` : d.note ? `<p class="mini">${esc(d.note)}</p>` : '';
-  return `<article class="card doel${d.open ? ' open' : ''}" data-doel="${esc(d.id)}" id="doel-${esc(d.id)}">
-    <button type="button" class="doel-head" data-toggle aria-expanded="${!!d.open}">${headInner(d)}</button>
+  return `<article class="card doel${escA(d.open ? ' open' : '')}" data-doel="${esc(d.id)}" id="doel-${esc(d.id)}">
+    <button type="button" class="doel-head" data-toggle aria-expanded="${escA(!!d.open)}">${headInner(d)}</button>
     ${d.open ? `<div class="doel-body">
       <div class="chips" data-chips>${chipsHTML(d)}</div>
       <div class="sec"><span class="sec-label"><span class="nr" aria-hidden="true">1</span><label for="f-${esc(d.id)}-doel">Doel</label> <span class="hint">wat moet er beter worden, en voor wie?</span></span>
@@ -1516,21 +1517,21 @@ function renderDoelen() {
   renderEmpty();
 }
 function renderDoel(id) {
-  const d = doelById(id), el = document.querySelector(`[data-doel="${id}"]`);
+  const d = doelById(id), el = document.querySelector(`[data-doel="${escA(id)}"]`);
   if (!d || !el) { renderDoelen(); return; }
   el.outerHTML = doelHTML(d);
-  const nu = document.querySelector(`[data-doel="${id}"]`);
+  const nu = document.querySelector(`[data-doel="${escA(id)}"]`);
   nu.querySelectorAll('textarea').forEach(autosize);
   drawCharts(nu);
 }
 // Tijdens het typen alleen de afgeleide delen bijwerken, zodat de cursor in het veld blijft.
 function refreshDoel(id) {
-  const d = doelById(id), el = document.querySelector(`[data-doel="${id}"]`);
+  const d = doelById(id), el = document.querySelector(`[data-doel="${escA(id)}"]`);
   if (!d || !el) return;
   el.querySelector('.doel-head').innerHTML = headInner(d);
   const ch = el.querySelector('[data-chips]'); if (ch) ch.innerHTML = chipsHTML(d);
   d.inds.forEach(i => {
-    const box = el.querySelector(`[data-ind="${i.id}"]`); if (!box) return;
+    const box = el.querySelector(`[data-ind="${escA(i.id)}"]`); if (!box) return;
     const n = box.querySelector('[data-next]'); if (n) n.innerHTML = nextHTML(i);
     const s = box.querySelector('[data-stand]'); if (s) s.innerHTML = standHTML(i);
     const r = box.querySelector('[data-richting]'); if (r && !r.contains(document.activeElement)) r.innerHTML = richtingHTML(i);
@@ -1584,7 +1585,7 @@ function renderAside() {
       <summary>${asideOpen ? 'Minder tonen' : 'Stand per doel tonen'}</summary>
       <ul class="ov-list">${ds.map(d => `<li><button type="button" data-goto="${esc(d.id)}"><span class="ov-d">${esc(d.text.trim() || 'Doel zonder naam')}</span>
         ${d.inds.filter(i => i.name.trim()).map(i => { const st = standOf(i);
-          return `<span class="ov-i"><span class="lbl">${pillHTML(i)}<span class="t">${esc(i.name.trim())}</span></span><span class="bar" aria-hidden="true"><span style="width:${st.pct || 0}%"></span></span><span class="v">${esc(st.pct != null && st.pct > 0 ? st.pct + '%' : st.short === 'gehaald' ? '100%' : '–')}</span></span>`; }).join('') || '<span class="ov-i"><span class="lbl">nog geen indicator</span></span>'}
+          return `<span class="ov-i"><span class="lbl">${pillHTML(i)}<span class="t">${esc(i.name.trim())}</span></span><span class="bar" aria-hidden="true"><span style="width:${escA(st.pct || 0)}%"></span></span><span class="v">${esc(st.pct != null && st.pct > 0 ? st.pct + '%' : st.short === 'gehaald' ? '100%' : '–')}</span></span>`; }).join('') || '<span class="ov-i"><span class="lbl">nog geen indicator</span></span>'}
       </button></li>`).join('')}</ul>
     </details>
     <div class="exp-btns"><button type="button" class="btn-s" data-exp="png">Afbeelding</button><button type="button" class="btn-s" data-exp="pdf">PDF</button></div>
@@ -1651,13 +1652,13 @@ document.addEventListener('keydown', e => {
 function jumpTo(doelId, indId, f) {
   const d = doelById(doelId); if (!d) return;
   if (!d.open) { d.open = true; save(); renderDoel(d.id); renderSignals(); }
-  const card = document.querySelector(`[data-doel="${doelId}"]`); if (!card) return;
-  const box = indId ? card.querySelector(`[data-ind="${indId}"]`) : card;
+  const card = document.querySelector(`[data-doel="${escA(doelId)}"]`); if (!card) return;
+  const box = indId ? card.querySelector(`[data-ind="${escA(indId)}"]`) : card;
   let el = null, mark = null;
   if (f === 'doel') el = card.querySelector('[data-df="text"]');
-  else if (box && ['soort', 'vorm', 'bron', 'richting'].includes(f)) { mark = box.querySelector(`[data-group="${f}"]`); el = mark && (mark.querySelector('[aria-checked="true"]') || mark.querySelector('[role="radio"]')); }
-  else if (box && f.startsWith('met:')) { const [, mid, k] = f.split(':'); el = box.querySelector(`[data-met="${mid}"] [data-mf="${k}"]`); }
-  else if (box) el = box.querySelector(`[data-f="${f}"]`);
+  else if (box && ['soort', 'vorm', 'bron', 'richting'].includes(f)) { mark = box.querySelector(`[data-group="${escA(f)}"]`); el = mark && (mark.querySelector('[aria-checked="true"]') || mark.querySelector('[role="radio"]')); }
+  else if (box && f.startsWith('met:')) { const [, mid, k] = f.split(':'); el = box.querySelector(`[data-met="${escA(mid)}"] [data-mf="${escA(k)}"]`); }
+  else if (box) el = box.querySelector(`[data-f="${escA(f)}"]`);
   if (!el) el = card.querySelector('[data-df="text"]');
   mark = mark || el;
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1679,14 +1680,14 @@ document.addEventListener('click', e => {
   if (t.closest('#new-plan')) { addPlan(); return; }
   if (t.closest('#sig-jump')) { nextSignal(); return; }
   const go = t.closest('[data-goto]');
-  if (go) { const d = doelById(go.dataset.goto); if (d) { if (!d.open) { d.open = true; save(); renderDoel(d.id); renderSignals(); } const el = document.querySelector(`[data-doel="${d.id}"]`); el.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block:'start' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1400); } return; }
+  if (go) { const d = doelById(go.dataset.goto); if (d) { if (!d.open) { d.open = true; save(); renderDoel(d.id); renderSignals(); } const el = document.querySelector(`[data-doel="${escA(d.id)}"]`); el.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block:'start' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1400); } return; }
   const card = t.closest('[data-doel]'); if (!card) return;
   const d = doelById(card.dataset.doel); if (!d) return;
   const jump = t.closest('[data-jump]');
   if (jump) { const [ind, f] = jump.dataset.jump.split('|'); jumpTo(d.id, ind, f); return; }
   if (t.closest('[data-toggle]')) {
     d.open = !d.open; if (!d.open) delete d.fresh; save(); renderDoel(d.id); renderSignals();
-    if (!d.open) { const el = document.querySelector(`[data-doel="${d.id}"]`); if (el.getBoundingClientRect().top < 0) el.scrollIntoView({ block:'start' }); }
+    if (!d.open) { const el = document.querySelector(`[data-doel="${escA(d.id)}"]`); if (el.getBoundingClientRect().top < 0) el.scrollIntoView({ block:'start' }); }
     return;
   }
   const pick = t.closest('[data-pick]');
@@ -1698,7 +1699,7 @@ document.addEventListener('click', e => {
   }
   if (t.closest('[data-add-ind]')) {
     const i = newInd(); d.inds.push(i); save(); renderDoel(d.id); refreshDerived();
-    const el = document.querySelector(`[data-ind="${i.id}"] [data-f="name"]`); if (el) { el.scrollIntoView({ block:'center' }); el.focus({ preventScroll:true }); }
+    const el = document.querySelector(`[data-ind="${escA(i.id)}"] [data-f="name"]`); if (el) { el.scrollIntoView({ block:'center' }); el.focus({ preventScroll:true }); }
     if (d.inds.length > MAX_IND) toast('Kies er hooguit drie; meer meet je toch niet.');
     return;
   }
@@ -1710,7 +1711,7 @@ document.addEventListener('click', e => {
   if (t.closest('[data-add-met]')) {
     const i = indOf(d, t); if (!i) return;
     const m = { id:uid(), d:isoToday(), v:'' }; i.metingen.push(m); save(); renderDoel(d.id); refreshDerived();
-    const el = document.querySelector(`[data-met="${m.id}"] [data-mf="v"]`); if (el) el.focus();
+    const el = document.querySelector(`[data-met="${escA(m.id)}"] [data-mf="v"]`); if (el) el.focus();
     return;
   }
   if (t.closest('[data-del-met]')) {
@@ -1730,7 +1731,7 @@ $('add-doel').addEventListener('submit', e => {
   const v = $('new-doel').value.trim(); if (!v) { $('new-doel').focus(); return; }
   cur().doelen.forEach(d => { d.open = false; delete d.fresh; });
   const d = newDoel(v); cur().doelen.push(d); $('new-doel').value = ''; save(); render();
-  const el = document.querySelector(`[data-doel="${d.id}"] [data-f="name"]`);
+  const el = document.querySelector(`[data-doel="${escA(d.id)}"] [data-f="name"]`);
   if (el) { el.closest('[data-doel]').scrollIntoView({ block:'start' }); el.focus({ preventScroll:true }); }
 });
 
@@ -1855,14 +1856,14 @@ function buildExport() {
   const p = cur(), e = esc, node = document.createElement('div');
   const H = 'font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#64748b;margin:0 0 6px';
   const pill = i => { const s = soortOf(i.soort); if (!s) return ''; const c = { effect:['#d1fae5', '#065f46'], gebruik:['#ecfdf5', '#065f46'], inspanning:['#f1f5f9', '#334155'] }[s.id];
-    return `<span style="display:inline-block;font-size:11px;font-weight:600;padding:1px 8px;border-radius:999px;background:${c[0]};color:${c[1]};white-space:nowrap">${s.kort}</span>`; };
+    return `<span style="display:inline-block;font-size:11px;font-weight:600;padding:1px 8px;border-radius:999px;background:${escA(c[0])};color:${escA(c[1])};white-space:nowrap">${s.kort}</span>`; };
   const rows = p.doelen.flatMap((d, k) => d.inds.filter(i => i.name.trim()).map(i => {
     const c = calc(i), st = standOf(i, c);
     return `<tr><td style="padding:6px 8px 6px 0;border-top:1px solid #eef2f6;vertical-align:top;color:#64748b">${k + 1}</td>
       <td style="padding:6px 8px;border-top:1px solid #eef2f6;vertical-align:top;color:#1e293b">${e(i.name.trim())}<div style="margin-top:2px">${pill(i)}</div></td>
       <td style="padding:6px 8px;border-top:1px solid #eef2f6;vertical-align:top;white-space:nowrap;font-variant-numeric:tabular-nums">${c.hasNul ? e(shownV(i, i.nul.v, c.nul)) : '<span style="color:#b45309">geen nulmeting</span>'}${c.hasStreef ? ' → ' + e(shownV(i, i.streef.v, c.streef)) : ''}</td>
       <td style="padding:6px 0 6px 8px;border-top:1px solid #eef2f6;vertical-align:top">${e((st.words || st.short).replace(/\.$/, ''))}</td></tr>`; })).join('');
-  let html = rows ? `<div data-oc-keep style="margin-bottom:22px"><div style="${H}">Stand</div><table style="width:100%;border-collapse:collapse;font-size:12.5px;line-height:1.4;color:#334155">
+  let html = rows ? `<div data-oc-keep style="margin-bottom:22px"><div style="${escA(H)}">Stand</div><table style="width:100%;border-collapse:collapse;font-size:12.5px;line-height:1.4;color:#334155">
     <tr style="color:#64748b;font-size:11px;text-align:left"><th style="padding:0 8px 4px 0;font-weight:600">Doel</th><th style="padding:0 8px 4px;font-weight:600">Waaraan zie je het?</th><th style="padding:0 8px 4px;font-weight:600">Nu → streefwaarde</th><th style="padding:0 0 4px 8px;font-weight:600">Stand</th></tr>${rows}</table></div>` : '';
   p.doelen.forEach((d, k) => {
     const named = d.inds.filter(indBegun), sig = doelSignals(d);
@@ -2510,7 +2511,7 @@ document.addEventListener('click', e => {
 
   // #hoe-werkt-dit opent het blok
   function vanAdres(vloeiend) {
-    var h = decodeURIComponent(location.hash.slice(1));
+    var h = location.hash.slice(1); try { h = decodeURIComponent(h); } catch (x) {}
     if (h !== SLUG && h !== d.id) return;
     if (!staat) zet(true, vloeiend);
     requestAnimationFrame(function () { d.scrollIntoView({ behavior: vloeiend && !rustig.matches ? 'smooth' : 'auto', block: 'start' }); });

@@ -1052,7 +1052,7 @@ const ocRich = (() => {
   const inl = s => e(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/(^|[\s(])_(.+?)_(?=[\s).,:;!?]|$)/g, '$1<i>$2</i>');
   const bare = s => String(s).replace(/\*\*(.+?)\*\*/g, '$1').replace(/(^|[\s(])_(.+?)_(?=[\s).,:;!?]|$)/g, '$1$2');
   const TD = 'border:1px solid #cbd5e1;padding:4px 8px;text-align:left;vertical-align:top';
-  const tableHTML = rows => `<table style="border-collapse:collapse;margin:4pt 0">${rows.map((r, i) => `<tr>${r.map(c => i ? `<td style="${TD}">${inl(c)}</td>` : `<th style="${TD};background:#f1f5f9">${inl(c)}</th>`).join('')}</tr>`).join('')}</table>`;
+  const tableHTML = rows => `<table style="border-collapse:collapse;margin:4pt 0">${rows.map((r, i) => `<tr>${r.map(c => i ? `<td style="${escA(TD)}">${inl(c)}</td>` : `<th style="${escA(TD)};background:#f1f5f9">${inl(c)}</th>`).join('')}</tr>`).join('')}</table>`;
   function convert(src) {
     const T = [], H = []; let list = false, table = null;
     const flush = () => { if (list) { H.push('</ul>'); list = false; } if (table) { H.push(tableHTML(table)); table = null; } };
@@ -1171,8 +1171,17 @@ function linkLegacy(retros) {
 }
 // Bestaat de retro waarnaar een actie meeging nog? Dan volg je haar daar op.
 const movedTo = a => (a && a.moved && state.retros.find(x => x.id === a.moved && !x.voorbeeld)) || null;
+/* Een bestand van iemand anders kan in elk veld tekst zetten. Bij het inlezen: datums moeten op een datum lijken en getallen een getal zijn. */
+function ocVeilig(v, k, getal) {
+  if (Array.isArray(v)) return v.map(x => ocVeilig(x, k, getal));
+  if (v && typeof v === 'object') { Object.keys(v).forEach(x => { const r = ocVeilig(v[x], x, getal); if (r === undefined) delete v[x]; else v[x] = r; }); return v; }
+  if (/^(when|by|date|datum|due|deadline)$/.test(k) && typeof v === 'string' && v && !/^\d{4}-\d{2}-\d{2}(T[\d:.]+Z?)?$/.test(v)) return '';
+  if (getal.test(k) && v != null && typeof v !== 'number') { const n = typeof v === 'string' && v.trim() !== '' ? Number(v) : NaN; return Number.isFinite(n) ? n : undefined; }
+  if (typeof v === 'number' && !Number.isFinite(v)) return undefined;
+  return v;
+}
 function load() {
-  try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && Array.isArray(d.retros) && d.retros.length) { d.retros = d.retros.filter(r => r && typeof r === 'object').map(migreer); if (d.retros.length) { linkLegacy(d.retros); return d; } } } catch {}
+  try { const d = ocVeilig(JSON.parse(localStorage.getItem(KEY)), '', /^(votes)$/); if (d && Array.isArray(d.retros) && d.retros.length) { d.retros = d.retros.filter(r => r && typeof r === 'object').map(migreer); if (d.retros.length) { linkLegacy(d.retros); return d; } } } catch {}
   const r = newRetro();
   return { retros:[r], current:r.id, sortVotes:false, col:0, minutes:5 };
 }
@@ -1181,6 +1190,7 @@ function save() { ocAfterSave(); try { localStorage.setItem(KEY, JSON.stringify(
 const cur = () => state.retros.find(r => r.id === state.current) || state.retros[0];
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const escA = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));   // waarde in een attribuut: ook ids, statussen, datums en getallen
 
 /* ---------- Iconen ---------- */
 const I = {
@@ -1208,27 +1218,27 @@ function dotsHTML(v) {
 }
 function noteHTML(n, col) {
   const isAction = cur().actions.some(a => a.fromCard === n.id);
-  return `<li class="note${isAction ? ' is-action' : ''}" data-id="${n.id}" style="--c:${col.c}">
+  return `<li class="note${escA(isAction ? ' is-action' : '')}" data-id="${escA(n.id)}" style="--c:${escA(col.c)}">
     <div class="note-text" id="nt-${esc(String(n.id))}" contenteditable="plaintext-only" spellcheck="false" role="textbox" aria-label="Kaartje">${esc(n.text)}</div>
     <div class="note-foot">
-      <div class="votes" aria-label="${n.votes} stemmen">
+      <div class="votes" aria-label="${escA(n.votes)} stemmen">
         <button class="vote-btn" data-vote="-1" aria-label="Stem minder" aria-describedby="nt-${esc(String(n.id))}">${I.minus}</button>
         <span class="dots">${dotsHTML(n.votes)}</span>
         <button class="vote-btn" data-vote="1" aria-label="Stem meer" aria-describedby="nt-${esc(String(n.id))}">${I.plus}</button>
       </div>
-      <button class="mini make-action${isAction ? ' on' : ''}" aria-describedby="nt-${esc(String(n.id))}" title="${isAction ? 'Staat bij de acties' : 'Maak hier een actie van'}">${I.flag}Actie</button>
+      <button class="mini make-action${escA(isAction ? ' on' : '')}" aria-describedby="nt-${esc(String(n.id))}" title="${escA(isAction ? 'Staat bij de acties' : 'Maak hier een actie van')}">${I.flag}Actie</button>
       <button class="del" aria-label="Verwijder kaartje" aria-describedby="nt-${esc(String(n.id))}">${I.del}</button>
     </div>
   </li>`;
 }
 function actionHTML(a, carried) {
-  return `<li class="action${a.done ? ' done' : ''}" data-id="${a.id}" data-carried="${carried ? 1 : 0}">
-    <button class="check" aria-label="${a.done ? 'Niet meer afgevinkt' : 'Afvinken'}" aria-describedby="at-${esc(String(a.id))}"><span class="box">${I.check}</span></button>
+  return `<li class="action${escA(a.done ? ' done' : '')}" data-id="${escA(a.id)}" data-carried="${escA(carried ? 1 : 0)}">
+    <button class="check" aria-label="${escA(a.done ? 'Niet meer afgevinkt' : 'Afvinken')}" aria-describedby="at-${esc(String(a.id))}"><span class="box">${I.check}</span></button>
     <div class="action-body">
       <div class="action-text" id="at-${esc(String(a.id))}" contenteditable="plaintext-only" spellcheck="false" role="textbox" aria-label="Actie">${esc(a.text)}</div>
       <div class="action-fields">
-        <label class="field${a.who ? '' : ' empty'}" title="Wie">${I.user}<input type="text" data-f="who" value="${esc(a.who || '')}" placeholder="wie" aria-label="Wie"></label>
-        <label class="field${a.when ? '' : ' empty'}" title="Tegen wanneer">${I.cal}<input type="date" data-f="when" value="${esc(a.when || '')}" aria-label="Tegen wanneer"></label>
+        <label class="field${escA(a.who ? '' : ' empty')}" title="Wie">${I.user}<input type="text" data-f="who" value="${esc(a.who || '')}" placeholder="wie" aria-label="Wie"></label>
+        <label class="field${escA(a.when ? '' : ' empty')}" title="Tegen wanneer">${I.cal}<input type="date" data-f="when" value="${esc(a.when || '')}" aria-label="Tegen wanneer"></label>
         ${a.origin ? `<span class="from">uit ${esc(a.origin)}</span>` : ''}
         ${!a.done && movedTo(a) ? `<span class="from">verder opgevolgd in ${esc(movedTo(a).name || 'Naamloos')}</span>` : ''}
       </div>
@@ -1240,7 +1250,7 @@ function actionHTML(a, carried) {
 function renderTabs() {
   $('lists').innerHTML = state.retros.map(r => {
     const n = r.cards.length;
-    return `<button class="tab${r.id === state.current ? ' active' : ''}" data-retro="${r.id}">${esc(r.name || 'Naamloos')}${r.voorbeeld ? '<span class="vb-tag">voorbeeld</span>' : ''}<span class="n">${n || ''}</span></button>`;
+    return `<button class="tab${escA(r.id === state.current ? ' active' : '')}" data-retro="${escA(r.id)}">${esc(r.name || 'Naamloos')}${r.voorbeeld ? '<span class="vb-tag">voorbeeld</span>' : ''}<span class="n">${n || ''}</span></button>`;
   }).join('') + `<button class="tab add" id="new-retro" aria-label="Nieuwe retro">+ Retro</button>`;
 }
 
@@ -1254,15 +1264,15 @@ function render() {
   // kolomtabs (gsm)
   state.col = Math.min(state.col || 0, 2);
   $('col-tabs').innerHTML = F.cols.map((c, i) =>
-    `<button role="tab" aria-selected="${i === state.col}" class="${i === state.col ? 'on' : ''}" data-col="${i}"${c.k ? ` title="${esc(c.t)}"` : ''}>${esc(c.k || c.t)}<span class="n">${r.cards.filter(x => x.col === i).length}</span></button>`).join('');
+    `<button role="tab" aria-selected="${escA(i === state.col)}" class="${escA(i === state.col ? 'on' : '')}" data-col="${escA(i)}"${c.k ? ` title="${esc(c.t)}"` : ''}>${esc(c.k || c.t)}<span class="n">${r.cards.filter(x => x.col === i).length}</span></button>`).join('');
 
   $('board').innerHTML = F.cols.map((c, i) => {
     let cards = r.cards.filter(x => x.col === i);
     if (state.sortVotes) cards = cards.slice().sort((a, b) => b.votes - a.votes);
-    return `<section class="card col${i === state.col ? ' on' : ''}" data-col="${i}">
-      <div class="col-head"><span class="col-dot" style="background:${c.c}"></span><h2 class="col-title">${esc(c.t)}</h2><span class="col-count">${cards.length}</span></div>
+    return `<section class="card col${escA(i === state.col ? ' on' : '')}" data-col="${escA(i)}">
+      <div class="col-head"><span class="col-dot" style="background:${escA(c.c)}"></span><h2 class="col-title">${esc(c.t)}</h2><span class="col-count">${cards.length}</span></div>
       <p class="col-hint">${esc(c.h)}</p>
-      <form class="add-row" data-col="${i}" autocomplete="off">
+      <form class="add-row" data-col="${escA(i)}" autocomplete="off">
         <input class="add-input" placeholder="Typ of plak, druk Enter" aria-label="Nieuw kaartje bij ${esc(c.t)}" enterkeyhint="enter" autocomplete="off" autocapitalize="sentences">
         <button class="add-btn" type="submit" aria-label="Toevoegen">${I.plus}</button>
       </form>
@@ -1326,7 +1336,7 @@ function addCards(col, text) {
   return lines.length;
 }
 function focusInput(col) {
-  const inp = document.querySelector(`.add-row[data-col="${col}"] .add-input`);
+  const inp = document.querySelector(`.add-row[data-col="${escA(col)}"] .add-input`);
   if (inp) inp.focus();
 }
 document.addEventListener('submit', e => {
@@ -1507,7 +1517,7 @@ function openNewDialog() {
     <input class="text-in" id="dlg-name" maxlength="60" value="${esc(defaultName())}">
     <span class="lbl">Formaat</span>
     <div class="formats">
-      ${Object.entries(FORMATS).map(([k, f]) => `<label class="fmt"><input type="radio" name="fmt" value="${k}" ${k === (FORMATS[prev.format] ? prev.format : 'hrp') ? 'checked' : ''}><div><strong>${esc(f.name)}</strong><br><span>${esc(f.cols.map(c => c.h).join(' · '))}</span></div></label>`).join('')}
+      ${Object.entries(FORMATS).map(([k, f]) => `<label class="fmt"><input type="radio" name="fmt" value="${escA(k)}" ${k === (FORMATS[prev.format] ? prev.format : 'hrp') ? 'checked' : ''}><div><strong>${esc(f.name)}</strong><br><span>${esc(f.cols.map(c => c.h).join(' · '))}</span></div></label>`).join('')}
     </div>
     ${carry.length ? `<label class="carry-opt"><input type="checkbox" id="dlg-carry" checked><span>Neem de <strong>${carry.length} open ${carry.length === 1 ? 'actie' : 'acties'}</strong> van '${esc(src.name)}' mee, om op te volgen${ouder ? '<small class="carry-why">Dat is je recentste retro. Zo neem je van elke actie de laatste versie mee.</small>' : ''}</span></label>` : ''}
     <div class="dlg-actions"><button class="btn btn-soft" data-x>Annuleer</button><button class="btn btn-primary" data-ok>Maak retro</button></div>
@@ -1554,7 +1564,7 @@ function exportView(r) {
   const dots = n => n ? `<span style="display:inline-flex;align-items:center;gap:3px;flex-shrink:0;margin-left:10px;font-size:12px;font-weight:700;color:#059669;background:#ecfdf5;border-radius:999px;padding:1px 8px 1px 6px">● ${n}</span>` : '';
   const cols = F.cols.map((c, i) => {
     const cards = r.cards.filter(x => x.col === i).slice().sort((a, b) => b.votes - a.votes);
-    return `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-top:4px solid ${c.c};border-radius:12px;padding:14px 14px 10px">
+    return `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-top:4px solid ${escA(c.c)};border-radius:12px;padding:14px 14px 10px">
       <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:2px">
         <span style="font-size:17px;font-weight:700;color:#1e293b">${e(c.t)}</span>
         <span style="font-size:12px;color:#94a3b8">${cards.length}</span></div>
@@ -1569,7 +1579,7 @@ function exportView(r) {
       ? '<span style="width:16px;height:16px;border-radius:4px;background:#10b981;color:#fff;font-size:11px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">✓</span>'
       : '<span style="width:16px;height:16px;border-radius:4px;border:2px solid #cbd5e1;flex-shrink:0;box-sizing:border-box"></span>';
     return `<div data-oc-keep style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid #f1f5f9;font-size:14px">
-      ${box}<span style="flex:1;color:${a.done ? '#94a3b8' : '#1e293b'};${a.done ? 'text-decoration:line-through;' : ''}">${e(a.text)}</span>
+      ${box}<span style="flex:1;color:${escA(a.done ? '#94a3b8' : '#1e293b')};${escA(a.done ? 'text-decoration:line-through;' : '')}">${e(a.text)}</span>
       <span style="font-size:12px;color:#64748b">${e(meta)}</span></div>`;
   };
   const block = (title, list, note) => `<div style="margin-top:20px;border:1px solid #e2e8f0;border-radius:12px;padding:12px 16px 6px">
@@ -1648,7 +1658,7 @@ $('menu').addEventListener('click', async e => {
 /* Eén retro verwijderen: meteen, met Ongedaan (herstelt ook de plaats in de tabs en de actieve retro) */
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-exp]'); if (!b) return;
-  const m = document.querySelector(`#menu [data-act="${b.dataset.exp}"]`); if (m) m.click();
+  const m = document.querySelector(`#menu [data-act="${escA(b.dataset.exp)}"]`); if (m) m.click();
 });
 /* Voorbeeld: een eigen tabblad, gemarkeerd, telt niet mee in andere tools */
 function exampleRetro() {
@@ -1759,7 +1769,7 @@ $('presets').addEventListener('click', e => {
     const box = document.createElement('div');
     box.className = 'dlg-back';
     box.innerHTML = `<div class="dlg" role="dialog" aria-modal="true"><h2>Eigen duur</h2>
-      <label class="lbl" for="dlg-min">Aantal minuten</label><input class="text-in" id="dlg-min" type="number" min="1" max="120" value="${Math.round(timer.total / 60)}" inputmode="numeric">
+      <label class="lbl" for="dlg-min">Aantal minuten</label><input class="text-in" id="dlg-min" type="number" min="1" max="120" value="${escA(Math.round(timer.total / 60))}" inputmode="numeric">
       <div class="dlg-actions"><button class="btn btn-soft" data-x>Annuleer</button><button class="btn btn-primary" data-ok>Zet timer</button></div></div>`;
     document.body.appendChild(box);
     const inp = box.querySelector('input'); inp.focus(); inp.select();
@@ -2376,7 +2386,7 @@ document.addEventListener('click', e => {
 
   // #hoe-werkt-dit opent het blok
   function vanAdres(vloeiend) {
-    var h = decodeURIComponent(location.hash.slice(1));
+    var h = location.hash.slice(1); try { h = decodeURIComponent(h); } catch (x) {}
     if (h !== SLUG && h !== d.id) return;
     if (!staat) zet(true, vloeiend);
     requestAnimationFrame(function () { d.scrollIntoView({ behavior: vloeiend && !rustig.matches ? 'smooth' : 'auto', block: 'start' }); });

@@ -636,6 +636,8 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
 <div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-text"></span><button id="toast-btn" hidden>Ongedaan</button></div>
 
 <script>
+/* Een cel die begint met = + - of @ zou Excel als formule uitvoeren: zet er een ' voor (gewone getallen blijven). */
+function ocCsvVeilig(s) { s = String(s == null ? '' : s); return /^[=+\-@\t\r]/.test(s) && !/^[+-]?\d+([.,]\d+)*%?$/.test(s) ? "'" + s : s; }
 /* Het actieve project uit de app (oc.project): nieuwe projecten, analyses en lijsten krijgen die naam. */
 function ocProject(fb) { try { const p = JSON.parse(localStorage.getItem('oc.project')); return p && typeof p.name === 'string' && p.name.trim() ? p.name.trim().slice(0, 80) : fb; } catch { return fb; } }
 function ocPickProject(st, arr, cur = 'current') { const p = ocProject(''); if (!p || !st || !Array.isArray(st[arr])) return; const u = st[arr].find(x => x && x.name === p); if (u) st[cur] = u.id; }   // open het actieve project uit de app
@@ -1101,6 +1103,7 @@ const KEY = 'gap.v1';
 const uid = () => Math.random().toString(36).slice(2, 10);
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const escA = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));   // waarde in een attribuut: ook ids, statussen, datums en getallen
 const newGap = theme => ({ id:uid(), theme:theme || '', asis:{ text:'', indicator:'', value:'', unit:'' },
   tobe:{ text:'', value:'', by:'' }, evidence:[], whys:[''], actions:[], impact:0, feas:0, open:true });
 // Vergelijken zoals de kiezer: zonder hoofdletters, dubbele spaties of leestekens aan de rand.
@@ -1120,8 +1123,17 @@ function ocRisicoMerk(d) {
     }));
   } catch {}
 }
+/* Een bestand van iemand anders kan in elk veld tekst zetten. Bij het inlezen: datums moeten op een datum lijken en getallen een getal zijn. */
+function ocVeilig(v, k, getal) {
+  if (Array.isArray(v)) return v.map(x => ocVeilig(x, k, getal));
+  if (v && typeof v === 'object') { Object.keys(v).forEach(x => { const r = ocVeilig(v[x], x, getal); if (r === undefined) delete v[x]; else v[x] = r; }); return v; }
+  if (/^(when|by|date|datum|due|deadline)$/.test(k) && typeof v === 'string' && v && !/^\d{4}-\d{2}-\d{2}(T[\d:.]+Z?)?$/.test(v)) return '';
+  if (getal.test(k) && v != null && typeof v !== 'number') { const n = typeof v === 'string' && v.trim() !== '' ? Number(v) : NaN; return Number.isFinite(n) ? n : undefined; }
+  if (typeof v === 'number' && !Number.isFinite(v)) return undefined;
+  return v;
+}
 function load() {
-  try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && Array.isArray(d.analyses) && d.analyses.length) { ocRisicoMerk(d); return d; } } catch {}
+  try { const d = ocVeilig(JSON.parse(localStorage.getItem(KEY)), '', /^(impact|feas)$/); if (d && Array.isArray(d.analyses) && d.analyses.length) { ocRisicoMerk(d); return d; } } catch {}
   const first = { id:uid(), name:ocProject('Mijn analyse'), question:'', gaps:[] };
   return { analyses:[first], current:first.id };
 }
@@ -1208,14 +1220,14 @@ const ICON = {
 function renderTabs() {
   $('lists').innerHTML = state.analyses.map(a => {
     const n = a.gaps.length;
-    return `<button class="tab${a.id === state.current ? ' active' : ''}" data-list="${esc(a.id)}">${esc(a.name || 'Naamloos')}${a.voorbeeld ? '<span class="vb-tag">voorbeeld</span>' : ''}<span class="n">${n || ''}</span></button>`;
+    return `<button class="tab${escA(a.id === state.current ? ' active' : '')}" data-list="${esc(a.id)}">${esc(a.name || 'Naamloos')}${a.voorbeeld ? '<span class="vb-tag">voorbeeld</span>' : ''}<span class="n">${n || ''}</span></button>`;
   }).join('') + '<button class="tab add" id="new-analysis" aria-label="Nieuwe analyse">+ Analyse</button>';
 }
 
 function evDots(g) {
   return '<span class="ev-dots" title="Bewijs per soort bron">' + TYPES.map(t => {
     const has = g.evidence.some(e => e.type === t.id);
-    return `<i style="${has ? `background:${t.color}` : ''}" title="${esc(t.name)}${has ? '' : ': geen'}"></i>`;
+    return `<i style="${escA(has ? `background:${t.color}` : '')}" title="${esc(t.name)}${escA(has ? '' : ': geen')}"></i>`;
   }).join('') + '</span>';
 }
 
@@ -1224,10 +1236,10 @@ function headInner(g) {
   const aanname = !g.evidence.length ? '<span class="label-aanname">nog niet bewezen</span>' : '';
   return `${ICON.chev}
     <span>
-      <span class="gap-title${g.theme.trim() ? '' : ' empty'}">${esc(g.theme.trim() || 'Thema zonder naam')}</span>
+      <span class="gap-title${escA(g.theme.trim() ? '' : ' empty')}">${esc(g.theme.trim() || 'Thema zonder naam')}</span>
       <span class="gap-sum">${ocRisico(g) ? '<span class="label-risico" title="Overgenomen als risico. Het gaat niet als doel naar het Meetplan, tenzij je een gewenste situatie invult.">risico</span>' : ''}${gt ? `<span class="num">${esc(gt.line)}</span><span>${esc(gt.delta)}</span>` : '<span>nog zonder cijfers</span>'}${evDots(g)}${aanname}</span>
     </span>
-    <span class="gap-right"><span class="qpill ${q.cls}">${q.name}</span></span>`;
+    <span class="gap-right"><span class="qpill ${escA(q.cls)}">${q.name}</span></span>`;
 }
 
 function chipsHTML(g) {
@@ -1243,8 +1255,8 @@ function gapBoxHTML(g) {
   const u = isPct(g) ? '%' : g.asis.unit ? ' ' + esc(g.asis.unit) : '';
   return `<div class="big">${esc(gt.delta)}<span class="dir">${esc(gt.dir)}</span></div>
     <div class="bar" aria-hidden="true"><span class="track"></span>
-      <span class="span" style="left:${Math.min(pa, pb)}%;width:${Math.abs(pb - pa)}%"></span>
-      <span class="pt cur" style="left:${pa}%"></span><span class="pt tgt" style="left:${pb}%"></span></div>
+      <span class="span" style="left:${escA(Math.min(pa, pb))}%;width:${escA(Math.abs(pb - pa))}%"></span>
+      <span class="pt cur" style="left:${escA(pa)}%"></span><span class="pt tgt" style="left:${escA(pb)}%"></span></div>
     <div class="bar-labels">${(() => {
       const nu = `<span>nu <b>${nf(a)}${u}</b></span>`, doel = `<span>doel <b>${nf(b)}${u}</b>${g.tobe.by ? ' · ' + esc(fmtDate(g.tobe.by)) : ''}</span>`;
       return a <= b ? nu + doel : doel + nu; })()}</div>`;
@@ -1253,13 +1265,13 @@ function gapBoxHTML(g) {
 function evHTML(g, e, i = 0) {
   const n = i + 1;
   const t = typeOf(e.type);
-  return `<div class="ev" data-ev="${e.id}" style="border-left-color:${t.color}">
+  return `<div class="ev" data-ev="${escA(e.id)}" style="border-left-color:${escA(t.color)}">
     <div class="ev-top">
-      <select class="field sm" data-ef="type" aria-label="Soort bron">${TYPES.map(x => `<option value="${x.id}"${x.id === e.type ? ' selected' : ''}>${x.name}</option>`).join('')}</select>
-      <select class="field sm" data-ef="strength" aria-label="Sterkte van het bewijs">${STRENGTHS.map(x => `<option value="${x.id}"${x.id === e.strength ? ' selected' : ''}>${x.name}</option>`).join('')}</select>
+      <select class="field sm" data-ef="type" aria-label="Soort bron">${TYPES.map(x => `<option value="${escA(x.id)}"${x.id === e.type ? ' selected' : ''}>${x.name}</option>`).join('')}</select>
+      <select class="field sm" data-ef="strength" aria-label="Sterkte van het bewijs">${STRENGTHS.map(x => `<option value="${escA(x.id)}"${x.id === e.strength ? ' selected' : ''}>${x.name}</option>`).join('')}</select>
     </div>
-    <button class="x" data-del-ev="${e.id}" aria-label="Bron verwijderen">${ICON.x}</button>
-    <input class="field sm note" data-ef="note" aria-label="Bron ${n}: welke bron?" value="${esc(e.note)}" placeholder="Welke bron? Bv. cijfers van onze dienst, 2026" maxlength="160">
+    <button class="x" data-del-ev="${escA(e.id)}" aria-label="Bron verwijderen">${ICON.x}</button>
+    <input class="field sm note" data-ef="note" aria-label="Bron ${escA(n)}: welke bron?" value="${esc(e.note)}" placeholder="Welke bron? Bv. cijfers van onze dienst, 2026" maxlength="160">
     <div class="ev-help">${esc(t.help)}</div>
   </div>`;
 }
@@ -1268,38 +1280,38 @@ function whyHTML(g, w, i) {
   const filled = g.whys.filter(x => x.trim()).length;
   const isRoot = i === g.whys.length - 1 && g.whys.length > 1 && w.trim();
   const label = i === 0 ? 'Waarom?' : isRoot ? 'Echte oorzaak?' : `Waarom ${i + 1}?`;
-  return `<div class="why${isRoot ? ' root' : ''}">
+  return `<div class="why${escA(isRoot ? ' root' : '')}">
     <span class="why-n">${label}</span>
-    <textarea class="field sm grow" rows="1" data-why="${i}" aria-label="${label}" placeholder="${i === 0 ? 'Waarom bestaat dit verschil?' : 'En waarom is dat zo?'}" maxlength="200">${esc(w)}</textarea>
-    ${i > 0 ? `<button class="x" data-del-why="${i}" aria-label="Verwijder ${label.replace('?', '').toLowerCase()}">${ICON.x}</button>` : '<span class="x-ph"></span>'}
+    <textarea class="field sm grow" rows="1" data-why="${escA(i)}" aria-label="${escA(label)}" placeholder="${escA(i === 0 ? 'Waarom bestaat dit verschil?' : 'En waarom is dat zo?')}" maxlength="200">${esc(w)}</textarea>
+    ${i > 0 ? `<button class="x" data-del-why="${escA(i)}" aria-label="Verwijder ${escA(label.replace('?', '').toLowerCase())}">${ICON.x}</button>` : '<span class="x-ph"></span>'}
   </div>`;
 }
 
 function actHTML(a, i = 0) {
   const n = i + 1;
   const missing = a.text.trim() && !a.who.trim();
-  return `<div class="act${a.done ? ' done' : ''}" data-act-id="${a.id}">
-    <button class="box" data-af="done" aria-label="${a.done ? 'Actie ${n} niet meer afgevinkt' : 'Actie ${n} afvinken'}">${ICON.check}</button>
+  return `<div class="act${escA(a.done ? ' done' : '')}" data-act-id="${escA(a.id)}">
+    <button class="box" data-af="done" aria-label="${escA(a.done ? 'Actie ${escA(n)} niet meer afgevinkt' : 'Actie ${escA(n)} afvinken')}">${ICON.check}</button>
     <div class="act-fields">
-      <textarea class="field sm a-text grow" rows="1" data-af="text" aria-label="Actie ${n}: wat is nodig?" placeholder="Wat is nodig?" maxlength="200">${esc(a.text)}</textarea>
+      <textarea class="field sm a-text grow" rows="1" data-af="text" aria-label="Actie ${escA(n)}: wat is nodig?" placeholder="Wat is nodig?" maxlength="200">${esc(a.text)}</textarea>
       <div class="act-meta">
-        <input class="field sm${missing ? ' missing' : ''}" data-af="who" aria-label="Wie, actie ${n}" value="${esc(a.who)}" placeholder="Wie?" maxlength="60">
-        <input class="field sm" type="date" data-af="by" value="${esc(a.by)}" aria-label="Tegen wanneer, actie ${n}">
+        <input class="field sm${escA(missing ? ' missing' : '')}" data-af="who" aria-label="Wie, actie ${escA(n)}" value="${esc(a.who)}" placeholder="Wie?" maxlength="60">
+        <input class="field sm" type="date" data-af="by" value="${esc(a.by)}" aria-label="Tegen wanneer, actie ${escA(n)}">
       </div>
     </div>
-    <button class="x" data-del-act="${a.id}" aria-label="Actie ${n} verwijderen">${ICON.x}</button>
+    <button class="x" data-del-act="${escA(a.id)}" aria-label="Actie ${escA(n)} verwijderen">${ICON.x}</button>
   </div>`;
 }
 
 function segHTML(key, val, lo, hi, title) {
   return `<div><div class="seg-label"><span>${title}</span><b>${val || '–'}</b></div>
-    <div class="seg" role="radiogroup" aria-label="${title}">${[1, 2, 3, 4].map(v => `<button role="radio" aria-checked="${v === val}" class="${v === val ? 'on' : ''}" data-prio="${key}" data-v="${v}">${v}</button>`).join('')}</div>
+    <div class="seg" role="radiogroup" aria-label="${escA(title)}">${[1, 2, 3, 4].map(v => `<button role="radio" aria-checked="${escA(v === val)}" class="${escA(v === val ? 'on' : '')}" data-prio="${escA(key)}" data-v="${escA(v)}">${v}</button>`).join('')}</div>
     <div class="seg-ends"><span>${lo}</span><span>${hi}</span></div></div>`;
 }
 
 function gapHTML(g) {
-  return `<article class="card gap${g.open ? ' open' : ''}" data-gap="${g.id}" id="gap-${g.id}">
-    <button class="gap-head" data-toggle aria-expanded="${!!g.open}">${headInner(g)}</button>
+  return `<article class="card gap${escA(g.open ? ' open' : '')}" data-gap="${escA(g.id)}" id="gap-${escA(g.id)}">
+    <button class="gap-head" data-toggle aria-expanded="${escA(!!g.open)}">${headInner(g)}</button>
     ${g.open ? `<div class="gap-body">
       <div class="chips" data-chips>${chipsHTML(g)}</div>
       <div class="sec"><span class="sec-label">Thema</span>
@@ -1368,14 +1380,14 @@ function renderGaps() {
   document.querySelectorAll('#gaps textarea').forEach(autosize);
 }
 function renderGap(id) {
-  const g = gapById(id), el = document.querySelector(`[data-gap="${id}"]`);
+  const g = gapById(id), el = document.querySelector(`[data-gap="${escA(id)}"]`);
   if (!g || !el) { renderGaps(); return; }
   el.outerHTML = gapHTML(g);
-  document.querySelectorAll(`[data-gap="${id}"] textarea`).forEach(autosize);
+  document.querySelectorAll(`[data-gap="${escA(id)}"] textarea`).forEach(autosize);
 }
 // Alleen de afgeleide delen bijwerken, zodat de cursor in het invoerveld blijft staan.
 function refreshGap(id) {
-  const g = gapById(id), el = document.querySelector(`[data-gap="${id}"]`);
+  const g = gapById(id), el = document.querySelector(`[data-gap="${escA(id)}"]`);
   if (!g || !el) return;
   el.querySelector('.gap-head').innerHTML = headInner(g);
   const c = el.querySelector('[data-chips]'); if (c) c.innerHTML = chipsHTML(g);
@@ -1405,7 +1417,7 @@ function renderSignals() {
   $('sigbar').innerHTML = n
     ? `<button class="sig-summary" id="sig-jump" title="Spring naar het volgende thema met een aandachtspunt">${ICON.warn}${n} ${n === 1 ? 'aandachtspunt' : 'aandachtspunten'}</button>`
     : `<span class="sig-summary ok">${ICON.ok}Geen aandachtspunten</span>`;
-  $('sig-analysis').innerHTML = analysisSignals(a).map(s => `<div class="sig-analysis${s.soft ? ' soft' : ''}"><span class="dot"></span>${esc(s.text)}</div>`).join('');
+  $('sig-analysis').innerHTML = analysisSignals(a).map(s => `<div class="sig-analysis${escA(s.soft ? ' soft' : '')}"><span class="dot"></span>${esc(s.text)}</div>`).join('');
 }
 
 /* Overzichtskaart: per verschil een balk van nu naar doel, kleur volgt de prioriteit, een stipje per soort bewijs. */
@@ -1415,7 +1427,7 @@ function kloofkaart(a, big) {
   const rows = ranked(a).map((g, i) => {
     const gt = gapText(g), q = quadOf(g);
     const dots = TYPES.map(t => { const has = g.evidence.some(x => x.type === t.id);
-      return `<span title="${e(t.name)}${has ? '' : ': geen'}" style="display:inline-block;width:7px;height:7px;border-radius:2px;background:${has ? t.color : 'transparent'};border:1px solid ${has ? t.color : '#cbd5e1'};box-sizing:border-box"></span>`; }).join('');
+      return `<span title="${escA(e(t.name))}${escA(has ? '' : ': geen')}" style="display:inline-block;width:7px;height:7px;border-radius:2px;background:${escA(has ? t.color : 'transparent')};border:1px solid ${escA(has ? t.color : '#cbd5e1')};box-sizing:border-box"></span>`; }).join('');
     let bar;
     if (gt) {
       const { a: va, b: vb } = gt.c;
@@ -1426,9 +1438,9 @@ function kloofkaart(a, big) {
       bar = `<div style="display:flex;align-items:center;gap:8px">
         <div style="position:relative;flex:1;height:14px">
           <div style="position:absolute;left:0;right:0;top:5px;height:4px;border-radius:2px;background:#f1f5f9"></div>
-          <div style="position:absolute;left:${x1}%;width:${Math.max(0.5, x2 - x1)}%;top:4px;height:6px;border-radius:3px;background:${QBAR[q]}${q === 'liggen' ? ';border:1px dashed #94a3b8;box-sizing:border-box' : ''}"></div>
-          <div style="position:absolute;left:${pos(va)}%;top:1px;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:#fff;border:2px solid #475569;box-sizing:border-box"></div>
-          <div style="position:absolute;left:${pos(vb)}%;top:1px;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:#047857;border:2px solid #fff;box-sizing:border-box;box-shadow:0 0 0 1px #047857"></div>
+          <div style="position:absolute;left:${escA(x1)}%;width:${escA(Math.max(0.5, x2 - x1))}%;top:4px;height:6px;border-radius:3px;background:${escA(QBAR[q])}${escA(q === 'liggen' ? ';border:1px dashed #94a3b8;box-sizing:border-box' : '')}"></div>
+          <div style="position:absolute;left:${escA(pos(va))}%;top:1px;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:#fff;border:2px solid #475569;box-sizing:border-box"></div>
+          <div style="position:absolute;left:${escA(pos(vb))}%;top:1px;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:#047857;border:2px solid #fff;box-sizing:border-box;box-shadow:0 0 0 1px #047857"></div>
         </div>
         <span style="font-size:12px;font-weight:700;color:#1e293b;font-variant-numeric:tabular-nums;white-space:nowrap;min-width:3.25em;text-align:right">${e(pct)}</span></div>
         <div style="font-size:12px;color:#64748b;font-variant-numeric:tabular-nums">${e(gt.line)}</div>`;
@@ -1436,14 +1448,14 @@ function kloofkaart(a, big) {
       bar = `<div style="font-size:12px;color:#64748b;padding:2px 0">nog zonder cijfers</div>`;
     }
     return `<div data-oc-keep style="padding:7px 0;border-top:1px solid #f1f5f9">
-      <div style="display:flex;align-items:baseline;gap:6px;font-size:${fs}px;line-height:1.35;color:#1e293b;margin-bottom:3px">
+      <div style="display:flex;align-items:baseline;gap:6px;font-size:${escA(fs)}px;line-height:1.35;color:#1e293b;margin-bottom:3px">
         <span style="color:#64748b;font-variant-numeric:tabular-nums">${i + 1}</span><span style="flex:1;min-width:0;overflow-wrap:anywhere;font-weight:600">${e(g.theme || 'Thema zonder naam')}</span>
         <span style="display:inline-flex;gap:2px;flex-shrink:0">${dots}</span></div>${bar}</div>`;
   }).join('');
   const legend = `<div style="display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:#64748b;margin-top:6px;align-items:center">
     <span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;border:2px solid #475569;vertical-align:-1px"></span> nu</span>
     <span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#047857;vertical-align:-1px"></span> doel</span>
-    ${['eerst', 'plannen', 'snel'].map(k => `<span><span style="display:inline-block;width:14px;height:6px;border-radius:3px;background:${QBAR[k]};vertical-align:1px"></span> ${QUADS[k].name.toLowerCase()}</span>`).join('')}
+    ${['eerst', 'plannen', 'snel'].map(k => `<span><span style="display:inline-block;width:14px;height:6px;border-radius:3px;background:${escA(QBAR[k])};vertical-align:1px"></span> ${QUADS[k].name.toLowerCase()}</span>`).join('')}
     <span>stipjes: bewijs per soort</span></div>`;
   return rows + legend;
 }
@@ -1467,12 +1479,12 @@ function renderAside() {
       <summary>${asideOpen ? 'Minder tonen' : 'Bewijs en volgorde tonen'}</summary>
       <div class="ov-sec"><div class="ov-sub">Hoeveel bewijs heb je?</div>
         ${n ? `<div class="cov">${cov.map(({ t, k }) => `<div class="cov-row" title="${esc(t.help)}">
-          <span class="lbl"><span class="sw" style="background:${t.color}"></span>${t.name}</span>
-          <span class="cov-bar"><span style="width:${n ? k / n * 100 : 0}%;background:${t.color}"></span></span>
+          <span class="lbl"><span class="sw" style="background:${escA(t.color)}"></span>${t.name}</span>
+          <span class="cov-bar"><span style="width:${escA(n ? k / n * 100 : 0)}%;background:${escA(t.color)}"></span></span>
           <span class="v">${k}/${n}</span></div>`).join('')}</div>` : '<p class="ov-empty">Nog geen verschillen.</p>'}
       </div>
       <div class="ov-sec"><div class="ov-sub">Volgorde</div>
-        ${n ? `<ol class="rank">${rank.map((g, i) => `<li><button data-goto="${g.id}" aria-label="${i + 1}. ${esc(g.theme || 'Thema zonder naam')}, ${QUADS[quadOf(g)].name}"><span class="r">${i + 1}</span><span class="t">${esc(g.theme || 'Thema zonder naam')}</span><span class="qpill ${QUADS[quadOf(g)].cls}">${QUADS[quadOf(g)].name}</span></button></li>`).join('')}</ol>`
+        ${n ? `<ol class="rank">${rank.map((g, i) => `<li><button data-goto="${escA(g.id)}" aria-label="${escA(i + 1)}. ${esc(g.theme || 'Thema zonder naam')}, ${escA(QUADS[quadOf(g)].name)}"><span class="r">${i + 1}</span><span class="t">${esc(g.theme || 'Thema zonder naam')}</span><span class="qpill ${escA(QUADS[quadOf(g)].cls)}">${QUADS[quadOf(g)].name}</span></button></li>`).join('')}</ol>`
           : '<p class="ov-empty">Wat veel oplevert en makkelijk is, komt eerst.</p>'}
       </div>
     </details>
@@ -1485,7 +1497,7 @@ function render() {
 }
 function refreshDerived() { renderTabs(); renderSignals(); renderAside(); }
 
-$('how-types').innerHTML = TYPES.map(t => `<div><span style="width:8px;height:8px;border-radius:2px;background:${t.color};flex-shrink:0;display:inline-block;transform:translateY(-1px)"></span><span><b>${t.name}</b>: ${esc(t.help.split(':')[1] ? t.help.split(':')[1].trim() : t.help)}</span></div>`).join('');
+$('how-types').innerHTML = TYPES.map(t => `<div><span style="width:8px;height:8px;border-radius:2px;background:${escA(t.color)};flex-shrink:0;display:inline-block;transform:translateY(-1px)"></span><span><b>${t.name}</b>: ${esc(t.help.split(':')[1] ? t.help.split(':')[1].trim() : t.help)}</span></div>`).join('');
 
 /* ---------- Melding met Ongedaan ---------- */
 let undoFn = null, undoVersion = -1, toastTimer = null;
@@ -1549,7 +1561,7 @@ document.addEventListener('keydown', e => {
     e.preventDefault();
     const card = t.closest('[data-gap]'), g = gapById(card.dataset.gap);
     if (+t.dataset.why === g.whys.length - 1 && t.value.trim() && g.whys.length < MAX_WHY) addWhy(g);
-    else { const next = card.querySelector(`[data-why="${+t.dataset.why + 1}"]`); if (next) next.focus(); else t.blur(); }
+    else { const next = card.querySelector(`[data-why="${escA(+t.dataset.why + 1)}"]`); if (next) next.focus(); else t.blur(); }
   }
   if (e.key === 'Enter' && t.dataset && t.dataset.af === 'text') {
     e.preventDefault(); const who = t.closest('[data-act-id]').querySelector('[data-af="who"]'); who.focus();
@@ -1560,7 +1572,7 @@ document.addEventListener('keydown', e => {
 function addWhy(g) {
   if (g.whys.length >= MAX_WHY) return;
   g.whys.push(''); save(); renderGap(g.id); refreshDerived();
-  const el = document.querySelector(`[data-gap="${g.id}"] [data-why="${g.whys.length - 1}"]`); if (el) el.focus();
+  const el = document.querySelector(`[data-gap="${escA(g.id)}"] [data-why="${escA(g.whys.length - 1)}"]`); if (el) el.focus();
 }
 
 document.addEventListener('click', e => {
@@ -1576,7 +1588,7 @@ document.addEventListener('click', e => {
 
   if (t.closest('[data-toggle]')) {
     g.open = !g.open; save(); renderGap(g.id); renderSignals();
-    if (!g.open) { const el = document.querySelector(`[data-gap="${g.id}"]`); if (el.getBoundingClientRect().top < 0) el.scrollIntoView({ block:'start' }); }
+    if (!g.open) { const el = document.querySelector(`[data-gap="${escA(g.id)}"]`); if (el.getBoundingClientRect().top < 0) el.scrollIntoView({ block:'start' }); }
     return;
   }
   if (t.closest('[data-add-ev]')) {
@@ -1585,7 +1597,7 @@ document.addEventListener('click', e => {
     const type = ['data', 'nagekeken', 'stakeholders', 'onderzoek', 'ervaring'].find(x => !used.has(x)) || 'data';
     const ev = { id:uid(), type, note:'', strength:'redelijk' };
     g.evidence.push(ev); save(); renderGap(g.id); refreshDerived();
-    const el = document.querySelector(`[data-ev="${ev.id}"] [data-ef="note"]`); if (el) el.focus();
+    const el = document.querySelector(`[data-ev="${escA(ev.id)}"] [data-ef="note"]`); if (el) el.focus();
     return;
   }
   const dEv = t.closest('[data-del-ev]');
@@ -1600,7 +1612,7 @@ document.addEventListener('click', e => {
   if (t.closest('[data-add-act]')) {
     const a = { id:uid(), text:'', who:'', by:'', done:false };
     g.actions.push(a); save(); renderGap(g.id); refreshDerived();
-    const el = document.querySelector(`[data-act-id="${a.id}"] [data-af="text"]`); if (el) el.focus();
+    const el = document.querySelector(`[data-act-id="${escA(a.id)}"] [data-af="text"]`); if (el) el.focus();
     return;
   }
   const box = t.closest('[data-af="done"]');
@@ -1623,7 +1635,7 @@ document.addEventListener('click', e => {
 function openAndScroll(id) {
   const g = gapById(id); if (!g) return;
   if (!g.open) { g.open = true; save(); renderGap(id); }
-  const el = document.querySelector(`[data-gap="${id}"]`);
+  const el = document.querySelector(`[data-gap="${escA(id)}"]`);
   el.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block:'start' });
   el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1400);
 }
@@ -1639,7 +1651,7 @@ $('add-gap').addEventListener('submit', e => {
   const v = $('new-gap').value.trim(); if (!v) { $('new-gap').focus(); return; }
   cur().gaps.forEach(g => g.open = false);
   const g = newGap(v); cur().gaps.push(g); $('new-gap').value = ''; save(); render();
-  const el = document.querySelector(`[data-gap="${g.id}"] [data-f="asis.text"]`);
+  const el = document.querySelector(`[data-gap="${escA(g.id)}"] [data-f="asis.text"]`);
   if (el) { el.closest('[data-gap]').scrollIntoView({ block:'start' }); el.focus({ preventScroll:true }); }
 });
 
@@ -1764,7 +1776,7 @@ function asMarkdown() {
   return md.replace(/^#{1,6}\s+/gm, '').replace(/^>\s?/gm, '').replace(/\*\*(.+?)\*\*/g, '$1').replace(/_\((.+?)\)_/g, '($1)').replace(/\n{3,}/g, '\n\n');
 }
 function asCSV() {
-  const cell = v => { const s = String(v == null ? '' : v); return /[;"\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  const cell = v => { const s = ocCsvVeilig(v); return /[;"\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
   const head = ['Rang','Thema','Huidige situatie','Wat meet je','Huidige waarde','Maat','Gewenste situatie','Doel','Tegen','Verschil','Bewijs','Aantal bronnen','Nog niet bewezen','Echte oorzaak','Waarom-keten','Acties','Impact','Haalbaarheid','Prioriteit','Signalen'];
   const rows = ranked(cur()).map((g, i) => {
     const gt = gapText(g), whys = g.whys.filter(w => w.trim());
@@ -1793,52 +1805,52 @@ function buildExport() {
   if (n) html += `<div data-oc-keep style="margin-bottom:20px"><div style="font-size:18px;font-weight:700;color:#1e293b;margin-bottom:6px">Overzicht van verschillen</div>${kloofkaart(a, true)}</div>`;
   // overzicht
   html += `<div data-oc-keep style="display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:14px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:22px">
-    <div><div style="${S.h}">Overzicht</div>
+    <div><div style="${escA(S.h)}">Overzicht</div>
       <div style="font-size:13px;color:#334155;line-height:1.7">${n} ${n === 1 ? 'verschil' : 'verschillen'} · ${sig} ${sig === 1 ? 'aandachtspunt' : 'aandachtspunten'} · ${assum} nog niet bewezen</div>
-      <div style="${S.h};margin-top:10px">Hoeveel bewijs heb je?</div>
+      <div style="${escA(S.h)};margin-top:10px">Hoeveel bewijs heb je?</div>
       ${TYPES.map(t => { const k = a.gaps.filter(g => g.evidence.some(x => x.type === t.id)).length;
         return `<div style="display:grid;grid-template-columns:110px 1fr 34px;gap:8px;align-items:center;font-size:12px;color:#475569;margin:3px 0">
-          <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${t.color};margin-right:6px"></span>${t.name}</span>
-          <span style="height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden"><span style="display:block;height:6px;width:${n ? k / n * 100 : 0}%;background:${t.color}"></span></span>
+          <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${escA(t.color)};margin-right:6px"></span>${t.name}</span>
+          <span style="height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden"><span style="display:block;height:6px;width:${escA(n ? k / n * 100 : 0)}%;background:${escA(t.color)}"></span></span>
           <span style="text-align:right">${k}/${n}</span></div>`; }).join('')}
-      ${analysisSignals(a).map(s => `<div style="font-size:12px;color:${s.soft ? '#64748b' : '#b45309'};margin-top:6px">Let op: ${e(s.text)}</div>`).join('')}
+      ${analysisSignals(a).map(s => `<div style="font-size:12px;color:${escA(s.soft ? '#64748b' : '#b45309')};margin-top:6px">Let op: ${e(s.text)}</div>`).join('')}
     </div>
-    <div><div style="${S.h}">Volgorde</div>
+    <div><div style="${escA(S.h)}">Volgorde</div>
       ${ranked(a).map((g, i) => `<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;font-size:13px;color:#1e293b;padding:4px 0;border-bottom:1px solid #eef2f6">
-        <span><span style="color:#94a3b8;margin-right:6px">${i + 1}</span>${e(g.theme || 'Thema zonder naam')}</span><span style="${S.pill(...qc[quadOf(g)])};white-space:nowrap">${QUADS[quadOf(g)].name}</span></div>`).join('')}
+        <span><span style="color:#94a3b8;margin-right:6px">${i + 1}</span>${e(g.theme || 'Thema zonder naam')}</span><span style="${escA(S.pill(...qc[quadOf(g)]))};white-space:nowrap">${QUADS[quadOf(g)].name}</span></div>`).join('')}
     </div></div>`;
   ranked(a).forEach((g, i) => {
     const gt = gapText(g), s = gapSignals(g), whys = g.whys.filter(w => w.trim());
     html += `<div data-oc-keep style="padding:16px 0 18px;border-top:1px solid #e2e8f0">
       <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:10px">
         <div style="font-size:17px;font-weight:700;color:#1e293b">${i + 1}. ${e(g.theme || 'Thema zonder naam')}</div>
-        <div style="white-space:nowrap"><span style="${S.pill(...qc[quadOf(g)])}">${QUADS[quadOf(g)].name}</span> <span style="font-size:12px;color:#64748b;margin-left:6px">${rated(g) ? `impact ${g.impact}/4 · haalbaarheid ${g.feas}/4` : ''}</span></div>
+        <div style="white-space:nowrap"><span style="${escA(S.pill(...qc[quadOf(g)]))}">${QUADS[quadOf(g)].name}</span> <span style="font-size:12px;color:#64748b;margin-left:6px">${rated(g) ? `impact ${g.impact}/4 · haalbaarheid ${g.feas}/4` : ''}</span></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
         <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px">
-          <div style="${S.h}">Huidige situatie ${g.evidence.length ? '' : '<span style="color:#d97706;border:1px dashed #f59e0b;border-radius:4px;padding:0 5px;margin-left:4px">nog niet bewezen</span>'}</div>
-          <p style="${S.p}">${e(g.asis.text || '—')}</p>
-          ${g.asis.indicator || g.asis.value ? `<p style="${S.p};color:#64748b;font-size:12px;margin-top:4px">${e(g.asis.indicator)}${g.asis.value ? `: <b style="color:#1e293b">${e(g.asis.value)} ${e(g.asis.unit)}</b>` : ''}</p>` : ''}
+          <div style="${escA(S.h)}">Huidige situatie ${g.evidence.length ? '' : '<span style="color:#d97706;border:1px dashed #f59e0b;border-radius:4px;padding:0 5px;margin-left:4px">nog niet bewezen</span>'}</div>
+          <p style="${escA(S.p)}">${e(g.asis.text || '—')}</p>
+          ${g.asis.indicator || g.asis.value ? `<p style="${escA(S.p)};color:#64748b;font-size:12px;margin-top:4px">${e(g.asis.indicator)}${g.asis.value ? `: <b style="color:#1e293b">${e(g.asis.value)} ${e(g.asis.unit)}</b>` : ''}</p>` : ''}
         </div>
         <div style="background:#ecfdf5;border:1px solid #cfe9dd;border-radius:8px;padding:10px 12px">
-          <div style="${S.h}">Gewenste situatie</div>
-          <p style="${S.p}">${e(g.tobe.text || '—')}</p>
-          ${g.tobe.value ? `<p style="${S.p};color:#64748b;font-size:12px;margin-top:4px">Doel: <b style="color:#1e293b">${e(g.tobe.value)} ${e(g.asis.unit)}</b>${g.tobe.by ? ` · tegen ${e(fmtDate(g.tobe.by))}` : ''}</p>` : ''}
+          <div style="${escA(S.h)}">Gewenste situatie</div>
+          <p style="${escA(S.p)}">${e(g.tobe.text || '—')}</p>
+          ${g.tobe.value ? `<p style="${escA(S.p)};color:#64748b;font-size:12px;margin-top:4px">Doel: <b style="color:#1e293b">${e(g.tobe.value)} ${e(g.asis.unit)}</b>${g.tobe.by ? ` · tegen ${e(fmtDate(g.tobe.by))}` : ''}</p>` : ''}
         </div>
       </div>
-      <p style="${S.p};margin-top:10px"><b>Verschil:</b> ${gt ? `${e(gt.line)} · ${e(gt.delta)} <span style="color:#64748b">(${e(gt.dir)})</span>` : '<span style="color:#64748b">kwalitatief</span>'}</p>
+      <p style="${escA(S.p)};margin-top:10px"><b>Verschil:</b> ${gt ? `${e(gt.line)} · ${e(gt.delta)} <span style="color:#64748b">(${e(gt.dir)})</span>` : '<span style="color:#64748b">kwalitatief</span>'}</p>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:12px">
-        <div><div style="${S.h}">Bewijs</div>
-          ${g.evidence.length ? g.evidence.map(x => { const t = typeOf(x.type); return `<div style="font-size:12px;line-height:1.45;color:#334155;margin-bottom:5px;padding-left:8px;border-left:3px solid ${t.color}"><b>${t.name}</b> <span style="color:#64748b">(${x.strength})</span>${x.note ? `<br>${e(x.note)}` : ''}</div>`; }).join('')
+        <div><div style="${escA(S.h)}">Bewijs</div>
+          ${g.evidence.length ? g.evidence.map(x => { const t = typeOf(x.type); return `<div style="font-size:12px;line-height:1.45;color:#334155;margin-bottom:5px;padding-left:8px;border-left:3px solid ${escA(t.color)}"><b>${t.name}</b> <span style="color:#64748b">(${x.strength})</span>${x.note ? `<br>${e(x.note)}` : ''}</div>`; }).join('')
             : '<div style="font-size:12px;color:#b45309">Geen bron: dit is nog niet bewezen</div>'}
         </div>
-        <div><div style="${S.h}">Waarom</div>
-          ${whys.length ? whys.map((w, k) => `<div style="font-size:12px;line-height:1.45;color:${k === whys.length - 1 && whys.length > 1 ? '#059669' : '#334155'};margin-bottom:4px;padding-left:${k * 8}px">${k + 1}. ${e(w)}</div>`).join('') : '<div style="font-size:12px;color:#94a3b8">Nog niet onderzocht</div>'}
+        <div><div style="${escA(S.h)}">Waarom</div>
+          ${whys.length ? whys.map((w, k) => `<div style="font-size:12px;line-height:1.45;color:${escA(k === whys.length - 1 && whys.length > 1 ? '#059669' : '#334155')};margin-bottom:4px;padding-left:${k * 8}px">${k + 1}. ${e(w)}</div>`).join('') : '<div style="font-size:12px;color:#94a3b8">Nog niet onderzocht</div>'}
         </div>
-        <div><div style="${S.h}">Wat is nodig</div>
+        <div><div style="${escA(S.h)}">Wat is nodig</div>
           ${g.actions.length ? g.actions.map(x => `<div style="display:flex;gap:6px;font-size:12px;line-height:1.45;color:#334155;margin-bottom:5px">
-            <span style="flex:none;width:12px;height:12px;margin-top:2px;border-radius:3px;${x.done ? 'background:#10b981' : 'border:1.5px solid #94a3b8'}"></span>
-            <span style="${x.done ? 'color:#94a3b8;text-decoration:line-through' : ''}">${e(x.text || '—')}<br><span style="color:${x.who ? '#64748b' : '#b45309'}">${x.who ? e(x.who) : 'wie?'}${x.by ? ' · ' + e(fmtDate(x.by)) : ''}</span></span></div>`).join('')
+            <span style="flex:none;width:12px;height:12px;margin-top:2px;border-radius:3px;${escA(x.done ? 'background:#10b981' : 'border:1.5px solid #94a3b8')}"></span>
+            <span style="${escA(x.done ? 'color:#94a3b8;text-decoration:line-through' : '')}">${e(x.text || '—')}<br><span style="color:${escA(x.who ? '#64748b' : '#b45309')}">${x.who ? e(x.who) : 'wie?'}${x.by ? ' · ' + e(fmtDate(x.by)) : ''}</span></span></div>`).join('')
             : '<div style="font-size:12px;color:#94a3b8">Nog geen acties</div>'}
         </div>
       </div>
@@ -2451,7 +2463,7 @@ document.addEventListener('click', e => {
 
   // #hoe-werkt-dit opent het blok
   function vanAdres(vloeiend) {
-    var h = decodeURIComponent(location.hash.slice(1));
+    var h = location.hash.slice(1); try { h = decodeURIComponent(h); } catch (x) {}
     if (h !== SLUG && h !== d.id) return;
     if (!staat) zet(true, vloeiend);
     requestAnimationFrame(function () { d.scrollIntoView({ behavior: vloeiend && !rustig.matches ? 'smooth' : 'auto', block: 'start' }); });

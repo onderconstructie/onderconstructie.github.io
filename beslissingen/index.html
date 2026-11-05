@@ -1030,6 +1030,7 @@ function save() { ocAfterSave(); try { localStorage.setItem(KEY, JSON.stringify(
 const cur = () => state.logs.find(l => l.id === state.current) || state.logs[0];
 const $ = id => document.getElementById(id);
 const esc = s => String(s || '').replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const escA = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));   // waarde in een attribuut: ook ids, statussen, datums en getallen
 const STATUS = { genomen:'Genomen', herzien:'Herzien', ingetrokken:'Ingetrokken' };
 function fmtDate(iso) {
   if (!iso) return '';
@@ -1050,8 +1051,8 @@ const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strok
 /* Een actierij in het formulier (data-a) of bij een bewaarde beslissing (data-af, met afvinkvakje) */
 function actRowHTML(a, saved) {
   const k = saved ? 'data-af' : 'data-a';
-  return `<div class="act-row${saved ? ' has-check' + (a.done ? ' done' : '') : ''}"${saved ? ` data-aid="${a.id}"` : ''}>
-    ${saved ? `<button type="button" class="act-check" aria-pressed="${!!a.done}" aria-label="Actie klaar"><span class="act-box">${ICON_CHECK}</span></button>` : ''}
+  return `<div class="act-row${escA(saved ? ' has-check' + (a.done ? ' done' : '') : '')}"${saved ? ` data-aid="${escA(a.id)}"` : ''}>
+    ${saved ? `<button type="button" class="act-check" aria-pressed="${escA(!!a.done)}" aria-label="Actie klaar"><span class="act-box">${ICON_CHECK}</span></button>` : ''}
     <input class="field" ${k}="text" value="${esc(a.text || '')}" placeholder="Wat moet er gebeuren?" aria-label="Actie" maxlength="300">
     <input class="field" ${k}="who" value="${esc(a.who || '')}" placeholder="Wie" aria-label="Wie" maxlength="80" list="who-list">
     <input class="field" ${k}="when" type="date" value="${esc(a.when || '')}" aria-label="Tegen wanneer">
@@ -1157,7 +1158,7 @@ $('add-form').addEventListener('submit', e => {
   setReplacing(null);
   openId = null;
   render();
-  const li = document.querySelector(`.dec[data-id="${it.id}"]`);
+  const li = document.querySelector(`.dec[data-id="${escA(it.id)}"]`);
   if (li) { li.classList.add('flash'); }
   $('add-what').focus();
 });
@@ -1173,14 +1174,14 @@ $('replacing-x').addEventListener('click', () => setReplacing(null));
 const CHEV = '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
 function decHTML(it, l) {
   const meta = [fmtDate(it.date), it.who, it.bron ? 'uit ' + it.bron : ''].filter(Boolean).join(' · ');
-  const pill = it.status !== 'genomen' ? `<span class="pill ${it.status}">${STATUS[it.status]}</span>` : '';
+  const pill = it.status !== 'genomen' ? `<span class="pill ${escA(it.status)}">${STATUS[it.status]}</span>` : '';
   const metaLine = (pill || meta) ? `<span class="dec-meta" style="display:block">${pill}${esc(meta)}</span>` : '';
   const by = it.replacedBy && l.items.find(x => x.id === it.replacedBy);
   const rep = it.replaces && l.items.find(x => x.id === it.replaces);
   const links = (by ? `<p class="dec-link">Vervangen door: <b>${esc(by.what)}</b></p>` : '') +
                 (rep ? `<p class="dec-link">Vervangt: <b>${esc(rep.what)}</b></p>` : '');
   const open = it.id === openId;
-  const head = `<button class="dec-head" aria-expanded="${open}">
+  const head = `<button class="dec-head" aria-expanded="${escA(open)}">
       <span>
         <span class="dec-what" style="display:block">${esc(it.what)}</span>
         ${metaLine}
@@ -1190,11 +1191,11 @@ function decHTML(it, l) {
       </span>${CHEV}
     </button>`;
   const acts = it.actions || [];
-  const actList = acts.length ? `<ul class="dec-acts" aria-label="Acties">${acts.map(a => `<li class="dec-act${a.done ? ' done' : ''}" data-aid="${a.id}">
-      <button type="button" class="act-check" aria-pressed="${!!a.done}" aria-label="Klaar: ${esc(a.text)}"><span class="act-box">${ICON_CHECK}</span></button>
+  const actList = acts.length ? `<ul class="dec-acts" aria-label="Acties">${acts.map(a => `<li class="dec-act${escA(a.done ? ' done' : '')}" data-aid="${escA(a.id)}">
+      <button type="button" class="act-check" aria-pressed="${escA(!!a.done)}" aria-label="Klaar: ${esc(a.text)}"><span class="act-box">${ICON_CHECK}</span></button>
       <span><span class="txt">${esc(a.text)}</span>${actMeta(a) ? `<span class="meta">${esc(actMeta(a))}${isLate(a, it) ? ' · <b class="late">te laat</b>' : ''}</span>` : ''}</span></li>`).join('')}</ul>` : '';
-  if (!open) return `<li class="dec ${it.status}" data-id="${it.id}">${head}${actList}</li>`;
-  return `<li class="dec open ${it.status}" data-id="${it.id}">${head}
+  if (!open) return `<li class="dec ${escA(it.status)}" data-id="${escA(it.id)}">${head}${actList}</li>`;
+  return `<li class="dec open ${escA(it.status)}" data-id="${escA(it.id)}">${head}
     <div class="dec-edit">
       <div class="grid">
         <label class="full"><span class="lbl">Beslissing</span><input class="field" data-f="what" value="${esc(it.what)}" maxlength="300"></label>
@@ -1204,7 +1205,7 @@ function decHTML(it, l) {
         <label class="full"><span class="lbl">Alternatieven die afvielen</span><textarea class="field" data-f="alt" maxlength="2000">${esc(it.alt)}</textarea></label>
         <div class="full"><span class="lbl">Status</span>
           <div class="status" role="group" aria-label="Status">
-            ${Object.entries(STATUS).map(([k, v]) => `<button type="button" data-status="${k}" aria-pressed="${it.status === k}">${v}</button>`).join('')}
+            ${Object.entries(STATUS).map(([k, v]) => `<button type="button" data-status="${escA(k)}" aria-pressed="${escA(it.status === k)}">${v}</button>`).join('')}
           </div>
         </div>
         <label class="full" ${it.status === 'genomen' ? 'hidden' : ''}><span class="lbl">${it.status === 'herzien' ? 'Wat is er veranderd, en waarom?' : 'Waarom ingetrokken?'}</span><textarea class="field" data-f="note" maxlength="2000">${esc(it.note)}</textarea></label>
@@ -1225,7 +1226,7 @@ function decHTML(it, l) {
 
 function renderTabs() {
   $('lists').innerHTML = state.logs.map(l =>
-    `<button class="tab${l.id === state.current ? ' active' : ''}" data-log="${l.id}">${esc(l.name || 'Naamloos')}${l.voorbeeld ? '<span class="vb-tag">voorbeeld</span>' : ''}<span class="n">${l.items.length || ''}</span></button>`
+    `<button class="tab${escA(l.id === state.current ? ' active' : '')}" data-log="${escA(l.id)}">${esc(l.name || 'Naamloos')}${l.voorbeeld ? '<span class="vb-tag">voorbeeld</span>' : ''}<span class="n">${l.items.length || ''}</span></button>`
   ).join('') + `<button class="tab add" id="new-log" aria-label="Nieuwe log">+ Log</button>`;
 }
 
@@ -1289,7 +1290,7 @@ $('decs').addEventListener('click', e => {
   if (ck) {
     const { a, it } = findAct(ck); if (!a) return;
     a.done = !a.done; save(); render();
-    const again = document.querySelector(`.dec[data-id="${it.id}"] [data-aid="${a.id}"] .act-check`); again && again.focus();
+    const again = document.querySelector(`.dec[data-id="${escA(it.id)}"] [data-aid="${escA(a.id)}"] .act-check`); again && again.focus();
     return;
   }
   const ax = e.target.closest('.act-x');
@@ -1307,7 +1308,7 @@ $('decs').addEventListener('click', e => {
     // Eén formulier tegelijk: een leeg invulpaneel klapt dicht als je een bewaarde beslissing opent
     if (openId && !$('more').hidden && formLeeg()) setMore(false);
     render();
-    const li = document.querySelector(`.dec[data-id="${it.id}"]`);
+    const li = document.querySelector(`.dec[data-id="${escA(it.id)}"]`);
     if (openId && li) li.scrollIntoView({ block:'nearest', behavior:'smooth' });
     return;
   }
@@ -1315,7 +1316,7 @@ $('decs').addEventListener('click', e => {
   if (st) {
     const { it } = findIt(st); if (!it) return;
     it.status = st.dataset.status; save(); render();
-    const note = document.querySelector(`.dec[data-id="${it.id}"] [data-f="note"]`);
+    const note = document.querySelector(`.dec[data-id="${escA(it.id)}"] [data-f="note"]`);
     if (note && it.status !== 'genomen') note.focus();
     return;
   }
@@ -1326,7 +1327,7 @@ $('decs').addEventListener('click', e => {
   if (act.dataset.act === 'add-action') {
     const a = { id:uid(), text:'', who:'', when:'', done:false };
     (it.actions = it.actions || []).push(a); render();
-    const inp = document.querySelector(`.dec[data-id="${it.id}"] [data-aid="${a.id}"] [data-af="text"]`); inp && inp.focus();
+    const inp = document.querySelector(`.dec[data-id="${escA(it.id)}"] [data-aid="${escA(a.id)}"] [data-af="text"]`); inp && inp.focus();
     return;
   }
   if (act.dataset.act === 'replace') {
@@ -1458,7 +1459,7 @@ function exportName(l) { return ocFileName('beslissingen', l.name || ocProject('
 
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-exp]'); if (!b) return;
-  const m = document.querySelector(`#menu [data-act="${b.dataset.exp}"]`); if (m) m.click();
+  const m = document.querySelector(`#menu [data-act="${escA(b.dataset.exp)}"]`); if (m) m.click();
 });
 /* Voorbeeld: een eigen log, gemarkeerd, telt niet mee in andere tools */
 document.addEventListener('click', e => {
@@ -1486,29 +1487,29 @@ function buildExport(l, q, paginate) {
   const list = sorted(l.items).filter(it => matches(it, qq));
   const node = document.createElement('div');
   const C = { text:'#1e293b', soft:'#475569', muted:'#94a3b8', line:'#e2e8f0', accent:'#059669' };
-  const lab = t => `<div style="font-size:10.5px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${C.muted};margin:10px 0 2px">${t}</div>`;
-  const para = (t, col) => `<div style="font-size:14px;line-height:1.55;color:${col || C.soft};white-space:pre-wrap;word-break:break-word">${esc(t)}</div>`;
+  const lab = t => `<div style="font-size:10.5px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${escA(C.muted)};margin:10px 0 2px">${t}</div>`;
+  const para = (t, col) => `<div style="font-size:14px;line-height:1.55;color:${escA(col || C.soft)};white-space:pre-wrap;word-break:break-word">${esc(t)}</div>`;
   node.innerHTML = list.map((it, i) => {
     const gone = it.status !== 'genomen';
     const nr = list.length - i;
     const meta = [fmtDate(it.date), it.who && `beslist door ${esc(it.who)}`].filter(Boolean).join(' · ');
     const pillCol = it.status === 'ingetrokken' ? '#b91c1c' : '#b45309', pillBg = it.status === 'ingetrokken' ? '#fef2f2' : '#fffbeb';
-    const pill = gone ? `<span style="display:inline-block;margin-left:8px;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:600;color:${pillCol};background:${pillBg};vertical-align:3px">${STATUS[it.status]}</span>` : '';
+    const pill = gone ? `<span style="display:inline-block;margin-left:8px;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:600;color:${escA(pillCol)};background:${escA(pillBg)};vertical-align:3px">${STATUS[it.status]}</span>` : '';
     const rep = it.replaces && l.items.find(x => x.id === it.replaces);
     const by = it.replacedBy && l.items.find(x => x.id === it.replacedBy);
-    return `<div class="x-dec" style="display:grid;grid-template-columns:38px 1fr;gap:0 10px;padding:16px 0 18px;${i ? `border-top:1px solid ${C.line};` : ''}">
-      <div style="font-size:13px;font-weight:700;color:${gone ? C.muted : C.accent};padding-top:2px;font-variant-numeric:tabular-nums">${nr}</div>
-      <div style="${gone ? 'opacity:0.72;' : ''}">
-        <div style="font-size:16.5px;font-weight:700;line-height:1.4;color:${C.text};${it.status === 'ingetrokken' ? 'text-decoration:line-through;text-decoration-color:#cbd5e1;' : ''}">${esc(it.what)}${pill}</div>
-        ${meta ? `<div style="font-size:12.5px;color:${C.muted};margin-top:3px">${meta}</div>` : ''}
+    return `<div class="x-dec" style="display:grid;grid-template-columns:38px 1fr;gap:0 10px;padding:16px 0 18px;${escA(i ? `border-top:1px solid ${C.line};` : '')}">
+      <div style="font-size:13px;font-weight:700;color:${escA(gone ? C.muted : C.accent)};padding-top:2px;font-variant-numeric:tabular-nums">${nr}</div>
+      <div style="${escA(gone ? 'opacity:0.72;' : '')}">
+        <div style="font-size:16.5px;font-weight:700;line-height:1.4;color:${escA(C.text)};${escA(it.status === 'ingetrokken' ? 'text-decoration:line-through;text-decoration-color:#cbd5e1;' : '')}">${esc(it.what)}${pill}</div>
+        ${meta ? `<div style="font-size:12.5px;color:${escA(C.muted)};margin-top:3px">${meta}</div>` : ''}
         ${it.why ? lab('Waarom') + para(it.why) : ''}
         ${it.alt ? lab('Afgevallen alternatieven') + para(it.alt) : ''}
         ${gone && it.note ? lab(it.status === 'ingetrokken' ? 'Ingetrokken' : 'Herzien') + para(it.note) : ''}
-        ${(it.actions || []).length ? lab('Acties') + it.actions.map(a => `<div style="display:flex;gap:8px;align-items:baseline;font-size:14px;line-height:1.5;color:${a.done ? C.muted : C.soft}">
-          <span style="flex:none;width:12px;height:12px;border-radius:3px;${a.done ? `background:${C.accent};` : 'border:1.5px solid #94a3b8;'}display:inline-block;transform:translateY(1px)"></span>
-          <span style="${a.done ? 'text-decoration:line-through;' : ''}">${esc(a.text)}${actMeta(a) ? `<span style="color:${C.muted}"> · ${esc(actMeta(a))}</span>` : ''}</span></div>`).join('') : ''}
-        ${rep ? `<div style="font-size:12.5px;color:${C.soft};margin-top:8px">Vervangt: <em>${esc(rep.what)}</em></div>` : ''}
-        ${by ? `<div style="font-size:12.5px;color:${C.soft};margin-top:8px">Vervangen door: <em>${esc(by.what)}</em></div>` : ''}
+        ${(it.actions || []).length ? lab('Acties') + it.actions.map(a => `<div style="display:flex;gap:8px;align-items:baseline;font-size:14px;line-height:1.5;color:${escA(a.done ? C.muted : C.soft)}">
+          <span style="flex:none;width:12px;height:12px;border-radius:3px;${escA(a.done ? `background:${C.accent};` : 'border:1.5px solid #94a3b8;')}display:inline-block;transform:translateY(1px)"></span>
+          <span style="${escA(a.done ? 'text-decoration:line-through;' : '')}">${esc(a.text)}${actMeta(a) ? `<span style="color:${escA(C.muted)}"> · ${esc(actMeta(a))}</span>` : ''}</span></div>`).join('') : ''}
+        ${rep ? `<div style="font-size:12.5px;color:${escA(C.soft)};margin-top:8px">Vervangt: <em>${esc(rep.what)}</em></div>` : ''}
+        ${by ? `<div style="font-size:12.5px;color:${escA(C.soft)};margin-top:8px">Vervangen door: <em>${esc(by.what)}</em></div>` : ''}
       </div></div>`;
   }).join('');
   const n = list.length;
@@ -1608,7 +1609,7 @@ async function mailGroup(l) {
 $('copy-mail').addEventListener('click', () => copyForMail(cur()));
 $('mail-btn').addEventListener('click', () => mailGroup(cur()));
 function downloadCSV(l) {
-  const cell = v => { let t = String(v || '').replace(/\r?\n/g, ' '); if (/^[=+\-@\t]/.test(t)) t = "'" + t; return `"${t.replace(/"/g, '""')}"`; };
+  const cell = v => { let t = String(v || '').replace(/\r?\n/g, ' '); if (/^[=+\-@\t\r]/.test(t)) t = "'" + t; return `"${t.replace(/"/g, '""')}"`; };
   const rows = [['Datum', 'Beslissing', 'Waarom', 'Beslist door', 'Alternatieven', 'Status', 'Notitie', 'Acties']]
     .concat(sorted(l.items).map(it => [it.date, it.what, it.why, it.who, it.alt, STATUS[it.status], it.note,
       (it.actions || []).map(a => a.text + (actMeta(a) ? ` (${actMeta(a)})` : '') + (a.done ? ' [klaar]' : '')).join(' | ')]));
@@ -2211,7 +2212,7 @@ document.addEventListener('click', e => {
 
   // #hoe-werkt-dit opent het blok
   function vanAdres(vloeiend) {
-    var h = decodeURIComponent(location.hash.slice(1));
+    var h = location.hash.slice(1); try { h = decodeURIComponent(h); } catch (x) {}
     if (h !== SLUG && h !== d.id) return;
     if (!staat) zet(true, vloeiend);
     requestAnimationFrame(function () { d.scrollIntoView({ behavior: vloeiend && !rustig.matches ? 'smooth' : 'auto', block: 'start' }); });
