@@ -1057,6 +1057,43 @@ body.searching #cycle, body.searching #vs-note { display:none !important; }
 
 /* ---------- v42: donkere modus ---------- */
 
+
+/* ---------- Onderdelen (tabbalk) ---------- */
+.tabbar { display:flex; }
+.tab { flex:1 1 0; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; min-height:56px; padding:0.25rem 0.125rem;
+  font:inherit; font-size:0.6875rem; font-weight:600; color:var(--slate-500); background:none; border:0; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+.tab .tab-ic { display:flex; align-items:center; justify-content:center; width:52px; height:30px; border-radius:999px; transition:background .15s; }
+.tab svg { width:22px; height:22px; }
+.tab[aria-current="true"] { color:var(--accent-dark); }
+.tab[aria-current="true"] .tab-ic { background:#d1fae5; }
+.tab:focus-visible { outline:2px solid var(--accent-dark); outline-offset:-2px; border-radius:12px; }
+.tab-lbl { max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+@media (max-width:699.98px) {
+  .tabbar { position:fixed; left:0; right:0; bottom:0; z-index:6; background:rgba(255,255,255,0.97); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+    border-top:1px solid var(--slate-200); padding:0.125rem max(0.25rem, env(safe-area-inset-right,0px)) env(safe-area-inset-bottom,0px) max(0.25rem, env(safe-area-inset-left,0px)); }
+  .home { padding-bottom:calc(64px + env(safe-area-inset-bottom,0px)); }
+  html:not(.in-tool) .app-toast { bottom:calc(env(safe-area-inset-bottom,0px) + 4.75rem); }
+}
+@media (min-width:700px) {
+  .tabbar { position:sticky; top:0; z-index:6; justify-content:center; gap:0.25rem; padding:0.5rem 1rem; background:rgba(255,255,255,0.95);
+    -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); border-bottom:1px solid var(--slate-200); }
+  .tab { flex:none; flex-direction:row; gap:0.375rem; min-height:44px; padding:0.375rem 1rem 0.375rem 0.625rem; border-radius:999px; font-size:0.9375rem; }
+  .tab .tab-ic { width:auto; height:auto; background:none !important; }
+  .tab:hover { background:var(--slate-50); color:var(--slate-700); }
+  .tab[aria-current="true"] { background:#d1fae5; color:var(--accent-dark); }
+}
+html.in-tool .tabbar { visibility:hidden; }
+/* Wat staat in welk onderdeel */
+#home[data-tab="start"] #alltools, #home[data-tab="start"] #tabgroup { display:none; }
+#home:not([data-tab="start"]) #mywork, #home:not([data-tab="start"]) #start, #home:not([data-tab="start"]) #paths-wrap,
+#home:not([data-tab="start"]) #myproj, #home:not([data-tab="start"]) #backup-nudge, #home:not([data-tab="start"]) #install { display:none !important; }
+#home[data-tab="projecten"] #tabgroup, #home[data-tab="projecten"] #cy-always,
+#home[data-tab="projecten"] .group[data-group="vergaderen"], #home[data-tab="projecten"] .group[data-group="zakmes"], #home[data-tab="projecten"] .group[data-group="reset"] { display:none !important; }
+#home[data-tab="vergaderen"] #alltools, #home[data-tab="zakmes"] #alltools, #home[data-tab="reset"] #alltools { display:none; }
+body.searching #home #alltools { display:block !important; }
+body.searching #home #tabgroup { display:none !important; }
+.tabgroup .tg-head { display:grid; grid-template-columns:40px 1fr auto; gap:0.75rem; align-items:center; padding:0.875rem 1rem 0.875rem 0.875rem; position:relative; }
+.tabgroup .tg-head::before { content:''; position:absolute; left:0; top:0.875rem; bottom:0.875rem; width:3px; border-radius:0 3px 3px 0; background:var(--accent); }
 </style>
 </head>
 <body>
@@ -1092,6 +1129,9 @@ body.searching #cycle, body.searching #vs-note { display:none !important; }
       </div>
     </div>
   </header>
+
+  <!-- Onderdelen: op een gsm onderaan (duim), breder bovenaan. Start = je werk en "Waar begin je?" -->
+  <nav class="tabbar" id="tabbar" aria-label="Onderdelen"></nav>
 
   <main class="main">
     <div class="install update" id="update" hidden role="status">
@@ -1141,6 +1181,9 @@ body.searching #cycle, body.searching #vs-note { display:none !important; }
       <div class="proj" id="proj"></div>
       <div class="mproj" id="mproj" hidden></div>
     </section>
+
+    <!-- Vergaderen, Zakmes of Reset: de tools van dat onderdeel -->
+    <section class="tabgroup" id="tabgroup" aria-labelledby="tabgroup-h"></section>
 
     <section class="alltools" id="alltools" aria-labelledby="alltools-h">
       <div class="all-head" id="all-head">
@@ -1202,7 +1245,7 @@ body.searching #cycle, body.searching #vs-note { display:none !important; }
     <span class="sep" aria-hidden="true">·</span>
     <button class="footer-link fb-link" id="fb-open" type="button" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/></svg>Suggestie of fout?</button>
     <span class="sep" aria-hidden="true">·</span>
-    <span class="app-version" title="Versie van de app">v85</span>
+    <span class="app-version" title="Versie van de app">v86</span>
   </footer>
 </div>
 
@@ -1569,8 +1612,44 @@ function setPhase(id, focus, tapped) {
   if (tapped && innerWidth < 760) { const r = $('cy-list').getBoundingClientRect(); if (r.top > innerHeight - 96) $('cy-list').scrollIntoView({ behavior: calm() ? 'auto' : 'smooth', block:'start' }); }
 }
 // Een groep openen (vanuit "Waar begin je?" of een oud adres): dan per onderwerp tonen, zonder die keuze te onthouden.
+/* ---------- Onderdelen: Start, Projecten, Vergaderen, Zakmes, Reset ----------
+   Start = verder waar je was, onlangs gebruikt, Waar begin je?, je stappenplan en je project.
+   Projecten = de kring per fase (of per onderwerp) met de project- en verandertools.
+   Vergaderen, Zakmes en Reset = de tools van dat onderdeel. De app opent altijd op Start. */
+const TAB_IC = {
+  start:'<path d="M4 11l8-7 8 7"/><path d="M6 10v10h4.5v-6h3v6H18V10"/>',
+  projecten:'<rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="11" rx="1.5"/><rect x="17" y="4" width="4" height="7" rx="1.5"/>',
+  vergaderen:'<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M15.5 14.2c3 .2 5.5 2.2 5.5 5.8"/>',
+  zakmes:'<path d="M14.7 6.3a4 4 0 0 0-5.4 5.2L3 17.8V21h3.2l6.3-6.3a4 4 0 0 0 5.2-5.4l-2.6 2.6-2.4-.6-.6-2.4z"/>',
+  reset:'<path d="M5 19c0-8 5-13 14-14 0 9-5 14-13 14"/><path d="M5 19c3-4 6-6 9-7"/>'
+};
+const TABS = [{ id:'start', label:'Start' }, { id:'projecten', label:'Projecten' }, { id:'vergaderen', label:'Vergaderen' }, { id:'zakmes', label:'Zakmes' }, { id:'reset', label:'Reset' }];
+const tabOf = gid => gid === 'verandering' ? 'projecten' : gid;
+let tab = 'start';
+$('tabbar').innerHTML = TABS.map(t => `<button type="button" class="tab" data-tab="${t.id}" aria-current="false"><span class="tab-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${TAB_IC[t.id]}</svg></span><span class="tab-lbl">${t.label}</span></button>`).join('');
+function setTab(id, keep) {
+  if (!TABS.some(t => t.id === id)) id = 'start';
+  tab = id; $('home').dataset.tab = id;
+  $('tabbar').querySelectorAll('.tab').forEach(b => b.setAttribute('aria-current', String(b.dataset.tab === id)));
+  const g = ['vergaderen', 'zakmes', 'reset'].includes(id) ? GROUPS.find(x => x.id === id) : null;
+  const n = g ? TOOLS.filter(t => inGroup(t, id)).length : 0;
+  $('tabgroup').innerHTML = g ? `<div class="group"><div class="tg-head"><span class="group-logo" aria-hidden="true">${bare(g.logo)}</span>
+      <span><h2 class="group-title" id="tabgroup-h" tabindex="-1">${esc(g.label)}</h2><span class="group-note">${esc(g.note)}</span></span>
+      <span class="group-meta"><span class="count">${n}</span></span></div>
+    <div class="list">${groupRows(id)}</div></div>` : '';
+  $('alltools-h').textContent = id === 'projecten' ? 'Projecten en verandering' : 'Alle tools';
+  if (g) markLive();
+  if (!keep) window.scrollTo(0, 0);
+}
+$('tabbar').addEventListener('click', e => {
+  const b = e.target.closest('.tab'); if (!b) return;
+  if (document.body.classList.contains('searching')) closeSearch();
+  setTab(b.dataset.tab);
+});
 function goGroup(id, smooth) {
   if (!GROUPS.some(g => g.id === id)) return;
+  if (tabOf(id) !== 'projecten') { setTab(id); requestAnimationFrame(() => { const hd = $('tabgroup-h'); if (hd) hd.focus({ preventScroll:true }); }); return; }
+  setTab('projecten', true);
   if (view !== 'onderwerp') setView('onderwerp', false, false);
   setCollapsed(id, false); saveCollapsed();
   const g = document.querySelector(`.group[data-group="${id}"]`);
@@ -2940,6 +3019,7 @@ function useTools(list, raw) {
 function renderHome() {
   renderGroups(); renderProject(); renderRecent(); renderFilter(); renderPaths(); syncBackupNudge(); syncSearchHint();
   const cl = closedGroups(); GROUPS.forEach(g => setCollapsed(g.id, cl.includes(g.id)));
+  setTab(tab, true);
   markLive();
 }
 let refreshing = null;
