@@ -409,6 +409,9 @@ input[type="date"]::-webkit-date-and-time-value { text-align:left; min-height:1.
 input[type="date"]::-webkit-calendar-picker-indicator { cursor:pointer; opacity:0.6; }
 /* voorbeeldtekst in velden: contrast minstens 4,5:1 (ook waar de tool zelf niets kiest) */
 input::placeholder, textarea::placeholder { color:#64748b; opacity:1; }
+
+/* Een gedeelde log herken je aan een klein icoon in zijn tab */
+.tab .tab-deel { width:15px; height:15px; margin-right:0.375rem; vertical-align:-2px; flex:none; }
 </style>
 <style>
 /* UX-audit (nov 2026) */
@@ -1325,7 +1328,7 @@ function decHTML(it, l) {
 
 function renderTabs() {
   $('lists').innerHTML = state.logs.map(l =>
-    `<button class="tab${escA(l.id === state.current ? ' active' : '')}" data-log="${escA(l.id)}">${esc(l.name || 'Naamloos')}${l.voorbeeld ? '<span class="vb-tag">voorbeeld</span>' : ''}<span class="n">${l.items.length || ''}</span></button>`
+    `<button class="tab${escA(l.id === state.current ? ' active' : '')}" data-log="${escA(l.id)}">${l.gedeeld === true && window.ocKoppel && ocKoppel.toestand().fase !== 'uit' ? TAB_DEEL : ''}${esc(l.name || 'Naamloos')}${l.voorbeeld ? '<span class="vb-tag">voorbeeld</span>' : ''}<span class="n">${l.items.length || ''}</span></button>`
   ).join('') + `<button class="tab add" id="new-log" aria-label="Nieuwe log">+ Log</button>`;
 }
 
@@ -1752,6 +1755,7 @@ ocOpenOvernemen();
      Verwijderingen ouder dan 90 dagen gaan bij het schrijven weg.
      Haalt het bestand iets weg of vervangt het iets, dan kan je dat 12 seconden ongedaan maken.
      Bij gelijke tijd beslist een vaste vergelijking, zodat beide kanten hetzelfde kiezen. Een voorbeeld gaat nooit mee. */
+const TAB_DEEL = '<svg class="tab-deel" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="gedeeld" role="img"><circle cx="9" cy="8" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="9" r="2.4"/><path d="M15.5 14.2a4.5 4.5 0 0 1 5.5 4.8"/></svg>';   // klein icoon: deze log is gedeeld
 window.ocKoppel = (() => {
   const TOOL = 'beslissingen', DB = 'oc-koppel', STORE = 'bestand', NAAM = 'beslissingen-gedeeld.json';
   const SOORT = 'oc-beslissingen', VERSIE = 1, POLL = 20000, PAUZE = 1000;
@@ -2319,6 +2323,13 @@ window.ocKoppel = (() => {
   };
   let getoond = '';
   function toon() {
+    // het icoon van een gedeelde log in de tabs bijwerken (zonder alles opnieuw te tekenen)
+    try {
+      document.querySelectorAll('.tab[data-log]').forEach(t => {
+        const l = state.logs.find(x => x.id === t.dataset.log), moet = !!l && l.gedeeld === true && fase !== 'uit', s = t.querySelector('.tab-deel');
+        if (moet && !s) t.insertAdjacentHTML('afterbegin', TAB_DEEL); else if (!moet && s) s.remove();
+      });
+    } catch {}
     const box = document.getElementById('kp'), sub = document.getElementById('kp-sub');
     if (!box) return;                              // de pagina laadt net opnieuw
     if (sub) sub.textContent = fase === 'uit' ? 'Standaard blijft alles op dit toestel' : `Gekoppeld met ${naam}`;

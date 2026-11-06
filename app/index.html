@@ -194,6 +194,13 @@ body.filtering #groups, body.filtering #list-tools { display:none; }
 .path-next small { display:block; font-size:0.75rem; color:var(--accent-dark); font-weight:600; text-transform:uppercase; letter-spacing:0.04em; }
 .path-next .chev { margin-left:auto; color:var(--accent); }
 .path.open .path-next { display:none; }
+/* Kaarten naast elkaar even hoog, met "Begin hier" onderaan op dezelfde hoogte (zolang geen enkele kaart openstaat) */
+.paths:not(:has(.path.open)) { align-items:stretch; }
+.paths:not(:has(.path.open)) .path { display:flex; flex-direction:column; }
+.paths:not(:has(.path.open)) .path-head { flex:1; align-items:start; }
+.paths:not(:has(.path.open)) .path-head > svg, .paths:not(:has(.path.open)) .path-head > .toggle { align-self:center; }
+.paths:not(:has(.path.open)) .path-head > span:first-child { display:flex; flex-direction:column; align-self:stretch; }
+.paths:not(:has(.path.open)) .path-bar { margin-top:auto; padding-top:0.5rem; }
 .steps { list-style:none; display:none; border-top:1px solid var(--slate-100); padding:0.375rem 0 0.5rem; }
 .path.open .steps { display:block; }
 .step { position:relative; }
@@ -381,7 +388,11 @@ body.filtering #groups, body.filtering #list-tools { display:none; }
 .tb-title {
   text-align:center; font-weight:600; color:var(--slate-800); font-size:0.9375rem;
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  transition:opacity 0.15s ease;
 }
+/* Staat de grote titel van de tool in beeld, dan is de titel in de balk dubbel: pas tonen als je voorbij die titel scrolt */
+.topbar.kop-in-beeld .tb-title { opacity:0; }
+@media (prefers-reduced-motion:reduce) { .tb-title { transition:none; } }
 .tb-actions { display:flex; }
 /* Stappenplan: zit mee in de bovenbalk (v38), één compacte balk in plaats van twee */
 .topbar { position:relative; }
@@ -1254,7 +1265,7 @@ body.searching #home #tabgroup { display:none !important; }
     <span class="sep" aria-hidden="true">·</span>
     <button class="footer-link fb-link" id="fb-open" type="button" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/></svg>Suggestie of fout?</button>
     <span class="sep" aria-hidden="true">·</span>
-    <span class="app-version" title="Versie van de app">v11.0</span>
+    <span class="app-version" title="Versie van de app">v11.1</span>
   </footer>
 </div>
 
@@ -1915,6 +1926,7 @@ function openTool(id, fromHistory, van, zoek, stap) {
   for (const [k, el] of frames) el.classList.toggle('active', k === id);
   document.documentElement.classList.add('in-tool');
   $('tb-title').textContent = t.title;
+  $('topbar').classList.toggle('kop-in-beeld', f.dataset.kop === '1');
   renderPathbar(id);
   $('viewer').classList.add('open');
   $('viewer').setAttribute('aria-hidden', 'false');
@@ -2019,6 +2031,17 @@ function wire(f, id) {
   // Een eigen installeerknop in een tool is binnen de app overbodig en verwarrend.
   // Plaats voor de schuifbalk altijd vrijhouden: zo verspringt een tool niet opzij als ze langer of korter wordt, of als je van tool wisselt
   try { const st = doc.createElement('style'); st.textContent = '#installChip{display:none!important} html{scrollbar-gutter:stable}'; doc.head.appendChild(st); } catch {}
+  // De titel in de balk alleen tonen als de grote titel van de tool uit beeld is
+  try {
+    const h1 = doc.querySelector('h1');
+    if (h1 && f.contentWindow.IntersectionObserver) {
+      new f.contentWindow.IntersectionObserver(es => {
+        const zien = es[es.length - 1].isIntersecting;
+        f.dataset.kop = zien ? '1' : '';
+        if (frames.get(current) === f) $('topbar').classList.toggle('kop-in-beeld', zien);
+      }).observe(h1);
+    }
+  } catch {}
   // De eigen terugknop van een tool is dubbel met de balk van de app: verbergen.
   doc.querySelectorAll('a.back-link, a.crumb').forEach(a => {
     try { if (HUBS.includes(norm(new URL(a.href, doc.baseURI).pathname))) a.style.display = 'none'; } catch {}
