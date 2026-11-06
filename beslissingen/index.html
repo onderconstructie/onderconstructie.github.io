@@ -440,7 +440,7 @@ input::placeholder, textarea::placeholder { color:#64748b; opacity:1; }
 .kp-chip svg { width:18px; height:18px; flex:none; color:var(--accent-dark); }
 .kp-chip .kp-t { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .kp-chip b { font-weight:600; }
-.kp-chip .kp-tijd { font-variant-numeric:tabular-nums; }
+.kp-chip .kp-tijd { flex:none; margin-left:-0.25rem; white-space:nowrap; font-variant-numeric:tabular-nums; }
 .kp-chip.wacht { border-color:var(--slate-200); background:var(--wit); color:var(--slate-600); }
 .kp-chip.wacht svg { color:var(--slate-500); }
 .kp-bar { display:flex; flex-wrap:wrap; align-items:center; gap:0.5rem 0.75rem; padding:0.5rem 0.5rem 0.5rem 0.875rem; border:1px solid var(--slate-200); border-radius:12px; background:var(--wit); font-size:0.9375rem; line-height:1.4; color:var(--slate-700); }
@@ -2062,7 +2062,7 @@ window.ocKoppel = (() => {
     if (fase === 'actief') meld('Koppeling hervat');
   }
   async function opnieuw() {
-    if (!h) { venster(vensterKies()); return; }
+    if (!h) { vanVenster(vensterKies()); return; }
     let p = 'denied';
     try { p = await h.queryPermission({ mode:'readwrite' }); if (p === 'prompt') p = await h.requestPermission({ mode:'readwrite' }); } catch {}
     if (p === 'granted') {
@@ -2070,7 +2070,7 @@ window.ocKoppel = (() => {
       if (fase === 'actief') { startPoll(); meld('Weer gekoppeld'); return; }
       if (fout === 'slot') { meld('Het bestand is nog niet bereikbaar. Beslissingslog probeert het zo opnieuw.'); return; }
     }
-    venster(vensterKies(true));                                       // verplaatst of hernoemd: kies het opnieuw
+    vanVenster(vensterKies(true));                                    // verplaatst of hernoemd: kies het opnieuw
   }
   async function ontkoppel(stil) {
     if (h && vuil && fase === 'actief') { clearTimeout(schrijfT); await wachtrij(bijwerken); }   // laatste wijziging nog meegeven
@@ -2113,7 +2113,7 @@ window.ocKoppel = (() => {
         <div class="kp-btns"><button type="button" class="kp-btn hoofd" data-kp="hervat">Hervat</button></div></div>`;
     else if (fase === 'fout') html = `<div class="kp-bar" role="region" aria-label="Gedeeld bestand"><div class="kp-tx">${I.let}<span>${fout === 'ongeldig' ? 'Het gedeelde bestand is niet meer te lezen.' : 'Het gedeelde bestand is niet bereikbaar.'} Je werk blijft op dit toestel bewaard.<small>${fout === 'slot' ? `${n} is bezet of op slot. Beslissingslog probeert het zo opnieuw.` : fout === 'ongeldig' ? `In ${n} staat iets anders dan beslissingen.` : `Is ${n} verplaatst, hernoemd of niet meer gedeeld?`}</small></span></div>
         <div class="kp-btns"><button type="button" class="kp-btn hoofd" data-kp="opnieuw">Opnieuw koppelen</button><button type="button" class="kp-btn rustig" data-kp="ontkoppel">Ontkoppel</button></div></div>`;
-    else html = `<button type="button" class="kp-chip${vuil ? ' wacht' : ''}" data-kp="details" aria-label="Gedeeld via ${n}. Details en ontkoppelen">${I.samen}<span class="kp-t">Gedeeld via <b>${n}</b> · <span class="kp-tijd">${vuil ? 'bewaren…' : 'bijgewerkt ' + tijdTekst(bijgewerkt || Date.now())}</span></span></button>`;
+    else html = `<button type="button" class="kp-chip${vuil ? ' wacht' : ''}" data-kp="details" aria-label="Gedeeld via ${n}. Details en ontkoppelen">${I.samen}<span class="kp-t">Gedeeld via <b>${n}</b></span><span class="kp-tijd">· ${vuil ? 'bewaren…' : 'bijgewerkt ' + tijdTekst(bijgewerkt || Date.now())}</span></button>`;
     if (html === getoond) return;
     const opFocus = box.contains(document.activeElement) && document.activeElement.dataset.kp;
     box.innerHTML = html; getoond = html;
