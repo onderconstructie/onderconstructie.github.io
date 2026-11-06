@@ -443,6 +443,17 @@ input::placeholder, textarea::placeholder { color:#64748b; opacity:1; }
 .kp-chip .kp-tijd { flex:none; margin-left:-0.25rem; white-space:nowrap; font-variant-numeric:tabular-nums; }
 .kp-chip.wacht { border-color:var(--slate-200); background:var(--wit); color:var(--slate-600); }
 .kp-chip.wacht svg { color:var(--slate-500); }
+.kp-chip.prive { border-color:var(--slate-200); background:var(--wit); color:var(--slate-600); }
+.kp-chip.prive svg { color:var(--slate-500); }
+.kp-logs { margin:0.875rem 0 0; padding:0; border:0; min-width:0; }
+.kp-logs legend { padding:0; font-size:0.9375rem; font-weight:600; color:var(--slate-800); }
+.kp-log { display:flex; align-items:center; gap:0.75rem; min-height:48px; margin-top:0.375rem; padding:0.375rem 0.75rem; border:1px solid var(--slate-200); border-radius:12px; cursor:pointer; }
+.kp-log:has(input:checked) { border-color:var(--accent); background:var(--accent-50); }
+.kp-log input { flex:none; width:20px; height:20px; margin:0; accent-color:var(--accent-dark); cursor:pointer; }
+.kp-log span { display:flex; flex-direction:column; min-width:0; line-height:1.35; }
+.kp-log b { overflow-wrap:anywhere; }
+.kp-log small { font-size:0.8125rem; color:var(--slate-500); }
+.kp-dlg .kp-hint { margin-top:0.5rem; font-size:0.8125rem; color:var(--slate-500); }
 .kp-bar { display:flex; flex-wrap:wrap; align-items:center; gap:0.5rem 0.75rem; padding:0.5rem 0.5rem 0.5rem 0.875rem; border:1px solid var(--slate-200); border-radius:12px; background:var(--wit); font-size:0.9375rem; line-height:1.4; color:var(--slate-700); }
 .kp-bar .kp-tx { flex:1 1 16rem; min-width:0; display:flex; gap:0.625rem; align-items:flex-start; overflow-wrap:anywhere; }
 .kp-bar .kp-tx svg { width:20px; height:20px; flex:none; margin-top:0.0625rem; color:var(--slate-500); }
@@ -497,6 +508,8 @@ input::placeholder, textarea::placeholder { color:#64748b; opacity:1; }
 <main class="main">
   <nav class="lists" id="lists" aria-label="Logs"></nav>
   <div class="kp" id="kp" hidden></div>
+  <div class="kp" id="opslag" hidden><div class="kp-bar" role="alert"><div class="kp-tx"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 7.5v5.5M12 16.5h.01"/></svg><span>Je beslissingen worden niet meer bewaard op dit toestel.<small>De opslag van je browser is vol of geblokkeerd. Bewaar je werk als bestand, dan gaat er niets verloren.</small></span></div>
+    <div class="kp-btns"><button type="button" class="kp-btn hoofd" id="opslag-bewaar">Bewaar als bestand</button></div></div></div>
   <div class="vb-bar" id="vb-bar" hidden>
     <div class="vb-text"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg><span>Dit is een voorbeeld om de tool te verkennen. Het telt niet mee in andere tools.</span></div>
     <div class="vb-btns"><button type="button" class="vb-btn vb-wis" id="vb-wis">Wis voorbeeld</button><button type="button" class="vb-btn vb-eigen" id="vb-eigen">Maak er mijn eigen van</button></div>
@@ -582,7 +595,7 @@ input::placeholder, textarea::placeholder { color:#64748b; opacity:1; }
         <li><b>Volg de acties op.</b> Vink een actie af zodra ze klaar is. Is de datum voorbij, dan staat er "te laat" bij.</li>
         <li><b>Herzie of trek in.</b> Tik op een beslissing om ze aan te passen. Verandert ze, kies dan Herzien en koppel er een nieuwe beslissing aan. Zo blijft zichtbaar wat er eerst gold.</li>
         <li><b>Deel het met de groep.</b> Kies na het overleg "Mail naar de groep" of "Kopieer voor e-mail". Een afbeelding, PDF of CSV kan ook.</li>
-        <li><b>Werk samen via een gedeeld bestand.</b> Standaard blijft alles op dit toestel. Wil je met je team in één log werken? Kies dan in het menu ⋮ "Werk samen via een gedeeld bestand" en zet het bestand in een gedeelde map die je computer synchroniseert. Dit kan alleen in Chrome of Edge op een computer. Passen twee mensen dezelfde beslissing aan, dan wint wie het laatst bewaart.</li>
+        <li><b>Werk samen via een gedeeld bestand.</b> Standaard blijft alles op dit toestel. Wil je met je team in één log werken? Kies dan in het menu ⋮ "Werk samen via een gedeeld bestand", vink aan welke logs meegaan en zet het bestand in een gedeelde map die je computer synchroniseert. Dit kan alleen in Chrome of Edge op een computer. Passen twee mensen dezelfde beslissing aan, dan wint wie het laatst bewaart.</li>
       </ul>
       <p>Tip: Enter in een actieveld maakt meteen een nieuwe actie. Escape sluit een beslissing die openstaat. Vanaf zes beslissingen verschijnt een zoekveld.</p>
       <p>Koos je in de <a href="../beslisscore/">Beslisscore</a>? Dan neem je die keuze hier over met "Overnemen uit…". De open acties gaan naar het <a href="../kanban/">Takenbord</a> met "Zet in Takenbord". Vink daar aan welke je overneemt.</p>
@@ -926,6 +939,8 @@ async function ocWipeAll() {
   try { localStorage.removeItem(KEY); } catch {}
   state = load(); save(); render();
   ocShare.clear(OC_ID);
+  // Was er een koppeling, dan krijgen andere tabbladen het wis-signaal (zoals de app het stuurt): zij schrijven niet meer naar het bestand.
+  if (koppeling && window.ocKoppel) ocKoppel.seinWis();
   toast('Alles gewist', ocUndoable(() => { state = copy; if (window.ocKoppel) ocKoppel.herstel(koppeling); }));
 }
 document.addEventListener('click', e => { if (e.target.closest('[data-act="wipe"]')) ocWipeAll(); });
@@ -1074,14 +1089,15 @@ function load() {
     // Elke log, beslissing en actie apart nakijken: één kapot stuk mag de rest van de log niet meenemen.
     // Oudere bewaringen hebben geen acties: die blijven gewoon laden (acties zijn optioneel).
     const str = v => typeof v === 'string' ? v : typeof v === 'number' ? String(v) : '';
+    const okId = v => { const s = str(v); return s && s !== '__proto__' && s !== 'constructor' && s !== 'prototype' ? s : ''; };   // nooit een id dat een gewoon object breekt
     const logs = d.logs.filter(l => l && typeof l === 'object').map(l => Object.assign({}, l, {
-      id: str(l.id) || uid(), name: str(l.name) || 'Naamloos',
+      id: okId(l.id) || uid(), name: str(l.name) || 'Naamloos',
       items: (Array.isArray(l.items) ? l.items : []).filter(it => it && typeof it === 'object').map(it => {
-        const o = Object.assign({}, it, { id: str(it.id) || uid(), what: str(it.what).trim() || 'Zonder titel', why: str(it.why), who: str(it.who), date: str(it.date),
+        const o = Object.assign({}, it, { id: okId(it.id) || uid(), what: str(it.what).trim() || 'Zonder titel', why: str(it.why), who: str(it.who), date: str(it.date),
           alt: str(it.alt), note: str(it.note), status: ['genomen', 'herzien', 'ingetrokken'].includes(it.status) ? it.status : 'genomen', created: +it.created || 0 });
         if (typeof it.van === 'string' && it.van) o.vanWas = str(it.vanWas); else { delete o.van; delete o.vanWas; }
         if (Array.isArray(it.actions)) o.actions = it.actions.filter(a => a && typeof a === 'object')
-          .map(a => Object.assign({}, a, { id: str(a.id) || uid(), text: str(a.text), who: str(a.who), when: str(a.when), done: !!a.done }));
+          .map(a => Object.assign({}, a, { id: okId(a.id) || uid(), text: str(a.text), who: str(a.who), when: str(a.when), done: !!a.done }));
         else delete o.actions;
         return o;
       })
@@ -1094,9 +1110,23 @@ function load() {
 let state = load();
 ocPickProject(state, 'logs');
 // Gekoppeld met een gedeeld bestand? Dan krijgt elke wijziging een tijdstempel en gaat ze na een korte pauze ook naar dat bestand.
-function save() { ocAfterSave(); if (window.ocKoppel) ocKoppel.stempel(); try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} if (window.ocKoppel) ocKoppel.na(); }
+function save() { ocAfterSave(); if (window.ocKoppel) ocKoppel.stempel(); bewaarState(); if (window.ocKoppel) ocKoppel.na(); }
 const cur = () => state.logs.find(l => l.id === state.current) || state.logs[0];
 const $ = id => document.getElementById(id);
+/* Lokaal bewaren. Lukt het niet (opslag vol of geblokkeerd), dan staat er een vaste balk met "Bewaar als bestand".
+   Lukt het later weer, dan verdwijnt de balk. Nooit een fout stil inslikken. */
+function bewaarState() {
+  try { localStorage.setItem(KEY, JSON.stringify(state)); if (!$('opslag').hidden) $('opslag').hidden = true; return true; }
+  catch (e) { $('opslag').hidden = false; return false; }
+}
+// "Bewaar als bestand" vanuit die balk: wat nu in de tool staat (niet wat er nog in de opslag zat), in het formaat van "Open bestand"
+$('opslag-bewaar').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify({ app:'Onder Constructie', version:1, created:new Date().toISOString(), tool:'beslissingen', data:{ [KEY]:JSON.stringify(state) } }, null, 1)], { type:'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = ocFileName('beslissingen', state.logs.length === 1 ? state.logs[0].name : '') + '.json';
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  toast('Bestand gedownload. Bewaar het op een veilige plek.');
+});
 const esc = s => String(s || '').replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
 const escA = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));   // waarde in een attribuut: ook ids, statussen, datums en getallen
 const STATUS = { genomen:'Genomen', herzien:'Herzien', ingetrokken:'Ingetrokken' };
@@ -1137,7 +1167,7 @@ function setMore(open) {
 $('more-toggle').addEventListener('click', () => {
   const open = $('more').hidden;
   setMore(open);
-  state.moreOpen = open; try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {}
+  state.moreOpen = open; bewaarState();
 });
 if (state.moreOpen) setMore(true);
 /* Concept: wat je typt maar nog niet bewaarde, overleeft herladen en de terugknop (zelfde opslag, eigen veld) */
@@ -1152,7 +1182,7 @@ function bewaarConcept() {
     if (formLeeg()) delete state.draft;
     else state.draft = { what:$('add-what').value, why:$('add-why').value, who:$('add-who').value, date:$('add-date').value, alt:$('add-alt').value,
       acts:[...$('add-acts').querySelectorAll('.act-row')].map(r => ({ text:r.querySelector('[data-a="text"]').value, who:r.querySelector('[data-a="who"]').value, when:r.querySelector('[data-a="when"]').value })) };
-    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {}
+    bewaarState();
   }, 300);
 }
 $('add-form').addEventListener('input', bewaarConcept);
@@ -1337,6 +1367,7 @@ function render() {
   const whos = [...new Set(state.logs.flatMap(x => x.items.flatMap(i => [i.who, ...(i.actions || []).map(a => a.who)])).filter(Boolean))];
   $('who-list').innerHTML = whos.map(w => `<option value="${esc(w)}">`).join('');
   renderTabs();
+  if (window.ocKoppel) ocKoppel.toon();   // gekoppeld: toont of deze log gedeeld is
 }
 
 /* ---------- Bewerken ---------- */
@@ -1438,13 +1469,13 @@ $('search').addEventListener('input', render);
 
 /* ---------- Ongedaan maken ---------- */
 let undoFn = null, toastTimer = null;
-function toast(msg, undo) {
+function toast(msg, undo, ms) {
   undoFn = undo || null;
   $('toast-text').textContent = msg;
   $('toast-btn').hidden = !undo;
   $('toast').classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { $('toast').classList.remove('show'); undoFn = null; }, undo ? 6000 : 2500);
+  toastTimer = setTimeout(() => { $('toast').classList.remove('show'); undoFn = null; }, ms || (undo ? 6000 : 2500));
 }
 $('toast-btn').addEventListener('click', () => {
   if (undoFn) { undoFn(); undoFn = null; save(); render(); }
@@ -1560,7 +1591,7 @@ function buildExport(l, q, paginate) {
   node.innerHTML = list.map((it, i) => {
     const gone = it.status !== 'genomen';
     const nr = list.length - i;
-    const meta = [fmtDate(it.date), it.who && `beslist door ${esc(it.who)}`].filter(Boolean).join(' · ');
+    const meta = [esc(fmtDate(it.date)), it.who && `beslist door ${esc(it.who)}`].filter(Boolean).join(' · ');
     const pillCol = it.status === 'ingetrokken' ? '#b91c1c' : '#b45309', pillBg = it.status === 'ingetrokken' ? '#fef2f2' : '#fffbeb';
     const pill = gone ? `<span style="display:inline-block;margin-left:8px;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:600;color:${escA(pillCol)};background:${escA(pillBg)};vertical-align:3px">${STATUS[it.status]}</span>` : '';
     const rep = it.replaces && l.items.find(x => x.id === it.replaces);
@@ -1709,19 +1740,43 @@ ocOpenOvernemen();
    die je computer synchroniseert), bewaart de log ook daarin. De lokale opslag blijft altijd werken; het bestand komt erbij.
    Alleen in browsers met showSaveFilePicker (Chrome en Edge op een computer).
    - De koppeling (het bestandshandvat) staat in IndexedDB: databank oc-koppel, store bestand, sleutel beslissingen.
+     Vóór elke schrijfactie kijkt de tool na of die koppeling er nog is. Zo niet (bv. Alles wissen in een ander tabblad),
+     dan schrijft hij niets en ontkoppelt hij stil. Een tabblad dat "Alles wissen" ontvangt, schrijft nooit meer.
+   - Per log kies je of hij meegaat (gedeeld:true op de log). Wat je niet aanvinkt, blijft alleen op dit toestel, ook later.
    - Bestand = hetzelfde formaat als "Bewaar als bestand" (app, version, data), met een eigen kop (soort, versie).
-     Daardoor kan je het gedeelde bestand ook gewoon openen met "Open bestand".
+     Daardoor kan je het gedeelde bestand ook gewoon openen met "Open bestand". Hoogstens 2 MB, 200 logs en 5000 beslissingen per log.
    - Samenvoegen per log en per beslissing op id: de laatste wijziging (gewijzigd, in ms) wint; oude stukken zonder tijd tellen als 0.
+     Een tijd verder dan nu + 5 minuten telt als nu + 5 minuten. Een eigen wijziging krijgt minstens de vorige tijd + 1.
      Verwijderd = een id met tijd in weg (per log voor beslissingen, bovenaan voor logs). Een verwijdering wint van een oudere wijziging.
+     Verwijderingen ouder dan 90 dagen gaan bij het schrijven weg.
+     Haalt het bestand iets weg of vervangt het iets, dan kan je dat 12 seconden ongedaan maken.
      Bij gelijke tijd beslist een vaste vergelijking, zodat beide kanten hetzelfde kiezen. Een voorbeeld gaat nooit mee. */
 window.ocKoppel = (() => {
   const TOOL = 'beslissingen', DB = 'oc-koppel', STORE = 'bestand', NAAM = 'beslissingen-gedeeld.json';
   const SOORT = 'oc-beslissingen', VERSIE = 1, POLL = 20000, PAUZE = 1000;
+  const MARGE = 5 * 60000, OUD = 90 * 864e5, ONGEDAAN_MS = 12000;
+  const MAX_BYTES = 2 * 1024 * 1024, MAX_LOGS = 200, MAX_ITEMS = 5000;
   const TYPES = [{ description:'Gedeelde beslissingen', accept:{ 'application/json':['.json'] } }];
   const kan = () => typeof window.showSaveFilePicker === 'function' && typeof window.showOpenFilePicker === 'function' && window.isSecureContext !== false;
-  let h = null, naam = '', fase = 'uit', fout = '';            // fase: uit | actief | hervat | fout;  fout: weg | slot | ongeldig
+  let h = null, naam = '', fase = 'uit', fout = '';            // fase: uit | actief | hervat | fout;  fout: weg | slot | ongeldig | groot | eigengroot
   let laatst = { lm:-1, size:-1, tekst:null, data:null }, bijgewerkt = 0, gecontroleerd = 0;
   let vuil = false, schrijfT = null, pollT = null, rij = Promise.resolve(), wachtend = false, tekenLater = false, laatsteKijk = 0;
+  let gewist = false, deelOpen = 0;
+
+  /* --- Het wis-signaal van dit tabblad komt ook bij onszelf binnen (elk BroadcastChannel-object van de pagina krijgt het).
+     Het gedeelde blok oc-sync zou dan deze pagina herladen en Ongedaan kwijtspelen. Daarom krijgt elk kanaal 'oc-sync'
+     van deze pagina een eerste luisteraar die ons eigen bericht tegenhoudt. Berichten van andere tabbladen gaan gewoon door. --- */
+  const PAGINA = Math.random().toString(36).slice(2) + Date.now().toString(36);
+  (() => {
+    const BC = window.BroadcastChannel; if (typeof BC !== 'function') return;
+    function Kanaal(n) {
+      const c = new BC(n);
+      if (String(n) === 'oc-sync') c.addEventListener('message', e => { if (e.data && e.data.bron === PAGINA) e.stopImmediatePropagation(); });
+      return c;
+    }
+    Kanaal.prototype = BC.prototype;
+    try { window.BroadcastChannel = Kanaal; } catch {}
+  })();
 
   /* --- IndexedDB: alleen openen als je koppelde (zonder koppeling wordt er niets aangemaakt) --- */
   function db() {
@@ -1745,14 +1800,29 @@ window.ocKoppel = (() => {
   const zetRec = rec => idb('readwrite', s => s.put(rec, TOOL));
   const wisRec = () => idb('readwrite', s => s.delete(TOOL));
   async function bestaatDb() { try { if (indexedDB.databases) return (await indexedDB.databases()).some(d => d && d.name === DB); } catch {} return false; }
+  const fout_ = n => Object.assign(new Error(n), { name:n });
+  // Staat de koppeling met dit bestand nog in IndexedDB? Kan het niet nagekeken worden, dan schrijven we nu niet (later opnieuw).
+  async function nogGekoppeld(h0) {
+    let rec;
+    try {
+      if (indexedDB.databases && !(await indexedDB.databases()).some(d => d && d.name === DB)) return false;
+      rec = await leesRec();
+    } catch { throw fout_('Bezig'); }
+    if (!rec || !rec.handle) return false;
+    try { return await rec.handle.isSameEntry(h0); } catch { return (rec.naam || rec.handle.name) === naam; }
+  }
+  // De koppeling is elders gewist: niets meer doen, zonder melding. IndexedDB laten we met rust.
+  function losStil() { stop(); h = null; fase = 'uit'; fout = ''; vuil = false; toon(); }
 
   /* --- Gegevens uit een bestand nakijken: vaste velden, schone ids. Zo is ook de vergelijking van twee kanten altijd dezelfde. --- */
-  const sid = v => (typeof v === 'string' || typeof v === 'number' ? String(v) : '').replace(/[^\w-]/g, '').slice(0, 40);
+  const VERBODEN = new Set(['__proto__', 'constructor', 'prototype']);
+  const sid = v => { const s = (typeof v === 'string' || typeof v === 'number' ? String(v) : '').replace(/[^\w-]/g, '').slice(0, 40); return VERBODEN.has(s) ? '' : s; };
   const str = (v, n) => (typeof v === 'string' ? v : typeof v === 'number' ? String(v) : '').slice(0, n || 2000);
-  const tijd = v => { const n = Math.round(+v); return isFinite(n) && n > 0 ? Math.min(n, 8.64e15) : 0; };
-  function wegMap(m) {
-    const o = {};
-    if (m && typeof m === 'object' && !Array.isArray(m)) Object.keys(m).forEach(k => { const id = sid(k), t = tijd(m[k]); if (id && id !== '__proto__' && t) o[id] = Math.max(o[id] || 0, t); });
+  // Een tijd verder dan nu + 5 minuten telt als nu + 5 minuten: een vervalste of voorlopende klok wint niet altijd.
+  const tijd = v => { const n = Math.round(+v); return isFinite(n) && n > 0 ? Math.min(n, Date.now() + MARGE) : 0; };
+  function wegMap(m, grens) {
+    const o = Object.create(null);
+    if (m && typeof m === 'object' && !Array.isArray(m)) Object.keys(m).forEach(k => { const id = sid(k), t = tijd(m[k]); if (id && t && t >= (grens || 0)) o[id] = Math.max(o[id] || 0, t); });
     return o;
   }
   function schoonItem(it) {
@@ -1772,22 +1842,28 @@ window.ocKoppel = (() => {
     if (tijd(it.gewijzigd)) o.gewijzigd = tijd(it.gewijzigd);
     return o;
   }
-  function schoonLog(l) {
+  function schoonLog(l, grens) {
     if (!l || typeof l !== 'object' || l.voorbeeld) return null;
     const id = sid(l.id); if (!id) return null;
     const gezien = new Set(), items = (Array.isArray(l.items) ? l.items : []).map(schoonItem).filter(it => it && !gezien.has(it.id) && gezien.add(it.id));
     const o = { id, name:str(l.name, 60).trim() || 'Naamloos', items };
-    const w = wegMap(l.weg); if (Object.keys(w).length) o.weg = w;
+    const w = wegMap(l.weg, grens); if (Object.keys(w).length) o.weg = w;
     if (tijd(l.gewijzigd)) o.gewijzigd = tijd(l.gewijzigd);
     return o;
   }
-  // Het deel dat gedeeld wordt: alle logs behalve een voorbeeld, en de verwijderde logs. Geen concept, geen gekozen tab, geen 'laatst door'.
-  function deel(s) {
-    const gezien = new Set();
-    return { logs:(s.logs || []).map(schoonLog).filter(l => l && !gezien.has(l.id) && gezien.add(l.id)), weg:wegMap(s.weg) };
+  // Een log gaat alleen mee als je hem koos (gedeeld) en hij geen voorbeeld is
+  const deelbaar = l => !!l && l.gedeeld === true && !l.voorbeeld;
+  /* Het deel dat gedeeld wordt. Uit een bestand: alles (behalve een voorbeeld). Om te schrijven: alleen de gedeelde logs,
+     en zonder verwijderingen ouder dan 90 dagen. Geen concept, geen gekozen tab, geen 'laatst door'. */
+  function deelVan(s, schrijven) {
+    const gezien = new Set(), grens = schrijven ? Date.now() - OUD : 0;
+    const logs = (s.logs || []).filter(l => !schrijven || deelbaar(l)).map(l => schoonLog(l, grens)).filter(l => l && !gezien.has(l.id) && gezien.add(l.id));
+    return { logs, weg:wegMap(s.weg, grens) };
   }
-  const canon = s => JSON.stringify(deel(s));
+  const canon = s => JSON.stringify(deelVan(s, true));
   const ck = it => JSON.stringify(schoonItem(it));
+  const teGroot = b => b.logs.length > MAX_LOGS || b.logs.some(l => l.items.length > MAX_ITEMS);
+  const bytes = t => new Blob([t]).size;
   // Een geldig bestand: geeft het gedeelde deel terug, anders null
   function ontleed(tekst) {
     let d; try { d = JSON.parse(tekst); } catch { return null; }
@@ -1795,22 +1871,22 @@ window.ocKoppel = (() => {
     const ruw = d.data && typeof d.data === 'object' ? d.data[KEY] : null;
     let s; try { s = typeof ruw === 'string' ? JSON.parse(ruw) : ruw; } catch { return null; }
     if (!s || typeof s !== 'object' || !Array.isArray(s.logs)) return null;
-    return deel(s);
+    return deelVan(s, false);
   }
   function bestandTekst(data) {
     return JSON.stringify({ app:'Onder Constructie', version:1, soort:SOORT, versie:VERSIE, tool:TOOL, created:new Date().toISOString(), data:{ [KEY]:data } }, null, 1);
   }
 
   /* --- Samenvoegen: lokaal (a) en bestand (b). Vaste regels, niets raden. --- */
-  const ts = x => (x && x.gewijzigd) || 0;
+  const ts = x => tijd(x && x.gewijzigd);
   function kies(x, y) {                      // de laatste wijziging wint; bij gelijke tijd een vaste keuze (aan beide kanten dezelfde)
     if (ts(x) !== ts(y)) return ts(x) > ts(y) ? x : y;
     const cx = ck(x), cy = ck(y);
     return cx === cy || cx > cy ? x : y;
   }
+  function voeg(a, b) { const o = wegMap(a); Object.keys(wegMap(b)).forEach(k => { o[k] = Math.max(o[k] || 0, tijd(b[k])); }); return o; }
   function samen(a, b) {
-    const weg = Object.assign({}, wegMap(a.weg));
-    Object.keys(b.weg).forEach(k => { weg[k] = Math.max(weg[k] || 0, b.weg[k]); });
+    const weg = voeg(a.weg, b.weg);
     const am = new Map(a.logs.map(l => [l.id, l])), bm = new Map(b.logs.map(l => [l.id, l]));
     const ids = [...am.keys(), ...[...bm.keys()].filter(id => !am.has(id))];
     const logs = [];
@@ -1818,8 +1894,7 @@ window.ocKoppel = (() => {
       const x = am.get(id), y = bm.get(id);
       let l = x || y;
       if (x && y) {
-        const lw = Object.assign({}, wegMap(x.weg));
-        Object.keys(y.weg || {}).forEach(k => { lw[k] = Math.max(lw[k] || 0, y.weg[k]); });
+        const lw = voeg(x.weg, y.weg);
         const xm = new Map(x.items.map(i => [i.id, i])), ym = new Map(y.items.map(i => [i.id, i]));
         const iids = [...xm.keys(), ...[...ym.keys()].filter(i => !xm.has(i))];
         const items = iids.map(i => xm.has(i) && ym.has(i) ? kies(xm.get(i), ym.get(i)) : xm.get(i) || ym.get(i)).filter(it => !(lw[it.id] >= ts(it)));
@@ -1827,8 +1902,8 @@ window.ocKoppel = (() => {
         l = Object.assign({}, x, { name:kop.name, items });
         if (ts(kop)) l.gewijzigd = ts(kop); else delete l.gewijzigd;
         if (Object.keys(lw).length) l.weg = lw; else delete l.weg;
-      } else if (l.weg && Object.keys(l.weg).length) {
-        const lw = l.weg; if (l.items.some(it => lw[it.id] >= ts(it))) l = Object.assign({}, l, { items:l.items.filter(it => !(lw[it.id] >= ts(it))) });
+      } else if (l.weg && typeof l.weg === 'object' && Object.keys(l.weg).length) {
+        const lw = wegMap(l.weg); if (l.items.some(it => lw[it.id] >= ts(it))) l = Object.assign({}, l, { items:l.items.filter(it => !(lw[it.id] >= ts(it))) });
       }
       // Een verwijderde log blijft weg, tenzij iemand er later nog iets in veranderde
       const nieuwste = Math.max(ts(l), ...l.items.map(ts));
@@ -1844,30 +1919,45 @@ window.ocKoppel = (() => {
   const SEP = '\u0001';
   function onthoud() {
     cache.clear();
-    state.logs.forEach(l => { cache.set('l' + SEP + l.id, { v:logKop(l), vb:!!l.voorbeeld }); l.items.forEach(it => cache.set('i' + SEP + l.id + SEP + it.id, ck(it))); });
+    state.logs.forEach(l => { cache.set('l' + SEP + l.id, { v:logKop(l), vb:!!l.voorbeeld, g:deelbaar(l), t:ts(l) }); l.items.forEach(it => cache.set('i' + SEP + l.id + SEP + it.id, { c:ck(it), t:ts(it) })); });
   }
+  // Een eigen wijziging wint altijd van wat je al zag: minstens de vorige tijd + 1. Stond die vorige tijd in de toekomst
+  // (een collega met een voorlopende klok), dan krijgt de correctie nu + 5 minuten + 1, zodat ze ook bij anderen wint.
+  const volgende = prev => { const nu = Date.now(), p = tijd(prev); return p > nu ? nu + MARGE + 1 : Math.max(nu, p + 1); };
   function stempel() {
     if (!state.weg || typeof state.weg !== 'object') return;
-    const nu = Date.now(), gezien = new Set();
+    const gezien = new Set();
     state.logs.forEach(l => {
       const kl = 'l' + SEP + l.id, c = cache.get(kl); gezien.add(kl);
-      if (!c || c.v !== logKop(l)) l.gewijzigd = nu;
-      l.items.forEach(it => { const k = 'i' + SEP + l.id + SEP + it.id; gezien.add(k); if (cache.get(k) !== ck(it)) it.gewijzigd = nu; });
+      if (!c || c.v !== logKop(l)) l.gewijzigd = volgende(l.gewijzigd);
+      l.items.forEach(it => { const k = 'i' + SEP + l.id + SEP + it.id, ci = cache.get(k); gezien.add(k); if (!ci || ci.c !== ck(it)) it.gewijzigd = volgende(it.gewijzigd); });
     });
     cache.forEach((v, k) => {
       if (gezien.has(k)) return;
       const p = k.split(SEP);
-      if (p[0] === 'l') { if (!v.vb) state.weg[p[1]] = nu; return; }
+      if (p[0] === 'l') { if (v.g && !VERBODEN.has(p[1])) state.weg[p[1]] = volgende(Math.max(v.t, tijd(state.weg[p[1]]))); return; }
       const l = state.logs.find(x => x.id === p[1]);
-      if (l && !l.voorbeeld) (l.weg = l.weg && typeof l.weg === 'object' ? l.weg : {})[p[2]] = nu;
+      if (l && !l.voorbeeld && !VERBODEN.has(p[2])) { if (!l.weg || typeof l.weg !== 'object') l.weg = {}; l.weg[p[2]] = volgende(v.t); }
     });
     onthoud();
   }
   function volg() { if (!state.weg || typeof state.weg !== 'object') { onthoud(); state.weg = {}; } }
   if (state.weg && typeof state.weg === 'object') onthoud();
+  // Welke logs gaan mee: null = laten zoals het is (opnieuw koppelen), anders de gekozen ids
+  function markeer(keuze) {
+    if (keuze == null) return;
+    state.logs.forEach(l => { if (!l.voorbeeld && keuze.includes(l.id)) l.gedeeld = true; else delete l.gedeeld; });
+  }
+  // Verwijderingen ouder dan 90 dagen ook lokaal opruimen
+  function snoei() {
+    const grens = Date.now() - OUD; let weg = false;
+    const ruim = m => { if (m && typeof m === 'object') Object.keys(m).forEach(k => { if (!(tijd(m[k]) >= grens)) { delete m[k]; weg = true; } }); };
+    ruim(state.weg); state.logs.forEach(l => ruim(l.weg));
+    return weg;
+  }
 
   /* --- Lokaal bewaren na samenvoegen (zonder nieuwe tijdstempels) en opnieuw tekenen zonder te springen --- */
-  function bewaarLokaal() { try { ocAfterSave(); } catch {} try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} onthoud(); }
+  function bewaarLokaal() { try { ocAfterSave(); } catch {} bewaarState(); onthoud(); }
   function bezigMetBewerken() { const a = document.activeElement; return !!(a && a.closest && a.closest('.dec-edit')); }
   function teken() {
     if (bezigMetBewerken()) { tekenLater = true; return; }
@@ -1878,69 +1968,146 @@ window.ocKoppel = (() => {
     if (id) { const n = decs().find(e => e.dataset.id === id); if (n) { const d = n.getBoundingClientRect().top - top; if (Math.abs(d) > 1) window.scrollBy(0, d); } }
   }
   document.getElementById('decs').addEventListener('focusout', () => setTimeout(() => { if (tekenLater && !bezigMetBewerken()) teken(); }, 0));
-  // Voeg het bestand samen met de log. Geeft terug hoeveel er nieuw, anders of weg is (alleen wat je ziet).
+
+  /* --- Ongedaan na een samenvoeging die iets weghaalde of verving: de kopie van vlak ervoor komt terug, met nieuwe tijden
+     zodat ze wint. Wat er nieuw binnenkwam, blijft. Wat je sindsdien zelf aanpaste, blijft ook. --- */
+  const kopie = x => JSON.parse(JSON.stringify(x));
+  function maakOngedaan(voor, leeg) {
+    const na = kopie(state.logs.filter(deelbaar));
+    const f = () => {
+      const naL = new Map(na.map(l => [l.id, l]));
+      voor.logs.filter(deelbaar).forEach(vl => {
+        const nl = naL.get(vl.id), l = state.logs.find(x => x.id === vl.id);
+        if (!nl) {                                               // de log verdween via het bestand
+          if (l) return;
+          const k = kopie(vl), tomb = tijd(state.weg && state.weg[vl.id]);
+          k.gewijzigd = Math.max(volgende(ts(vl)), tomb + 1);
+          k.items.forEach(it => { it.gewijzigd = Math.max(volgende(ts(it)), tomb + 1); });
+          state.logs.push(k); return;
+        }
+        if (!l) return;                                          // sindsdien zelf verwijderd
+        if (vl.name !== nl.name && l.name === nl.name) { l.name = vl.name; l.gewijzigd = volgende(Math.max(ts(nl), ts(l))); }
+        const ni = new Map(nl.items.map(i => [i.id, i]));
+        vl.items.forEach(vi => {
+          const n = ni.get(vi.id), ci = l.items.find(i => i.id === vi.id);
+          if (n && ck(n) === ck(vi)) return;                     // niet geraakt door het bestand
+          if (n ? (!ci || ck(ci) !== ck(n)) : !!ci) return;      // sindsdien zelf aangepast
+          const k = kopie(vi), tomb = tijd(l.weg && l.weg[vi.id]);
+          k.gewijzigd = Math.max(volgende(Math.max(ts(n), ts(vi))), tomb + 1);
+          if (ci) l.items[l.items.indexOf(ci)] = k; else l.items.push(k);
+        });
+      });
+      // de lege log die er alleen kwam omdat alles weg was
+      if (leeg) { const i = state.logs.findIndex(x => x.id === leeg && !x.items.length); if (i >= 0 && state.logs.length > 1) state.logs.splice(i, 1); }
+      if (!state.logs.some(l => l.id === state.current)) state.current = state.logs[0].id;
+      try { openId = null; } catch {}
+    };
+    f.kp = true; f.voor = voor; f.leeg = leeg;
+    return f;
+  }
+
+  // Voeg het bestand samen met de log. Geeft terug hoeveel er nieuw, anders of weg is (alleen in de gedeelde logs).
   function pasToe(b) {
-    const voor = new Map(), logsVoor = JSON.stringify(state.logs.filter(l => !l.voorbeeld).map(l => [l.id, l.name]));
-    state.logs.forEach(l => { if (!l.voorbeeld) l.items.forEach(it => voor.set(it.id, ck(it))); });
-    const m = samen({ logs:state.logs, weg:state.weg || {} }, b);
-    const r = { nieuw:0, anders:0, weg:0, veranderd:false };
-    if (JSON.stringify(deel({ logs:m.logs, weg:m.weg })) === canon(state)) return r;
-    if (!m.logs.length) m.logs.push({ id:uid(), name:ocProject('Mijn project'), items:[] });
+    const r = { nieuw:0, anders:0, weg:0, logs:0, nieuweLogs:0, veranderd:false, ongedaan:null };
+    // Een log die alleen op dit toestel staat en hetzelfde id heeft als een log in het bestand, krijgt een eigen id. Hij gaat nooit mee.
+    const bIds = new Set(b.logs.map(l => l.id)); let herId = false;
+    state.logs.forEach(l => { if (!deelbaar(l) && bIds.has(l.id)) { const n = uid(); if (state.current === l.id) state.current = n; l.id = n; herId = true; } });
+    const voor = new Map(), logsVoor = new Map();
+    state.logs.forEach(l => { if (deelbaar(l)) { logsVoor.set(l.id, l.name); l.items.forEach(it => voor.set(l.id + SEP + it.id, ck(it))); } });
+    const m = samen({ logs:state.logs.filter(deelbaar), weg:state.weg || {} }, b);
+    const mm = new Map(m.logs.map(l => [l.id, l])), logs = [];
+    state.logs.forEach(l => { if (!deelbaar(l)) logs.push(l); else if (mm.has(l.id)) { logs.push(mm.get(l.id)); mm.delete(l.id); } });
+    mm.forEach(l => logs.push(Object.assign({}, l, { gedeeld:true })));
+    if (canon({ logs, weg:m.weg }) === canon(state)) { if (herId) { r.veranderd = true; bewaarLokaal(); } return r; }
+    // vlak vóór het samenvoegen: een kopie, voor Ongedaan (loopt er nog een Ongedaan van het bestand, dan de oudste kopie)
+    const vorige = (() => { try { return typeof undoFn === 'function' && undoFn.kp ? undoFn : null; } catch { return null; } })();
+    const voorKopie = vorige ? vorige.voor : kopie(state);
+    let leeg = vorige ? vorige.leeg : '';
+    if (!logs.length) { leeg = uid(); logs.push({ id:leeg, name:ocProject('Mijn project'), items:[] }); }
     const na = new Set();
-    m.logs.forEach(l => { if (!l.voorbeeld) l.items.forEach(it => { na.add(it.id); if (!voor.has(it.id)) r.nieuw++; else if (voor.get(it.id) !== ck(it)) r.anders++; }); });
-    voor.forEach((v, id) => { if (!na.has(id)) r.weg++; });
-    if (JSON.stringify(m.logs.filter(l => !l.voorbeeld).map(l => [l.id, l.name])) !== logsVoor) r.anders++;
-    state.logs = m.logs; state.weg = m.weg;
+    logs.forEach(l => { if (deelbaar(l)) {
+      if (!logsVoor.has(l.id)) r.nieuweLogs++; else if (logsVoor.get(l.id) !== l.name) r.logs++;
+      l.items.forEach(it => { const k = l.id + SEP + it.id; na.add(k); if (!voor.has(k)) r.nieuw++; else if (voor.get(k) !== ck(it)) r.anders++; });
+    } });
+    voor.forEach((v, k) => { if (!na.has(k)) r.weg++; });
+    logsVoor.forEach((n, id) => { if (!logs.some(l => l.id === id)) r.logs++; });
+    state.logs = logs; state.weg = m.weg;
     if (!state.logs.some(l => l.id === state.current)) state.current = state.logs[0].id;
     r.veranderd = true;
     bewaarLokaal();
-    if (r.nieuw || r.anders || r.weg) teken();
+    if (r.anders || r.weg || r.logs) { r.ongedaan = maakOngedaan(voorKopie, leeg); r.ongedaan.n = (vorige && vorige.n || 0) + r.anders + r.weg; }
+    if (r.nieuw || r.anders || r.weg || r.logs || r.nieuweLogs) teken();
     return r;
   }
+  const aantal = n => `${n} ${n === 1 ? 'beslissing' : 'beslissingen'}`;
+  function meldSamen(r) {
+    if (r.ongedaan) {
+      const n = r.ongedaan.n, t = n ? `${aantal(n)} aangepast of verwijderd via het gedeelde bestand` : 'Een log aangepast of verwijderd via het gedeelde bestand';
+      toast(t, r.ongedaan, ONGEDAAN_MS);
+    } else if (r.nieuw) meld(`${r.nieuw} ${r.nieuw === 1 ? 'nieuwe beslissing' : 'nieuwe beslissingen'} van het gedeelde bestand`);
+    else if (r.nieuweLogs) meld('Bijgewerkt met het gedeelde bestand');
+  }
 
-  /* --- Lezen, samenvoegen en schrijven: één ding tegelijk --- */
+  /* --- Lezen, samenvoegen en schrijven: één ding tegelijk, in een eenvoudige wachtrij --- */
+  function inRij(fn) { const p = rij.then(() => fn()); rij = p.catch(() => {}); return p; }
   function wachtrij(fn) {
     if (wachtend) return rij;
     wachtend = true;
-    rij = rij.then(() => { wachtend = false; return fn(); }).catch(() => {});
-    return rij;
+    return inRij(() => { wachtend = false; return fn(); }).catch(() => {});
   }
-  const ongedaanOpen = () => { try { return typeof undoFn === 'function'; } catch { return false; } };
-  async function schrijf(data) {
-    const tekst = bestandTekst(data);
-    const w = await h.createWritable();
+  // Een Ongedaan van een eigen handeling (de hele log terug) staat open: eerst laten afwerken, anders zou Ongedaan het werk van een collega terugdraaien.
+  // Ongedaan van het bestand zelf zet alleen de geraakte beslissingen terug: daar moet niets op wachten.
+  const ongedaanOpen = () => { try { return typeof undoFn === 'function' && !undoFn.kp; } catch { return false; } };
+  async function schrijf(h0, tekst, data) {
+    const w = await h0.createWritable();
     try { await w.write(tekst); await w.close(); } catch (e) { try { await w.abort(); } catch {} throw e; }
-    let f = null; try { f = await h.getFile(); } catch {}
+    let f = null; try { f = await h0.getFile(); } catch {}
     laatst = { lm:f ? f.lastModified : -1, size:f ? f.size : -1, tekst, data };
     bijgewerkt = Date.now();
   }
   async function bijwerken() {
-    if (!h || (fase !== 'actief' && fase !== 'fout')) return;
-    // Een melding met Ongedaan staat open: eerst laten afwerken, anders zou Ongedaan het werk van een collega terugdraaien.
+    if (!h || gewist || (fase !== 'actief' && fase !== 'fout')) return;
     if (ongedaanOpen()) { clearTimeout(schrijfT); schrijfT = setTimeout(() => wachtrij(bijwerken), 1500); return; }
     const h0 = h;
     try {
-      let f = await h0.getFile();
-      if (h !== h0) return;
-      if (f.lastModified !== laatst.lm || f.size !== laatst.size) {
-        const tekst = await f.text();
-        if (tekst !== laatst.tekst) {
-          const b = ontleed(tekst);
-          if (!b) throw Object.assign(new Error('ongeldig'), { name:'Ongeldig' });
-          const r = pasToe(b);
-          laatst = { lm:f.lastModified, size:f.size, tekst, data:JSON.stringify(b) };
-          if (r.veranderd) bijgewerkt = Date.now();
-          if (r.nieuw) meld(`${r.nieuw} ${r.nieuw === 1 ? 'nieuwe beslissing' : 'nieuwe beslissingen'} van het gedeelde bestand`);
-          else if (r.anders || r.weg) meld('Bijgewerkt met het gedeelde bestand');
-        } else { laatst.lm = f.lastModified; laatst.size = f.size; }
+      if (!await nogGekoppeld(h0)) { if (h === h0) losStil(); return; }
+      for (let poging = 0; ; poging++) {
+        if (h !== h0 || gewist) return;
+        const f = await h0.getFile();
+        if (h !== h0) return;
+        if (f.size > MAX_BYTES) throw fout_('Groot');
+        if (f.lastModified !== laatst.lm || f.size !== laatst.size) {
+          const tekst = await f.text();
+          if (tekst !== laatst.tekst) {
+            const b = ontleed(tekst);
+            if (!b) throw fout_('Ongeldig');
+            if (teGroot(b)) throw fout_('Groot');
+            if (h !== h0 || gewist) return;
+            const r = pasToe(b);
+            laatst = { lm:f.lastModified, size:f.size, tekst, data:JSON.stringify(b) };
+            if (r.veranderd) bijgewerkt = Date.now();
+            meldSamen(r);
+          } else { laatst.lm = f.lastModified; laatst.size = f.size; }
+        }
+        const mijn = canon(state);
+        if (mijn === laatst.data) break;
+        const tekst = bestandTekst(mijn);
+        if (bytes(tekst) > MAX_BYTES || teGroot(JSON.parse(mijn))) throw fout_('EigenGroot');
+        // Vlak vóór het schrijven: nog gekoppeld? En is het bestand sinds het samenvoegen veranderd? Dan eerst opnieuw samenvoegen (hoogstens 3 keer).
+        if (!await nogGekoppeld(h0)) { if (h === h0) losStil(); return; }
+        const f2 = await h0.getFile();
+        if (f2.lastModified !== laatst.lm || f2.size !== laatst.size) { if (poging < 3) continue; throw fout_('Bezig'); }
+        if (h !== h0 || gewist) return;
+        await schrijf(h0, tekst, mijn);
+        if (snoei()) bewaarLokaal();
+        break;
       }
-      const mijn = canon(state);
-      if (mijn !== laatst.data) await schrijf(mijn);
+      if (h !== h0) return;
       gecontroleerd = Date.now(); vuil = false;
       if (!bijgewerkt) bijgewerkt = gecontroleerd;                 // log en bestand zijn gelijk sinds nu
       if (fase !== 'actief' || fout) { fase = 'actief'; fout = ''; }
       toon();
-    } catch (e) { await mislukt(e); }
+    } catch (e) { if (h === h0) await mislukt(e); }
   }
   async function mislukt(e) {
     const n = e && e.name;
@@ -1951,6 +2118,8 @@ window.ocKoppel = (() => {
       fout = 'weg';
     } else if (n === 'NotFoundError') fout = 'weg';
     else if (n === 'Ongeldig') fout = 'ongeldig';
+    else if (n === 'Groot') fout = 'groot';
+    else if (n === 'EigenGroot') fout = 'eigengroot';
     else fout = 'slot';                                  // op slot, schrijffout, net aan het synchroniseren: later opnieuw
     fase = 'fout'; vuil = true; toon();
   }
@@ -1974,67 +2143,89 @@ window.ocKoppel = (() => {
   addEventListener('pagehide', () => { if (vuil && h && fase === 'actief') { clearTimeout(schrijfT); wachtrij(bijwerken); } });
   // Een ander tabblad van deze tool bewaarde: de tool las de log al opnieuw in, wij onthouden die toestand
   addEventListener('storage', e => { if (e.key === KEY && state.weg && typeof state.weg === 'object') onthoud(); if (e.key === 'oc.wis' || e.key === null) naWissen(); });
-  // "Wissen" in de app: zijn de gegevens van deze tool weg, dan ook de koppeling (het bestand blijft staan)
-  try { const bc = new BroadcastChannel('oc-sync'); bc.addEventListener('message', e => { if (e.data && e.data.type === 'wis') naWissen(); }); } catch {}
-  function naWissen() {
+  // "Alles wissen" in een ander tabblad (van deze tool of in de app): de koppeling gaat mee weg, het bestand blijft staan
+  try { const bc = new BroadcastChannel('oc-sync'); bc.addEventListener('message', e => { const d = e.data; if (d && (d.type === 'wis' || d.type === 'oc-koppel-wis') && d.bron !== PAGINA) naWissen(d); }); } catch {}
+  async function naWissen(bericht) {
+    const eigen = !!(bericht && bericht.tool === TOOL);
     let er = true; try { er = localStorage.getItem(KEY) != null; } catch {}
-    if (er) return;
-    stop(); h = null; fase = 'uit'; fout = '';
-    if (kan()) bestaatDb().then(ja => { if (ja) wisRec().catch(() => {}); });
+    if (!eigen && er) {                              // de app wiste iets anders: staat onze koppeling er nog?
+      if (!h) return;
+      let blijft = true; try { blijft = await nogGekoppeld(h); } catch {}
+      if (blijft) return;
+    }
+    gewist = true; losStil();
+    if (!er && kan()) bestaatDb().then(ja => { if (ja) wisRec().catch(() => {}); });
+  }
+  // Het wis-signaal van "Alles wissen" in deze tool, zoals de app het stuurt. In de app (iframe) een eigen soort:
+  // anders laadt de app helemaal opnieuw en is Ongedaan weg. Andere tabbladen van deze tool begrijpen beide.
+  function seinWis() {
+    let inApp = true; try { inApp = window.top !== window; } catch {}
+    if (!inApp) { try { localStorage.setItem('oc.wis', String(Date.now())); } catch {} }
+    try { const c = new BroadcastChannel('oc-sync'); c.postMessage({ type:inApp ? 'oc-koppel-wis' : 'wis', tool:TOOL, bron:PAGINA }); c.close(); } catch {}
   }
 
   /* --- Koppelen --- */
   const tijdTekst = t => { const d = new Date(t), nu = new Date(), u = `${d.getHours()}.${String(d.getMinutes()).padStart(2, '0')}`;
     return d.toDateString() === nu.toDateString() ? u : d.toLocaleDateString('nl-BE', { day:'numeric', month:'short' }) + ' ' + u; };
-  const aantal = n => `${n} ${n === 1 ? 'beslissing' : 'beslissingen'}`;
   function meld(msg) { toast(msg); setTimeout(() => { const t = document.getElementById('toast-text'); if (t && t.textContent === msg) toast(msg); }, 2300); }
   async function begin(nh, p) {
-    h = nh; naam = nh.name || NAAM;
-    try { await zetRec({ handle:nh, naam, sinds:Date.now() }); } catch {}
+    h = nh; naam = nh.name || NAAM; gewist = false;
+    try { await zetRec({ handle:nh, naam, sinds:Date.now() }); }
+    catch { h = null; fase = 'uit'; toon(); meld('Deze browser kan de koppeling niet bewaren. Er is niets gekoppeld.'); return false; }
     fase = p === 'granted' ? 'actief' : 'hervat'; fout = '';
     if (fase === 'actief') startPoll();
-    toon();
+    toon(); return true;
   }
   function kiesFout(e) {
     if (e && e.name === 'AbortError') return;                       // venster gesloten zonder te kiezen
     if (e && e.name === 'SecurityError') { venster(vensterNiet(true)); return; }
     meld('Koppelen lukt nu niet. Je log blijft op dit toestel.');
   }
-  async function koppelNieuw() {
+  async function koppelNieuw(keuze) {
     let nh; try { nh = await window.showSaveFilePicker({ suggestedName:NAAM, types:TYPES }); } catch (e) { kiesFout(e); return; }
     await rij;
     // Koos je een bestand waar al gedeelde beslissingen in staan? Dan voegen we samen in plaats van te overschrijven.
-    let tekst = ''; try { tekst = await (await nh.getFile()).text(); } catch {}
+    let tekst = '';
+    try { const f = await nh.getFile(); if (f.size > MAX_BYTES) { vanVenster(vensterTeGroot(nh.name, false, keuze)); return; } tekst = await f.text(); } catch {}
     const b = tekst.trim() ? ontleed(tekst) : null;
-    if (b) { await koppelMet(nh, tekst, b, 'granted'); return; }
+    if (b) { if (teGroot(b)) { vanVenster(vensterTeGroot(nh.name, false, keuze)); return; } await koppelMet(nh, tekst, b, 'granted', keuze); return; }
+    const voor = state.logs.map(l => [l, l.gedeeld]);
+    const terug = () => voor.forEach(([l, g]) => { if (g) l.gedeeld = g; else delete l.gedeeld; });
+    markeer(keuze);
+    const mijn = canon(state), tekstN = bestandTekst(mijn);
+    if (bytes(tekstN) > MAX_BYTES || teGroot(JSON.parse(mijn))) { terug(); vanVenster(vensterTeGroot(nh.name, true, keuze)); return; }
     volg(); bewaarLokaal();
-    stop(); h = nh; fase = 'actief'; fout = '';
-    try { await schrijf(canon(state)); } catch (e) { h = null; fase = 'uit'; toon(); meld('Het bestand kan niet bewaard worden. Er is niets gekoppeld.'); return; }
-    await begin(nh, 'granted');
-    const n = state.logs.filter(l => !l.voorbeeld).reduce((s, l) => s + l.items.length, 0);
+    stop(); h = nh; naam = nh.name || NAAM; fase = 'actief'; fout = '';
+    try { await inRij(() => schrijf(nh, tekstN, mijn)); } catch (e) { h = null; fase = 'uit'; terug(); bewaarLokaal(); toon(); meld('Het bestand kan niet bewaard worden. Er is niets gekoppeld.'); return; }
+    if (!await begin(nh, 'granted')) { terug(); bewaarLokaal(); return; }
+    const n = state.logs.filter(deelbaar).reduce((s, l) => s + l.items.length, 0);
     meld(n ? `Gekoppeld. Je ${aantal(n)} ${n === 1 ? 'staat' : 'staan'} nu ook in ${naam}.` : `Gekoppeld met ${naam}.`);
   }
-  async function koppelBestaand() {
+  async function koppelBestaand(keuze) {
     let nh; try { [nh] = await window.showOpenFilePicker({ types:TYPES, multiple:false }); } catch (e) { kiesFout(e); return; }
     if (!nh) return;
     let p = 'prompt';
     try { p = await nh.queryPermission({ mode:'readwrite' }); if (p !== 'granted') p = await nh.requestPermission({ mode:'readwrite' }); } catch {}
     await rij;
-    let tekst = null; try { tekst = await (await nh.getFile()).text(); } catch {}
+    let tekst = null, groot = false;
+    try { const f = await nh.getFile(); if (f.size > MAX_BYTES) groot = true; else tekst = await f.text(); } catch {}
+    if (groot) { vanVenster(vensterTeGroot(nh.name, false, keuze)); return; }
     const b = tekst != null && tekst.trim() ? ontleed(tekst) : null;
-    if (!b) { venster(vensterOngeldig(nh.name)); return; }
-    await koppelMet(nh, tekst, b, p);
+    if (!b) { vanVenster(vensterOngeldig(nh.name, keuze)); return; }
+    if (teGroot(b)) { vanVenster(vensterTeGroot(nh.name, false, keuze)); return; }
+    await koppelMet(nh, tekst, b, p, keuze);
   }
-  async function koppelMet(nh, tekst, b, p) {
+  async function koppelMet(nh, tekst, b, p, keuze) {
     let f = null; try { f = await nh.getFile(); } catch {}
     stop(); volg();
+    markeer(keuze);
     // Een lege log van jou (zonder beslissingen) gaat niet mee: anders staat er bij iedereen een lege tab bij.
     if (b.logs.length) state.logs = state.logs.filter(l => l.voorbeeld || l.items.length || b.logs.some(x => x.id === l.id));
-    // Alleen bij het koppelen: een log van jou met dezelfde naam als een log in het bestand wordt die log (daarna telt enkel het id)
+    // Alleen bij het koppelen: een gedeelde log van jou met dezelfde naam als een log in het bestand wordt die log (daarna telt enkel het id)
     const vrij = new Map(), bIds = new Set(b.logs.map(l => l.id));
     b.logs.forEach(l => { const k = ocNorm(l.name); if (k && !vrij.has(k)) vrij.set(k, l.id); });
     state.logs.forEach(l => {
-      if (l.voorbeeld || bIds.has(l.id)) return;
+      if (!deelbaar(l) || bIds.has(l.id)) return;
       const k = ocNorm(l.name), id = vrij.get(k);
       if (!id || state.logs.some(x => x.id === id)) return;
       vrij.delete(k); if (state.current === l.id) state.current = id; l.id = id;
@@ -2044,14 +2235,15 @@ window.ocKoppel = (() => {
     const r = pasToe(b);
     if (!r.veranderd) bewaarLokaal();
     teken();
-    const vanJou = state.logs.filter(l => !l.voorbeeld).reduce((s, l) => s + l.items.filter(it => !inBestand.has(it.id)).length, 0);
+    const vanJou = state.logs.filter(deelbaar).reduce((s, l) => s + l.items.filter(it => !inBestand.has(it.id)).length, 0);
     const uit = b.logs.reduce((s, l) => s + l.items.length, 0);
     laatst = { lm:f ? f.lastModified : -1, size:f ? f.size : -1, tekst, data:JSON.stringify(b) };
-    await begin(nh, p);
+    if (!await begin(nh, p)) return;
     bijgewerkt = Date.now();
     if (fase === 'actief') await wachtrij(bijwerken);
-    meld((uit ? `${aantal(uit)} uit het bestand${vanJou ? `, ${vanJou} van jou toegevoegd` : ''}` : `Gekoppeld met ${naam}${vanJou ? `. Je ${aantal(vanJou)} ${vanJou === 1 ? 'staat' : 'staan'} er nu ook in` : ''}`)
-      + (fase === 'hervat' ? '. Kies Hervat om verder te werken.' : ''));
+    const msg = (uit ? `${aantal(uit)} uit het bestand${vanJou ? `, ${vanJou} van jou toegevoegd` : ''}` : `Gekoppeld met ${naam}${vanJou ? `. Je ${aantal(vanJou)} ${vanJou === 1 ? 'staat' : 'staan'} er nu ook in` : ''}`)
+      + (fase === 'hervat' ? '. Kies Hervat om verder te werken.' : '');
+    if (r.ongedaan) toast(`${msg}. ${r.ongedaan.n ? aantal(r.ongedaan.n) : 'Een log'} aangepast of verwijderd.`, r.ongedaan, ONGEDAAN_MS); else meld(msg);
   }
   async function hervat() {
     if (!h) return;
@@ -2069,27 +2261,41 @@ window.ocKoppel = (() => {
       fase = 'fout'; laatst.lm = -1; await wachtrij(bijwerken);
       if (fase === 'actief') { startPoll(); meld('Weer gekoppeld'); return; }
       if (fout === 'slot') { meld('Het bestand is nog niet bereikbaar. Beslissingslog probeert het zo opnieuw.'); return; }
+      if (fout === 'eigengroot') { meld('Je log is nog te groot voor het gedeelde bestand.'); return; }
     }
     vanVenster(vensterKies(true));                                    // verplaatst of hernoemd: kies het opnieuw
   }
   async function ontkoppel(stil) {
     if (h && vuil && fase === 'actief') { clearTimeout(schrijfT); await wachtrij(bijwerken); }   // laatste wijziging nog meegeven
-    stop(); h = null; fase = 'uit'; fout = '';
+    stop(); h = null; fase = 'uit'; fout = ''; vuil = false;
     try { if (await bestaatDb()) await wisRec(); } catch {}
+    if (state.logs.some(l => 'gedeeld' in l)) { state.logs.forEach(l => { delete l.gedeeld; }); bewaarLokaal(); }
     toon();
     if (!stil) meld('Ontkoppeld. Je log staat nog op dit toestel.');
   }
-  // Alles wissen in de tool: de koppeling gaat mee weg (het bestand niet). Geeft terug wat Ongedaan nodig heeft.
+  // Alles wissen in de tool: de koppeling gaat mee weg (het bestand niet). Geeft terug wat Ongedaan nodig heeft (ook als
+  // de koppeling uit een ander tabblad komt).
   async function wis() {
-    const terug = h ? { handle:h, naam } : null;
-    stop(); h = null; fase = 'uit'; fout = '';
-    try { if (kan() && await bestaatDb()) await wisRec(); } catch {}
+    let terug = h ? { handle:h, naam } : null;
+    stop(); h = null; fase = 'uit'; fout = ''; vuil = false;
+    try {
+      if (kan() && await bestaatDb()) {
+        if (!terug) { const rec = await leesRec(); if (rec && rec.handle) terug = { handle:rec.handle, naam:rec.naam }; }
+        await wisRec();
+      }
+    } catch {}
     toon(); return terug;
   }
   function herstel(t) {
     if (state.weg && typeof state.weg === 'object') onthoud();      // geen nieuwe tijdstempels voor wat Ongedaan terugzet
     if (!t || !t.handle) return;
-    (async () => { let p = 'prompt'; try { p = await t.handle.queryPermission({ mode:'readwrite' }); } catch {} laatst = { lm:-1, size:-1, tekst:null, data:null }; await begin(t.handle, p); if (fase === 'actief') wachtrij(bijwerken); })();
+    (async () => { let p = 'prompt'; try { p = await t.handle.queryPermission({ mode:'readwrite' }); } catch {} laatst = { lm:-1, size:-1, tekst:null, data:null }; if (await begin(t.handle, p) && fase === 'actief') wachtrij(bijwerken); })();
+  }
+  // Deze log (die alleen op dit toestel stond) gaat vanaf nu ook naar het gedeelde bestand
+  function deelDezeLog() {
+    const l = cur(); if (!h || !l || l.voorbeeld || deelbaar(l)) return;
+    l.gedeeld = true; save(); render();
+    meld(`${l.name || 'Naamloos'} staat nu ook in ${naam}.`);
   }
 
   /* --- Wat je ziet: een kleine regel als je gekoppeld bent, een rustige balk als er iets nodig is --- */
@@ -2111,8 +2317,13 @@ window.ocKoppel = (() => {
     let html;
     if (fase === 'hervat') html = `<div class="kp-bar" role="region" aria-label="Gedeeld bestand"><div class="kp-tx">${I.slot}<span>Koppeling met <b>${n}</b> hervatten<small>Je log staat veilig op dit toestel. Geef opnieuw toegang om samen verder te werken.</small></span></div>
         <div class="kp-btns"><button type="button" class="kp-btn hoofd" data-kp="hervat">Hervat</button></div></div>`;
-    else if (fase === 'fout') html = `<div class="kp-bar" role="region" aria-label="Gedeeld bestand"><div class="kp-tx">${I.let}<span>${fout === 'ongeldig' ? 'Het gedeelde bestand is niet meer te lezen.' : 'Het gedeelde bestand is niet bereikbaar.'} Je werk blijft op dit toestel bewaard.<small>${fout === 'slot' ? `${n} is bezet of op slot. Beslissingslog probeert het zo opnieuw.` : fout === 'ongeldig' ? `In ${n} staat iets anders dan beslissingen.` : `Is ${n} verplaatst, hernoemd of niet meer gedeeld?`}</small></span></div>
+    else if (fase === 'fout') {
+      const kop = fout === 'ongeldig' ? 'Het gedeelde bestand is niet meer te lezen.' : fout === 'groot' ? 'Het gedeelde bestand is te groot.' : fout === 'eigengroot' ? 'Je log is te groot voor het gedeelde bestand.' : 'Het gedeelde bestand is niet bereikbaar.';
+      const uitleg = fout === 'slot' ? `${n} is bezet of op slot. Beslissingslog probeert het zo opnieuw.` : fout === 'ongeldig' ? `In ${n} staat iets anders dan beslissingen.`
+        : fout === 'groot' || fout === 'eigengroot' ? 'Een gedeeld bestand mag hoogstens 2 MB zijn, met 200 logs en 5000 beslissingen per log.' : `Is ${n} verplaatst, hernoemd of niet meer gedeeld?`;
+      html = `<div class="kp-bar" role="region" aria-label="Gedeeld bestand"><div class="kp-tx">${I.let}<span>${kop} Je werk blijft op dit toestel bewaard.<small>${uitleg}</small></span></div>
         <div class="kp-btns"><button type="button" class="kp-btn hoofd" data-kp="opnieuw">Opnieuw koppelen</button><button type="button" class="kp-btn rustig" data-kp="ontkoppel">Ontkoppel</button></div></div>`;
+    } else if (!deelbaar(cur())) html = `<button type="button" class="kp-chip prive" data-kp="details" aria-label="Deze log blijft op dit toestel. Hij gaat niet naar ${n}. Toon details.">${I.toestel}<span class="kp-t">Deze log blijft op dit toestel</span></button>`;
     else html = `<button type="button" class="kp-chip${vuil ? ' wacht' : ''}" data-kp="details" aria-label="Gedeeld via ${n}, ${vuil ? 'bezig met bewaren' : 'bijgewerkt ' + tijdTekst(bijgewerkt || Date.now())}. Toon details of ontkoppel.">${I.samen}<span class="kp-t">Gedeeld via <b>${n}</b></span><span class="kp-tijd">· ${vuil ? 'bewaren…' : 'bijgewerkt ' + tijdTekst(bijgewerkt || Date.now())}</span></button>`;
     if (html === getoond) return;
     const opFocus = box.contains(document.activeElement) && document.activeElement.dataset.kp;
@@ -2124,11 +2335,18 @@ window.ocKoppel = (() => {
 
   /* --- Het venster --- */
   const li = (ico, t) => `<li>${ico}<span>${t}</span></li>`;
+  // Welke logs gaan mee? Alleen je eigen logs met beslissingen. Standaard alleen de log die nu open is.
+  function logKeuze() {
+    const c = cur(), ls = state.logs.filter(l => !l.voorbeeld && l.items.length);
+    if (!ls.length) return '';
+    return `<fieldset class="kp-logs"><legend>Welke logs gaan mee naar het bestand?</legend>${ls.map(l => `<label class="kp-log"><input type="checkbox" data-log="${escA(l.id)}"${l === c ? ' checked' : ''}><span><b>${esc(l.name || 'Naamloos')}</b><small>${aantal(l.items.length)}${l === c ? ' · nu open' : ''}</small></span></label>`).join('')}
+      <p class="kp-hint">Wat je niet aanvinkt, blijft alleen op dit toestel.</p></fieldset>`;
+  }
   function vensterKies(opnieuw) {
-    return { titel:opnieuw ? 'Kies het gedeelde bestand opnieuw' : 'Werk samen via een gedeeld bestand',
+    return { titel:opnieuw ? 'Kies het gedeelde bestand opnieuw' : 'Werk samen via een gedeeld bestand', opnieuw:!!opnieuw,
       html:(opnieuw ? `<p>Is het bestand verplaatst of hernoemd? Koppel het dan opnieuw. Je log blijft op dit toestel staan.</p>`
         : `<p class="kp-eerst">Standaard blijft alles op dit toestel.</p>
-          <p>Kies je dit, dan bewaart Beslissingslog je log ook in een bestand dat jij kiest. Zet het bijvoorbeeld in een gedeelde map die je computer synchroniseert. Wie hetzelfde bestand koppelt, ziet dezelfde beslissingen.</p>`)
+          <p>Kies je dit, dan bewaart Beslissingslog de logs die je kiest ook in een bestand. Zet het bijvoorbeeld in een gedeelde map die je computer synchroniseert. Wie hetzelfde bestand koppelt, ziet dezelfde beslissingen.</p>${logKeuze()}`)
         + `<ul>${li(I.toestel, 'Alleen in Chrome of Edge op een computer.')}${li(I.terug, 'Je kan altijd ontkoppelen. Dan blijft je lijst op dit toestel staan.')}</ul>`,
       knoppen:[['nieuw', 'Maak een nieuw gedeeld bestand', 'hoofd'], ['bestaand', 'Koppel een bestaand gedeeld bestand', 'tweede'], ['annuleer', 'Annuleer', 'rustig']] };
   }
@@ -2137,18 +2355,33 @@ window.ocKoppel = (() => {
       html:`<p class="kp-eerst">Standaard blijft alles op dit toestel.</p><p class="kp-melding">${kader ? 'In dit venster kan dit niet: open Beslissingslog in een eigen tabblad van Chrome of Edge op een computer.' : 'Samenwerken via een gedeeld bestand kan alleen in Chrome of Edge op een computer.'}</p>`,
       knoppen:[['annuleer', 'Sluit', 'hoofd']], rij:true };
   }
-  function vensterOngeldig(bn) {
-    return { titel:'Dit bestand kan niet gekoppeld worden',
+  function vensterOngeldig(bn, keuze) {
+    return { titel:'Dit bestand kan niet gekoppeld worden', vast:keuze,
       html:`<p><b>${esc(bn || 'Dit bestand')}</b> is geen bestand met gedeelde beslissingen. Er is niets gekoppeld en er is niets veranderd.</p><p>Kies een bestand dat iemand hier maakte met "Maak een nieuw gedeeld bestand", of maak zelf een nieuw.</p>`,
       knoppen:[['terug', 'Kies een ander bestand', 'tweede'], ['annuleer', 'Sluit', 'rustig']] };
   }
+  function vensterTeGroot(bn, eigen, keuze) {
+    return { titel:eigen ? 'Je logs zijn te groot om te delen' : 'Dit bestand is te groot om te koppelen', vast:keuze,
+      html:`<p>${eigen ? 'Wat je aanvinkte, past niet in één gedeeld bestand.' : `<b>${esc(bn || 'Dit bestand')}</b> is te groot.`} Een gedeeld bestand mag hoogstens 2 MB zijn, met 200 logs en 5000 beslissingen per log.</p><p>Er is niets gekoppeld en er is niets veranderd.</p>`,
+      knoppen:eigen ? [['annuleer', 'Sluit', 'hoofd']] : [['terug', 'Kies een ander bestand', 'tweede'], ['annuleer', 'Sluit', 'rustig']], rij:eigen };
+  }
   function vensterDetails() {
+    const l = cur(), gd = deelbaar(l), ln = esc(l.name || 'Naamloos');
+    const eerst = gd ? `<p>De log <b>${ln}</b> staat op dit toestel en in <b>${esc(naam)}</b>.</p>`
+      : l.voorbeeld ? `<p>Het voorbeeld gaat nooit naar <b>${esc(naam)}</b>. Het staat alleen op dit toestel.</p>`
+      : `<p>De log <b>${ln}</b> staat alleen op dit toestel. Hij gaat niet naar <b>${esc(naam)}</b>.</p>`;
     return { titel:'Gedeeld bestand',
-      html:`<p>Je log staat op dit toestel en in <b>${esc(naam)}</b>.</p>
+      html:`${eerst}
         <ul>${li(I.terug, `Laatst bijgewerkt om ${tijdTekst(bijgewerkt || Date.now())}${gecontroleerd ? `, nagekeken om ${tijdTekst(gecontroleerd)}` : ''}. Beslissingslog kijkt elke 20 seconden of iemand iets veranderde.`)}
           ${li(I.samen, 'Passen twee mensen dezelfde beslissing aan, dan wint wie het laatst bewaart.')}
           ${li(I.map, 'Ontkoppel je, dan blijft je log op dit toestel en blijft het bestand bestaan.')}</ul>`,
-      knoppen:[['ontkoppel', 'Ontkoppel', 'rustig'], ['annuleer', 'Sluit', 'hoofd']], rij:true };
+      knoppen:gd || l.voorbeeld ? [['ontkoppel', 'Ontkoppel', 'rustig'], ['annuleer', 'Sluit', 'hoofd']] : [['deel', 'Deel deze log ook', 'tweede'], ['ontkoppel', 'Ontkoppel', 'rustig'], ['annuleer', 'Sluit', 'hoofd']],
+      rij:gd || !!l.voorbeeld };
+  }
+  function vensterOpen() {
+    return { titel:'Bestand openen?',
+      html:`<p>Je bent gekoppeld aan <b>${esc(naam)}</b>. Wat je opent, gaat dan ook naar het gedeelde bestand.</p><p>Kies je "Ontkoppel en open", dan blijft het gedeelde bestand zoals het is.</p>`,
+      knoppen:[['ontkoppel-open', 'Ontkoppel en open', 'hoofd'], ['open-deel', 'Open en deel', 'tweede'], ['annuleer', 'Annuleer', 'rustig']] };
   }
   function venster(v) {
     return new Promise(klaar => {
@@ -2160,11 +2393,15 @@ window.ocKoppel = (() => {
         <div class="kp-acties${v.rij ? ' kp-rij' : ''}">${knoppen.map(([k, t, c]) => `<button type="button" class="${c}" data-k="${k}">${esc(t)}</button>`).join('')}</div></div>`;
       back.querySelector('h2').textContent = v.titel;
       document.body.appendChild(back);
-      const dicht = k => { document.removeEventListener('keydown', toets, true); back.remove(); try { if (terug && terug.isConnected) terug.focus({ preventScroll:true }); } catch {} klaar(k); };
+      const dicht = k => {
+        const vinkjes = [...back.querySelectorAll('input[data-log]')];
+        v.metKeuze = vinkjes.length > 0; v.keuze = vinkjes.filter(i => i.checked).map(i => i.dataset.log);
+        document.removeEventListener('keydown', toets, true); back.remove(); try { if (terug && terug.isConnected) terug.focus({ preventScroll:true }); } catch {} klaar(k);
+      };
       const toets = e => {
         if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); dicht('annuleer'); return; }
         if (e.key !== 'Tab') return;
-        const f = [...back.querySelectorAll('button')]; const i = f.indexOf(document.activeElement);
+        const f = [...back.querySelectorAll('button, input')]; const i = f.indexOf(document.activeElement);
         if (e.shiftKey && i <= 0) { e.preventDefault(); f[f.length - 1].focus(); } else if (!e.shiftKey && (i === f.length - 1 || i < 0)) { e.preventDefault(); f[0].focus(); }
       };
       document.addEventListener('keydown', toets, true);
@@ -2175,9 +2412,11 @@ window.ocKoppel = (() => {
   // De keuzes uit het venster: de bestandskiezer opent meteen bij de klik (zonder iets anders ertussen)
   async function vanVenster(v) {
     const k = await venster(v);
-    if (k === 'nieuw') koppelNieuw();
-    else if (k === 'bestaand' || k === 'terug') koppelBestaand();
+    const keuze = v.metKeuze ? v.keuze : 'vast' in v ? v.vast : v.opnieuw ? null : [];
+    if (k === 'nieuw') koppelNieuw(keuze);
+    else if (k === 'bestaand' || k === 'terug') koppelBestaand(keuze);
     else if (k === 'ontkoppel') ontkoppel();
+    else if (k === 'deel') deelDezeLog();
   }
   function openVenster() {
     if (fase !== 'uit') { vanVenster(vensterDetails()); return; }
@@ -2193,6 +2432,34 @@ window.ocKoppel = (() => {
     if (k === 'ontkoppel') ontkoppel();
   });
 
+  /* --- "Open bestand" terwijl je gekoppeld bent: eerst vragen. Standaard en veilig: ontkoppelen.
+     We vangen de klik en (voor de zekerheid) ook het gekozen bestand op, vóór het gedeelde blok het opent. --- */
+  async function openKeuze(verder) {
+    const k = await venster(vensterOpen());
+    if (k === 'ontkoppel-open') { await ontkoppel(true); verder(); }
+    else if (k === 'open-deel') { deelOpen = Date.now(); verder(); }
+  }
+  // "Open en deel": na het herladen gaan de logs uit het geopende bestand mee (alleen als de log echt vervangen werd)
+  function onthoudGeopend(file) {
+    file.text().then(t => {
+      try { const d = JSON.parse(t), ruw = d.data[KEY], s = typeof ruw === 'string' ? JSON.parse(ruw) : ruw;
+        sessionStorage.setItem('oc.koppel.open', JSON.stringify({ ids:s.logs.map(l => String(l && l.id)), t:Date.now() })); } catch {}
+    }, () => {});
+  }
+  document.addEventListener('click', e => {
+    if (fase === 'uit' || !e.target.closest || !e.target.closest('[data-bestand="open"]')) return;
+    e.stopImmediatePropagation(); e.preventDefault();
+    try { closeMenu(); } catch {}
+    openKeuze(() => { const i = document.getElementById('oc-bestand-in'); if (i) { i.value = ''; i.click(); } });
+  }, true);
+  document.addEventListener('change', e => {
+    const inp = e.target; if (!inp || inp.id !== 'oc-bestand-in' || fase === 'uit') return;
+    const f = inp.files && inp.files[0]; if (!f) return;
+    if (deelOpen && Date.now() - deelOpen < 120000) { deelOpen = 0; onthoudGeopend(f); return; }
+    e.stopImmediatePropagation();
+    openKeuze(() => inp.dispatchEvent(new Event('change')));
+  }, true);
+
   /* --- Bij het laden: alleen iets doen als je eerder zelf koppelde --- */
   (async () => {
     if (!kan()) return;
@@ -2201,13 +2468,19 @@ window.ocKoppel = (() => {
     let rec = null; try { rec = await leesRec(); } catch { return; }
     if (!rec || !rec.handle) return;
     if (!er) { try { await wisRec(); } catch {} return; }          // de app wiste de gegevens van deze tool: de koppeling gaat mee
+    if (gewist) return;
     volg();
+    let o = null; try { o = JSON.parse(sessionStorage.getItem('oc.koppel.open') || 'null'); sessionStorage.removeItem('oc.koppel.open'); } catch {}
+    if (o && Array.isArray(o.ids) && Date.now() - o.t < 600000) {
+      const ids = new Set(o.ids), eigen = state.logs.filter(l => !l.voorbeeld);
+      if (eigen.length && eigen.every(l => ids.has(l.id))) { eigen.forEach(l => { l.gedeeld = true; }); bewaarLokaal(); }
+    }
     let p = 'prompt'; try { p = await rec.handle.queryPermission({ mode:'readwrite' }); } catch {}
     h = rec.handle; naam = rec.naam || rec.handle.name || NAAM; fase = p === 'granted' ? 'actief' : 'hervat';
     if (fase === 'actief') { startPoll(); toon(); laatsteKijk = Date.now(); wachtrij(bijwerken); } else toon();
   })();
 
-  return { stempel, na, wis, herstel, toestand:() => ({ fase, fout, naam, vuil, bijgewerkt }), samen, ontleed };
+  return { stempel, na, wis, herstel, seinWis, toon, toestand:() => ({ fase, fout, naam, vuil, bijgewerkt, gewist }), samen, ontleed };
 })();
 </script>
 <script>
