@@ -61,6 +61,9 @@ button { background:none; border:0; cursor:pointer; }
 .tab.active { background:var(--slate-800); border-color:var(--slate-800); color:var(--wit); }
 .tab.active .n { color:var(--slate-300); }
 .tab.add { color:var(--accent-dark); border-style:dashed; }
+/* Werk samen via een gedeeld bestand: de status staat onder de tabs (de stijl komt uit het gedeelde blok oc-koppel) */
+.kp { margin:0 0 0.875rem; }
+body.present .kp { display:none; }
 
 /* Kaart */
 .card { background:var(--wit); border:1px solid var(--slate-200); border-radius:16px; box-shadow:0 1px 2px rgba(15,23,42,0.04); }
@@ -630,6 +633,7 @@ input::placeholder, textarea::placeholder { color:#64748b; opacity:1; }
         <li><b>Stem op wat telt.</b> Geef met plus en min stemmen aan de kaartjes die het belangrijkst zijn. "Op stemmen" zet ze in volgorde.</li>
         <li><b>Maak er acties van.</b> Tik bij een kaartje op Actie, of typ een actie onderaan. Vul in wie ze doet en tegen wanneer: een actie zonder eigenaar gebeurt zelden.</li>
         <li><b>Volg op bij de volgende retro.</b> Kies "+&nbsp;Retro" voor een nieuwe ronde. De open acties van vorige keer gaan mee, zodat je ziet wat er echt gebeurde.</li>
+        <li><b>Werk samen via een gedeeld bestand.</b> Standaard blijft alles op dit toestel. Wil je dat iedereen op zijn eigen toestel kaartjes toevoegt en stemt? Kies dan in het menu ⋮ "Werk samen via een gedeeld bestand", vink aan welke retro's meegaan en zet het bestand in een gedeelde map die je computer synchroniseert. Dit kan in Chrome of Edge op een computer en in Chrome op Android, niet op een iPhone of iPad. Iedereen met toegang tot het bestand ziet wat erin staat. Stemmen twee mensen tegelijk, dan tellen beide stemmen.</li>
       </ul>
       <p>Tip: plak een lijst in een invulveld en elke regel wordt een kaartje. Enter bewaart een aangepast kaartje, Escape zet het terug.</p>
       <p>De open acties zet je met "Zet in Takenbord" in het <a href="../kanban/">Takenbord</a>. Vink daar aan welke je overneemt.</p>
@@ -647,6 +651,1013 @@ input::placeholder, textarea::placeholder { color:#64748b; opacity:1; }
 
 <div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-text"></span><button id="toast-btn" hidden>Ongedaan</button></div>
 
+<script>
+/* oc-koppel v1 begin */
+/* ---------- Werk samen via een gedeeld bestand (gedeeld blok, één bron: scratchpad/oc-koppel.html) ----------
+   Standaard blijft alles op dit toestel. Pas als je in het menu bewust een gedeeld bestand kiest (een bestand in een map
+   die je computer synchroniseert), bewaart de tool de eenheden die je aanvinkt (een log, een project, een overleg) ook daarin.
+   De lokale opslag blijft altijd werken; het bestand komt erbij. Alleen met showSaveFilePicker (Chrome en Edge op een computer,
+   Chrome op Android). Zonder koppeling maakt dit blok niets aan: geen IndexedDB, geen polling, geen knoppen in beeld.
+   - Koppeling (het bestandshandvat) in IndexedDB: databank oc-koppel, store bestand, sleutel = tool-id. Vóór elke schrijfactie
+     kijkt het blok na of die koppeling er nog is. Zo niet (Alles wissen in een ander tabblad), dan schrijft het niets en ontkoppelt
+     het stil. Een tabblad dat "Alles wissen" ontvangt, schrijft nooit meer.
+   - Bestand = het formaat van "Bewaar als bestand" (app, version, data), met een kop: soort (bv. oc-takenbord) en versie.
+     Een bestand van een andere tool koppel je niet. Hoogstens 2 MB, en grenzen op aantallen per tool.
+   - Samenvoegen per eenheid en per item op id: de laatste wijziging (gewijzigd, in ms) wint; zonder tijd telt 0. Een tijd verder
+     dan nu + 5 minuten telt als nu + 5 minuten; een eigen wijziging krijgt minstens de vorige tijd + 1. Verwijderd = een id met tijd
+     (per verzameling op de eenheid, bovenaan voor eenheden). Een verwijdering wint van een oudere wijziging. Verwijderingen ouder
+     dan 90 dagen gaan bij het schrijven weg. De velden van een eenheid zonder id (naam en zo) gaan samen: de laatste wint.
+     Bij gelijke tijd beslist een vaste vergelijking, aan beide kanten dezelfde. Een voorbeeld gaat nooit mee.
+     Haalt het bestand iets weg of vervangt het iets, dan kan je dat 12 seconden ongedaan maken.
+   - Lezen: elke 20 seconden (alleen als de tool zichtbaar is), bij focus, pageshow, visibilitychange en als de app de tool weer
+     toont (bericht oc-zichtbaar). Telkens een vers getFile() en een vergelijking op inhoud, niet alleen op lastModified.
+
+   Gebruik: ocKoppel.start(adapter), met
+     id, soort, naam, bestand        tool-id (sleutel in IndexedDB), soort in het bestand, naam in de teksten, begin van de bestandsnaam
+     sleutel, lijst, verz            sleutel in data van het bestand, eigenschap met de eenheden, { verzameling: eigenschap met verwijderingen }
+     vlag, huidig, kopVelden         eigenschap "gaat mee", eigenschap met de open eenheid, velden zonder id die per eenheid samengaan
+     w, max                          woorden ({een, veel, De, Deze, Hij, deze, werk, zelfde, item:[een, veel]}), { eenheden, items }
+     staat()                         de live toestand (met lijst en weg)
+     schoonEenheid(u), schoonItem(v, it, tijd, H), kopSchoon(u, H)   de eigen validatie van de tool (zoals bij Open bestand)
+     bewaar(), teken(), bezig(), anker, tabs(), toast(msg, undo, ms), ongedaan()    lokaal bewaren, tekenen, melding
+     menu {na(), tekst, sluit(), knop()}, plek(), open {knop, invoer}               waar het menu-item en de status komen
+     optioneel: idVan, volgorde ('bestand'), botsing(v, x, y, winnaar, H), naSamen(u), nieuweEenheid(), leeg(u), spoel(),
+                label(u), naamVoorBestand(u), aantal(u), kiesHuidig(), naOngedaan(), naamKoppel, uitleg (zin over gelijktijdig aanpassen) */
+window.ocKoppel = (() => {
+  const DB = 'oc-koppel', STORE = 'bestand', VERSIE = 1, POLL = 20000, PAUZE = 1000;
+  const MARGE = 5 * 60000, OUD = 90 * 864e5, ONGEDAAN_MS = 12000, MAX_BYTES = 2 * 1024 * 1024;
+  const SOORTEN = { 'oc-beslissingen':'Beslissingslog', 'oc-takenbord':'Takenbord', 'oc-notities':'Vergadernotities' };
+  const TOOLS = { beslissingen:'Beslissingslog', kanban:'Takenbord', notities:'Vergadernotities' };
+  const kan = () => typeof window.showSaveFilePicker === 'function' && typeof window.showOpenFilePicker === 'function' && window.isSecureContext !== false;
+  const TAB_DEEL = '<svg class="tab-deel" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="gedeeld" role="img"><circle cx="9" cy="8" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="9" r="2.4"/><path d="M15.5 14.2a4.5 4.5 0 0 1 5.5 4.8"/></svg>';
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+  const uid = () => Math.random().toString(36).slice(2, 10);
+  const norm = v => String(v || '').normalize('NFC').toLowerCase().replace(/\s+/g, ' ').trim().replace(/^[\s.,;:!?·-]+|[\s.,;:!?·-]+$/g, '');
+  // kleine letters, koppeltekens, geen vreemde tekens; hoogstens 40 tekens, afgebroken tussen twee woorden
+  const slug = s => { const t = String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); if (t.length <= 40) return t; const k = t.slice(0, 41), i = k.lastIndexOf('-'); return i > 0 ? k.slice(0, i) : t.slice(0, 40); };
+  let A = null;                                                // de adapter van de tool (pas na start)
+  let h = null, naam = '', fase = 'uit', fout = '', andere = '';   // fase: uit | actief | hervat | fout;  fout: weg | slot | ongeldig | groot | eigengroot
+  let laatst = { lm:-1, size:-1, tekst:null, data:null, obj:null }, bijgewerkt = 0, gecontroleerd = 0;
+  let vuil = false, schrijfT = null, pollT = null, rij = Promise.resolve(), wachtend = false, tekenLater = false, laatsteKijk = 0;
+  let gewist = false, deelOpen = 0;
+
+  /* --- Het wis-signaal van dit tabblad komt ook bij onszelf binnen (elk BroadcastChannel-object van de pagina krijgt het).
+     Het gedeelde blok oc-sync zou dan deze pagina herladen en Ongedaan kwijtspelen. Daarom krijgt elk kanaal 'oc-sync'
+     van deze pagina een eerste luisteraar die ons eigen bericht tegenhoudt. Berichten van andere tabbladen gaan gewoon door. --- */
+  const PAGINA = Math.random().toString(36).slice(2) + Date.now().toString(36);
+  (() => {
+    const BC = window.BroadcastChannel; if (typeof BC !== 'function' || BC.__kp) return;
+    function Kanaal(n) {
+      const c = new BC(n);
+      if (String(n) === 'oc-sync') c.addEventListener('message', e => { if (e.data && e.data.bron === PAGINA) e.stopImmediatePropagation(); });
+      return c;
+    }
+    Kanaal.prototype = BC.prototype; Kanaal.__kp = true;
+    try { window.BroadcastChannel = Kanaal; } catch {}
+  })();
+
+  /* --- IndexedDB: alleen openen als je koppelde (zonder koppeling wordt er niets aangemaakt) --- */
+  function db() {
+    return new Promise((ok, no) => {
+      const r = indexedDB.open(DB, 1);
+      r.onupgradeneeded = () => { if (!r.result.objectStoreNames.contains(STORE)) r.result.createObjectStore(STORE); };
+      r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); r.onblocked = () => no(new Error('geblokkeerd'));
+    });
+  }
+  async function idb(mode, fn) {
+    const d = await db();
+    try {
+      return await new Promise((ok, no) => {
+        const t = d.transaction(STORE, mode), q = fn(t.objectStore(STORE)); let res;
+        if (q) q.onsuccess = () => { res = q.result; };
+        t.oncomplete = () => ok(res); t.onerror = t.onabort = () => no(t.error);
+      });
+    } finally { d.close(); }
+  }
+  const leesRec = () => idb('readonly', s => s.get(A.id));
+  const zetRec = rec => idb('readwrite', s => s.put(rec, A.id));
+  const wisRec = () => idb('readwrite', s => s.delete(A.id));
+  async function bestaatDb() { try { if (indexedDB.databases) return (await indexedDB.databases()).some(d => d && d.name === DB); } catch {} return false; }
+  const fout_ = n => Object.assign(new Error(n), { name:n });
+  // Staat de koppeling met dit bestand nog in IndexedDB? Kan het niet nagekeken worden, dan schrijven we nu niet (later opnieuw).
+  async function nogGekoppeld(h0) {
+    let rec;
+    try {
+      if (indexedDB.databases && !(await indexedDB.databases()).some(d => d && d.name === DB)) return false;
+      rec = await leesRec();
+    } catch { throw fout_('Bezig'); }
+    if (!rec || !rec.handle) return false;
+    try { return await rec.handle.isSameEntry(h0); } catch { return (rec.naam || rec.handle.name) === naam; }
+  }
+  // De koppeling is elders gewist: niets meer doen, zonder melding. IndexedDB laten we met rust.
+  function losStil() { stop(); h = null; fase = 'uit'; fout = ''; vuil = false; toon(); }
+
+  /* --- Gegevens uit een bestand nakijken: vaste velden, schone ids. Zo is ook de vergelijking van twee kanten altijd dezelfde. --- */
+  const VERBODEN = new Set(['__proto__', 'constructor', 'prototype']);
+  const sid = v => { const s = (typeof v === 'string' || typeof v === 'number' ? String(v) : '').replace(/[^\w-]/g, '').slice(0, 40); return VERBODEN.has(s) ? '' : s; };
+  const str = (v, n) => (typeof v === 'string' ? v : typeof v === 'number' ? String(v) : '').slice(0, n || 2000);
+  const datum = v => /^\d{4}-\d{2}-\d{2}$/.test(str(v)) ? v : '';
+  // Een tijd verder dan nu + 5 minuten telt als nu + 5 minuten: een vervalste of voorlopende klok wint niet altijd.
+  // Werd er bij het lezen een tijd begrensd, dan schrijven we het bestand meteen terug: zo telt bij iedereen dezelfde tijd.
+  let telKap = false, gekapt = 0;
+  const tijd = v => { const n = Math.round(+v); if (!isFinite(n) || n <= 0) return 0; const g = Date.now() + MARGE; if (n > g) { if (telKap) gekapt++; return g; } return n; };
+  const ruweTijd = v => { const n = Math.round(+v); return isFinite(n) && n > 0 ? Math.min(n, 9e15) : 0; };
+  function wegMap(m, grens) {
+    const o = Object.create(null);
+    if (m && typeof m === 'object' && !Array.isArray(m)) Object.keys(m).forEach(k => { const id = sid(k), t = tijd(m[k]); if (id && t && t >= (grens || 0)) o[id] = Math.max(o[id] || 0, t); });
+    return o;
+  }
+  const H = { sid, str, tijd, datum, norm, slug, uid };
+  const V = () => Object.keys(A.verz);
+  const iid = (v, it) => !it || typeof it !== 'object' ? '' : A.idVan && A.idVan[v] ? sid(A.idVan[v](it)) : sid(it.id);
+  // ruw: de tijden zoals ze zijn (om te vergelijken of iets veranderde), anders begrensd op nu + 5 minuten (bij het lezen en schrijven)
+  function schoonItem(v, it, ruw) {
+    if (!it || typeof it !== 'object') return null;
+    const t = ruw ? ruweTijd : tijd;
+    if (!iid(v, it)) return null;
+    const o = A.schoonItem(v, it, t, H);
+    if (!o || typeof o !== 'object' || !iid(v, o)) return null;
+    if (t(it.gewijzigd)) o.gewijzigd = t(it.gewijzigd);
+    if (A.botsing && Array.isArray(it.spoor)) { const s = it.spoor.map(sid).filter(Boolean).slice(0, 12); if (s.length) o.spoor = s; }
+    return o;
+  }
+  const kopVan = u => { const o = {}; (A.kopVelden || []).forEach(k => { if (u && k in u) o[k] = u[k]; }); return o; };
+  const kopTekst = u => JSON.stringify(A.kopSchoon(u, H));
+  function schoonEenheid(raw, grens) {
+    if (!raw || typeof raw !== 'object' || raw.voorbeeld) return null;
+    const id = sid(raw.id); if (!id) return null;
+    const u = A.schoonEenheid ? A.schoonEenheid(raw) : raw;   // de eigen validatie van de tool (verwijzingen tussen verzamelingen)
+    if (!u || typeof u !== 'object') return null;
+    const o = Object.assign({ id }, A.kopSchoon(u, H));
+    V().forEach(v => { const gezien = new Set(); o[v] = (Array.isArray(u[v]) ? u[v] : []).map(it => schoonItem(v, it)).filter(it => it && !gezien.has(iid(v, it)) && gezien.add(iid(v, it))); });
+    V().forEach(v => { const w = wegMap(raw[A.verz[v]], grens); if (Object.keys(w).length) o[A.verz[v]] = w; });
+    if (tijd(raw.gewijzigd)) o.gewijzigd = tijd(raw.gewijzigd);
+    return o;
+  }
+  // Een eenheid gaat alleen mee als je ze koos (vlag) en ze geen voorbeeld is
+  const deelbaar = u => !!u && u[A.vlag] === true && !u.voorbeeld;
+  /* Het deel dat gedeeld wordt. Uit een bestand: alles (behalve een voorbeeld). Om te schrijven: alleen de gedeelde eenheden,
+     en zonder verwijderingen ouder dan 90 dagen. Niets van wat alleen voor dit toestel is (de open eenheid, concepten). */
+  function deelVan(s, schrijven) {
+    const gezien = new Set(), grens = schrijven ? Date.now() - OUD : 0;
+    const L = (Array.isArray(s[A.lijst]) ? s[A.lijst] : []).filter(u => !schrijven || deelbaar(u)).map(u => schoonEenheid(u, grens)).filter(u => u && !gezien.has(u.id) && gezien.add(u.id));
+    return { [A.lijst]:L, weg:wegMap(s.weg, grens) };
+  }
+  // Vergelijken zonder op de volgorde te letten: zo blijven twee toestellen met een andere volgorde niet om beurten schrijven
+  const opId = (x, y) => (x.k < y.k ? -1 : x.k > y.k ? 1 : 0);
+  function stabiel(x) {
+    if (Array.isArray(x)) return '[' + x.map(stabiel).join(',') + ']';
+    if (x && typeof x === 'object') return '{' + Object.keys(x).sort().map(k => JSON.stringify(k) + ':' + stabiel(x[k])).join(',') + '}';
+    return JSON.stringify(x === undefined ? null : x);
+  }
+  function vgl(d) {
+    const us = d[A.lijst].map(u => { const o = Object.assign({}, u); V().forEach(v => { o[v] = o[v].map(it => ({ k:iid(v, it), it })).sort(opId).map(x => x.it); }); return { k:u.id, it:o }; }).sort(opId).map(x => x.it);
+    return stabiel({ e:us, weg:d.weg });
+  }
+  const ck = (v, it) => JSON.stringify(schoonItem(v, it, true));
+  // Alleen de inhoud (zonder tijd en spoor): om te tellen wat echt veranderde, en voor het spoor van een item
+  const inh = (v, it) => { const o = schoonItem(v, it, true); if (!o) return ''; delete o.gewijzigd; delete o.spoor; return JSON.stringify(o); };
+  const hash = s => { let a = 5381, b = 52711; for (let i = 0; i < s.length; i++) { const c = s.charCodeAt(i); a = (a * 33) ^ c; b = (b * 33) ^ c; } return (a >>> 0).toString(36) + (b >>> 0).toString(36); };
+  const hInh = (v, it) => hash(inh(v, it));
+  const MAX = () => Object.assign({ eenheden:200, items:5000 }, A.max || {});
+  const teGroot = b => b[A.lijst].length > MAX().eenheden || b[A.lijst].some(u => V().some(v => u[v].length > MAX().items));
+  const bytes = t => new Blob([t]).size;
+  // Een geldig bestand van deze tool: geeft het gedeelde deel terug, anders null
+  function ontleed(tekst) {
+    let d; try { d = JSON.parse(tekst); } catch { return null; }
+    if (!d || typeof d !== 'object' || (d.soort !== A.soort && d.app !== 'Onder Constructie')) return null;
+    if (typeof d.soort === 'string' && d.soort !== A.soort) return null;          // een bestand van een andere tool
+    const ruw = d.data && typeof d.data === 'object' ? d.data[A.sleutel] : null;
+    let s; try { s = typeof ruw === 'string' ? JSON.parse(ruw) : ruw; } catch { return null; }
+    if (!s || typeof s !== 'object' || !Array.isArray(s[A.lijst])) return null;
+    telKap = true; gekapt = 0;
+    try { return deelVan(s, false); } finally { telKap = false; }
+  }
+  // Komt het bestand van een andere tool? Dan de naam van die tool, anders ''
+  function vanAndere(tekst) {
+    let d; try { d = JSON.parse(tekst); } catch { return ''; }
+    if (!d || typeof d !== 'object') return '';
+    if (typeof d.soort === 'string' && d.soort !== A.soort) return SOORTEN[d.soort] || 'een andere tool';
+    const heeft = d.data && typeof d.data === 'object' && Object.prototype.hasOwnProperty.call(d.data, A.sleutel);
+    if (d.app === 'Onder Constructie' && typeof d.tool === 'string' && d.tool !== A.id && !heeft) return TOOLS[d.tool] || 'een andere tool';
+    return '';
+  }
+  // Wat we als "laatst gelezen" onthouden. Was er een tijd begrensd, dan iets dat nooit gelijk is: het bestand wordt dan herschreven.
+  const gelezen = b => gekapt ? '' : vgl(b);
+  function bestandTekst(data) {
+    return JSON.stringify({ app:'Onder Constructie', version:1, soort:A.soort, versie:VERSIE, tool:A.id, created:new Date().toISOString(), data:{ [A.sleutel]:data } }, null, 1);
+  }
+
+  /* --- Samenvoegen: lokaal (a) en bestand (b). Vaste regels, niets raden. --- */
+  const ts = x => tijd(x && x.gewijzigd);
+  function kies(v, x, y) {                   // de laatste wijziging wint; bij gelijke tijd een vaste keuze (aan beide kanten dezelfde)
+    if (ts(x) !== ts(y)) return ts(x) > ts(y) ? x : y;
+    const cx = ck(v, x), cy = ck(v, y);
+    return cx === cy || cx > cy ? x : y;
+  }
+  function voeg(a, b) { const o = wegMap(a); Object.keys(wegMap(b)).forEach(k => { o[k] = Math.max(o[k] || 0, tijd(b[k])); }); return o; }
+  // Volgorde: standaard eerst die van dit toestel, dan wat nieuw is. 'bestand': die van het bestand, en wat alleen hier staat, na zijn voorganger.
+  function volgorde(xs, ys) {
+    if (A.volgorde !== 'bestand') { const s = new Set(xs); return [...xs, ...ys.filter(i => !s.has(i))]; }
+    const uit = ys.slice(), inY = new Set(ys);
+    xs.forEach((i, k) => { if (inY.has(i)) return; let j = -1; for (let q = k - 1; q >= 0 && j < 0; q--) j = uit.indexOf(xs[q]); uit.splice(j + 1, 0, i); });
+    return uit;
+  }
+  /* Een tool met botsing (Vergadernotities) houdt per item een spoor bij: de vingerafdrukken van de versies die al in het bestand
+     stonden toen je het aanpaste. Bouwt de ene versie voort op de andere, dan wint de nieuwste in die lijn, wat de klok ook zegt.
+     Komen beide uit dezelfde vroegere versie, dan pasten twee mensen tegelijk aan: de tool beslist (bv. beide bewaren). */
+  function beide(v, x, y) {
+    const w = kies(v, x, y);
+    if (!A.botsing || ck(v, x) === ck(v, y)) return [w];
+    const hx = hInh(v, x), hy = hInh(v, y), sx = Array.isArray(x.spoor) ? x.spoor : [], sy = Array.isArray(y.spoor) ? y.spoor : [];
+    if (hx === hy) return [w];
+    if (sy.includes(hx)) return [y];
+    if (sx.includes(hy)) return [x];
+    if (!sx.some(s => sy.includes(s))) return [w];
+    const r = A.botsing(v, x, y, w, H);
+    if (!Array.isArray(r) || !r.length) return [w];
+    const sp = [hx, hy, ...sx, ...sy].filter((s, i, l) => l.indexOf(s) === i).slice(0, 12);
+    r[0] = Object.assign({}, r[0], { spoor:sp, gewijzigd:Math.max(ts(x), ts(y)) + 1 });
+    return r;
+  }
+  // De versie van een item zoals het bestand ze laatst had (gelezen of geschreven)
+  let basisVan, basisMap = new Map();          // (basisVan begint ongelijk aan elke laatst.obj, ook null)
+  function basis(uid, v, id) {
+    if (basisVan !== laatst.obj) { basisVan = laatst.obj; basisMap = new Map(); ((laatst.obj && laatst.obj[A.lijst]) || []).forEach(u => V().forEach(w => (u[w] || []).forEach(it => basisMap.set(u.id + SEP + w + SEP + iid(w, it), it)))); }
+    return basisMap.get(uid + SEP + v + SEP + id) || null;
+  }
+  function samen(a, b) {
+    const L = A.lijst, weg = voeg(a.weg, b.weg);
+    const am = new Map(a[L].map(u => [u.id, u])), bm = new Map(b[L].map(u => [u.id, u]));
+    const ids = [...am.keys(), ...[...bm.keys()].filter(id => !am.has(id))];
+    const uit = [];
+    ids.forEach(id => {
+      const x = am.get(id), y = bm.get(id);
+      let u = x || y;
+      if (x && y) {
+        const kop = ts(x) !== ts(y) ? (ts(x) > ts(y) ? x : y) : (kopTekst(x) >= kopTekst(y) ? x : y);
+        u = Object.assign({}, x, kopVan(kop));
+        V().forEach(v => {
+          const wp = A.verz[v], lw = voeg(x[wp], y[wp]), xs = Array.isArray(x[v]) ? x[v] : [], ys = Array.isArray(y[v]) ? y[v] : [];
+          const xm = new Map(xs.map(i => [iid(v, i), i])), ym = new Map(ys.map(i => [iid(v, i), i]));
+          const items = [];
+          volgorde([...xm.keys()], [...ym.keys()]).forEach(i => { const p = xm.get(i), q = ym.get(i); if (p && q) items.push(...beide(v, p, q)); else items.push(p || q); });
+          const gezien = new Set();
+          u[v] = items.filter(it => !(lw[iid(v, it)] >= ts(it)) && !gezien.has(iid(v, it)) && gezien.add(iid(v, it)));
+          if (Object.keys(lw).length) u[wp] = lw; else delete u[wp];
+        });
+        if (ts(kop)) u.gewijzigd = ts(kop); else delete u.gewijzigd;
+        if (A.naSamen) u = A.naSamen(u) || u;
+      } else V().forEach(v => {
+        const wp = A.verz[v];
+        if (u[wp] && typeof u[wp] === 'object' && Object.keys(u[wp]).length) {
+          const lw = wegMap(u[wp]); if ((u[v] || []).some(it => lw[iid(v, it)] >= ts(it))) u = Object.assign({}, u, { [v]:u[v].filter(it => !(lw[iid(v, it)] >= ts(it))) });
+        }
+      });
+      // Een verwijderde eenheid blijft weg, tenzij iemand er later nog iets in veranderde
+      const nieuwste = Math.max(ts(u), ...V().flatMap(v => (u[v] || []).map(ts)));
+      if (!u.voorbeeld && weg[id] && weg[id] >= nieuwste) return;
+      uit.push(u);
+    });
+    return { [L]:uit, weg };
+  }
+
+  /* --- Tijdstempels: na elke bewaring vergelijken we met wat we kenden. Pas vanaf de eerste koppeling (staat.weg bestaat). --- */
+  const cache = new Map();
+  const SEP = '\u0001';
+  const kopKenmerk = u => JSON.stringify([kopVan(u), !!u.voorbeeld]);
+  // Per eenheid: hoe ze er als geheel uitzag (ruw), en per item een vingerafdruk. Een eenheid die niet veranderde, slaan we snel over.
+  function merk(u) {
+    const keys = [];
+    V().forEach(v => (u[v] || []).forEach(it => { const k = 'i' + SEP + u.id + SEP + v + SEP + iid(v, it); keys.push(k); cache.set(k, { c:ck(v, it), t:ts(it) }); }));
+    cache.set('l' + SEP + u.id, { v:kopKenmerk(u), g:deelbaar(u), t:ts(u), ruw:JSON.stringify(u), keys });
+  }
+  function onthoud() { cache.clear(); (A.staat()[A.lijst] || []).forEach(merk); }
+  // Een eigen wijziging wint altijd van wat je al zag: minstens de vorige tijd + 1. Stond die vorige tijd in de toekomst
+  // (een collega met een voorlopende klok), dan krijgt de correctie nu + 5 minuten + 1, zodat ze ook bij anderen wint.
+  const volgende = prev => { const nu = Date.now(), p = tijd(prev); return p > nu ? nu + MARGE + 1 : Math.max(nu, p + 1); };
+  function stempel() {
+    if (!A) return;
+    const S = A.staat();
+    if (!S.weg || typeof S.weg !== 'object') return;
+    const gezien = new Set(), opnieuw = [], weg = [];
+    (S[A.lijst] || []).forEach(u => {
+      const kl = 'l' + SEP + u.id, c = cache.get(kl); gezien.add(kl);
+      if (c && c.ruw === JSON.stringify(u)) { c.keys.forEach(k => gezien.add(k)); return; }
+      if (!c || c.v !== kopKenmerk(u)) u.gewijzigd = volgende(u.gewijzigd);
+      V().forEach(v => (u[v] || []).forEach(it => {
+        const id = iid(v, it), k = 'i' + SEP + u.id + SEP + v + SEP + id, ci = cache.get(k); gezien.add(k);
+        if (ci && ci.c === ck(v, it)) return;
+        it.gewijzigd = volgende(it.gewijzigd);
+        // spoor: van welke versie in het bestand vertrok deze wijziging?
+        const b = A.botsing && basis(u.id, v, id);
+        if (b) { const hb = hInh(v, b), sp = Array.isArray(it.spoor) ? it.spoor : []; if (hb !== hInh(v, it) && sp[0] !== hb) it.spoor = [hb, ...sp.filter(s => s !== hb)].slice(0, 12); }
+      }));
+      opnieuw.push(u);
+    });
+    cache.forEach((val, k) => {
+      if (gezien.has(k)) return;
+      weg.push(k);
+      const p = k.split(SEP);
+      if (p[0] === 'l') { if (val.g && !VERBODEN.has(p[1])) S.weg[p[1]] = volgende(Math.max(val.t, tijd(S.weg[p[1]]))); return; }
+      const u = S[A.lijst].find(x => x.id === p[1]), wp = A.verz[p[2]];
+      if (u && !u.voorbeeld && wp && p[3] && !VERBODEN.has(p[3])) { if (!u[wp] || typeof u[wp] !== 'object') u[wp] = {}; u[wp][p[3]] = volgende(val.t); }
+    });
+    weg.forEach(k => cache.delete(k));
+    opnieuw.forEach(merk);
+  }
+  function volg() { const S = A.staat(); if (!S.weg || typeof S.weg !== 'object') { onthoud(); S.weg = {}; } }
+  // Welke eenheden gaan mee: null = laten zoals het is (opnieuw koppelen), anders de gekozen ids
+  function markeer(keuze) {
+    if (keuze == null) return;
+    A.staat()[A.lijst].forEach(u => { if (!u.voorbeeld && keuze.includes(u.id)) u[A.vlag] = true; else delete u[A.vlag]; });
+  }
+  // Verwijderingen ouder dan 90 dagen ook lokaal opruimen
+  function snoei() {
+    const grens = Date.now() - OUD, S = A.staat(); let weg = false;
+    const ruim = m => { if (m && typeof m === 'object') Object.keys(m).forEach(k => { if (!(tijd(m[k]) >= grens)) { delete m[k]; weg = true; } }); };
+    ruim(S.weg); S[A.lijst].forEach(u => V().forEach(v => ruim(u[A.verz[v]])));
+    return weg;
+  }
+  // De open eenheid bestaat niet meer: de tool kiest een andere
+  function zorgHuidig() {
+    const S = A.staat(), L = S[A.lijst];
+    if (L.some(u => u.id === S[A.huidig])) return;
+    if (A.kiesHuidig) A.kiesHuidig(); else if (L.length) S[A.huidig] = L[0].id;
+  }
+  const huidig = () => { const S = A.staat(); return S[A.lijst].find(u => u.id === S[A.huidig]) || null; };
+
+  /* --- Lokaal bewaren na samenvoegen (zonder nieuwe tijdstempels) en opnieuw tekenen zonder te springen --- */
+  function bewaarLokaal() { try { A.bewaar(); } catch {} onthoud(); }
+  const bezig = () => { try { return !!(A.bezig && A.bezig()); } catch { return false; } };
+  function teken() {
+    if (bezig()) { tekenLater = true; return; }
+    tekenLater = false;
+    const els = () => A.anker ? [...document.querySelectorAll(A.anker)] : [];
+    const ank = els().find(e => e.getBoundingClientRect().bottom > 0), id = ank && ank.dataset.id, top = ank && ank.getBoundingClientRect().top;
+    A.teken();
+    if (id) { const n = els().find(e => e.dataset.id === id); if (n) { const d = n.getBoundingClientRect().top - top; if (Math.abs(d) > 1) window.scrollBy(0, d); } }
+  }
+  document.addEventListener('focusout', () => setTimeout(() => { if (A && tekenLater && !bezig()) teken(); }, 0));
+  setInterval(() => { if (A && tekenLater && !bezig()) teken(); }, 1500);
+
+  /* --- Ongedaan na een samenvoeging die iets weghaalde of verving: de kopie van vlak ervoor komt terug, met nieuwe tijden
+     zodat ze wint. Wat er nieuw binnenkwam, blijft. Wat je sindsdien zelf aanpaste, blijft ook. --- */
+  const kopie = x => JSON.parse(JSON.stringify(x));
+  function maakOngedaan(voor, leeg) {
+    const L = A.lijst, na = kopie(A.staat()[L].filter(deelbaar));
+    const f = () => {
+      const S = A.staat(), naL = new Map(na.map(u => [u.id, u]));
+      voor[L].filter(deelbaar).forEach(vu => {
+        const nu = naL.get(vu.id), u = S[L].find(x => x.id === vu.id);
+        if (!nu) {                                               // de eenheid verdween via het bestand
+          if (u) return;
+          const k = kopie(vu), tomb = tijd(S.weg && S.weg[vu.id]);
+          k.gewijzigd = Math.max(volgende(ts(vu)), tomb + 1);
+          V().forEach(v => (k[v] || []).forEach(it => { it.gewijzigd = Math.max(volgende(ts(it)), tomb + 1); }));
+          S[L].push(k); return;
+        }
+        if (!u) return;                                          // sindsdien zelf verwijderd
+        if (kopTekst(vu) !== kopTekst(nu) && kopTekst(u) === kopTekst(nu)) { Object.assign(u, kopVan(vu)); u.gewijzigd = volgende(Math.max(ts(nu), ts(u))); }
+        V().forEach(v => {
+          const wp = A.verz[v], ni = new Map((nu[v] || []).map(i => [iid(v, i), i]));
+          (vu[v] || []).forEach(vi => {
+            const id = iid(v, vi), n = ni.get(id), ci = (u[v] || []).find(i => iid(v, i) === id);
+            if (n && ck(v, n) === ck(v, vi)) return;             // niet geraakt door het bestand
+            if (n ? (!ci || ck(v, ci) !== ck(v, n)) : !!ci) return;   // sindsdien zelf aangepast
+            const k = kopie(vi), tomb = tijd(u[wp] && u[wp][id]);
+            k.gewijzigd = Math.max(volgende(Math.max(ts(n), ts(vi))), tomb + 1);
+            if (ci) u[v][u[v].indexOf(ci)] = k; else (u[v] = u[v] || []).push(k);
+          });
+        });
+      });
+      // de lege eenheid die er alleen kwam omdat alles weg was
+      if (leeg) { const i = S[L].findIndex(x => x.id === leeg && (A.leeg ? A.leeg(x) : true)); if (i >= 0 && S[L].length > 1) S[L].splice(i, 1); }
+      zorgHuidig();
+      try { if (A.naOngedaan) A.naOngedaan(); } catch {}
+    };
+    f.kp = true; f.voor = voor; f.leeg = leeg;
+    return f;
+  }
+
+  // Voeg het bestand samen met de toestand. Geeft terug hoeveel er nieuw, anders of weg is (alleen in de gedeelde eenheden).
+  function pasToe(b) {
+    const S = A.staat(), L = A.lijst, H0 = V()[0];
+    const r = { nieuw:0, anders:0, weg:0, logs:0, nieuweLogs:0, overig:0, veranderd:false, ongedaan:null };
+    // Een eenheid die alleen op dit toestel staat en hetzelfde id heeft als een eenheid in het bestand, krijgt een eigen id. Ze gaat nooit mee.
+    const bIds = new Set(b[L].map(u => u.id)); let herId = false;
+    S[L].forEach(u => { if (!deelbaar(u) && bIds.has(u.id)) { const n = uid(); if (S[A.huidig] === u.id) S[A.huidig] = n; u.id = n; herId = true; } });
+    const voor = new Map(), logsVoor = new Map();
+    S[L].forEach(u => { if (deelbaar(u)) { logsVoor.set(u.id, kopTekst(u)); V().forEach(v => (u[v] || []).forEach(it => voor.set(v + SEP + u.id + SEP + iid(v, it), inh(v, it)))); } });
+    const m = samen({ [L]:S[L].filter(deelbaar), weg:S.weg || {} }, b);
+    const mm = new Map(m[L].map(u => [u.id, u])), units = [];
+    S[L].forEach(u => { if (!deelbaar(u)) units.push(u); else if (mm.has(u.id)) { units.push(mm.get(u.id)); mm.delete(u.id); } });
+    mm.forEach(u => units.push(Object.assign({}, u, { [A.vlag]:true })));
+    if (vgl(deelVan({ [L]:units, weg:m.weg }, true)) === vgl(deelVan(S, true))) { if (herId) { r.veranderd = true; bewaarLokaal(); } return r; }
+    // vlak vóór het samenvoegen: een kopie, voor Ongedaan (loopt er nog een Ongedaan van het bestand, dan de oudste kopie)
+    const vorige = (() => { try { const f = A.ongedaan && A.ongedaan(); return typeof f === 'function' && f.kp ? f : null; } catch { return null; } })();
+    const voorKopie = vorige ? vorige.voor : kopie(S);
+    let leeg = vorige ? vorige.leeg : '';
+    if (!units.length && A.nieuweEenheid) { const n = A.nieuweEenheid(); leeg = n.id; units.push(n); }
+    const na = new Set();
+    units.forEach(u => { if (deelbaar(u)) {
+      if (!logsVoor.has(u.id)) r.nieuweLogs++; else if (logsVoor.get(u.id) !== kopTekst(u)) r.logs++;
+      V().forEach(v => (u[v] || []).forEach(it => {
+        const k = v + SEP + u.id + SEP + iid(v, it); na.add(k);
+        if (!voor.has(k)) { if (v === H0) r.nieuw++; } else if (voor.get(k) !== inh(v, it)) { if (v === H0) r.anders++; else r.overig++; }
+      }));
+    } });
+    voor.forEach((x, k) => { if (!na.has(k)) { if (k.split(SEP)[0] === H0) r.weg++; else r.overig++; } });
+    logsVoor.forEach((n, id) => { if (!units.some(u => u.id === id)) r.logs++; });
+    S[L] = units; S.weg = m.weg;
+    zorgHuidig();
+    r.veranderd = true;
+    bewaarLokaal();
+    if (r.anders || r.weg || r.logs || r.overig) { r.ongedaan = maakOngedaan(voorKopie, leeg); r.ongedaan.n = (vorige && vorige.n || 0) + r.anders + r.weg; }
+    teken();
+    return r;
+  }
+  const aantal = n => `${n} ${n === 1 ? A.w.item[0] : A.w.item[1]}`;
+  function meldSamen(r) {
+    if (r.ongedaan) {
+      const n = r.ongedaan.n, t = n ? `${aantal(n)} aangepast of verwijderd via het gedeelde bestand` : `${A.w.Een} ${A.w.een} aangepast of verwijderd via het gedeelde bestand`;
+      A.toast(t, r.ongedaan, ONGEDAAN_MS);
+    } else if (r.nieuw) meld(`${r.nieuw} nieuwe ${r.nieuw === 1 ? A.w.item[0] : A.w.item[1]} van het gedeelde bestand`);
+    else if (r.nieuweLogs) meld('Bijgewerkt met het gedeelde bestand');
+  }
+
+  /* --- Lezen, samenvoegen en schrijven: één ding tegelijk, in een eenvoudige wachtrij --- */
+  function inRij(fn) { const p = rij.then(() => fn()); rij = p.catch(() => {}); return p; }
+  function wachtrij(fn) {
+    if (wachtend) return rij;
+    wachtend = true;
+    return inRij(() => { wachtend = false; return fn(); }).catch(() => {});
+  }
+  // Een Ongedaan van een eigen handeling staat open: eerst laten afwerken, anders zou Ongedaan het werk van een collega terugdraaien.
+  // Ongedaan van het bestand zelf zet alleen de geraakte items terug: daar moet niets op wachten.
+  const ongedaanOpen = () => { try { const f = A.ongedaan && A.ongedaan(); return typeof f === 'function' && !f.kp; } catch { return false; } };
+  async function schrijf(h0, tekst, data, obj) {
+    const w = await h0.createWritable();
+    try { await w.write(tekst); await w.close(); } catch (e) { try { await w.abort(); } catch {} throw e; }
+    let f = null; try { f = await h0.getFile(); } catch {}
+    laatst = { lm:f ? f.lastModified : -1, size:f ? f.size : -1, tekst, data, obj };
+    bijgewerkt = Date.now();
+  }
+  // Elke keer een vers getFile() en een vergelijking op inhoud: een gedeelde map op een gsm geeft soms een kopie
+  // waarvan lastModified niet verandert.
+  const spoel = () => { try { if (A.spoel) A.spoel(); } catch {} };
+  async function bijwerken() {
+    if (!h || gewist || (fase !== 'actief' && fase !== 'fout')) return;
+    spoel();
+    if (ongedaanOpen()) { clearTimeout(schrijfT); schrijfT = setTimeout(() => wachtrij(bijwerken), 500); return; }
+    const h0 = h;
+    try {
+      if (!await nogGekoppeld(h0)) { if (h === h0) losStil(); return; }
+      for (let poging = 0; ; poging++) {
+        if (h !== h0 || gewist) return;
+        const f = await h0.getFile();
+        if (h !== h0) return;
+        if (f.size > MAX_BYTES) throw fout_('Groot');
+        const tekst = await f.text();
+        if (tekst !== laatst.tekst) {
+          const b = ontleed(tekst);
+          if (!b) throw fout_('Ongeldig');
+          if (teGroot(b)) throw fout_('Groot');
+          if (h !== h0 || gewist) return;
+          const r = pasToe(b);
+          laatst = { lm:f.lastModified, size:f.size, tekst, data:gelezen(b), obj:b };
+          if (r.veranderd) bijgewerkt = Date.now();
+          meldSamen(r);
+        } else { laatst.lm = f.lastModified; laatst.size = f.size; }
+        const deel = deelVan(A.staat(), true), mijn = vgl(deel);
+        if (mijn === laatst.data) break;
+        const tekstN = bestandTekst(JSON.stringify(deel));
+        if (bytes(tekstN) > MAX_BYTES || teGroot(deel)) throw fout_('EigenGroot');
+        // Vlak vóór het schrijven: nog gekoppeld? En is het bestand sinds het samenvoegen veranderd (tijd, grootte of inhoud)?
+        // Dan eerst opnieuw samenvoegen (hoogstens 3 keer).
+        if (!await nogGekoppeld(h0)) { if (h === h0) losStil(); return; }
+        const f2 = await h0.getFile();
+        if (f2.lastModified !== laatst.lm || f2.size !== laatst.size || (await f2.text()) !== laatst.tekst) { if (poging < 3) continue; throw fout_('Bezig'); }
+        if (h !== h0 || gewist) return;
+        await schrijf(h0, tekstN, mijn, deel);
+        if (snoei()) bewaarLokaal();
+        break;
+      }
+      if (h !== h0) return;
+      gecontroleerd = Date.now(); vuil = false;
+      if (!bijgewerkt) bijgewerkt = gecontroleerd;                 // toestand en bestand zijn gelijk sinds nu
+      if (fase !== 'actief' || fout) { fase = 'actief'; fout = ''; }
+      toon();
+    } catch (e) { if (h === h0) await mislukt(e); }
+  }
+  async function mislukt(e) {
+    const n = e && e.name;
+    if (!h) return;
+    if (n === 'NotAllowedError' || n === 'SecurityError') {
+      let p = 'denied'; try { p = await h.queryPermission({ mode:'readwrite' }); } catch {}
+      if (p === 'prompt') { fase = 'hervat'; toon(); return; }
+      fout = 'weg';
+    } else if (n === 'NotFoundError') fout = 'weg';
+    else if (n === 'Ongeldig') fout = 'ongeldig';
+    else if (n === 'Groot') fout = 'groot';
+    else if (n === 'EigenGroot') fout = 'eigengroot';
+    else fout = 'slot';                                  // op slot, schrijffout, net aan het synchroniseren: later opnieuw
+    fase = 'fout'; vuil = true; toon();
+  }
+  // Na elke bewaring van de tool: na een korte pauze ook in het bestand
+  function na() {
+    if (!A || !h) return;
+    vuil = true;
+    if (fase !== 'actief' && fase !== 'fout') { toon(); return; }
+    clearTimeout(schrijfT); schrijfT = setTimeout(() => wachtrij(bijwerken), PAUZE);
+    toon();
+  }
+  function kijk(nu) {
+    if (!A || !h || (fase !== 'actief' && fase !== 'fout') || document.visibilityState === 'hidden') return;
+    if (!nu && Date.now() - laatsteKijk < 2000) return;
+    laatsteKijk = Date.now(); return wachtrij(bijwerken);
+  }
+  // "Nu bijwerken": meteen lezen en samenvoegen (ook als er net gekeken werd)
+  async function nuBijwerken() {
+    if (!h || (fase !== 'actief' && fase !== 'fout')) return;
+    clearTimeout(schrijfT); laatsteKijk = Date.now();
+    await rij; await wachtrij(bijwerken);
+  }
+  function startPoll() { clearInterval(pollT); pollT = setInterval(() => { if (document.visibilityState === 'visible') { laatsteKijk = Date.now(); wachtrij(bijwerken); } }, POLL); }
+  function stop() { clearInterval(pollT); clearTimeout(schrijfT); pollT = schrijfT = null; }
+  addEventListener('focus', () => kijk());
+  addEventListener('pageshow', () => kijk());
+  document.addEventListener('visibilitychange', () => { if (!A) return; if (document.visibilityState === 'visible') kijk(); else if (vuil && h && fase === 'actief') { clearTimeout(schrijfT); wachtrij(bijwerken); } });
+  addEventListener('pagehide', () => { if (A && vuil && h && fase === 'actief') { clearTimeout(schrijfT); wachtrij(bijwerken); } });
+  // De app toont deze tool weer (een kader dat al geladen was): meteen kijken
+  addEventListener('message', e => { if (e.origin === location.origin && e.source === window.parent && e.data && e.data.type === 'oc-zichtbaar') kijk(true); });
+  // Een ander tabblad van deze tool bewaarde: de tool las de toestand al opnieuw in, wij onthouden die
+  addEventListener('storage', e => { if (!A) return; const S = A.staat(); if (e.key === A.sleutel && S.weg && typeof S.weg === 'object') onthoud(); if (e.key === 'oc.wis' || e.key === null) naWissen(); });
+  // "Alles wissen" in een ander tabblad (van deze tool of in de app): de koppeling gaat mee weg, het bestand blijft staan
+  try { const bc = new BroadcastChannel('oc-sync'); bc.addEventListener('message', e => { const d = e.data; if (A && d && (d.type === 'wis' || d.type === 'oc-koppel-wis') && d.bron !== PAGINA) naWissen(d); }); } catch {}
+  async function naWissen(bericht) {
+    const eigen = !!(bericht && bericht.tool === A.id);
+    let er = true; try { er = localStorage.getItem(A.sleutel) != null; } catch {}
+    if (!eigen && er) {                              // de app wiste iets anders: staat onze koppeling er nog?
+      if (!h) return;
+      let blijft = true; try { blijft = await nogGekoppeld(h); } catch {}
+      if (blijft) return;
+    }
+    gewist = true; losStil();
+    if (!er && kan()) bestaatDb().then(ja => { if (ja) wisRec().catch(() => {}); });
+  }
+  // Het wis-signaal van "Alles wissen" in deze tool, zoals de app het stuurt. In de app (iframe) een eigen soort:
+  // anders laadt de app helemaal opnieuw en is Ongedaan weg. Andere tabbladen van deze tool begrijpen beide.
+  function seinWis() {
+    let inApp = true; try { inApp = window.top !== window; } catch {}
+    if (!inApp) { try { localStorage.setItem('oc.wis', String(Date.now())); } catch {} }
+    try { const c = new BroadcastChannel('oc-sync'); c.postMessage({ type:inApp ? 'oc-koppel-wis' : 'wis', tool:A.id, bron:PAGINA }); c.close(); } catch {}
+  }
+
+  /* --- Koppelen --- */
+  const tijdTekst = t => { const d = new Date(t), nu = new Date(), u = `${d.getHours()}.${String(d.getMinutes()).padStart(2, '0')}`;
+    return d.toDateString() === nu.toDateString() ? u : d.toLocaleDateString('nl-BE', { day:'numeric', month:'short' }) + ' ' + u; };
+  // Een melding die lang genoeg blijft staan om te lezen
+  function meld(msg) { A.toast(msg, null, 4800); }
+  const label = u => u ? (A.label ? A.label(u) : (u.name || 'Naamloos')) : '';
+  // De naam die de bestandskiezer voorstelt: de tool en de eerste gekozen eenheid, bv. takenbord-teamoverleg-gedeeld.json
+  function voorstel(keuze) {
+    const S = A.staat(), c = huidig(), ids = Array.isArray(keuze) ? keuze : [];
+    const u = (c && ids.includes(c.id) ? c : S[A.lijst].find(x => ids.includes(x.id))) || c;
+    const s = slug(A.naamVoorBestand ? A.naamVoorBestand(u) : label(u));
+    return `${A.bestand}${s ? '-' + s : ''}-gedeeld.json`;
+  }
+  const TYPES = () => [{ description:`Gedeelde ${A.w.zelfde}`, accept:{ 'application/json':['.json'] } }];
+  async function begin(nh, p) {
+    h = nh; naam = nh.name || voorstel(null); gewist = false;
+    try { await zetRec({ handle:nh, naam, sinds:Date.now() }); }
+    catch { h = null; fase = 'uit'; toon(); meld('Deze browser kan de koppeling niet bewaren. Er is niets gekoppeld.'); return false; }
+    fase = p === 'granted' ? 'actief' : 'hervat'; fout = '';
+    if (fase === 'actief') startPoll();
+    toon(); return true;
+  }
+  function kiesFout(e) {
+    if (e && e.name === 'AbortError') return;                       // venster gesloten zonder te kiezen
+    if (e && e.name === 'SecurityError') { venster(vensterNiet(true)); return; }
+    meld(`Koppelen lukt nu niet. Je ${A.w.werk} blijft op dit toestel.`);
+  }
+  async function koppelNieuw(keuze) {
+    let nh; try { nh = await window.showSaveFilePicker({ suggestedName:voorstel(keuze), types:TYPES() }); } catch (e) { kiesFout(e); return; }
+    await rij; spoel();
+    // Koos je een bestand waar al gedeelde gegevens in staan? Dan voegen we samen in plaats van te overschrijven.
+    let tekst = '';
+    try { const f = await nh.getFile(); if (f.size > MAX_BYTES) { vanVenster(vensterTeGroot(nh.name, false, keuze)); return; } tekst = await f.text(); } catch {}
+    const b = tekst.trim() ? ontleed(tekst) : null;
+    if (b) { if (teGroot(b)) { vanVenster(vensterTeGroot(nh.name, false, keuze)); return; } await koppelMet(nh, tekst, b, 'granted', keuze); return; }
+    const vt = tekst.trim() ? vanAndere(tekst) : '';
+    if (vt) { vanVenster(vensterOngeldig(nh.name, keuze, vt)); return; }   // nooit het bestand van een andere tool overschrijven
+    const S = A.staat(), voor = S[A.lijst].map(u => [u, u[A.vlag]]);
+    const terug = () => voor.forEach(([u, g]) => { if (g) u[A.vlag] = g; else delete u[A.vlag]; });
+    markeer(keuze);
+    const deel = deelVan(S, true), mijn = vgl(deel), tekstN = bestandTekst(JSON.stringify(deel));
+    if (bytes(tekstN) > MAX_BYTES || teGroot(deel)) { terug(); vanVenster(vensterTeGroot(nh.name, true, keuze)); return; }
+    volg(); bewaarLokaal();
+    stop(); h = nh; naam = nh.name || voorstel(keuze); fase = 'actief'; fout = '';
+    try { await inRij(() => schrijf(nh, tekstN, mijn, deel)); } catch (e) { h = null; fase = 'uit'; terug(); bewaarLokaal(); toon(); meld('Het bestand kan niet bewaard worden. Er is niets gekoppeld.'); return; }
+    if (!await begin(nh, 'granted')) { terug(); bewaarLokaal(); return; }
+    const H0 = V()[0], n = S[A.lijst].filter(deelbaar).reduce((s, u) => s + (u[H0] || []).length, 0);
+    meld(n ? `Gekoppeld. Je ${aantal(n)} ${n === 1 ? 'staat' : 'staan'} nu ook in ${naam}.` : `Gekoppeld met ${naam}.`);
+  }
+  async function koppelBestaand(keuze) {
+    let nh; try { [nh] = await window.showOpenFilePicker({ types:TYPES(), multiple:false }); } catch (e) { kiesFout(e); return; }
+    if (!nh) return;
+    let p = 'prompt';
+    try { p = await nh.queryPermission({ mode:'readwrite' }); if (p !== 'granted') p = await nh.requestPermission({ mode:'readwrite' }); } catch {}
+    await rij;
+    let tekst = null, groot = false;
+    try { const f = await nh.getFile(); if (f.size > MAX_BYTES) groot = true; else tekst = await f.text(); } catch {}
+    if (groot) { vanVenster(vensterTeGroot(nh.name, false, keuze)); return; }
+    const b = tekst != null && tekst.trim() ? ontleed(tekst) : null;
+    if (!b) { vanVenster(vensterOngeldig(nh.name, keuze, tekst ? vanAndere(tekst) : '')); return; }
+    if (teGroot(b)) { vanVenster(vensterTeGroot(nh.name, false, keuze)); return; }
+    await koppelMet(nh, tekst, b, p, keuze);
+  }
+  async function koppelMet(nh, tekst, b, p, keuze) {
+    spoel();
+    const S = A.staat(), L = A.lijst, H0 = V()[0], lees = gelezen(b);
+    let f = null; try { f = await nh.getFile(); } catch {}
+    stop(); volg();
+    markeer(keuze);
+    // Een lege eenheid van jou gaat niet mee: anders staat er bij iedereen een lege tab bij.
+    if (b[L].length && A.leeg) S[L] = S[L].filter(u => u.voorbeeld || !A.leeg(u) || b[L].some(x => x.id === u.id));
+    // Alleen bij het koppelen: een gedeelde eenheid van jou met dezelfde naam als een eenheid in het bestand wordt die eenheid (daarna telt enkel het id)
+    if (A.naamKoppel !== false) {
+      const vrij = new Map(), bIds = new Set(b[L].map(u => u.id));
+      b[L].forEach(u => { const k = norm(label(u)); if (k && !vrij.has(k)) vrij.set(k, u.id); });
+      S[L].forEach(u => {
+        if (!deelbaar(u) || bIds.has(u.id)) return;
+        const k = norm(label(u)), id = vrij.get(k);
+        if (!id || S[L].some(x => x.id === id)) return;
+        vrij.delete(k); if (S[A.huidig] === u.id) S[A.huidig] = id; u.id = id;
+      });
+    }
+    if (S[L].length && !S[L].some(u => u.id === S[A.huidig])) S[A.huidig] = (S[L].find(u => !u.voorbeeld) || S[L][0]).id;
+    const inBestand = new Set(); b[L].forEach(u => (u[H0] || []).forEach(it => inBestand.add(iid(H0, it))));
+    laatst.obj = b;
+    const r = pasToe(b);
+    if (!r.veranderd) bewaarLokaal();
+    teken();
+    const vanJou = A.staat()[L].filter(deelbaar).reduce((s, u) => s + (u[H0] || []).filter(it => !inBestand.has(iid(H0, it))).length, 0);
+    const uit = b[L].reduce((s, u) => s + (u[H0] || []).length, 0);
+    laatst = { lm:f ? f.lastModified : -1, size:f ? f.size : -1, tekst, data:lees, obj:b };
+    if (!await begin(nh, p)) return;
+    bijgewerkt = Date.now();
+    if (fase === 'actief') await wachtrij(bijwerken);
+    const msg = (uit ? `${aantal(uit)} uit het bestand${vanJou ? `, ${vanJou} van jou toegevoegd` : ''}` : `Gekoppeld met ${naam}${vanJou ? `. Je ${aantal(vanJou)} ${vanJou === 1 ? 'staat' : 'staan'} er nu ook in` : ''}`)
+      + (fase === 'hervat' ? '. Kies Hervat om verder te werken.' : '');
+    if (r.ongedaan) A.toast(`${msg}. ${r.ongedaan.n ? aantal(r.ongedaan.n) : `${A.w.Een} ${A.w.een}`} aangepast of verwijderd.`, r.ongedaan, ONGEDAAN_MS); else meld(msg);
+  }
+  async function hervat() {
+    if (!h) return;
+    let p = 'denied'; try { p = await h.requestPermission({ mode:'readwrite' }); } catch {}   // meteen bij de klik: de browser vraagt toestemming
+    if (p !== 'granted') { meld(`Zonder toegang blijft je ${A.w.werk} alleen op dit toestel.`); return; }
+    fase = 'actief'; fout = ''; startPoll(); laatsteKijk = Date.now();
+    await wachtrij(bijwerken);
+    if (fase === 'actief') meld('Koppeling hervat');
+  }
+  async function opnieuw() {
+    if (!h) { vanVenster(vensterKies()); return; }
+    let p = 'denied';
+    try { p = await h.queryPermission({ mode:'readwrite' }); if (p === 'prompt') p = await h.requestPermission({ mode:'readwrite' }); } catch {}
+    if (p === 'granted') {
+      fase = 'fout'; laatst.lm = -1; laatst.tekst = null; await wachtrij(bijwerken);
+      if (fase === 'actief') { startPoll(); meld('Weer gekoppeld'); return; }
+      if (fout === 'slot') { meld(`Het bestand is nog niet bereikbaar. ${A.naam} probeert het zo opnieuw.`); return; }
+      if (fout === 'eigengroot') { meld(`Je ${A.w.werk} is nog te groot voor het gedeelde bestand.`); return; }
+    }
+    vanVenster(vensterKies(true));                                    // verplaatst of hernoemd: kies het opnieuw
+  }
+  async function ontkoppel(stil) {
+    if (h && vuil && fase === 'actief') { clearTimeout(schrijfT); await wachtrij(bijwerken); }   // laatste wijziging nog meegeven
+    stop(); h = null; fase = 'uit'; fout = ''; vuil = false;
+    try { if (await bestaatDb()) await wisRec(); } catch {}
+    const S = A.staat();
+    if (S[A.lijst].some(u => A.vlag in u)) { S[A.lijst].forEach(u => { delete u[A.vlag]; }); bewaarLokaal(); }
+    toon();
+    if (!stil) meld(`Ontkoppeld. Je ${A.w.werk} staat nog op dit toestel.`);
+  }
+  // Alles wissen in de tool: de koppeling gaat mee weg (het bestand niet). Geeft terug wat Ongedaan nodig heeft (ook als
+  // de koppeling uit een ander tabblad komt).
+  async function wis() {
+    if (!A) return null;
+    let terug = h ? { handle:h, naam } : null;
+    stop(); h = null; fase = 'uit'; fout = ''; vuil = false;
+    try {
+      if (kan() && await bestaatDb()) {
+        if (!terug) { const rec = await leesRec(); if (rec && rec.handle) terug = { handle:rec.handle, naam:rec.naam }; }
+        await wisRec();
+      }
+    } catch {}
+    toon(); return terug;
+  }
+  function herstel(t) {
+    if (!A) return;
+    const S = A.staat();
+    if (S.weg && typeof S.weg === 'object') onthoud();      // geen nieuwe tijdstempels voor wat Ongedaan terugzet
+    if (!t || !t.handle) return;
+    (async () => { let p = 'prompt'; try { p = await t.handle.queryPermission({ mode:'readwrite' }); } catch {} laatst = { lm:-1, size:-1, tekst:null, data:null, obj:null }; if (await begin(t.handle, p) && fase === 'actief') wachtrij(bijwerken); })();
+  }
+  // Deze eenheid (die alleen op dit toestel stond) gaat vanaf nu ook naar het gedeelde bestand
+  function deelDeze() {
+    const u = huidig(); if (!h || !u || u.voorbeeld || deelbaar(u)) return;
+    u[A.vlag] = true; A.bewaarMetStempel ? A.bewaarMetStempel() : (stempel(), A.bewaar(), na()); A.teken();
+    meld(`${label(u)} staat nu ook in ${naam}.`);
+  }
+
+  /* --- Wat je ziet: een kleine regel als je gekoppeld bent, een rustige balk als er iets nodig is --- */
+  const I = {
+    samen:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.25"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M16 4.75a3.25 3.25 0 0 1 0 6.5M21 20a6 6 0 0 0-3.5-5.45"/></svg>',
+    slot:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 7.5-2"/></svg>',
+    let:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 7.5v5.5M12 16.5h.01"/></svg>',
+    toestel:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>',
+    map:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>',
+    terug:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.5-5.8M4 4v4h4"/></svg>',
+    gsm:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M11 18h2"/></svg>'
+  };
+  // de plaats (marge) van .kp kiest de tool zelf
+  const CSS = '@media print{.kp,.kp-back{display:none!important}}'
+    + ':where(.kp,.kp-back) button{font:inherit;border:0;cursor:pointer;margin:0}:where(.kp,.kp-back),:where(.kp,.kp-back) *{box-sizing:border-box}'
+    + ':where(.kp-dlg) h2,:where(.kp-dlg) p,:where(.kp-dlg) ul,:where(.kp-dlg) li{margin:0;padding:0}'
+    + '.tab-deel{width:15px;height:15px;margin-right:.375rem;vertical-align:-2px;flex:none}'
+    + '.kp-chip{display:inline-flex;align-items:center;gap:.5rem;max-width:100%;min-height:44px;padding:.25rem .875rem .25rem .625rem;border-radius:999px;border:1px solid #d1fae5;background:#ecfdf5;color:#065f46;font-size:.875rem;font-weight:500;text-align:left}'
+    + '.kp-chip:hover{border-color:#10b981}.kp-chip svg{width:18px;height:18px;flex:none;color:#047857}'
+    + '.kp-chip .kp-t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.kp-chip b{font-weight:600}'
+    + '.kp-chip .kp-tijd{flex:none;margin-left:-.25rem;white-space:nowrap;font-variant-numeric:tabular-nums}'
+    + '.kp-chip.wacht,.kp-chip.prive{border-color:#e2e8f0;background:#fff;color:#475569}.kp-chip.wacht svg,.kp-chip.prive svg{color:#64748b}'
+    + '.kp-logs{margin:.875rem 0 0;padding:0;border:0;min-width:0}.kp-logs legend{padding:0;font-size:.9375rem;font-weight:600;color:#1e293b}'
+    + '.kp-log{display:flex;align-items:center;gap:.75rem;min-height:48px;margin-top:.375rem;padding:.375rem .75rem;border:1px solid #e2e8f0;border-radius:12px;cursor:pointer}'
+    + '.kp-log:has(input:checked){border-color:#10b981;background:#ecfdf5}.kp-log input{flex:none;width:20px;height:20px;margin:0;accent-color:#047857;cursor:pointer}'
+    + '.kp-log span{display:flex;flex-direction:column;min-width:0;line-height:1.35}.kp-log b{overflow-wrap:anywhere}.kp-log small{font-size:.8125rem;color:#64748b}'
+    + '.kp-dlg .kp-hint{margin-top:.5rem;font-size:.8125rem;color:#64748b}'
+    + '.kp-bar{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem .75rem;padding:.5rem .5rem .5rem .875rem;border:1px solid #e2e8f0;border-radius:12px;background:#fff;font-size:.9375rem;line-height:1.4;color:#334155}'
+    + '.kp-bar .kp-tx{flex:1 1 16rem;min-width:0;display:flex;gap:.625rem;align-items:flex-start;overflow-wrap:anywhere}'
+    + '.kp-bar .kp-tx svg{width:20px;height:20px;flex:none;margin-top:.0625rem;color:#64748b}.kp-bar small{display:block;margin-top:.125rem;font-size:.8125rem;color:#64748b}'
+    + '.kp-btns{display:flex;flex-wrap:wrap;gap:.375rem}.kp-btn{min-height:44px;padding:.375rem .875rem;border-radius:10px;font-size:.875rem;font-weight:600;white-space:nowrap}'
+    + '.kp-btn.hoofd{background:#047857;color:#fff}.kp-btn.hoofd:hover{background:#065f46}.kp-btn.rustig{background:#f1f5f9;color:#334155}.kp-btn.rustig:hover{background:#e2e8f0}'
+    + '.kp-menu small{max-width:15rem;overflow-wrap:anywhere}'
+    + '.kp-back{position:fixed;inset:0;z-index:10001;display:flex;align-items:flex-end;justify-content:center;background:rgba(15,23,42,.45);backdrop-filter:blur(3px);overscroll-behavior:contain}'
+    + '@media (min-width:640px){.kp-back{align-items:center;padding:1rem}}'
+    + '.kp-dlg{width:100%;max-width:460px;max-height:min(90vh,680px);overflow:auto;background:#fff;border-radius:18px 18px 0 0;padding:1.375rem 1.25rem calc(1.125rem + env(safe-area-inset-bottom, 0px));box-shadow:0 20px 50px rgba(15,23,42,.25);color:#334155;font-family:inherit;text-align:left}'
+    + '@media (min-width:640px){.kp-dlg{border-radius:18px;padding:1.5rem 1.5rem 1.25rem}}'
+    + '.kp-dlg h2{font-size:1.1875rem;font-weight:700;color:#1e293b;letter-spacing:-.015em;line-height:1.3}'
+    + '.kp-dlg p,.kp-dlg li{font-size:.9375rem;line-height:1.55;overflow-wrap:anywhere}.kp-dlg p{margin-top:.625rem}'
+    + '.kp-dlg .kp-eerst{color:#1e293b;font-weight:600}.kp-dlg b{color:#1e293b;font-weight:600}'
+    + '.kp-dlg ul{list-style:none;margin-top:.875rem;padding:.75rem .875rem;border-radius:12px;background:#f8fafc;display:grid;gap:.375rem}'
+    + '.kp-dlg li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:.5rem;color:#475569}.kp-dlg li svg{width:18px;height:18px;margin-top:.1875rem;color:#64748b}'
+    + '.kp-dlg .kp-melding{margin-top:.875rem;padding:.625rem .875rem;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0;color:#334155}'
+    + '.kp-acties{display:flex;flex-direction:column;gap:.5rem;margin-top:1.25rem}'
+    + '.kp-acties button{min-height:48px;padding:.625rem 1rem;border-radius:12px;font-size:.9375rem;font-weight:600;text-align:center;line-height:1.3}'
+    + '.kp-acties .hoofd{background:#047857;color:#fff}.kp-acties .hoofd:hover{background:#065f46}'
+    + '.kp-acties .tweede{background:#fff;color:#047857;border:1.5px solid #d1fae5}.kp-acties .tweede:hover{background:#ecfdf5;border-color:#10b981}'
+    + '.kp-acties .rustig{color:#475569;background:#f1f5f9}.kp-acties .rustig:hover{background:#e2e8f0}'
+    + '.kp-acties .tweede[aria-busy="true"]{opacity:.7;cursor:progress}'
+    + '@media (min-width:640px){.kp-acties.kp-rij{flex-direction:row;justify-content:flex-end}}';
+  let getoond = '';
+  function plaats() {
+    let box = document.getElementById('kp');
+    if (!box) {
+      const p = A.plek && A.plek(); if (!p || !p.parentNode) return null;
+      box = document.createElement('div'); box.className = 'kp'; box.id = 'kp'; box.hidden = true;
+      p.parentNode.insertBefore(box, p.nextSibling);
+    }
+    return box;
+  }
+  function icoon(u) { return A && deelbaar(u) && fase !== 'uit' ? TAB_DEEL : ''; }
+  function toon() {
+    if (!A) return;
+    // het icoon van een gedeelde eenheid in de tabs bijwerken (zonder alles opnieuw te tekenen)
+    try {
+      const S = A.staat();
+      (A.tabs ? A.tabs() : []).forEach(([t, id]) => {
+        const u = S[A.lijst].find(x => x.id === id), moet = !!u && u[A.vlag] === true && fase !== 'uit', s = t.querySelector('.tab-deel');
+        if (moet && !s) t.insertAdjacentHTML('afterbegin', TAB_DEEL); else if (!moet && s) s.remove();
+      });
+    } catch {}
+    const box = plaats(), sub = document.getElementById('kp-sub');
+    if (sub) sub.textContent = fase === 'uit' ? 'Standaard blijft alles op dit toestel' : `Gekoppeld met ${naam}`;
+    if (!box) return;                              // de pagina laadt net opnieuw
+    if (fase === 'uit') { if (!box.hidden) { box.hidden = true; box.innerHTML = ''; } getoond = ''; return; }
+    box.hidden = false;
+    const n = esc(naam), c = huidig(), w = A.w;
+    let html;
+    if (fase === 'hervat') html = `<div class="kp-bar" role="region" aria-label="Gedeeld bestand"><div class="kp-tx">${I.slot}<span>Koppeling met <b>${n}</b> hervatten<small>Je ${esc(w.werk)} staat veilig op dit toestel. Geef opnieuw toegang om samen verder te werken. Je browser vraagt dan of het mag: kies <b>Wijzigingen opslaan</b>.</small></span></div>
+        <div class="kp-btns"><button type="button" class="kp-btn hoofd" data-kp="hervat">Hervat</button></div></div>`;
+    else if (fase === 'fout') {
+      const kop = fout === 'ongeldig' ? 'Het gedeelde bestand is niet meer te lezen.' : fout === 'groot' ? 'Het gedeelde bestand is te groot.' : fout === 'eigengroot' ? `Je ${esc(w.werk)} is te groot voor het gedeelde bestand.` : 'Het gedeelde bestand is niet bereikbaar.';
+      const uitleg = fout === 'slot' ? `${n} is bezet of op slot. ${esc(A.naam)} probeert het zo opnieuw.` : fout === 'ongeldig' ? `In ${n} staat iets anders dan ${esc(w.zelfde)}.`
+        : fout === 'groot' || fout === 'eigengroot' ? grensTekst() : `Is ${n} verplaatst, hernoemd of niet meer gedeeld?`;
+      html = `<div class="kp-bar" role="region" aria-label="Gedeeld bestand"><div class="kp-tx">${I.let}<span>${kop} Je werk blijft op dit toestel bewaard.<small>${uitleg}</small></span></div>
+        <div class="kp-btns"><button type="button" class="kp-btn hoofd" data-kp="opnieuw">Opnieuw koppelen</button><button type="button" class="kp-btn rustig" data-kp="ontkoppel">Ontkoppel</button></div></div>`;
+    } else if (c && !deelbaar(c)) html = `<button type="button" class="kp-chip prive" data-kp="details" aria-label="${esc(w.Deze)} blijft op dit toestel. ${esc(w.Hij)} gaat niet naar ${n}. Toon details.">${I.toestel}<span class="kp-t">${esc(w.Deze)} blijft op dit toestel</span></button>`;
+    else html = `<button type="button" class="kp-chip${vuil ? ' wacht' : ''}" data-kp="details" aria-label="Gedeeld via ${n}, ${vuil ? 'bezig met bewaren' : 'bijgewerkt ' + tijdTekst(bijgewerkt || Date.now())}. Toon details of ontkoppel.">${I.samen}<span class="kp-t">Gedeeld via <b>${n}</b></span><span class="kp-tijd">· ${vuil ? 'bewaren…' : 'bijgewerkt ' + tijdTekst(bijgewerkt || Date.now())}</span></button>`;
+    if (html === getoond) return;
+    const opFocus = box.contains(document.activeElement) && document.activeElement.dataset.kp;
+    box.innerHTML = html; getoond = html;
+    if (opFocus) { const b = box.querySelector(`[data-kp="${opFocus}"]`); if (b) b.focus({ preventScroll:true }); }
+  }
+  // "bijgewerkt" blijft kloppen, ook als de klok verder loopt
+  setInterval(() => { if (A && fase === 'actief' && !document.hidden) toon(); }, 30000);
+
+  /* --- Het venster --- */
+  const li = (ico, t) => `<li>${ico}<span>${t}</span></li>`;
+  const grensTekst = () => `Een gedeeld bestand mag hoogstens 2 MB zijn, met ${MAX().eenheden} ${A.w.veel} en ${MAX().items} ${A.w.item[1]} per ${A.w.een}.`;
+  // Welke eenheden gaan mee? Alleen je eigen eenheden met inhoud. Standaard alleen de eenheid die nu open is.
+  function eenheidKeuze() {
+    const S = A.staat(), c = huidig(), ls = S[A.lijst].filter(u => !u.voorbeeld && !(A.leeg && A.leeg(u)));
+    if (!ls.length) return '';
+    const tel = u => A.aantal ? A.aantal(u) : aantal((u[V()[0]] || []).length);
+    return `<fieldset class="kp-logs"><legend>Welke ${esc(A.w.veel)} gaan mee naar het bestand?</legend>${ls.map(u => `<label class="kp-log"><input type="checkbox" data-log="${esc(u.id)}"${u === c ? ' checked' : ''}><span><b>${esc(label(u))}</b><small>${esc(tel(u))}${u === c ? ' · nu open' : ''}</small></span></label>`).join('')}
+      <p class="kp-hint">Wat je niet aanvinkt, blijft alleen op dit toestel.</p></fieldset>`;
+  }
+  function vensterKies(opnieuw) {
+    return { titel:opnieuw ? 'Kies het gedeelde bestand opnieuw' : 'Werk samen via een gedeeld bestand', opnieuw:!!opnieuw,
+      html:(opnieuw ? `<p>Is het bestand verplaatst of hernoemd? Koppel het dan opnieuw. Je ${esc(A.w.werk)} blijft op dit toestel staan.</p>`
+        : `<p class="kp-eerst">Standaard blijft alles op dit toestel.</p>
+          <p>Kies je dit, dan bewaart ${esc(A.naam)} de ${esc(A.w.veel)} die je kiest ook in een bestand. Zet het bijvoorbeeld in een gedeelde map die je computer synchroniseert. Wie hetzelfde bestand koppelt, ziet dezelfde ${esc(A.w.zelfde)}.</p>${eenheidKeuze()}`)
+        + `<ul>${li(I.toestel, 'In Chrome of Edge op een computer, en in Chrome op Android.')}${li(I.slot, `Je browser vraagt daarna zelf of ${esc(A.naam)} in dat bestand mag bewaren. Kies daar <b>Wijzigingen opslaan</b>. Dat venster komt van je browser, niet van ons.`)}${li(I.terug, 'Je kan altijd ontkoppelen. Dan blijft je lijst op dit toestel staan.')}</ul>`,
+      knoppen:[['nieuw', 'Maak een nieuw gedeeld bestand', 'hoofd'], ['bestaand', 'Koppel een bestaand gedeeld bestand', 'tweede'], ['annuleer', 'Annuleer', 'rustig']] };
+  }
+  function vensterNiet(kader) {
+    return { titel:'Werk samen via een gedeeld bestand',
+      html:`<p class="kp-eerst">Standaard blijft alles op dit toestel.</p><p class="kp-melding">${kader ? `In dit venster kan dit niet: open ${esc(A.naam)} in een eigen tabblad van Chrome of Edge.` : 'Samenwerken via een gedeeld bestand kan in Chrome of Edge op een computer en in Chrome op Android. Op een iPhone of iPad en in Safari of Firefox kan het niet.'}</p>`,
+      knoppen:[['annuleer', 'Sluit', 'hoofd']], rij:true };
+  }
+  function vensterOngeldig(bn, keuze, vt) {
+    return { titel:'Dit bestand kan niet gekoppeld worden', vast:keuze,
+      html:(vt ? `<p>Dit is een bestand van ${esc(vt)}, niet van ${esc(A.naam)}.</p><p><b>${esc(bn || 'Dit bestand')}</b> is niet gekoppeld en er is niets veranderd.</p>`
+        : `<p><b>${esc(bn || 'Dit bestand')}</b> is geen bestand met gedeelde ${esc(A.w.zelfde)}. Er is niets gekoppeld en er is niets veranderd.</p>`)
+        + '<p>Kies een bestand dat iemand hier maakte met "Maak een nieuw gedeeld bestand", of maak zelf een nieuw.</p>',
+      knoppen:[['terug', 'Kies een ander bestand', 'tweede'], ['annuleer', 'Sluit', 'rustig']] };
+  }
+  function vensterTeGroot(bn, eigen, keuze) {
+    return { titel:eigen ? `Je ${A.w.veel} zijn te groot om te delen` : 'Dit bestand is te groot om te koppelen', vast:keuze,
+      html:`<p>${eigen ? 'Wat je aanvinkte, past niet in één gedeeld bestand.' : `<b>${esc(bn || 'Dit bestand')}</b> is te groot.`} ${grensTekst()}</p><p>Er is niets gekoppeld en er is niets veranderd.</p>`,
+      knoppen:eigen ? [['annuleer', 'Sluit', 'hoofd']] : [['terug', 'Kies een ander bestand', 'tweede'], ['annuleer', 'Sluit', 'rustig']], rij:eigen };
+  }
+  const nagekeken = () => `Laatst bijgewerkt om ${tijdTekst(bijgewerkt || Date.now())}. Laatst nagekeken om ${tijdTekst(gecontroleerd || bijgewerkt || Date.now())}.`;
+  function vensterDetails() {
+    const u = huidig(), w = A.w, gd = !u || deelbaar(u), vb = !!(u && u.voorbeeld), ln = esc(label(u));
+    const eerst = !u ? `<p>Je werk staat op dit toestel en in <b>${esc(naam)}</b>.</p>`
+      : gd ? `<p>${esc(w.De)} ${esc(w.een)} <b>${ln}</b> staat op dit toestel en in <b>${esc(naam)}</b>.</p>`
+      : vb ? `<p>Het voorbeeld gaat nooit naar <b>${esc(naam)}</b>. Het staat alleen op dit toestel.</p>`
+      : `<p>${esc(w.De)} ${esc(w.een)} <b>${ln}</b> staat alleen op dit toestel. ${esc(w.Hij)} gaat niet naar <b>${esc(naam)}</b>.</p>`;
+    return { titel:'Gedeeld bestand',
+      html:`${eerst}
+        <ul>${li(I.terug, `<span class="kp-nagekeken">${nagekeken()}</span> ${esc(A.naam)} kijkt elke 20 seconden of iemand iets veranderde.`)}
+          ${li(I.gsm, 'Op een gsm kan het even duren voor wijzigingen van anderen verschijnen. Tik op Nu bijwerken of open de tool opnieuw.')}
+          ${li(I.samen, A.uitleg || `Passen twee mensen dezelfde ${esc(w.item[0])} aan, dan wint wie het laatst bewaart.`)}
+          ${li(I.map, `Ontkoppel je, dan blijft je ${esc(w.werk)} op dit toestel en blijft het bestand bestaan.`)}</ul>`,
+      knoppen:(gd || vb ? [['nu', 'Nu bijwerken', 'tweede']] : [['nu', 'Nu bijwerken', 'tweede'], ['deel', `Deel ${w.deze} ook`, 'tweede']]).concat([['ontkoppel', 'Ontkoppel', 'rustig'], ['annuleer', 'Sluit', 'hoofd']]),
+      rij:gd || vb,
+      blijf:{ nu:async back => {
+        const b = back.querySelector('[data-k="nu"]'), t = back.querySelector('.kp-nagekeken');
+        b.setAttribute('aria-busy', 'true'); b.textContent = 'Bezig met bijwerken…';
+        await nuBijwerken();
+        b.removeAttribute('aria-busy'); b.textContent = 'Nu bijwerken';
+        if (fase !== 'actief') return true;                  // er loopt iets mis: het venster gaat dicht, de balk legt het uit
+        if (t) t.textContent = nagekeken();
+        return false;
+      } } };
+  }
+  function vensterOpen() {
+    return { titel:'Bestand openen?',
+      html:`<p>Je bent gekoppeld aan <b>${esc(naam)}</b>. Wat je opent, gaat dan ook naar het gedeelde bestand.</p><p>Kies je "Ontkoppel en open", dan blijft het gedeelde bestand zoals het is.</p>`,
+      knoppen:[['ontkoppel-open', 'Ontkoppel en open', 'hoofd'], ['open-deel', 'Open en deel', 'tweede'], ['annuleer', 'Annuleer', 'rustig']] };
+  }
+  function venster(v) {
+    return new Promise(klaar => {
+      const terug = document.activeElement, back = document.createElement('div');
+      back.className = 'kp-back';
+      const tid = 'kp-t-' + Math.random().toString(36).slice(2, 7);
+      const knoppen = v.knoppen;
+      back.innerHTML = `<div class="kp-dlg" role="dialog" aria-modal="true" aria-labelledby="${tid}"><h2 id="${tid}"></h2>${v.html}
+        <div class="kp-acties${v.rij ? ' kp-rij' : ''}">${knoppen.map(([k, t, c]) => `<button type="button" class="${c}" data-k="${k}">${esc(t)}</button>`).join('')}</div></div>`;
+      back.querySelector('h2').textContent = v.titel;
+      document.body.appendChild(back);
+      const dicht = k => {
+        const vinkjes = [...back.querySelectorAll('input[data-log]')];
+        v.metKeuze = vinkjes.length > 0; v.keuze = vinkjes.filter(i => i.checked).map(i => i.dataset.log);
+        document.removeEventListener('keydown', toets, true); back.remove(); try { if (terug && terug.isConnected) terug.focus({ preventScroll:true }); } catch {} klaar(k);
+      };
+      const toets = e => {
+        if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); dicht('annuleer'); return; }
+        if (e.key !== 'Tab') return;
+        const f = [...back.querySelectorAll('button, input')]; const i = f.indexOf(document.activeElement);
+        if (e.shiftKey && i <= 0) { e.preventDefault(); f[f.length - 1].focus(); } else if (!e.shiftKey && (i === f.length - 1 || i < 0)) { e.preventDefault(); f[0].focus(); }
+      };
+      document.addEventListener('keydown', toets, true);
+      back.addEventListener('click', async e => {
+        const b = e.target.closest('[data-k]');
+        if (b && v.blijf && v.blijf[b.dataset.k]) { if (b.getAttribute('aria-busy') === 'true') return; if (await v.blijf[b.dataset.k](back)) dicht('annuleer'); return; }
+        if (b) dicht(b.dataset.k); else if (e.target === back) dicht('annuleer');
+      });
+      (back.querySelector('.hoofd') || back.querySelector('button')).focus();
+    });
+  }
+  // De keuzes uit het venster: de bestandskiezer opent meteen bij de klik (zonder iets anders ertussen)
+  async function vanVenster(v) {
+    const k = await venster(v);
+    const keuze = v.metKeuze ? v.keuze : 'vast' in v ? v.vast : v.opnieuw ? null : [];
+    if (k === 'nieuw') koppelNieuw(keuze);
+    else if (k === 'bestaand' || k === 'terug') koppelBestaand(keuze);
+    else if (k === 'ontkoppel') ontkoppel();
+    else if (k === 'deel') deelDeze();
+  }
+  function openVenster() {
+    if (fase !== 'uit') { vanVenster(vensterDetails()); return; }
+    vanVenster(kan() ? vensterKies() : vensterNiet(false));
+  }
+
+  /* --- "Open bestand" terwijl je gekoppeld bent: eerst vragen. Standaard en veilig: ontkoppelen.
+     We vangen de klik en (voor de zekerheid) ook het gekozen bestand op, vóór de tool het opent. --- */
+  async function openKeuze(verder) {
+    const k = await venster(vensterOpen());
+    if (k === 'ontkoppel-open') { await ontkoppel(true); verder(); }
+    else if (k === 'open-deel') { deelOpen = Date.now(); verder(); }
+  }
+  // "Open en deel": na het herladen gaan de eenheden uit het geopende bestand mee (alleen als ze echt vervangen werden)
+  const OPEN = () => 'oc.koppel.open.' + A.id;
+  function onthoudGeopend(file) {
+    file.text().then(t => {
+      try { const d = JSON.parse(t), ruw = d.data[A.sleutel], s = typeof ruw === 'string' ? JSON.parse(ruw) : ruw;
+        sessionStorage.setItem(OPEN(), JSON.stringify({ ids:s[A.lijst].map(u => String(u && u.id)), t:Date.now() })); } catch {}
+    }, () => {});
+  }
+
+  /* --- Starten: de tool geeft zijn adapter. Alleen iets doen als je eerder zelf koppelde. --- */
+  function start(ad) {
+    if (A) return;
+    A = ad;
+    let er = true; try { er = localStorage.getItem(A.sleutel) != null; } catch {}
+    if (!document.getElementById('kp-stijl')) { const s = document.createElement('style'); s.id = 'kp-stijl'; s.textContent = CSS; document.head.appendChild(s); }
+    // het menu-item komt na "Open bestand" (staat het al in de HTML, dan blijft het)
+    const naM = A.menu && A.menu.na && A.menu.na();
+    if (naM && naM.parentNode && !naM.parentNode.querySelector('[data-koppel]')) {
+      {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'kp-menu'; b.setAttribute('data-koppel', ''); b.setAttribute('role', 'menuitem');
+        b.innerHTML = `${I.samen}<span class="${esc(A.menu.tekst || 'ocb-t')}">Werk samen via een gedeeld bestand<small id="kp-sub">Standaard blijft alles op dit toestel</small></span>`;
+        naM.parentNode.insertBefore(b, naM.nextSibling);
+      }
+    }
+    plaats();
+    document.addEventListener('click', e => {
+      if (e.target.closest('[data-koppel]')) { try { A.menu.sluit(); A.menu.knop().focus({ preventScroll:true }); } catch {} openVenster(); return; }
+      const b = e.target.closest('[data-kp]'); if (!b) return;
+      const k = b.dataset.kp;
+      if (k === 'details') vanVenster(vensterDetails());
+      if (k === 'hervat') hervat();
+      if (k === 'opnieuw') opnieuw();
+      if (k === 'ontkoppel') ontkoppel();
+    });
+    if (A.open) {
+      document.addEventListener('click', e => {
+        if (fase === 'uit' || !e.target.closest || !e.target.closest(A.open.knop)) return;
+        e.stopImmediatePropagation(); e.preventDefault();
+        try { A.menu.sluit(); } catch {}
+        openKeuze(() => { const i = document.getElementById(A.open.invoer); if (i) { i.value = ''; i.click(); } });
+      }, true);
+      document.addEventListener('change', e => {
+        const inp = e.target; if (!inp || inp.id !== A.open.invoer || fase === 'uit') return;
+        const f = inp.files && inp.files[0]; if (!f) return;
+        if (deelOpen && Date.now() - deelOpen < 120000) { deelOpen = 0; onthoudGeopend(f); return; }
+        e.stopImmediatePropagation();
+        openKeuze(() => inp.dispatchEvent(new Event('change')));
+      }, true);
+    }
+    const S0 = A.staat();
+    if (S0.weg && typeof S0.weg === 'object') onthoud();
+    (async () => {
+      if (!kan()) return;
+      if (!await bestaatDb()) return;
+      let rec = null; try { rec = await leesRec(); } catch { return; }
+      if (!rec || !rec.handle) return;
+      if (!er) { try { await wisRec(); } catch {} return; }          // de app wiste de gegevens van deze tool: de koppeling gaat mee
+      if (gewist) return;
+      volg();
+      let o = null; try { o = JSON.parse(sessionStorage.getItem(OPEN()) || 'null'); sessionStorage.removeItem(OPEN()); } catch {}
+      if (o && Array.isArray(o.ids) && Date.now() - o.t < 600000) {
+        const ids = new Set(o.ids), eigen = A.staat()[A.lijst].filter(u => !u.voorbeeld);
+        if (eigen.length && eigen.every(u => ids.has(u.id))) { eigen.forEach(u => { u[A.vlag] = true; }); bewaarLokaal(); }
+      }
+      let p = 'prompt'; try { p = await rec.handle.queryPermission({ mode:'readwrite' }); } catch {}
+      h = rec.handle; naam = rec.naam || rec.handle.name || voorstel(null); fase = p === 'granted' ? 'actief' : 'hervat';
+      if (fase === 'actief') { startPoll(); toon(); laatsteKijk = Date.now(); wachtrij(bijwerken); } else toon();
+      try { if (A.naStart) A.naStart(); } catch {}
+    })();
+  }
+
+  // Een fout in de tijdstempels mag het gewone bewaren van de tool nooit tegenhouden
+  const stempelVeilig = () => { try { stempel(); } catch (e) { try { console.warn('oc-koppel: tijdstempel', e); } catch {} } };
+  return { start, TAB_DEEL, icoon, stempel:stempelVeilig, na, wis, herstel, seinWis, toon, onthoud, nu:nuBijwerken, gedeeld:u => !!A && deelbaar(u),
+    toestand:() => ({ fase, fout, naam, vuil, bijgewerkt, gewist, nagekeken:gecontroleerd }), samen, ontleed, vanAndere, H, tijd, wegMap };
+})();
+/* oc-koppel v1 einde */
+</script>
 <script>
 /* ---------- Overnemen tussen tools (gedeeld door de Onder Constructie-tools, v2) ----------
    Alle tools draaien op hetzelfde domein en delen dus localStorage. Elke tool legt wat hij te bieden
@@ -911,10 +1922,13 @@ function ocPublish() {
 async function ocWipeAll() {
   if (!await ocConfirm(`Alles wissen in ${OC_TOOL}?`, "Alle retro's verdwijnen. Je kan dit nog ongedaan maken tot je iets anders doet.", 'Alles wissen')) return;
   const copy = JSON.parse(JSON.stringify(state));
+  // De koppeling met een gedeeld bestand gaat mee weg. Het bestand zelf blijft staan.
+  const koppeling = window.ocKoppel ? await ocKoppel.wis() : null;
   try { localStorage.removeItem(KEY); } catch {}
   state = load(); save(); render();
   ocShare.clear(OC_ID);
-  toast('Alles gewist', ocUndoable(() => { state = copy; }));
+  if (koppeling && window.ocKoppel) ocKoppel.seinWis();
+  toast('Alles gewist', ocUndoable(() => { state = copy; if (window.ocKoppel) ocKoppel.herstel(koppeling); }));
 }
 document.addEventListener('click', e => { if (e.target.closest('[data-act="wipe"]')) ocWipeAll(); });
 
@@ -1194,7 +2208,24 @@ function load() {
   return { retros:[r], current:r.id, sortVotes:false, col:0, minutes:5 };
 }
 let state = load();
-function save() { ocAfterSave(); try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
+function save() {
+  ocAfterSave();
+  if (window.ocKoppel) ocKoppel.stempel();   // gekoppeld: elke wijziging krijgt een tijdstempel
+  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {}
+  if (window.ocKoppel) ocKoppel.na();        // gekoppeld: na een korte pauze ook in het gedeelde bestand
+}
+// Meteen bewaren na een samenvoeging met het gedeelde bestand (zonder nieuwe tijdstempels)
+function kpBewaarNu() { ocAfterSave(); try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
+/* Gekoppeld (state.weg bestaat): een stem telt apart per sessie (st: {sessie: [aantal, volgnummer]}), zodat stemmen van twee
+   mensen tegelijk allebei meetellen. De stemmen van vóór het koppelen staan onder '_'. Een aangepaste tekst onthoudt zijn tijd (tT). */
+const KP_SES = 's' + Math.random().toString(36).slice(2, 10);
+const kpSom = st => Math.max(0, Object.keys(st).reduce((s, k) => s + (+st[k][0] || 0), 0));
+function kpStem(card, d) {
+  if (!state.weg) { card.votes = Math.max(0, card.votes + d); return; }
+  if (!card.st || typeof card.st !== 'object') card.st = { _:[card.votes || 0, 0] };
+  if (kpSom(card.st) + d < 0) return;
+  const e = card.st[KP_SES] || [0, 0]; card.st[KP_SES] = [e[0] + d, e[1] + 1]; card.votes = kpSom(card.st);
+}
 const cur = () => state.retros.find(r => r.id === state.current) || state.retros[0];
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
@@ -1258,8 +2289,9 @@ function actionHTML(a, carried) {
 function renderTabs() {
   $('lists').innerHTML = state.retros.map(r => {
     const n = r.cards.length;
-    return `<button class="tab${escA(r.id === state.current ? ' active' : '')}" data-retro="${escA(r.id)}">${esc(r.name || 'Naamloos')}${r.voorbeeld ? '<span class="vb-tag">voorbeeld</span>' : ''}<span class="n">${n || ''}</span></button>`;
+    return `<button class="tab${escA(r.id === state.current ? ' active' : '')}" data-retro="${escA(r.id)}">${window.ocKoppel ? ocKoppel.icoon(r) : ''}${esc(r.name || 'Naamloos')}${r.voorbeeld ? '<span class="vb-tag">voorbeeld</span>' : ''}<span class="n">${n || ''}</span></button>`;
   }).join('') + `<button class="tab add" id="new-retro" aria-label="Nieuwe retro">+ Retro</button>`;
+  if (window.ocKoppel) ocKoppel.toon();   // gekoppeld: het icoon in de tab en of deze retro gedeeld is
 }
 
 function render() {
@@ -1321,13 +2353,13 @@ function actionsCount(r) {
 
 /* ---------- Melding met ongedaan maken ---------- */
 let undoFn = null, toastTimer = null;
-function toast(msg, undo) {
+function toast(msg, undo, ms) {
   undoFn = undo || null;
   $('toast-text').textContent = msg;
   $('toast-btn').hidden = !undo;
   $('toast').classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { $('toast').classList.remove('show'); undoFn = null; }, undo ? 6000 : 2500);
+  toastTimer = setTimeout(() => { $('toast').classList.remove('show'); undoFn = null; }, ms || (undo ? 6000 : 2500));
 }
 $('toast-btn').addEventListener('click', () => {
   if (undoFn) { undoFn(); undoFn = null; save(); render(); }
@@ -1393,7 +2425,7 @@ document.addEventListener('click', e => {
   const vb = t.closest('.vote-btn');
   if (vb) {
     const { card } = findCard(vb); if (!card) return;
-    card.votes = Math.max(0, card.votes + (+vb.dataset.vote));
+    kpStem(card, +vb.dataset.vote);
     save();
     if (state.sortVotes) render();
     else { const li = vb.closest('.note'); li.querySelector('.dots').innerHTML = dotsHTML(card.votes); li.querySelector('.votes').setAttribute('aria-label', card.votes + ' stemmen'); }
@@ -1466,6 +2498,7 @@ document.addEventListener('focusout', e => {
     if (v === card.text) return;
     if (!v) { const restore = snapshot(); r.cards.splice(idx, 1); save(); render(); toast('Kaartje verwijderd', restore); return; }
     card.text = v.slice(0, 400);
+    if (state.weg) card.tT = Date.now();
     save();
   } else if (t.classList.contains('action-text')) {
     const { list, idx, a } = findAction(t); if (!a) return;
@@ -1659,7 +2692,7 @@ $('menu').addEventListener('click', async e => {
   }
   if (act === 'clear-votes') {
     if (!r.cards.some(c => c.votes)) { toast('Er zijn nog geen stemmen'); return; }
-    const restore = snapshot(); r.cards.forEach(c => c.votes = 0); save(); render(); toast('Stemmen op nul', restore);
+    const restore = snapshot(); r.cards.forEach(c => { c.votes = 0; if (c.st) Object.keys(c.st).forEach(k => { c.st[k] = [0, (+c.st[k][1] || 0) + 1]; }); }); save(); render(); toast('Stemmen op nul', restore);
   }
   if (act === 'delete') deleteRetro(r);
 });
@@ -1811,10 +2844,104 @@ document.addEventListener('keydown', e => {
 });
 
 /* ---------- Andere tabbladen gelijk houden ---------- */
-window.addEventListener('storage', e => { if (e.key === KEY) { state = load(); render(); } });
+window.addEventListener('storage', e => { if (e.key === KEY) { state = load(); if (window.ocKoppel) ocKoppel.onthoud(); render(); } });
 
 render();
 showClock();
+</script>
+<script>
+/* ---------- Werk samen via een gedeeld bestand: de adapter voor het gedeelde blok oc-koppel ----------
+   Eén retro = één eenheid. De items zijn de kaartjes, de acties en de acties van vorige keer, elk met een id.
+   Naam, datum en formaat gaan per retro samen: de laatste wijziging wint. Een actie: de laatste wijziging wint.
+   Een kaartje: de tekst van de laatste wijziging (tT), en de stemmen tellen per sessie (st: {sessie: [aantal, volgnummer]}),
+   zodat twee mensen die tegelijk stemmen allebei meetellen. Volgorde in een kolom: die van het bestand; een nieuw kaartje
+   van jou komt na het kaartje dat ervoor stond ("Op stemmen" sorteert zoals altijd).
+   Wat alleen voor dit toestel is (verberg wat klaar is, de kolom op de gsm, de timer) gaat niet mee.
+   Bestand: soort oc-retro, data 'retro.v1' = {retros, weg}. */
+(() => {
+  const DATUM = /^\d{4}-\d{2}-\d{2}$/;
+  const stSom = st => Math.max(0, Object.keys(st).reduce((s, k) => s + (+st[k][0] || 0), 0));
+  // Iedereen met toegang tot het bestand ziet wat erin staat: dat zeggen we rustig in het koppelvenster
+  new MutationObserver(() => {
+    const d = document.querySelector('.kp-dlg'); if (!d || d.dataset.kpNamen || !d.querySelector('[data-k="nieuw"]')) return;
+    d.dataset.kpNamen = '1';
+    const p = document.createElement('p'); p.className = 'kp-hint'; p.textContent = 'Iedereen met toegang tot het bestand ziet wat erin staat, ook namen.';
+    const ps = d.querySelectorAll(':scope > p'); (ps[ps.length - 1] || d.querySelector('h2')).after(p);
+  }).observe(document.body, { childList:true });
+  const actie = (x, H, mee) => {
+    const a = { id:H.sid(x.id), text:H.str(x.text, 400), who:H.str(x.who, 120), when:DATUM.test(x.when) ? x.when : '', done:x.done === true };
+    if (mee) { a.from = H.sid(x.from) || null; a.origin = H.str(x.origin, 120); } else if (H.sid(x.fromCard)) a.fromCard = H.sid(x.fromCard);
+    if (H.sid(x.moved)) a.moved = H.sid(x.moved);
+    return a;
+  };
+  ocKoppel.start({
+    id:'retro', soort:'oc-retro', naam:'Retro', bestand:'retro',
+    sleutel:KEY, lijst:'retros', verz:{ cards:'weg', actions:'wegActies', carried:'wegMee' }, vlag:'gedeeld', huidig:'current', kopVelden:['name', 'date', 'format'], volgorde:'bestand',
+    w:{ een:'retro', veel:"retro's", Een:'Een', De:'De', Deze:'Deze retro', deze:'deze retro', Hij:'Ze', werk:'werk', zelfde:"retro's", item:['kaartje', 'kaartjes'] },
+    max:{ eenheden:200, items:2000 },
+    uitleg:'Stemmen twee mensen tegelijk, dan tellen beide stemmen. Voor de rest wint wie het laatst bewaart.',
+    staat:() => state,
+    kopSchoon:(r, H) => ({ name:H.str(r.name, 60), date:DATUM.test(r.date) ? r.date : '', format:FORMATS[r.format] ? r.format : 'hrp' }),
+    schoonItem:(v, x, tijd, H) => {
+      if (v === 'actions') return actie(x, H, false);
+      if (v === 'carried') return actie(x, H, true);
+      const text = H.str(x.text, 400); if (!text.trim()) return null;
+      const c = { id:H.sid(x.id), col:[0, 1, 2].includes(x.col) ? x.col : 0, text, votes:Math.max(0, Math.min(9999, Math.round(+x.votes) || 0)) };
+      if (x.st && typeof x.st === 'object' && !Array.isArray(x.st)) {
+        const st = {};
+        Object.keys(x.st).slice(0, 300).forEach(k => { const id = H.sid(k), e = x.st[k];
+          if (id && Array.isArray(e)) st[id] = [Math.max(-9999, Math.min(9999, Math.round(+e[0]) || 0)), Math.max(0, Math.min(1e6, Math.round(+e[1]) || 0))]; });
+        if (Object.keys(st).length) { c.st = st; c.votes = stSom(st); }
+      }
+      if (tijd(x.tT)) c.tT = tijd(x.tT);
+      return c;
+    },
+    // Twee mensen pasten tegelijk hetzelfde kaartje aan: de stemmen tellen per sessie, de tekst van de laatste wijziging
+    botsing:(v, x, y, w) => {
+      if (v !== 'cards') return null;
+      const o = Object.assign({}, w);
+      if (x.st || y.st) {
+        const sx = x.st || {}, sy = y.st || {}, st = {};
+        new Set([...Object.keys(sx), ...Object.keys(sy)]).forEach(k => {
+          const a = sx[k], b = sy[k];
+          st[k] = !a ? b : !b ? a : +a[1] !== +b[1] ? (+a[1] > +b[1] ? a : b) : (w === x ? a : b);
+        });
+        o.st = st; o.votes = stSom(st);
+      }
+      const tx = +x.tT || 0, ty = +y.tT || 0, s = tx !== ty ? (tx > ty ? x : y) : w;
+      o.text = s.text; if (Math.max(tx, ty)) o.tT = Math.max(tx, ty);
+      return [o];
+    },
+    label:r => r.name || 'Naamloos',
+    naamVoorBestand:r => r ? String(r.name || '').replace(/^\s*retro\b[\s:-]*/i, '') : '',   // retro-6-11-2026-gedeeld.json, niet retro-retro-…
+    aantal:r => `${r.cards.length} ${r.cards.length === 1 ? 'kaartje' : 'kaartjes'} · ${r.actions.length} ${r.actions.length === 1 ? 'actie' : 'acties'}`,
+    leeg:r => !r.cards.length && !r.actions.length && !r.carried.length,
+    nieuweEenheid:() => newRetro(),
+    kiesHuidig:() => { state.current = (state.retros.filter(r => !r.voorbeeld).pop() || state.retros[0] || {}).id; },
+    // Een eigen kopie na het samenvoegen: wat uit het bestand komt, deelt anders zijn object met de versie die het blok als
+    // "laatst in het bestand" onthoudt. Dan zou de eerste aanpassing daarna geen spoor krijgen (en geen samenvoegen per vak of stem).
+    bewaar:() => { state.retros = JSON.parse(JSON.stringify(state.retros)); kpBewaarNu(); },
+    teken:() => {
+      // het lege invulveld waarin je stond, blijft de focus houden
+      const a = document.activeElement, rij = a && a.closest && a.closest('.add-row[data-col]'), col = rij ? rij.dataset.col : null;
+      render();
+      if (col != null) { const i = document.querySelector(`.add-row[data-col="${escA(col)}"] .add-input`); if (i) i.focus({ preventScroll:true }); }
+    },
+    bezig:() => {
+      if (document.querySelector('.dlg-back, .ocw-back, .kp-back, .ocs-back')) return true;
+      const a = document.activeElement; if (!a) return false;
+      if (a.isContentEditable || a.matches('.action input, #retro-name')) return true;
+      return a.matches('.add-input') && !!a.value.trim();
+    },
+    anker:'.note[data-id]',
+    tabs:() => [...document.querySelectorAll('.tab[data-retro]')].map(t => [t, t.dataset.retro]),
+    toast:(msg, undo, ms) => toast(msg, undo, ms),
+    ongedaan:() => undoFn,
+    menu:{ na:() => document.querySelector('#menu [data-bestand="open"]'), tekst:'ocb-t', sluit:() => closeMenu(), knop:() => $('menu-btn') },
+    plek:() => $('lists'),
+    open:{ knop:'[data-bestand="open"]', invoer:'oc-bestand-in' }
+  });
+})();
 </script>
 <script>
 /* Opnieuw beginnen: zichtbaar zodra er echt iets ingevuld is; start de eigen 'Alles wissen' van de tool.
