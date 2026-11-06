@@ -1058,6 +1058,11 @@ body.searching #cycle, body.searching #vs-note { display:none !important; }
 .cy-list .results-title { font-size:1.125rem; }
 .tg-tools { padding:0 0 0.5rem; margin-top:-0.5rem; }
 .tg-tools button[hidden] { display:none; }
+body:not(.view-fase) #home[data-tab="projecten"] #alltools-h { cursor:pointer; }
+.tg-top { cursor:pointer; border-radius:var(--r-md, 12px); -webkit-tap-highlight-color:transparent; }
+.tg-top:focus-visible { outline:2px solid var(--accent-dark); outline-offset:2px; }
+@media (hover:hover) { .tg-top:hover .group-title { color:var(--accent-dark); } }
+.tg-top:active { background:var(--slate-100); }
 .tg-top { display:grid; grid-template-columns:44px 1fr auto; gap:0.75rem; align-items:center; padding:0.25rem 0.25rem 0.875rem; }
 .tabgroup .group.sub .row { padding-left:1rem; }
 .cy-more { font-size:0.8125rem; font-weight:600; color:var(--slate-600); padding:0.75rem 1rem 0.5rem; background:var(--slate-50); border-top:1px solid var(--slate-200); }
@@ -1401,7 +1406,7 @@ body.searching #home #tabgroup { display:none !important; }
         <a class="ft-link" href="https://www.linkedin.com/in/bartel-volckaert-8a96842/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Maker</a>
         <button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (34 seconden)" title="Bekijk de film (34 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg></button>
       </nav>
-      <p class="ft-meta"><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v13.5</span></p>
+      <p class="ft-meta"><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v13.6</span></p>
     </div>
   </footer>
   <dialog class="film" id="film" aria-labelledby="film-h">
@@ -1738,15 +1743,30 @@ function syncSubTools() {
   const all = [...document.querySelectorAll('#tabgroup .group.sub')], dicht = all.filter(g => g.classList.contains('collapsed')).length;
   const o = document.querySelector('[data-sub-all="open"]'), c = document.querySelector('[data-sub-all="dicht"]');
   if (o) o.hidden = dicht === 0; if (c) c.hidden = dicht === all.length;
+  const top = document.querySelector('#tabgroup .tg-top'); if (top) top.setAttribute('aria-expanded', String(dicht === 0));
 }
-document.addEventListener('click', e => {
-  const b = e.target.closest('[data-sub-all]'); if (!b) return;
-  const dicht = b.dataset.subAll === 'dicht';
+// Een tik op de kop van Vergaderen of Zakmes: alles open, en als alles al open is: alles dicht
+function subAlles(dicht) {
   document.querySelectorAll('#tabgroup .group.sub').forEach(g => {
     g.classList.toggle('collapsed', dicht); g.querySelector('.group-head').setAttribute('aria-expanded', String(!dicht));
     g.querySelectorAll('.row').forEach(r => r.tabIndex = dicht ? -1 : 0);
   });
   subSave(); syncSubTools();
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-sub-all]'); if (b) { subAlles(b.dataset.subAll === 'dicht'); return; }
+  if (e.target.closest('.tg-top')) subAlles(!document.querySelector('#tabgroup .group.sub.collapsed'));
+});
+// Projecten per onderwerp: een tik op de titel doet hetzelfde voor de vier groepen
+function projAlles() {
+  if (tab !== 'projecten' || document.body.classList.contains('view-fase')) return;
+  const gs = [...document.querySelectorAll('#groups .group')].filter(g => g.offsetParent), open = gs.some(g => g.classList.contains('collapsed'));
+  gs.forEach(g => setCollapsed(g.dataset.group, !open)); saveCollapsed();
+}
+$('alltools-h').addEventListener('click', projAlles);
+document.addEventListener('keydown', e => {
+  if (!e.target.closest || !e.target.closest('.tg-top') || (e.key !== 'Enter' && e.key !== ' ')) return;
+  e.preventDefault(); subAlles(!document.querySelector('#tabgroup .group.sub.collapsed'));
 });
 document.addEventListener('click', e => {
   const h = e.target.closest('.group-head');
@@ -1878,7 +1898,7 @@ function setTab(id, keep) {
   const g = ['vergaderen', 'zakmes', 'reset'].includes(id) ? GROUPS.find(x => x.id === id) : null;
   const n = g ? TOOLS.filter(t => inGroup(t, id)).length : 0;
   $('tabgroup').innerHTML = !g ? '' : TAB_SUB[id]
-    ? `<div class="tg-top"><span class="group-logo" aria-hidden="true">${bare(g.logo)}</span>
+    ? `<div class="tg-top" role="button" tabindex="0" aria-controls="tabgroup" title="Alles open of dicht"><span class="group-logo" aria-hidden="true">${bare(g.logo)}</span>
         <span><h2 class="group-title" id="tabgroup-h" tabindex="-1">${esc(g.label)}</h2><span class="group-note">${esc(g.note)}</span></span>
         <span class="group-meta"><span class="count">${n}</span></span></div>
         <div class="list-tools tg-tools"><button type="button" data-sub-all="open">Alles open</button><button type="button" data-sub-all="dicht">Alles dicht</button></div>${subRows(id)}`
