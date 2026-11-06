@@ -586,8 +586,8 @@ input::placeholder, textarea::placeholder { color:#64748b; opacity:1; }
      schoonEenheid(u), schoonItem(v, it, tijd, H), kopSchoon(u, H)   de eigen validatie van de tool (zoals bij Open bestand)
      bewaar(), teken(), bezig(), anker, tabs(), toast(msg, undo, ms), ongedaan()    lokaal bewaren, tekenen, melding
      menu {na(), tekst, sluit(), knop()}, plek(), open {knop, invoer}               waar het menu-item en de status komen
-     optioneel: idVan, volgorde ('bestand'), botsing(v, x, y, z, winnaar, H), naSamen(u), nieuweEenheid(), leeg(u),
-                label(u), aantal(u), kiesHuidig(), naOngedaan(), naamKoppel, uitleg (zin over gelijktijdig aanpassen) */
+     optioneel: idVan, volgorde ('bestand'), botsing(v, x, y, z, winnaar, H), naSamen(u), nieuweEenheid(), leeg(u), spoel(),
+                label(u), naamVoorBestand(u), aantal(u), kiesHuidig(), naOngedaan(), naamKoppel, uitleg (zin over gelijktijdig aanpassen) */
 window.ocKoppel = (() => {
   const DB = 'oc-koppel', STORE = 'bestand', VERSIE = 1, POLL = 20000, PAUZE = 1000;
   const MARGE = 5 * 60000, OUD = 90 * 864e5, ONGEDAAN_MS = 12000, MAX_BYTES = 2 * 1024 * 1024;
@@ -787,7 +787,8 @@ window.ocKoppel = (() => {
           const zi = new Map(zu && Array.isArray(zu[v]) ? zu[v].map(i => [iid(v, i), i]) : []);
           const items = [];
           volgorde([...xm.keys()], [...ym.keys()]).forEach(i => { const p = xm.get(i), q = ym.get(i); if (p && q) items.push(...beide(v, p, q, zi.get(i))); else items.push(p || q); });
-          u[v] = items.filter(it => !(lw[iid(v, it)] >= ts(it)));
+          const gezien = new Set();
+          u[v] = items.filter(it => !(lw[iid(v, it)] >= ts(it)) && !gezien.has(iid(v, it)) && gezien.add(iid(v, it)));
           if (Object.keys(lw).length) u[wp] = lw; else delete u[wp];
         });
         if (ts(kop)) u.gewijzigd = ts(kop); else delete u.gewijzigd;
@@ -810,11 +811,13 @@ window.ocKoppel = (() => {
   const cache = new Map();
   const SEP = '\u0001';
   const kopKenmerk = u => JSON.stringify([kopVan(u), !!u.voorbeeld]);
-  function onthoud() {
-    cache.clear();
-    const S = A.staat();
-    (S[A.lijst] || []).forEach(u => { cache.set('l' + SEP + u.id, { v:kopKenmerk(u), g:deelbaar(u), t:ts(u) }); V().forEach(v => (u[v] || []).forEach(it => cache.set('i' + SEP + u.id + SEP + v + SEP + iid(v, it), { c:ck(v, it), t:ts(it) }))); });
+  // Per eenheid: hoe ze er als geheel uitzag (ruw), en per item een vingerafdruk. Een eenheid die niet veranderde, slaan we snel over.
+  function merk(u) {
+    const keys = [];
+    V().forEach(v => (u[v] || []).forEach(it => { const k = 'i' + SEP + u.id + SEP + v + SEP + iid(v, it); keys.push(k); cache.set(k, { c:ck(v, it), t:ts(it) }); }));
+    cache.set('l' + SEP + u.id, { v:kopKenmerk(u), g:deelbaar(u), t:ts(u), ruw:JSON.stringify(u), keys });
   }
+  function onthoud() { cache.clear(); (A.staat()[A.lijst] || []).forEach(merk); }
   // Een eigen wijziging wint altijd van wat je al zag: minstens de vorige tijd + 1. Stond die vorige tijd in de toekomst
   // (een collega met een voorlopende klok), dan krijgt de correctie nu + 5 minuten + 1, zodat ze ook bij anderen wint.
   const volgende = prev => { const nu = Date.now(), p = tijd(prev); return p > nu ? nu + MARGE + 1 : Math.max(nu, p + 1); };
@@ -822,20 +825,24 @@ window.ocKoppel = (() => {
     if (!A) return;
     const S = A.staat();
     if (!S.weg || typeof S.weg !== 'object') return;
-    const gezien = new Set();
+    const gezien = new Set(), opnieuw = [], weg = [];
     (S[A.lijst] || []).forEach(u => {
       const kl = 'l' + SEP + u.id, c = cache.get(kl); gezien.add(kl);
+      if (c && c.ruw === JSON.stringify(u)) { c.keys.forEach(k => gezien.add(k)); return; }
       if (!c || c.v !== kopKenmerk(u)) u.gewijzigd = volgende(u.gewijzigd);
       V().forEach(v => (u[v] || []).forEach(it => { const k = 'i' + SEP + u.id + SEP + v + SEP + iid(v, it), ci = cache.get(k); gezien.add(k); if (!ci || ci.c !== ck(v, it)) it.gewijzigd = volgende(it.gewijzigd); }));
+      opnieuw.push(u);
     });
     cache.forEach((val, k) => {
       if (gezien.has(k)) return;
+      weg.push(k);
       const p = k.split(SEP);
       if (p[0] === 'l') { if (val.g && !VERBODEN.has(p[1])) S.weg[p[1]] = volgende(Math.max(val.t, tijd(S.weg[p[1]]))); return; }
       const u = S[A.lijst].find(x => x.id === p[1]), wp = A.verz[p[2]];
       if (u && !u.voorbeeld && wp && p[3] && !VERBODEN.has(p[3])) { if (!u[wp] || typeof u[wp] !== 'object') u[wp] = {}; u[wp][p[3]] = volgende(val.t); }
     });
-    onthoud();
+    weg.forEach(k => cache.delete(k));
+    opnieuw.forEach(merk);
   }
   function volg() { const S = A.staat(); if (!S.weg || typeof S.weg !== 'object') { onthoud(); S.weg = {}; } }
   // Welke eenheden gaan mee: null = laten zoals het is (opnieuw koppelen), anders de gekozen ids
@@ -976,8 +983,10 @@ window.ocKoppel = (() => {
   }
   // Elke keer een vers getFile() en een vergelijking op inhoud: een gedeelde map op een gsm geeft soms een kopie
   // waarvan lastModified niet verandert.
+  const spoel = () => { try { if (A.spoel) A.spoel(); } catch {} };
   async function bijwerken() {
     if (!h || gewist || (fase !== 'actief' && fase !== 'fout')) return;
+    spoel();
     if (ongedaanOpen()) { clearTimeout(schrijfT); schrijfT = setTimeout(() => wachtrij(bijwerken), 500); return; }
     const h0 = h;
     try {
@@ -1112,7 +1121,7 @@ window.ocKoppel = (() => {
   }
   async function koppelNieuw(keuze) {
     let nh; try { nh = await window.showSaveFilePicker({ suggestedName:voorstel(keuze), types:TYPES() }); } catch (e) { kiesFout(e); return; }
-    await rij;
+    await rij; spoel();
     // Koos je een bestand waar al gedeelde gegevens in staan? Dan voegen we samen in plaats van te overschrijven.
     let tekst = '';
     try { const f = await nh.getFile(); if (f.size > MAX_BYTES) { vanVenster(vensterTeGroot(nh.name, false, keuze)); return; } tekst = await f.text(); } catch {}
@@ -1147,6 +1156,7 @@ window.ocKoppel = (() => {
     await koppelMet(nh, tekst, b, p, keuze);
   }
   async function koppelMet(nh, tekst, b, p, keuze) {
+    spoel();
     const S = A.staat(), L = A.lijst, H0 = V()[0], lees = gelezen(b);
     let f = null; try { f = await nh.getFile(); } catch {}
     stop(); volg();
@@ -1170,7 +1180,7 @@ window.ocKoppel = (() => {
     const r = pasToe(b);
     if (!r.veranderd) bewaarLokaal();
     teken();
-    const vanJou = S === A.staat() ? A.staat()[L].filter(deelbaar).reduce((s, u) => s + (u[H0] || []).filter(it => !inBestand.has(iid(H0, it))).length, 0) : 0;
+    const vanJou = A.staat()[L].filter(deelbaar).reduce((s, u) => s + (u[H0] || []).filter(it => !inBestand.has(iid(H0, it))).length, 0);
     const uit = b[L].reduce((s, u) => s + (u[H0] || []).length, 0);
     laatst = { lm:f ? f.lastModified : -1, size:f ? f.size : -1, tekst, data:lees, obj:b };
     if (!await begin(nh, p)) return;
@@ -1247,7 +1257,8 @@ window.ocKoppel = (() => {
     terug:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.5-5.8M4 4v4h4"/></svg>',
     gsm:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M11 18h2"/></svg>'
   };
-  const CSS = '.kp{margin:0 0 .875rem}@media print{.kp,.kp-back{display:none!important}}'
+  // de plaats (marge) van .kp kiest de tool zelf
+  const CSS = '@media print{.kp,.kp-back{display:none!important}}'
     + ':where(.kp,.kp-back) button{font:inherit;border:0;cursor:pointer;margin:0}:where(.kp,.kp-back),:where(.kp,.kp-back) *{box-sizing:border-box}'
     + ':where(.kp-dlg) h2,:where(.kp-dlg) p,:where(.kp-dlg) ul,:where(.kp-dlg) li{margin:0;padding:0}'
     + '.tab-deel{width:15px;height:15px;margin-right:.375rem;vertical-align:-2px;flex:none}'
@@ -1463,9 +1474,9 @@ window.ocKoppel = (() => {
     let er = true; try { er = localStorage.getItem(A.sleutel) != null; } catch {}
     if (!document.getElementById('kp-stijl')) { const s = document.createElement('style'); s.id = 'kp-stijl'; s.textContent = CSS; document.head.appendChild(s); }
     // het menu-item komt na "Open bestand" (staat het al in de HTML, dan blijft het)
-    if (!document.querySelector('[data-koppel]')) {
-      const naM = A.menu && A.menu.na && A.menu.na();
-      if (naM && naM.parentNode) {
+    const naM = A.menu && A.menu.na && A.menu.na();
+    if (naM && naM.parentNode && !naM.parentNode.querySelector('[data-koppel]')) {
+      {
         const b = document.createElement('button'); b.type = 'button'; b.className = 'kp-menu'; b.setAttribute('data-koppel', ''); b.setAttribute('role', 'menuitem');
         b.innerHTML = `${I.samen}<span class="${esc(A.menu.tekst || 'ocb-t')}">Werk samen via een gedeeld bestand<small id="kp-sub">Standaard blijft alles op dit toestel</small></span>`;
         naM.parentNode.insertBefore(b, naM.nextSibling);
