@@ -109,16 +109,26 @@ kbd { font:inherit; font-size:0.75rem; font-weight:600; padding:0 0.375rem; bord
 .vraag-blok.in { animation:zacht 0.28s ease; }
 @keyframes zacht { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
 .uitspraak { font-size:1.375rem; font-weight:600; color:var(--slate-800); line-height:1.35; letter-spacing:-0.01em; text-align:center; text-wrap:balance; min-height:calc(2 * 1.35em); display:flex; align-items:center; justify-content:center; margin-bottom:1.5rem; }
-.keuzes { display:flex; flex-direction:column; gap:0.5rem; }
-.keuze { display:flex; align-items:center; gap:0.875rem; width:100%; min-height:52px; padding:0.5rem 0.875rem 0.5rem 0.625rem; border:1.5px solid var(--slate-200); border-radius:12px; background:var(--wit); color:var(--slate-700); font-size:1rem; font-weight:500; text-align:left; transition:border-color 0.15s, background 0.15s; }
-.keuze:hover { border-color:var(--slate-300); background:var(--slate-50); }
-.keuze .nr { flex:none; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--slate-100); color:var(--slate-600); font-size:0.875rem; font-weight:700; font-variant-numeric:tabular-nums; }
-.keuze .t { flex:1; min-width:0; }
-.keuze .v { flex:none; width:20px; height:20px; color:var(--accent-dark); opacity:0; }
-.keuze[aria-checked="true"] { border-color:var(--accent); background:var(--accent-50); color:var(--accent-hover); font-weight:600; }
-.keuze[aria-checked="true"] .nr { background:var(--accent-dark); color:#fff; }
-.keuze[aria-checked="true"] .v { opacity:1; }
-.vraag-nav { display:flex; justify-content:space-between; align-items:center; gap:0.75rem; max-width:30rem; margin:1.25rem auto 0; min-height:44px; }
+/* Antwoorden met een schuifje: geen standaardwaarde, het spoor kleurt groen tot aan de knop */
+.schuif-label { text-align:center; font-size:1.25rem; font-weight:700; color:var(--accent-hover); letter-spacing:-0.01em; line-height:1.4; min-height:1.75rem; margin:0 0 0.5rem; }
+.schuif-label.leeg { font-size:1rem; font-weight:500; color:var(--slate-500); }
+.schuif-wrap { position:relative; height:44px; --v:0; }
+.spoor { position:absolute; left:22px; right:22px; top:50%; height:8px; margin-top:-4px; border-radius:999px; background:var(--slate-200); pointer-events:none; }
+.spoor-vul { position:absolute; left:0; top:0; bottom:0; width:calc(var(--v) * 100%); border-radius:999px; background:linear-gradient(to right, #6ee7b7, var(--accent)); }
+.leeg .spoor-vul { display:none; }
+.streep { position:absolute; top:14px; left:calc(var(--s) * 100%); width:2px; height:7px; margin-left:-1px; border-radius:1px; background:var(--slate-300); }
+.schuif { position:absolute; inset:0; width:100%; height:44px; margin:0; padding:0; background:transparent; -webkit-appearance:none; appearance:none; cursor:pointer; touch-action:pan-y; border-radius:12px; }
+.schuif::-webkit-slider-runnable-track { height:44px; background:transparent; border:0; }
+.schuif::-moz-range-track { height:44px; background:transparent; border:0; }
+.schuif::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:44px; height:44px; border:0; border-radius:50%; background:radial-gradient(circle, #047857 0 10px, #fff 10.5px 13px, rgba(16,185,129,0.2) 13.5px 20px, transparent 20.5px); }
+.schuif::-moz-range-thumb { width:44px; height:44px; border:0; border-radius:50%; background:radial-gradient(circle, #047857 0 10px, #fff 10.5px 13px, rgba(16,185,129,0.2) 13.5px 20px, transparent 20.5px); }
+.schuif:active::-webkit-slider-thumb { background:radial-gradient(circle, #047857 0 11px, #fff 11.5px 14px, rgba(16,185,129,0.28) 14.5px 22px, transparent 22.5px); }
+.leeg .schuif::-webkit-slider-thumb { opacity:0; }
+.leeg .schuif::-moz-range-thumb { opacity:0; }
+.uitersten { display:flex; justify-content:space-between; gap:1rem; margin-top:0.375rem; font-size:0.8125rem; color:var(--slate-500); }
+.vraag-nav .btn { transition:none; }
+.vraag-nav .btn-primary:disabled { background:var(--slate-100); color:var(--slate-600); cursor:not-allowed; transform:none; box-shadow:none; }
+.vraag-nav { display:flex; justify-content:space-between; align-items:center; gap:0.75rem; max-width:30rem; margin:1.75rem auto 0; min-height:48px; }
 .vraag-nav .stil { visibility:hidden; }
 .hint { text-align:center; font-size:0.8125rem; color:var(--slate-500); margin-top:1rem; }
 
@@ -191,6 +201,13 @@ details[open] > summary .pijl { transform:rotate(180deg); }
 .explain .inner { padding:0 1.125rem 1.125rem; font-size:0.9375rem; line-height:1.55; color:#475569; }
 .explain .inner > * + * { margin-top:0.5rem; }
 .explain .inner ul { padding-left:1.25rem; }
+.explain .bron { margin-top:1rem; padding-top:0.875rem; border-top:1px solid var(--slate-100); font-size:0.8125rem; line-height:1.55; color:var(--slate-500); }
+.explain .bron h3 { font-size:0.875rem; font-weight:700; color:var(--slate-600); margin-bottom:0.25rem; }
+.explain .inner .bron > * + *, .explain .bron > * + * { margin-top:0.375rem; }
+.explain .inner .bron p.bron-kop, .explain .bron p.bron-kop { font-weight:600; color:var(--slate-600); margin-top:0.625rem; }
+.explain .bron ul { padding-left:1.125rem; margin-top:0.125rem; }
+.explain .bron li + li { margin-top:0.25rem; }
+.explain .inner .bron h3 + p { margin-top:0.25rem; }
 
 /* Gsm */
 @media (max-width:640px) {
@@ -213,7 +230,6 @@ details[open] > summary .pijl { transform:rotate(180deg); }
 @media (max-width:640px) and (max-height:760px) {
   :root { --h:120px; }
   .uitspraak { margin-bottom:1rem; }
-  .keuze { min-height:48px; }
   .voortgang { margin-bottom:1.25rem; }
 }
 
@@ -232,12 +248,13 @@ footer.oc-footer .oc-quote { font-size:0.8125rem; line-height:1.5; color:#047857
 
 :focus-visible { outline:2px solid #047857 !important; outline-offset:2px; }
 a, button, summary, label { touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
-.btn:active, .keuze:active, summary:active { filter:brightness(0.96); }
+.btn:active, summary:active { filter:brightness(0.96); }
 @media (hover:none) and (pointer:coarse) { .toetsenbord { display:none !important; } }
 html:has(.ocw-back) { overflow:hidden; }
 @media (forced-colors:active) {
-  .keuze, .btn { border:1px solid ButtonText; }
-  .keuze[aria-checked="true"] { border:3px solid Highlight; }
+  .btn { border:1px solid ButtonText; }
+  .spoor { border:1px solid CanvasText; }
+  .spoor-vul { forced-color-adjust:none; background:Highlight; }
   .th-buis { border:2px solid CanvasText; }
   .th-vul, .th-bol, .th-vorig, .voortgang .balk span { forced-color-adjust:none; background:Highlight; }
 }
@@ -410,13 +427,18 @@ details.explain.oc-u .oc-u-noot a, details.explain.oc-u .oc-u-stap-uitleg a, det
                 <div class="voortgang"><div class="balk" aria-hidden="true"><span id="balk"></span></div><span class="tel" id="tel"></span></div>
                 <div class="vraag-blok" id="vraag-blok">
                     <h2 class="uitspraak" id="uitspraak" tabindex="-1"></h2>
-                    <div class="keuzes" id="keuzes" role="radiogroup" aria-labelledby="uitspraak"></div>
+                    <p class="schuif-label leeg" id="schuif-label" aria-hidden="true">Schuif of tik op de lijn</p>
+                    <div class="schuif-wrap leeg" id="schuif-wrap">
+                        <div class="spoor" aria-hidden="true"><span class="spoor-vul"></span><span class="streep" style="--s:0.1"></span><span class="streep" style="--s:0.3"></span><span class="streep" style="--s:0.5"></span><span class="streep" style="--s:0.7"></span><span class="streep" style="--s:0.9"></span></div>
+                        <input type="range" class="schuif" id="schuif" min="0" max="100" step="1" value="50" aria-labelledby="uitspraak" aria-valuetext="Nog geen antwoord">
+                    </div>
+                    <div class="uitersten" aria-hidden="true"><span>Klopt helemaal niet</span><span>Klopt helemaal</span></div>
                 </div>
                 <div class="vraag-nav">
                     <button type="button" class="btn-link" id="vorige"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Vorige</button>
-                    <button type="button" class="btn-link" id="volgende">Volgende<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+                    <button type="button" class="btn btn-primary" id="volgende" disabled><span id="volgende-t">Volgende</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
                 </div>
-                <p class="hint toetsenbord">Tip: kies met de toetsen <kbd>1</kbd> tot <kbd>5</kbd>.</p>
+                <p class="hint toetsenbord">Tip: schuif met de pijltjes of spring met <kbd>1</kbd> tot <kbd>5</kbd>. <kbd>Enter</kbd> gaat verder.</p>
             </div>
 
             <!-- Resultaat -->
@@ -458,7 +480,7 @@ details.explain.oc-u .oc-u-noot a, details.explain.oc-u .oc-u-stap-uitleg a, det
         <details class="explain" id="hoe-werkt-dit">
           <summary>Hoe werkt dit?</summary>
           <div class="inner">
-            <p>De Goestingmeter kijkt naar drie dingen die je nodig hebt om met goesting te werken. Ze komen uit de zelfdeterminatietheorie: een theorie over wat mensen van binnenuit motiveert. Onthoud het als ABC.</p>
+            <p>De Goestingmeter kijkt naar drie psychologische basisbehoeften: wat elke mens nodig heeft om met goesting te werken en zich goed te voelen. Onthoud ze als ABC.</p>
             <ul>
               <li><b>A van autonomie.</b> Je kan zelf keuzes maken in je werk, je staat achter wat je doet en je kan jezelf zijn. Dat is geen vrijheid blijheid: het gaat om ruimte binnen duidelijke afspraken, niet om doen wat je wil.</li>
               <li><b>B van belonging.</b> Dat Engelse woord betekent erbij horen. Je voelt je verbonden met de mensen met wie je werkt.</li>
@@ -467,6 +489,14 @@ details.explain.oc-u .oc-u-noot a, details.explain.oc-u .oc-u-stap-uitleg a, det
               <li><b>Zo werkt de meter.</b> Je krijgt twaalf uitspraken, vier per letter, door elkaar. De tool kiest ze uit een grotere lijst. Je antwoorden vullen drie thermometers. Ze zijn even belangrijk: er is geen totaal.</li>
             </ul>
             <p>Dit is geen wetenschappelijke test. Het is een spiegel om over je werk na te denken.</p>
+            <div class="bron">
+              <h3>Waar komt dit vandaan?</h3>
+              <p>Het idee van drie psychologische basisbehoeften komt uit de zelfdeterminatietheorie. Die theorie werd vanaf de jaren 1980 ontwikkeld door de Amerikaanse psychologen Edward Deci en Richard Ryan. De uitspraken in deze meter zijn eigen tekst, geen vragenlijst uit hun onderzoek.</p>
+              <p class="bron-kop">Om verder te lezen</p>
+              <ul>
+                <li>R. M. Ryan en E. L. Deci (2000). Self-determination theory and the facilitation of intrinsic motivation, social development, and well-being. <i>American Psychologist</i>, 55(1), 68–78.</li>
+              </ul>
+            </div>
             <p>Tip: bewaar je resultaat en vul de meter na een paar weken opnieuw in, met dezelfde uitspraken. Dan zie je eerlijk of er iets veranderde. Wil je erover praten met je leidinggevende of coach? Kopieer je resultaat als tekst.</p>
             <p>Even tot rust komen? Probeer <a href="../adem/">Adem</a> of <a href="../hier/">Hier &amp; Nu</a>.</p>
           </div>
@@ -535,8 +565,12 @@ const $ = id => document.getElementById(id);
 const KEY = 'goesting.v1';
 const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 
-/* Antwoordschaal: index 0 tot 4 */
+/* Antwoord: een schuifje van 0 tot 100. Het label volgt vijf banden. */
 const SCHAAL = ['Klopt helemaal niet', 'Klopt eerder niet', 'Soms wel, soms niet', 'Klopt eerder wel', 'Klopt helemaal'];
+const band = v => v <= 19 ? 0 : v <= 39 ? 1 : v <= 60 ? 2 : v <= 80 ? 3 : 4;
+const label = v => SCHAAL[band(v)];
+const SPRONG = [10, 30, 50, 70, 90];   // toetsen 1 tot 5
+const okWaarde = v => Number.isInteger(v) && v >= 0 && v <= 100;
 
 /* De drie dimensies, met de ideeën en de tips voor wie een team leidt (tekst van de eigenaar) */
 const DIMS = [
@@ -634,11 +668,11 @@ function trek(vorige) {
   });
   return meng(ids);
 }
-/* Score per dimensie: positief 0 tot 4, negatief omgekeerd; som / 16 als percentage */
+/* Score per dimensie: positief = waarde, negatief = 100 min de waarde; het gemiddelde van de vier, afgerond */
 function scores(ids, antw) {
   const s = { a:0, b:0, c:0 };
-  ids.forEach(id => { const v = antw[id]; s[dimVan(id)] += BYID[id].neg ? 4 - v : v; });
-  return { a:Math.round(s.a / 16 * 100), b:Math.round(s.b / 16 * 100), c:Math.round(s.c / 16 * 100) };
+  ids.forEach(id => { const v = antw[id]; s[dimVan(id)] += BYID[id].neg ? 100 - v : v; });
+  return { a:Math.round(s.a / 4), b:Math.round(s.b / 4), c:Math.round(s.c / 4) };
 }
 const woord = p => p < 40 ? 'Hier wringt het' : p < 70 ? 'Half vol' : 'Goed gevuld';
 
@@ -682,9 +716,8 @@ const laatste = () => data.metingen[data.metingen.length - 1] || null;
 
 /* ---------- Toestand van deze ronde (alleen in het geheugen) ---------- */
 let view = 'start';
-let run = null;   // { ids, antw:{id:0..4}, i, modus:'zelfde'|'nieuw'|'eerste', t, bewaardId, getoond }
+let run = null;   // { ids, antw:{id:0..100}, i, modus:'zelfde'|'nieuw'|'eerste', t, bewaardId, getoond }
 let laatsteSet = null;
-let verderT = null;
 
 function begin(modus) {
   const vorige = laatste();
@@ -697,7 +730,7 @@ function begin(modus) {
   view = 'vraag';
   render();
   zegVraag();
-  $('uitspraak').focus({ preventScroll:true });
+  $('schuif').focus({ preventScroll:true });
   scrollKaart();
 }
 function scrollKaart() {
@@ -721,20 +754,34 @@ function renderStart() {
   const m = laatste(), kanZelfde = !!(m && m.ids);
   if (!kanZelfde) { $('kies').hidden = true; $('begin').hidden = false; }
 }
-const CHECK = '<svg class="v" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 function renderVraag(anim) {
-  const id = run.ids[run.i], gekozen = run.antw[id];
-  const beantwoord = Object.keys(run.antw).length;
+  const id = run.ids[run.i];
   $('tel').textContent = (run.i + 1) + ' van 12';
-  $('balk').style.width = (beantwoord / 12 * 100) + '%';
   $('uitspraak').textContent = BYID[id].t;
-  $('keuzes').innerHTML = SCHAAL.map((s, k) => `<button type="button" class="keuze" role="radio" data-k="${k}" aria-checked="${gekozen === k}" tabindex="${(gekozen == null ? k === 0 : gekozen === k) ? 0 : -1}"><span class="nr" aria-hidden="true">${k + 1}</span><span class="t">${esc(s)}</span>${CHECK}</button>`).join('');
+  toonWaarde();
   $('vorige').classList.toggle('stil', run.i === 0);
   $('vorige').setAttribute('aria-hidden', String(run.i === 0)); $('vorige').tabIndex = run.i === 0 ? -1 : 0;
-  const kanVerder = gekozen != null;
-  $('volgende').classList.toggle('stil', !kanVerder);
-  $('volgende').setAttribute('aria-hidden', String(!kanVerder)); $('volgende').tabIndex = kanVerder ? 0 : -1;
+  $('volgende-t').textContent = run.i === 11 ? 'Toon resultaat' : 'Volgende';
   if (anim) { const b = $('vraag-blok'); b.classList.remove('in'); void b.offsetWidth; b.classList.add('in'); }
+}
+/* Het schuifje toont de waarde van de huidige uitspraak; zonder waarde staat er geen knop */
+function toonWaarde() {
+  const v = run.antw[run.ids[run.i]], heeft = okWaarde(v), sl = $('schuif');
+  $('schuif-wrap').classList.toggle('leeg', !heeft);
+  $('schuif-wrap').style.setProperty('--v', heeft ? v / 100 : 0);
+  if (heeft && sl.value !== String(v)) sl.value = String(v);
+  sl.setAttribute('aria-valuetext', heeft ? label(v) : 'Nog geen antwoord');
+  if (!heeft) sl.removeAttribute('aria-valuenow'); else sl.setAttribute('aria-valuenow', String(v));
+  $('schuif-label').textContent = heeft ? label(v) : 'Schuif of tik op de lijn';
+  $('schuif-label').classList.toggle('leeg', !heeft);
+  $('volgende').disabled = !heeft;
+  $('balk').style.width = (Object.keys(run.antw).length / 12 * 100) + '%';
+}
+function zetWaarde(v) {
+  if (view !== 'vraag') return;
+  v = Math.min(100, Math.max(0, Math.round(v)));
+  run.antw[run.ids[run.i]] = v;
+  toonWaarde();
 }
 function zegVraag() { zeg('Uitspraak ' + (run.i + 1) + ' van 12. ' + BYID[run.ids[run.i]].t); }
 
@@ -809,22 +856,12 @@ function renderHisto() {
 }
 
 /* ---------- Invullen ---------- */
-function kies(k, viaToets) {
+function verder() {
   if (view !== 'vraag') return;
-  const id = run.ids[run.i];
-  run.antw[id] = k;
-  const opKeuze = viaToets || (document.activeElement && document.activeElement.closest && document.activeElement.closest('#keuzes'));
-  renderVraag();
-  const b = $('keuzes').querySelector(`[data-k="${k}"]`); if (opKeuze && b) b.focus({ preventScroll:true });
-  clearTimeout(verderT);
-  verderT = setTimeout(() => { verderT = null; verder(opKeuze); }, matchMedia('(prefers-reduced-motion: reduce)').matches ? 150 : 320);
-}
-function verder(focusKeuze) {
-  if (view !== 'vraag') return;
-  if (run.antw[run.ids[run.i]] == null) return;
+  if (!okWaarde(run.antw[run.ids[run.i]])) return;
   if (run.i < 11) {
     run.i++; renderVraag(true); zegVraag();
-    if (focusKeuze) { const r = $('keuzes').querySelector('[tabindex="0"]'); r && r.focus({ preventScroll:true }); }
+    $('schuif').focus({ preventScroll:true });
     return;
   }
   /* Klaar: is er een open vraag (na Vorige)? Dan eerst die. */
@@ -838,19 +875,43 @@ function toonResultaat() {
   scrollKaart();
   zeg('Je resultaat. ' + resultaatZin());
 }
-$('keuzes').addEventListener('click', e => { const b = e.target.closest('.keuze'); if (b) kies(+b.dataset.k, e.detail === 0); });
 $('vorige').addEventListener('click', () => {
   if (view !== 'vraag' || run.i === 0) return;
-  clearTimeout(verderT); verderT = null;
   run.i--; renderVraag(true); zegVraag();
-  const r = $('keuzes').querySelector('[tabindex="0"]'); r && r.focus({ preventScroll:true });
+  $('schuif').focus({ preventScroll:true });
 });
-$('volgende').addEventListener('click', () => { clearTimeout(verderT); verderT = null; verder(true); });
+$('volgende').addEventListener('click', verder);
+
+/* Schuifje: een tik op de lijn zet meteen de waarde, slepen werkt overal (ook waar de browser dat zelf niet doet) */
+const KNOP = 22;   // halve breedte van de knop: het midden van de knop loopt van 22 px tot breedte min 22 px
+const sl = $('schuif');
+function waardeUit(x) { const r = sl.getBoundingClientRect(); return (x - r.left - KNOP) / Math.max(1, r.width - 2 * KNOP) * 100; }
+let sleept = null;
+sl.addEventListener('pointerdown', e => {
+  if (e.button > 0) return;
+  e.preventDefault();
+  sl.focus({ preventScroll:true });
+  sleept = e.pointerId;
+  try { sl.setPointerCapture(e.pointerId); } catch (err) {}
+  zetWaarde(waardeUit(e.clientX));
+});
+sl.addEventListener('pointermove', e => { if (sleept === e.pointerId) zetWaarde(waardeUit(e.clientX)); });
+['pointerup', 'pointercancel', 'lostpointercapture'].forEach(t => sl.addEventListener(t, e => { if (sleept === e.pointerId) sleept = null; }));
+sl.addEventListener('input', () => zetWaarde(+sl.value));
+sl.addEventListener('keydown', e => {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const nu = run && okWaarde(run.antw[run.ids[run.i]]) ? run.antw[run.ids[run.i]] : 50;
+  const leeg = !(run && okWaarde(run.antw[run.ids[run.i]]));
+  const d = { ArrowRight:5, ArrowUp:5, ArrowLeft:-5, ArrowDown:-5, PageUp:20, PageDown:-20 }[e.key];
+  if (d != null) { e.preventDefault(); zetWaarde(leeg ? 50 : nu + d); return; }
+  if (e.key === 'Home' || e.key === 'End') { e.preventDefault(); zetWaarde(e.key === 'Home' ? 0 : 100); }
+});
 document.addEventListener('keydown', e => {
   if (view !== 'vraag' || e.ctrlKey || e.metaKey || e.altKey || e.defaultPrevented) return;
   if (document.querySelector('.ocw-back') || $('menu').classList.contains('open')) return;
-  const a = document.activeElement; if (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return;
-  if (/^[1-5]$/.test(e.key)) { e.preventDefault(); kies(+e.key - 1, true); }
+  const a = document.activeElement;
+  if (/^[1-5]$/.test(e.key)) { e.preventDefault(); zetWaarde(SPRONG[+e.key - 1]); if (a === document.body || !a) sl.focus({ preventScroll:true }); return; }
+  if (e.key === 'Enter' && (a === sl || a === document.body || !a || a === $('uitspraak'))) { e.preventDefault(); verder(); }
 });
 
 /* ---------- Begin, zelfde of nieuw ---------- */
@@ -884,7 +945,7 @@ function alsTekst() {
   const r = ['Goestingmeter, ' + langDatum(run.t), ''];
   DIMS.forEach(D => r.push(D.letter + '. ' + D.naam + ': ' + S[D.k] + '%, ' + woord(S[D.k]).toLowerCase() + (prev ? ' (vorige keer ' + prev[D.k] + '%)' : '')));
   if (!prev && anderEerder()) r.push('', 'Andere uitspraken dan vorige keer, dus geen vergelijking.');
-  r.push('', 'Geen wetenschappelijke test.');
+  r.push('', 'Gebaseerd op de zelfdeterminatietheorie (Deci en Ryan). Geen wetenschappelijke test.');
   return r.join('\n') + '\n';
 }
 async function kopieer() {
@@ -903,7 +964,6 @@ async function kopieer() {
 $('kopieer').addEventListener('click', kopieer);
 $('opnieuw').addEventListener('click', () => {
   const oud = run, wasBewaard = !!(run && run.bewaardId);
-  clearTimeout(verderT); verderT = null;
   run = null; view = 'start'; $('kies').hidden = true; $('begin').hidden = false;
   render();
   $('begin').click();
@@ -932,7 +992,6 @@ $('histo-lijst').addEventListener('click', e => {
 /* ---------- Alles wissen ---------- */
 async function ocWipeAll() {
   if (!await ocConfirm(`Alles wissen in ${OC_TOOL}?`, 'Je bewaarde metingen en je huidige antwoorden verdwijnen. Je kan dit nog ongedaan maken tot je iets anders doet.', 'Alles wissen')) return;
-  clearTimeout(verderT); verderT = null;
   const kopie = { data:JSON.parse(JSON.stringify(data)), run:run ? JSON.parse(JSON.stringify(run)) : null, view };
   data = { metingen:[] }; run = null; view = 'start'; laatsteSet = null;
   $('kies').hidden = true; $('begin').hidden = false;
@@ -989,7 +1048,7 @@ addEventListener('storage', e => { if (e.key === KEY) { data = load(); if (run &
 
 render();
 /* Voor tests: window.goesting */
-window.goesting = { POOL, DIMS, SCHAAL, trek, meng, scores, woord, staat:() => JSON.parse(JSON.stringify({ data, run, view })), tekst:() => alsTekst() };
+window.goesting = { POOL, DIMS, SCHAAL, band, label, trek, meng, scores, woord, staat:() => JSON.parse(JSON.stringify({ data, run, view })), tekst:() => alsTekst() };
 </script>
 <input type="file" id="oc-bestand-in" accept=".json,application/json" hidden>
 <script>
