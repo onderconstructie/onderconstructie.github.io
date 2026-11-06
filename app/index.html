@@ -1400,7 +1400,7 @@ body.searching #home #tabgroup { display:none !important; }
         <a class="ft-link" href="https://www.linkedin.com/in/bartel-volckaert-8a96842/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Maker</a>
         <button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (34 seconden)" title="Bekijk de film (34 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg></button>
       </nav>
-      <p class="ft-meta"><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v13.1</span></p>
+      <p class="ft-meta"><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v13.2</span></p>
     </div>
   </footer>
   <dialog class="film" id="film" aria-labelledby="film-h">
@@ -1676,11 +1676,19 @@ const MEET_SUB = [
   { id:'afsluiten', label:'Afsluiten',           note:'Terugblikken en goed eindigen', tools:['check-out', 'retro'] },
   { id:'slimmer',   label:'Slimmer vergaderen',  note:'Wie moet erbij, en wat kost het?', tools:['vergaderkost', 'paradox'] }
 ];
-function meetRows() {
-  const all = byOrder(TOOLS.filter(t => inGroup(t, 'vergaderen')));
-  // een nieuwe tool zonder vaste plaats: terugblikken = afsluiten, anders samen nadenken
-  const plek = t => (MEET_SUB.find(m => m.tools.includes(t.id)) || MEET_SUB.find(m => m.id === (['check', 'act'].includes((t.pdca || [])[0]) ? 'afsluiten' : 'nadenken'))).id;
-  return MEET_SUB.map(m => {
+/* Zakmes: kleine hulpjes, in drie soorten */
+const ZAK_SUB = [
+  { id:'werk',   label:'Slim werken',         note:'Focus, termijnen en teksten', tools:['focus', 'werkdagen', 'woordwolk'] },
+  { id:'vast',   label:'Vastleggen en delen', note:'Notities, schetsen en scancodes', tools:['memomiles', 'schets', 'qr'] },
+  { id:'licht',  label:'Licht en geluid',     note:'Gezien worden, en een geluidje op het goede moment', tools:['looplicht', 'klankkast'] }
+];
+const TAB_SUB = { vergaderen:MEET_SUB, zakmes:ZAK_SUB };
+function subRows(gid) {
+  const SUB = TAB_SUB[gid], all = byOrder(TOOLS.filter(t => inGroup(t, gid)));
+  // een nieuwe tool zonder vaste plaats: bij Vergaderen terugblikken = afsluiten, anders samen nadenken; bij Zakmes bij Slim werken
+  const val = t => gid === 'vergaderen' ? (['check', 'act'].includes((t.pdca || [])[0]) ? 'afsluiten' : 'nadenken') : SUB[0].id;
+  const plek = t => (SUB.find(m => m.tools.includes(t.id)) || SUB.find(m => m.id === val(t))).id;
+  return SUB.map(m => {
     const ts = all.filter(t => plek(t) === m.id).sort((a, b) => (m.tools.indexOf(a.id) + 1 || 99) - (m.tools.indexOf(b.id) + 1 || 99));
     return ts.length ? `<h3 class="tg-sub"><b>${esc(m.label)}</b><span>${esc(m.note)}</span></h3>${ts.map(t => rowHTML(t)).join('')}` : '';
   }).join('');
@@ -1833,7 +1841,7 @@ function setTab(id, keep) {
   $('tabgroup').innerHTML = g ? `<div class="group"><div class="tg-head"><span class="group-logo" aria-hidden="true">${bare(g.logo)}</span>
       <span><h2 class="group-title" id="tabgroup-h" tabindex="-1">${esc(g.label)}</h2><span class="group-note">${esc(g.note)}</span></span>
       <span class="group-meta"><span class="count">${n}</span></span></div>
-    <div class="list">${id === 'vergaderen' ? meetRows() : groupRows(id)}</div></div>` : '';
+    <div class="list">${TAB_SUB[id] ? subRows(id) : groupRows(id)}</div></div>` : '';
   $('alltools-h').textContent = id === 'projecten' ? 'Projecten en verandering' : 'Alle tools';
   if (g) markLive();
   if (!keep) window.scrollTo(0, 0);
