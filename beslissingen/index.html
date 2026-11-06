@@ -829,8 +829,8 @@ function ocDatum(v) {
   if (t.getFullYear() !== +y || t.getMonth() !== +m - 1 || t.getDate() !== +d) return '';
   return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 }
-document.addEventListener('click', async e => {
-  if (!e.target.closest('#oc-imp')) return;
+document.addEventListener('click', e => { if (e.target.closest('#oc-imp')) ocOvernemen(); });
+async function ocOvernemen() {
   const types = ['besluit'];
   const picked = await ocShare.pick({ types, self:OC_ID, title:'Beslissingen overnemen', intro:'Kies beslissingen uit andere tools. Ze komen in deze log, met hun reden en datum.', have:ocAlBesluiten() });
   if (!picked.length) return;
@@ -851,7 +851,15 @@ document.addEventListener('click', async e => {
   save(); render();
   const nieuw = n ? `${n} ${n === 1 ? 'beslissing' : 'beslissingen'} overgenomen` : 'Niets nieuws overgenomen';
   toast(al ? `${nieuw}. ${al} ${al === 1 ? 'stond' : 'stonden'} er al.` : nieuw, n ? restore : undefined);
-});
+}
+/* Een andere tool (bv. Vergadernotities) opende deze log met ?van=<tool>: meteen kiezen wat je overneemt, zoals in het Takenbord. */
+function ocOpenOvernemen() {
+  let van = '';
+  try { const u = new URL(location.href); van = u.searchParams.get('van') || ''; if (van) { window.ocVan = van; u.searchParams.delete('van'); history.replaceState(null, '', u.pathname + u.search + u.hash); } } catch { return; }
+  if (!van || van === OC_ID || !ocShare.count(['besluit'], OC_ID)) { window.ocVan = ''; return; }
+  if (cur().voorbeeld) { window.ocVan = ''; toast('Dit is het voorbeeld. Maak er je eigen log van, dan staat Overnemen uit andere tools bij een nieuwe beslissing.'); return; }
+  setTimeout(async () => { try { await ocOvernemen(); } finally { window.ocVan = ''; } }, 300);   // ocVan: de besluiten van die tool staan al aangevinkt
+}
 
 async function ocWipeAll() {
   if (!await ocConfirm(`Alles wissen in ${OC_TOOL}?`, 'Alle logs en beslissingen verdwijnen. Je kan dit nog ongedaan maken tot je iets anders doet.', 'Alles wissen')) return;
@@ -1633,6 +1641,7 @@ window.addEventListener('storage', e => { if (e.key === KEY) { state = load(); r
 
 render();
 try { ocPublish(); } catch {}
+ocOpenOvernemen();
 </script>
 <script>
 /* Opnieuw beginnen: zichtbaar zodra er echt iets ingevuld is; start de eigen 'Alles wissen' van de tool.

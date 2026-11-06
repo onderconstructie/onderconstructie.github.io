@@ -9,7 +9,7 @@
 <meta name="oc:labels" content="vergaderen">
 <meta name="oc:kort" content="Noteer de vergadering. Acties en besluiten haal je er zo uit.">
 <meta name="oc:volgorde" content="106">
-<meta name="oc:opslag" content="notities.v1, oc.share.notities">
+<meta name="oc:opslag" content="notities.v1, notities.v1.kapot, oc.share.notities">
 <meta name="theme-color" content="#ffffff">
 <meta name="color-scheme" content="light">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40' fill='none' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='20' cy='20' r='18' fill='%23f8fafc' stroke='%23e2e8f0' stroke-width='1.5'/%3E%3Cpath d='M26 18.75V13a2.5 2.5 0 0 0-2.5-2.5h-11.5A2.5 2.5 0 0 0 9.5 13v15a2.5 2.5 0 0 0 2.5 2.5h11.5a2.5 2.5 0 0 0 2.5-2.5v-3.25' stroke='%2364748b'/%3E%3Cpath d='M13.5 8.5v4M18 8.5v4M22.5 8.5v4' stroke='%2364748b'/%3E%3Cpath d='M13 16.5h9M13 27h6' stroke='%23cbd5e1'/%3E%3Cpath d='M13 21.75h17' stroke='%2310b981'/%3E%3Cpath d='M27.5 19.25l2.5 2.5-2.5 2.5' stroke='%2310b981'/%3E%3C/svg%3E">
@@ -77,7 +77,6 @@ button { background:none; border:0; cursor:pointer; }
 .icon-btn { width:44px; height:44px; display:flex; align-items:center; justify-content:center; border-radius:10px; color:var(--slate-500); flex-shrink:0; }
 .icon-btn:hover { background:var(--slate-100); color:var(--slate-700); }
 .icon-btn svg { width:20px; height:20px; }
-.icon-btn.del-unit:hover { color:#b91c1c; background:#fef2f2; }
 
 /* Het overleg: datum, voorzitter, aanwezigen */
 .vg { margin-bottom:1rem; }
@@ -414,7 +413,7 @@ button.oc-import { color:#047857; min-height:44px; margin-top:0.25rem; }
 html { -webkit-text-size-adjust:100%; text-size-adjust:100%; }
 button, a, summary, label, select, [role="button"], [role="tab"], [data-act], input[type="range"], input[type="checkbox"], input[type="radio"] { touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
 @media (hover:none) { button:not(:disabled):active, a:active, summary:active, [role="button"]:active, [role="tab"]:active { filter:brightness(0.93); } }
-@media (pointer:coarse) { .field { font-size:16px !important; } }
+@media (pointer:coarse) { .field { font-size:max(16px, 1rem) !important; } }
 /* venster open: de pagina erachter schuift niet mee, en scrollen binnen het venster loopt niet door naar de pagina */
 html:has(.ocs-back, .ocw-back, .gal-back, .oc-dialog-backdrop) { overflow:hidden; }
 .ocs-back *, .ocw-back *, .gal-back * { overscroll-behavior:contain; }
@@ -458,7 +457,8 @@ body { min-height:100dvh; }
 /* Schermlezer en toetsenbord */
 .tx:focus-visible, .pt-t:focus-visible, .list-name:focus-visible { outline:none !important; }
 .soort:focus-visible, .rm-b:focus-visible, .rm-x:focus-visible { outline-offset:-2px; }
-@media (pointer:coarse) { .tx, .pt-t, .mens-in { font-size:16px !important; } .pt-t { font-size:17px !important; } }
+/* gsm: minstens 16px (anders zoomt iPhone in), maar groeit mee met grote tekst zodat tekst en regelhoogte bij elkaar blijven */
+@media (pointer:coarse) { .tx, .pt-t, .mens-in { font-size:max(16px, 1rem) !important; } .pt-t { font-size:max(17px, 1.0625rem) !important; } }
 @media (forced-colors:active) {
   .vk-keus [role="radio"][aria-checked="true"], .modus [role="radio"][aria-checked="true"] { outline:3px solid Highlight; }
   .regel[data-s="a"] .sb, .regel[data-s="b"] .sb { border:2px solid CanvasText; }
@@ -483,7 +483,9 @@ body { min-height:100dvh; }
 }
 /* Kopregel: titel en datum, elk met één tik aan te passen */
 .card-head .dat { margin-left:0.125rem; }
-.card-head .del-unit { margin-left:auto; }
+.card-head .menu-wrap { margin-left:auto; }
+/* Grote tekst: de kopregel breekt af in plaats van het menu buiten beeld te duwen */
+.card-head { flex-wrap:wrap; row-gap:0; }
 .dat { position:relative; display:inline-flex; align-items:center; min-height:44px; flex:none; border-radius:999px; }
 .dat .c { display:inline-flex; align-items:center; gap:0.3125rem; min-height:32px; padding:0 0.625rem; border-radius:999px; border:1px solid var(--slate-200); background:var(--wit); font-size:0.875rem; font-weight:600; color:var(--slate-700); white-space:nowrap; font-variant-numeric:tabular-nums; }
 .dat .c svg { width:14px; height:14px; flex:none; color:var(--slate-500); }
@@ -562,6 +564,43 @@ body { min-height:100dvh; }
 }
 @media (max-width:360px) { .balk .stuur { padding:0.375rem 0.625rem; } }
 html:has(.dlg-back) { overflow:hidden; }
+/* Vaste meldingen bovenaan: opslag vol, kapotte opslag, een ander tabblad */
+.meldingen { position:sticky; top:0; z-index:45; }
+.melding-balk { display:flex; flex-wrap:wrap; align-items:center; gap:0.25rem 0.625rem; padding:0.25rem max(0.5rem, env(safe-area-inset-right)) 0.25rem max(1rem, env(safe-area-inset-left)); background:var(--oranje-50); border-bottom:1px solid var(--oranje-200); color:#78350f; font-size:0.875rem; font-weight:600; line-height:1.35; }
+.melding-balk > span { flex:1 1 10rem; min-width:0; padding:0.25rem 0; }
+.melding-balk.zacht { background:var(--slate-100); border-bottom-color:var(--slate-200); color:var(--slate-700); font-weight:500; }
+.mb-knop { min-height:44px; padding:0.375rem 0.875rem; border-radius:10px; background:var(--accent-dark); color:#fff; font-size:0.875rem; font-weight:600; }
+.mb-knop:hover { background:var(--accent-hover); }
+.mb-x { width:44px; height:44px; flex:none; display:grid; place-items:center; border-radius:10px; color:inherit; }
+.mb-x svg { width:16px; height:16px; }
+.mb-x:hover { background:rgba(15,23,42,0.06); }
+/* Te lang voor een mail-link: twee stappen in vaste volgorde */
+.stap-uitleg { font-size:0.9375rem; color:var(--slate-600); margin-bottom:0.75rem; }
+.stappen { list-style:none; display:grid; gap:0.5rem; margin-bottom:0.5rem; }
+.stap { width:100%; display:flex; align-items:center; gap:0.75rem; min-height:56px; padding:0.625rem 0.875rem; border:1.5px solid var(--slate-200); border-radius:12px; background:var(--wit); text-align:left; }
+.stap:hover { border-color:var(--accent); background:var(--accent-50); }
+.stap-nr { flex:none; width:30px; height:30px; border-radius:50%; display:grid; place-items:center; background:var(--accent-dark); color:#fff; font-weight:700; font-size:0.9375rem; }
+.stap-nr svg { width:16px; height:16px; }
+.stap-t { display:flex; flex-direction:column; min-width:0; font-size:1rem; font-weight:700; color:var(--slate-800); line-height:1.3; }
+.stap-t small { font-size:0.8125rem; font-weight:500; color:var(--slate-600); margin-top:0.125rem; }
+.stap.klaar { border-color:var(--accent-mid); background:var(--accent-50); }
+.stap.klaar .stap-t { color:#065f46; }
+.stap-reserve textarea { width:100%; font-size:0.875rem; resize:vertical; }
+.vs-extra { font-size:0.8125rem; color:var(--slate-500); }
+/* Afdrukken: alleen het verslag, op A4 */
+.afdruk { display:none; }
+@media print {
+  @page { size:A4; margin:14mm 14mm 16mm; }
+  html, body { background:#fff !important; }
+  body > *:not(.afdruk) { display:none !important; }
+  .afdruk { display:block !important; font-family:'DM Sans', system-ui, sans-serif; color:#1e293b; }
+  .afdruk-kop { display:flex; align-items:flex-end; justify-content:space-between; gap:24px; border-bottom:2px solid #10b981; padding-bottom:10px; margin-bottom:16px; }
+  .afdruk-kop h1 { font-size:20px; font-weight:700; letter-spacing:-0.02em; color:#1e293b; }
+  .afdruk-kop p { font-size:13px; color:#475569; margin-top:2px; }
+  .afdruk-kop .afdruk-d { font-size:11px; color:#64748b; white-space:nowrap; }
+  .afdruk-voet { display:flex; justify-content:space-between; margin-top:18px; padding-top:8px; border-top:1px solid #e2e8f0; font-size:10px; color:#64748b; }
+  .afdruk [data-oc-keep] { break-inside:avoid; }
+}
 @media (max-width:420px) { .mens-in { width:9.5rem; } input[type="date"].field { width:10.5rem; } .card-head .list-name { font-size:1.125rem; } }
 /* Safari op iPhone en iPad geeft een datumveld een eigen vaste breedte; zonder dit schuift het over het vak ernaast. */
 input[type="date"] { -webkit-appearance:none; appearance:none; max-width:100%; min-width:0; font-variant-numeric:tabular-nums; }
@@ -681,6 +720,12 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
 </head>
 <body>
 
+<div class="meldingen" id="meldingen">
+  <div class="melding-balk" id="mb-vol" role="alert" hidden><span>Je notities worden niet meer bewaard. Bewaar ze als bestand.</span><button type="button" class="mb-knop" id="mb-vol-bewaar">Bewaar als bestand</button></div>
+  <div class="melding-balk" id="mb-kapot" role="alert" hidden><span id="mb-kapot-t">Je vorige notities konden niet geopend worden. Ze staan apart bewaard.</span><button type="button" class="mb-knop" id="mb-kapot-bewaar">Bewaar ze als bestand</button><button type="button" class="mb-x" id="mb-kapot-x" aria-label="Sluit deze melding"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+  <div class="melding-balk zacht" id="mb-tab" role="status" hidden><span>Deze notities staan ook open in een ander tabblad. Werk in één tabblad.</span><button type="button" class="mb-x" id="mb-tab-x" aria-label="Sluit deze melding"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+</div>
+
 <header class="header">
   <a href="https://onderconstructie.github.io/projectmanagement/#vergaderen" class="back-link" aria-label="Terug naar Vergaderen">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
@@ -706,7 +751,6 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
     <div class="card-head">
       <input class="list-name" id="titel" data-oc-titel placeholder="Titel van het overleg" aria-label="Titel van het overleg" maxlength="80" spellcheck="false" enterkeyhint="next" autocomplete="off">
       <span class="dat"><span class="c" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg><span id="datum-t"></span></span><input type="date" id="datum" min="2000-01-01" max="2199-12-31" aria-label="Datum van het overleg"></span>
-      <button class="icon-btn del-unit" id="del-unit" type="button" aria-label="Verwijder dit overleg" title="Verwijder dit overleg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg></button>
       <div class="menu-wrap" id="menu-wrap">
         <button class="icon-btn" id="menu-btn" type="button" aria-label="Meer acties" aria-haspopup="true" aria-expanded="false" aria-controls="menu">
           <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
@@ -715,11 +759,12 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
           <button type="button" data-bestand="bewaar" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M12 11v6M9 14l3 3 3-3"/></svg><span class="ocb-t">Bewaar als bestand<small>Al je overleggen, voor later of een ander toestel</small></span></button>
           <button type="button" data-bestand="open" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 10v6M9 13l3-3 3 3"/></svg>Open bestand</button>
           <div class="sep" role="separator"></div>
-          <button type="button" data-act="pdf" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 15h6M9 18h4"/></svg>Download het verslag als PDF</button>
+          <button type="button" data-act="pdf" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 15h6M9 18h4"/></svg><span class="ocb-t">Het verslag als PDF of op papier<small>Kies bij de printer "Opslaan als PDF"</small></span></button>
           <button type="button" data-act="copy" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Kopieer het verslag als tekst</button>
           <button type="button" data-act="stuur" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.5 2.5 10.5 13.5"/><path d="M21.5 2.5 14.5 21.5l-4-8-8-4z"/></svg>Verstuur het verslag</button>
           <p class="ocb-note">Een PDF of tekst kan je niet terug openen.</p>
           <div class="sep" role="separator"></div>
+          <button type="button" data-act="del" class="danger" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>Verwijder dit overleg</button>
           <button type="button" data-act="wipe" class="danger" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>Alles wissen</button>
         </div>
       </div>
@@ -755,7 +800,7 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
         <div id="secties"></div>
         <div class="notes-voet">
           <button type="button" class="add-punt" id="add-punt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Agendapunt</button>
-          <p class="notes-tip" id="notes-tip">Snel: begin een regel met <kbd>a:</kbd> voor een actie, <kbd>b:</kbd> voor een besluit, <kbd>#</kbd> voor een agendapunt, en typ <kbd>@</kbd> voor wie. Staat @naam vooraan of achteraan, dan staat de naam in het verslag alleen bij wie.</p>
+          <p class="notes-tip" id="notes-tip">Snel: begin een regel met <kbd>a:</kbd> voor een actie, <kbd>b:</kbd> voor een besluit, <kbd>#</kbd> voor een agendapunt, en typ <kbd>@</kbd> voor wie: <kbd>Tab</kbd> kiest de naam, <kbd>Enter</kbd> maakt altijd een nieuwe regel. Staat @naam vooraan of achteraan, dan staat de naam in het verslag alleen bij wie, behalve na een woord als aan, naar of voor.</p>
         </div>
       </section>
       <section class="papier" id="papier" aria-label="Verslag" hidden></section>
@@ -779,7 +824,7 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
         <div class="naar">
           <button type="button" class="knop" data-exp="copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Kopieer als tekst</button>
           <button type="button" class="knop" data-exp="mail" id="exp-mail" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>Open in je mailprogramma</button>
-          <button type="button" class="knop" data-exp="pdf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 15h6M9 18h4"/></svg>Download als PDF</button>
+          <button type="button" class="knop" data-exp="pdf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 15h6M9 18h4"/></svg>PDF of afdrukken</button>
           <a class="oc-tb-btn" id="naar-bord" href="../kanban/?van=notities"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="11" rx="1.5"/><rect x="17" y="4" width="4" height="7" rx="1.5"/></svg><span>Acties naar het Takenbord</span></a>
           <a class="oc-tb-btn" id="naar-besl" href="../beslissingen/?van=notities"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="6" r="3"/><path d="M10 9v3M14 9v3"/><rect x="5" y="12" width="14" height="4" rx="1"/><path d="M5 20h14"/></svg><span>Besluiten naar Beslissingen</span></a>
         </div>
@@ -795,12 +840,12 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
     <div class="inner">
       <p>Na veel vergaderingen raken de afspraken zoek tussen de notities. Hier typ je zoals in een kladblok, maar acties en besluiten haal je er met één tik uit. Na afloop heb je een net verslag.</p>
       <ul>
-        <li><b>Begin een overleg.</b> De cursor staat meteen in de eerste regel: typ. Elke Enter is een nieuwe regel. Tik op de titel of de datum om ze aan te passen. Aanwezigen voeg je toe met "+ Naam". Tik op een naam om afwezig of verontschuldigd aan te duiden.</li>
+        <li><b>Begin een overleg.</b> De cursor staat meteen in de eerste regel: typ. Elke Enter is een nieuwe regel, ook als de lijst met namen openstaat. Tik op de titel of de datum om ze aan te passen. Aanwezigen voeg je toe met "+ Naam". Tik op een naam om afwezig of verontschuldigd aan te duiden.</li>
         <li><b>Maak van een regel een actie of een besluit.</b> Tik op het bolletje vooraan de regel. Een regel weg? Tik op het kruisje rechts, Ongedaan kan nog even. Of begin de regel met "a:" voor een actie en "b:" voor een besluit. Op een computer kan het ook met Alt+A en Alt+B (op een Mac: Option+A en Option+B). Ctrl+Shift+A en Ctrl+Shift+B gebruikt je browser al zelf.</li>
-        <li><b>Zeg wie en tegen wanneer.</b> Typ @ en kies een naam. Staat @naam vooraan of achteraan de regel, dan staat de naam in het verslag alleen bij wie; midden in een zin blijft ze staan. Of tik bij de actie op "wie?" en tik op een naam: je typt meteen verder. Schrijf een termijn zoals "tegen vrijdag", "binnen 2 weken" of "15/12": de tool toont de datum voluit. Klopt die niet, tik erop om ze aan te passen of weg te halen.</li>
+        <li><b>Zeg wie en tegen wanneer.</b> Typ @ en kies een naam met Tab of een tik. Staat @naam vooraan of achteraan de regel, dan staat de naam in het verslag alleen bij wie; midden in een zin blijft ze staan. Achteraan na een woord als aan, naar, voor of met blijft ze ook staan. In een gewone regel zet @ alleen wie: de regel blijft gewoon. Of tik bij de actie op "wie?" en tik op een naam: je typt meteen verder. Schrijf een termijn zoals "tegen vrijdag", "binnen 2 weken" of "15/12": de tool toont de datum voluit. Klopt die niet, tik erop om ze aan te passen of weg te halen.</li>
         <li><b>Werk met een agenda als je wil.</b> Begin een regel met "# " of tik op "Agendapunt": je krijgt een kopje, en de regels eronder horen bij dat punt. Backspace vooraan het kopje maakt er weer een gewone regel van. Zonder agenda blijft het één lijst.</li>
-        <li><b>Volg op bij het volgende overleg.</b> Kies "Volgend overleg van" bij een nieuw overleg. De open acties van vorige keer staan dan bovenaan. Zet ze met één tik op Klaar, Loopt nog of Vervalt. Wat je niet aanduidt, blijft open.</li>
-        <li><b>Verstuur het verslag.</b> Bij Verslag zie je eerst wie er was, dan wat elke persoon moet doen en tegen wanneer, dan de besluiten en de notities per punt. Ontbreekt er bij een actie nog een wie of een datum, tik er dan op en vul het meteen aan. Met "Verstuur verslag" open je je mail, of op een gsm het deelmenu. Kopiëren en een PDF kan ook. De voorzitter en de datum van het volgende overleg kies je daar ook, met één tik.</li>
+        <li><b>Volg op bij het volgende overleg.</b> Kies "Volgend overleg van" bij een nieuw overleg. De open acties van vorige keer staan dan bovenaan. Zet ze met één tik op Klaar, Loopt nog of Vervalt. Wat je niet aanduidt, blijft open en staat zo in het verslag. Een overleg verwijderen doe je in het menu ⋮.</li>
+        <li><b>Verstuur het verslag.</b> Bij Verslag zie je eerst wie er was, dan wat elke persoon moet doen en tegen wanneer, dan de besluiten en de notities per punt. Ontbreekt er bij een actie nog een wie of een datum, tik er dan op en vul het meteen aan. Met "Verstuur verslag" open je je mail, of op een gsm het deelmenu. Is het verslag te lang voor een mail-link, dan kopieer je het eerst en open je daarna je mail. Kopiëren kan ook, en "PDF of afdrukken" opent de printer van je browser. Op een computer brengt Alt+V je van de notities naar het verslag en terug. De voorzitter en de datum van het volgende overleg kies je daar ook, met één tik.</li>
       </ul>
       <p>Tip: zet bij elke actie meteen wie ze doet. Een actie zonder naam gebeurt zelden. De balk onderaan of rechts telt mee.</p>
       <p>Je notities blijven op dit toestel. Stuur of bewaar het verslag als je klaar bent.</p>
@@ -825,6 +870,7 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
   <p class="quote">Wat niemand opschrijft, doet niemand.</p>
 </footer>
 
+<div class="afdruk" id="afdruk" aria-hidden="true"></div>
 <div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-text"></span><button id="toast-btn" type="button" hidden>Ongedaan</button></div>
 <div class="sr-only" id="live" aria-live="polite"></div>
 <textarea id="houvast" class="houvast" tabindex="-1" aria-hidden="true"></textarea>
@@ -1334,7 +1380,8 @@ const herken = (() => {
     const k = ref + '\u0001' + tekst;
     if (cache.has(k)) return cache.get(k);
     if (cache.size > 3000) cache.clear();
-    const t = tekst.toLowerCase(), c = [];
+    // Kleine letters met dezelfde lengte: een letter die langer wordt ("İ" wordt "i̇"), blijft zoals ze is. Zo kloppen de posities.
+    const t = Array.from(tekst, ch => { const l = ch.toLowerCase(); return l.length === ch.length ? l : ch; }).join(''), c = [];
     if (t.length === tekst.length) for (const r of R) {
       r.rx.lastIndex = 0; let m;
       while ((m = r.rx.exec(t))) {
@@ -1365,8 +1412,9 @@ const STANDAARD = new RegExp('^Overleg \\d{1,2} (' + MAANDEN.join('|') + ')$');
 const isStandaard = t => STANDAARD.test(String(t || '').trim());
 const standaardTitel = iso => 'Overleg ' + dagMaand(iso);
 function nieuweRegel(p = '', t = '', s = '') { return { id:uid(), p, s, t, wie:'', wan:'', uit:'', af:'', in:'', van:'', at:'' }; }
+const MAXT = 20000;   // tekens per regel: ruim genoeg voor een lange plaktekst
 function regelValid(r, pts) {
-  return { id:str(r.id, 40), p:(r.p === 'vk' || pts.has(r.p)) ? r.p : '', s:['a', 'b'].includes(r.s) ? r.s : '', t:str(r.t, 2000).replace(/\r?\n/g, ' '),
+  return { id:str(r.id, 40), p:(r.p === 'vk' || pts.has(r.p)) ? r.p : '', s:['a', 'b'].includes(r.s) ? r.s : '', t:str(r.t, MAXT).replace(/\r?\n/g, ' '),
     wie:str(r.wie, 200), wan:okIso(r.wan) ? r.wan : '', uit:str(r.uit, 160), af:['klaar', 'vervalt', 'loopt'].includes(r.af) ? r.af : '',
     in:str(r.in, 40), van:str(r.van, 40), at:str(r.at, 200) };
 }
@@ -1390,21 +1438,70 @@ function vgValid(m) {
 function valid(d) {
   const s = leeg();
   if (!d || typeof d !== 'object') return s;
-  if (Array.isArray(d.items)) { const ids = new Set(); s.items = d.items.map(vgValid).filter(m => m && !ids.has(m.id) && ids.add(m.id)).slice(0, 500); }
+  // Geen bovengrens op het aantal overleggen: een overleg verdwijnt nooit stil. Vanaf VEEL waarschuwt de tool rustig.
+  if (Array.isArray(d.items)) { const ids = new Set(); s.items = d.items.map(vgValid).filter(m => m && !ids.has(m.id) && ids.add(m.id)); }
   s.current = typeof d.current === 'string' && s.items.some(m => m.id === d.current) ? d.current : (gesorteerd(s.items).pop() || {}).id || '';
   s.namen = Array.isArray(d.namen) ? [...new Set(d.namen.filter(x => typeof x === 'string' && x.trim()).map(x => x.trim().slice(0, 60)))].slice(0, 80) : [];
   s.modus = d.modus === 'verslag' ? 'verslag' : 'notities';
   s.tip = d.tip === true;
   return s;
 }
-function load() { let d = null; try { d = JSON.parse(localStorage.getItem(KEY)); } catch { d = null; } return valid(d); }
+const VEEL = 300;
+// Kapotte opslag: wat de tool niet (helemaal) kan lezen, gaat eerst apart (KAPOT). Pas daarna mag de tool bewaren.
+const KAPOT = KEY + '.kapot';
+let kapotNu = '', blokkeer = false;   // kapotNu: 'alles' of 'deel'; blokkeer: apart zetten lukte niet, dus de oude inhoud nooit overschrijven
+function bewaarKapot(raw, hoeveel) {
+  kapotNu = hoeveel;
+  try { const oud = localStorage.getItem(KAPOT); if (!oud || !oud.includes(raw)) localStorage.setItem(KAPOT, oud ? oud + '\n\n' + raw : raw); }
+  catch { blokkeer = true; }
+}
+function load() {
+  let raw = null; try { raw = localStorage.getItem(KEY); } catch { return leeg(); }
+  if (raw == null || raw === '') return leeg();
+  let d; try { d = JSON.parse(raw); } catch { bewaarKapot(raw, 'alles'); return leeg(); }
+  const s = valid(d);
+  const n = d && typeof d === 'object' && Array.isArray(d.items) ? d.items.filter(x => x && typeof x === 'object').length : -1;
+  if (n < 0) bewaarKapot(raw, 'alles'); else if (s.items.length < n) bewaarKapot(raw, 'deel');
+  return s;
+}
 let state = load();
-let saveT = 0, volGemeld = false;
+// basis: wat dit tabblad het laatst las of bewaarde. Zo weet het bij een ander tabblad wat het zelf veranderde.
+let saveT = 0, basis = JSON.stringify(state), nietBewaard = false;
 function schrijf() {
   clearTimeout(saveT); saveT = 0;
-  try { localStorage.setItem(KEY, JSON.stringify(state)); volGemeld = false; }
-  catch { if (!volGemeld) { volGemeld = true; toast('Het geheugen van deze browser is vol. Bewaar je werk als bestand en verwijder oude overleggen.'); } }
-  ocAfterSave();
+  const tekst = JSON.stringify(state);
+  let ok = !blokkeer;
+  if (ok) try { localStorage.setItem(KEY, tekst); basis = tekst; } catch { ok = false; }
+  zetNietBewaard(!ok);
+  ocAfterSave(); afdrukLater();
+}
+// Zolang bewaren niet lukt, staat er een vaste balk bovenaan. Ze verdwijnt zodra het weer lukt.
+function zetNietBewaard(aan) {
+  if (aan === nietBewaard) return;
+  nietBewaard = aan; $('mb-vol').hidden = !aan;
+  if (aan) zeg('Je notities worden niet meer bewaard. Bewaar ze als bestand.');
+}
+// Een bestand downloaden (zelfde vorm en naam als Bewaar als bestand)
+function download(inhoud, naam, type) {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([inhoud], { type })); a.download = naam;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+const bestandNaam = (extra, ext) => slug(ocBestand.naam()) + (extra ? '-' + extra : '') + '-' + isoVan(new Date()) + '.' + ext;
+// Bewaar als bestand met wat nu op het scherm staat: de opslag van de browser loopt achter als ze vol is
+function bewaarStaat() {
+  const data = { [KEY]: JSON.stringify(state) };
+  try { const k = localStorage.getItem(KAPOT); if (k) data[KAPOT] = k; } catch {}
+  download(JSON.stringify({ app:'Onder Constructie', version:1, created:new Date().toISOString(), tool:OC_ID, data }, null, 1), bestandNaam('', 'json'), 'application/json');
+  toast('Bestand gedownload. Je notities staan nog niet terug in de browser.');
+}
+function bewaarKapotBestand() {
+  let k = ''; try { k = localStorage.getItem(KAPOT) || ''; } catch {}
+  if (!k) k = (() => { try { return localStorage.getItem(KEY) || ''; } catch { return ''; } })();
+  if (!k) { toast('Er is niets om te bewaren.'); return; }
+  download(k, bestandNaam('onleesbaar', 'txt'), 'text/plain;charset=utf-8');
+  blokkeer = false;   // nu staat het ook in een bestand: de tool mag weer bewaren
+  toast('Bestand gedownload');
+  if (saveT || nietBewaard) schrijf();
 }
 function save(nu) { if (nu) { schrijf(); return; } clearTimeout(saveT); saveT = setTimeout(schrijf, 350); }
 addEventListener('pagehide', () => { if (saveT) schrijf(); if (ocPubT) { clearTimeout(ocPubT); ocPubT = 0; try { ocPublish(); } catch {} } });
@@ -1469,10 +1566,10 @@ function ocLijsten() { return state.items.map(m => ({ name:naamVan(m) })); }
 async function ocWipeAll() {
   if (!await ocConfirm(`Alles wissen in ${OC_TOOL}?`, 'Al je overleggen en notities verdwijnen van dit toestel. Wat al in het Takenbord of het Beslissingslog staat, blijft daar. Je kan dit nog ongedaan maken tot je iets anders doet.', 'Alles wissen')) return;
   const copy = JSON.parse(JSON.stringify(state));
-  try { localStorage.removeItem(KEY); } catch {}
-  ocShare.clear(OC_ID);
+  let kapot = null; try { kapot = localStorage.getItem(KAPOT); localStorage.removeItem(KEY); localStorage.removeItem(KAPOT); } catch {}
+  ocShare.clear(OC_ID); blokkeer = false; $('mb-kapot').hidden = true;
   state = leeg(); save(true); render();
-  toast('Alles gewist', ocUndoable(() => { state = copy; }));
+  toast('Alles gewist', ocUndoable(() => { state = copy; if (kapot) try { localStorage.setItem(KAPOT, kapot); } catch {} }));
 }
 document.addEventListener('click', e => { if (e.target.closest('[data-act="wipe"]')) { closeMenu(); ocWipeAll(); } });
 
@@ -1484,7 +1581,7 @@ function toast(msg, undo) {
   $('toast-btn').hidden = !undo;
   $('toast').classList.add('show');
   clearTimeout(toastT);
-  toastT = setTimeout(() => { $('toast').classList.remove('show'); undoFn = null; }, undo ? 6500 : Math.max(2600, msg.length * 55));
+  toastT = setTimeout(() => { $('toast').classList.remove('show'); undoFn = null; }, undo ? 10000 : Math.max(2600, msg.length * 55));   // met Ongedaan: 10 seconden
 }
 $('toast-btn').addEventListener('click', () => {
   const f = undoFn; undoFn = null; $('toast').classList.remove('show');
@@ -1506,6 +1603,7 @@ const ICON = {
 
 /* ---------- Tekenen ---------- */
 function render() {
+  afdrukLater();
   const m = cur();
   $('vb-start').hidden = !!state.items.length;
   ['vg', 'modus', 'werk'].forEach(id => { $(id).hidden = !m; });
@@ -1530,7 +1628,6 @@ function renderTabs() {
 const STATUS = ['aanwezig', 'afwezig', 'verontschuldigd'];
 function renderKop(m) {
   $('vb-bar').hidden = !m.voorbeeld;
-  const dl = `Verwijder ${tabNaam(m)} van ${dagMaand(m.datum)}`; $('del-unit').setAttribute('aria-label', dl); $('del-unit').title = dl;
   if (document.activeElement !== $('titel')) $('titel').value = toonTitel(m);
   if (document.activeElement !== $('datum')) $('datum').value = m.datum;
   $('datum-t').textContent = kortD(m.datum, vandaag());
@@ -1599,7 +1696,7 @@ function metaHTML(m, r) {
   return h;
 }
 function regelHTML(m, r, plh) {
-  return `<li class="regel" data-id="${esc(r.id)}" data-s="${r.s}"${r.af ? ` data-af="${r.af}"` : ''}><button type="button" class="soort" data-soort aria-label="${soortLabel(r.s)}" title="Gewone regel, actie of besluit"><span class="sb" aria-hidden="true">${r.s.toUpperCase()}</span></button><div class="rb"><textarea class="tx" rows="1" aria-label="${SOORT[r.s]}"${plh ? ` placeholder="${esc(plh)}"` : ''} autocapitalize="sentences" enterkeyhint="enter">${esc(r.t)}</textarea><div class="rm">${metaHTML(m, r)}</div></div><button type="button" class="rx" data-rx aria-label="Verwijder deze regel" title="Verwijder deze regel">${ICON.x}</button></li>`;
+  return `<li class="regel" data-id="${esc(r.id)}" data-s="${r.s}"${r.af ? ` data-af="${r.af}"` : ''}><button type="button" class="soort" data-soort aria-label="${soortLabel(r.s)}" title="Gewone regel, actie of besluit"><span class="sb" aria-hidden="true">${r.s.toUpperCase()}</span></button><div class="rb"><textarea class="tx" rows="1" maxlength="${MAXT}" aria-label="${SOORT[r.s]}"${plh ? ` placeholder="${esc(plh)}"` : ''} autocapitalize="sentences" enterkeyhint="enter">${esc(r.t)}</textarea><div class="rm">${metaHTML(m, r)}</div></div><button type="button" class="rx" data-rx aria-label="Verwijder deze regel" title="Verwijder deze regel">${ICON.x}</button></li>`;
 }
 function sectieHTML(m, s, enige) {
   const rs = m.regels.filter(r => r.p === s.p);
@@ -1670,6 +1767,9 @@ const opvLater = () => renderOpv(false);
 // Eenvoudige regels die je kan voorspellen, geen gokwerk.
 // Eén vaste regel voor @naam: stond de naam vooraan of achteraan de regel, dan staat ze in het verslag alleen bij wie.
 // Midden in de zin blijft ze staan ("Bel @Jonas over de offerte"). Namen die je zonder @ typte, blijven altijd staan.
+// Achteraan blijft ze ook staan na een woord als aan, naar of voor: "Affiche bezorgen aan @Els" heeft de naam nodig.
+const BLIJFT = new Set(['aan', 'naar', 'voor', 'met', 'bij', 'van', 'over', 'door', 'tegen', 'op', 'en', 'of']);   // "samen met" eindigt op "met"
+const naWoord = (t, i) => { const w = /([^\s,;:]+)[\s,;:]*$/.exec(t.slice(0, i)); return w ? w[1].toLowerCase() : ''; };
 function leesTekst(r) {
   const t0 = String(r.t || '').replace(/(^|\s)@(?=\S)/g, '$1').replace(/\s+/g, ' ').trim();
   const wie = wieLijst(r.wie).map(zacht);
@@ -1681,7 +1781,8 @@ function leesTekst(r) {
       const e = reEsc(v);
       const vooraan = new RegExp('^' + e + '(?=[\\s,:;.!?]|$)[\\s,:;]*', 'i'), achteraan = new RegExp('[\\s,;:]+' + e + '[.!?]?$', 'i');
       if (vooraan.test(t)) { t = t.replace(vooraan, ''); break; }
-      if (achteraan.test(t)) { t = t.replace(achteraan, ''); break; }
+      const a = achteraan.exec(t);
+      if (a) { if (!BLIJFT.has(naWoord(t, a.index + 1))) t = t.slice(0, a.index); break; }
     }
   });
   t = t.trim();
@@ -1696,13 +1797,15 @@ function verslagData(m) {
   A.forEach(a => (a.wie.length ? a.wie : ['']).forEach(n => { const k = zacht(n); if (!per.has(k)) per.set(k, { naam:n, l:[] }); per.get(k).l.push(a); }));
   const G = [...per.entries()].sort(([a], [b]) => (a ? 0 : 1) - (b ? 0 : 1) || a.localeCompare(b, 'nl')).map(([, g]) => g);
   const vk = vorigeActies(m).filter(x => x.r.af && x.r.in === m.id).map(x => ({ r:x.r, tekst:leesTekst(x.r) }));
+  // Wat je niet aanduidde, blijft open: dat staat ook in het verslag, met wie en tegen wanneer
+  const nogOpen = vorigeActies(m).filter(x => !x.r.af).map(x => { const w = wanVan(x.r, x.m); return { r:x.r, tekst:leesTekst(x.r), extra:[wieLijst(x.r.wie).join(', '), w ? 'tegen ' + kortD(w, m.datum) : ''].filter(Boolean) }; });
   // Notities: alleen de gewone regels. Acties en besluiten staan al bovenaan.
   const N = secties(m).filter(s => s.p !== 'vk').map(s => {
     const rs = m.regels.filter(r => r.p === s.p && r.t.trim());
     return { kop:s.punt ? (s.punt.t.trim() || 'Agendapunt ' + s.nr) : s.kop, nr:s.nr, regels:rs.filter(r => !r.s), nA:rs.filter(r => r.s === 'a').length, nB:rs.filter(r => r.s === 'b').length };
   }).filter(s => s.regels.length);   // alleen wat er echt bij staat
   const P = [0, 1, 2].map(st => m.mensen.filter(p => p.s === st).map(p => p.n));
-  return { B:besluiten(m), A, G, klaar:vk.filter(x => x.r.af === 'klaar'), vervalt:vk.filter(x => x.r.af === 'vervalt'), N, P };
+  return { B:besluiten(m), A, G, klaar:vk.filter(x => x.r.af === 'klaar'), vervalt:vk.filter(x => x.r.af === 'vervalt'), nogOpen, N, P };
 }
 // Wat nog ontbreekt bij de open acties: eerst wie (dat weegt het zwaarst), dan wanneer
 function ontbreekt(m) {
@@ -1729,7 +1832,7 @@ function renderVerslag() {
   meta[4][1] = m.volgend ? zetKnop('data-vs-volgend', ICON.kal, cap(voluitD(m.volgend, m.datum)), 'Volgend overleg: ' + langD(m.volgend) + '. Pas aan.') : leegKnop('data-vs-volgend', '1', ICON.kal, 'kies een datum', 'Kies de datum van het volgende overleg');
   let h = `<header class="vs-kop"><p class="vs-soort">Verslag</p><h2 class="vs-titel">${esc(titelVan(m))}</h2><p class="vs-datum">${esc(cap(langD(m.datum)))}</p>`
     + `<dl class="vs-meta">${meta.filter(x => x[1]).map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl></header>`;
-  const leeg = !D.B.length && !D.A.length && !D.N.length && !D.klaar.length && !D.vervalt.length;
+  const leeg = !D.B.length && !D.A.length && !D.N.length && !D.klaar.length && !D.vervalt.length && !D.nogOpen.length;
   if (leeg) h += '<p class="vs-leeg">Nog niets genoteerd. Wat je bij Notities typt, komt hier netjes onder elkaar.</p>';
   if (D.G.length) {
     h += `<section class="vs-blok"><h3 class="vs-h">Wat moet er gebeuren</h3>${D.G.map(g => `<div class="vs-pers${g.naam ? '' : ' niemand'}"><h4 class="vs-wie">${g.naam ? esc(g.naam) : 'Nog niemand aangeduid'}</h4><ul class="vs-taken">${g.l.map(a => {
@@ -1740,7 +1843,8 @@ function renderVerslag() {
   }
   if (D.B.length) h += `<section class="vs-blok"><h3 class="vs-h">Besluiten</h3><ul class="vs-l besl">${D.B.map(r => `<li><i aria-hidden="true">•</i><span>${esc(cap(r.t))}</span></li>`).join('')}</ul></section>`;
   if (D.klaar.length || D.vervalt.length) h += `<section class="vs-blok"><h3 class="vs-h">Van vorige keer</h3><ul class="vs-l">${[...D.klaar.map(x => ['Klaar', x]), ...D.vervalt.map(x => ['Vervalt', x])].map(([k, x]) => `<li><i aria-hidden="true">•</i><span><b>${k}:</b> ${esc(x.tekst)}</span></li>`).join('')}</ul></section>`;
-  if (D.N.length) h += `<section class="vs-blok"><h3 class="vs-h">Notities</h3>${D.N.map(s => `${s.kop ? `<h4 class="vs-h4">${s.nr ? s.nr + '. ' : ''}${esc(s.kop)}</h4>` : ''}${s.regels.length ? `<ul class="vs-l">${s.regels.map(r => `<li><i aria-hidden="true">•</i><span>${esc(cap(r.t))}</span></li>`).join('')}</ul>` : ''}`).join('')}</section>`;
+  if (D.nogOpen.length) h += `<section class="vs-blok"><h3 class="vs-h">Nog open van vorige keer</h3><ul class="vs-l">${D.nogOpen.map(x => `<li><i aria-hidden="true">•</i><span>${esc(x.tekst)}${x.extra.length ? ` <small class="vs-extra">(${esc(x.extra.join(', '))})</small>` : ''}</span></li>`).join('')}</ul></section>`;
+  if (D.N.length) h +=`<section class="vs-blok"><h3 class="vs-h">Notities</h3>${D.N.map(s => `${s.kop ? `<h4 class="vs-h4">${s.nr ? s.nr + '. ' : ''}${esc(s.kop)}</h4>` : ''}${s.regels.length ? `<ul class="vs-l">${s.regels.map(r => `<li><i aria-hidden="true">•</i><span>${esc(cap(r.t))}</span></li>`).join('')}</ul>` : ''}`).join('')}</section>`;
   $('papier').innerHTML = `<article class="blad">${h}</article>`;
   renderDeel(m);
 }
@@ -1768,7 +1872,7 @@ function renderDeel(m) {
   const statusH = (s2 = status) => s2 ? `<p class="vs-status" role="status">${ICON.vink}<span>${esc(s2)}</span></p>` : '';
   $('deel-check').innerHTML = check ? checkH(false) : '';
   $('deel-status').innerHTML = statusH();
-  $('deel-sub').textContent = deelMenu() ? 'Kies hoe je het deelt: mail, chat of een andere app.' : 'Je mailprogramma opent met het onderwerp en de tekst.';
+  $('deel-sub').textContent = deelMenu() ? 'Kies hoe je het deelt: mail, chat of een andere app.' : mailTeLang(m) ? 'Het verslag is lang: je kopieert het eerst en plakt het dan in je mail.' : 'Je mailprogramma opent met het onderwerp en de tekst.';
   $('exp-mail').hidden = !deelMenu();
   // In de smalle balk: eerst of het verstuurd is (dat wil je dan weten), anders wat nog ontbreekt
   $('balk-check').innerHTML = status ? statusH(status.replace(' vandaag om ', ' om ')) : check ? checkH(true) : t.a ? `<p class="vs-status">${ICON.vink}<span>Elke actie heeft een wie en een datum</span></p>` : '';
@@ -1793,6 +1897,7 @@ function verslagTekst(m) {
   }
   if (D.B.length) { L.push('', 'BESLUITEN'); D.B.forEach(r => L.push('- ' + cap(r.t))); }
   if (D.klaar.length || D.vervalt.length) { L.push('', 'VAN VORIGE KEER'); D.klaar.forEach(x => L.push('- Klaar: ' + x.tekst)); D.vervalt.forEach(x => L.push('- Vervalt: ' + x.tekst)); }
+  if (D.nogOpen.length) { L.push('', 'NOG OPEN VAN VORIGE KEER'); D.nogOpen.forEach(x => L.push('- ' + x.tekst.replace(/[.\s]+$/, '') + (x.extra.length ? ' (' + x.extra.join(', ').replace(/ (\d+) /g, ' $1 ') + ')' : ''))); }
   if (D.N.some(s => s.regels.length)) {
     L.push('', 'NOTITIES');
     // In de mail: alleen agendapunten met eigen notities; acties en besluiten staan al bovenaan
@@ -1815,11 +1920,36 @@ function exportNode(m) {
     return `<div data-oc-keep style="display:flex;gap:12px;font-size:14px;line-height:1.45;padding:3px 0 3px 16px"><span style="flex:1;min-width:0;color:#334155">${esc(a.tekst)}${x.length ? ` <span style="color:#64748b;font-size:12px">(${esc(x.join(', '))})</span>` : ''}</span><span style="width:110px;flex:none;text-align:right;color:#334155">${a.w ? esc(kortD(a.w, m.datum)) : ''}</span></div>`; }).join('')).join(''));
   if (D.B.length) h += blok(H('Besluiten') + D.B.map(r => li(esc(cap(r.t)), 'font-weight:600;color:#1e293b')).join(''));
   if (D.klaar.length || D.vervalt.length) h += blok(H('Van vorige keer') + [...D.klaar.map(x => ['Klaar', x]), ...D.vervalt.map(x => ['Vervalt', x])].map(([k, x]) => li(`<b style="font-weight:600;color:#1e293b">${k}:</b> ${esc(x.tekst)}`)).join(''));
+  if (D.nogOpen.length) h += blok(H('Nog open van vorige keer') + D.nogOpen.map(x => li(esc(x.tekst) + (x.extra.length ? ` <span style="color:#64748b;font-size:12px">(${esc(x.extra.join(', '))})</span>` : ''))).join(''));
   if (D.N.length) h += blok(H('Notities') + D.N.map(s => (s.kop ? H4((s.nr ? s.nr + '. ' : '') + s.kop) : '') + s.regels.map(r => li(esc(cap(r.t)))).join('')).join(''));
   if (!h) h = '<div style="font-size:14px;color:#64748b">Nog niets genoteerd.</div>';
   wrap.innerHTML = h.replace(/^<div style="padding:12px 0 6px;border-top:1px solid #e2e8f0">/, '<div style="padding:0 0 6px">');
   return wrap;
 }
+/* Afdrukken en PDF: alleen het verslag, op A4, als echte tekst. Ook Ctrl+P drukt alleen het verslag af (geen knoppen, geen balk). */
+let titelVoorAfdruk = '';
+function vulAfdruk() {
+  const el = $('afdruk'), m = cur(); el.innerHTML = '';
+  if (!m) { el.textContent = 'Nog geen verslag.'; return; }
+  const kop = document.createElement('header'); kop.className = 'afdruk-kop';
+  kop.innerHTML = '<div><h1></h1><p></p></div><p class="afdruk-d"></p>';
+  kop.querySelector('h1').textContent = titelVan(m);
+  kop.querySelector('p').textContent = 'Verslag van ' + langD(m.datum);
+  kop.querySelector('.afdruk-d').textContent = new Date().toLocaleDateString('nl-BE', { day:'numeric', month:'long', year:'numeric' });
+  const voet = document.createElement('footer'); voet.className = 'afdruk-voet'; voet.innerHTML = '<span>Onder Constructie</span><span>onderconstructie.github.io</span>';
+  el.append(kop, exportNode(m), voet);
+}
+// Het blad voor de printer blijft bij: ook een printopdracht die geen beforeprint geeft, drukt het juiste verslag af
+let afdrukT = 0;
+const afdrukLater = () => { clearTimeout(afdrukT); afdrukT = setTimeout(() => { try { vulAfdruk(); } catch {} }, 600); };
+addEventListener('beforeprint', () => {
+  vulAfdruk();
+  const m = cur(); if (!m) return;
+  // de naam die de browser voorstelt voor de PDF
+  if (!titelVoorAfdruk) titelVoorAfdruk = document.title;
+  document.title = `verslag-${slug(isStandaard(m.titel) ? 'overleg' : m.titel)}-${m.datum}`;
+});
+addEventListener('afterprint', () => { if (titelVoorAfdruk) { document.title = titelVoorAfdruk; titelVoorAfdruk = ''; } });
 const slug = s => (s || 'overleg').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50) || 'overleg';
 async function kopieer(text) {
   try { await navigator.clipboard.writeText(text); return true; } catch {}
@@ -1847,23 +1977,44 @@ async function doe(act) {
     else toast('Kopiëren lukt hier niet. Kies Verstuur verslag of PDF.');
   }
   if (act === 'mail') {
-    const tekst = verslagTekst(m), ond = onderwerp(m);
-    const url = 'mailto:?subject=' + encodeURIComponent(ond) + '&body=' + encodeURIComponent(tekst);
-    if (url.length <= 1800) { window.ocMail(url); verstuurd(m, 'mail'); toast('Je mailprogramma opent met het verslag.'); }
-    else {
-      const ok = await kopieer(tekst);
-      window.ocMail('mailto:?subject=' + encodeURIComponent(ond));
-      if (ok) verstuurd(m, 'mail');
-      toast(ok ? 'Het verslag is te lang voor een mail-link. Het staat gekopieerd: plak het in je mail.' : 'Het verslag is te lang voor een mail-link. Kopieer het eerst.');
-    }
+    const url = mailUrl(m, true);
+    if (url.length <= MAILMAX) { window.ocMail(url); verstuurd(m, 'mail'); toast('Je mailprogramma opent met het verslag.'); }
+    else mailInStappen(m);   // te lang: nooit een lege mail, wel twee duidelijke stappen
   }
   if (act === 'pdf') {
-    toast('Bezig…');
-    try {
-      await ocExport.pdf(() => ({ node:exportNode(m), title:titelVan(m), subtitle:'Verslag van ' + langD(m.datum) }), `verslag-${slug(isStandaard(m.titel) ? 'overleg' : m.titel)}-${m.datum}`);
-      verstuurd(m, 'pdf'); toast('PDF gedownload');
-    } catch { toast('Downloaden lukt nu niet. Probeer het opnieuw.'); }
+    // De printweergave van de browser: een PDF met echte tekst (zoeken, kopiëren, voorlezen). Wat er gebeurt, kiest de gebruiker daar.
+    try { window.print(); } catch { toast('Afdrukken lukt hier niet. Kies Kopieer als tekst.'); }
   }
+}
+// Een mail-link wordt in veel mailprogramma's afgekapt boven 1.800 tekens
+const MAILMAX = 1800;
+const mailUrl = (m, metTekst) => 'mailto:?subject=' + encodeURIComponent(onderwerp(m)) + (metTekst ? '&body=' + encodeURIComponent(verslagTekst(m)) : '');
+const mailTeLang = m => mailUrl(m, true).length > MAILMAX;
+function mailInStappen(m) {
+  const v = venster('Verstuur het verslag',
+    `<p class="stap-uitleg">Het verslag is te lang om rechtstreeks in een mail te zetten. Het gaat in twee stappen.</p>
+     <ol class="stappen"><li><button type="button" class="stap" data-stap="kopieer"><span class="stap-nr" aria-hidden="true">1</span><span class="stap-t">Kopieer het verslag<small>Het komt op je klembord.</small></span></button></li>
+     <li><button type="button" class="stap" data-stap="mail"><span class="stap-nr" aria-hidden="true">2</span><span class="stap-t">Open je mail<small>Met het onderwerp al ingevuld. Plak daar het verslag.</small></span></button></li></ol>
+     <div class="stap-reserve" hidden><label class="lbl" for="stap-tekst">Kopiëren lukt hier niet. Selecteer de tekst en kopieer ze zelf.</label><textarea class="field" id="stap-tekst" rows="6" readonly></textarea></div>`);
+  const k1 = v.el.querySelector('[data-stap="kopieer"]'), k2 = v.el.querySelector('[data-stap="mail"]');
+  v.el.addEventListener('click', async e => {
+    if (e.target.closest('[data-stap="kopieer"]')) {
+      const tekst = verslagTekst(m);
+      if (await kopieer(tekst)) {
+        k1.classList.add('klaar'); k1.querySelector('.stap-nr').innerHTML = ICON.vink; k1.querySelector('.stap-t').firstChild.textContent = 'Gekopieerd'; k1.querySelector('small').textContent = 'Het verslag staat op je klembord.';
+        k1.setAttribute('aria-label', 'Stap 1: gekopieerd. Kopieer opnieuw.');
+        verstuurd(m, 'gekopieerd'); zeg('Gekopieerd. Stap 2: open je mail.'); k2.focus();
+      } else {
+        const r = v.el.querySelector('.stap-reserve'), t = v.el.querySelector('#stap-tekst');
+        r.hidden = false; t.value = tekst; t.focus(); t.select();
+      }
+    }
+    if (e.target.closest('[data-stap="mail"]')) {
+      window.ocMail(mailUrl(m, false)); v.sluit();
+      toast(k1.classList.contains('klaar') ? 'Plak het verslag in de mail die opent.' : 'Je mail opent zonder het verslag. Kopieer het eerst als je het wil plakken.');
+    }
+  });
+  k1.focus();
 }
 document.addEventListener('click', e => { const b = e.target.closest('[data-exp]'); if (b && !b.disabled) doe(b.dataset.exp); });
 // Bewaar als bestand bewaart al je overleggen: dat telt als bewaard (maar een verstuurd verslag blijft verstuurd)
@@ -2081,8 +2232,11 @@ function toonSugg(ta, t) {
   const m = cur(), l = kandidaten(m, t.tok);
   if (sugWeg && sugWeg.ta === ta && sugWeg.start === t.start) return;   // met Escape weggeklikt: pas bij een nieuw @ weer tonen
   sugWeg = null;
-  sug = { ta, start:t.start, tok:t.tok, l, i:sug && sug.ta === ta && sug.start === t.start ? Math.min(sug.i, Math.max(0, l.length - 1)) : 0 };
+  const al = sug && sug.ta === ta && sug.start === t.start;
+  sug = { ta, start:t.start, tok:t.tok, l, i:al ? Math.min(sug.i, Math.max(0, l.length - 1)) : 0 };
   tekenSugg();
+  // Een schermlezer hoort dat er een keuzelijst is, en hoe je kiest
+  if (!al && l.length) zeg(`${meer(l.length, 'naam', 'namen')} om te kiezen. Tab kiest ${l[0].n}.`);
 }
 function tekenSugg() {
   if (!sug) return;
@@ -2121,8 +2275,8 @@ function kies(k) {
   const tussen = x.n + (na.startsWith(' ') ? '' : ' ');
   ta.value = voor + tussen + na; r.t = ta.value;
   const pos = voor.length + tussen.length; try { ta.setSelectionRange(pos, pos); } catch {}
-  voegWieToe(r, x.n); voegAt(r, x.n);
-  if (!r.s) { r.s = 'a'; updateLi(li, m, r); zeg('Actie voor ' + x.n); } else zeg('Wie: ' + x.n);
+  voegWieToe(r, x.n); voegAt(r, x.n);   // @ zet alleen wie: een gewone regel blijft gewoon (een actie maak je met a:, het bolletje of Alt+A)
+  zeg('Wie: ' + x.n);
   sluitSugg(); updateMeta(li, m, r); autosize(ta); save(); opvLater();
 }
 // Een @woord dat je niet uit de lijst koos: de naam die precies past, of de naam zoals je hem typte
@@ -2141,7 +2295,7 @@ function bevestigNamen(ta, r, m, alles) {
   });
   if (!veranderd) return false;
   ta.value = v; r.t = v; try { ta.setSelectionRange(pos, pos); } catch {}
-  const li = ta.closest('.regel'); if (!r.s) r.s = 'a';
+  const li = ta.closest('.regel');
   updateLi(li, m, r); save(); opvLater();
   return true;
 }
@@ -2193,7 +2347,8 @@ $('secties').addEventListener('keydown', e => {
   else if (sug && sug.ta === ta) {
     const n = sug.l.length;
     if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && n) { e.preventDefault(); sug.i = (sug.i + (e.key === 'ArrowDown' ? 1 : -1) + n) % n; tekenSugg(); return; }
-    if ((e.key === 'Tab' || e.key === 'Enter') && n && !e.shiftKey) { e.preventDefault(); kies(sug.i); return; }
+    // Tab kiest de naam. Enter maakt altijd een nieuwe regel (een half getypte @naam wordt dan bevestigd zoals je ze typte).
+    if (e.key === 'Tab' && n && !e.shiftKey) { e.preventDefault(); kies(sug.i); return; }
     if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); sugWeg = { ta, start:sug.start }; sluitSugg(); return; }
   }
   if (e.altKey && !e.ctrlKey && !e.metaKey) {
@@ -2512,7 +2667,8 @@ function nieuwVenster() {
 function alleVenster() {
   const per = new Map();
   gesorteerd().slice().reverse().forEach(m => { const k = (m.voorbeeld ? 'vb:' : '') + m.reeks; if (!per.has(k)) per.set(k, []); per.get(k).push(m); });
-  const v = venster('Alle overleggen', [...per.values()].map(l => `<div class="reeks"><h3>${esc(tabNaam(l[0]))}${l[0].voorbeeld ? ' (voorbeeld)' : ''}</h3><ul>${l.map(m => `<li><button type="button" data-open="${esc(m.id)}"${m.id === state.current ? ' aria-current="true"' : ''}><span>${esc(m.titel)}</span><small>${esc(kortD(m.datum, vandaag()))}${m.datum.slice(0, 4) !== vandaag().slice(0, 4) ? ' ' + m.datum.slice(0, 4) : ''}</small></button></li>`).join('')}</ul></div>`).join(''));
+  const veel = state.items.length >= VEEL ? `<p class="mens-tip" style="margin:0 0 0.75rem">Je hebt ${state.items.length} overleggen. Bewaar ze af en toe als bestand (menu ⋮). Zo ben je niets kwijt als de browser vol raakt.</p>` : '';
+  const v = venster('Alle overleggen', veel + [...per.values()].map(l => `<div class="reeks"><h3>${esc(tabNaam(l[0]))}${l[0].voorbeeld ? ' (voorbeeld)' : ''}</h3><ul>${l.map(m => `<li><button type="button" data-open="${esc(m.id)}"${m.id === state.current ? ' aria-current="true"' : ''}><span>${esc(m.titel)}</span><small>${esc(kortD(m.datum, vandaag()))}${m.datum.slice(0, 4) !== vandaag().slice(0, 4) ? ' ' + m.datum.slice(0, 4) : ''}</small></button></li>`).join('')}</ul></div>`).join(''));
   v.el.addEventListener('click', e => { const b = e.target.closest('[data-open]'); if (b) { state.current = b.dataset.open; save(); v.sluit(null); render(); } });
   (v.el.querySelector('[aria-current="true"]') || v.el.querySelector('[data-open]')).focus();
 }
@@ -2540,6 +2696,21 @@ $('lists').addEventListener('click', e => {
   state.current = b.dataset.tab; save(); render();
 });
 $('modus').addEventListener('click', e => { const b = e.target.closest('[data-modus]'); if (b) zetModus(b.dataset.modus); });
+// Notities | Verslag: een pijltje kiest meteen (zoals bij elke keuze met rondjes)
+$('modus').addEventListener('keydown', e => {
+  if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key) || e.altKey || e.ctrlKey || e.metaKey) return;
+  e.preventDefault();
+  const naar = e.key === 'Home' ? 'notities' : e.key === 'End' ? 'verslag' : state.modus === 'verslag' ? 'notities' : 'verslag';
+  zetModus(naar); const b = $('modus').querySelector(`[data-modus="${naar}"]`); if (b) b.focus({ preventScroll:true });
+});
+// Alt+V (op een Mac Option+V): van overal naar het verslag, en weer terug naar de regel waar je typte
+document.addEventListener('keydown', e => {
+  if (!e.altKey || e.ctrlKey || e.metaKey || (e.code !== 'KeyV' && String(e.key).toLowerCase() !== 'v')) return;
+  if (!cur() || document.querySelector('.dlg-back, .ocw-back, .ocs-back')) return;
+  e.preventDefault();
+  if (state.modus === 'verslag') { zetModus('notities'); terugNaarNotities(); }
+  else { zetModus('verslag'); $('modus').querySelector('[data-modus="verslag"]').focus({ preventScroll:true }); }
+});
 // Het verslag is een eigen weergave: het staat bovenaan, zonder de invoer erboven. Terug naar de notities brengt je waar je was.
 let notesY = 0;
 function zetModus(md) {
@@ -2556,15 +2727,19 @@ function zetModus(md) {
 document.addEventListener('click', e => { const b = e.target.closest('[data-naar]'); if (b && !b.closest('[data-modus]')) zetModus(b.dataset.naar); });
 $('opv-lijst').addEventListener('click', e => { const b = e.target.closest('[data-ga]'); if (b) gaNaar(b.dataset.ga); });
 $('balk-opv').addEventListener('click', opvVenster);
-$('del-unit').addEventListener('click', () => {
+// Een overleg verwijderen: in het menu ⋮, met een bevestiging die de titel en de datum noemt. Ongedaan kan daarna nog 10 seconden.
+async function verwijderOverleg() {
   const m = cur(); if (!m) return;
+  const naam = `${tabNaam(m)} van ${zinD(m.datum)}`;
+  if (!await ocConfirm(`${naam} verwijderen?`, `Dit overleg en al zijn notities verdwijnen van dit toestel${heeftInhoud(m) ? ` (${meer(m.regels.filter(r => r.t.trim()).length, 'regel', 'regels')})` : ''}. Wat al in het Takenbord of het Beslissingslog staat, blijft daar. Je kan dit nog even ongedaan maken.`, 'Verwijder')) return;
+  if (cur() !== m) return;
   const restore = snapshot(), l = gesorteerd(), i = l.indexOf(m);
   state.items.forEach(x => x.regels.forEach(r => { if (r.in === m.id) { r.af = ''; r.in = ''; } }));
   state.items = state.items.filter(x => x !== m);
   const rest = gesorteerd(); state.current = rest.length ? rest[Math.min(Math.max(i - 1, 0), rest.length - 1)].id : '';
   save(true); render();
   toast(`${tabNaam(m)} van ${dagMaand(m.datum)} verwijderd`, ocUndoable(restore));
-});
+}
 
 /* ---------- Beginnen en het voorbeeld ---------- */
 $('begin-btn').addEventListener('click', () => { maakOverleg(null); });
@@ -2634,7 +2809,9 @@ $('menu').addEventListener('keydown', e => {
 });
 $('menu').addEventListener('click', e => {
   const b = e.target.closest('[data-act]'); if (!b || b.dataset.act === 'wipe') return;
-  closeMenu(); doe(b.dataset.act);
+  closeMenu();
+  if (b.dataset.act === 'del') { verwijderOverleg(); return; }
+  doe(b.dataset.act);
 });
 
 /* ---------- De balk onderaan: boven het toetsenbord van een gsm, en de actieve regel blijft erboven ---------- */
@@ -2668,14 +2845,76 @@ if (window.visualViewport) {
 }
 addEventListener('resize', () => { zetBalkMaat(); if (sug) tekenSugg(); renderOpv(true); });
 
-/* ---------- Andere tabbladen gelijk houden ---------- */
-addEventListener('storage', e => { if (e.key === KEY) { state = load(); render(); } });
+/* ---------- Twee tabbladen: niets stil overschrijven ----------
+   Bewaart een ander tabblad, dan neemt dit tabblad dat over. Veranderde het zelf ook iets dat nog niet bewaard was,
+   dan voegen we samen per overleg en per regel (wie iets veranderde, houdt dat). Typten beide tabbladen iets anders
+   in dezelfde regel, dan blijven beide versies staan, onder elkaar. Daarna bewaart dit tabblad meteen. */
+const canon = v => JSON.stringify(v, (k, x) => x && typeof x === 'object' && !Array.isArray(x) ? Object.fromEntries(Object.keys(x).sort().map(y => [y, x[y]])) : x);
+const zelfde = (a, b) => canon(a) === canon(b);
+function samenRegels(b, o, h) {
+  const B = new Map(b.map(r => [r.id, r])), O = new Map(o.map(r => [r.id, r])), H = new Set(h.map(r => r.id)), uit = [];
+  h.forEach(hr => {
+    const or = O.get(hr.id), br = B.get(hr.id);
+    if (!or) { if (!br || !zelfde(hr, br)) uit.push(hr); return; }      // hier weggehaald: weg, tenzij het andere tabblad ze nog aanpaste
+    if (br && zelfde(or, br)) { uit.push(hr); return; }
+    if (!br || zelfde(hr, br)) { uit.push(or); return; }
+    const r = { ...hr }; Object.keys(or).forEach(k => { if (!zelfde(or[k], br[k])) r[k] = or[k]; });
+    uit.push(r);
+    if (hr.t !== br.t && hr.t !== or.t) uit.push({ ...hr, id:uid(), van:'' });   // allebei getypt in dezelfde regel: beide blijven
+  });
+  o.forEach((or, i) => {
+    if (H.has(or.id)) return;
+    const br = B.get(or.id); if (br && zelfde(or, br)) return;            // het andere tabblad haalde ze weg, hier onveranderd: weg
+    let j = -1; for (let k = i - 1; k >= 0 && j < 0; k--) j = uit.findIndex(x => x.id === o[k].id);
+    uit.splice(j + 1, 0, or);                                               // nieuw hier: op dezelfde plek
+  });
+  return uit;
+}
+function samenvoegen(base, ons, hun) {
+  const B = new Map(base.items.map(m => [m.id, m])), O = new Map(ons.items.map(m => [m.id, m])), H = new Set(hun.items.map(m => m.id)), items = [];
+  hun.items.forEach(h => {
+    const o = O.get(h.id), b = B.get(h.id);
+    if (!o) { if (!b || !zelfde(h, b)) items.push(h); return; }
+    if (b && zelfde(o, b)) { items.push(h); return; }
+    if (!b || zelfde(h, b)) { items.push(o); return; }
+    const m = { ...h }; Object.keys(o).forEach(k => { if (k !== 'regels' && !zelfde(o[k], b[k])) m[k] = o[k]; });
+    m.regels = samenRegels(b.regels, o.regels, h.regels);
+    items.push(m);
+  });
+  ons.items.forEach(o => { if (!H.has(o.id)) { const b = B.get(o.id); if (!b || !zelfde(o, b)) items.push(o); } });
+  return valid({ ...hun, items, namen:[...ons.namen, ...hun.namen], tip:ons.tip || hun.tip });
+}
+addEventListener('storage', e => {
+  if (e.key !== KEY) return;                        // (alles gewist via de app: dat regelt het gedeelde blok, het herlaadt)
+  let hun; try { hun = valid(JSON.parse(e.newValue)); } catch { return; }
+  const eigen = !!saveT || JSON.stringify(state) !== basis;
+  let base = leeg(); try { base = valid(JSON.parse(basis)); } catch {}
+  const nieuw = eigen ? samenvoegen(base, state, hun) : hun;
+  // dit tabblad blijft bij hetzelfde overleg en dezelfde weergave
+  if (nieuw.items.some(m => m.id === state.current)) nieuw.current = state.current;
+  nieuw.modus = state.modus;
+  state = nieuw;
+  // basis = wat nu in de opslag staat; lukt het bewaren, dan wordt dat de samengevoegde versie
+  basis = JSON.stringify(eigen ? { ...hun, current:state.current, modus:state.modus } : state);
+  if (eigen) schrijf();
+  render();
+  if ($('mb-tab').hidden && !tabGezien) { $('mb-tab').hidden = false; zeg('Deze notities staan ook open in een ander tabblad. Werk in één tabblad.'); }
+});
+let tabGezien = false;
+$('mb-tab-x').addEventListener('click', () => { $('mb-tab').hidden = true; tabGezien = true; });
+$('mb-vol-bewaar').addEventListener('click', bewaarStaat);
+$('mb-kapot-bewaar').addEventListener('click', bewaarKapotBestand);
+$('mb-kapot-x').addEventListener('click', () => { $('mb-kapot').hidden = true; });
+if (kapotNu) { $('mb-kapot-t').textContent = kapotNu === 'alles' ? 'Je vorige notities konden niet geopend worden. Ze staan apart bewaard.' : 'Een deel van je vorige notities kon niet geopend worden. Dat deel staat apart bewaard.'; $('mb-kapot').hidden = false; }
+if (blokkeer) zetNietBewaard(true);
 
 /* Voor de test: de herkenning en een vaste "vandaag" */
 window.ocNotities = { herken, zetVandaag: iso => { NU = okIso(iso) ? iso : ''; }, staat: () => state, tekst: () => cur() && verslagTekst(cur()), onderwerp: () => cur() && onderwerp(cur()) };
 
 render();
 setTimeout(() => { try { ocPublish(); } catch {} }, 0);
+// Heel veel overleggen: één rustige melding per sessie (er gaat niets verloren, maar een bestand is veiliger)
+try { if (state.items.length >= VEEL && !sessionStorage.getItem('notities.veel')) { sessionStorage.setItem('notities.veel', '1'); setTimeout(() => toast(`Je hebt ${state.items.length} overleggen. Bewaar ze af en toe als bestand.`), 800); } } catch {}
 </script>
 <script>
 /* Opnieuw beginnen: zichtbaar zodra er echt iets ingevuld is; start de eigen 'Alles wissen' van de tool.
