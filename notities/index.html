@@ -755,7 +755,7 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
         <div id="secties"></div>
         <div class="notes-voet">
           <button type="button" class="add-punt" id="add-punt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Agendapunt</button>
-          <p class="notes-tip" id="notes-tip">Snel: begin een regel met <kbd>a:</kbd> voor een actie, <kbd>b:</kbd> voor een besluit, <kbd>#</kbd> voor een agendapunt, en typ <kbd>@</kbd> voor wie.</p>
+          <p class="notes-tip" id="notes-tip">Snel: begin een regel met <kbd>a:</kbd> voor een actie, <kbd>b:</kbd> voor een besluit, <kbd>#</kbd> voor een agendapunt, en typ <kbd>@</kbd> voor wie. Staat @naam vooraan of achteraan, dan staat de naam in het verslag alleen bij wie.</p>
         </div>
       </section>
       <section class="papier" id="papier" aria-label="Verslag" hidden></section>
@@ -797,7 +797,7 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
       <ul>
         <li><b>Begin een overleg.</b> De cursor staat meteen in de eerste regel: typ. Elke Enter is een nieuwe regel. Tik op de titel of de datum om ze aan te passen. Aanwezigen voeg je toe met "+ Naam". Tik op een naam om afwezig of verontschuldigd aan te duiden.</li>
         <li><b>Maak van een regel een actie of een besluit.</b> Tik op het bolletje vooraan de regel. Een regel weg? Tik op het kruisje rechts, Ongedaan kan nog even. Of begin de regel met "a:" voor een actie en "b:" voor een besluit. Op een computer kan het ook met Alt+A en Alt+B (op een Mac: Option+A en Option+B). Ctrl+Shift+A en Ctrl+Shift+B gebruikt je browser al zelf.</li>
-        <li><b>Zeg wie en tegen wanneer.</b> Typ @ en kies een naam. Of tik bij de actie op "wie?" en tik op een naam: je typt meteen verder. Schrijf een termijn zoals "tegen vrijdag", "binnen 2 weken" of "15/12": de tool toont de datum voluit. Klopt die niet, tik erop om ze aan te passen of weg te halen.</li>
+        <li><b>Zeg wie en tegen wanneer.</b> Typ @ en kies een naam. Staat @naam vooraan of achteraan de regel, dan staat de naam in het verslag alleen bij wie; midden in een zin blijft ze staan. Of tik bij de actie op "wie?" en tik op een naam: je typt meteen verder. Schrijf een termijn zoals "tegen vrijdag", "binnen 2 weken" of "15/12": de tool toont de datum voluit. Klopt die niet, tik erop om ze aan te passen of weg te halen.</li>
         <li><b>Werk met een agenda als je wil.</b> Begin een regel met "# " of tik op "Agendapunt": je krijgt een kopje, en de regels eronder horen bij dat punt. Backspace vooraan het kopje maakt er weer een gewone regel van. Zonder agenda blijft het één lijst.</li>
         <li><b>Volg op bij het volgende overleg.</b> Kies "Volgend overleg van" bij een nieuw overleg. De open acties van vorige keer staan dan bovenaan. Zet ze met één tik op Klaar, Loopt nog of Vervalt. Wat je niet aanduidt, blijft open.</li>
         <li><b>Verstuur het verslag.</b> Bij Verslag zie je eerst wie er was, dan wat elke persoon moet doen en tegen wanneer, dan de besluiten en de notities per punt. Ontbreekt er bij een actie nog een wie of een datum, tik er dan op en vul het meteen aan. Met "Verstuur verslag" open je je mail, of op een gsm het deelmenu. Kopiëren en een PDF kan ook. De voorzitter en de datum van het volgende overleg kies je daar ook, met één tik.</li>
@@ -1364,11 +1364,11 @@ const str = (v, max) => typeof v === 'string' ? v.slice(0, max) : '';
 const STANDAARD = new RegExp('^Overleg \\d{1,2} (' + MAANDEN.join('|') + ')$');
 const isStandaard = t => STANDAARD.test(String(t || '').trim());
 const standaardTitel = iso => 'Overleg ' + dagMaand(iso);
-function nieuweRegel(p = '', t = '', s = '') { return { id:uid(), p, s, t, wie:'', wan:'', uit:'', af:'', in:'', van:'' }; }
+function nieuweRegel(p = '', t = '', s = '') { return { id:uid(), p, s, t, wie:'', wan:'', uit:'', af:'', in:'', van:'', at:'' }; }
 function regelValid(r, pts) {
   return { id:str(r.id, 40), p:(r.p === 'vk' || pts.has(r.p)) ? r.p : '', s:['a', 'b'].includes(r.s) ? r.s : '', t:str(r.t, 2000).replace(/\r?\n/g, ' '),
     wie:str(r.wie, 200), wan:okIso(r.wan) ? r.wan : '', uit:str(r.uit, 160), af:['klaar', 'vervalt', 'loopt'].includes(r.af) ? r.af : '',
-    in:str(r.in, 40), van:str(r.van, 40) };
+    in:str(r.in, 40), van:str(r.van, 40), at:str(r.at, 200) };
 }
 // Hoe het verslag de deur uitging (de herinnering en de melding onder de knop gebruiken dat)
 const HOE = { gedeeld:'Gedeeld', mail:'Mail geopend', gekopieerd:'Gekopieerd', pdf:'PDF gedownload', bestand:'Bewaard als bestand' };
@@ -1668,9 +1668,27 @@ const opvLater = () => renderOpv(false);
 /* ---------- Het verslag ---------- */
 // De tool herschrijft je tekst niet: wat je typte, staat in het verslag. Alleen het @-teken valt weg.
 // Eenvoudige regels die je kan voorspellen, geen gokwerk.
+// Eén vaste regel voor @naam: stond de naam vooraan of achteraan de regel, dan staat ze in het verslag alleen bij wie.
+// Midden in de zin blijft ze staan ("Bel @Jonas over de offerte"). Namen die je zonder @ typte, blijven altijd staan.
 function leesTekst(r) {
-  return cap(String(r.t || '').replace(/(^|\s)@(?=\S)/g, '$1').replace(/\s+/g, ' ').trim());
+  const t0 = String(r.t || '').replace(/(^|\s)@(?=\S)/g, '$1').replace(/\s+/g, ' ').trim();
+  const wie = wieLijst(r.wie).map(zacht);
+  const at = wieLijst(r.at).filter(n => wie.includes(zacht(n)));
+  let t = t0;
+  at.forEach(n => {
+    const vormen = [...new Set([n, n.split(' ')[0]])].sort((a, b) => b.length - a.length);
+    for (const v of vormen) {
+      const e = reEsc(v);
+      const vooraan = new RegExp('^' + e + '(?=[\\s,:;.!?]|$)[\\s,:;]*', 'i'), achteraan = new RegExp('[\\s,;:]+' + e + '[.!?]?$', 'i');
+      if (vooraan.test(t)) { t = t.replace(vooraan, ''); break; }
+      if (achteraan.test(t)) { t = t.replace(achteraan, ''); break; }
+    }
+  });
+  t = t.trim();
+  return cap(t.replace(/[.!?]/g, '').length > 1 ? t : t0);
 }
+const reEsc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const voegAt = (r, naam) => { const l = wieLijst(r.at); if (!l.some(x => zacht(x) === zacht(naam))) l.push(naam); r.at = l.join(', '); };
 // Wat moet er gebeuren: per persoon (op alfabet), en wat nog niemand heeft achteraan. Elk lijstje op datum.
 function verslagData(m) {
   const A = opDatum(m, acties(m)).map(({ r, w }) => ({ r, w, wie:wieLijst(r.wie), tekst:leesTekst(r) }));
@@ -2103,7 +2121,7 @@ function kies(k) {
   const tussen = x.n + (na.startsWith(' ') ? '' : ' ');
   ta.value = voor + tussen + na; r.t = ta.value;
   const pos = voor.length + tussen.length; try { ta.setSelectionRange(pos, pos); } catch {}
-  voegWieToe(r, x.n);
+  voegWieToe(r, x.n); voegAt(r, x.n);
   if (!r.s) { r.s = 'a'; updateLi(li, m, r); zeg('Actie voor ' + x.n); } else zeg('Wie: ' + x.n);
   sluitSugg(); updateMeta(li, m, r); autosize(ta); save(); opvLater();
 }
@@ -2117,7 +2135,7 @@ function bevestigNamen(ta, r, m, alles) {
     if (!z) return heel;
     const precies = m.mensen.filter(p => zacht(p.n) === z), voornaam = m.mensen.filter(p => zacht(p.n).split(' ')[0] === z);
     const naam = precies.length === 1 ? precies[0].n : voornaam.length === 1 ? voornaam[0].n : cap(schoon);
-    voegWieToe(r, naam); veranderd = true;
+    voegWieToe(r, naam); voegAt(r, naam); veranderd = true;
     if (off + voor.length < pos) pos--;
     return voor + tok;
   });
@@ -2334,7 +2352,7 @@ $('vorige-lijst').addEventListener('click', e => {
   if (r.af === 'loopt') { const k = m.regels.find(x => x.van === r.id); if (k) m.regels.splice(m.regels.indexOf(k), 1); }
   r.af = nieuw; r.in = nieuw ? m.id : '';
   if (nieuw === 'loopt') {
-    const k = nieuweRegel('vk', r.t, 'a'); k.wie = r.wie; k.wan = wanVan(r, o.m); k.van = r.id;
+    const k = nieuweRegel('vk', r.t, 'a'); k.wie = r.wie; k.at = r.at; k.wan = wanVan(r, o.m); k.van = r.id;
     const na = m.regels.filter(x => x.p === 'vk').pop();
     if (na) voegIn(m, k, na, 'na'); else m.regels.unshift(k);
   }
