@@ -1032,7 +1032,7 @@ function ocGapMigrate(items) {
     const n = ocGapText(x.name).slice(0, 120); if (have.has(n.toLowerCase())) return; have.add(n.toLowerCase()); x.name = n; });
 }
 function load() {
-  try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && Array.isArray(d.mats) && d.mats.length) { d.mats.forEach(m => { ocGapMigrate(m && m.tasks); (m && Array.isArray(m.tasks) ? m.tasks : []).forEach(t => { if (t && t.cells) Object.keys(t.cells).forEach(k => { if (t.cells[k] === 'AR') t.cells[k] = 'A'; }); }); }); return d; } } catch {}
+  try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && Array.isArray(d.mats) && d.mats.length) { d.mats.forEach(m => { ocGapMigrate(m && m.tasks); (m && Array.isArray(m.tasks) ? m.tasks : []).forEach(t => { if (t && t.cells && typeof t.cells === 'object') Object.keys(t.cells).forEach(k => { if (t.cells[k] === 'AR') t.cells[k] = 'A'; else if (!['R', 'A', 'C', 'I'].includes(t.cells[k])) delete t.cells[k]; }); }); }); return d; } } catch {}
   const m = blank();
   return { mats:[m], current:m.id };
 }
@@ -1188,7 +1188,7 @@ const XC = {
   C:'background:#ecfdf5;border:1.5px solid #10b981;color:#059669;',
   I:'background:#ffffff;border:1.5px solid #cbd5e1;color:#64748b;'
 };
-const xbox = (v, size = 34) => `<span style="display:inline-flex;align-items:center;justify-content:center;width:${escA(v === 'AR' ? Math.round(size * 1.25) : size)}px;height:${escA(size)}px;border-radius:9px;font-weight:700;font-size:${escA(Math.max(11, Math.round(size * (v === 'AR' ? 0.36 : 0.44))))}px;line-height:1;${escA(v ? XC[v] : 'color:#cbd5e1;')}">${SHOW(v) || '·'}</span>`;
+const xbox = (v, size = 34) => `<span style="display:inline-flex;align-items:center;justify-content:center;width:${escA(v === 'AR' ? Math.round(size * 1.25) : size)}px;height:${escA(size)}px;border-radius:9px;font-weight:700;font-size:${escA(Math.max(11, Math.round(size * (v === 'AR' ? 0.36 : 0.44))))}px;line-height:1;${escA(v ? XC[v] : 'color:#cbd5e1;')}">${esc(SHOW(v)) || '·'}</span>`;
 function exportWidth(m) { return Math.max(1120, 320 + 165 * m.roles.length + 80); }
 function buildExport() {
   const m = cur();
