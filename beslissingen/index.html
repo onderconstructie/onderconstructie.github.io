@@ -2030,8 +2030,16 @@ window.ocKoppel = (() => {
     stop(); volg();
     // Een lege log van jou (zonder beslissingen) gaat niet mee: anders staat er bij iedereen een lege tab bij.
     if (b.logs.length) state.logs = state.logs.filter(l => l.voorbeeld || l.items.length || b.logs.some(x => x.id === l.id));
-    if (!state.logs.length) state.logs.push({ id:uid(), name:ocProject('Mijn project'), items:[] });
-    if (!state.logs.some(l => l.id === state.current)) state.current = (state.logs.find(l => !l.voorbeeld) || state.logs[0]).id;
+    // Alleen bij het koppelen: een log van jou met dezelfde naam als een log in het bestand wordt die log (daarna telt enkel het id)
+    const vrij = new Map(), bIds = new Set(b.logs.map(l => l.id));
+    b.logs.forEach(l => { const k = ocNorm(l.name); if (k && !vrij.has(k)) vrij.set(k, l.id); });
+    state.logs.forEach(l => {
+      if (l.voorbeeld || bIds.has(l.id)) return;
+      const k = ocNorm(l.name), id = vrij.get(k);
+      if (!id || state.logs.some(x => x.id === id)) return;
+      vrij.delete(k); if (state.current === l.id) state.current = id; l.id = id;
+    });
+    if (state.logs.length && !state.logs.some(l => l.id === state.current)) state.current = (state.logs.find(l => !l.voorbeeld) || state.logs[0]).id;
     const inBestand = new Set(); b.logs.forEach(l => l.items.forEach(it => inBestand.add(it.id)));
     const r = pasToe(b);
     if (!r.veranderd) bewaarLokaal();
