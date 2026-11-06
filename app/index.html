@@ -1055,6 +1055,9 @@ body.searching #cycle, body.searching #vs-note { display:none !important; }
 /* ---------- v42: donkere modus ---------- */
 
 
+/* Plaats voor de schuifbalk altijd vrijhouden: wisselen tussen Start, Projecten, ... verspringt niet opzij */
+html { scrollbar-gutter:stable; }
+
 /* ---------- Onderdelen (tabbalk) ---------- */
 .tabbar { display:flex; }
 .tab { flex:1 1 0; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; min-height:56px; padding:0.25rem 0.125rem;
@@ -1251,7 +1254,7 @@ body.searching #home #tabgroup { display:none !important; }
     <span class="sep" aria-hidden="true">·</span>
     <button class="footer-link fb-link" id="fb-open" type="button" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/></svg>Suggestie of fout?</button>
     <span class="sep" aria-hidden="true">·</span>
-    <span class="app-version" title="Versie van de app">v10.4</span>
+    <span class="app-version" title="Versie van de app">v10.5</span>
   </footer>
 </div>
 
@@ -2011,7 +2014,8 @@ function wire(f, id) {
   try { doc = f.contentDocument; } catch { return; }
   if (!doc) return;
   // Een eigen installeerknop in een tool is binnen de app overbodig en verwarrend.
-  try { const st = doc.createElement('style'); st.textContent = '#installChip{display:none!important}'; doc.head.appendChild(st); } catch {}
+  // Plaats voor de schuifbalk altijd vrijhouden: zo verspringt een tool niet opzij als ze langer of korter wordt, of als je van tool wisselt
+  try { const st = doc.createElement('style'); st.textContent = '#installChip{display:none!important} html{scrollbar-gutter:stable}'; doc.head.appendChild(st); } catch {}
   // De eigen terugknop van een tool is dubbel met de balk van de app: verbergen.
   doc.querySelectorAll('a.back-link, a.crumb').forEach(a => {
     try { if (HUBS.includes(norm(new URL(a.href, doc.baseURI).pathname))) a.style.display = 'none'; } catch {}
@@ -2667,11 +2671,13 @@ function askProjectName(then) {
   dlg.onclick = e => { if (e.target === dlg) done(false); };
 }
 /* Stappenplanbalk in de app: in welk plan zit je, welke stap, wat komt hierna */
-let pathCtx = store.get('path-ctx', null);
+let pathCtx = store.get('path-ctx', null), viaPad = false;
 document.addEventListener('click', e => {
   const c = e.target.closest('[data-ctx]'), p = e.target.closest('.path[data-path], .pathbar[data-path]');
   const id = c ? c.dataset.ctx : p && e.target.closest('[data-id]') ? p.dataset.path : null;
   if (id) { pathCtx = id; store.set('path-ctx', pathCtx); markStarted(id); }
+  // De stappenplanbalk alleen als je de tool via een stappenplan opende; vanuit Vergaderen of Zakmes blijft de balk gewoon
+  if (e.target.closest('#home [data-id], .pathbar [data-id]')) viaPad = !!id;
   const so = e.target.closest('[data-start]');
   if (so) { const u = store.get('start-used', []); if (!u.includes(so.dataset.start)) store.set('start-used', [...u, so.dataset.start]); }
 }, true);
@@ -2679,7 +2685,7 @@ function renderPathbar(id) {
   const t = byId[id], bar = $('pathbar'), plans = (t && t.traject || []).map(x => x.naam).filter(n => TRAJECTEN.some(tr => tr.id === n));
   // Zichtbaar = #pathbar zonder hidden (tools zoals Communicatieplan kijken daarnaar om hun eigen teller te verbergen)
   const show = on => { bar.hidden = !on; if (!on) bar.innerHTML = ''; $('topbar').classList.toggle('has-path', on); };
-  if (!plans.length) { show(false); return; }
+  if (!plans.length || !viaPad) { show(false); return; }
   const st = startedPaths(), trId = plans.includes(pathCtx) ? pathCtx : plans.find(n => st.includes(n)) || plans[0], tr = TRAJECTEN.find(x => x.id === trId);
   const steps = stepsOf(trId), i = steps.findIndex(s => s.t.id === id);
   if (steps.length < 2 || i < 0) { show(false); return; }
