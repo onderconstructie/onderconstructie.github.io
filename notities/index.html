@@ -481,6 +481,33 @@ body { min-height:100dvh; }
   .vs-act li { grid-template-columns:minmax(0, 1fr) auto; }
   .vs-act .wat { grid-column:1 / -1; grid-row:2; }
 }
+/* Kopregel: titel en datum, elk met één tik aan te passen */
+.card-head .dat { margin-left:0.125rem; }
+.card-head .del-unit { margin-left:auto; }
+.dat { position:relative; display:inline-flex; align-items:center; min-height:44px; flex:none; border-radius:999px; }
+.dat .c { display:inline-flex; align-items:center; gap:0.3125rem; min-height:32px; padding:0 0.625rem; border-radius:999px; border:1px solid var(--slate-200); background:var(--wit); font-size:0.875rem; font-weight:600; color:var(--slate-700); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.dat .c svg { width:14px; height:14px; flex:none; color:var(--slate-500); }
+.dat:hover .c { border-color:var(--accent); }
+.dat:focus-within .c { outline:2px solid #047857; outline-offset:2px; }
+.dat input { position:absolute; inset:0; width:100%; height:100%; margin:0; padding:0; border:0; opacity:0; cursor:pointer; font-size:16px; }
+.dat input::-webkit-calendar-picker-indicator { position:absolute; inset:0; width:auto; height:auto; margin:0; padding:0; opacity:0; cursor:pointer; }
+.vg .vg-in { padding-top:0; gap:0.5rem; }
+/* Een regel weghalen: het kruisje staat op de regel waar je typt (en bij aanwijzen met de muis) */
+.tx { padding-right:2.25rem; }
+.rx { position:absolute; top:0; right:-0.25rem; width:44px; height:44px; display:none; place-items:center; color:var(--slate-500); border-radius:10px; }
+.rx svg { width:14px; height:14px; }
+.regel:focus-within .rx { display:grid; }
+.regel:only-child:has(.tx:placeholder-shown) .rx { display:none !important; }   /* de enige lege regel: niets om weg te halen */
+@media (hover:hover) { .regel:hover .rx { display:grid; } }
+.rx:hover { color:#b91c1c; background:#fef2f2; }
+.houvast { position:fixed; top:0; left:0; width:1px; height:1px; opacity:0; border:0; padding:0; resize:none; font-size:16px; pointer-events:none; }
+/* Wie kiezen: de aanwezigen als knoppen, in de balk (gsm) of onder de regel */
+.balk-lbl { flex:none; align-self:center; font-size:0.8125rem; font-weight:600; color:var(--slate-600); padding-right:0.125rem; }
+.balk-sugg button.meer, .sugg li.meer { color:var(--accent-dark); font-weight:600; }
+.balk-sugg button.meer { border-style:dashed; }
+.sugg.wie { left:44px; top:calc(100% - 0.25rem); }
+.rm-b[aria-expanded="true"] .c { border-style:solid; border-color:var(--accent); background:var(--accent-50); color:#065f46; }
+.vs-meta .rm-b.zet .c { border-color:var(--slate-200); }
 /* Het verslag als eigen weergave: de invoer erboven verdwijnt, de keuze Notities | Verslag blijft de weg terug */
 .main.vs #vorige, .main.vs #vg .card-head, .main.vs #vg .vg-in, .main.vs #vg:has(#vb-bar[hidden]) { display:none !important; }
 .main.vs #vg .vb-bar { margin-bottom:0.75rem; }
@@ -535,7 +562,7 @@ body { min-height:100dvh; }
 }
 @media (max-width:360px) { .balk .stuur { padding:0.375rem 0.625rem; } }
 html:has(.dlg-back) { overflow:hidden; }
-@media (max-width:420px) { .mens-in { width:9.5rem; } input[type="date"].field { width:10.5rem; } }
+@media (max-width:420px) { .mens-in { width:9.5rem; } input[type="date"].field { width:10.5rem; } .card-head .list-name { font-size:1.125rem; } }
 /* Safari op iPhone en iPad geeft een datumveld een eigen vaste breedte; zonder dit schuift het over het vak ernaast. */
 input[type="date"] { -webkit-appearance:none; appearance:none; max-width:100%; min-width:0; font-variant-numeric:tabular-nums; }
 input[type="date"]::-webkit-date-and-time-value { text-align:left; min-height:1.5em; }
@@ -667,7 +694,7 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
 </header>
 
 <main class="main" id="main">
-  <div class="vb-start oc-start" id="vb-start" hidden><p class="start-zin">Typ zoals in een kladblok. Acties en besluiten haal je er met één tik uit.</p><p class="start-stil">Je notities blijven op dit toestel. Stuur of bewaar het verslag als je klaar bent.</p><div class="oc-start-btns"><button type="button" class="oc-begin" id="begin-btn" data-oc-begin="#titel">Begin een overleg</button><button type="button" class="oc-vb" id="example">Voorbeeld bekijken</button></div><p class="oc-open-row"><button type="button" class="oc-open-link" data-bestand="open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 16v-5M9.5 13.5 12 11l2.5 2.5"/></svg>Open bestand</button></p></div>
+  <div class="vb-start oc-start" id="vb-start" hidden><p class="start-zin">Typ zoals in een kladblok. Acties en besluiten haal je er met één tik uit.</p><p class="start-stil">Je notities blijven op dit toestel. Stuur of bewaar het verslag als je klaar bent.</p><div class="oc-start-btns"><button type="button" class="oc-begin" id="begin-btn" data-oc-begin="#secties .tx">Begin een overleg</button><button type="button" class="oc-vb" id="example">Voorbeeld bekijken</button></div><p class="oc-open-row"><button type="button" class="oc-open-link" data-bestand="open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 16v-5M9.5 13.5 12 11l2.5 2.5"/></svg>Open bestand</button></p></div>
 
   <nav class="lists" id="lists" aria-label="Overleggen"></nav>
 
@@ -678,6 +705,7 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
     </div>
     <div class="card-head">
       <input class="list-name" id="titel" data-oc-titel placeholder="Titel van het overleg" aria-label="Titel van het overleg" maxlength="80" spellcheck="false" enterkeyhint="next" autocomplete="off">
+      <span class="dat"><span class="c" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg><span id="datum-t"></span></span><input type="date" id="datum" min="2000-01-01" max="2199-12-31" aria-label="Datum van het overleg"></span>
       <button class="icon-btn del-unit" id="del-unit" type="button" aria-label="Verwijder dit overleg" title="Verwijder dit overleg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg></button>
       <div class="menu-wrap" id="menu-wrap">
         <button class="icon-btn" id="menu-btn" type="button" aria-label="Meer acties" aria-haspopup="true" aria-expanded="false" aria-controls="menu">
@@ -697,11 +725,6 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
       </div>
     </div>
     <div class="vg-in">
-      <div class="vg-meta">
-        <div><label class="lbl" for="datum">Datum</label><input class="field" type="date" id="datum" min="2000-01-01" max="2199-12-31"></div>
-        <div><label class="lbl" for="vz">Voorzitter</label><select class="field" id="vz"></select></div>
-        <div><label class="lbl" for="volgend">Volgend overleg <span class="opt">(als je het weet)</span></label><input class="field" type="date" id="volgend" min="2000-01-01" max="2199-12-31"></div>
-      </div>
       <div>
         <div class="mensen-kop"><span class="lbl" id="mensen-lbl">Aanwezigen</span><span class="n" id="mensen-n"></span></div>
         <ul class="mensen" id="mensen" aria-labelledby="mensen-lbl"></ul>
@@ -732,7 +755,7 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
         <div id="secties"></div>
         <div class="notes-voet">
           <button type="button" class="add-punt" id="add-punt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Agendapunt</button>
-          <p class="notes-tip" id="notes-tip">Snel: begin een regel met <kbd>a:</kbd> voor een actie, <kbd>b:</kbd> voor een besluit, en typ <kbd>@</kbd> voor wie.</p>
+          <p class="notes-tip" id="notes-tip">Snel: begin een regel met <kbd>a:</kbd> voor een actie, <kbd>b:</kbd> voor een besluit, <kbd>#</kbd> voor een agendapunt, en typ <kbd>@</kbd> voor wie.</p>
         </div>
       </section>
       <section class="papier" id="papier" aria-label="Verslag" hidden></section>
@@ -772,12 +795,12 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
     <div class="inner">
       <p>Na veel vergaderingen raken de afspraken zoek tussen de notities. Hier typ je zoals in een kladblok, maar acties en besluiten haal je er met één tik uit. Na afloop heb je een net verslag.</p>
       <ul>
-        <li><b>Begin een overleg.</b> Pas de titel aan als je wil, en typ meteen. Elke Enter is een nieuwe regel. Datum, voorzitter en aanwezigen vul je in wanneer het past. Tik op een naam om afwezig of verontschuldigd aan te duiden.</li>
-        <li><b>Maak van een regel een actie of een besluit.</b> Tik op het bolletje vooraan de regel. Of begin de regel met "a:" voor een actie en "b:" voor een besluit. Op een computer kan het ook met Alt+A en Alt+B (op een Mac: Option+A en Option+B). Ctrl+Shift+A en Ctrl+Shift+B gebruikt je browser al zelf.</li>
-        <li><b>Zeg wie en tegen wanneer.</b> Typ @ en kies een naam. Schrijf een termijn zoals "tegen vrijdag", "binnen 2 weken" of "15/12": de tool toont de datum voluit. Klopt die niet, tik erop om ze aan te passen of weg te halen.</li>
-        <li><b>Werk met een agenda als je wil.</b> Met "Agendapunt" krijg je een kopje per punt. Zonder agenda blijft het één lijst.</li>
+        <li><b>Begin een overleg.</b> De cursor staat meteen in de eerste regel: typ. Elke Enter is een nieuwe regel. Tik op de titel of de datum om ze aan te passen. Aanwezigen voeg je toe met "+ Naam". Tik op een naam om afwezig of verontschuldigd aan te duiden.</li>
+        <li><b>Maak van een regel een actie of een besluit.</b> Tik op het bolletje vooraan de regel. Een regel weg? Tik op het kruisje rechts, Ongedaan kan nog even. Of begin de regel met "a:" voor een actie en "b:" voor een besluit. Op een computer kan het ook met Alt+A en Alt+B (op een Mac: Option+A en Option+B). Ctrl+Shift+A en Ctrl+Shift+B gebruikt je browser al zelf.</li>
+        <li><b>Zeg wie en tegen wanneer.</b> Typ @ en kies een naam. Of tik bij de actie op "wie?" en tik op een naam: je typt meteen verder. Schrijf een termijn zoals "tegen vrijdag", "binnen 2 weken" of "15/12": de tool toont de datum voluit. Klopt die niet, tik erop om ze aan te passen of weg te halen.</li>
+        <li><b>Werk met een agenda als je wil.</b> Begin een regel met "# " of tik op "Agendapunt": je krijgt een kopje, en de regels eronder horen bij dat punt. Backspace vooraan het kopje maakt er weer een gewone regel van. Zonder agenda blijft het één lijst.</li>
         <li><b>Volg op bij het volgende overleg.</b> Kies "Volgend overleg van" bij een nieuw overleg. De open acties van vorige keer staan dan bovenaan. Zet ze met één tik op Klaar, Loopt nog of Vervalt. Wat je niet aanduidt, blijft open.</li>
-        <li><b>Verstuur het verslag.</b> Bij Verslag zie je eerst wie er was, dan wat elke persoon moet doen en tegen wanneer, dan de besluiten en de notities per punt. Ontbreekt er bij een actie nog een wie of een datum, tik er dan op en vul het meteen aan. Met "Verstuur verslag" open je je mail, of op een gsm het deelmenu. Kopiëren en een PDF kan ook.</li>
+        <li><b>Verstuur het verslag.</b> Bij Verslag zie je eerst wie er was, dan wat elke persoon moet doen en tegen wanneer, dan de besluiten en de notities per punt. Ontbreekt er bij een actie nog een wie of een datum, tik er dan op en vul het meteen aan. Met "Verstuur verslag" open je je mail, of op een gsm het deelmenu. Kopiëren en een PDF kan ook. De voorzitter en de datum van het volgende overleg kies je daar ook, met één tik.</li>
       </ul>
       <p>Tip: zet bij elke actie meteen wie ze doet. Een actie zonder naam gebeurt zelden. De balk onderaan of rechts telt mee.</p>
       <p>Je notities blijven op dit toestel. Stuur of bewaar het verslag als je klaar bent.</p>
@@ -804,6 +827,7 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
 
 <div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-text"></span><button id="toast-btn" type="button" hidden>Ongedaan</button></div>
 <div class="sr-only" id="live" aria-live="polite"></div>
+<textarea id="houvast" class="houvast" tabindex="-1" aria-hidden="true"></textarea>
 
 <script>
 /* Het actieve project uit de app (oc.project): nieuwe projecten, analyses en lijsten krijgen die naam. */
@@ -1507,11 +1531,10 @@ const STATUS = ['aanwezig', 'afwezig', 'verontschuldigd'];
 function renderKop(m) {
   $('vb-bar').hidden = !m.voorbeeld;
   const dl = `Verwijder ${tabNaam(m)} van ${dagMaand(m.datum)}`; $('del-unit').setAttribute('aria-label', dl); $('del-unit').title = dl;
-  if (document.activeElement !== $('titel')) $('titel').value = m.titel;
+  if (document.activeElement !== $('titel')) $('titel').value = toonTitel(m);
   if (document.activeElement !== $('datum')) $('datum').value = m.datum;
-  if (document.activeElement !== $('volgend')) $('volgend').value = m.volgend || '';
-  const namen = m.mensen.map(p => p.n); if (m.vz && !namen.includes(m.vz)) namen.push(m.vz);
-  $('vz').innerHTML = '<option value="">Geen</option>' + namen.map(n => `<option${n === m.vz ? ' selected' : ''}>${esc(n)}</option>`).join('');
+  $('datum-t').textContent = kortD(m.datum, vandaag());
+  $('datum').setAttribute('aria-label', `Datum van het overleg: ${langD(m.datum)}. Pas aan.`);
   renderMensen(m);
   $('herinner').hidden = !(!m.voorbeeld && !m.gedeeld && heeftInhoud(m) && verschil(m.datum, vandaag()) >= 1);
 }
@@ -1576,7 +1599,7 @@ function metaHTML(m, r) {
   return h;
 }
 function regelHTML(m, r, plh) {
-  return `<li class="regel" data-id="${esc(r.id)}" data-s="${r.s}"${r.af ? ` data-af="${r.af}"` : ''}><button type="button" class="soort" data-soort aria-label="${soortLabel(r.s)}" title="Gewone regel, actie of besluit"><span class="sb" aria-hidden="true">${r.s.toUpperCase()}</span></button><div class="rb"><textarea class="tx" rows="1" aria-label="${SOORT[r.s]}"${plh ? ` placeholder="${esc(plh)}"` : ''} autocapitalize="sentences" enterkeyhint="enter">${esc(r.t)}</textarea><div class="rm">${metaHTML(m, r)}</div></div></li>`;
+  return `<li class="regel" data-id="${esc(r.id)}" data-s="${r.s}"${r.af ? ` data-af="${r.af}"` : ''}><button type="button" class="soort" data-soort aria-label="${soortLabel(r.s)}" title="Gewone regel, actie of besluit"><span class="sb" aria-hidden="true">${r.s.toUpperCase()}</span></button><div class="rb"><textarea class="tx" rows="1" aria-label="${SOORT[r.s]}"${plh ? ` placeholder="${esc(plh)}"` : ''} autocapitalize="sentences" enterkeyhint="enter">${esc(r.t)}</textarea><div class="rm">${metaHTML(m, r)}</div></div><button type="button" class="rx" data-rx aria-label="Verwijder deze regel" title="Verwijder deze regel">${ICON.x}</button></li>`;
 }
 function sectieHTML(m, s, enige) {
   const rs = m.regels.filter(r => r.p === s.p);
@@ -1676,12 +1699,16 @@ function ontbreekt(m) {
 const metaRijen = (m, D) => [['Voorzitter', m.vz], ['Aanwezig', D.P[0].join(', ')], ['Afwezig', D.P[1].join(', ')], ['Verontschuldigd', D.P[2].join(', ')], ['Volgend overleg', m.volgend ? cap(voluitD(m.volgend, m.datum)) : '']];
 const extraBij = (a, g) => { const samen = a.wie.filter(n => zacht(n) !== zacht(g.naam)); return [samen.length ? 'samen met ' + samen.join(', ') : '', a.r.af ? AF[a.r.af].toLowerCase() : a.r.van ? 'van vorige keer' : ''].filter(Boolean); };
 const titelVan = m => isStandaard(m.titel) ? 'Overleg' : m.titel;
+// In de kopregel staat de datum er al naast: een standaardtitel toont daar gewoon "Overleg"
+const toonTitel = m => isStandaard(m.titel) ? 'Overleg' : m.titel;
 function renderVerslag() {
   const m = cur(); if (!m) return;
   const D = verslagData(m);
   const leegKnop = (attr, id, icon, t, lbl) => `<button type="button" class="rm-b leeg" ${attr}="${esc(id)}" aria-label="${esc(lbl)}"><span class="c">${icon}${t}</span></button>`;
   const meta = metaRijen(m, D).map(([k, v]) => [k, v ? esc(v) : '']);
-  meta[4][1] = meta[4][1] || leegKnop('data-vs-volgend', '1', ICON.kal, 'kies een datum', 'Kies de datum van het volgende overleg');
+  const zetKnop = (attr, icon, t, lbl) => `<button type="button" class="rm-b zet" ${attr}="1" aria-label="${esc(lbl)}"><span class="c">${icon}${esc(t)}</span></button>`;
+  meta[0][1] = m.vz ? zetKnop('data-vs-vz', ICON.pers, m.vz, 'Voorzitter: ' + m.vz + '. Pas aan.') : leegKnop('data-vs-vz', '1', ICON.pers, 'kies', 'Kies de voorzitter');
+  meta[4][1] = m.volgend ? zetKnop('data-vs-volgend', ICON.kal, cap(voluitD(m.volgend, m.datum)), 'Volgend overleg: ' + langD(m.volgend) + '. Pas aan.') : leegKnop('data-vs-volgend', '1', ICON.kal, 'kies een datum', 'Kies de datum van het volgende overleg');
   let h = `<header class="vs-kop"><p class="vs-soort">Verslag</p><h2 class="vs-titel">${esc(titelVan(m))}</h2><p class="vs-datum">${esc(cap(langD(m.datum)))}</p>`
     + `<dl class="vs-meta">${meta.filter(x => x[1]).map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl></header>`;
   const leeg = !D.B.length && !D.A.length && !D.N.length && !D.klaar.length && !D.vervalt.length;
@@ -1844,9 +1871,10 @@ function vulAan() {
 }
 document.addEventListener('click', e => { if (e.target.closest('[data-vul]')) vulAan(); });
 $('papier').addEventListener('click', e => {
-  const m = cur(), b = e.target.closest('[data-vs-wie], [data-vs-wan], [data-vs-volgend]'); if (!m || !b) return;
+  const m = cur(), b = e.target.closest('[data-vs-wie], [data-vs-wan], [data-vs-volgend], [data-vs-vz]'); if (!m || !b) return;
   vulVan = false;
   if (b.dataset.vsVolgend) { kiesVolgend(m); return; }
+  if (b.dataset.vsVz) { kiesVz(m); return; }
   const r = regel(m, b.dataset.vsWie || b.dataset.vsWan); if (!r) return;
   (b.dataset.vsWie ? kiesWie : kiesWan)(m, r, null);
 });
@@ -1860,6 +1888,15 @@ function zetSoort(li, m, r, s, zeggen) {
   if (zeggen) zeg(s === 'a' ? 'Actie' : s === 'b' ? 'Besluit' : 'Gewone regel');
 }
 const alleTx = () => [...$('secties').querySelectorAll('.tx')];
+// Waar typte je het laatst? Enter in het lege naamveld of in de titel brengt je daar terug.
+let laatste = null;
+$('secties').addEventListener('focusout', e => { const ta = e.target; if (ta.classList && ta.classList.contains('tx')) laatste = { id:ta.closest('.regel').dataset.id, pos:ta.selectionStart }; });
+function terugNaarNotities() {
+  const t = (laatste && taVan(laatste.id)) || alleTx()[0];
+  if (t) zetCaret(t, laatste && taVan(laatste.id) ? laatste.pos : 'eind');
+}
+// Even een onzichtbaar veld vasthouden terwijl de regels opnieuw getekend worden: zo blijft het toetsenbord van een gsm open
+function houvast() { const a = document.activeElement; if (a && a.closest && a.closest('#secties')) $('houvast').focus({ preventScroll:true }); }
 function zetCaret(ta, pos) { ta.focus({ preventScroll:true }); const p = pos === 'eind' ? ta.value.length : Math.min(pos, ta.value.length); try { ta.setSelectionRange(p, p); } catch {} zichtbaar(ta); }
 function voegIn(m, n, r, waar) { const i = m.regels.indexOf(r); m.regels.splice(waar === 'voor' ? i : i + 1, 0, n); }
 function verwijderRegel(m, r, li) {
@@ -1958,6 +1995,20 @@ function plak(ta, tekst, a, b) {
   const t = taVan(laatste.id); if (t) zetCaret(t, caret);
 }
 
+// Een regel weghalen, met Ongedaan. De cursor gaat naar het einde van de regel erboven.
+function haalRegelWeg(m, r, li) {
+  const restore = snapshot(), lijst = m.regels.filter(x => x.p === r.p), i = lijst.indexOf(r);
+  const naar = lijst[i - 1] || lijst[i + 1], typte = document.activeElement && document.activeElement.closest && !!document.activeElement.closest('#secties');
+  if (!naar && !r.t && !r.s) return;
+  sluitSugg(); houvast();
+  if (naar) verwijderRegel(m, r, li); else { const n = nieuweRegel(r.p); verwijderRegel(m, r, null); m.regels.push(n); }
+  zorg(m); save(true); renderNotes(); opvLater();
+  const doel = naar ? taVan(naar.id) : alleTx().find(t => t.closest('.regel') && regel(m, t.closest('.regel').dataset.id).p === r.p);
+  if (doel) { if (typte || !balkSmal()) zetCaret(doel, naar === lijst[i - 1] ? 'eind' : 0); else doel.closest('.regel').querySelector('.soort').focus({ preventScroll:true }); }
+  else if (document.activeElement === $('houvast')) $('houvast').blur();
+  toast('Regel weggehaald', ocUndoable(restore));
+}
+
 /* @naam: een keuzelijst met de aanwezigen. Tab of een tik kiest. Het @-teken verdwijnt, de naam blijft staan. */
 let sug = null, sugWeg = null;
 const balkSmal = () => getComputedStyle($('balk')).display !== 'none';
@@ -1974,6 +2025,40 @@ function kandidaten(m, tok) {
   if (tok && !l.some(x => zacht(x.n) === z)) l.push({ n:cap(tok), sub:'nieuw', nieuw:true });
   return l.slice(0, 8);
 }
+// "wie?" bij een actie: de aanwezigen als knoppen. Eén tik kiest. Daarna typ je verder waar je was,
+// of op een nieuwe regel als je net achteraan die actie zat.
+function openWie(m, r, li) {
+  sluitSugg();
+  const a = document.activeElement, van = a && a.classList && a.classList.contains('tx') ? a : null;
+  let ta = van;
+  if (!ta && !balkSmal()) { ta = li.querySelector('.tx'); zetCaret(ta, 'eind'); }
+  const huidig = wieLijst(r.wie).map(zacht);
+  const namen = [...new Set([...m.mensen.filter(p => !p.s).map(p => p.n), ...m.mensen.filter(p => p.s).map(p => p.n), ...wieLijst(r.wie)])];
+  const l = namen.map(n => ({ n, sub:huidig.includes(zacht(n)) ? 'gekozen' : '' })).concat({ n:'Andere naam', meer:true });
+  // op een gsm is alleen wie al gekozen is groen; op een breed scherm staat de eerste klaar voor de pijltjes
+  const gk = l.findIndex(x => x.sub);
+  sug = { mode:'wie', ta, rid:r.id, l, i:balkSmal() ? gk : Math.max(0, gk),
+    terug:van ? { id:van.closest('.regel').dataset.id, pos:van.selectionStart, eind:van.selectionStart === van.value.length } : null };
+  tekenSugg();
+  const wb = li.querySelector('[data-wie]'); if (wb) wb.setAttribute('aria-expanded', 'true');
+  zeg('Kies wie dit doet');
+}
+function kiesSnelWie(k) {
+  const x = sug.l[k], m = cur(), r = m && regel(m, sug.rid), { terug, ta } = sug;
+  sluitSugg();
+  if (!x || !r) return;
+  const li = liVan(r.id);
+  if (x.meer) { kiesWie(m, r, li); return; }
+  r.wie = x.n; if (li) updateMeta(li, m, r); save(); opvLater(); zeg('Wie: ' + x.n);
+  if (terug && terug.id === r.id && terug.eind && li) {
+    const lijst = m.regels.filter(y => y.p === r.p), nx = lijst[lijst.indexOf(r) + 1];
+    if (!nx) { const n = nieuweRegel(r.p); voegIn(m, n, r, 'na'); const nli = maakLi(m, n); li.after(nli); autosize(nli.querySelector('.tx')); zetCaret(nli.querySelector('.tx'), 0); save(); }
+    else if (!nx.t) zetCaret(taVan(nx.id), 0);
+    else zetCaret(taVan(r.id), 'eind');
+  } else if (terug && taVan(terug.id)) zetCaret(taVan(terug.id), terug.pos);
+  else if (ta) zetCaret(ta, 'eind');
+  else { const b = li && li.querySelector('[data-wie]'); if (b) b.focus({ preventScroll:true }); }
+}
 function toonSugg(ta, t) {
   const m = cur(), l = kandidaten(m, t.tok);
   if (sugWeg && sugWeg.ta === ta && sugWeg.start === t.start) return;   // met Escape weggeklikt: pas bij een nieuw @ weer tonen
@@ -1983,32 +2068,35 @@ function toonSugg(ta, t) {
 }
 function tekenSugg() {
   if (!sug) return;
-  const { ta, l, i } = sug, smal = balkSmal();
-  ta.setAttribute('aria-expanded', 'true'); ta.setAttribute('aria-autocomplete', 'list');
+  const { ta, l, i } = sug, smal = balkSmal(), wie = sug.mode === 'wie';
+  const anker = wie ? liVan(sug.rid) : ta.closest('.regel'); if (!anker) { sluitSugg(); return; }
+  if (ta) { ta.setAttribute('aria-expanded', 'true'); ta.setAttribute('aria-autocomplete', 'list'); }
   if (smal) {
     const el = $('balk-sugg'); $('balk-gewoon').hidden = true; el.hidden = false;
-    el.innerHTML = l.length ? l.map((x, k) => `<button type="button" role="option" id="sg-${k}" aria-selected="${k === i}" data-sg="${k}">${esc(x.n)}</button>`).join('') : '<span class="leeg">Typ een naam</span>';
-    ta.setAttribute('aria-controls', 'balk-sugg');
+    el.innerHTML = (wie ? '<span class="balk-lbl" aria-hidden="true">Wie?</span>' : '') + (l.length ? l.map((x, k) => `<button type="button" role="option" id="sg-${k}" aria-selected="${k === i}" data-sg="${k}"${x.meer ? ' class="meer"' : ''}>${esc(x.n)}</button>`).join('') : '<span class="leeg">Typ een naam</span>');
+    if (ta) ta.setAttribute('aria-controls', 'balk-sugg');
   } else {
-    let ul = ta.closest('.regel').querySelector('.sugg');
-    if (!ul) { ul = document.createElement('ul'); ul.className = 'sugg'; ul.id = 'sugg'; ul.setAttribute('role', 'listbox'); ul.setAttribute('aria-label', 'Kies wie'); ta.closest('.regel').appendChild(ul); }
-    ul.innerHTML = l.length ? l.map((x, k) => `<li role="option" id="sg-${k}" aria-selected="${k === i}" data-sg="${k}">${esc(x.n)}${x.sub ? ` <small>${esc(x.sub)}</small>` : ''}</li>`).join('') : '<li class="leeg">Typ een naam</li>';
-    const vv = window.visualViewport, r = ta.getBoundingClientRect();
+    let ul = anker.querySelector('.sugg');
+    if (!ul) { ul = document.createElement('ul'); ul.className = 'sugg' + (wie ? ' wie' : ''); ul.id = 'sugg'; ul.setAttribute('role', 'listbox'); ul.setAttribute('aria-label', 'Kies wie'); anker.appendChild(ul); }
+    ul.innerHTML = l.length ? l.map((x, k) => `<li role="option" id="sg-${k}" aria-selected="${k === i}" data-sg="${k}"${x.meer ? ' class="meer"' : ''}>${esc(x.n)}${x.sub ? ` <small>${esc(x.sub)}</small>` : ''}</li>`).join('') : '<li class="leeg">Typ een naam</li>';
+    const vv = window.visualViewport, r = (wie ? anker : ta).getBoundingClientRect();
     ul.classList.toggle('boven', r.bottom + 260 > (vv ? vv.height + vv.offsetTop : innerHeight) && r.top > 280);
-    ta.setAttribute('aria-controls', 'sugg');
+    if (ta) ta.setAttribute('aria-controls', 'sugg');
   }
-  if (l.length) ta.setAttribute('aria-activedescendant', 'sg-' + i); else ta.removeAttribute('aria-activedescendant');
+  if (ta) { if (l.length) ta.setAttribute('aria-activedescendant', 'sg-' + i); else ta.removeAttribute('aria-activedescendant'); }
 }
 function sluitSugg() {
   if (!sug) return;
-  const ta = sug.ta; ['aria-expanded', 'aria-controls', 'aria-activedescendant'].forEach(a => ta.removeAttribute(a));
+  const ta = sug.ta; if (ta) ['aria-expanded', 'aria-controls', 'aria-activedescendant'].forEach(a => ta.removeAttribute(a));
   document.querySelectorAll('.sugg').forEach(u => u.remove());
+  document.querySelectorAll('[data-wie][aria-expanded]').forEach(x => x.removeAttribute('aria-expanded'));
   $('balk-sugg').hidden = true; $('balk-sugg').innerHTML = ''; $('balk-gewoon').hidden = state.modus === 'verslag';
   sug = null;
 }
 function voegWieToe(r, naam) { const l = wieLijst(r.wie); if (!l.some(x => zacht(x) === zacht(naam))) l.push(naam); r.wie = l.join(', '); }
 function kies(k) {
   if (!sug) return;
+  if (sug.mode === 'wie') { kiesSnelWie(k); return; }
   const x = sug.l[k]; if (!x) return;
   const { ta } = sug, m = cur(), li = ta.closest('.regel'), r = regel(m, li.dataset.id); if (!r) return;
   const v = ta.value, eind = ta.selectionStart, voor = v.slice(0, sug.start), na = v.slice(eind);
@@ -2052,6 +2140,7 @@ $('secties').addEventListener('input', e => {
     if (v.indexOf('\n', i + 1) < 0 && ta.selectionStart === i + 1) { ta.value = v.slice(0, i) + v.slice(i + 1); r.t = ta.value; try { ta.setSelectionRange(i, i); } catch {} enter(ta); return; }
     ta.value = ''; r.t = ''; plak(ta, v, 0, 0); return;
   }
+  if (!r.s && /^#\s/.test(v)) { maakPunt(m, r, ta, v); return; }
   const p = PREFIX.exec(v);
   if (p) {
     const s = p[1][0].toLowerCase(), pos = Math.max(0, ta.selectionStart - p[0].length);
@@ -2078,10 +2167,12 @@ $('secties').addEventListener('keydown', e => {
   const ta = e.target, m = cur(); if (!m) return;
   if (ta.classList.contains('pt-t')) {
     if (e.key === 'Enter') { e.preventDefault(); const s = ta.closest('.sectie'), t = s && s.querySelector('.tx'); if (t) zetCaret(t, 'eind'); }
+    if (e.key === 'Backspace' && ta.selectionStart === 0 && ta.selectionEnd === 0 && !e.isComposing) { e.preventDefault(); puntTerug(m, ta.dataset.pt); }
     return;
   }
   if (!ta.classList.contains('tx') || e.isComposing || e.keyCode === 229) return;
-  if (sug && sug.ta === ta) {
+  if (sug && sug.mode === 'wie' && (balkSmal() || sug.ta !== ta || sug.rid !== ta.closest('.regel').dataset.id)) { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); sluitSugg(); return; } }
+  else if (sug && sug.ta === ta) {
     const n = sug.l.length;
     if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && n) { e.preventDefault(); sug.i = (sug.i + (e.key === 'ArrowDown' ? 1 : -1) + n) % n; tekenSugg(); return; }
     if ((e.key === 'Tab' || e.key === 'Enter') && n && !e.shiftKey) { e.preventDefault(); kies(sug.i); return; }
@@ -2106,14 +2197,18 @@ $('secties').addEventListener('focusout', e => {
 });
 $('secties').addEventListener('focusin', e => { if (e.target.classList && e.target.classList.contains('tx')) setTimeout(() => zichtbaar(e.target), 60); });
 // Knopjes bij een regel: de focus blijft in de tekst, zodat het toetsenbord van een gsm openblijft
-['mousedown', 'pointerdown'].forEach(t => document.addEventListener(t, e => { if (e.target.closest && e.target.closest('.soort, [data-sg], .mens-sugg button')) { const a = document.activeElement; if (a && (a.classList.contains('tx') || a.id === 'mens-in')) e.preventDefault(); } }));
-document.addEventListener('click', e => { const o = e.target.closest('[data-sg]'); if (o && sug) kies(+o.dataset.sg); });
+['mousedown', 'pointerdown'].forEach(t => document.addEventListener(t, e => { if (e.target.closest && e.target.closest('.soort, [data-sg], [data-wie], [data-rx], .mens-sugg button')) { const a = document.activeElement; if (a && (a.classList.contains('tx') || a.id === 'mens-in')) e.preventDefault(); } }));
+document.addEventListener('click', e => {
+  const o = e.target.closest('[data-sg]'); if (o && sug) { kies(+o.dataset.sg); return; }
+  if (sug && sug.mode === 'wie' && !e.target.closest('[data-wie], #balk-sugg, .sugg')) sluitSugg();   // ergens anders getikt: de keuze verdwijnt
+});
 
 $('secties').addEventListener('click', e => {
   const m = cur(); if (!m) return;
   const li = e.target.closest('.regel'), r = li && regel(m, li.dataset.id);
   if (e.target.closest('[data-soort]') && r) { zetSoort(li, m, r, VOLGENDE[r.s], true); return; }
-  if (e.target.closest('[data-wie]') && r) { kiesWie(m, r, li); return; }
+  if (e.target.closest('[data-wie]') && r) { if (sug && sug.mode === 'wie' && sug.rid === r.id) sluitSugg(); else if (m.mensen.length) openWie(m, r, li); else kiesWie(m, r, li); return; }
+  if (e.target.closest('[data-rx]') && r) { haalRegelWeg(m, r, li); return; }
   if (e.target.closest('[data-wan-x]') && r) {
     const oud = { wan:r.wan, uit:r.uit }, h = herken(r.t, m.datum);
     r.wan = ''; if (h) r.uit = zacht(h.tekst);
@@ -2132,6 +2227,39 @@ $('secties').addEventListener('click', e => {
     toast(`Agendapunt ${nr} verwijderd`, ocUndoable(restore));
   }
 });
+// "# Budget" vooraan een regel: een nieuw agendapunt, vlak na het punt waar je zit. De regels eronder gaan mee.
+function maakPunt(m, r, ta, v) {
+  const titel = v.replace(/^#\s+/, ''), pos = Math.max(0, ta.selectionStart - (v.length - titel.length));
+  const lijst = m.regels.filter(x => x.p === r.p), na = r.p === 'vk' ? [] : lijst.slice(lijst.indexOf(r) + 1);
+  const p = { id:uid(), t:titel.slice(0, 200) };
+  m.agenda.splice(m.agenda.findIndex(a => a.id === r.p) + 1, 0, p);
+  houvast();
+  m.regels.splice(m.regels.indexOf(r), 1);
+  // de regels van het nieuwe punt komen achteraan, in dezelfde volgorde
+  na.forEach(x => { m.regels.splice(m.regels.indexOf(x), 1); x.p = p.id; m.regels.push(x); });
+  zorg(m); save(); renderNotes(); opvLater();
+  const pt = $('secties').querySelector(`[data-pt="${CSS.escape(p.id)}"]`);
+  if (pt) { pt.focus({ preventScroll:true }); try { pt.setSelectionRange(pos, pos); } catch {} zichtbaar(pt); }
+  zeg('Agendapunt ' + (m.agenda.indexOf(p) + 1));
+}
+// Backspace vooraan de titel van een agendapunt: het kopje wordt weer een gewone regel, de regels gaan terug naar het punt erboven
+function puntTerug(m, pid) {
+  const i = m.agenda.findIndex(a => a.id === pid); if (i < 0) return;
+  const p = m.agenda[i], vorig = i > 0 ? m.agenda[i - 1].id : '';
+  const rs = m.regels.filter(x => x.p === pid && x.t.trim());
+  const n = nieuweRegel(vorig, p.t.trim());
+  houvast();
+  m.regels = m.regels.filter(x => x.p !== pid);
+  m.agenda.splice(i, 1);
+  rs.forEach(x => { x.p = vorig; });
+  const plek = m.regels.map(x => x.p).lastIndexOf(vorig);
+  m.regels.splice(plek < 0 ? m.regels.length : plek + 1, 0, n, ...rs);
+  // een lege regel net boven het nieuwe stuk mag weg
+  const voor = m.regels[m.regels.indexOf(n) - 1]; if (voor && voor.p === vorig && !voor.t.trim() && !voor.s) m.regels.splice(m.regels.indexOf(voor), 1);
+  zorg(m); save(); renderNotes(); opvLater();
+  const t = taVan(n.id); if (t) zetCaret(t, 0);
+  zeg('Gewone regel');
+}
 $('add-punt').addEventListener('click', () => {
   const m = cur(); if (!m) return;
   if (!m.agenda.length && m.regels.filter(r => r.p === '').every(r => !r.t.trim())) m.regels = m.regels.filter(r => r.p !== '');
@@ -2143,27 +2271,28 @@ $('add-punt').addEventListener('click', () => {
 /* ---------- Het overleg: titel, datum, voorzitter, aanwezigen ---------- */
 document.addEventListener('input', e => {
   const t = e.target, m = cur(); if (!m) return;
-  if (t.id === 'titel') { m.titel = t.value.slice(0, 80); save(); renderTabs(); return; }
+  if (t.id === 'titel') { const v = t.value.slice(0, 80); m.titel = v.trim() === 'Overleg' ? standaardTitel(m.datum) : v; save(); renderTabs(); return; }
   if (t.id === 'mens-in') { if (/[,;\n]/.test(t.value)) { const delen = t.value.split(/[,;\n]/); t.value = delen.pop(); delen.forEach(n => voegMensToe(m, n)); } toonMensSugg(); }
 });
-$('titel').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); const t = alleTx()[0]; if (t && state.modus === 'notities') zetCaret(t, 'eind'); else $('titel').blur(); } });
-$('titel').addEventListener('change', () => { const m = cur(); if (m && !m.titel.trim()) { m.titel = standaardTitel(m.datum); $('titel').value = m.titel; save(); renderTabs(); } });
+$('titel').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); if (state.modus === 'notities') terugNaarNotities(); else $('titel').blur(); } });
+$('titel').addEventListener('change', () => { const m = cur(); if (m && !m.titel.trim()) { m.titel = standaardTitel(m.datum); $('titel').value = toonTitel(m); save(); renderTabs(); } });
+// Een tik op de titel: staat er nog de standaardtitel, dan is die geselecteerd en typ je er meteen over
+$('titel').addEventListener('focus', () => { const m = cur(); if (m && isStandaard(m.titel)) setTimeout(() => { if (document.activeElement === $('titel')) $('titel').select(); }, 0); });
+// De datum: een tik opent de kalender van het toestel
+$('datum').addEventListener('click', () => { try { $('datum').showPicker(); } catch {} });
 $('datum').addEventListener('change', () => {
   const m = cur(), v = $('datum').value; if (!m || !okIso(v)) return;
   if (isStandaard(m.titel)) m.titel = standaardTitel(v);
   m.datum = v; save(); render();
 });
-$('volgend').addEventListener('change', () => { const m = cur(), v = $('volgend').value; if (!m) return; m.volgend = okIso(v) ? v : ''; save(); });
-$('vz').addEventListener('change', () => { const m = cur(); if (m) { m.vz = $('vz').value; save(); if (state.modus === 'verslag') renderVerslag(); } });
 function voegMensToe(m, naam) {
   const n = String(naam || '').replace(/\s+/g, ' ').trim().slice(0, 60); if (!n) return false;
   if (m.mensen.some(p => zacht(p.n) === zacht(n))) return false;
   m.mensen.push({ n:cap(n), s:0 });
   if (!m.voorbeeld) state.namen = [cap(n), ...state.namen.filter(x => zacht(x) !== zacht(n))].slice(0, 80);
-  save(); renderMensen(m); renderKopVz(m);
+  save(); renderMensen(m);
   return true;
 }
-function renderKopVz(m) { const namen = m.mensen.map(p => p.n); if (m.vz && !namen.includes(m.vz)) namen.push(m.vz); $('vz').innerHTML = '<option value="">Geen</option>' + namen.map(n => `<option${n === m.vz ? ' selected' : ''}>${esc(n)}</option>`).join(''); }
 function toonMensSugg() {
   const m = cur(), inp = $('mens-in'), box = $('mens-sugg'); if (!m || !inp) return;
   const z = zacht(inp.value), l = state.namen.filter(n => !m.mensen.some(p => zacht(p.n) === zacht(n)) && (!z || zacht(n).split(' ').some(w => w.startsWith(z)))).slice(0, 8);
@@ -2173,7 +2302,7 @@ function toonMensSugg() {
 $('mensen').addEventListener('keydown', e => {
   if (e.target.id !== 'mens-in') return;
   const m = cur(), inp = e.target;
-  if (e.key === 'Enter') { e.preventDefault(); if (inp.value.trim()) { voegMensToe(m, inp.value); inp.value = ''; toonMensSugg(); } else { const t = alleTx()[0]; if (t) zetCaret(t, 'eind'); } }
+  if (e.key === 'Enter') { e.preventDefault(); if (inp.value.trim()) { voegMensToe(m, inp.value); inp.value = ''; toonMensSugg(); } else terugNaarNotities(); }
   if (e.key === 'Backspace' && !inp.value && m.mensen.length) { e.preventDefault(); haalMensWeg(m, m.mensen.length - 1, true); }
 });
 document.addEventListener('focusin', e => { if (e.target.id === 'mens-in') toonMensSugg(); });
@@ -2184,7 +2313,7 @@ document.addEventListener('focusout', e => {
 $('mens-sugg').addEventListener('click', e => { const b = e.target.closest('[data-naam]'); if (!b) return; voegMensToe(cur(), b.dataset.naam); const inp = $('mens-in'); inp.value = ''; inp.focus({ preventScroll:true }); toonMensSugg(); });
 function haalMensWeg(m, i, focusIn) {
   const p = m.mensen[i]; if (!p) return;
-  const restore = snapshot(); m.mensen.splice(i, 1); save(true); renderMensen(m); renderKopVz(m);
+  const restore = snapshot(); m.mensen.splice(i, 1); save(true); renderMensen(m);
   toast(`${p.n} weggehaald`, ocUndoable(restore));
   if (focusIn) $('mens-in').focus(); else { const b = $('mensen').querySelector(`[data-mens="${Math.min(i, m.mensen.length - 1)}"]`) || $('mens-in'); b.focus({ preventScroll:true }); }
 }
@@ -2297,13 +2426,29 @@ function kiesVolgend(m) {
     `<div class="snel" role="group" aria-label="Snel kiezen">${snel.map(([t, iso]) => `<button type="button" data-iso="${iso}" aria-pressed="${iso === nu}">${t}<small>${esc(kortD(iso, ref))}</small></button>`).join('')}</div>
      <label class="lbl" for="vo-in">Of kies een datum</label><input class="field" type="date" id="vo-in" value="${esc(nu)}" min="2000-01-01" max="2199-12-31">`,
     '<button type="button" class="knop links" data-geen>Nog niet gekend</button><button type="button" class="knop groen" data-ok>Klaar</button>');
-  const zet = iso => { m.volgend = okIso(iso) ? iso : ''; save(true); $('volgend').value = m.volgend; v.sluit(null); renderVerslag(); const b = $('papier').querySelector('.vs-meta div:last-child dd'); if (b) { b.tabIndex = -1; b.focus(); } };
+  const zet = iso => { m.volgend = okIso(iso) ? iso : ''; save(true); v.sluit(null); renderVerslag(); const b = $('papier').querySelector('[data-vs-volgend]'); if (b) b.focus(); };
   v.el.addEventListener('click', e => {
     const b = e.target.closest('[data-iso]'); if (b) { zet(b.dataset.iso); return; }
     if (e.target.closest('[data-geen]')) { zet(''); return; }
     if (e.target.closest('[data-ok]')) zet(v.el.querySelector('#vo-in').value);
   });
   v.el.querySelector('[data-iso]').focus();
+}
+// De voorzitter (staat in het verslag; de besluiten gaan met die naam naar het Beslissingslog). Eén tik kiest.
+function kiesVz(m) {
+  const namen = [...new Set([...m.mensen.filter(p => !p.s).map(p => p.n), ...m.mensen.map(p => p.n), ...(m.vz ? [m.vz] : [])])];
+  const v = venster('Voorzitter',
+    `${namen.length ? `<div class="snel" role="group" aria-label="Aanwezigen">${namen.map(n => `<button type="button" data-n="${esc(n)}" aria-pressed="${n === m.vz}">${esc(n)}</button>`).join('')}</div>` : ''}
+     <label class="lbl" for="vz-in">${namen.length ? 'Iemand anders' : 'Naam'}</label><input class="field" id="vz-in" maxlength="60" autocomplete="off" autocapitalize="words" enterkeyhint="done" placeholder="Naam">`,
+    '<button type="button" class="knop links" data-geen>Geen</button><button type="button" class="knop groen" data-ok>Klaar</button>');
+  const zet = n => { m.vz = String(n || '').trim().slice(0, 60); save(true); v.sluit(null); renderVerslag(); const b = $('papier').querySelector('[data-vs-vz]'); if (b) b.focus(); };
+  v.el.addEventListener('click', e => {
+    const b = e.target.closest('[data-n]'); if (b) { zet(b.dataset.n); return; }
+    if (e.target.closest('[data-geen]')) { zet(''); return; }
+    if (e.target.closest('[data-ok]')) { const x = v.el.querySelector('#vz-in').value.trim(); if (x) zet(cap(x)); else v.sluit(); }
+  });
+  v.el.querySelector('#vz-in').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); const x = e.target.value.trim(); if (x) zet(cap(x)); } });
+  (v.el.querySelector('[data-n]') || v.el.querySelector('#vz-in')).focus();
 }
 // Nieuw overleg: helemaal nieuw, of het volgende van een reeks (titel en aanwezigen gaan mee, de open acties komen bovenaan)
 function reeksen() {
@@ -2404,10 +2549,7 @@ $('del-unit').addEventListener('click', () => {
 });
 
 /* ---------- Beginnen en het voorbeeld ---------- */
-$('begin-btn').addEventListener('click', () => {
-  maakOverleg(null);
-  setTimeout(() => { const t = $('titel'); t.focus({ preventScroll:true }); t.select(); }, 0);
-});
+$('begin-btn').addEventListener('click', () => { maakOverleg(null); });
 function voorbeeld() {
   const nu = vandaag(), vorig = plus(nu, -7), rs = 'voorbeeld';
   const team = ['Sara', 'Jonas', 'Leen', 'Ahmed', 'Griet'];
@@ -2452,7 +2594,7 @@ $('vb-wis').addEventListener('click', () => {
 $('vb-eigen').addEventListener('click', () => {
   state.items = state.items.filter(m => !m.voorbeeld);
   maakOverleg(null);
-  setTimeout(() => { const t = $('titel'); t.focus({ preventScroll:true }); t.select(); }, 0);
+  const t = alleTx()[0]; if (t) zetCaret(t, 0);
   toast('Je eigen overleg staat klaar');
 });
 
@@ -2492,8 +2634,13 @@ function zichtbaar(el) {
   if (el.classList && el.classList.contains('tx')) el = el.closest('.regel') || el;
   const vv = window.visualViewport, top = vv ? vv.offsetTop : 0, h = vv ? vv.height : innerHeight;
   const bh = balkSmal() ? $('balk').offsetHeight : 0, r = el.getBoundingClientRect();
-  const onder = top + h - bh - 12, boven = top + 12;
-  if (r.bottom > onder) window.scrollBy(0, Math.min(r.bottom - onder, r.top - boven));
+  const ts = $('toast').classList.contains('show') ? $('toast').offsetHeight + 8 : 0;
+  // de regel eronder hoort er ook bij: wie typt, ziet waar de volgende regel komt
+  let eronder = el.classList && (el.classList.contains('regel') || el.classList.contains('pt-t')) ? 48 : 0;
+  // achteraan de notities: ook de tip met de snelle schrijfwijzen blijft in beeld zolang hij er staat
+  if (eronder && el.classList.contains('regel') && el === alleTx().pop()?.closest('.regel') && !$('notes-tip').hidden) eronder = Math.min(150, Math.max(48, $('notes-tip').getBoundingClientRect().bottom - r.bottom + 4));
+  const onder = top + h - bh - ts - 12, boven = top + 12;
+  if (r.bottom + eronder > onder) window.scrollBy(0, Math.min(r.bottom + eronder - onder, r.top - boven));
   else if (r.top < boven) window.scrollBy(0, r.top - boven);
 }
 if (window.visualViewport) {
