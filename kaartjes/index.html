@@ -291,6 +291,10 @@ html:has(.ocw-back) { overflow:hidden; }
 @media print { .card-head, .controls, .set, .mono, .acties, .toast, .exit-present { display:none !important; } }
 /* Eenheid: vaste breedte voor de inhoud onder de kop (smal 720 px of breed 1200 px) */
 .main { max-width:720px; margin-left:auto; margin-right:auto; }
+
+/* De kaart zelf is ook een knop om te trekken */
+#kaart, #stapel { cursor:pointer; -webkit-tap-highlight-color:transparent; }
+@media (hover:hover) and (prefers-reduced-motion:no-preference) { #tafel:has(#paneel[hidden]) #kaart:hover { translate:0 -3px; transition:translate .15s ease; } }
 /* oc-uitleg v1 begin */
 /* "Hoe werkt dit?": één blok voor alle tools. Zonder JavaScript blijft de gewone uitklapper leesbaar.
    Het script zet .oc-u op <details class="explain"> en bouwt de inhoud om tot inleiding, stappen, tip en verwijzingen. */
@@ -833,6 +837,12 @@ function groei(t) { t.style.height = 'auto'; t.style.height = Math.max(44, t.scr
 
 /* ---------- Bediening ---------- */
 $('trek').addEventListener('click', () => { if ($('trek').getAttribute('aria-disabled') === 'true') { toast('Zet eerst een soort aan: Meten, Verbinden of Meta.'); return; } trek(); });
+// Ook een tik of klik op de kaart of de stapel trekt een kaart (niet op knoppen of velden in het paneel)
+$('tafel').addEventListener('click', e => {
+  if (e.target.closest('#paneel, button, a, input, textarea, select, label')) return;
+  if (!e.target.closest('#kaart, #stapel')) return;
+  $('trek').click();
+});
 $('soorten').addEventListener('click', e => {
   const b = e.target.closest('[data-soort]'); if (!b) return;
   const s = b.dataset.soort, aan = !st.aan.includes(s);
