@@ -481,8 +481,60 @@ body { min-height:100dvh; }
   .vs-act li { grid-template-columns:minmax(0, 1fr) auto; }
   .vs-act .wat { grid-column:1 / -1; grid-row:2; }
 }
+/* Het verslag als eigen weergave: de invoer erboven verdwijnt, de keuze Notities | Verslag blijft de weg terug */
+.main.vs #vorige, .main.vs #vg .card-head, .main.vs #vg .vg-in, .main.vs #vg:has(#vb-bar[hidden]) { display:none !important; }
+.main.vs #vg .vb-bar { margin-bottom:0.75rem; }
+.modus-rij { display:flex; align-items:center; gap:0.5rem; margin-bottom:1rem; }
+.modus-rij .modus { flex:1; margin-bottom:0; }
+.modus-menu:empty { display:none; }
+.modus-menu { margin-left:auto; }
+/* Opnieuw beginnen: Alles wissen staat in het menu, een overleg verwijderen kan met Ongedaan. Het blok blijft voor Bewaar als bestand. */
+#oc-restart-row { display:none !important; }
+.vs-meta { display:grid; gap:0.1875rem; margin-top:0.75rem; font-size:0.9375rem; line-height:1.45; }
+.vs-meta div { display:grid; grid-template-columns:8.5rem minmax(0, 1fr); gap:0.75rem; align-items:baseline; }
+.vs-meta dt { color:var(--slate-500); font-size:0.875rem; }
+.vs-meta dd { color:var(--slate-700); min-width:0; overflow-wrap:anywhere; }
+.vs-meta dd:focus { outline:none; }
+.vs-meta .rm-b { margin:-0.5rem 0 -0.5rem -0.375rem; }
+@container (max-width:479.98px) { .vs-meta div { grid-template-columns:7.25rem minmax(0, 1fr); gap:0.5rem; } }
+.vs-pers + .vs-pers { margin-top:0.75rem; }
+.vs-wie { font-size:1rem; font-weight:700; color:var(--slate-800); margin-bottom:0.125rem; }
+.vs-pers.niemand .vs-wie { color:var(--slate-600); font-weight:600; }
+.vs-taken { list-style:none; border-left:2px solid var(--accent-mid); padding-left:0.75rem; max-width:40rem; }
+.vs-pers.niemand .vs-taken { border-left:2px dashed var(--slate-300); }
+.vs-taken li { display:grid; grid-template-columns:minmax(0, 1fr) auto; gap:0 0.75rem; align-items:baseline; padding:0.25rem 0; font-size:0.9375rem; line-height:1.45; border-radius:6px; }
+.vs-taken li:focus { outline:2px solid #047857; outline-offset:2px; }
+.vs-taken .wat { color:var(--slate-700); min-width:0; overflow-wrap:anywhere; }
+.vs-taken .wat small { display:block; font-size:0.8125rem; color:var(--slate-500); }
+.vs-taken .wan { font-size:0.875rem; font-weight:600; color:var(--slate-700); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.vs-plus { grid-column:1 / -1; display:flex; flex-wrap:wrap; margin:-0.375rem 0 -0.375rem -0.375rem; }
+.vs-verwijs { font-size:0.8125rem; color:var(--slate-500); margin:0.25rem 0 0 1.375rem; }
+/* Versturen: één hoofdknop, een korte check en wat al gebeurde */
+.deel .stuur { width:100%; margin-top:0.75rem; }
+.check-knop { width:100%; display:flex; gap:0.5rem; align-items:flex-start; text-align:left; min-height:44px; padding:0.5rem 0.625rem; margin-top:0.75rem; border-radius:10px; background:var(--oranje-50); border:1px solid var(--oranje-200); color:#78350f; font-size:0.875rem; line-height:1.35; }
+.check-knop:hover { background:#fef3c7; }
+.check-knop svg { width:18px; height:18px; flex:none; color:#b45309; margin-top:1px; }
+.check-knop > span { display:flex; flex-direction:column; min-width:0; }
+.check-knop b { font-weight:600; }
+.check-knop small { font-size:0.8125rem; }
+.vs-status { display:flex; gap:0.375rem; align-items:flex-start; font-size:0.8125rem; font-weight:600; color:var(--accent-dark); margin-top:0.625rem; line-height:1.4; }
+.vs-status svg { width:16px; height:16px; flex:none; margin-top:1px; }
+.deel .deel-sub { margin-top:0.5rem; }
+.balk-vs { flex:1; min-width:0; display:flex; align-items:center; gap:0.5rem; }
+.balk-check { flex:1; min-width:0; }
+.balk-check .check-knop { margin:0; padding:0.3125rem 0.5rem; font-size:0.8125rem; }
+.balk-check .check-knop small { font-size:0.75rem; }
+.balk-check .vs-status { margin:0; padding:0 0.25rem; font-weight:500; color:var(--slate-600); }
+.balk-check .vs-status svg { color:var(--accent-dark); }
+.balk .stuur { flex:none; }
+@media (max-width:999.98px) {
+  .deel-hoofd { display:none; }
+  .deel .meer-h { margin-top:0; }
+  body.met-balk .footer { padding-bottom:calc(var(--balk) + 2rem); }
+  body.met-balk .toast { bottom:calc(var(--balk) + 0.75rem); }
+}
+@media (max-width:360px) { .balk .stuur { padding:0.375rem 0.625rem; } }
 html:has(.dlg-back) { overflow:hidden; }
-@media (max-width:999.98px) { .werk.verslag-modus .zij { order:-1; } }
 @media (max-width:420px) { .mens-in { width:9.5rem; } input[type="date"].field { width:10.5rem; } }
 /* Safari op iPhone en iPad geeft een datumveld een eigen vaste breedte; zonder dit schuift het over het vak ernaast. */
 input[type="date"] { -webkit-appearance:none; appearance:none; max-width:100%; min-width:0; font-variant-numeric:tabular-nums; }
@@ -627,7 +679,7 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
     <div class="card-head">
       <input class="list-name" id="titel" data-oc-titel placeholder="Titel van het overleg" aria-label="Titel van het overleg" maxlength="80" spellcheck="false" enterkeyhint="next" autocomplete="off">
       <button class="icon-btn del-unit" id="del-unit" type="button" aria-label="Verwijder dit overleg" title="Verwijder dit overleg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg></button>
-      <div class="menu-wrap">
+      <div class="menu-wrap" id="menu-wrap">
         <button class="icon-btn" id="menu-btn" type="button" aria-label="Meer acties" aria-haspopup="true" aria-expanded="false" aria-controls="menu">
           <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
         </button>
@@ -637,7 +689,7 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
           <div class="sep" role="separator"></div>
           <button type="button" data-act="pdf" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 15h6M9 18h4"/></svg>Download het verslag als PDF</button>
           <button type="button" data-act="copy" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Kopieer het verslag als tekst</button>
-          <button type="button" data-act="mail" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>Mail het verslag</button>
+          <button type="button" data-act="stuur" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.5 2.5 10.5 13.5"/><path d="M21.5 2.5 14.5 21.5l-4-8-8-4z"/></svg>Verstuur het verslag</button>
           <p class="ocb-note">Een PDF of tekst kan je niet terug openen.</p>
           <div class="sep" role="separator"></div>
           <button type="button" data-act="wipe" class="danger" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>Alles wissen</button>
@@ -648,6 +700,7 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
       <div class="vg-meta">
         <div><label class="lbl" for="datum">Datum</label><input class="field" type="date" id="datum" min="2000-01-01" max="2199-12-31"></div>
         <div><label class="lbl" for="vz">Voorzitter</label><select class="field" id="vz"></select></div>
+        <div><label class="lbl" for="volgend">Volgend overleg <span class="opt">(als je het weet)</span></label><input class="field" type="date" id="volgend" min="2000-01-01" max="2199-12-31"></div>
       </div>
       <div>
         <div class="mensen-kop"><span class="lbl" id="mensen-lbl">Aanwezigen</span><span class="n" id="mensen-n"></span></div>
@@ -655,7 +708,7 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
         <div class="mens-sugg" id="mens-sugg" aria-label="Eerder gebruikte namen" hidden></div>
         <p class="mens-tip" id="mens-tip" hidden>Tik op een naam: aanwezig, afwezig of verontschuldigd.</p>
       </div>
-      <p class="herinner" id="herinner" hidden><span>Nog niet gedeeld of bewaard.</span><button type="button" data-naar="verslag">Toon verslag</button></p>
+      <p class="herinner" id="herinner" hidden><span>Het verslag is nog niet verstuurd.</span><button type="button" data-naar="verslag">Toon verslag</button></p>
     </div>
   </section>
 
@@ -664,9 +717,13 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
     <ul class="vorige-lijst" id="vorige-lijst"></ul>
   </section>
 
+  <div class="modus-rij">
   <div class="modus" id="modus" role="radiogroup" aria-label="Weergave" hidden>
     <button type="button" role="radio" aria-checked="true" data-modus="notities"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>Notities</button>
     <button type="button" role="radio" aria-checked="false" data-modus="verslag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>Verslag</button>
+  </div>
+
+  <div class="modus-menu" id="modus-menu"></div>
   </div>
 
   <div class="werk" id="werk" hidden>
@@ -687,16 +744,19 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
         <div id="opv-lijst"></div>
         <button type="button" class="knop zacht" data-naar="verslag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>Toon verslag</button>
       </section>
-      <section class="card deel" id="deel" aria-labelledby="deel-h" hidden>
-        <h2 class="zij-t" id="deel-h">Verslag delen</h2>
-        <p class="deel-sub">Je notities blijven op dit toestel. Stuur of bewaar het verslag als je klaar bent.</p>
-        <div class="deel-knoppen">
-          <button type="button" class="knop groen breed" data-exp="copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Kopieer als tekst</button>
-          <button type="button" class="knop" data-exp="mail"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>Mail</button>
-          <button type="button" class="knop" data-exp="pdf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 15h6M9 18h4"/></svg>PDF</button>
+      <section class="card deel" id="deel" aria-label="Verslag versturen" hidden>
+        <div class="deel-hoofd">
+          <h2 class="zij-t">Verslag versturen</h2>
+          <div id="deel-check"></div>
+          <button type="button" class="knop groen breed stuur" data-exp="stuur"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.5 2.5 10.5 13.5"/><path d="M21.5 2.5 14.5 21.5l-4-8-8-4z"/></svg>Verstuur verslag</button>
+          <p class="deel-sub" id="deel-sub"></p>
+          <div id="deel-status"></div>
         </div>
-        <h3 class="opv-h">Naar andere tools</h3>
+        <h3 class="opv-h meer-h">Meer met dit verslag</h3>
         <div class="naar">
+          <button type="button" class="knop" data-exp="copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Kopieer als tekst</button>
+          <button type="button" class="knop" data-exp="mail" id="exp-mail" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>Open in je mailprogramma</button>
+          <button type="button" class="knop" data-exp="pdf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 15h6M9 18h4"/></svg>Download als PDF</button>
           <a class="oc-tb-btn" id="naar-bord" href="../kanban/?van=notities"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="11" rx="1.5"/><rect x="17" y="4" width="4" height="7" rx="1.5"/></svg><span>Acties naar het Takenbord</span></a>
           <a class="oc-tb-btn" id="naar-besl" href="../beslissingen/?van=notities"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="6" r="3"/><path d="M10 9v3M14 9v3"/><rect x="5" y="12" width="14" height="4" rx="1"/><path d="M5 20h14"/></svg><span>Besluiten naar Beslissingen</span></a>
         </div>
@@ -717,7 +777,7 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
         <li><b>Zeg wie en tegen wanneer.</b> Typ @ en kies een naam. Schrijf een termijn zoals "tegen vrijdag", "binnen 2 weken" of "15/12": de tool toont de datum voluit. Klopt die niet, tik erop om ze aan te passen of weg te halen.</li>
         <li><b>Werk met een agenda als je wil.</b> Met "Agendapunt" krijg je een kopje per punt. Zonder agenda blijft het één lijst.</li>
         <li><b>Volg op bij het volgende overleg.</b> Kies "Volgend overleg van" bij een nieuw overleg. De open acties van vorige keer staan dan bovenaan. Zet ze met één tik op Klaar, Loopt nog of Vervalt. Wat je niet aanduidt, blijft open.</li>
-        <li><b>Deel het verslag.</b> Bij Verslag staan de besluiten, de acties met wie en wanneer, de notities per punt en wie er was. Kopieer de tekst voor een mail, mail het meteen of download een PDF.</li>
+        <li><b>Verstuur het verslag.</b> Bij Verslag zie je eerst wie er was, dan wat elke persoon moet doen en tegen wanneer, dan de besluiten en de notities per punt. Ontbreekt er bij een actie nog een wie of een datum, tik er dan op en vul het meteen aan. Met "Verstuur verslag" open je je mail, of op een gsm het deelmenu. Kopiëren en een PDF kan ook.</li>
       </ul>
       <p>Tip: zet bij elke actie meteen wie ze doet. Een actie zonder naam gebeurt zelden. De balk onderaan of rechts telt mee.</p>
       <p>Je notities blijven op dit toestel. Stuur of bewaar het verslag als je klaar bent.</p>
@@ -730,6 +790,10 @@ details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker);
   <div class="balk-gewoon" id="balk-gewoon" style="display:contents">
     <button type="button" class="balk-opv" id="balk-opv" aria-haspopup="dialog"><span class="t" id="balk-sam"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>
     <button type="button" class="knop zacht" id="balk-modus" data-naar="verslag">Verslag</button>
+  </div>
+  <div class="balk-vs" id="balk-vs" hidden>
+    <div class="balk-check" id="balk-check"></div>
+    <button type="button" class="knop groen stuur" data-exp="stuur"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.5 2.5 10.5 13.5"/><path d="M21.5 2.5 14.5 21.5l-4-8-8-4z"/></svg>Verstuur verslag</button>
   </div>
   <div class="balk-sugg" id="balk-sugg" role="listbox" aria-label="Kies wie" hidden></div>
 </div>
@@ -1282,6 +1346,8 @@ function regelValid(r, pts) {
     wie:str(r.wie, 200), wan:okIso(r.wan) ? r.wan : '', uit:str(r.uit, 160), af:['klaar', 'vervalt', 'loopt'].includes(r.af) ? r.af : '',
     in:str(r.in, 40), van:str(r.van, 40) };
 }
+// Hoe het verslag de deur uitging (de herinnering en de melding onder de knop gebruiken dat)
+const HOE = { gedeeld:'Gedeeld', mail:'Mail geopend', gekopieerd:'Gekopieerd', pdf:'PDF gedownload', bestand:'Bewaard als bestand' };
 function vgValid(m) {
   if (!m || typeof m !== 'object' || typeof m.id !== 'string' || !m.id) return null;
   const agenda = (Array.isArray(m.agenda) ? m.agenda : []).filter(p => p && typeof p.id === 'string' && p.id && p.id !== 'vk').slice(0, 60).map(p => ({ id:p.id.slice(0, 40), t:str(p.t, 200) }));
@@ -1290,7 +1356,8 @@ function vgValid(m) {
   const mensen = [], namen = new Set();
   (Array.isArray(m.mensen) ? m.mensen : []).forEach(x => { const n = x && str(x.n, 60).trim(); if (n && !namen.has(zacht(n))) { namen.add(zacht(n)); mensen.push({ n, s:[0, 1, 2].includes(x.s) ? x.s : 0 }); } });
   const vg = { id:m.id.slice(0, 40), titel:str(m.titel, 80), reeks:str(m.reeks, 40) || m.id.slice(0, 40), datum:okIso(m.datum) ? m.datum : vandaag(),
-    mensen:mensen.slice(0, 60), vz:str(m.vz, 60), agenda, regels, gedeeld:+m.gedeeld || 0, gemaakt:+m.gemaakt || 0 };
+    mensen:mensen.slice(0, 60), vz:str(m.vz, 60), agenda, regels, gedeeld:+m.gedeeld || 0, gemaakt:+m.gemaakt || 0,
+    volgend:okIso(m.volgend) ? m.volgend : '', hoe:HOE[m.hoe] ? m.hoe : '' };
   if (!vg.titel.trim()) vg.titel = standaardTitel(vg.datum);
   if (m.voorbeeld === true) vg.voorbeeld = true;
   zorg(vg);
@@ -1368,7 +1435,7 @@ const ocWie = w => wieLijst(w).join('; ') || undefined;
 // Per overleg een lijst: de open acties (met wie en tegen wanneer) en de besluiten (wie besliste, de datum, het agendapunt). Een voorbeeld nooit.
 function ocPublish() {
   ocShare.publish(OC_ID, OC_TOOL, state.items.filter(m => !m.voorbeeld).map(m => ({ name:naamVan(m), items:[
-    ...acties(m).filter(r => !r.af).map(r => ({ type:'actie', text:cap(r.t), who:ocWie(r.wie), when:wanVan(r, m) || undefined })),
+    ...acties(m).filter(r => !r.af).map(r => ({ type:'actie', text:leesTekst(r, m, wanVan(r, m)), who:ocWie(r.wie), when:wanVan(r, m) || undefined })),   // zoals in het verslag: zonder de naam en de termijn die er apart bij staan
     ...besluiten(m).map(r => ({ type:'besluit', text:cap(r.t), who:m.vz || undefined, when:m.datum, note:puntTitel(m, r.p) || undefined }))
   ] })));
 }
@@ -1408,7 +1475,9 @@ const ICON = {
   x: I('<path d="M18 6L6 18M6 6l12 12"/>', 2.5),
   prul: I('<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/>'),
   pers: I('<circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/>'),
-  kal: I('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/>')
+  kal: I('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/>'),
+  vink: I('<path d="M20 6 9 17l-5-5"/>', 2.5),
+  let: I('<circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5h.01"/>')
 };
 
 /* ---------- Tekenen ---------- */
@@ -1440,6 +1509,7 @@ function renderKop(m) {
   const dl = `Verwijder ${tabNaam(m)} van ${dagMaand(m.datum)}`; $('del-unit').setAttribute('aria-label', dl); $('del-unit').title = dl;
   if (document.activeElement !== $('titel')) $('titel').value = m.titel;
   if (document.activeElement !== $('datum')) $('datum').value = m.datum;
+  if (document.activeElement !== $('volgend')) $('volgend').value = m.volgend || '';
   const namen = m.mensen.map(p => p.n); if (m.vz && !namen.includes(m.vz)) namen.push(m.vz);
   $('vz').innerHTML = '<option value="">Geen</option>' + namen.map(n => `<option${n === m.vz ? ' selected' : ''}>${esc(n)}</option>`).join('');
   renderMensen(m);
@@ -1475,8 +1545,11 @@ function renderModus() {
   $('notes').hidden = v; $('papier').hidden = !v;
   $('opv').hidden = v; $('deel').hidden = !v;
   $('zij').classList.toggle('notities-modus', !v); $('werk').classList.toggle('verslag-modus', v);
-  $('balk-modus').textContent = v ? 'Notities' : 'Verslag';
-  $('balk-modus').dataset.naar = v ? 'notities' : 'verslag';
+  $('main').classList.toggle('vs', v);
+  // Het menu ⋮ blijft bereikbaar: in het verslag staat het naast de keuze Notities | Verslag
+  const plek = v ? $('modus-menu') : $('vg').querySelector('.card-head');
+  if ($('menu-wrap').parentElement !== plek) { closeMenu(); plek.appendChild($('menu-wrap')); }
+  $('balk-gewoon').hidden = v || !!sug; $('balk-vs').hidden = !v;
   $('balk').hidden = false; document.body.classList.add('met-balk'); zetBalkMaat();
 }
 
@@ -1570,76 +1643,149 @@ function renderOpv(nu) {
 const opvLater = () => renderOpv(false);
 
 /* ---------- Het verslag ---------- */
-function verslagData(m) {
-  const A = opDatum(m, acties(m)).map(({ r, w }) => ({ r, w, wie:wieLijst(r.wie).join(', ') }));
-  const vk = vorigeActies(m).filter(x => x.r.af && x.r.in === m.id);
-  const N = secties(m).map(s => ({ kop:s.punt ? (s.punt.t.trim() || 'Agendapunt ' + s.nr) : s.kop, nr:s.nr, regels:m.regels.filter(r => r.p === s.p && r.t.trim()) }))
-    .filter(s => s.regels.length || (s.nr && s.kop && !s.kop.startsWith('Agendapunt ')));
-  const P = [0, 1, 2].map(st => m.mensen.filter(p => p.s === st).map(p => p.n));
-  return { B:besluiten(m), A, klaar:vk.filter(x => x.r.af === 'klaar').map(x => x.r), vervalt:vk.filter(x => x.r.af === 'vervalt').map(x => x.r), N, P };
+// De tekst van een actie zoals de lezer ze ziet: zonder de naam die al als wie staat, en zonder de herkende termijn
+// als de datum er apart bij staat. Alleen vooraan of achteraan in de zin: midden in een zin blijft alles staan
+// ("Beurtrol voor woensdag opmaken" blijft heel). De bewaarde tekst blijft ongemoeid.
+const reEsc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+function leesTekst(r, m, w) {
+  let t = String(r.t || '').replace(/(^|\s)@(?=\S)/g, '$1').replace(/\s+/g, ' ').trim();
+  const namen = wieLijst(r.wie).flatMap(n => [n, n.split(' ')[0]]).filter(Boolean);
+  const h = w ? herkendVan(r, m) : null, ht = h ? h.tekst.replace(/\s+/g, ' ').replace(/[\s,;:.!]+$/, '').toLowerCase() : '';
+  for (let k = 0; k < 4; k++) {
+    const voor = t;
+    t = t.replace(/[\s,;:.!]+$/, '');
+    namen.forEach(n => { t = t.replace(new RegExp('[\\s,]+' + reEsc(n) + '$', 'i'), ''); });
+    if (ht && t.toLowerCase().endsWith(ht) && t.length > ht.length) t = t.slice(0, -ht.length).replace(/[\s,]+$/, '').replace(/(^|\s)(tegen ten laatste|ten laatste|uiterlijk|tegen)$/i, '');
+    if (t === voor) break;
+  }
+  namen.forEach(n => { t = t.replace(new RegExp('^' + reEsc(n) + '(?=[\\s,:])[\\s,:]+', 'i'), ''); });
+  t = t.trim();
+  return t.replace(/[.!?]/g, '').length > 1 ? cap(t) : cap(r.t);
 }
-const regelTekst = r => (r.s === 'a' ? 'Actie: ' : r.s === 'b' ? 'Besluit: ' : '') + cap(r.t);
+// Wat moet er gebeuren: per persoon (op alfabet), en wat nog niemand heeft achteraan. Elk lijstje op datum.
+function verslagData(m) {
+  const A = opDatum(m, acties(m)).map(({ r, w }) => ({ r, w, wie:wieLijst(r.wie), tekst:leesTekst(r, m, w) }));
+  const per = new Map();
+  A.forEach(a => (a.wie.length ? a.wie : ['']).forEach(n => { const k = zacht(n); if (!per.has(k)) per.set(k, { naam:n, l:[] }); per.get(k).l.push(a); }));
+  const G = [...per.entries()].sort(([a], [b]) => (a ? 0 : 1) - (b ? 0 : 1) || a.localeCompare(b, 'nl')).map(([, g]) => g);
+  const vk = vorigeActies(m).filter(x => x.r.af && x.r.in === m.id).map(x => ({ r:x.r, tekst:leesTekst(x.r, x.m, wanVan(x.r, x.m)) }));
+  // Notities: alleen de gewone regels. Acties en besluiten staan al bovenaan; een agendapunt zegt hoeveel.
+  const N = secties(m).filter(s => s.p !== 'vk').map(s => {
+    const rs = m.regels.filter(r => r.p === s.p && r.t.trim());
+    return { kop:s.punt ? (s.punt.t.trim() || 'Agendapunt ' + s.nr) : s.kop, nr:s.nr, regels:rs.filter(r => !r.s), nA:rs.filter(r => r.s === 'a').length, nB:rs.filter(r => r.s === 'b').length };
+  }).filter(s => s.regels.length || (s.kop && (s.nA || s.nB)) || (s.nr && s.kop && !s.kop.startsWith('Agendapunt ')));
+  const P = [0, 1, 2].map(st => m.mensen.filter(p => p.s === st).map(p => p.n));
+  return { B:besluiten(m), A, G, klaar:vk.filter(x => x.r.af === 'klaar'), vervalt:vk.filter(x => x.r.af === 'vervalt'), N, P };
+}
+// Wat nog ontbreekt bij de open acties: eerst wie (dat weegt het zwaarst), dan wanneer
+function ontbreekt(m) {
+  const uit = [], gezien = new Set();
+  verslagData(m).G.forEach(g => g.l.forEach(a => {
+    if (a.r.af || gezien.has(a.r.id)) return; gezien.add(a.r.id);
+    if (!a.wie.length) uit.push({ r:a.r, wat:'wie' });
+    if (!a.w) uit.push({ r:a.r, wat:'wan' });
+  }));
+  return uit.filter(x => x.wat === 'wie').concat(uit.filter(x => x.wat === 'wan'));   // eerst wie, dan wanneer
+}
+const verwijs = s => (s.nA || s.nB) ? 'Ook ' + [s.nB && meer(s.nB, 'besluit', 'besluiten'), s.nA && meer(s.nA, 'actie', 'acties')].filter(Boolean).join(' en ') + ': zie hoger.' : '';
+const metaRijen = (m, D) => [['Voorzitter', m.vz], ['Aanwezig', D.P[0].join(', ')], ['Afwezig', D.P[1].join(', ')], ['Verontschuldigd', D.P[2].join(', ')], ['Volgend overleg', m.volgend ? cap(voluitD(m.volgend, m.datum)) : '']];
+const extraBij = (a, g) => { const samen = a.wie.filter(n => zacht(n) !== zacht(g.naam)); return [samen.length ? 'samen met ' + samen.join(', ') : '', a.r.af ? AF[a.r.af].toLowerCase() : a.r.van ? 'van vorige keer' : ''].filter(Boolean); };
+const titelVan = m => isStandaard(m.titel) ? 'Overleg' : m.titel;
 function renderVerslag() {
   const m = cur(); if (!m) return;
-  const D = verslagData(m), zw = t => `<span class="open">${t}</span>`;
-  let h = `<header class="vs-kop"><p class="vs-soort">Verslag</p><h2 class="vs-titel">${esc(isStandaard(m.titel) ? 'Overleg' : m.titel)}</h2><p class="vs-datum">${esc(cap(langD(m.datum)))}${m.vz ? ' · Voorzitter: ' + esc(m.vz) : ''}</p></header>`;
+  const D = verslagData(m);
+  const leegKnop = (attr, id, icon, t, lbl) => `<button type="button" class="rm-b leeg" ${attr}="${esc(id)}" aria-label="${esc(lbl)}"><span class="c">${icon}${t}</span></button>`;
+  const meta = metaRijen(m, D).map(([k, v]) => [k, v ? esc(v) : '']);
+  meta[4][1] = meta[4][1] || leegKnop('data-vs-volgend', '1', ICON.kal, 'kies een datum', 'Kies de datum van het volgende overleg');
+  let h = `<header class="vs-kop"><p class="vs-soort">Verslag</p><h2 class="vs-titel">${esc(titelVan(m))}</h2><p class="vs-datum">${esc(cap(langD(m.datum)))}</p>`
+    + `<dl class="vs-meta">${meta.filter(x => x[1]).map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl></header>`;
   const leeg = !D.B.length && !D.A.length && !D.N.length && !D.klaar.length && !D.vervalt.length;
   if (leeg) h += '<p class="vs-leeg">Nog niets genoteerd. Wat je bij Notities typt, komt hier netjes onder elkaar.</p>';
-  if (D.B.length) h += `<section class="vs-blok"><h3 class="vs-h">Besluiten</h3><ul class="vs-l besl">${D.B.map(r => `<li><i aria-hidden="true">•</i><span>${esc(cap(r.t))}</span></li>`).join('')}</ul></section>`;
-  if (D.A.length || D.klaar.length || D.vervalt.length) {
-    h += '<section class="vs-blok"><h3 class="vs-h">Acties</h3>';
-    if (D.A.length) h += `<ul class="vs-act">${D.A.map(({ r, w, wie }) => `<li><span class="wie">${wie ? esc(wie) : zw('wie nog open')}</span><span class="wat">${esc(cap(r.t))}${r.af ? `<span class="vk-tag">${AF[r.af].toLowerCase()}</span>` : r.van ? '<span class="vk-tag">van vorige keer</span>' : ''}</span><span class="wan">${w ? esc(kortD(w, m.datum)) : zw('geen datum')}</span></li>`).join('')}</ul>`;
-    if (D.klaar.length) h += `<h4 class="vs-h4">Van vorige keer klaar</h4><ul class="vs-l">${D.klaar.map(r => `<li><i aria-hidden="true">•</i><span>${esc(cap(r.t))}</span></li>`).join('')}</ul>`;
-    if (D.vervalt.length) h += `<h4 class="vs-h4">Van vorige keer vervallen</h4><ul class="vs-l">${D.vervalt.map(r => `<li><i aria-hidden="true">•</i><span>${esc(cap(r.t))}</span></li>`).join('')}</ul>`;
-    h += '</section>';
+  if (D.G.length) {
+    h += `<section class="vs-blok"><h3 class="vs-h">Wat moet er gebeuren</h3>${D.G.map(g => `<div class="vs-pers${g.naam ? '' : ' niemand'}"><h4 class="vs-wie">${g.naam ? esc(g.naam) : 'Nog niemand aangeduid'}</h4><ul class="vs-taken">${g.l.map(a => {
+      const x = extraBij(a, g), open = !a.r.af;
+      const knop = (open && !a.wie.length ? leegKnop('data-vs-wie', a.r.id, ICON.pers, 'wie?', 'Kies wie dit doet: ' + a.tekst.slice(0, 80)) : '') + (open && !a.w ? leegKnop('data-vs-wan', a.r.id, ICON.kal, 'wanneer?', 'Kies tegen wanneer: ' + a.tekst.slice(0, 80)) : '');
+      return `<li data-r="${esc(a.r.id)}"><span class="wat">${esc(a.tekst)}${x.length ? `<small>${esc(x.join(' · '))}</small>` : ''}</span>${a.w ? `<span class="wan"><span class="sr-only">tegen </span>${esc(kortD(a.w, m.datum))}</span>` : ''}${knop ? `<span class="vs-plus">${knop}</span>` : ''}</li>`;
+    }).join('')}</ul></div>`).join('')}</section>`;
   }
-  if (D.N.length) h += `<section class="vs-blok"><h3 class="vs-h">Notities</h3>${D.N.map(s => `${s.kop ? `<h4 class="vs-h4">${s.nr ? s.nr + '. ' : ''}${esc(s.kop)}</h4>` : ''}${s.regels.length ? `<ul class="vs-l">${s.regels.map(r => `<li><i aria-hidden="true">•</i><span>${r.s ? `<b>${SOORT[r.s]}:</b> ` : ''}${esc(cap(r.t))}</span></li>`).join('')}</ul>` : ''}`).join('')}</section>`;
-  if (m.mensen.length) h += `<section class="vs-blok"><h3 class="vs-h">Aanwezigen</h3>${[['Aanwezig', D.P[0]], ['Afwezig', D.P[1]], ['Verontschuldigd', D.P[2]]].filter(x => x[1].length).map(([k, l]) => `<p class="vs-p"><b>${k}:</b> ${esc(l.join(', '))}</p>`).join('')}</section>`;
+  if (D.B.length) h += `<section class="vs-blok"><h3 class="vs-h">Besluiten</h3><ul class="vs-l besl">${D.B.map(r => `<li><i aria-hidden="true">•</i><span>${esc(cap(r.t))}</span></li>`).join('')}</ul></section>`;
+  if (D.klaar.length || D.vervalt.length) h += `<section class="vs-blok"><h3 class="vs-h">Van vorige keer</h3><ul class="vs-l">${[...D.klaar.map(x => ['Klaar', x]), ...D.vervalt.map(x => ['Vervalt', x])].map(([k, x]) => `<li><i aria-hidden="true">•</i><span><b>${k}:</b> ${esc(x.tekst)}</span></li>`).join('')}</ul></section>`;
+  if (D.N.length) h += `<section class="vs-blok"><h3 class="vs-h">Notities</h3>${D.N.map(s => `${s.kop ? `<h4 class="vs-h4">${s.nr ? s.nr + '. ' : ''}${esc(s.kop)}</h4>` : ''}${s.regels.length ? `<ul class="vs-l">${s.regels.map(r => `<li><i aria-hidden="true">•</i><span>${esc(cap(r.t))}</span></li>`).join('')}</ul>` : ''}${s.kop && verwijs(s) ? `<p class="vs-verwijs">${verwijs(s)}</p>` : ''}`).join('')}</section>`;
   $('papier').innerHTML = `<article class="blad">${h}</article>`;
+  renderDeel(m);
+}
+// Wanneer het verslag de deur uitging, in gewone woorden
+function wanneerT(ts) {
+  const d = new Date(ts), iso = isoVan(d), nu = isoVan(new Date()), u = `${d.getHours()}.${pad(d.getMinutes())} uur`;
+  return iso === nu ? 'vandaag om ' + u : iso === plus(nu, -1) ? 'gisteren om ' + u : 'op ' + kortD(iso) + ' om ' + u;
+}
+const deelMenu = () => typeof navigator.share === 'function' && matchMedia('(pointer:coarse)').matches;
+let laatstVerstuurd = null;     // voor een voorbeeld: alleen tot je herlaadt
+// De knop Verstuur, de korte check en wat al gebeurde; rechts op een breed scherm, in de balk onderaan op een gsm
+function renderDeel(m) {
+  m = m || cur(); if (!m) return;
   const t = telling(m), vb = !!m.voorbeeld, nB = besluiten(m).length;
   const zet = (a, n, leegT) => { a.setAttribute('aria-disabled', String(vb || !n)); if (vb || !n) a.removeAttribute('href'); else a.setAttribute('href', a.dataset.href); a.querySelector('span').textContent = a.dataset.t + (n ? ` (${n})` : ''); a.title = vb ? 'Een voorbeeld geeft niets door' : n ? '' : leegT; };
   [$('naar-bord'), $('naar-besl')].forEach(a => { if (!a.dataset.href) { a.dataset.href = a.getAttribute('href'); a.dataset.t = a.querySelector('span').textContent; } });
   zet($('naar-bord'), t.open, 'Geen open acties'); zet($('naar-besl'), nB, 'Geen besluiten');
   $('naar-uitleg').textContent = vb ? 'Een voorbeeld geeft niets door aan andere tools.' : !t.open && !nB ? 'Zodra er acties of besluiten zijn, kan je ze hier doorgeven.' : 'Die tool opent. Vink daar aan wat je overneemt.';
+  const o = ontbreekt(m), nWie = o.filter(x => x.wat === 'wie').length, nWan = o.length - nWie;
+  const check = [nWie && meer(nWie, 'actie', 'acties') + ' zonder wie', nWan && (nWie ? nWan : meer(nWan, 'actie', 'acties')) + ' zonder datum'].filter(Boolean).join(' · ');
+  const st = vb ? laatstVerstuurd : m.gedeeld ? { hoe:m.hoe, ts:m.gedeeld } : null;
+  const status = st ? (HOE[st.hoe] || 'Gedeeld of bewaard') + ' ' + wanneerT(st.ts) : '';
+  const kort = [nWie && nWie + ' zonder wie', nWan && nWan + ' zonder datum'].filter(Boolean).join(' · ');
+  const checkH = (klein) => `<button type="button" class="check-knop" data-vul${klein ? ` aria-label="${check}. Tik om aan te vullen."` : ''}>${ICON.let}<span><b>${klein ? kort : check}</b><small>${klein ? 'Tik om aan te vullen' : 'Tik om aan te vullen. Versturen kan ook zo.'}</small></span></button>`;
+  const statusH = (s2 = status) => s2 ? `<p class="vs-status" role="status">${ICON.vink}<span>${esc(s2)}</span></p>` : '';
+  $('deel-check').innerHTML = check ? checkH(false) : '';
+  $('deel-status').innerHTML = statusH();
+  $('deel-sub').textContent = deelMenu() ? 'Kies hoe je het deelt: mail, chat of een andere app.' : 'Je mailprogramma opent met het onderwerp en de tekst.';
+  $('exp-mail').hidden = !deelMenu();
+  // In de smalle balk: eerst of het verstuurd is (dat wil je dan weten), anders wat nog ontbreekt
+  $('balk-check').innerHTML = status ? statusH(status.replace(' vandaag om ', ' om ')) : check ? checkH(true) : t.a ? `<p class="vs-status">${ICON.vink}<span>Elke actie heeft een wie en een datum</span></p>` : '';
+  zetBalkMaat();
 }
-
-// Platte tekst voor een mail: streepjes als opsomming, geen opmaaktekens
+// Platte tekst voor een mail: kort, met streepjes als opsomming en zonder opmaaktekens
+function onderwerp(m) {
+  const dm = dagMaand(m.datum) + (m.datum.slice(0, 4) !== vandaag().slice(0, 4) ? ' ' + m.datum.slice(0, 4) : '');
+  const t = isStandaard(m.titel) ? 'overleg' : m.titel.trim();
+  return 'Verslag ' + (t.includes(dagMaand(m.datum)) ? t : t + ' ' + dm);
+}
 function verslagTekst(m) {
-  const D = verslagData(m), L = [];
-  L.push(isStandaard(m.titel) ? 'Overleg' : m.titel);
-  L.push(cap(langD(m.datum)) + (m.vz ? ', voorzitter: ' + m.vz : ''));
-  if (D.B.length) { L.push('', 'Besluiten'); D.B.forEach(r => L.push('- ' + cap(r.t))); }
-  if (D.A.length || D.klaar.length || D.vervalt.length) {
-    L.push('', 'Acties');
-    D.A.forEach(({ r, w, wie }) => L.push(`- ${wie || 'Wie nog open'}: ${cap(r.t).replace(/[.\s]+$/, '')}${w ? ' (tegen ' + voluitD(w, m.datum) + ')' : ' (geen datum)'}${r.af ? ', ' + AF[r.af].toLowerCase() : ''}`));
-    if (D.klaar.length) { L.push('', 'Van vorige keer klaar'); D.klaar.forEach(r => L.push('- ' + cap(r.t))); }
-    if (D.vervalt.length) { L.push('', 'Van vorige keer vervallen'); D.vervalt.forEach(r => L.push('- ' + cap(r.t))); }
+  const D = verslagData(m), L = [titelVan(m), cap(langD(m.datum))];
+  metaRijen(m, D).forEach(([k, v]) => { if (v) L.push(`${k}: ${k === 'Volgend overleg' ? v[0].toLowerCase() + v.slice(1) : v}`); });
+  if (D.G.length) {
+    L.push('', 'WAT MOET ER GEBEUREN');
+    D.G.forEach((g, i) => {
+      if (i) L.push('');
+      L.push(g.naam || 'Nog niemand aangeduid');
+      g.l.forEach(a => { const x = extraBij(a, g); L.push(`- ${a.tekst.replace(/[.\s]+$/, '')}${a.w ? ', tegen ' + kortD(a.w, m.datum).replace(/ /g, '\u00a0') : ''}${x.length ? ' (' + x.join(', ') + ')' : ''}`); });
+    });
   }
-  if (D.N.length) {
-    L.push('', 'Notities');
-    D.N.forEach((s, i) => { if (s.kop) { if (i) L.push(''); L.push((s.nr ? s.nr + '. ' : '') + s.kop); } s.regels.forEach(r => L.push('- ' + regelTekst(r))); });
+  if (D.B.length) { L.push('', 'BESLUITEN'); D.B.forEach(r => L.push('- ' + cap(r.t))); }
+  if (D.klaar.length || D.vervalt.length) { L.push('', 'VAN VORIGE KEER'); D.klaar.forEach(x => L.push('- Klaar: ' + x.tekst)); D.vervalt.forEach(x => L.push('- Vervalt: ' + x.tekst)); }
+  if (D.N.some(s => s.regels.length)) {
+    L.push('', 'NOTITIES');
+    // In de mail: alleen agendapunten met eigen notities; acties en besluiten staan al bovenaan
+    D.N.filter(s => s.regels.length).forEach((s, i) => { if (s.kop) { if (i) L.push(''); L.push((s.nr ? s.nr + '. ' : '') + s.kop); } s.regels.forEach(r => L.push('- ' + cap(r.t))); });
   }
-  if (m.mensen.length) { L.push(''); [['Aanwezig', D.P[0]], ['Afwezig', D.P[1]], ['Verontschuldigd', D.P[2]]].forEach(([k, l]) => { if (l.length) L.push(`${k}: ${l.join(', ')}`); }); }
   return L.join('\n');
 }
-// Voor de PDF: dezelfde inhoud met vaste opmaak
+// Voor de PDF: dezelfde inhoud en volgorde, met vaste opmaak
 function exportNode(m) {
   const D = verslagData(m), wrap = document.createElement('div');
   const H = t => `<div style="font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#475569;margin:0 0 6px">${esc(t)}</div>`;
   const H4 = t => `<div data-oc-keep style="font-size:14px;font-weight:700;color:#1e293b;margin:10px 0 3px">${esc(t)}</div>`;
   const li = (t, extra = '') => `<div data-oc-keep style="display:flex;gap:8px;font-size:14px;line-height:1.5;color:#334155;margin:2px 0;${extra}"><span style="color:#94a3b8;font-weight:700">•</span><span style="flex:1;min-width:0">${t}</span></div>`;
   const blok = inner => `<div style="padding:12px 0 6px;border-top:1px solid #e2e8f0">${inner}</div>`;
+  const klein = t => `<div data-oc-keep style="font-size:12.5px;color:#64748b;margin:2px 0 0 16px">${esc(t)}</div>`;
   let h = '';
+  const meta = metaRijen(m, D).filter(x => x[1]);
+  if (meta.length) h += blok(meta.map(([k, v]) => `<div style="display:flex;gap:10px;font-size:14px;line-height:1.55;color:#334155"><span style="width:130px;flex:none;color:#64748b">${k}</span><span style="flex:1;min-width:0">${esc(v)}</span></div>`).join(''));
+  if (D.G.length) h += blok(H('Wat moet er gebeuren') + D.G.map(g => H4(g.naam || 'Nog niemand aangeduid') + g.l.map(a => { const x = extraBij(a, g);
+    return `<div data-oc-keep style="display:flex;gap:12px;font-size:14px;line-height:1.45;padding:3px 0 3px 16px"><span style="flex:1;min-width:0;color:#334155">${esc(a.tekst)}${x.length ? ` <span style="color:#64748b;font-size:12px">(${esc(x.join(', '))})</span>` : ''}</span><span style="width:110px;flex:none;text-align:right;color:#334155">${a.w ? esc(kortD(a.w, m.datum)) : ''}</span></div>`; }).join('')).join(''));
   if (D.B.length) h += blok(H('Besluiten') + D.B.map(r => li(esc(cap(r.t)), 'font-weight:600;color:#1e293b')).join(''));
-  if (D.A.length || D.klaar.length || D.vervalt.length) {
-    let a = H('Acties');
-    a += D.A.map(({ r, w, wie }) => `<div data-oc-keep style="display:flex;gap:12px;font-size:14px;line-height:1.45;padding:5px 0;border-bottom:1px solid #f1f5f9"><span style="width:130px;flex:none;font-weight:600;color:${wie ? '#1e293b' : '#64748b'};${wie ? '' : 'font-style:italic;font-weight:500'}">${wie ? esc(wie) : 'wie nog open'}</span><span style="flex:1;min-width:0;color:#334155">${esc(cap(r.t))}${r.af ? ` <span style="color:#64748b;font-size:12px">(${AF[r.af].toLowerCase()})</span>` : ''}</span><span style="width:110px;flex:none;text-align:right;color:${w ? '#334155' : '#64748b'};${w ? '' : 'font-style:italic'}">${w ? esc(kortD(w, m.datum)) : 'geen datum'}</span></div>`).join('');
-    if (D.klaar.length) a += H4('Van vorige keer klaar') + D.klaar.map(r => li(esc(cap(r.t)))).join('');
-    if (D.vervalt.length) a += H4('Van vorige keer vervallen') + D.vervalt.map(r => li(esc(cap(r.t)))).join('');
-    h += blok(a);
-  }
-  if (D.N.length) h += blok(H('Notities') + D.N.map(s => (s.kop ? H4((s.nr ? s.nr + '. ' : '') + s.kop) : '') + s.regels.map(r => li((r.s ? `<b style="font-weight:600;color:#1e293b">${SOORT[r.s]}:</b> ` : '') + esc(cap(r.t)))).join('')).join(''));
-  if (m.mensen.length) h += blok(H('Aanwezigen') + [['Aanwezig', D.P[0]], ['Afwezig', D.P[1]], ['Verontschuldigd', D.P[2]]].filter(x => x[1].length).map(([k, l]) => `<div style="font-size:14px;line-height:1.5;color:#334155"><b style="color:#1e293b;font-weight:600">${k}:</b> ${esc(l.join(', '))}</div>`).join(''));
+  if (D.klaar.length || D.vervalt.length) h += blok(H('Van vorige keer') + [...D.klaar.map(x => ['Klaar', x]), ...D.vervalt.map(x => ['Vervalt', x])].map(([k, x]) => li(`<b style="font-weight:600;color:#1e293b">${k}:</b> ${esc(x.tekst)}`)).join(''));
+  if (D.N.length) h += blok(H('Notities') + D.N.map(s => (s.kop ? H4((s.nr ? s.nr + '. ' : '') + s.kop) : '') + s.regels.map(r => li(esc(cap(r.t)))).join('') + (s.kop && verwijs(s) ? klein(verwijs(s)) : '')).join(''));
   if (!h) h = '<div style="font-size:14px;color:#64748b">Nog niets genoteerd.</div>';
   wrap.innerHTML = h.replace(/^<div style="padding:12px 0 6px;border-top:1px solid #e2e8f0">/, '<div style="padding:0 0 6px">');
   return wrap;
@@ -1649,39 +1795,76 @@ async function kopieer(text) {
   try { await navigator.clipboard.writeText(text); return true; } catch {}
   try { const t = document.createElement('textarea'); t.value = text; t.setAttribute('readonly', ''); t.style.position = 'fixed'; t.style.opacity = '0'; document.body.appendChild(t); t.select(); const ok = document.execCommand('copy'); t.remove(); return ok; } catch { return false; }
 }
-function gedeeld(m) { if (m && !m.voorbeeld) { m.gedeeld = Date.now(); save(true); $('herinner').hidden = true; } }
+// Bewaar wanneer en hoe het verslag de deur uitging
+function verstuurd(m, hoe) {
+  if (!m) return;
+  if (m.voorbeeld) laatstVerstuurd = { hoe, ts:Date.now() };
+  else { m.gedeeld = Date.now(); m.hoe = hoe; save(true); $('herinner').hidden = true; }
+  renderDeel(m);
+}
 window.ocMail = url => { const a = document.createElement('a'); a.href = url; document.body.appendChild(a); a.click(); a.remove(); };
 async function doe(act) {
   const m = cur(); if (!m) return;
   if (saveT) schrijf();
+  if (act === 'stuur' && deelMenu()) {
+    try { await navigator.share({ title:onderwerp(m), text:verslagTekst(m) }); verstuurd(m, 'gedeeld'); toast('Verslag gedeeld'); return; }
+    catch (e) { if (e && e.name === 'AbortError') return; }    // weggeklikt: niets gebeurd. Lukt het niet, dan via de mail.
+    act = 'mail';
+  }
+  if (act === 'stuur') act = 'mail';
   if (act === 'copy') {
-    if (await kopieer(verslagTekst(m))) { gedeeld(m); toast('Verslag gekopieerd. Plak het in je mail.'); }
-    else toast('Kopiëren lukt hier niet. Kies Mail of PDF.');
+    if (await kopieer(verslagTekst(m))) { verstuurd(m, 'gekopieerd'); toast('Verslag gekopieerd. Plak het in je mail.'); }
+    else toast('Kopiëren lukt hier niet. Kies Verstuur verslag of PDF.');
   }
   if (act === 'mail') {
-    const tekst = verslagTekst(m), ond = 'Verslag ' + naamVan(m);
+    const tekst = verslagTekst(m), ond = onderwerp(m);
     const url = 'mailto:?subject=' + encodeURIComponent(ond) + '&body=' + encodeURIComponent(tekst);
-    if (url.length <= 1800) { window.ocMail(url); gedeeld(m); toast('Je mailprogramma opent met het verslag.'); }
+    if (url.length <= 1800) { window.ocMail(url); verstuurd(m, 'mail'); toast('Je mailprogramma opent met het verslag.'); }
     else {
       const ok = await kopieer(tekst);
       window.ocMail('mailto:?subject=' + encodeURIComponent(ond));
-      if (ok) gedeeld(m);
+      if (ok) verstuurd(m, 'mail');
       toast(ok ? 'Het verslag is te lang voor een mail-link. Het staat gekopieerd: plak het in je mail.' : 'Het verslag is te lang voor een mail-link. Kopieer het eerst.');
     }
   }
   if (act === 'pdf') {
     toast('Bezig…');
     try {
-      await ocExport.pdf(() => ({ node:exportNode(m), title:isStandaard(m.titel) ? 'Overleg' : m.titel, subtitle:'Verslag van ' + langD(m.datum) + (m.vz ? ' · Voorzitter: ' + m.vz : '') }), `verslag-${slug(isStandaard(m.titel) ? 'overleg' : m.titel)}-${m.datum}`);
-      gedeeld(m); toast('PDF gedownload');
+      await ocExport.pdf(() => ({ node:exportNode(m), title:titelVan(m), subtitle:'Verslag van ' + langD(m.datum) }), `verslag-${slug(isStandaard(m.titel) ? 'overleg' : m.titel)}-${m.datum}`);
+      verstuurd(m, 'pdf'); toast('PDF gedownload');
     } catch { toast('Downloaden lukt nu niet. Probeer het opnieuw.'); }
   }
 }
 document.addEventListener('click', e => { const b = e.target.closest('[data-exp]'); if (b && !b.disabled) doe(b.dataset.exp); });
-// Bewaar als bestand bewaart al je overleggen: dat telt als bewaard
-document.addEventListener('click', e => { if (e.target.closest('[data-bestand="bewaar"]') && state.items.length) { const nu = Date.now(); state.items.forEach(m => { if (!m.voorbeeld && heeftInhoud(m)) m.gedeeld = nu; }); save(true); $('herinner').hidden = true; } }, true);
+// Bewaar als bestand bewaart al je overleggen: dat telt als bewaard (maar een verstuurd verslag blijft verstuurd)
+document.addEventListener('click', e => { if (e.target.closest('[data-bestand="bewaar"]') && state.items.length) { const nu = Date.now(); state.items.forEach(m => { if (!m.voorbeeld && heeftInhoud(m) && !m.gedeeld) { m.gedeeld = nu; m.hoe = 'bestand'; } }); save(true); $('herinner').hidden = true; } }, true);
 // Naar het Takenbord of het Beslissingslog: eerst alles doorgeven
 ['naar-bord', 'naar-besl'].forEach(id => $(id).addEventListener('click', () => ocNuDoorgeven()));
+// Ontbrekende wie of datum meteen aanvullen, in het verslag zelf
+function naVerslag(r, msg) {
+  renderVerslag();
+  const vul = [...document.querySelectorAll('[data-vul]')].find(x => x.offsetParent);
+  let el = r && $('papier').querySelector(`[data-r="${CSS.escape(r.id)}"]`);
+  if (vulVan && vul) el = vul;
+  if (el) { if (el.tagName === 'LI') el.tabIndex = -1; try { el.focus(); } catch {} }
+  vulVan = false;
+  if (msg) toast(msg);
+}
+let vulVan = false;
+function vulAan() {
+  const m = cur(), o = m && ontbreekt(m)[0]; if (!o) return;
+  vulVan = true;
+  const li = $('papier').querySelector(`[data-r="${CSS.escape(o.r.id)}"]`); if (li) li.scrollIntoView({ block:'center' });
+  (o.wat === 'wie' ? kiesWie : kiesWan)(m, o.r, null);
+}
+document.addEventListener('click', e => { if (e.target.closest('[data-vul]')) vulAan(); });
+$('papier').addEventListener('click', e => {
+  const m = cur(), b = e.target.closest('[data-vs-wie], [data-vs-wan], [data-vs-volgend]'); if (!m || !b) return;
+  vulVan = false;
+  if (b.dataset.vsVolgend) { kiesVolgend(m); return; }
+  const r = regel(m, b.dataset.vsWie || b.dataset.vsWan); if (!r) return;
+  (b.dataset.vsWie ? kiesWie : kiesWan)(m, r, null);
+});
 
 /* ---------- Typen ---------- */
 // "actie:", "a:", "besluit:" of "b:" vooraan wordt de soort van de regel
@@ -1835,7 +2018,7 @@ function sluitSugg() {
   if (!sug) return;
   const ta = sug.ta; ['aria-expanded', 'aria-controls', 'aria-activedescendant'].forEach(a => ta.removeAttribute(a));
   document.querySelectorAll('.sugg').forEach(u => u.remove());
-  $('balk-sugg').hidden = true; $('balk-sugg').innerHTML = ''; $('balk-gewoon').hidden = false;
+  $('balk-sugg').hidden = true; $('balk-sugg').innerHTML = ''; $('balk-gewoon').hidden = state.modus === 'verslag';
   sug = null;
 }
 function voegWieToe(r, naam) { const l = wieLijst(r.wie); if (!l.some(x => zacht(x) === zacht(naam))) l.push(naam); r.wie = l.join(', '); }
@@ -1985,6 +2168,7 @@ $('datum').addEventListener('change', () => {
   if (isStandaard(m.titel)) m.titel = standaardTitel(v);
   m.datum = v; save(); render();
 });
+$('volgend').addEventListener('change', () => { const m = cur(), v = $('volgend').value; if (!m) return; m.volgend = okIso(v) ? v : ''; save(); });
 $('vz').addEventListener('change', () => { const m = cur(); if (m) { m.vz = $('vz').value; save(); if (state.modus === 'verslag') renderVerslag(); } });
 function voegMensToe(m, naam) {
   const n = String(naam || '').replace(/\s+/g, ' ').trim().slice(0, 60); if (!n) return false;
@@ -2071,22 +2255,29 @@ function venster(titel, inhoud, voet) {
   back.addEventListener('click', e => { if (e.target === back || e.target.closest('[data-dlg-x]')) sluit(); });
   return { el:back, sluit };
 }
+// li = de regel in de notities; zonder li komt de vraag uit het verslag: één tik op een naam kiest en sluit
 function kiesWie(m, r, li) {
   const huidig = wieLijst(r.wie), namen = [...new Set([...m.mensen.map(p => p.n), ...huidig])];
   const gekozen = new Set(huidig.map(zacht));
   const v = venster('Wie doet dit?',
     `<p class="lbl" style="margin:0 0 0.25rem">${esc(cap(r.t).slice(0, 120))}</p>${namen.length ? `<div class="snel" role="group" aria-label="Aanwezigen">${namen.map(n => `<button type="button" data-n="${esc(n)}" aria-pressed="${gekozen.has(zacht(n))}">${esc(n)}</button>`).join('')}</div>` : '<p class="mens-tip" style="margin:0 0 0.75rem">Nog geen aanwezigen. Typ een naam.</p>'}
      <label class="lbl" for="wie-in">Iemand anders</label><input class="field" id="wie-in" maxlength="60" autocomplete="off" autocapitalize="words" enterkeyhint="done" placeholder="Naam">`,
-    '<button type="button" class="knop links" data-niemand>Niemand</button><button type="button" class="knop groen" data-ok>Klaar</button>');
+    (li ? '<button type="button" class="knop links" data-niemand>Niemand</button>' : '') + '<button type="button" class="knop groen" data-ok>Klaar</button>');
+  const klaarMet = () => {
+    save(true); opvLater();
+    if (li) { updateMeta(li, m, r); v.sluit(li.querySelector('[data-wie]')); }
+    else { v.sluit(null); naVerslag(r, wieLijst(r.wie).length ? 'Staat nu bij ' + wieLijst(r.wie).join(' en ') : ''); }
+  };
   const klaar = () => {
     const extra = v.el.querySelector('#wie-in').value.trim();
     const l = namen.filter(n => gekozen.has(zacht(n))); if (extra && !l.some(n => zacht(n) === zacht(extra))) l.push(cap(extra));
-    r.wie = l.join(', '); save(true); updateMeta(li, m, r); opvLater(); v.sluit(li.querySelector('[data-wie]'));
+    r.wie = l.join(', '); klaarMet();
   };
   v.el.addEventListener('click', e => {
     const b = e.target.closest('[data-n]');
+    if (b && !li) { r.wie = b.dataset.n; klaarMet(); return; }
     if (b) { const z = zacht(b.dataset.n); if (gekozen.has(z)) gekozen.delete(z); else gekozen.add(z); b.setAttribute('aria-pressed', String(gekozen.has(z))); }
-    if (e.target.closest('[data-niemand]')) { r.wie = ''; save(true); updateMeta(li, m, r); opvLater(); v.sluit(li.querySelector('[data-wie]')); }
+    if (e.target.closest('[data-niemand]')) { r.wie = ''; klaarMet(); }
     if (e.target.closest('[data-ok]')) klaar();
   });
   v.el.querySelector('#wie-in').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); klaar(); } });
@@ -2102,12 +2293,30 @@ function kiesWan(m, r, li) {
   const zet = iso => {
     const h = herken(r.t, m.datum);
     if (iso) { r.wan = iso; r.uit = ''; } else { r.wan = ''; if (h) r.uit = zacht(h.tekst); }
-    save(true); updateMeta(li, m, r); opvLater(); v.sluit(li.querySelector('[data-wan]') || li.querySelector('.tx'));
+    save(true); opvLater();
+    if (li) { updateMeta(li, m, r); v.sluit(li.querySelector('[data-wan]') || li.querySelector('.tx')); }
+    else { v.sluit(null); naVerslag(r, ''); }
   };
   v.el.addEventListener('click', e => {
     const b = e.target.closest('[data-iso]'); if (b) { zet(b.dataset.iso); return; }
     if (e.target.closest('[data-geen]')) { zet(''); return; }
-    if (e.target.closest('[data-ok]')) { const x = v.el.querySelector('#wan-in').value; if (okIso(x)) { if (x !== nu || r.wan) zet(x); else v.sluit(li.querySelector('[data-wan]')); } else if (!x) zet(''); else v.sluit(); }
+    if (e.target.closest('[data-ok]')) { const x = v.el.querySelector('#wan-in').value; if (okIso(x)) { if (x !== nu || r.wan) zet(x); else v.sluit(li ? li.querySelector('[data-wan]') : undefined); } else if (!x) zet(''); else v.sluit(); }
+  });
+  v.el.querySelector('[data-iso]').focus();
+}
+// De datum van het volgende overleg (staat in het verslag, als je ze kent)
+function kiesVolgend(m) {
+  const ref = m.datum, nu = m.volgend;
+  const snel = [1, 2, 3, 4].map(n => [n === 1 ? 'Over 1 week' : `Over ${n} weken`, plus(ref, 7 * n)]);
+  const v = venster('Volgend overleg',
+    `<div class="snel" role="group" aria-label="Snel kiezen">${snel.map(([t, iso]) => `<button type="button" data-iso="${iso}" aria-pressed="${iso === nu}">${t}<small>${esc(kortD(iso, ref))}</small></button>`).join('')}</div>
+     <label class="lbl" for="vo-in">Of kies een datum</label><input class="field" type="date" id="vo-in" value="${esc(nu)}" min="2000-01-01" max="2199-12-31">`,
+    '<button type="button" class="knop links" data-geen>Nog niet gekend</button><button type="button" class="knop groen" data-ok>Klaar</button>');
+  const zet = iso => { m.volgend = okIso(iso) ? iso : ''; save(true); $('volgend').value = m.volgend; v.sluit(null); renderVerslag(); const b = $('papier').querySelector('.vs-meta div:last-child dd'); if (b) { b.tabIndex = -1; b.focus(); } };
+  v.el.addEventListener('click', e => {
+    const b = e.target.closest('[data-iso]'); if (b) { zet(b.dataset.iso); return; }
+    if (e.target.closest('[data-geen]')) { zet(''); return; }
+    if (e.target.closest('[data-ok]')) zet(v.el.querySelector('#vo-in').value);
   });
   v.el.querySelector('[data-iso]').focus();
 }
@@ -2119,7 +2328,7 @@ function reeksen() {
 }
 function maakOverleg(bron, titel) {
   const datum = vandaag();
-  const m = { id:uid(), titel:'', reeks:'', datum, mensen:[], vz:'', agenda:[], regels:[], gedeeld:0, gemaakt:Date.now() };
+  const m = { id:uid(), titel:'', reeks:'', datum, mensen:[], vz:'', agenda:[], regels:[], gedeeld:0, gemaakt:Date.now(), volgend:'', hoe:'' };
   m.reeks = bron ? bron.reeks : m.id;
   if (bron) { m.mensen = bron.mensen.map(p => ({ n:p.n, s:0 })); m.vz = bron.vz; }
   m.titel = (titel || '').trim() || (bron && !isStandaard(bron.titel) ? bron.titel : standaardTitel(datum));
@@ -2183,11 +2392,18 @@ $('lists').addEventListener('click', e => {
   state.current = b.dataset.tab; save(); render();
 });
 $('modus').addEventListener('click', e => { const b = e.target.closest('[data-modus]'); if (b) zetModus(b.dataset.modus); });
+// Het verslag is een eigen weergave: het staat bovenaan, zonder de invoer erboven. Terug naar de notities brengt je waar je was.
+let notesY = 0;
 function zetModus(md) {
   if (saveT) schrijf();
   sluitSugg();
-  state.modus = md === 'verslag' ? 'verslag' : 'notities'; save(); render();
-  const r = $('modus').getBoundingClientRect(); if (r.top < 0 || r.top > innerHeight * 0.6) $('modus').scrollIntoView({ block:'start', behavior:STIL() ? 'auto' : 'smooth' });
+  const was = state.modus, nieuw = md === 'verslag' ? 'verslag' : 'notities';
+  if (was === 'notities' && nieuw === 'verslag') notesY = scrollY;
+  state.modus = nieuw; save(); render();
+  const r = $('modus').getBoundingClientRect(), y = Math.max(0, r.top + scrollY - 8);
+  if (nieuw === 'verslag' && was !== nieuw) { if (balkSmal() || r.top < 0) window.scrollTo(0, y); }
+  else if (nieuw === 'notities' && was !== nieuw && notesY) window.scrollTo(0, notesY);
+  else if (r.top < 0 || r.top > innerHeight * 0.6) $('modus').scrollIntoView({ block:'start', behavior:STIL() ? 'auto' : 'smooth' });
 }
 document.addEventListener('click', e => { const b = e.target.closest('[data-naar]'); if (b && !b.closest('[data-modus]')) zetModus(b.dataset.naar); });
 $('opv-lijst').addEventListener('click', e => { const b = e.target.closest('[data-ga]'); if (b) gaNaar(b.dataset.ga); });
@@ -2229,7 +2445,7 @@ function voorbeeld() {
     R('vb-q2', '', 'Sinds de nieuwe werkwijze wachten bezoekers gemiddeld 12 minuten minder.'),
     R('vb-q2', '', 'Het tweede loket blijft op woensdag soms onbemand.'),
     R('vb-q2', 'b', 'Vanaf maandag werken we met een vaste beurtrol op woensdag.'),
-    R('vb-q2', 'a', 'Beurtrol voor woensdag opmaken, binnen 2 weken', 'Leen'),
+    R('vb-q2', 'a', 'Beurtrol aan het loket opmaken, binnen 2 weken', 'Leen'),
     R('vb-q2', 'a', 'Een bord met de wachttijd aan de ingang hangen'),
     R('vb-q3', '', 'Griet is volgende maand twee weken met verlof.'),
     R('vb-q3', 'a', 'Vervanging zoeken voor de weken dat Griet weg is', 'Sara')
@@ -2306,7 +2522,7 @@ addEventListener('resize', () => { zetBalkMaat(); if (sug) tekenSugg(); renderOp
 addEventListener('storage', e => { if (e.key === KEY) { state = load(); render(); } });
 
 /* Voor de test: de herkenning en een vaste "vandaag" */
-window.ocNotities = { herken, zetVandaag: iso => { NU = okIso(iso) ? iso : ''; }, staat: () => state, tekst: () => cur() && verslagTekst(cur()) };
+window.ocNotities = { herken, zetVandaag: iso => { NU = okIso(iso) ? iso : ''; }, staat: () => state, tekst: () => cur() && verslagTekst(cur()), onderwerp: () => cur() && onderwerp(cur()) };
 
 render();
 setTimeout(() => { try { ocPublish(); } catch {} }, 0);
