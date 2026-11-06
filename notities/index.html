@@ -1435,7 +1435,7 @@ const ocWie = w => wieLijst(w).join('; ') || undefined;
 // Per overleg een lijst: de open acties (met wie en tegen wanneer) en de besluiten (wie besliste, de datum, het agendapunt). Een voorbeeld nooit.
 function ocPublish() {
   ocShare.publish(OC_ID, OC_TOOL, state.items.filter(m => !m.voorbeeld).map(m => ({ name:naamVan(m), items:[
-    ...acties(m).filter(r => !r.af).map(r => ({ type:'actie', text:leesTekst(r, m, wanVan(r, m)), who:ocWie(r.wie), when:wanVan(r, m) || undefined })),   // zoals in het verslag: zonder de naam en de termijn die er apart bij staan
+    ...acties(m).filter(r => !r.af).map(r => ({ type:'actie', text:leesTekst(r), who:ocWie(r.wie), when:wanVan(r, m) || undefined })),
     ...besluiten(m).map(r => ({ type:'besluit', text:cap(r.t), who:m.vz || undefined, when:m.datum, note:puntTitel(m, r.p) || undefined }))
   ] })));
 }
@@ -1643,37 +1643,23 @@ function renderOpv(nu) {
 const opvLater = () => renderOpv(false);
 
 /* ---------- Het verslag ---------- */
-// De tekst van een actie zoals de lezer ze ziet: zonder de naam die al als wie staat, en zonder de herkende termijn
-// als de datum er apart bij staat. Alleen vooraan of achteraan in de zin: midden in een zin blijft alles staan
-// ("Beurtrol voor woensdag opmaken" blijft heel). De bewaarde tekst blijft ongemoeid.
-const reEsc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-function leesTekst(r, m, w) {
-  let t = String(r.t || '').replace(/(^|\s)@(?=\S)/g, '$1').replace(/\s+/g, ' ').trim();
-  const namen = wieLijst(r.wie).flatMap(n => [n, n.split(' ')[0]]).filter(Boolean);
-  const h = w ? herkendVan(r, m) : null, ht = h ? h.tekst.replace(/\s+/g, ' ').replace(/[\s,;:.!]+$/, '').toLowerCase() : '';
-  for (let k = 0; k < 4; k++) {
-    const voor = t;
-    t = t.replace(/[\s,;:.!]+$/, '');
-    namen.forEach(n => { t = t.replace(new RegExp('[\\s,]+' + reEsc(n) + '$', 'i'), ''); });
-    if (ht && t.toLowerCase().endsWith(ht) && t.length > ht.length) t = t.slice(0, -ht.length).replace(/[\s,]+$/, '').replace(/(^|\s)(tegen ten laatste|ten laatste|uiterlijk|tegen)$/i, '');
-    if (t === voor) break;
-  }
-  namen.forEach(n => { t = t.replace(new RegExp('^' + reEsc(n) + '(?=[\\s,:])[\\s,:]+', 'i'), ''); });
-  t = t.trim();
-  return t.replace(/[.!?]/g, '').length > 1 ? cap(t) : cap(r.t);
+// De tool herschrijft je tekst niet: wat je typte, staat in het verslag. Alleen het @-teken valt weg.
+// Eenvoudige regels die je kan voorspellen, geen gokwerk.
+function leesTekst(r) {
+  return cap(String(r.t || '').replace(/(^|\s)@(?=\S)/g, '$1').replace(/\s+/g, ' ').trim());
 }
 // Wat moet er gebeuren: per persoon (op alfabet), en wat nog niemand heeft achteraan. Elk lijstje op datum.
 function verslagData(m) {
-  const A = opDatum(m, acties(m)).map(({ r, w }) => ({ r, w, wie:wieLijst(r.wie), tekst:leesTekst(r, m, w) }));
+  const A = opDatum(m, acties(m)).map(({ r, w }) => ({ r, w, wie:wieLijst(r.wie), tekst:leesTekst(r) }));
   const per = new Map();
   A.forEach(a => (a.wie.length ? a.wie : ['']).forEach(n => { const k = zacht(n); if (!per.has(k)) per.set(k, { naam:n, l:[] }); per.get(k).l.push(a); }));
   const G = [...per.entries()].sort(([a], [b]) => (a ? 0 : 1) - (b ? 0 : 1) || a.localeCompare(b, 'nl')).map(([, g]) => g);
-  const vk = vorigeActies(m).filter(x => x.r.af && x.r.in === m.id).map(x => ({ r:x.r, tekst:leesTekst(x.r, x.m, wanVan(x.r, x.m)) }));
-  // Notities: alleen de gewone regels. Acties en besluiten staan al bovenaan; een agendapunt zegt hoeveel.
+  const vk = vorigeActies(m).filter(x => x.r.af && x.r.in === m.id).map(x => ({ r:x.r, tekst:leesTekst(x.r) }));
+  // Notities: alleen de gewone regels. Acties en besluiten staan al bovenaan.
   const N = secties(m).filter(s => s.p !== 'vk').map(s => {
     const rs = m.regels.filter(r => r.p === s.p && r.t.trim());
     return { kop:s.punt ? (s.punt.t.trim() || 'Agendapunt ' + s.nr) : s.kop, nr:s.nr, regels:rs.filter(r => !r.s), nA:rs.filter(r => r.s === 'a').length, nB:rs.filter(r => r.s === 'b').length };
-  }).filter(s => s.regels.length || (s.kop && (s.nA || s.nB)) || (s.nr && s.kop && !s.kop.startsWith('Agendapunt ')));
+  }).filter(s => s.regels.length);   // alleen wat er echt bij staat
   const P = [0, 1, 2].map(st => m.mensen.filter(p => p.s === st).map(p => p.n));
   return { B:besluiten(m), A, G, klaar:vk.filter(x => x.r.af === 'klaar'), vervalt:vk.filter(x => x.r.af === 'vervalt'), N, P };
 }
@@ -1687,7 +1673,6 @@ function ontbreekt(m) {
   }));
   return uit.filter(x => x.wat === 'wie').concat(uit.filter(x => x.wat === 'wan'));   // eerst wie, dan wanneer
 }
-const verwijs = s => (s.nA || s.nB) ? 'Ook ' + [s.nB && meer(s.nB, 'besluit', 'besluiten'), s.nA && meer(s.nA, 'actie', 'acties')].filter(Boolean).join(' en ') + ': zie hoger.' : '';
 const metaRijen = (m, D) => [['Voorzitter', m.vz], ['Aanwezig', D.P[0].join(', ')], ['Afwezig', D.P[1].join(', ')], ['Verontschuldigd', D.P[2].join(', ')], ['Volgend overleg', m.volgend ? cap(voluitD(m.volgend, m.datum)) : '']];
 const extraBij = (a, g) => { const samen = a.wie.filter(n => zacht(n) !== zacht(g.naam)); return [samen.length ? 'samen met ' + samen.join(', ') : '', a.r.af ? AF[a.r.af].toLowerCase() : a.r.van ? 'van vorige keer' : ''].filter(Boolean); };
 const titelVan = m => isStandaard(m.titel) ? 'Overleg' : m.titel;
@@ -1710,7 +1695,7 @@ function renderVerslag() {
   }
   if (D.B.length) h += `<section class="vs-blok"><h3 class="vs-h">Besluiten</h3><ul class="vs-l besl">${D.B.map(r => `<li><i aria-hidden="true">•</i><span>${esc(cap(r.t))}</span></li>`).join('')}</ul></section>`;
   if (D.klaar.length || D.vervalt.length) h += `<section class="vs-blok"><h3 class="vs-h">Van vorige keer</h3><ul class="vs-l">${[...D.klaar.map(x => ['Klaar', x]), ...D.vervalt.map(x => ['Vervalt', x])].map(([k, x]) => `<li><i aria-hidden="true">•</i><span><b>${k}:</b> ${esc(x.tekst)}</span></li>`).join('')}</ul></section>`;
-  if (D.N.length) h += `<section class="vs-blok"><h3 class="vs-h">Notities</h3>${D.N.map(s => `${s.kop ? `<h4 class="vs-h4">${s.nr ? s.nr + '. ' : ''}${esc(s.kop)}</h4>` : ''}${s.regels.length ? `<ul class="vs-l">${s.regels.map(r => `<li><i aria-hidden="true">•</i><span>${esc(cap(r.t))}</span></li>`).join('')}</ul>` : ''}${s.kop && verwijs(s) ? `<p class="vs-verwijs">${verwijs(s)}</p>` : ''}`).join('')}</section>`;
+  if (D.N.length) h += `<section class="vs-blok"><h3 class="vs-h">Notities</h3>${D.N.map(s => `${s.kop ? `<h4 class="vs-h4">${s.nr ? s.nr + '. ' : ''}${esc(s.kop)}</h4>` : ''}${s.regels.length ? `<ul class="vs-l">${s.regels.map(r => `<li><i aria-hidden="true">•</i><span>${esc(cap(r.t))}</span></li>`).join('')}</ul>` : ''}`).join('')}</section>`;
   $('papier').innerHTML = `<article class="blad">${h}</article>`;
   renderDeel(m);
 }
@@ -1758,7 +1743,7 @@ function verslagTekst(m) {
     D.G.forEach((g, i) => {
       if (i) L.push('');
       L.push(g.naam || 'Nog niemand aangeduid');
-      g.l.forEach(a => { const x = extraBij(a, g); L.push(`- ${a.tekst.replace(/[.\s]+$/, '')}${a.w ? ', tegen ' + kortD(a.w, m.datum).replace(/ /g, '\u00a0') : ''}${x.length ? ' (' + x.join(', ') + ')' : ''}`); });
+      g.l.forEach(a => { const x = [a.w ? kortD(a.w, m.datum).replace(/ /g, '\u00a0') : ''].concat(extraBij(a, g)).filter(Boolean); L.push(`- ${a.tekst.replace(/[.\s]+$/, '')}${x.length ? ' (' + x.join(', ') + ')' : ''}`); });   // je eigen tekst, met de datum tussen haakjes
     });
   }
   if (D.B.length) { L.push('', 'BESLUITEN'); D.B.forEach(r => L.push('- ' + cap(r.t))); }
@@ -1785,7 +1770,7 @@ function exportNode(m) {
     return `<div data-oc-keep style="display:flex;gap:12px;font-size:14px;line-height:1.45;padding:3px 0 3px 16px"><span style="flex:1;min-width:0;color:#334155">${esc(a.tekst)}${x.length ? ` <span style="color:#64748b;font-size:12px">(${esc(x.join(', '))})</span>` : ''}</span><span style="width:110px;flex:none;text-align:right;color:#334155">${a.w ? esc(kortD(a.w, m.datum)) : ''}</span></div>`; }).join('')).join(''));
   if (D.B.length) h += blok(H('Besluiten') + D.B.map(r => li(esc(cap(r.t)), 'font-weight:600;color:#1e293b')).join(''));
   if (D.klaar.length || D.vervalt.length) h += blok(H('Van vorige keer') + [...D.klaar.map(x => ['Klaar', x]), ...D.vervalt.map(x => ['Vervalt', x])].map(([k, x]) => li(`<b style="font-weight:600;color:#1e293b">${k}:</b> ${esc(x.tekst)}`)).join(''));
-  if (D.N.length) h += blok(H('Notities') + D.N.map(s => (s.kop ? H4((s.nr ? s.nr + '. ' : '') + s.kop) : '') + s.regels.map(r => li(esc(cap(r.t)))).join('') + (s.kop && verwijs(s) ? klein(verwijs(s)) : '')).join(''));
+  if (D.N.length) h += blok(H('Notities') + D.N.map(s => (s.kop ? H4((s.nr ? s.nr + '. ' : '') + s.kop) : '') + s.regels.map(r => li(esc(cap(r.t)))).join('')).join(''));
   if (!h) h = '<div style="font-size:14px;color:#64748b">Nog niets genoteerd.</div>';
   wrap.innerHTML = h.replace(/^<div style="padding:12px 0 6px;border-top:1px solid #e2e8f0">/, '<div style="padding:0 0 6px">');
   return wrap;
