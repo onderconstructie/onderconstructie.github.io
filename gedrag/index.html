@@ -45,7 +45,7 @@ a { color:var(--accent-dark); }
 .card-title { flex:1; min-width:0; font-size:1.0625rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.01em; }
 .project { flex:1; min-width:0; font-size:1.25rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.02em; border:0; background:none; outline:none; padding:0.125rem 0; border-bottom:1.5px solid transparent; }
 .project:focus { border-bottom-color:var(--accent); }
-.project::placeholder { color:var(--slate-300); }
+.project::placeholder { color:#64748b; }
 .icon-btn { width:38px; height:38px; display:flex; align-items:center; justify-content:center; border-radius:10px; color:var(--slate-500); flex-shrink:0; }
 .icon-btn:hover { background:var(--slate-100); color:var(--slate-700); }
 .icon-btn svg { width:20px; height:20px; }
@@ -151,6 +151,9 @@ body { overflow-wrap:break-word; }
 .start-card { padding:1.5rem 1.25rem; text-align:center; }
 .start-card p { color:var(--slate-600); margin-bottom:0.875rem; }
 .start-card .btns { display:flex; gap:0.5rem; justify-content:center; flex-wrap:wrap; }
+.start-card, .start-gal { position:relative; }
+.start-menu { position:absolute; top:0.5rem; right:0.5rem; text-align:left; }
+@media (max-width:600px) { .start-card:has(> .start-menu) { padding-top:3.25rem; } }
 .btn { min-height:44px; padding:0.5rem 1rem; border-radius:10px; font-weight:600; font-size:0.9375rem; }
 .btn-primary { background:var(--accent-dark); color:var(--wit); }
 .btn-primary:hover { background:var(--accent-hover); }
@@ -297,6 +300,12 @@ html { scroll-padding-top:64px; }
 }
 .vb-tag { font-size:0.75rem; }
 
+/* voorbeeldtekst in velden: contrast minstens 4,5:1 (ook waar de tool zelf niets kiest) */
+input::placeholder, textarea::placeholder { color:#64748b; opacity:1; }
+
+/* Eenheid: vaste breedte voor de inhoud onder de kop (smal 720 px of breed 1200 px) */
+.main { max-width:1200px; margin-left:auto; margin-right:auto; }
+
 /* oc-uitleg v1 begin */
 /* "Hoe werkt dit?": één blok voor alle tools. Zonder JavaScript blijft de gewone uitklapper leesbaar.
    Het script zet .oc-u op <details class="explain"> en bouwt de inhoud om tot inleiding, stappen, tip en verwijzingen. */
@@ -384,6 +393,8 @@ details.explain.oc-u a.oc-u-chip:hover { background:var(--u-zacht); border-color
 details.explain.oc-u a.oc-u-chip:focus-visible { outline:2px solid var(--u-groen); outline-offset:2px; }
 details.explain.oc-u .oc-u-noot a, details.explain.oc-u .oc-u-stap-uitleg a, details.explain.oc-u .oc-u-tip-tekst a { color:var(--u-donker); font-weight:600; text-decoration:underline; text-decoration-color:var(--u-licht); text-decoration-thickness:2px; text-underline-offset:3px; }
 details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker); }
+/* tikdoel: de link blijft gewoon in de zin, maar is minstens 44 px hoog; de regels schuiven niet uit elkaar */
+details.explain.oc-u .oc-u-noot a, details.explain.oc-u .oc-u-stap-uitleg a, details.explain.oc-u .oc-u-tip-tekst a { padding-block:calc(22.5px - 0.6em); padding-inline:3px; margin-inline:-3px; }
 
 /* breed: links lezen, rechts doen */
 @container (min-width:720px) and (max-width:999.98px) {
@@ -573,7 +584,7 @@ const ocShare = (() => {
       @media(min-width:640px){.ocs-back{align-items:center;padding:1rem}}
       .ocs-back.open{opacity:1}
       .ocs{width:100%;max-width:520px;max-height:min(86vh,720px);display:flex;flex-direction:column;background:#fff;border-radius:18px 18px 0 0;
-        box-shadow:0 20px 50px rgba(15,23,42,.25);transform:translateY(12px);transition:transform .15s;color:#1e293b}
+        box-shadow:0 20px 50px rgba(15,23,42,.25);transform:translateY(12px);transition:transform .15s;color:#1e293b;-webkit-hyphens:manual;hyphens:manual}
       @media(min-width:640px){.ocs{border-radius:18px}}
       .ocs-back.open .ocs{transform:none}
       .ocs-head{padding:1.125rem 1.25rem .75rem;border-bottom:1px solid #e2e8f0}
@@ -581,19 +592,20 @@ const ocShare = (() => {
       .ocs-sub{font-size:.8125rem;color:#64748b;margin-top:.125rem}
       .ocs-body{overflow:auto;padding:.5rem 1.25rem 1rem;flex:1}
       .ocs-src{margin-top:.875rem}
-      .ocs-src-head{display:flex;align-items:center;gap:.5rem;padding:.375rem 0}
+      .ocs-src-head{display:flex;flex-wrap:wrap;align-items:center;column-gap:.5rem;padding:.375rem 0}
       .ocs-src-head b{font-size:.9375rem}
-      .ocs-src-head span{font-size:.75rem;color:#64748b}
-      .ocs-all{margin-left:auto;font:inherit;font-size:.8125rem;color:#047857;background:none;border:0;cursor:pointer;padding:.25rem .5rem;min-height:44px;border-radius:6px}
+      .ocs-src-head span{font-size:.75rem;color:#64748b;flex:1 1 8rem}
+      .ocs-all{margin-left:auto;font:inherit;font-size:.8125rem;color:#047857;background:none;border:0;cursor:pointer;padding:.25rem .5rem;min-height:44px;min-width:44px;border-radius:6px}
       .ocs-all:hover{background:#d1fae5}
       .ocs-item{display:flex;align-items:flex-start;gap:.625rem;padding:.625rem .25rem;min-height:44px;box-sizing:border-box;border-top:1px solid #f1f5f9;cursor:pointer;font-size:.9375rem;line-height:1.4;overflow-wrap:anywhere;min-width:0}
       .ocs-item.al{cursor:default;color:#64748b}.ocs-item.al em{font-style:normal;font-size:.75rem;font-weight:600;color:#047857;margin-left:.375rem;white-space:nowrap}
-      .ocs-src-head b,.ocs-src-head span{overflow-wrap:anywhere;min-width:0}.ocs-note{margin:.25rem 0 .5rem;padding:.5rem .75rem;border-radius:10px;background:#f8fafc;color:#475569;font-size:.875rem;line-height:1.45}
+      .ocs-src-head b,.ocs-src-head span{overflow-wrap:break-word;min-width:0}.ocs-src-head b{flex:0 1 auto;min-width:auto;max-width:100%}.ocs-note{margin:.25rem 0 .5rem;padding:.5rem .75rem;border-radius:10px;background:#f8fafc;color:#475569;font-size:.875rem;line-height:1.45}
       .ocs-item input{width:18px;height:18px;margin-top:.125rem;accent-color:#10b981;flex:none}
       .ocs-item small{display:block;font-size:.75rem;color:#64748b}
       .ocs-empty{padding:1.5rem .25rem;color:#64748b;font-size:.9375rem;line-height:1.5}
-      .ocs-foot{display:flex;gap:.5rem;justify-content:flex-end;padding:.875rem 1.25rem calc(.875rem + env(safe-area-inset-bottom,0px));border-top:1px solid #e2e8f0}
+      .ocs-foot{display:flex;align-items:center;gap:.5rem;justify-content:flex-end;padding:.875rem 1.25rem calc(.875rem + env(safe-area-inset-bottom,0px));border-top:1px solid #e2e8f0}
       .ocs-btn{font:inherit;font-size:.9375rem;font-weight:600;padding:.625rem 1rem;min-height:44px;border-radius:10px;border:0;cursor:pointer}
+      .ocs-hint{margin-right:auto;font-size:.8125rem;line-height:1.3;color:#64748b}
       .ocs-cancel{background:#f1f5f9;color:#475569}
       .ocs-ok{background:#047857;color:#fff}.ocs-ok:hover{background:#065f46}
       .ocs-ok:disabled{background:#cbd5e1;color:#334155;cursor:default}
@@ -621,13 +633,14 @@ const ocShare = (() => {
               <span>${esc(it.text)}${al ? '<em>staat er al</em>' : ''}${it.who || it.when || (notes !== false && it.note) ? `<small>${esc([it.who, datum(it.when), notes !== false && it.note].filter(Boolean).join(' · '))}</small>` : ''}</span></label>`; }).join('')}
           </div>`).join('') : `<p class="ocs-empty">Er zijn nog geen ${esc(what)} om over te nemen. Vul ze eerst in een andere tool van Onder Constructie in, dan verschijnen ze hier.</p>`}
         </div>
-        <div class="ocs-foot"><button class="ocs-btn ocs-cancel" type="button">Annuleer</button>
+        <div class="ocs-foot"><span class="ocs-hint">Vink eerst iets aan</span><button class="ocs-btn ocs-cancel" type="button">Annuleer</button>
           <button class="ocs-btn ocs-ok" type="button" disabled>Neem over</button></div></div>`;
       document.body.appendChild(back);
       requestAnimationFrame(() => back.classList.add('open'));
-      const ok = back.querySelector('.ocs-ok');
+      const ok = back.querySelector('.ocs-ok'), hint = back.querySelector('.ocs-hint');
       const boxes = () => [...back.querySelectorAll('input[type=checkbox]:not(:disabled)')];
-      const sync = () => { const n = boxes().filter(b => b.checked).length; ok.disabled = !n; ok.textContent = n ? `Neem ${n} over` : 'Neem over'; };
+      // Grijze knop: er staat bij wat je eerst doet. Is er niets om aan te vinken, dan zegt het venster dat al zelf.
+      const sync = () => { const n = boxes().filter(b => b.checked).length; ok.disabled = !n; ok.textContent = n ? `Neem ${n} over` : 'Neem over'; hint.hidden = !!n || !boxes().length; };
       // Geopend vanuit een tool (?van=<tool>): alleen die bron aanvinken, en daarin de lijst van het actieve project als die er is.
       // Zonder ?van= en met één bron: die staat aangevinkt.
       let proj = ''; try { proj = norm((JSON.parse(localStorage.getItem('oc.project') || 'null') || {}).name); } catch {}
@@ -1020,7 +1033,7 @@ function render() {
     + `<button type="button" class="tab add" data-act="new" aria-label="Nog een gedrag">+ Gedrag</button>`);
   $('oc-restart').parentElement.hidden = !state.units.some(x => !x.voorbeeld);
   if (!u) {
-    morph($('app'), `<section class="card start-card">
+    morph($('app'), `<section class="card start-card"><div class="menu-wrap start-menu"><button class="icon-btn" id="menu-btn" type="button" aria-label="Meer acties" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg></button><div class="menu" id="menu" role="menu"><button type="button" data-oc-bestand="open" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 16v-5M9.5 13.5 12 11l2.5 2.5"/></svg>Open bestand</button><button type="button" data-start-vb role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>Voorbeeld bekijken</button></div></div>
       <p class="start-lead">Kies één gedrag dat moet veranderen, kijk wat het tegenhoudt, en maak een plan dat daar echt op inspeelt.</p>
       <div class="btns"><button type="button" class="btn btn-primary" data-act="new">Begin met een gedrag</button><button type="button" class="btn btn-ghost" data-act="example">Voorbeeld bekijken</button></div><p class="oc-open-row"><button type="button" class="oc-open-link" data-oc-bestand="open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 16v-5M9.5 13.5 12 11l2.5 2.5"/></svg>Open bestand</button></p></section>`);
     return;
@@ -1403,6 +1416,8 @@ function example() {
 }
 
 /* Menu */
+// Eenheid: ook op het lege scherm staat het menu op zijn vaste plaats. "Voorbeeld bekijken" daarin doet hetzelfde als de knop op het scherm.
+document.addEventListener('click', e => { if (!e.target.closest || !e.target.closest('[data-start-vb]')) return; const m = document.getElementById('menu'); if (m) m.classList.remove('open'); const v = document.querySelector('#app [data-act="example"]'); if (v) v.click(); });
 document.addEventListener('click', e => {
   const btn = e.target.closest('#menu-btn'), menu = $('menu');
   if (btn) { e.stopPropagation(); const o = menu.classList.toggle('open'); btn.setAttribute('aria-expanded', o); return; }
@@ -1849,7 +1864,7 @@ window.ocBestand = (function () {
         + 'background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%2394a3b8%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M12 20h9%27/%3E%3Cpath d=%27M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z%27/%3E%3C/svg%3E")!important}'
         + 'input[data-oc-titel]:hover{border-bottom-color:#cbd5e1!important}'
         + 'input[data-oc-titel]:focus{border-bottom:1.5px solid #047857!important;background-image:none!important}'
-        + 'input[data-oc-titel]::placeholder{color:#94a3b8;opacity:1}'
+        + 'input[data-oc-titel]::placeholder{color:#64748b;opacity:1}'
         + 'input[data-oc-titel]+*{margin-left:auto}';
       document.head.appendChild(s);
     }
