@@ -567,7 +567,7 @@ details.explain.oc-u .oc-u-noot a, details.explain.oc-u .oc-u-stap-uitleg a, det
 <div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-text"></span><button id="toast-btn" hidden>Ongedaan</button></div>
 
 <script>
-/* oc-koppel v1 begin */
+/* oc-koppel v1.1 begin */
 /* ---------- Werk samen via een gedeeld bestand (gedeeld blok, één bron: scratchpad/oc-koppel.html) ----------
    Standaard blijft alles op dit toestel. Pas als je in het menu bewust een gedeeld bestand kiest (een bestand in een map
    die je computer synchroniseert), bewaart de tool de eenheden die je aanvinkt (een log, een project, een overleg) ook daarin.
@@ -597,12 +597,27 @@ details.explain.oc-u .oc-u-noot a, details.explain.oc-u .oc-u-stap-uitleg a, det
      bewaar(), teken(), bezig(), anker, tabs(), toast(msg, undo, ms), ongedaan()    lokaal bewaren, tekenen, melding
      menu {na(), tekst, sluit(), knop()}, plek(), open {knop, invoer}               waar het menu-item en de status komen
      optioneel: idVan, volgorde ('bestand'), botsing(v, x, y, winnaar, H), naSamen(u), nieuweEenheid(), leeg(u), spoel(),
-                label(u), naamVoorBestand(u), aantal(u), kiesHuidig(), naOngedaan(), naamKoppel, uitleg (zin over gelijktijdig aanpassen) */
+                label(u), naamVoorBestand(u), aantal(u), kiesHuidig(), naOngedaan(), naamKoppel, uitleg (zin over gelijktijdig aanpassen),
+                regel        een extra zin (of lijst zinnen) in het venster, onder de vaste zin over namen
+                enkel        de tool heeft één vaste eenheid: geen keuzelijst in het venster, die eenheid gaat mee (true, of de zin die
+                             het zegt, bv. 'Je communicatieplan gaat mee naar het bestand.')
+                kopPerVeld   de velden zonder id (kopVelden) gaan per veld samen, niet per eenheid: elk veld onthoudt zijn tijd in kopT
+                inBestand    vaste velden naast de eenheden in de data van het bestand (bv. { schaal:5 }), voor oudere versies van de tool
+                naFase(f)    na elke wissel van fase (uit, actief, hervat, fout)
+
+   v1.1 (zelfde bestandsformaat als v1, in beide richtingen): wat het blok als "laatst in het bestand" onthoudt, is een eigen kopie
+   (vroeger deelde het objecten met de toestand, zodat de eerste aanpassing na het lezen geen spoor kreeg); de echte naam van alle
+   elf tools bij een bestand van een andere tool; regel, enkel, kopPerVeld, inBestand en naFase. */
 window.ocKoppel = (() => {
   const DB = 'oc-koppel', STORE = 'bestand', VERSIE = 1, POLL = 20000, PAUZE = 1000;
   const MARGE = 5 * 60000, OUD = 90 * 864e5, ONGEDAAN_MS = 12000, MAX_BYTES = 2 * 1024 * 1024;
-  const SOORTEN = { 'oc-beslissingen':'Beslissingslog', 'oc-takenbord':'Takenbord', 'oc-notities':'Vergadernotities' };
-  const TOOLS = { beslissingen:'Beslissingslog', kanban:'Takenbord', notities:'Vergadernotities' };
+  // soort in het bestand en tool-id (van "Bewaar als bestand") van elke tool met een gedeeld bestand: de naam die je ziet
+  const SOORTEN = { 'oc-beslissingen':'Beslissingslog', 'oc-takenbord':'Takenbord', 'oc-notities':'Vergadernotities', 'oc-risicomatrix':'Risicomatrix',
+    'oc-raci':'RACI-matrix', 'oc-betrokkenenradar':'Betrokkenenradar', 'oc-retro':'Retro', 'oc-projectopdracht':'Projectopdracht',
+    'oc-communicatieplan':'Communicatieplan', 'oc-sprintplanning':'Sprintplanning', 'oc-meetplan':'Meetplan' };
+  const TOOLS = { beslissingen:'Beslissingslog', kanban:'Takenbord', notities:'Vergadernotities', risico:'Risicomatrix', raci:'RACI-matrix',
+    stakeholders:'Betrokkenenradar', retro:'Retro', opdracht:'Projectopdracht', communicatie:'Communicatieplan', sprint:'Sprintplanning', meetplan:'Meetplan' };
+  const NAMEN = 'Iedereen met toegang tot het bestand ziet wat erin staat, ook namen.';
   const kan = () => typeof window.showSaveFilePicker === 'function' && typeof window.showOpenFilePicker === 'function' && window.isSecureContext !== false;
   const TAB_DEEL = '<svg class="tab-deel" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="gedeeld" role="img"><circle cx="9" cy="8" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="9" r="2.4"/><path d="M15.5 14.2a4.5 4.5 0 0 1 5.5 4.8"/></svg>';
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
@@ -698,12 +713,21 @@ window.ocKoppel = (() => {
   }
   const kopVan = u => { const o = {}; (A.kopVelden || []).forEach(k => { if (u && k in u) o[k] = u[k]; }); return o; };
   const kopTekst = u => JSON.stringify(A.kopSchoon(u, H));
+  // kopPerVeld: per veld zonder id de tijd van de laatste wijziging (kopT). Zonder kopT (een bestand van v1) telt de tijd van de eenheid.
+  function kopTijden(m) {
+    if (!m || typeof m !== 'object' || Array.isArray(m)) return null;
+    const o = {}; (A.kopVelden || []).forEach(k => { const t = tijd(m[k]); if (t && !VERBODEN.has(k)) o[k] = t; });
+    return Object.keys(o).length ? o : null;
+  }
+  const veldTijd = (u, k) => (u && u.kopT && typeof u.kopT === 'object' && tijd(u.kopT[k])) || ts(u);
+  const veldTekst = v => JSON.stringify(v === undefined ? null : v);
   function schoonEenheid(raw, grens) {
     if (!raw || typeof raw !== 'object' || raw.voorbeeld) return null;
     const id = sid(raw.id); if (!id) return null;
     const u = A.schoonEenheid ? A.schoonEenheid(raw) : raw;   // de eigen validatie van de tool (verwijzingen tussen verzamelingen)
     if (!u || typeof u !== 'object') return null;
     const o = Object.assign({ id }, A.kopSchoon(u, H));
+    if (A.kopPerVeld) { const kt = kopTijden(raw.kopT); if (kt) o.kopT = kt; }
     V().forEach(v => { const gezien = new Set(); o[v] = (Array.isArray(u[v]) ? u[v] : []).map(it => schoonItem(v, it)).filter(it => it && !gezien.has(iid(v, it)) && gezien.add(iid(v, it))); });
     V().forEach(v => { const w = wegMap(raw[A.verz[v]], grens); if (Object.keys(w).length) o[A.verz[v]] = w; });
     if (tijd(raw.gewijzigd)) o.gewijzigd = tijd(raw.gewijzigd);
@@ -759,7 +783,9 @@ window.ocKoppel = (() => {
   }
   // Wat we als "laatst gelezen" onthouden. Was er een tijd begrensd, dan iets dat nooit gelijk is: het bestand wordt dan herschreven.
   const gelezen = b => gekapt ? '' : vgl(b);
-  function bestandTekst(data) {
+  // Het bestand: het gedeelde deel, met de vaste velden van de tool ervoor (inBestand: die lezen alleen oudere versies van de tool)
+  function bestandTekst(deel) {
+    const data = JSON.stringify(A.inBestand && typeof A.inBestand === 'object' ? Object.assign({}, A.inBestand, deel) : deel);
     return JSON.stringify({ app:'Onder Constructie', version:1, soort:A.soort, versie:VERSIE, tool:A.id, created:new Date().toISOString(), data:{ [A.sleutel]:data } }, null, 1);
   }
 
@@ -812,6 +838,18 @@ window.ocKoppel = (() => {
       if (x && y) {
         const kop = ts(x) !== ts(y) ? (ts(x) > ts(y) ? x : y) : (kopTekst(x) >= kopTekst(y) ? x : y);
         u = Object.assign({}, x, kopVan(kop));
+        // kopPerVeld: per veld wint de laatste wijziging van dat veld; bij gelijke tijd een vaste keuze (aan beide kanten dezelfde)
+        if (A.kopPerVeld) {
+          const kt = {};
+          (A.kopVelden || []).forEach(k => {
+            if (VERBODEN.has(k)) return;
+            const tx = veldTijd(x, k), ty = veldTijd(y, k), vx = veldTekst(x[k]), vy = veldTekst(y[k]);
+            const w = tx !== ty ? (tx > ty ? x : y) : (vx >= vy ? x : y);
+            if (k in w) u[k] = w[k]; else delete u[k];
+            if (Math.max(tx, ty)) kt[k] = Math.max(tx, ty);
+          });
+          if (Object.keys(kt).length) u.kopT = kt; else delete u.kopT;
+        }
         V().forEach(v => {
           const wp = A.verz[v], lw = voeg(x[wp], y[wp]), xs = Array.isArray(x[v]) ? x[v] : [], ys = Array.isArray(y[v]) ? y[v] : [];
           const xm = new Map(xs.map(i => [iid(v, i), i])), ym = new Map(ys.map(i => [iid(v, i), i]));
@@ -859,7 +897,17 @@ window.ocKoppel = (() => {
     (S[A.lijst] || []).forEach(u => {
       const kl = 'l' + SEP + u.id, c = cache.get(kl); gezien.add(kl);
       if (c && c.ruw === JSON.stringify(u)) { c.keys.forEach(k => gezien.add(k)); return; }
-      if (!c || c.v !== kopKenmerk(u)) u.gewijzigd = volgende(u.gewijzigd);
+      if (!c || c.v !== kopKenmerk(u)) {
+        const voor = ts(u);
+        u.gewijzigd = volgende(u.gewijzigd);
+        // kopPerVeld: alleen de velden die veranderden, krijgen de nieuwe tijd; de andere houden hun tijd (of die van de eenheid ervoor)
+        if (A.kopPerVeld && c) {
+          let oud = {}; try { oud = JSON.parse(c.v)[0] || {}; } catch {}
+          const kt = kopTijden(u.kopT) || {};
+          (A.kopVelden || []).forEach(k => { if (VERBODEN.has(k)) return; if (veldTekst(oud[k]) !== veldTekst(u[k])) kt[k] = u.gewijzigd; else if (!kt[k]) kt[k] = voor || 1; });
+          u.kopT = kt;
+        }
+      }
       V().forEach(v => (u[v] || []).forEach(it => {
         const id = iid(v, it), k = 'i' + SEP + u.id + SEP + v + SEP + id, ci = cache.get(k); gezien.add(k);
         if (ci && ci.c === ck(v, it)) return;
@@ -933,7 +981,10 @@ window.ocKoppel = (() => {
           S[L].push(k); return;
         }
         if (!u) return;                                          // sindsdien zelf verwijderd
-        if (kopTekst(vu) !== kopTekst(nu) && kopTekst(u) === kopTekst(nu)) { Object.assign(u, kopVan(vu)); u.gewijzigd = volgende(Math.max(ts(nu), ts(u))); }
+        if (kopTekst(vu) !== kopTekst(nu) && kopTekst(u) === kopTekst(nu)) {
+          Object.assign(u, kopVan(vu)); u.gewijzigd = volgende(Math.max(ts(nu), ts(u)));
+          if (A.kopPerVeld) { const kt = kopTijden(u.kopT) || {}; (A.kopVelden || []).forEach(k => { if (!VERBODEN.has(k) && veldTekst(vu[k]) !== veldTekst(nu[k])) kt[k] = u.gewijzigd; }); u.kopT = kt; }
+        }
         V().forEach(v => {
           const wp = A.verz[v], ni = new Map((nu[v] || []).map(i => [iid(v, i), i]));
           (vu[v] || []).forEach(vi => {
@@ -1015,7 +1066,8 @@ window.ocKoppel = (() => {
     const w = await h0.createWritable();
     try { await w.write(tekst); await w.close(); } catch (e) { try { await w.abort(); } catch {} throw e; }
     let f = null; try { f = await h0.getFile(); } catch {}
-    laatst = { lm:f ? f.lastModified : -1, size:f ? f.size : -1, tekst, data, obj };
+    // een eigen kopie: de toestand mag dit nooit mee veranderen (anders krijgt de volgende aanpassing geen spoor)
+    laatst = { lm:f ? f.lastModified : -1, size:f ? f.size : -1, tekst, data, obj:kopie(obj) };
     bijgewerkt = Date.now();
   }
   // Elke keer een vers getFile() en een vergelijking op inhoud: een gedeelde map op een gsm geeft soms een kopie
@@ -1039,14 +1091,15 @@ window.ocKoppel = (() => {
           if (!b) throw fout_('Ongeldig');
           if (teGroot(b)) throw fout_('Groot');
           if (h !== h0 || gewist) return;
+          const bk = kopie(b);                     // wat het bestand had: een eigen kopie, want pasToe zet objecten van b in de toestand
           const r = pasToe(b);
-          laatst = { lm:f.lastModified, size:f.size, tekst, data:gelezen(b), obj:b };
+          laatst = { lm:f.lastModified, size:f.size, tekst, data:gelezen(b), obj:bk };
           if (r.veranderd) bijgewerkt = Date.now();
           meldSamen(r);
         } else { laatst.lm = f.lastModified; laatst.size = f.size; }
         const deel = deelVan(A.staat(), true), mijn = vgl(deel);
         if (mijn === laatst.data) break;
-        const tekstN = bestandTekst(JSON.stringify(deel));
+        const tekstN = bestandTekst(deel);
         if (bytes(tekstN) > MAX_BYTES || teGroot(deel)) throw fout_('EigenGroot');
         // Vlak vóór het schrijven: nog gekoppeld? En is het bestand sinds het samenvoegen veranderd (tijd, grootte of inhoud)?
         // Dan eerst opnieuw samenvoegen (hoogstens 3 keer).
@@ -1169,7 +1222,7 @@ window.ocKoppel = (() => {
     const S = A.staat(), voor = S[A.lijst].map(u => [u, u[A.vlag]]);
     const terug = () => voor.forEach(([u, g]) => { if (g) u[A.vlag] = g; else delete u[A.vlag]; });
     markeer(keuze);
-    const deel = deelVan(S, true), mijn = vgl(deel), tekstN = bestandTekst(JSON.stringify(deel));
+    const deel = deelVan(S, true), mijn = vgl(deel), tekstN = bestandTekst(deel);
     if (bytes(tekstN) > MAX_BYTES || teGroot(deel)) { terug(); vanVenster(vensterTeGroot(nh.name, true, keuze)); return; }
     volg(); bewaarLokaal();
     stop(); h = nh; naam = nh.name || voorstel(keuze); fase = 'actief'; fout = '';
@@ -1213,13 +1266,13 @@ window.ocKoppel = (() => {
     }
     if (S[L].length && !S[L].some(u => u.id === S[A.huidig])) S[A.huidig] = (S[L].find(u => !u.voorbeeld) || S[L][0]).id;
     const inBestand = new Set(); b[L].forEach(u => (u[H0] || []).forEach(it => inBestand.add(iid(H0, it))));
-    laatst.obj = b;
+    const bk = kopie(b); laatst.obj = bk;      // een eigen kopie (zie bijwerken)
     const r = pasToe(b);
     if (!r.veranderd) bewaarLokaal();
     teken();
     const vanJou = A.staat()[L].filter(deelbaar).reduce((s, u) => s + (u[H0] || []).filter(it => !inBestand.has(iid(H0, it))).length, 0);
     const uit = b[L].reduce((s, u) => s + (u[H0] || []).length, 0);
-    laatst = { lm:f ? f.lastModified : -1, size:f ? f.size : -1, tekst, data:lees, obj:b };
+    laatst = { lm:f ? f.lastModified : -1, size:f ? f.size : -1, tekst, data:lees, obj:bk };
     if (!await begin(nh, p)) return;
     bijgewerkt = Date.now();
     if (fase === 'actief') await wachtrij(bijwerken);
@@ -1309,6 +1362,7 @@ window.ocKoppel = (() => {
     + '.kp-log:has(input:checked){border-color:#10b981;background:#ecfdf5}.kp-log input{flex:none;width:20px;height:20px;margin:0;accent-color:#047857;cursor:pointer}'
     + '.kp-log span{display:flex;flex-direction:column;min-width:0;line-height:1.35}.kp-log b{overflow-wrap:anywhere}.kp-log small{font-size:.8125rem;color:#64748b}'
     + '.kp-dlg .kp-hint{margin-top:.5rem;font-size:.8125rem;color:#64748b}'
+    + '.kp-dlg .kp-enkel{margin-top:.875rem;padding:.625rem .875rem;border:1px solid #10b981;border-radius:12px;background:#ecfdf5;color:#065f46;font-weight:600}'
     + '.kp-bar{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem .75rem;padding:.5rem .5rem .5rem .875rem;border:1px solid #e2e8f0;border-radius:12px;background:#fff;font-size:.9375rem;line-height:1.4;color:#334155}'
     + '.kp-bar .kp-tx{flex:1 1 16rem;min-width:0;display:flex;gap:.625rem;align-items:flex-start;overflow-wrap:anywhere}'
     + '.kp-bar .kp-tx svg{width:20px;height:20px;flex:none;margin-top:.0625rem;color:#64748b}.kp-bar small{display:block;margin-top:.125rem;font-size:.8125rem;color:#64748b}'
@@ -1343,8 +1397,11 @@ window.ocKoppel = (() => {
     return box;
   }
   function icoon(u) { return A && deelbaar(u) && fase !== 'uit' ? TAB_DEEL : ''; }
+  let vorigeFase = 'uit';
   function toon() {
     if (!A) return;
+    // de tool wil weten wanneer je koppelt of ontkoppelt (bv. om de knop van het voorbeeld te tonen of te verbergen)
+    if (fase !== vorigeFase) { vorigeFase = fase; try { if (A.naFase) A.naFase(fase); } catch {} }
     // het icoon van een gedeelde eenheid in de tabs bijwerken (zonder alles opnieuw te tekenen)
     try {
       const S = A.staat();
@@ -1389,13 +1446,24 @@ window.ocKoppel = (() => {
     return `<fieldset class="kp-logs"><legend>Welke ${esc(A.w.veel)} gaan mee naar het bestand?</legend>${ls.map(u => `<label class="kp-log"><input type="checkbox" data-log="${esc(u.id)}"${u === c ? ' checked' : ''}><span><b>${esc(label(u))}</b><small>${esc(tel(u))}${u === c ? ' · nu open' : ''}</small></span></label>`).join('')}
       <p class="kp-hint">Wat je niet aanvinkt, blijft alleen op dit toestel.</p></fieldset>`;
   }
+  // Eén vaste eenheid (enkel): die gaat mee, er valt niets te kiezen. Alleen je eigen eenheid, nooit een voorbeeld.
+  const enkelIds = () => A.staat()[A.lijst].filter(u => !u.voorbeeld && !(A.leeg && A.leeg(u))).map(u => u.id);
+  // De vaste zin over namen in elke tool, en de eigen zin(nen) van de tool (regel)
+  const regels = () => [NAMEN].concat(A.regel || []).filter(t => typeof t === 'string' && t.trim())
+    .map((t, i) => `<p class="kp-hint ${i ? 'kp-regel' : 'kp-namen'}">${esc(t)}</p>`).join('');
   function vensterKies(opnieuw) {
-    return { titel:opnieuw ? 'Kies het gedeelde bestand opnieuw' : 'Werk samen via een gedeeld bestand', opnieuw:!!opnieuw,
-      html:(opnieuw ? `<p>Is het bestand verplaatst of hernoemd? Koppel het dan opnieuw. Je ${esc(A.w.werk)} blijft op dit toestel staan.</p>`
+    const w = A.w, enkel = !!A.enkel && !opnieuw, ids = enkel ? enkelIds() : [];
+    const wat = enkel ? `je ${esc(w.een)}` : `de ${esc(w.veel)} die je kiest`;
+    const zelfde = enkel ? `werkt in ${esc(String(w.De || 'De').toLowerCase())}zelfde ${esc(w.een)}` : `ziet dezelfde ${esc(w.zelfde)}`;
+    const v = { titel:opnieuw ? 'Kies het gedeelde bestand opnieuw' : 'Werk samen via een gedeeld bestand', opnieuw:!!opnieuw,
+      html:(opnieuw ? `<p>Is het bestand verplaatst of hernoemd? Koppel het dan opnieuw. Je ${esc(w.werk)} blijft op dit toestel staan.</p>${regels()}`
         : `<p class="kp-eerst">Standaard blijft alles op dit toestel.</p>
-          <p>Kies je dit, dan bewaart ${esc(A.naam)} de ${esc(A.w.veel)} die je kiest ook in een bestand. Zet het bijvoorbeeld in een gedeelde map die je computer synchroniseert. Wie hetzelfde bestand koppelt, ziet dezelfde ${esc(A.w.zelfde)}.</p>${eenheidKeuze()}`)
+          <p>Kies je dit, dan bewaart ${esc(A.naam)} ${wat} ook in een bestand. Zet het bijvoorbeeld in een gedeelde map die je computer synchroniseert. Wie hetzelfde bestand koppelt, ${zelfde}.</p>${regels()}`
+          + (!enkel ? eenheidKeuze() : ids.length ? `<p class="kp-enkel">${esc(typeof A.enkel === 'string' ? A.enkel : `Je ${w.een} gaat mee naar het bestand.`)}</p>` : ''))
         + `<ul>${li(I.toestel, 'In Chrome of Edge op een computer, en in Chrome op Android.')}${li(I.slot, `Je browser vraagt daarna zelf of ${esc(A.naam)} in dat bestand mag bewaren. Kies daar <b>Wijzigingen opslaan</b>. Dat venster komt van je browser, niet van ons.`)}${li(I.terug, 'Je kan altijd ontkoppelen. Dan blijft je lijst op dit toestel staan.')}</ul>`,
       knoppen:[['nieuw', 'Maak een nieuw gedeeld bestand', 'hoofd'], ['bestaand', 'Koppel een bestaand gedeeld bestand', 'tweede'], ['annuleer', 'Annuleer', 'rustig']] };
+    if (enkel) v.vast = ids;                       // de vaste eenheid gaat mee (geen vinkjes)
+    return v;
   }
   function vensterNiet(kader) {
     return { titel:'Werk samen via een gedeeld bestand',
@@ -1571,7 +1639,7 @@ window.ocKoppel = (() => {
   return { start, TAB_DEEL, icoon, stempel:stempelVeilig, na, wis, herstel, seinWis, toon, onthoud, nu:nuBijwerken, gedeeld:u => !!A && deelbaar(u),
     toestand:() => ({ fase, fout, naam, vuil, bijgewerkt, gewist, nagekeken:gecontroleerd }), samen, ontleed, vanAndere, H, tijd, wegMap };
 })();
-/* oc-koppel v1 einde */
+/* oc-koppel v1.1 einde */
 </script>
 <script>
 /* Het actieve project uit de app (oc.project): nieuwe projecten, analyses en lijsten krijgen die naam. */
@@ -2180,7 +2248,7 @@ function norm(o) {
   if (!KNELT.some(k => k.id === n.knelt)) n.knelt = '';
   LIJST.forEach(k => { if (Array.isArray(o[k])) { const a = o[k].filter(x => typeof x === 'string'); n[k] = a.length ? a : ['']; } });
   if (Array.isArray(o.mijlpalen)) {
-    const ms = o.mijlpalen.filter(m => m && typeof m === 'object').map(m => ({ id: typeof m.id === 'string' ? m.id : uid(), text:String(m.text == null ? '' : m.text), date:datumOk(m.date), ...kpTijd(m) }));
+    const ms = o.mijlpalen.filter(m => m && typeof m === 'object').map(m => ({ id: typeof m.id === 'string' ? m.id : uid(), text:String(m.text == null ? '' : m.text), date:datumOk(m.date), ...kpTijd(m), ...(m.ooit === true ? { ooit:true } : {}) }));
     n.mijlpalen = ms.length ? ms : [nieuwMs()];
   }
   // Herkomst van overgenomen doelen (zie ocDoelVan). Oude opdrachten hebben die niet: hun doelen zijn eigen werk.
@@ -2955,6 +3023,8 @@ render();
    De onderdelen houdt de adapter bij in o.vakken, alleen als je koppelde: na elke bewaring van de velden naar o.vakken,
    na het samenvoegen van o.vakken terug naar de velden. De naam van de opdracht gaat per opdracht samen: de laatste wint.
    Volgorde van de mijlpalen: die van het bestand; een nieuwe mijlpaal van jou blijft na de mijlpaal die ervoor stond.
+   Een lege mijlpaalrij gaat niet mee (zo komen er geen twee lege rijen samen). Was de rij al eens ingevuld (ooit), dan wel: dan
+   is ze leeg gemaakt, en dat moet iedereen zien.
    Bestand: soort oc-projectopdracht, data 'opdracht.v1' = {opdrachten, weg}, zodat "Open bestand" het ook kan openen. */
 (() => {
   // Een opdracht die uit het bestand komt, heeft alleen wat gedeeld wordt: de rest krijgt de gewone beginwaarden.
@@ -2971,12 +3041,19 @@ render();
     uitleg:'Passen twee mensen hetzelfde veld of dezelfde mijlpaal aan, dan wint wie het laatst bewaart. Wat iemand anders in een ander veld schreef, blijft staan.',
     staat:() => state,
     kopSchoon:(o, H) => ({ name:H.str(o.name, 80) || 'Naamloos' }),
-    schoonItem:(v, it, tijd, H) => v === 'vakken' ? kpVakken.schoon(it, H) : { id:H.sid(it.id), text:H.str(it.text, 500), date:datumOk(it.date) },
+    schoonItem:(v, it, tijd, H) => {
+      if (v === 'vakken') return kpVakken.schoon(it, H);
+      const m = { id:H.sid(it.id), text:H.str(it.text, 500), date:datumOk(it.date) };
+      // een lege rij gaat niet mee (elk toestel heeft er zelf een); een rij die al eens ingevuld was en nu leeg is, wel
+      if (!m.text.trim() && !m.date) { if (it.ooit !== true) return null; m.ooit = true; }
+      return m;
+    },
     label:o => o.name || 'Naamloos',
     aantal:o => { const n = kpVakken.aantal(o); return `${n} ${n === 1 ? 'vak' : 'vakken'} ingevuld`; },
     leeg:o => !begun(o),
     nieuweEenheid:() => nieuw(),
-    spoel:() => kpVakken.naar(),
+    // vóór elke schrijfbeurt: de velden naar de onderdelen, en elke ingevulde mijlpaal onthoudt dat ze al eens ingevuld was
+    spoel:() => { kpVakken.naar(); state.opdrachten.forEach(o => (o.mijlpalen || []).forEach(m => { if ((String(m.text || '').trim() || m.date) && m.ooit !== true) m.ooit = true; })); },
     bewaar:() => { kpVakken.uit(); state.opdrachten.forEach(heel); try { ocAfterSave(); } catch {} try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} },
     teken:() => render(),
     bezig:() => { const a = document.activeElement; return !!(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) && !a.closest('.kp-back')); },
@@ -2988,13 +3065,6 @@ render();
     plek:() => $('lists'),
     open:{ knop:'[data-bestand="open"]', invoer:'oc-bestand-in' }
   });
-  // In het venster: wie het bestand kan openen, ziet ook de namen (opdrachtgever, kernteam, ...)
-  new MutationObserver(() => {
-    const d = document.querySelector('.kp-dlg'); if (!d || d.dataset.kpNamen || !d.querySelector('[data-k="nieuw"]')) return;
-    d.dataset.kpNamen = '1';
-    const p = document.createElement('p'); p.className = 'kp-hint kp-namen'; p.textContent = 'Iedereen met toegang tot het bestand ziet wat erin staat, ook namen.';
-    const ref = d.querySelector('.kp-logs') || d.querySelector('ul'); if (ref) ref.parentNode.insertBefore(p, ref);
-  }).observe(document.body, { childList:true });
 })();
 </script>
 <script>
