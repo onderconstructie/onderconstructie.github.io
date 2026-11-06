@@ -1059,6 +1059,15 @@ body.searching #cycle, body.searching #vs-note { display:none !important; }
 .tg-tools { padding:0 0 0.5rem; margin-top:-0.5rem; }
 .tg-tools button[hidden] { display:none; }
 body:not(.view-fase) #home[data-tab="projecten"] #alltools-h { cursor:pointer; }
+/* De kop van Projecten: alleen in dat onderdeel; de titel staat er dan visueel, de h2 blijft voor schermlezers */
+.proj-top { display:none !important; }
+#home[data-tab="projecten"] .proj-top { display:grid !important; }
+.proj-top .group-title, .proj-top .group-note { display:block; }
+.proj-top .group-title { font-size:1.0625rem; font-weight:700; }
+#home[data-tab="projecten"] #alltools-h { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+body.view-fase .proj-top { cursor:default; }
+body.view-fase .proj-top:active { background:none; }
+body.searching .proj-top { display:none !important; }
 .tg-top { cursor:pointer; border-radius:var(--r-md, 12px); -webkit-tap-highlight-color:transparent; }
 .tg-top:focus-visible { outline:2px solid var(--accent-dark); outline-offset:2px; }
 @media (hover:hover) { .tg-top:hover .group-title { color:var(--accent-dark); } }
@@ -1347,6 +1356,10 @@ body.searching #home #tabgroup { display:none !important; }
     <section class="tabgroup" id="tabgroup" aria-labelledby="tabgroup-h"></section>
 
     <section class="alltools" id="alltools" aria-labelledby="alltools-h">
+      <!-- Projecten: dezelfde kop als Vergaderen, Zakmes en Reset (icoon, naam, uitleg, aantal); per onderwerp klapt een tik alles open of dicht -->
+      <div class="tg-top proj-top" id="proj-top" aria-hidden="true"><span class="group-logo"><svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="16" y="18" width="12" height="44" rx="2" fill="#cbd5e1"/><rect x="34" y="18" width="12" height="44" rx="2" fill="#cbd5e1"/><rect x="52" y="18" width="12" height="44" rx="2" fill="#cbd5e1"/><rect x="18" y="22" width="8" height="8" rx="1" fill="#10b981"/></svg></span>
+        <span><span class="group-title">Projecten</span><span class="group-note">Van opzet tot verandering</span></span>
+        <span class="group-meta"><span class="count" id="proj-count"></span></span></div>
       <div class="all-head" id="all-head">
         <h2 class="section-label" id="alltools-h">Alle tools</h2>
         <!-- twee gelijkwaardige ingangen: dezelfde tools, anders geordend. De keuze wordt onthouden. -->
@@ -1406,7 +1419,7 @@ body.searching #home #tabgroup { display:none !important; }
         <a class="ft-link" href="https://www.linkedin.com/in/bartel-volckaert-8a96842/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Maker</a>
         <button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (34 seconden)" title="Bekijk de film (34 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg></button>
       </nav>
-      <p class="ft-meta"><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v13.7</span></p>
+      <p class="ft-meta"><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v13.8</span></p>
     </div>
   </footer>
   <dialog class="film" id="film" aria-labelledby="film-h">
@@ -1765,6 +1778,7 @@ function projAlles() {
   gs.forEach(g => setCollapsed(g.dataset.group, !open)); saveCollapsed();
 }
 $('alltools-h').addEventListener('click', projAlles);
+$('proj-top').addEventListener('click', projAlles);
 document.addEventListener('keydown', e => {
   if (!e.target.closest || !e.target.closest('.tg-top') || (e.key !== 'Enter' && e.key !== ' ')) return;
   e.preventDefault(); subAlles(!document.querySelector('#tabgroup .group.sub.collapsed'));
@@ -1907,7 +1921,8 @@ function setTab(id, keep) {
       <span><h2 class="group-title" id="tabgroup-h" tabindex="-1">${esc(g.label)}</h2><span class="group-note">${esc(g.note)}</span></span>
       <span class="group-meta"><span class="count">${n}</span></span></div>
     <div class="list">${groupRows(id)}</div></div>`;
-  $('alltools-h').textContent = id === 'projecten' ? 'Projecten en verandering' : 'Alle tools';
+  $('alltools-h').textContent = id === 'projecten' ? 'Projecten' : 'Alle tools';
+  if (id === 'projecten') $('proj-count').textContent = TOOLS.filter(t => PROJ_GROUPS.includes(t.g)).length;
   if (g) { markLive(); syncSubTools(); }
   syncListTools();
   if (!keep) window.scrollTo(0, 0);
