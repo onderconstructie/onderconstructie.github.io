@@ -36,7 +36,7 @@ PADEN = [
     '/fortuna/', '/check-in/', '/project-realisme/', '/sprint/', '/vinkje/',
     '/beslissingen/', '/notities/', '/raci/', '/prioriteit/', '/retro/', '/vergaderkost/', '/ijsbreker/', '/kaartjes/', '/check-out/', '/goesting/',
     '/gap/', '/weerstand/', '/impact/', '/klimaat/', '/veranderprofiel/', '/sponsor/', '/communicatie/', '/stroom/', '/mindmap/', '/gedrag/', '/visgraat/', '/schildpad/', '/informatie/', '/beslisscore/', '/opdracht/', '/meetplan/', '/dossier/',
-    '/qr/', '/focus/', '/zakmes/looplicht/', '/zakmes/memomiles/', '/zakmes/schets/', '/zakmes/werkdagen/', '/zakmes/woordwolk/',
+    '/qr/', '/focus/', '/zakmes/looplicht/', '/zakmes/memomiles/', '/zakmes/schets/', '/zakmes/werkdagen/', '/zakmes/woordwolk/', '/zakmes/klankkast/',
     '/hier/', '/adem/', '/hart/',
 ]
 GROEPEN = {'projecten', 'zakmes', 'reset'}
