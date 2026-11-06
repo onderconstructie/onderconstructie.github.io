@@ -12,7 +12,7 @@
   - Een nieuwe versie van de service worker wacht. De app toont "Nieuwe versie klaar" met Vernieuwen;
     pas dan wisselt hij. Nooit stil wisselen terwijl je werkt.
 */
-const VERSION = 'oc-app-v106';   // in de app getoond als v10.6 (laatste cijfer na een punt)
+const VERSION = 'oc-app-v107';   // in de app getoond als v10.7 (laatste cijfer na een punt)
 // Lettertypes en bibliotheken hebben vaste bestandsnamen (met versienummer): die bewaren we apart,
 // zodat een nieuwe versie van de app ze niet opnieuw moet downloaden.
 const STATIC = 'oc-static-1';
@@ -99,6 +99,8 @@ self.addEventListener('activate', e => {
 self.addEventListener('message', e => {
   if (!e.data) return;
   if (e.data.type === 'skip') { self.skipWaiting(); return; }   // de gebruiker koos Vernieuwen
+  // De app toont het versienummer van de service worker die echt draait: één bron, VERSION hierboven
+  if (e.data.type === 'version') { e.source.postMessage({ type: 'version', version: VERSION }); return; }
   if (e.data.type !== 'status') return;
   e.waitUntil((async () => {
     const cache = await caches.open(VERSION);

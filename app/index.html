@@ -1254,7 +1254,7 @@ body.searching #home #tabgroup { display:none !important; }
     <span class="sep" aria-hidden="true">·</span>
     <button class="footer-link fb-link" id="fb-open" type="button" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/></svg>Suggestie of fout?</button>
     <span class="sep" aria-hidden="true">·</span>
-    <span class="app-version" title="Versie van de app">v10.6</span>
+    <span class="app-version" title="Versie van de app">v10.7</span>
   </footer>
 </div>
 
@@ -1848,7 +1848,7 @@ function markLive() {
 }
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-id]');
-  if (b) openTool(b.dataset.id);
+  if (b) openTool(b.dataset.id, false, null, '', !!b.closest('#pathbar'));
 });
 
 /* ---------- Tools openen in de app ---------- */
@@ -1899,7 +1899,7 @@ function prefetchNext(id) {
   'requestIdleCallback' in window ? requestIdleCallback(run, { timeout: 3000 }) : setTimeout(run, 1200);
 }
 
-function openTool(id, fromHistory, van, zoek) {
+function openTool(id, fromHistory, van, zoek, stap) {
   const t = byId[id]; if (!t) return;
   let f = frames.get(id);
   if (!f && pre && pre.id === id) { f = pre.f; pre = null; f.inert = false; }
@@ -1924,12 +1924,13 @@ function openTool(id, fromHistory, van, zoek) {
   const focusTool = () => { try { f.contentWindow.focus(); } catch {} $('back').focus({ preventScroll:true }); };
   if (f.dataset.loaded) { setTimeout(focusTool, 0); prefetchNext(id); } else f.addEventListener('load', focusTool, { once:true });
   syncTitle();
-  // van tool naar tool (stappenplan, link): de geschiedenis vervangen, zodat "terug" altijd naar het startscherm gaat
   // Uit de lijst, zoekveld of stappenplan: de geschiedenis vervangen, zodat "Tools" naar het startscherm gaat.
   // Via een link in een tool: een stap erbij, zodat terug (knop of Android) je naar die tool brengt.
+  // Vorige of Volgende in de stappenplanbalk: ook een stap erbij, zodat browser-terug naar de vorige stap gaat. "Tools" blijft naar het startscherm gaan.
   if (!fromHistory) {
     const d = history.state && history.state.tool ? (history.state.d || 1) : 0;
     if (van && byId[van] && d) { stapel = [...stapel.filter(x => x !== id), van].slice(-8); history.pushState({ tool:id, stapel, d:d + 1 }, '', '#' + id); }
+    else if (stap && d) { stapel = []; history.pushState({ tool:id, stapel, d:d + 1 }, '', '#' + id); }
     else { stapel = []; (d ? history.replaceState : history.pushState).call(history, { tool:id, stapel, d:d || 1 }, '', '#' + id); }
     logUse(id);
   }
@@ -2003,8 +2004,10 @@ function showHome(fromHistory) {
     renderRecent(); renderPaths(); syncBackupNudge(); markLive(); syncUpdate();
     // focus terug waar je vertrok (of op de kaart/rij van die tool)
     const vis = id => id && [...document.querySelectorAll(`#home [data-id="${CSS.escape(id)}"]`)].find(x => x.offsetParent);
-    const back = vis(opener) || vis(was);
-    if (back) back.focus({ preventScroll:true });
+    // anders: het stappenplan waarin je zat, of de eerste ingang van het startscherm. Nooit nergens (body).
+    const plan = pathCtx && [...document.querySelectorAll(`#home [data-ctx="${CSS.escape(pathCtx)}"], #home .path[data-path="${CSS.escape(pathCtx)}"] .path-head`)].find(x => x.offsetParent);
+    const row = vis(opener) || vis(was), back = row || plan || [...document.querySelectorAll('#home .stile, #home .ccard')].find(x => x.offsetParent);
+    if (back) back.focus({ preventScroll: !!row });
   }, 0));
 }
 
@@ -2099,6 +2102,11 @@ function setStatus(cached, total) {
 }
 /* Nieuwe versie: nooit stil wisselen terwijl je werkt. Op het startscherm verschijnt een rustige melding met Vernieuwen. */
 let updateReady = false, wantReload = false;
+// 'oc-app-v107' wordt v10.7 (het laatste cijfer na een punt)
+function showVersion(v) {
+  const m = /^oc-app-v(\d+)(\d)$/.exec(String(v || '')), el = document.querySelector('.app-version');
+  if (m && el) el.textContent = `v${m[1]}.${m[2]}`;
+}
 function offerUpdate() { updateReady = true; syncUpdate(); }
 function syncUpdate() { $('update').hidden = !updateReady || !!current; }
 $('update-btn').addEventListener('click', async () => {
@@ -2133,7 +2141,10 @@ if ('serviceWorker' in navigator) {
     if (e.data.type === 'status') setStatus(e.data.cached, e.data.total);
     else if (e.data.type === 'tools') refreshTools();   // de toollijst is veranderd op de site
     else if (e.data.type === 'update') offerUpdate();   // de app zelf is veranderd op de site
+    else if (e.data.type === 'version') showVersion(e.data.version);
   });
+  // Het versienummer komt van de service worker die de app bedient (VERSION in /sw.js); de tekst in de HTML is de terugval
+  if (navigator.serviceWorker.controller) navigator.serviceWorker.controller.postMessage({ type:'version' });
   navigator.serviceWorker.addEventListener('controllerchange', () => { if (wantReload) { wantReload = false; location.reload(); } });
   const register = () => navigator.serviceWorker.register('/sw.js', { scope:'/' }).then(reg => {
     const watch = w => w && w.addEventListener('statechange', () => { if (w.state === 'installed' && navigator.serviceWorker.controller) offerUpdate(); });
@@ -2143,7 +2154,7 @@ if ('serviceWorker' in navigator) {
     document.addEventListener('visibilitychange', () => { if (!document.hidden) reg.update().catch(() => {}); });
     return navigator.serviceWorker.ready;
   })
-    .then(reg => reg.active && reg.active.postMessage({ type:'status' }))
+    .then(reg => { if (reg.active) { reg.active.postMessage({ type:'status' }); reg.active.postMessage({ type:'version' }); } })
     .catch(() => {});
   // Pas na het laden en als het toestel even vrij is: de eerste lading krijgt de volle verbinding.
   const later = () => 'requestIdleCallback' in window ? requestIdleCallback(register, { timeout: 4000 }) : setTimeout(register, 1000);
@@ -2447,6 +2458,8 @@ document.addEventListener('keydown', e => {
    part = stukje voor de bestandsnaam bij een deelkopie (bv. "raci" of "3-apps"); zonder part is het een volledige kopie. */
 function backup(keys, part) {
   keys = [...new Set(keys)].filter(k => k !== 'oc-app.tools-cache');   // de toollijst komt altijd van de site
+  // De lege toestand van elke tool in de kopie gaat mee (oc.leeg.<pad>): na terugzetten weet de app zo wat echt werk is
+  keys = keys.concat(TOOLS.filter(t => t.path && keysFor(t.storage || [], keys).length).map(t => 'oc.leeg.' + t.path));
   const data = {}; keys.forEach(k => { try { const v = localStorage.getItem(k); if (v != null) data[k] = v; } catch {} });
   const blob = new Blob([JSON.stringify({ app:'Onder Constructie', version:1, created:new Date().toISOString(), data }, null, 1)], { type:'application/json' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
@@ -2496,8 +2509,9 @@ function dataMsg(text, bad) {
    Terugzetten VERVANGT wat er nu in die apps staat; het voegt niet samen. Apps die niet in het bestand zitten, blijven ongemoeid.
    Sleutels die niet van Onder Constructie zijn (bv. een budgetapp op hetzelfde adres), worden nooit geschreven. */
 let pendingRestore = null;
+const leegKey = t => 'oc.leeg.' + t.path, isLeeg = k => k.startsWith('oc.leeg.');
 function ownerOf(k) {
-  const t = TOOLS.find(t => keysFor((t.storage || []).concat('oc.share.' + t.id), [k]).length);
+  const t = TOOLS.find(t => isLeeg(k) ? t.path && k === leegKey(t) : keysFor((t.storage || []).concat('oc.share.' + t.id), [k]).length);
   if (t) return t;
   if (keysFor(APP_ENTRY.storage, [k]).length) return APP_ENTRY;
   return { id:'__other', title:'Overige gegevens', sub:'klaargelegde lijsten van tools die er niet meer zijn' };
@@ -2513,7 +2527,7 @@ $('data-restore-file').addEventListener('change', async e => {
   try {
     const d = JSON.parse(await file.text());
     if (!d || d.app !== 'Onder Constructie' || !d.data || typeof d.data !== 'object') throw new Error('vorm');
-    const allowed = [...TOOLS, APP_ENTRY].flatMap(t => t.storage || []).concat(['oc.share.*']);
+    const allowed = [...TOOLS, APP_ENTRY].flatMap(t => t.storage || []).concat(['oc.share.*'], TOOLS.filter(t => t.path).map(leegKey));
     const never = ['oc-app.tools-cache'];   // de toollijst komt altijd van de site zelf, nooit uit een bestand
     const put = Object.entries(d.data).filter(([k, v]) => typeof v === 'string' && !never.includes(k) && keysFor(allowed, [k]).length);
     if (!put.length) throw new Error('leeg');
@@ -2521,13 +2535,17 @@ $('data-restore-file').addEventListener('change', async e => {
     // per app: welke sleutels, en staat er nu iets anders (dan wordt het vervangen)? De instellingen van de app tellen daar niet bij.
     const groups = new Map();
     put.forEach(([k, v]) => { const t = ownerOf(k); if (!groups.has(t.id)) groups.set(t.id, { t, put: [] }); groups.get(t.id).put.push([k, v]); });
-    groups.forEach(g => {
-      g.replaces = g.t.id !== '__app' && g.put.some(([k, v]) => cur(k) != null && cur(k) !== v);
-      g.same = g.put.every(([k, v]) => cur(k) === v);
+    // De lege toestand (oc.leeg.*) is geen werk: ze telt niet mee voor "vervangt je werk" of "al gelijk", en alleen met gegevens erbij
+    groups.forEach((g, id) => {
+      const echt = g.put.filter(([k]) => !isLeeg(k));
+      if (!echt.length) { groups.delete(id); return; }
+      g.replaces = g.t.id !== '__app' && echt.some(([k, v]) => cur(k) != null && cur(k) !== v);
+      g.same = echt.every(([k, v]) => cur(k) === v);
     });
+    if (!groups.size) throw new Error('leeg');
     const order = [...groups.values()].sort((a, b) => (a.t.id === '__app') - (b.t.id === '__app') || (b.replaces - a.replaces));
     const when = d.created && !isNaN(new Date(d.created)) ? new Date(d.created).toLocaleDateString('nl-BE', { day:'numeric', month:'long', year:'numeric' }) : 'een eerder moment';
-    pendingRestore = { order, when };
+    pendingRestore = { order, when, oud: !Object.keys(d.data).some(isLeeg) };   // oud = een kopie van voor er lege toestanden in zaten
     $('restore-text').textContent = `Kopie van ${when}. Er ${order.length === 1 ? 'zit' : 'zitten'} ${appsWord(order)} in.`;
     $('restore-list').innerHTML = chooserHTML('rs', order, {
       label:'Wat zet je terug?', all:'Alles terugzetten', allSmall: `Alles uit dit bestand`,
@@ -2558,6 +2576,9 @@ $('restore-no').addEventListener('click', () => { showRestore(false); $('data-ba
 $('restore-yes').addEventListener('click', () => {
   const ch = chosenRestore(); if (!ch.length || !pendingRestore) return;
   const when = pendingRestore.when, put = ch.flatMap(g => g.put);
+  // Een oudere kopie zonder lege toestanden: '{}' = "niet gekend", dan telt wat erin staat als werk.
+  // Zo legt de tool de teruggezette inhoud bij het openen niet vast als "leeg". Een nieuwe kopie zet ze gewoon terug zoals ze waren.
+  if (pendingRestore.oud) ch.forEach(g => { if (g.t.path && TOOLS.includes(g.t)) put.push([leegKey(g.t), '{}']); });
   const cur = k => { try { return localStorage.getItem(k); } catch { return null; } };
   const before = Object.fromEntries(put.map(([k]) => [k, cur(k)]));
   put.forEach(([k, v]) => { try { localStorage.setItem(k, v); } catch {} });
