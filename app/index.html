@@ -357,6 +357,20 @@ body.filtering #groups, body.filtering #list-tools { display:none; }
 .dl .xs-modes { margin-bottom:0; }
 .dl .dbtn, .restore .dbtn { min-height:48px; }
 .dl-restore { margin-top:0.5rem; }
+/* Automatisch bewaren in een eigen bestand (alleen als je het zelf aanzet) */
+.auto[hidden] { display:none; }
+.auto { display:grid; gap:0.5rem; margin-top:0.75rem; padding-top:0.875rem; border-top:1px solid var(--slate-200); }
+.auto .dl-h { display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; }
+.auto-st { font-size:0.75rem; font-weight:600; padding:0.125rem 0.5rem; border-radius:999px; background:var(--slate-100); color:var(--slate-600); }
+.auto-st:empty { display:none; }
+.auto-st.aan { background:#d1fae5; color:#065f46; }
+.auto-p { font-size:0.875rem; line-height:1.45; color:var(--slate-600); overflow-wrap:anywhere; }
+.auto-p b { color:var(--slate-800); font-weight:600; }
+.auto-btns { display:flex; flex-wrap:wrap; gap:0.5rem; }
+.auto-btns .dbtn { min-height:48px; flex:1 1 10rem; }
+.auto-btns .dbtn.go { flex:2 1 12rem; }
+.auto-btns .dbtn.zacht { flex:0 1 auto; background:none; color:var(--slate-600); text-decoration:underline; text-underline-offset:3px; }
+.auto-btns .dbtn.zacht:hover { background:var(--slate-100); color:var(--slate-800); }
 .restore .xs-modes { margin-bottom:0.5rem; }
 .restore .xs-list { background:var(--wit); }
 .rs-st { color:var(--slate-500); }
@@ -525,6 +539,10 @@ body.filtering #groups, body.filtering #list-tools { display:none; }
 /* Zoeken: klein in de kop. Op een telefoon een vergrootglas dat openklapt. */
 .header-inner { position:relative; }
 .brand { flex:1; min-width:0; }
+/* Klik op het logo of de naam: terug naar Start, bovenaan */
+.hd-logo, .brand { cursor:pointer; }
+.hd-home { color:inherit; text-decoration:none; border-radius:6px; }
+.hd-home:focus-visible { outline:2px solid var(--accent-dark); outline-offset:3px; }
 .hsearch { display:flex; align-items:center; gap:0.25rem; flex-shrink:0; }
 .hs-open, .hs-close { width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; color:var(--slate-600); }
 .hs-open:hover, .hs-close:hover { background:var(--slate-100); color:var(--slate-800); }
@@ -1231,7 +1249,7 @@ body.searching #home #tabgroup { display:none !important; }
         <g fill="#10b981"><circle cx="32" cy="40" r="4"/><circle cx="48" cy="32" r="4"/><circle cx="56" cy="44" r="3"/><circle cx="40" cy="52" r="3"/></g>
       </svg>
       <div class="brand">
-        <h1 class="site-title">Onder Constructie</h1>
+        <h1 class="site-title"><a href="/app/" class="hd-home" title="Naar Start">Onder Constructie</a></h1>
         <p class="site-subtitle">Minder gepraat, meer beslist</p>
       </div>
       <div class="hsearch" id="hsearch" role="search">
@@ -1357,7 +1375,7 @@ body.searching #home #tabgroup { display:none !important; }
         <a class="ft-link" href="https://www.linkedin.com/in/bartel-volckaert-8a96842/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Maker</a>
         <button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (34 seconden)" title="Bekijk de film (34 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg></button>
       </nav>
-      <p class="ft-meta"><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v11.9</span></p>
+      <p class="ft-meta"><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v12.0</span></p>
     </div>
   </footer>
   <dialog class="film" id="film" aria-labelledby="film-h">
@@ -1382,6 +1400,11 @@ body.searching #home #tabgroup { display:none !important; }
         <div id="dl-body"></div>
         <button class="dbtn go" id="data-backup" type="button">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M5 21h14"/></svg><span id="data-backup-t">Download alles</span></button>
+      </div>
+      <div class="auto" id="auto" hidden role="group" aria-labelledby="auto-h">
+        <h3 class="dl-h" id="auto-h">Automatisch bewaren <span class="auto-st" id="auto-st"></span></h3>
+        <p class="auto-p" id="auto-p"></p>
+        <div class="auto-btns" id="auto-btns"></div>
       </div>
       <label class="dbtn dl-restore" for="data-restore-file">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V9m-5 5 5-5 5 5M5 3h14"/></svg>Reservekopie terugzetten</label>
@@ -1551,6 +1574,8 @@ const store = {
   set(k, v) { try { localStorage.setItem(KEY + k, JSON.stringify(v)); } catch {} }
 };
 const $ = id => document.getElementById(id);
+// Automatisch bewaren in een eigen bestand (zie verder): vroeg, want de herinnering leest de stand al bij het eerste tekenen
+const AUTO = { h:null, naam:'', st:'uit', fout:'', mag:false, busy:false, again:false };
 const chevron = '<svg class="chev" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
 
 function norm(path) {
@@ -1759,6 +1784,13 @@ function setTab(id, keep) {
   if (g) markLive();
   if (!keep) window.scrollTo(0, 0);
 }
+// Het logo, de naam en de baseline in de kop brengen je naar Start, bovenaan (zoals op elke website)
+document.querySelectorAll('.hd-logo, .brand').forEach(el => el.addEventListener('click', e => {
+  e.preventDefault();
+  if (document.body.classList.contains('searching')) closeSearch();
+  if (tab === 'start' && scrollY > 0) { window.scrollTo({ top:0, behavior: calm() ? 'auto' : 'smooth' }); return; }
+  setTab('start');
+}));
 $('tabbar').addEventListener('click', e => {
   const b = e.target.closest('.tab'); if (!b) return;
   if (document.body.classList.contains('searching')) closeSearch();
@@ -2309,6 +2341,7 @@ function renderData() {
   const sig = exitEntries().map(e => e.t.id).join();
   if (sig !== dlSig) { dlSig = sig; renderDownload(); }   // de keuze blijft staan zolang dezelfde apps er zijn
   last.textContent += ' Een reservekopie is een leesbaar bestand met alles wat je invulde: bewaar het zoals een vertrouwelijk document.';
+  renderAuto();
 }
 let dataOpener = null, dlSig = null;
 function openData() {
@@ -2357,6 +2390,7 @@ function fullExit() {
   });
   // Ook de koppelingen met een gedeeld bestand (Beslissingen); het bestand zelf blijft altijd staan
   try { indexedDB.deleteDatabase('oc-koppel'); } catch {}
+  autoForget();   // ook de koppeling met het bestand voor automatisch bewaren; het bestand zelf blijft staan
   signalWipe();
   history.replaceState(null, '', location.pathname);
   document.title = "Alles is gewist · Onder Constructie";
@@ -2479,6 +2513,7 @@ function closeExit(fromHistory) {
 // Een deel wissen: met Ongedaan. Open tools in de app sluiten; lopende tools (timer) die je niet koos, blijven open.
 function wipeChosen(ch, saved) {
   const ids = ch.map(e => e.t.id), restore = wipeKeys([...new Set(ch.flatMap(e => e.keys))]);
+  autoSoon(true);
   dropPre();
   [...frames.keys()].filter(id => ids.includes(id) || !busy.has(id)).forEach(dropFrame);
   signalWipe();
@@ -2486,7 +2521,7 @@ function wipeChosen(ch, saved) {
   again();
   const n = ids.filter(id => id !== '__app').length;
   appToast((saved ? 'Reservekopie gedownload. ' : '') + (ch.length === 1 ? `${ch[0].t.title} gewist` : n === ch.length ? `${n} apps gewist` : `${n} ${n === 1 ? 'app' : 'apps'} en de instellingen gewist`),
-    async () => { if (!await restore()) return; ids.forEach(dropFrame); signalWipe(); renderHome(); syncData(); appToast('Teruggezet'); });
+    async () => { if (!await restore()) return; ids.forEach(dropFrame); signalWipe(); renderHome(); syncData(); autoSoon(); appToast('Teruggezet'); });
 }
 $('exit-go').addEventListener('click', () => {
   if (!exitList.length) { closeExit(); return; }
@@ -2579,12 +2614,16 @@ document.addEventListener('keydown', e => {
 /* Een reservekopie is altijd hetzelfde formaat: { app, version:1, created, data:{ sleutel: tekst } }.
    Een kopie van één of enkele apps is gewoon een reservekopie met minder sleutels. Zo blijft elke oude kopie terugzetbaar.
    part = stukje voor de bestandsnaam bij een deelkopie (bv. "raci" of "3-apps"); zonder part is het een volledige kopie. */
-function backup(keys, part) {
-  keys = [...new Set(keys)].filter(k => k !== 'oc-app.tools-cache');   // de toollijst komt altijd van de site
+function backupData(keys) {
+  keys = [...new Set(keys)].filter(k => k !== 'oc-app.tools-cache' && !k.startsWith(KEY + 'auto'));   // de toollijst komt altijd van de site; de stand van automatisch bewaren hoort bij dit toestel
   // De lege toestand van elke tool in de kopie gaat mee (oc.leeg.<pad>): na terugzetten weet de app zo wat echt werk is
   keys = keys.concat(TOOLS.filter(t => t.path && keysFor(t.storage || [], keys).length).map(t => 'oc.leeg.' + t.path));
   const data = {}; keys.forEach(k => { try { const v = localStorage.getItem(k); if (v != null) data[k] = v; } catch {} });
-  const blob = new Blob([JSON.stringify({ app:'Onder Constructie', version:1, created:new Date().toISOString(), data }, null, 1)], { type:'application/json' });
+  return data;
+}
+const backupJSON = data => JSON.stringify({ app:'Onder Constructie', version:1, created:new Date().toISOString(), data }, null, 1);
+function backup(keys, part) {
+  const blob = new Blob([backupJSON(backupData(keys))], { type:'application/json' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
   a.download = `onderconstructie-reservekopie-${new Date().toISOString().slice(0, 10)}${part ? '-' + part : ''}.json`;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
@@ -2643,9 +2682,11 @@ function showRestore(on) {
   $('restore').hidden = !on; $('data-actions').hidden = on;
   if (!on) pendingRestore = null;
 }
-$('data-restore-file').addEventListener('change', async e => {
+$('data-restore-file').addEventListener('change', e => {
   const file = e.target.files && e.target.files[0]; e.target.value = '';
-  if (!file) return;
+  if (file) readRestore(file);
+});
+async function readRestore(file) {
   dataMsg('', false);
   try {
     const d = JSON.parse(await file.text());
@@ -2685,7 +2726,7 @@ $('data-restore-file').addEventListener('change', async e => {
     showRestore(false);
     dataMsg('Dit bestand is geen reservekopie van Onder Constructie. Kies een bestand met een naam die begint met "onderconstructie-reservekopie".', true);
   }
-});
+}
 function chosenRestore() { return !pendingRestore ? [] : chooserMode('rs') === 'all' ? pendingRestore.order : chooserPicked('rs', pendingRestore.order); }
 function syncRestoreBtn() {
   if (!pendingRestore) return;
@@ -2708,12 +2749,12 @@ $('restore-yes').addEventListener('click', () => {
   ocRisicoSchaal5();   // een oude reservekopie kan risico's op de schaal 1-10 bevatten
   showRestore(false);
   const refresh = () => { [...frames.keys()].forEach(id => dropFrame(id)); dropPre(); renderGroups(); renderRecent(); renderFilter(); renderPaths(); markLive(); renderData(); };
-  refresh(); signalWipe();   // open tools in andere tabbladen laden opnieuw
+  refresh(); signalWipe(); autoSoon(true);   // open tools in andere tabbladen laden opnieuw
   dataMsg(`Reservekopie van ${when} teruggezet: ${ch.length === 1 ? ch[0].t.title : appsWord(ch)}.`, false);
   $('data-close').focus();
   appToast('Reservekopie teruggezet', () => {
     Object.entries(before).forEach(([k, v]) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} });
-    refresh(); signalWipe(); dataMsg('Terugzetten ongedaan gemaakt.', false); appToast('Zoals voordien');
+    refresh(); signalWipe(); autoSoon(true); dataMsg('Terugzetten ongedaan gemaakt.', false); appToast('Zoals voordien');
   });
 });
 
@@ -3130,6 +3171,18 @@ const DAY = 864e5, NUDGE_AFTER = 7 * DAY, SNOOZE = 3 * DAY;
 function userEntries() { return dataEntries().filter(e => e.t.id !== '__app'); }
 function syncBackupNudge() {
   const has = userEntries().length, now = Date.now();
+  const nb = $('backup-now'); nb.textContent = 'Nu downloaden'; delete nb.dataset.auto;
+  if (has && AUTO.st === 'pauze' && now >= (store.get('backup-snooze', 0) || 0) && (AUTO.fout === 'kleiner' || autoDirty())) {
+    const n = esc(AUTO.naam);
+    $('backup-text').innerHTML = AUTO.fout === 'kleiner'
+      ? `<b>Je automatische reservekopie is niet bijgewerkt.</b> Er staat veel minder werk op dit toestel dan in ${n}. Was dat bewust?`
+      : AUTO.fout === 'toestemming'
+        ? `<b>Automatisch bewaren staat op pauze.</b> Je browser vraagt opnieuw toestemming om ${n} bij te werken.`
+        : `<b>Automatisch bewaren lukt niet.</b> Het bestand ${n} is niet bereikbaar. Je werk blijft op dit toestel.`;
+    nb.textContent = AUTO.fout === 'kleiner' ? 'Toch bijwerken' : AUTO.fout === 'toestemming' ? 'Hervat' : 'Kies een bestand';
+    nb.dataset.auto = AUTO.fout;
+    $('backup-nudge').hidden = false; return;
+  }
   if (!has) { store.set('data-since', null); $('backup-nudge').hidden = true; return; }
   if (!store.get('data-since', null)) store.set('data-since', now);
   const since = Math.max(store.get('backup-at', 0) || 0, store.get('data-since', now)), snooze = store.get('backup-snooze', 0) || 0;
@@ -3142,8 +3195,146 @@ function syncBackupNudge() {
       : '<b>Al een reservekopie gedownload?</b> Je werk in alle tools staat alleen in deze browser. Wordt die leeggemaakt of krijg je een nieuw toestel, dan is het weg.';
   }
 }
-$('backup-now').addEventListener('click', () => { backup(userEntries().flatMap(e => e.keys).concat(keysFor(['oc.share.*']))); syncBackupNudge(); appToast('Reservekopie gedownload. Bewaar ze op een veilige plek.'); });
+$('backup-now').addEventListener('click', e => {
+  if (e.currentTarget.dataset.auto) { e.currentTarget.dataset.auto === 'weg' || e.currentTarget.dataset.auto === 'fout' ? autoStart() : autoResume(); return; }
+  backup(userEntries().flatMap(e => e.keys).concat(keysFor(['oc.share.*']))); syncBackupNudge(); appToast('Reservekopie gedownload. Bewaar ze op een veilige plek.'); });
 $('backup-later').addEventListener('click', () => { store.set('backup-snooze', Date.now() + SNOOZE); syncBackupNudge(); });
+
+/* ---------- Automatisch bewaren in een eigen bestand ----------
+   Alleen als je het zelf aanzet (venster Reservekopie). Het bestand is een gewone reservekopie: hetzelfde formaat, terugzetten werkt zoals altijd.
+   Het is een kopie voor jezelf, niet voor je team: de app voegt niets samen, ze overschrijft het bestand met wat op dit toestel staat.
+   - Zonder je keuze: geen IndexedDB, geen bestand, niets. De koppeling staat in IndexedDB 'oc-reservekopie' (sleutel 'bestand').
+   - Wanneer: kort na een wijziging in een tool (storage-event van de iframes), als de app naar de achtergrond gaat, en bij het openen.
+     Alleen als er echt iets veranderde (vergelijking op inhoud).
+   - Veiligheid: wordt wat op dit toestel staat plots minder dan de helft van de vorige kopie, dan schrijft de app NIET.
+     Je beslist zelf (Toch bijwerken, of eerst de kopie bekijken en terugzetten). Wissen en terugzetten in de app zelf zijn bewust en mogen wel.
+   - Vraagt de browser na herladen opnieuw toestemming, dan staat het op pauze tot je op Hervat tikt.
+   - Alles wissen wist de koppeling, nooit het bestand. */
+const autoKan = () => 'showSaveFilePicker' in window && window.isSecureContext;
+function autoHash(s) { let a = 0xdeadbeef, b = 0x41c6ce57; for (let i = 0; i < s.length; i++) { const c = s.charCodeAt(i); a = Math.imul(a ^ c, 2654435761); b = Math.imul(b ^ c, 1597334677); } a = Math.imul(a ^ (a >>> 16), 2246822507) ^ Math.imul(b ^ (b >>> 13), 3266489909); b = Math.imul(b ^ (b >>> 16), 2246822507) ^ Math.imul(a ^ (a >>> 13), 3266489909); return (b >>> 0).toString(36) + (a >>> 0).toString(36); }
+// sig en grootte tellen alleen je werk in de tools: de instellingen van de app (laatst gebruikt, ...) veranderen bij elk bezoek
+function autoNu() {
+  const data = backupData(allBackupKeys()), werk = JSON.stringify(Object.keys(data).filter(k => !k.startsWith(KEY)).sort().map(k => [k, data[k]]));
+  return { body: JSON.stringify(data), sig: autoHash(werk), werk: werk.length };
+}
+function autoDirty() { try { return autoNu().sig !== store.get('auto-sig', null); } catch { return false; } }
+function autoDb() {
+  return new Promise((res, rej) => { const r = indexedDB.open('oc-reservekopie', 1); r.onupgradeneeded = () => r.result.createObjectStore('h'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+}
+async function autoIdb(h) {   // h = handle bewaren, null = wissen, undefined = lezen
+  const db = await autoDb();
+  try {
+    return await new Promise((res, rej) => {
+      const t = db.transaction('h', h === undefined ? 'readonly' : 'readwrite'), o = t.objectStore('h');
+      const q = h === undefined ? o.get('bestand') : h ? o.put(h, 'bestand') : o.delete('bestand');
+      t.oncomplete = () => res(q.result || null); t.onerror = () => rej(t.error);
+    });
+  } finally { db.close(); }
+}
+function autoForget() {
+  AUTO.h = null; AUTO.st = 'uit'; AUTO.fout = ''; clearTimeout(autoT);
+  ['auto', 'auto-sig', 'auto-size', 'auto-at'].forEach(k => { try { localStorage.removeItem(KEY + k); } catch {} });
+  try { indexedDB.deleteDatabase('oc-reservekopie'); } catch {}
+}
+function autoPause(fout) { AUTO.st = 'pauze'; AUTO.fout = fout; renderAuto(); syncBackupNudge(); }
+async function autoSave(force) {
+  if (exiting || !AUTO.h || !store.get('auto', null) || (AUTO.st !== 'aan' && !force)) return;
+  if (AUTO.busy) { AUTO.again = true; return; }
+  AUTO.busy = true;
+  try {
+    const { body, sig, werk } = autoNu();
+    if (!force && sig === store.get('auto-sig', null)) return;
+    const vorig = store.get('auto-size', 0) || 0;
+    if (!force && !AUTO.mag && vorig > 4096 && werk < vorig / 2) { autoPause('kleiner'); return; }
+    if (await AUTO.h.queryPermission({ mode:'readwrite' }) !== 'granted') { autoPause('toestemming'); return; }
+    const w = await AUTO.h.createWritable();
+    try { await w.write(backupJSON(JSON.parse(body))); await w.close(); } catch (e) { try { await w.abort(); } catch {} throw e; }
+    const now = Date.now();
+    store.set('auto-sig', sig); store.set('auto-size', werk); store.set('auto-at', now);
+    store.set('backup-at', now); store.set('backup-snooze', 0);   // telt als reservekopie: geen herinnering nodig
+    AUTO.st = 'aan'; AUTO.fout = ''; AUTO.mag = false;
+  } catch (e) {
+    autoPause(e && (e.name === 'NotFoundError' || e.name === 'NotAllowedError') ? 'weg' : 'fout');
+  } finally {
+    AUTO.busy = false; renderAuto(); syncBackupNudge();
+    if (AUTO.again) { AUTO.again = false; autoSave(); }
+  }
+}
+let autoT = 0;
+function autoSoon(mag) { if (!AUTO.h) return; if (mag) AUTO.mag = true; clearTimeout(autoT); autoT = setTimeout(() => autoSave(), 3000); }
+async function autoStart() {
+  if (!autoKan()) return;
+  let h;
+  try { h = await window.showSaveFilePicker({ suggestedName:'onderconstructie-reservekopie-automatisch.json', types:[{ description:'Reservekopie', accept:{ 'application/json':['.json'] } }] }); }
+  catch { return; }   // geannuleerd
+  AUTO.h = h; AUTO.naam = h.name; AUTO.st = 'aan'; AUTO.fout = ''; AUTO.mag = true;
+  store.set('auto', { naam:h.name }); store.set('auto-sig', null);
+  try { await autoIdb(h); } catch {}
+  await autoSave(true);
+  if (AUTO.st === 'aan') { if ($('data-sheet').hidden) appToast('Automatisch bewaren staat aan'); else dataMsg(`Alles wordt nu automatisch bewaard in ${h.name}.`, false); }
+}
+async function autoResume() {
+  if (!AUTO.h) return autoStart();
+  try { if (await AUTO.h.requestPermission({ mode:'readwrite' }) !== 'granted') return; }
+  catch { autoPause('weg'); return; }
+  if (AUTO.fout === 'kleiner') AUTO.mag = true;
+  AUTO.st = 'aan'; AUTO.fout = '';
+  await autoSave(true);
+  if (AUTO.st === 'aan' && $('data-sheet').hidden) appToast(`Bijgewerkt in ${AUTO.naam}`);
+}
+async function autoBekijk() {   // de kopie in het bestand bekijken en eventueel terugzetten, via het gewone terugzetten
+  try { if (await AUTO.h.queryPermission({ mode:'read' }) !== 'granted' && await AUTO.h.requestPermission({ mode:'read' }) !== 'granted') return; readRestore(await AUTO.h.getFile()); }
+  catch { autoPause('weg'); }
+}
+function autoStop() {
+  const naam = AUTO.naam; autoForget(); renderAuto(); syncBackupNudge();
+  dataMsg(`Automatisch bewaren staat uit. Het bestand ${naam} blijft staan.`, false);
+}
+const tijd = t => { const d = new Date(t), vandaag = d.toDateString() === new Date().toDateString(), u = d.toLocaleTimeString('nl-BE', { hour:'2-digit', minute:'2-digit' }).replace(':', '.');
+  return vandaag ? `vandaag om ${u}` : `${d.toLocaleDateString('nl-BE', { day:'numeric', month:'long' })} om ${u}`; };
+function renderAuto() {
+  const box = $('auto'); if (!box) return;
+  box.hidden = !autoKan();
+  if (box.hidden) return;
+  const n = `<b>${esc(AUTO.naam)}</b>`, st = $('auto-st'), b = (id, t, cls = '') => `<button type="button" class="dbtn ${cls}" data-auto="${id}">${t}</button>`;
+  st.className = 'auto-st' + (AUTO.st === 'aan' ? ' aan' : '');
+  st.textContent = AUTO.st === 'aan' ? 'aan' : AUTO.st === 'pauze' ? 'op pauze' : '';
+  let p, k;
+  if (AUTO.st === 'uit') {
+    p = 'Laat de app alles vanzelf bewaren in een bestand dat jij kiest, bv. in een map die je computer synchroniseert. Dat bestand is voor jou alleen: het gaat niet naar je team.';
+    k = b('start', 'Kies een bestand', 'go');
+  } else if (AUTO.st === 'aan') {
+    const at = store.get('auto-at', 0);
+    p = `Alles wordt bewaard in ${n}${at ? `, laatst ${tijd(at)}` : ''}. Werk je in een tool, dan volgt het bestand vanzelf.`;
+    k = b('bekijk', 'Bekijk de kopie') + b('stop', 'Zet uit', 'zacht');
+  } else if (AUTO.fout === 'kleiner') {
+    p = `Niet bijgewerkt: er staat veel minder werk op dit toestel dan in ${n}. Bewust gewist? Kies Toch bijwerken. Zo niet, bekijk de kopie en zet ze terug.`;
+    k = b('hervat', 'Toch bijwerken', 'go') + b('bekijk', 'Bekijk de kopie') + b('stop', 'Zet uit', 'zacht');
+  } else if (AUTO.fout === 'toestemming') {
+    p = `Op pauze: je browser vraagt opnieuw toestemming om ${n} bij te werken.`;
+    k = b('hervat', 'Hervat', 'go') + b('stop', 'Zet uit', 'zacht');
+  } else {
+    p = `Het bestand ${n} is niet bereikbaar. Je werk blijft op dit toestel bewaard.`;
+    k = b('start', 'Kies opnieuw een bestand', 'go') + b('stop', 'Zet uit', 'zacht');
+  }
+  $('auto-p').innerHTML = p; $('auto-btns').innerHTML = k;
+}
+$('auto').addEventListener('click', e => {
+  const a = e.target.closest('[data-auto]'); if (!a) return;
+  ({ start:autoStart, stop:autoStop, hervat:autoResume, bekijk:autoBekijk })[a.dataset.auto]();
+});
+async function autoInit() {
+  if (autoInit.klaar) return; autoInit.klaar = true;   // renderHome loopt vaker; één keer volstaat
+  if (!store.get('auto', null) || !autoKan()) return;   // niets gekozen: ook geen IndexedDB openen
+  let h = null; try { h = await autoIdb(); } catch {}
+  if (!h) { autoForget(); return; }
+  AUTO.h = h; AUTO.naam = h.name;
+  let p = 'prompt'; try { p = await h.queryPermission({ mode:'readwrite' }); } catch {}
+  if (p === 'granted') { AUTO.st = 'aan'; renderAuto(); autoSave(); } else autoPause('toestemming');
+}
+// Een tool in de app bewaart iets (storage-event uit de iframe of een ander tabblad): even later bijwerken
+window.addEventListener('storage', e => { if (e.storageArea === localStorage && AUTO.st === 'aan' && e.key && !e.key.startsWith(KEY + 'auto')) autoSoon(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden && AUTO.st === 'aan') { clearTimeout(autoT); autoSave(); } });
 
 /* Is er in een ander tabblad afgesloten (alles gewist)? Dan ook hier alles dicht en opnieuw laden. */
 function wipedElsewhere() { if (exiting || Date.now() - selfSignalAt < 2500) return; [...frames.keys()].forEach(id => dropFrame(id)); dropPre(); location.replace(location.pathname); }
@@ -3175,7 +3366,7 @@ function useTools(list, raw) {
   byId = Object.fromEntries(TOOLS.map(t => [t.id, t]));
 }
 function renderHome() {
-  renderGroups(); renderProject(); renderRecent(); renderFilter(); renderPaths(); syncBackupNudge(); syncSearchHint();
+  renderGroups(); renderProject(); renderRecent(); renderFilter(); renderPaths(); syncBackupNudge(); syncSearchHint(); autoInit();
   const cl = closedGroups(); GROUPS.forEach(g => setCollapsed(g.id, cl.includes(g.id)));
   setTab(tab, true);
   markLive();
