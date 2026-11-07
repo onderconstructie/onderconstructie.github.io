@@ -122,6 +122,9 @@ button { background:none; border:0; cursor:pointer; }
 .sec-title { font-size:1.0625rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.01em; line-height:1.3; }
 .tag-gew { font-size:0.75rem; font-weight:600; color:#92400e; background:var(--oranje-50); border:1px solid var(--oranje-200); border-radius:999px; padding:0.0625rem 0.5rem; white-space:nowrap; }
 .sec-q { font-size:0.875rem; color:var(--slate-500); margin:0.375rem 0 0.875rem; max-width:44em; }
+.les-hint { display:flex; gap:0.5rem; align-items:flex-start; margin:-0.25rem 0 0.875rem; padding:0.625rem 0.75rem; border-radius:12px; background:#f3fcf8; border:1px solid #d1fae5; font-size:0.875rem; color:var(--slate-600); line-height:1.45; max-width:44em; }
+.les-hint svg { width:18px; height:18px; flex:none; margin-top:0.0625rem; color:#059669; }
+.les-hint a { color:#047857; font-weight:600; text-underline-offset:2px; }
 .fld-label { display:block; font-size:0.875rem; font-weight:600; color:var(--slate-700); margin:0 0 0.3125rem; line-height:1.35; }
 .fld-label small { font-weight:400; color:var(--slate-500); font-size:0.8125rem; }
 .box { border:1px solid var(--slate-200); border-radius:12px; padding:0.75rem; background:var(--slate-50); min-width:0; }
@@ -2420,6 +2423,12 @@ function secHead(id) {
   return `<div class="sec-head"><span class="sec-n" aria-hidden="true">${s.n}</span><h2 class="sec-title" id="t-${escA(id)}">${s.titel}</h2><span class="tag-gew" data-gew="${escA(id)}" hidden>gewijzigd na akkoord</span></div>`;
 }
 
+// Lessen uit vorige projecten: alleen als het Leerpuntenlog "Volgende keer anders" heeft (geen voorbeeld)
+function lesHint() {
+  let n = 0;
+  try { const d = JSON.parse(localStorage.getItem('leerpunten.v1')); if (d && !d.voorbeeld && Array.isArray(d.items)) n = d.items.filter(x => x && x.soort === 'anders' && typeof x.text === 'string' && x.text.trim()).length; } catch {}
+  return n ? `<p class="les-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg><span><a href="../leerpunten/?toon=volgende">Lees eerst wat je vroeger leerde.</a> Je Leerpuntenlog heeft ${n} ${n === 1 ? 'les' : 'lessen'} voor "volgende keer anders".</span></p>` : '';
+}
 function lijstHTML(o, key, label, ph, mk) {
   const items = o[key].length ? o[key] : [''];
   const max = MAX[key];
@@ -2523,6 +2532,7 @@ function formHTML(o) {
   <section class="card sec-card" id="s-risicos" aria-labelledby="t-risicos">
     ${secHead('risicos')}
     <p class="sec-q">2 à 4 korte regels. Wat kan het project doen ontsporen? Wat neem je aan zonder dat het zeker is?</p>
+    ${lesHint()}
     ${lijstHTML(o, 'risicos', 'Risico of aanname', 'Bv. De leverancier levert de koppeling te laat', 'stip')}
     <div class="oc-tb" id="oc-ri" hidden><a class="oc-tb-btn" href="../risico/?van=opdracht">${ICON.ri}Zet in Risicomatrix</a><p>Risicomatrix opent. Vink daar de risico's aan die je wil overnemen. Daarna schat je kans en impact in.</p></div>
   </section>
