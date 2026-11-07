@@ -1308,7 +1308,8 @@ function gapLijn(g) {
 }
 const gapGrootte = g => { const a = num(g.asis.value), b = num(g.tobe.value); return isNaN(a) || isNaN(b) || !a ? 0 : Math.abs((b - a) / a); };
 
-/* Betrokkenenradar: stakeholders.v1 = { model:2, project, items:[{ name, contribution, willingness, next, wat, todo }], voorbeeld } (één project) */
+/* Betrokkenenradar: stakeholders.v1 = { model:3, analyses:[{ id, name, items:[{ name, contribution, willingness, next, wat, todo }], voorbeeld }], huidig }
+   (één analyse per project), of vroeger één analyse { model:2, project, items, voorbeeld } */
 const clamp10 = v => Math.max(1, Math.min(10, Math.round(+v) || 1));
 const BR_KWADRANT = (c, w) => c >= 6 ? (w >= 6 ? 'Nauw betrekken' : 'Vroeg opzoeken') : (w >= 6 ? 'Op de hoogte houden' : 'In het oog houden');
 
@@ -1372,12 +1373,17 @@ const LEES = {
     });
   },
   betrokken: d => {
-    if (!obj(d) || !Array.isArray(d.items)) return null;
-    const items = d.items.filter(x => obj(x) && x.name).map(x => {
-      const oud = !('contribution' in x) && ('power' in x || 'interest' in x);
-      return { name:String(x.name).slice(0, 80), c:clamp10(oud ? x.power : x.contribution), w:clamp10(oud ? x.interest : x.willingness), next:str(x.next, 140).trim(), wat:str(x.wat, 200).trim(), todo:x.todo === true };
+    if (!obj(d)) return null;
+    // de analyse van vroeger heette 'enig' (nu id 'radar'): een eerdere keuze in het dossier blijft zo gelden
+    const ps = Array.isArray(d.analyses) ? d.analyses.filter(obj) : Array.isArray(d.items) ? [{ id:'enig', name:d.project, items:d.items, voorbeeld:d.voorbeeld }] : null;
+    if (!ps) return null;
+    return ps.map((p, i) => {
+      const items = arr(p.items).filter(x => obj(x) && x.name).map(x => {
+        const oud = !('contribution' in x) && ('power' in x || 'interest' in x);
+        return { name:String(x.name).slice(0, 80), c:clamp10(oud ? x.power : x.contribution), w:clamp10(oud ? x.interest : x.willingness), next:str(x.next, 140).trim(), wat:str(x.wat, 200).trim(), todo:x.todo === true };
+      });
+      return { id:p.id === 'radar' ? 'enig' : itemId(p, i), name:str(p.name, 80), voorbeeld:p.voorbeeld === true, data:{ items }, inhoud:items.length > 0 };
     });
-    return [{ id:'enig', name:str(d.project, 80), voorbeeld:d.voorbeeld === true, data:{ items }, inhoud:items.length > 0 }];
   },
   realisme: d => arr(d && d.projects).filter(x => obj(x) && typeof x.name === 'string' && x.name.trim()).map((x, i) => {
     const o = realGetal(x.o), m = realGetal(x.m), p = realGetal(x.p);

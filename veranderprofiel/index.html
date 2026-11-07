@@ -40,6 +40,20 @@ a { color:var(--accent-dark); }
 .subtitle { font-size:0.9375rem; color:var(--slate-500); max-width:34rem; margin:0.125rem auto 0; }
 
 .main { flex:1; width:100%; max-width:880px; margin:0 auto; padding:1.25rem 1rem 3rem; display:flex; flex-direction:column; gap:1rem; }
+/* Projecten (tabs), zoals in de andere tools: elk project een eigen profiel */
+.lists { display:flex; gap:0.5rem; overflow-x:auto; scrollbar-width:none; margin:-0.25rem -1rem -0.25rem; padding:0.375rem 1rem; }
+.lists::-webkit-scrollbar { display:none; }
+.tab {
+  flex-shrink:0; padding:0.4375rem 0.875rem; border-radius:999px; font-size:0.875rem; font-weight:600;
+  border:1px solid var(--slate-200); background:var(--wit); color:var(--slate-600); white-space:nowrap;
+  display:flex; align-items:center; gap:0.375rem;
+}
+.tab .n { font-size:0.75rem; font-weight:500; color:var(--slate-500); font-variant-numeric:tabular-nums; }
+.tab.active { background:var(--slate-800); border-color:var(--slate-800); color:var(--wit); }
+.tab.active .n { color:var(--slate-300); }
+.tab.add { color:var(--accent-dark); border-style:dashed; }
+.vb-tag { font-size:0.6875rem; font-weight:600; padding:0 0.375rem; border-radius:999px; background:#fef3c7; color:#92400e; }
+.icon-btn.del-unit:hover { color:#b91c1c; background:#fef2f2; }
 .card { background:var(--wit); border:1px solid var(--slate-200); border-radius:16px; box-shadow:0 1px 2px rgba(15,23,42,0.04); }
 .card-head { display:flex; align-items:center; gap:0.5rem; padding:1rem 0.75rem 0.5rem 1.125rem; }
 .card-title { flex:1; min-width:0; font-size:1.0625rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.01em; }
@@ -402,9 +416,11 @@ input::placeholder, textarea::placeholder { color:#64748b; opacity:1; }
 </header>
 
 <main class="main">
+  <nav class="lists" id="lists" aria-label="Projecten"></nav>
   <section class="card hero" id="hero">
     <div class="card-head">
       <input class="project" id="project" data-oc-titel data-oc-projectnaam autocomplete="off" enterkeyhint="done" maxlength="100" placeholder="Naam van het project" aria-label="Naam van het project">
+      <button class="icon-btn del-unit" id="del-unit" type="button" aria-label="Verwijder project" title="Verwijder project"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg></button>
       <div class="menu-wrap">
         <button class="icon-btn" id="menu-btn" aria-label="Meer acties" aria-haspopup="true" aria-expanded="false">
           <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
@@ -903,6 +919,31 @@ function ocSharedChange(self) {
   } catch {}
   return null;
 }
+/* Kerncijfers van één project. Sponsorschap, de Betrokkenenradar en het Veranderprofiel leggen ze per project klaar, in de lijst
+   met de projectnaam: dan tellen alleen die van dit project, en heeft zo'n tool dit project niet, dan niets van die tool.
+   Een oudere versie van die tools (alleen een lijst 'Kerncijfers') en de andere tools (de Impactanalyse en het Veranderklimaat
+   geven die van hun open analyse) tellen zoals vroeger. De recentste bron eerst, zoals ocShare.sources. */
+const OC_PER_PROJECT = ['sponsor', 'stakeholders', 'veranderprofiel'];
+function ocCijferBronnen(naam, self) {
+  const n = v => String(v == null ? '' : v).normalize('NFC').toLowerCase().replace(/\s+/g, ' ').trim(), doel = n(naam), uit = [];
+  const kc = l => l && Array.isArray(l.items) ? l.items.filter(it => it && it.type === 'kerncijfer' && typeof it.text === 'string' && it.text.trim()) : [];
+  let keys = []; try { for (let i = 0; i < localStorage.length; i++) keys.push(localStorage.key(i)); } catch { return uit; }
+  keys.forEach(k => {
+    if (!k || !k.startsWith('oc.share.') || k === 'oc.share.' + self) return;
+    try {
+      const d = JSON.parse(localStorage.getItem(k)); if (!d || !Array.isArray(d.lists)) return;
+      const id = String(d.id || k.slice(9));
+      let lijsten = d.lists.filter(l => l && typeof l === 'object');
+      if (OC_PER_PROJECT.includes(id)) {
+        const per = lijsten.filter(l => !/^kerncijfers$/i.test(String(l.name || '').trim()) && kc(l).length);
+        if (per.length) lijsten = per.filter(l => doel && n(l.name) === doel).slice(0, 1);
+      }
+      const items = lijsten.flatMap(kc);
+      if (items.length) uit.push({ tool: String(d.tool || id), id, updated: +d.updated || 0, items });
+    } catch {}
+  });
+  return uit.sort((a, b) => b.updated - a.updated);
+}
 /* ---------- Veranderprofiel ---------- */
 const OC_ID = 'veranderprofiel', OC_TOOL = 'Veranderprofiel', KEY = 'veranderprofiel.v1';
 const $ = id => document.getElementById(id);
@@ -939,14 +980,49 @@ const ENDPOINT = [
 ];
 const EFFORT = ['Beperkt', 'Gemiddeld', 'Groot', 'Zeer groot'];
 
-function fresh() { return { project:ocProject(''), manual:{}, endpoint:null, type:null, typeWhy:'', notes:'' }; }
-function load() {
-  try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && typeof s === 'object') return { ...fresh(), ...s, manual:{ ...(s.manual || {}) } }; } catch {}
-  return fresh();
+/* Opslag: veranderprofiel.v1 = { projecten:[profiel], current, ocSince? }. Elk project heeft een eigen profiel, in een eigen tabblad.
+   Een profiel = { id, project, manual, endpoint, type, typeWhy, notes, voorbeeld?, vorigProject? }.
+   Vroeger had de tool één profiel: veranderprofiel.v1 was dat profiel zelf. Dat wordt het eerste project, met alles erop en eraan.
+   'state' is altijd het open profiel; 'book' is alles samen. */
+const uid = () => Math.random().toString(36).slice(2, 10);
+function fresh(naam) { return { id:uid(), project: naam == null ? ocProject('Mijn project') : naam, manual:{}, endpoint:null, type:null, typeWhy:'', notes:'' }; }
+// Eén profiel nakijken (uit de opslag of een bestand): vaste soorten, en wat er verder in staat, blijft.
+function profiel(s) {
+  if (!s || typeof s !== 'object' || Array.isArray(s)) return null;
+  const st = { ...fresh(''), ...s, manual:{ ...(s.manual && typeof s.manual === 'object' && !Array.isArray(s.manual) ? s.manual : {}) } };
+  ['project', 'typeWhy', 'notes'].forEach(k => { if (typeof st[k] !== 'string') st[k] = ''; });
+  if (!ENDPOINT.some(e => e.id === st.endpoint)) st.endpoint = null;
+  if (!TYPES.some(t => t.id === st.type)) st.type = null;
+  if (typeof st.id !== 'string' || !/^[\w-]{1,40}$/.test(st.id)) st.id = uid();
+  return st;
 }
-let state = load(), saves = 0;
+// Nog niets zelf ingevuld
+const leeg = p => !Object.keys(p.manual).length && !p.endpoint && !p.type && !p.typeWhy.trim() && !p.notes.trim();
+function load() {
+  let d = null; try { d = JSON.parse(localStorage.getItem(KEY)); } catch {}
+  if (d && typeof d === 'object' && Array.isArray(d.projecten)) {
+    const ids = new Set(), L = d.projecten.map(profiel).filter(p => p && !ids.has(p.id) && ids.add(p.id));
+    if (L.length) return Object.assign({ projecten:L, current: L.some(p => p.id === d.current) ? d.current : L[0].id }, typeof d.ocSince === 'string' ? { ocSince:d.ocSince } : {});
+  }
+  // Oud formaat: één profiel. De naam die het had; zonder naam die van het project in de app (als er iets ingevuld is), anders "Mijn project".
+  const oud = d && !Array.isArray(d.projecten) ? profiel(d) : null;
+  if (oud) {
+    if (!oud.project.trim() && !oud.voorbeeld) oud.project = leeg(oud) ? 'Mijn project' : ocProject('Mijn project');
+    return { projecten:[oud], current:oud.id };
+  }
+  const p = fresh(); return { projecten:[p], current:p.id };
+}
+let book = load(), state = null, saves = 0;
+const huidig = () => book.projecten.find(p => p.id === book.current) || book.projecten[0];
+function kies(id) { if (id) book.current = id; state = huidig(); book.current = state.id; }
+// Het actieve project uit de app openen: dezelfde regel als ocPickProject, op de projectnaam van het profiel.
+function ocKiesProject() { const n = ocProject(''); if (!n) return; let u = book.projecten.find(p => p.project === n); if (!u) { const o = ocProjectOud(); u = book.projecten.find(p => o.includes(p.project)); if (u) u.project = n; } if (u) book.current = u.id; kies(); }
+// Een ander project gekozen in de app en nog geen profiel ervoor: begin er een, zoals met "+ Project". Het vorige blijft in zijn tabblad.
+function ocNieuwProject() { const n = ocProjectNieuw(book, 'projecten', { van: p => p.project, leeg, noem: (p, x) => { p.project = x; } }); if (n) { const p = fresh(n); book.projecten.push(p); book.current = p.id; } kies(); return !!n; }
+ocKiesProject();
+function persist() { try { localStorage.setItem(KEY, JSON.stringify(book)); } catch {} }
 function save() {
-  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {}
+  persist();
   saves++; clearTimeout(save.t); save.t = setTimeout(publish, 300);
 }
 
@@ -954,7 +1030,7 @@ function save() {
 function readFigures() {
   const out = {};
   if (state.voorbeeld) { Object.entries(VB_FIGS).forEach(([k, v]) => { out[k] = { v, updated: Date.now() }; }); return out; }
-  ocShare.sources(['kerncijfer'], OC_ID).forEach(s => s.items.forEach(it => {
+  ocCijferBronnen(state.project, OC_ID).forEach(s => s.items.forEach(it => {
     if (!(it.text in out)) out[it.text] = { v: it.note == null ? '' : String(it.note), updated: s.updated };
   }));
   return out;
@@ -1119,7 +1195,15 @@ function joinNl(xs) { return xs.length < 2 ? xs.join('') : xs.slice(0, -1).join(
 function caveatText(r) { return joinNl(r.caveats.map(x => x.text)); }
 
 /* Weergave */
+function renderTabs() {
+  const keep = state, n = {};
+  try { book.projecten.forEach(p => { state = p; n[p.id] = compute().known.length; }); } finally { state = keep; }
+  $('lists').innerHTML = book.projecten.map(p => `<button type="button" class="tab${p === state ? ' active' : ''}" data-list="${esc(p.id)}"${p === state ? ' aria-current="true"' : ''}>${esc(p.project.trim() || 'Naamloos')}${p.voorbeeld ? '<span class="vb-tag">voorbeeld</span>' : ''}<span class="n">${n[p.id] || ''}</span></button>`).join('')
+    + '<button type="button" class="tab add" id="new-project" aria-label="Nieuw project">+ Project</button>';
+  const dl = `Verwijder ${state.project.trim() || 'project'}`; $('del-unit').setAttribute('aria-label', dl); $('del-unit').title = dl;
+}
 function render() {
+  renderTabs();
   // Een eigen inschatting die gelijk is geworden aan wat de tool zegt, valt weg: de tool volgt dan weer vanzelf.
   const f0 = readFigures(); let changed = false;
   AXES.forEach(a => { const m = state.manual[a.id]; if (m && m === autoLevel(a.id, f0)) { delete state.manual[a.id]; changed = true; } });
@@ -1244,16 +1328,27 @@ function advice(r) {
   return out;
 }
 
-function publish() {
-  if (state.voorbeeld) { ocShare.publish(OC_ID, OC_TOOL, []); return; }   // een voorbeeld telt niet mee in andere tools
-  const r = compute(), lists = [];
-  const items = [
-    r.type && { type:'kerncijfer', text:'profiel.type', note: TYPES.find(t => t.id === r.type).name },
+// De kerncijfers van het open profiel (state); zonder soort verandering geen.
+function kerncijfers(r) {
+  if (!r.type) return [];
+  return [
+    { type:'kerncijfer', text:'profiel.type', note: TYPES.find(t => t.id === r.type).name },
     r.effort && { type:'kerncijfer', text:'profiel.inspanning', note: String(r.effort.lvl) },
     { type:'kerncijfer', text:'profiel.project', note: projName() }
   ].filter(x => x && x.note);
-  if (r.type) lists.push({ name:'Kerncijfers', items });
-  if (r.type) lists.push({ name:'Aanpak', items: advice(r).map(a => ({ type:'taak', text:a.text })) });
+}
+function publish() {
+  // Per project een lijst met de projectnaam: de aanpak (taak) en de kerncijfers van dat project. Een voorbeeld telt nooit mee.
+  // De lijst 'Kerncijfers' (het open project) blijft voor wie de kerncijfers nog zonder projectnaam leest.
+  const keep = state, lists = [];
+  try {
+    book.projecten.filter(p => !p.voorbeeld).forEach(p => {
+      state = p;
+      const r = compute();
+      if (r.type) lists.push({ name: p.project.trim() || projName() || 'Naamloos', items: advice(r).map(a => ({ type:'taak', text:a.text })).concat(kerncijfers(r)) });
+    });
+  } finally { state = keep; }
+  if (!state.voorbeeld) { const kc = kerncijfers(compute()); if (kc.length) lists.push({ name:'Kerncijfers', items: kc }); }
   ocShare.publish(OC_ID, OC_TOOL, lists);
 }
 
@@ -1278,7 +1373,7 @@ document.addEventListener('click', e => {
   }
 });
 document.addEventListener('input', e => {
-  if (e.target.id === 'project') { state.project = e.target.value; save(); }
+  if (e.target.id === 'project') { state.project = e.target.value; save(); renderTabs(); }
   if (e.target.id === 'notes') { state.notes = e.target.value; save(); }
   if (e.target.id === 'type-why') { state.typeWhy = e.target.value; save(); }
 });
@@ -1308,13 +1403,15 @@ function toast(msg, undo) {
   toastTimer = setTimeout(() => { $('toast').classList.remove('show'); undoFn = null; }, undo ? 6000 : 2600);
 }
 $('toast-btn').addEventListener('click', () => { const f = undoFn; undoFn = null; $('toast').classList.remove('show'); f && f(); });
+// copy = een kopie van alle projecten (book), van voor de wijziging
 function undoable(copy) {
   const mark = saves;
   return () => {
     if (saves !== mark) { setTimeout(() => toast('Ongedaan maken kan niet meer: er is intussen iets veranderd'), 60); return; }
-    state = copy; save(); render(); toast('Teruggezet');
+    book = copy; kies(); save(); render(); toast('Teruggezet');
   };
 }
+const kopie = () => JSON.parse(JSON.stringify(book));
 
 function ocConfirm(title, text, okText) {
   if (!document.getElementById('ocw-style')) {
@@ -1394,8 +1491,12 @@ document.addEventListener('click', e => {
   const x = e.target.closest('[data-exp]'); if (x) { if (!x.disabled) document.querySelector(`#menu [data-act="${x.dataset.exp}"]`).click(); return; }
   if (e.target.closest('#example')) { loadExample(); return; }
   if (e.target.closest('#vb-wis')) {
-    const copy = JSON.parse(JSON.stringify(state));
-    state = { ...fresh() }; save(); render(); toast('Voorbeeld gewist', undoable(copy)); return;
+    const copy = kopie(), i = book.projecten.indexOf(state);
+    // Kwam het voorbeeld in de plaats van een leeg profiel, dan komt dat terug met zijn naam. Anders verdwijnt het tabblad.
+    if (typeof state.vorigProject === 'string' || book.projecten.length === 1) book.projecten[i] = fresh(state.vorigProject || undefined);
+    else book.projecten.splice(i, 1);
+    kies(book.projecten[Math.min(i, book.projecten.length - 1)].id);
+    save(); render(); toast('Voorbeeld gewist', undoable(copy)); return;
   }
   if (e.target.closest('#vb-eigen')) {
     // De niveaus van het voorbeeld worden eigen inschattingen; vanaf nu tellen de echte analyses weer.
@@ -1406,10 +1507,14 @@ document.addEventListener('click', e => {
   }
 });
 function loadExample() {
-  if (state.voorbeeld) { toast('Dit is het voorbeeld'); return; }
-  state = { ...fresh(), voorbeeld:true, project:VB_NAME, endpoint:'deels',
+  // Is er al een voorbeeld, dan ga je ernaartoe. Een leeg profiel wordt het voorbeeld; anders krijgt het voorbeeld een eigen tabblad.
+  const al = book.projecten.find(p => p.voorbeeld);
+  if (al) { kies(al.id); persist(); render(); toast('Dit is het voorbeeld'); return; }
+  const vb = { ...fresh(''), voorbeeld:true, project:VB_NAME, endpoint:'deels',
     notes:'De loketmedewerkers zien de winst, maar de premiedienst zit vol na drie zware veranderingen. We stellen ander werk uit en plannen extra bezetting in maart.' };
-  save(); render(); toast('Voorbeeld geladen');
+  if (leeg(state)) { vb.id = state.id; vb.vorigProject = state.project; book.projecten[book.projecten.indexOf(state)] = vb; }
+  else book.projecten.push(vb);
+  kies(vb.id); save(); render(); toast('Voorbeeld geladen');
 }
 document.addEventListener('click', async e => {
   const b = e.target.closest('#menu [data-act]'); if (!b) return;
@@ -1423,24 +1528,49 @@ document.addEventListener('click', async e => {
   } else if (act === 'copy') {
     (await ocRich.copy(asText())) ? toast('Gekopieerd, met opmaak') : toast('Kopiëren lukte niet');
   } else if (act === 'reset') {
-    const copy = JSON.parse(JSON.stringify(state));
+    const copy = kopie();
     state.manual = {}; state.type = null; state.typeWhy = ''; state.endpoint = null;
     save(); render(); toast('Alles volgt weer de tools', undoable(copy));
   } else if (act === 'wipe') {
-    if (!await ocConfirm('Alles wissen in Veranderprofiel?', 'Je eigen inschattingen en conclusies verdwijnen. De Betrokkenenradar, Sponsorschap, de Impactanalyse en het Veranderklimaat blijven zoals ze zijn.', 'Alles wissen')) return;
-    const copy = JSON.parse(JSON.stringify(state));
+    const n = book.projecten.filter(p => !p.voorbeeld).length;
+    if (!await ocConfirm('Alles wissen in Veranderprofiel?', (n > 1 ? `De profielen van alle ${n} projecten verdwijnen, met je eigen inschattingen en conclusies.` : 'Je eigen inschattingen en conclusies verdwijnen.') + ' De Betrokkenenradar, Sponsorschap, de Impactanalyse en het Veranderklimaat blijven zoals ze zijn.', 'Alles wissen')) return;
+    const copy = kopie();
     try { localStorage.removeItem(KEY); } catch {}
-    state = load(); ocShare.clear(OC_ID); saves++; render();
+    book = load(); kies(); ocShare.clear(OC_ID); saves++; clearTimeout(save.t); render();
     toast('Alles gewist', undoable(copy));
   }
 });
 
-// Eén profiel, geen tabbladen: nog niets ingevuld, dan volgt de projectnaam het project uit de app. Met inhoud blijft alles staan.
-function ocVolgProject() { const n = ocProject(''); if (!n || state.voorbeeld || state.project === n || Object.keys(state.manual).length || state.endpoint || state.type || String(state.typeWhy || '').trim() || String(state.notes || '').trim()) return false; state.project = n; return true; }
-ocVolgProject();
-ocProjectVolg(() => { if (ocVolgProject()) { save(); render(); } });   // open in de app en daar een ander project gekozen
+/* Projecten: een tab kiezen, een nieuw project, een project verwijderen (met Ongedaan) */
+function newProject() {
+  const p = fresh('Nieuw project'); book.projecten.push(p); kies(p.id); save(); render();
+  $('project').focus(); $('project').select();
+  requestAnimationFrame(() => { const a = document.querySelector('.tab.active'); if (a) a.scrollIntoView({ inline:'nearest', block:'nearest' }); });
+}
+function deleteProject() {
+  const copy = kopie(), p = state, i = book.projecten.indexOf(p);
+  book.projecten.splice(i, 1);
+  if (!book.projecten.length) book.projecten.push(fresh());
+  kies(book.projecten[Math.min(Math.max(i - 1, 0), book.projecten.length - 1)].id);
+  save(); render();
+  toast(`${p.project.trim() || 'Project'} verwijderd`, undoable(copy));
+}
+$('del-unit').addEventListener('click', deleteProject);
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-list]');
+  if (t) {
+    // Een ander tabblad openen is geen wijziging: Ongedaan blijft werken. De kerncijfers volgen het open project.
+    if (t.dataset.list !== state.id) { kies(t.dataset.list); persist(); render(); clearTimeout(save.t); save.t = setTimeout(publish, 300); }
+    return;
+  }
+  if (e.target.closest('#new-project')) newProject();
+});
+// Na het laden: het project uit de app openen of beginnen. Open in de app en daar een ander project gekozen: hetzelfde.
+{ const voor = JSON.stringify(book); ocNieuwProject(); if (JSON.stringify(book) !== voor) save(); }
+ocProjectVolg(() => { const voor = JSON.stringify(book); ocKiesProject(); ocNieuwProject(); if (JSON.stringify(book) !== voor) { save(); render(); } });
 render();
 setTimeout(publish, 0);
+// Opnieuw beginnen = Alles wissen (alle projecten, met bevestiging en Ongedaan), zoals in de Gap-analyse. Eén project verwijderen: de prullenbak.
 document.getElementById('oc-restart').addEventListener('click', () => document.querySelector('#menu [data-act="wipe"]').click());
 </script>
 <input type="file" id="oc-bestand-in" accept=".json,application/json" hidden>
@@ -1504,8 +1634,8 @@ window.ocBestand = (function () {
 <script>
 /* Bewaar als bestand / Open bestand */
 (() => {
-  const heeftWerk = () => { try { return !!(state.voorbeeld || Object.keys(state.manual).length || state.endpoint || state.type || String(state.typeWhy || '').trim() || String(state.notes || '').trim() || String(state.project || '').trim() !== ocProject('').trim()); } catch (e) { return true; } };
-  const extraNaam = () => { try { return String(state.project || '').trim(); } catch (e) { return ''; } };
+  const heeftWerk = () => { try { return book.projecten.length > 1 || book.projecten.some(p => p.voorbeeld || !leeg(p) || String(p.project || '').trim() !== ocProject('').trim()); } catch (e) { return true; } };
+  const extraNaam = () => { try { return book.projecten.length === 1 ? String(state.project || '').trim() : ''; } catch (e) { return ''; } };
   const inp = document.getElementById('oc-bestand-in');
   // Een lange melding blijft langer staan (minstens 4,5 s): toon ze opnieuw voor ze verdwijnt.
   const lang = msg => { toast(msg); setTimeout(() => { const t = document.getElementById('toast-text'); if (t && t.textContent === msg) toast(msg); }, 2300); };

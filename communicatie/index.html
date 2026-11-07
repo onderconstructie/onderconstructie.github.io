@@ -40,6 +40,21 @@ a { color:var(--accent-dark); }
 .subtitle { font-size:0.9375rem; color:var(--slate-500); max-width:34rem; margin:0.125rem auto 0; }
 
 .main { flex:1; width:100%; max-width:1120px; margin:0 auto; padding:1.25rem 1rem 3rem; display:flex; flex-direction:column; gap:1rem; }
+/* Projecten (tabs), zoals in de andere tools: elk project een eigen plan */
+.lists { display:flex; gap:0.5rem; overflow-x:auto; scrollbar-width:none; margin:-0.25rem -1rem -0.25rem; padding:0.375rem 1rem; }
+.lists::-webkit-scrollbar { display:none; }
+.tab {
+  flex-shrink:0; padding:0.4375rem 0.875rem; border-radius:999px; font-size:0.875rem; font-weight:600;
+  border:1px solid var(--slate-200); background:var(--wit); color:var(--slate-600); white-space:nowrap;
+  display:flex; align-items:center; gap:0.375rem;
+}
+.tab .n { font-size:0.75rem; font-weight:500; color:var(--slate-500); font-variant-numeric:tabular-nums; }
+.tab.active { background:var(--slate-800); border-color:var(--slate-800); color:var(--wit); }
+.tab.active .n { color:var(--slate-300); }
+.tab.add { color:var(--accent-dark); border-style:dashed; }
+.tab .tab-deel { margin-right:0; }
+.vb-tag { font-size:0.6875rem; font-weight:600; padding:0 0.375rem; border-radius:999px; background:#fef3c7; color:#92400e; }
+.icon-btn.del-unit:hover { color:#b91c1c; background:#fef2f2; }
 .card { background:var(--wit); border:1px solid var(--slate-200); border-radius:16px; box-shadow:0 1px 2px rgba(15,23,42,0.04); min-width:0; }
 .card-head { display:flex; align-items:center; gap:0.5rem; padding:1rem 0.75rem 0.5rem 1.125rem; }
 .card-title { flex:1; min-width:0; font-size:1.0625rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.01em; }
@@ -433,7 +448,7 @@ body:has(.ocs-back), body:has(.ocw-back) { overflow:hidden; }
 @media (prefers-reduced-motion:reduce) { *, *::before, *::after { animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important; } }
 #view:empty { min-height:100vh; }
 /* Werk samen via een gedeeld bestand: de status staat onder de kaart bovenaan (de stijl komt uit het gedeelde blok oc-koppel).
-   Er is één plan: dat gaat mee, er valt niets aan te vinken. */
+   Elk project heeft een eigen plan: bij het koppelen vink je aan welke plannen meegaan. */
 .kp { margin:0; }
 @supports (height:100dvh) { .aside { max-height:calc(100dvh - 2rem); } }
 .ocs-back .ocs { max-height:min(86dvh, 720px); }
@@ -620,9 +635,11 @@ input::placeholder, textarea::placeholder { color:#64748b; opacity:1; }
 </header>
 
 <main class="main">
+  <nav class="lists" id="lists" aria-label="Projecten"></nav>
   <section class="card" id="hero">
     <div class="card-head" style="padding-bottom:0.25rem">
       <input class="project" id="project" data-oc-titel data-oc-projectnaam data-f="name" maxlength="100" placeholder="Naam van het project" aria-label="Naam van het project">
+      <button class="icon-btn del-unit" id="del-unit" type="button" aria-label="Verwijder project" title="Verwijder project"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg></button>
       <div class="menu-wrap">
         <button class="icon-btn" id="menu-btn" aria-label="Meer acties" aria-haspopup="true" aria-expanded="false">
           <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
@@ -647,7 +664,7 @@ input::placeholder, textarea::placeholder { color:#64748b; opacity:1; }
       <span class="vb-btns"><button type="button" class="vb-btn vb-wis" id="vb-wis">Wis voorbeeld</button><button type="button" class="vb-btn vb-eigen" id="vb-eigen">Maak er mijn eigen van</button></span>
     </div>
     <div class="startrow oc-start" id="startrow" hidden><span>Begin bij stap 1, of bekijk eerst hoe een afgewerkt plan eruitziet.</span><div class="oc-start-btns"><button type="button" class="oc-begin" data-oc-begin="#view input:not([type=checkbox]):not([type=radio]), #view textarea">Begin met stap 1</button><button type="button" class="oc-vb" id="example">Voorbeeld bekijken</button></div><p class="oc-open-row"><button type="button" class="oc-open-link" data-bestand="open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 16v-5M9.5 13.5 12 11l2.5 2.5"/></svg>Open bestand</button></p></div>
-    <script>try { var oc0 = JSON.parse(localStorage.getItem('communicatie.v1') || 'null'); document.getElementById('startrow').hidden = !!oc0; document.getElementById('vb-bar').hidden = !(oc0 && oc0.voorbeeld); } catch (e) {}</script>
+    <script>try { var oc0 = JSON.parse(localStorage.getItem('communicatie.v1') || 'null'); if (oc0 && Array.isArray(oc0.plannen)) oc0 = oc0.plannen.filter(function (x) { return x && x.id === oc0.current; })[0] || oc0.plannen[0]; document.getElementById('startrow').hidden = !!oc0; document.getElementById('vb-bar').hidden = !(oc0 && oc0.voorbeeld); } catch (e) {}</script>
     <div class="tabs" role="tablist" aria-label="Weergave">
       <button role="tab" data-view="wizard" id="tab-wizard">Stappen</button>
       <button role="tab" data-view="plan" id="tab-plan">Plan</button>
@@ -670,7 +687,7 @@ input::placeholder, textarea::placeholder { color:#64748b; opacity:1; }
         <li><b>Het Veranderprofiel</b> stuurt mee: bij een zware verandering stelt de tool meer momenten en meer persoonlijk contact voor.</li>
         <li><b>Check je boodschap</b>: vijf vragen die elke lezer zich stelt. Wat de tool herkent, zoals een mailadres, staat al aangevinkt. De rest vink je zelf aan.</li>
         <li><b>Je momenten</b> komen als acties klaar te staan voor het Takenbord en Vinkje, met afzender en datum. Via het menu (⋮) zet je ze ook in je agenda.</li>
-        <li><b>Samenwerken</b> aan één plan kan via een gedeeld bestand. Standaard blijft alles op dit toestel. Kies in het menu ⋮ "Werk samen via een gedeeld bestand" en zet het bestand in een gedeelde map die je computer synchroniseert. Dit kan in Chrome of Edge op een computer en in Chrome op Android, niet op een iPhone of iPad. Passen twee mensen hetzelfde veld aan, dan wint wie het laatst bewaart.</li>
+        <li><b>Samenwerken</b> aan een plan kan via een gedeeld bestand. Standaard blijft alles op dit toestel. Kies in het menu ⋮ "Werk samen via een gedeeld bestand", vink aan welke plannen meegaan en zet het bestand in een gedeelde map die je computer synchroniseert. Dit kan in Chrome of Edge op een computer en in Chrome op Android, niet op een iPhone of iPad. Passen twee mensen hetzelfde veld aan, dan wint wie het laatst bewaart.</li>
       </ul>
       <p>Twee vuistregels lopen door het hele plan. Wie leiding geeft, hoort het vóór zijn team, zodat niemand het nieuws eerst op de gang opvangt. En hoe groter de verandering, hoe meer je zegt in gesprek in plaats van op papier.</p>
     </div>
@@ -2259,30 +2276,43 @@ window.kpVakken = (() => {
     const o = { id:f.id }; f.keys.forEach(([k, h]) => { o[k] = h.schoon(it[k], H); });
     return leegVak(f, o) ? null : o;
   }
-  return { naar:() => naarEen(state, stored()), uitEen, schoon };
+  // naar(p): de velden van plan p naar zijn onderdelen; van het open plan zonder onbevestigde voorstellen
+  return { naar:(p = state) => naarEen(p, p === state ? stored() : p), uitEen, schoon };
 })();
-function fresh() {
-  return { id:'plan', view:'wizard', step:0, name:'', what:'', why:'', sponsor:'', sponsorFrom:'', coreSender:'', coreSenderOther:'',
+/* Opslag: communicatie.v1 = { plannen:[plan], current, weg?, ocSince? }. Elk project heeft een eigen plan, in een eigen tabblad.
+   Vroeger had de tool één plan: communicatie.v1 was dat plan zelf (met id 'plan'). Dat wordt het eerste project, met alles erop en eraan.
+   Een gedeeld bestand heeft dezelfde vorm ({ plannen, weg }): "Open bestand" opent het als gewone opslag.
+   'state' is altijd het open plan; 'book' is alles samen. */
+const uidP = () => Math.random().toString(36).slice(2, 10);
+function fresh(naam) {
+  return { id:uidP(), view:'wizard', step:0, name: naam == null ? ocProject('Mijn project') : naam, what:'', why:'', sponsor:'', sponsorFrom:'', coreSender:'', coreSenderOther:'',
     groups:[], core:'', checks:{}, start:'', launch:'', moments:[], measures:[], ident:{ slogan:'', color:'', image:'', place:'' } };
 }
 function newGroup(name) {
   return { id:uid(), name, change:'', goals:[], lead:LEAD_RE.test(name), intens:null, hint:'', source:'', msg:'', sender:null, senderOther:'', channels:[], channelOther:'' };
 }
-function load() {
+// Eén plan nakijken (uit de opslag of een bestand). Wat er verder in staat, blijft.
+function plan(s) {
   try {
-    let s = JSON.parse(localStorage.getItem(KEY));
-    // Een gedeeld bestand (geopend met Open bestand) bewaart het plan als { plannen:[plan], weg }, met de velden als onderdelen
-    if (s && typeof s === 'object' && Array.isArray(s.plannen)) { const p = s.plannen.find(x => x && typeof x === 'object'); s = p ? Object.assign({}, p, s.weg && typeof s.weg === 'object' ? { kpWeg:s.weg } : {}) : null; }
-    if (s && typeof s === 'object' && Array.isArray(s.vakken) && !('view' in s)) { s = Object.assign({}, s); kpVakken.uitEen(s); }
-    if (s && typeof s === 'object') {
-      const f = fresh(), c = s.checks && typeof s.checks === 'object' ? s.checks : {}, checks = {};
+    // Een plan uit een gedeeld bestand heeft de velden als onderdelen
+    if (s && typeof s === 'object' && !Array.isArray(s) && Array.isArray(s.vakken) && !('view' in s)) { s = Object.assign({}, s); kpVakken.uitEen(s); }
+    if (s && typeof s === 'object' && !Array.isArray(s)) {
+      const f = fresh(''), c = s.checks && typeof s.checks === 'object' ? s.checks : {}, checks = {};
       ['mij', 'doen', 'waarom', 'taal', 'contact'].forEach(k => { if (typeof c[k] === 'boolean') checks[k] = c[k]; });
       if (c.kort === true && !('taal' in c)) checks.taal = true;   // oude toets: 'kort en eenvoudig' wordt 'gewone taal'
       const st = { ...f, ...s, ident:{ ...f.ident, ...(s.ident || {}) }, checks };
       if (!('coreSender' in s)) st.coreSender = 'sponsor';   // oudere plannen hadden de sponsor standaard gekozen
-      // Werk samen via een gedeeld bestand: het plan heeft een vast id, elke doelgroep, elk moment en elke meting een eigen id
-      st.id = 'plan';
-      ['groups', 'moments', 'measures'].forEach(k => (Array.isArray(st[k]) ? st[k] : []).forEach(x => { if (x && typeof x === 'object' && !x.id) x.id = uid(); }));
+      // Vaste soorten: tekst is tekst, lijsten zijn lijsten (een kapotte opslag of een vreemd bestand breekt de tool niet)
+      ['name', 'what', 'why', 'sponsor', 'sponsorFrom', 'coreSender', 'coreSenderOther', 'core', 'start', 'launch'].forEach(k => { if (typeof st[k] !== 'string') st[k] = ''; });
+      ['groups', 'moments', 'measures'].forEach(k => { st[k] = Array.isArray(st[k]) ? st[k].filter(x => x && typeof x === 'object' && !Array.isArray(x)) : []; });
+      // een doelgroep mist nooit een veld (wat er al stond, blijft)
+      st.groups = st.groups.map(g => { const n = Object.assign(newGroup(''), g); ['name', 'change', 'hint', 'source', 'msg', 'senderOther', 'channelOther'].forEach(k => { if (typeof n[k] !== 'string') n[k] = ''; }); ['goals', 'channels'].forEach(k => { if (!Array.isArray(n[k])) n[k] = []; }); return n; });
+      if (!st.ident || typeof st.ident !== 'object') st.ident = { ...f.ident };
+      if (!['wizard', 'plan', 'kal'].includes(st.view)) st.view = 'wizard';
+      st.step = Math.max(0, Math.min(8, Math.round(+st.step) || 0));
+      // Werk samen via een gedeeld bestand: elk plan heeft een eigen id (het plan van vroeger: 'plan'), elke doelgroep, elk moment en elke meting ook
+      if (typeof st.id !== 'string' || !/^[\w-]{1,40}$/.test(st.id)) st.id = uidP();
+      ['groups', 'moments', 'measures'].forEach(k => st[k].forEach(x => { if (!x.id) x.id = uid(); }));
       // Vroeger kapte een voorgesteld moment de kernboodschap af met "…": herstel de volledige tekst.
       const core = String(st.core || '').trim().replace(/\s+/g, ' ');
       (Array.isArray(st.moments) ? st.moments : []).forEach(m => {
@@ -2293,17 +2323,48 @@ function load() {
       return st;
     }
   } catch {}
-  return fresh();
+  return null;
 }
-let state = load(), saves = 0, autoSponsor = false, autoName = false, autoWhat = '';
+function load() {
+  let d = null; try { d = JSON.parse(localStorage.getItem(KEY)); } catch {}
+  if (d && typeof d === 'object' && Array.isArray(d.plannen)) {
+    const ids = new Set(), L = d.plannen.map(plan).filter(p => p && !ids.has(p.id) && ids.add(p.id));
+    if (L.length) {
+      const b = { plannen:L, current: L.some(p => p.id === d.current) ? d.current : (L.find(p => !p.voorbeeld) || L[0]).id };
+      if (d.weg && typeof d.weg === 'object' && !Array.isArray(d.weg)) b.weg = d.weg;
+      if (typeof d.ocSince === 'string') b.ocSince = d.ocSince;
+      return b;
+    }
+  }
+  // Oud formaat: één plan. De naam die het had; zonder naam die van het project in de app (als er iets ingevuld is), anders "Mijn project".
+  // Was het gekoppeld met een gedeeld bestand, dan gaan de verwijderde plannen (kpWeg) naar boven, zoals in het bestand.
+  const oud = d && typeof d === 'object' && !Array.isArray(d.plannen) ? plan(d) : null;
+  if (oud) {
+    oud.id = 'plan';
+    if (!oud.name.trim() && !oud.voorbeeld) oud.name = hasContent(oud) ? ocProject('Mijn project') : 'Mijn project';
+    const b = { plannen:[oud], current:oud.id };
+    if (oud.kpWeg && typeof oud.kpWeg === 'object') { b.weg = oud.kpWeg; delete oud.kpWeg; }
+    return b;
+  }
+  const p = fresh(); return { plannen:[p], current:p.id };
+}
+let state = null, saves = 0, autoSponsor = false, autoName = false, autoWhat = '';
+let book = load();
+const huidig = () => book.plannen.find(p => p.id === book.current) || book.plannen[0];
+function kies(id) { if (!book.plannen.length) book.plannen.push(fresh()); if (id) book.current = id; state = huidig(); book.current = state.id; }
+// Wat de tool voorstelde voor het open plan (en nog niet bewaard is), haal je eruit voor je een ander plan opent.
+function ontsuggereer() { if (!state) return; if (autoSponsor) { state.sponsor = ''; state.sponsorFrom = ''; } if (autoName) state.name = ''; if (autoWhat) state.what = ''; autoSponsor = false; autoName = false; autoWhat = ''; }
+// Het actieve project uit de app openen (ocPickProject), of er een plan voor beginnen zoals met "+ Project" (ocProjectNieuw).
+function ocNieuwProject() { const n = ocProjectNieuw(book, 'plannen', { leeg: p => !hasContent(p) }); if (n) { const p = fresh(n); book.plannen.push(p); book.current = p.id; } kies(); return !!n; }
+ocPickProject(book, 'plannen'); kies();
 // Wat uit een andere tool voorgesteld wordt (sponsor, projectnaam, de verandering), bewaren we pas als de gebruiker zelf iets doet.
 const stored = () => { const c = { ...state }; if (autoSponsor) { c.sponsor = ''; c.sponsorFrom = ''; } if (autoName) c.name = ''; if (autoWhat) c.what = ''; return c; };
-function persist() { try { localStorage.setItem(KEY, JSON.stringify(stored())); } catch {} }
+function persist() { try { localStorage.setItem(KEY, JSON.stringify({ ...book, plannen: book.plannen.map(p => p === state ? stored() : p) })); } catch {} }
 // Gekoppeld met een gedeeld bestand? Dan gaan de velden eerst naar de onderdelen, krijgt elke wijziging een tijdstempel
 // en gaat ze na een korte pauze ook naar dat bestand. Zonder koppeling verandert er niets.
 function save() {
   autoSponsor = false; autoName = false; autoWhat = '';
-  if (state.kpWeg && window.kpVakken) kpVakken.naar();
+  if (book.weg && window.kpVakken) kpVakken.naar();
   if (window.ocKoppel) ocKoppel.stempel();
   persist();
   if (window.ocKoppel) ocKoppel.na();
@@ -2312,10 +2373,12 @@ function save() {
 }
 // Stap, weergave of tab wisselen: bewaren zonder Ongedaan te laten vervallen.
 function saveUi() { persist(); }
-function hasContent() {
-  const strip = o => { const c = o === state ? stored() : { ...o }; delete c.view; delete c.step;
-    ['gedeeld', 'gewijzigd', 'vakken', 'kpWeg', 'wegGroepen', 'wegMomenten', 'wegMetingen', 'wegVakken'].forEach(k => { delete c[k]; }); return JSON.stringify(c); };
-  return strip(state) !== strip(fresh());
+// Staat er iets in het plan? De naam, de stap en de weergave tellen niet (een nieuw project heeft al een naam).
+function hasContent(p = state) {
+  const strip = o => { const c = o === state ? stored() : { ...o };
+    ['id', 'name', 'view', 'step', 'vorigProject', 'gedeeld', 'gewijzigd', 'vakken', 'kpWeg', 'wegGroepen', 'wegMomenten', 'wegMetingen', 'wegVakken'].forEach(k => { delete c[k]; });
+    return Object.keys(c).sort().map(k => k + '=' + JSON.stringify(c[k])).join('|'); };
+  return strip(p) !== strip(fresh(''));
 }
 function showRestart() { const r = $('restart-row'); if (r) r.hidden = !hasContent(); }
 function suggestSponsor() {
@@ -2333,12 +2396,38 @@ function sharedChange() {
 }
 const G = id => state.groups.find(g => g.id === id);
 const M = id => state.moments.find(m => m.id === id);
-const snapshot = () => JSON.parse(JSON.stringify(state));
+// Een kopie van alle plannen (voor Ongedaan)
+const snapshot = () => JSON.parse(JSON.stringify(book));
 
-/* Uit andere tools */
+/* Kerncijfers van één project. Sponsorschap, de Betrokkenenradar en het Veranderprofiel leggen ze per project klaar, in de lijst
+   met de projectnaam: dan tellen alleen die van dit project, en heeft zo'n tool dit project niet, dan niets van die tool.
+   Een oudere versie van die tools (alleen een lijst 'Kerncijfers') en de andere tools (de Impactanalyse en het Veranderklimaat
+   geven die van hun open analyse) tellen zoals vroeger. De recentste bron eerst, zoals ocShare.sources. */
+const OC_PER_PROJECT = ['sponsor', 'stakeholders', 'veranderprofiel'];
+function ocCijferBronnen(naam, self) {
+  const n = v => String(v == null ? '' : v).normalize('NFC').toLowerCase().replace(/\s+/g, ' ').trim(), doel = n(naam), uit = [];
+  const kc = l => l && Array.isArray(l.items) ? l.items.filter(it => it && it.type === 'kerncijfer' && typeof it.text === 'string' && it.text.trim()) : [];
+  let keys = []; try { for (let i = 0; i < localStorage.length; i++) keys.push(localStorage.key(i)); } catch { return uit; }
+  keys.forEach(k => {
+    if (!k || !k.startsWith('oc.share.') || k === 'oc.share.' + self) return;
+    try {
+      const d = JSON.parse(localStorage.getItem(k)); if (!d || !Array.isArray(d.lists)) return;
+      const id = String(d.id || k.slice(9));
+      let lijsten = d.lists.filter(l => l && typeof l === 'object');
+      if (OC_PER_PROJECT.includes(id)) {
+        const per = lijsten.filter(l => !/^kerncijfers$/i.test(String(l.name || '').trim()) && kc(l).length);
+        if (per.length) lijsten = per.filter(l => doel && n(l.name) === doel).slice(0, 1);
+      }
+      const items = lijsten.flatMap(kc);
+      if (items.length) uit.push({ tool: String(d.tool || id), id, updated: +d.updated || 0, items });
+    } catch {}
+  });
+  return uit.sort((a, b) => b.updated - a.updated);
+}
+/* Uit andere tools: de kerncijfers van dit plan (zie ocCijferBronnen) */
 function readFigures() {
   const out = {};
-  ocShare.sources(['kerncijfer'], OC_ID).forEach(s => s.items.forEach(it => {
+  ocCijferBronnen(state.name, OC_ID).forEach(s => s.items.forEach(it => {
     if (!(it.text in out)) out[it.text] = { v: it.note == null ? '' : String(it.note), tool: s.tool };
   }));
   return out;
@@ -2352,11 +2441,23 @@ function profile() {
 }
 const heavyProfile = p => (p.effort != null && p.effort >= 3) || /omvorming/i.test(p.type);
 function sponsorFound() {
-  const src = ocShare.sources(['betrokkene'], OC_ID);
-  const pick = src.filter(s => s.id === 'sponsor').concat(src.filter(s => s.id !== 'sponsor'));
-  for (const s of pick) for (const it of s.items) if (/^sponsor/i.test(it.note || '')) {
-    return { name: it.text, role: (String(it.note).split('·')[1] || '').trim(), tool: s.tool };
-  }
+  const n = v => String(v == null ? '' : v).normalize('NFC').toLowerCase().replace(/\s+/g, ' ').trim(), eigen = n(state.name);
+  const isSp = it => it && it.type === 'betrokkene' && typeof it.text === 'string' && it.text.trim() && /^sponsor/i.test(it.note || '');
+  const uit = (it, tool) => ({ name: it.text, role: (String(it.note).split('·')[1] || '').trim(), tool });
+  // Sponsorschap legt per project klaar, in de lijst met de projectnaam: alleen de sponsor van dit plan.
+  // Een oudere versie van Sponsorschap had één lijst 'Sponsor': die telt zoals vroeger.
+  try {
+    const d = JSON.parse(localStorage.getItem('oc.share.sponsor') || 'null');
+    const ls = d && Array.isArray(d.lists) ? d.lists.filter(l => l && Array.isArray(l.items)) : [];
+    const per = ls.some(l => !/^(sponsor|kerncijfers|gesprekspunten met de sponsor)$/i.test(String(l.name || '').trim()));
+    const l = per ? ls.find(l => eigen && n(l.name) === eigen) : ls.find(l => l.items.some(isSp));
+    const it = l && l.items.find(isSp);
+    if (it) return uit(it, String(d.tool || 'Sponsorschap'));
+  } catch {}
+  // Anders een betrokkene die in een andere tool als sponsor staat, eerst in de lijst van dit project
+  const src = ocShare.sources(['betrokkene'], OC_ID).filter(s => s.id !== 'sponsor');
+  const pick = src.filter(s => eigen && n(s.list) === eigen).concat(src.filter(s => !(eigen && n(s.list) === eigen)));
+  for (const s of pick) for (const it of s.items) if (/^sponsor/i.test(it.note || '')) return uit(it, s.tool);
   return null;
 }
 
@@ -2488,8 +2589,15 @@ const whoOpen = new Set();
 function inApp() {
   try { const b = window.frameElement && window.parent.document.getElementById('pathbar'); return !!(b && !b.hidden); } catch { return false; }
 }
+function renderTabs() {
+  const ico = p => window.ocKoppel && ocKoppel.icoon ? ocKoppel.icoon(p) : '';
+  $('lists').innerHTML = book.plannen.map(p => `<button type="button" class="tab${p === state ? ' active' : ''}" data-list="${escA(p.id)}"${p === state ? ' aria-current="true"' : ''}>${ico(p)}${esc(String(p.name || '').trim() || 'Naamloos')}${p.voorbeeld ? '<span class="vb-tag">voorbeeld</span>' : ''}<span class="n">${p.groups.length || ''}</span></button>`).join('')
+    + '<button type="button" class="tab add" id="new-project" aria-label="Nieuw project">+ Project</button>';
+  const dl = `Verwijder ${String(state.name || '').trim() || 'project'}`; $('del-unit').setAttribute('aria-label', dl); $('del-unit').title = dl;
+}
 function render() {
   pendingRender = false;
+  renderTabs();
   document.documentElement.classList.toggle('in-app', inApp());
   syncFields();
   ['wizard', 'plan', 'kal'].forEach(v => $('tab-' + v).setAttribute('aria-selected', state.view === v));
@@ -2949,14 +3057,21 @@ function setView(v) {
 }
 
 function publish() {
-  if (state.voorbeeld) { ocShare.publish(OC_ID, OC_TOOL, []); return; }   // een voorbeeld telt niet mee in andere tools
-  const ms = sortedMoments().filter(m => !m.done);
-  ocShare.publish(OC_ID, OC_TOOL, [
-    { name:'Momenten', items: ms.map(m => ({ type:'actie', text:`${chanLabel(m.channel)}: ${groupNames(m)} – ${(m.msg || 'moment').trim()}`, who: momentSender(m) || undefined, when: dmy(m.date) || undefined })) },
-    // Een overgenomen doelgroep (g.van) geven we niet opnieuw door: de bron blijft de baas. Wie de naam hier aanpast, maakt hem eigen werk.
-    { name:'Doelgroepen', items: state.groups.filter(g => !g.van).map(g => ({ type:'betrokkene', text:g.name })) },
-    { name:'Kerncijfers', items: state.what.trim() && !autoWhat ? [{ type:'kerncijfer', text:'verandering', note: state.what.trim() }] : [] }
-  ]);
+  // Per plan een lijst met de projectnaam: de momenten (actie) en de doelgroepen (betrokkene). Een voorbeeld telt nooit mee.
+  // "De verandering in één zin" (kerncijfer) blijft die van het open plan, in de lijst 'Kerncijfers', zoals vroeger.
+  const keep = state, lists = [];
+  try {
+    book.plannen.filter(p => !p.voorbeeld).forEach(p => {
+      state = p;
+      const ms = sortedMoments().filter(m => !m.done), eigenNaam = !(p === keep && autoName);
+      lists.push({ name: (eigenNaam && String(p.name || '').trim()) || ocProjectName() || 'Communicatieplan', items: [
+        ...ms.map(m => ({ type:'actie', text:`${chanLabel(m.channel)}: ${groupNames(m)} – ${(m.msg || 'moment').trim()}`, who: momentSender(m) || undefined, when: dmy(m.date) || undefined })),
+        // Een overgenomen doelgroep (g.van) geven we niet opnieuw door: de bron blijft de baas. Wie de naam hier aanpast, maakt hem eigen werk.
+        ...p.groups.filter(g => !g.van).map(g => ({ type:'betrokkene', text:g.name })) ] });
+    });
+  } finally { state = keep; }
+  if (!state.voorbeeld) lists.push({ name:'Kerncijfers', items: state.what.trim() && !autoWhat ? [{ type:'kerncijfer', text:'verandering', note: state.what.trim() }] : [] });
+  ocShare.publish(OC_ID, OC_TOOL, lists);
 }
 
 
@@ -2973,7 +3088,7 @@ document.addEventListener('input', e => {
   if (t.id === 'new-group' && t.getAttribute('aria-invalid')) { t.removeAttribute('aria-invalid'); $('new-group-err').textContent = ''; }
   if (t.type === 'date' || t.tagName === 'SELECT' || t.type === 'checkbox') return;   // via change
   if (d.f) {
-    setPath(d.f, t.value); save(); live();
+    setPath(d.f, t.value); save(); live(); if (d.f === 'name') renderTabs();
     if (d.f === 'ident.color') document.querySelectorAll('[data-swatch]').forEach(b => b.setAttribute('aria-pressed', b.dataset.swatch === t.value));
     return;
   }
@@ -3084,8 +3199,9 @@ function refreshImports() { document.querySelectorAll('[data-oc-types]').forEach
 // Een ander tabblad bewaarde iets: eerst de nieuwe toestand inlezen, dan pas hertekenen (stap en weergave blijven).
 window.addEventListener('storage', e => {
   if (e.key === KEY || e.key === null) {
-    const { view, step } = state;
-    state = load(); state.view = view; state.step = step; autoSponsor = false; autoName = false; autoWhat = ''; suggestSponsor();
+    const { view, step, id } = state;
+    book = load(); state = null; kies(book.plannen.some(p => p.id === id) ? id : null); if (state.id === id) { state.view = view; state.step = step; }
+    autoSponsor = false; autoName = false; autoWhat = ''; suggestSponsor();
     saves++;                                           // Ongedaan uit dit tabblad zou de nieuwe toestand overschrijven
     renderKeepFocus(); return;
   }
@@ -3113,7 +3229,7 @@ function undoable(copy, na) {
   const mark = saves;
   return () => {
     if (saves !== mark) { setTimeout(() => toast('Ongedaan maken kan niet meer: er is intussen iets veranderd'), 60); return; }
-    state = copy; if (na) na(); autoSponsor = false; autoName = false; autoWhat = ''; save(); render(); toast('Teruggezet');
+    book = copy; state = null; kies(); if (na) na(); autoSponsor = false; autoName = false; autoWhat = ''; save(); render(); toast('Teruggezet');
   };
 }
 
@@ -3327,9 +3443,11 @@ function tracksHTML() {
 /* ---------- Voorbeeld ---------- */
 function loadExample() {
   if (window.ocKoppel && ocKoppel.toestand().fase !== 'uit') { toast('Je werkt samen via een gedeeld bestand. Ontkoppel eerst om het voorbeeld te bekijken.'); return; }
-  if (hasContent() && !state.voorbeeld) { toast('Wis eerst je eigen plan om het voorbeeld te bekijken'); return; }
+  // Is er al een voorbeeld, dan ga je ernaartoe. Een leeg plan wordt het voorbeeld; anders krijgt het voorbeeld een eigen tabblad.
+  const al = book.plannen.find(p => p.voorbeeld);
+  if (al) { ontsuggereer(); kies(al.id); persist(); render(); toast('Dit is het voorbeeld'); return; }
   const L = workday(addDays(todayIso(), 49));
-  const s = fresh();
+  const s = fresh('');
   Object.assign(s, { voorbeeld:true, view:'plan', step:8, name:'Digitaal premieloket voor renovatie',
     what:'Vanaf de lancering vraag je een renovatiepremie alleen nog online aan, niet meer op papier.',
     why:'Papieren aanvragen raken zoek tussen post, mail en dossierkasten. Aanvragers wachten weken op een antwoord en bellen het loket plat. Online zie je meteen wat ontbreekt en volg je je aanvraag zelf op.',
@@ -3352,12 +3470,22 @@ function loadExample() {
   s.moments.push(mk(addDays(todayIso(), -10), [tl.id], 'gesprek', 'sponsor', 'Kennismaking met het project en jullie rol'));
   s.moments[s.moments.length - 1].done = true;
   state = cur0;
-  const copy = snapshot(); state = s; autoSponsor = false; autoName = false; autoWhat = ''; save(); render();
+  ontsuggereer();
+  const copy = snapshot();
+  if (!hasContent()) { s.id = state.id; s.vorigProject = state.name; book.plannen[book.plannen.indexOf(state)] = s; } else book.plannen.push(s);
+  kies(s.id); save(); render();
   toast('Voorbeeld geladen', undoable(copy));
 }
 document.addEventListener('click', e => {
   if (e.target.closest('#example')) { loadExample(); return; }
-  if (e.target.closest('#vb-wis')) { const copy = snapshot(); state = fresh(); autoSponsor = false; autoName = false; autoWhat = ''; suggestSponsor(); save(); render(); toast('Voorbeeld gewist', undoable(copy)); return; }
+  if (e.target.closest('#vb-wis')) {
+    const copy = snapshot(), i = book.plannen.indexOf(state);
+    // Kwam het voorbeeld in de plaats van een leeg plan, dan komt dat terug met zijn naam. Anders verdwijnt het tabblad.
+    if (typeof state.vorigProject === 'string' || book.plannen.length === 1) book.plannen[i] = fresh(state.vorigProject || undefined);
+    else book.plannen.splice(i, 1);
+    kies(book.plannen[Math.min(i, book.plannen.length - 1)].id);
+    autoSponsor = false; autoName = false; autoWhat = ''; suggestSponsor(); save(); render(); toast('Voorbeeld gewist', undoable(copy)); return;
+  }
   if (e.target.closest('#vb-eigen')) { delete state.voorbeeld; save(); render(); toast('Het voorbeeld is nu van jou'); }
 });
 
@@ -3387,69 +3515,90 @@ document.addEventListener('click', async e => {
     if (!state.moments.length) { toast('Er zijn nog geen momenten'); return; }
     download(csv(), base + '-momenten.csv', 'text/csv;charset=utf-8'); toast('CSV gedownload');
   } else if (act === 'wipe') {
-    if (!await ocConfirm('Alles wissen in het Communicatieplan?', 'Je doelgroepen, boodschappen en alle momenten verdwijnen. De andere tools blijven zoals ze zijn.', 'Alles wissen')) return;
+    const nP = book.plannen.filter(p => !p.voorbeeld).length;
+    if (!await ocConfirm('Alles wissen in het Communicatieplan?', (nP > 1 ? `De plannen van alle ${nP} projecten verdwijnen, met hun doelgroepen, boodschappen en momenten.` : 'Je doelgroepen, boodschappen en alle momenten verdwijnen.') + ' De andere tools blijven zoals ze zijn.', 'Alles wissen')) return;
     const copy = snapshot();
     // De koppeling met een gedeeld bestand gaat mee weg. Het bestand zelf blijft staan.
     const koppeling = window.ocKoppel ? await ocKoppel.wis() : null;
     try { localStorage.removeItem(KEY); } catch {}
-    state = load(); autoName = false; autoWhat = ''; suggestSponsor(); ocShare.clear(OC_ID); saves++; clearTimeout(save.t); render();
+    book = load(); state = null; kies(); autoSponsor = false; autoName = false; autoWhat = ''; suggestSponsor(); ocShare.clear(OC_ID); saves++; clearTimeout(save.t); render();
     // Was er een koppeling, dan krijgen andere tabbladen het wis-signaal: zij schrijven niet meer naar het bestand.
     if (koppeling && window.ocKoppel) ocKoppel.seinWis();
     toast('Alles gewist', undoable(copy, () => { if (window.ocKoppel) ocKoppel.herstel(koppeling); }));
   }
 });
 
-// Eén plan, geen tabbladen: komt de naam nog uit de app of is het plan nog leeg, dan volgt de naam het project uit de app. Met inhoud blijft alles staan.
-function ocVolgProject() {
-  const n = ocProjectName(); if (!n || state.voorbeeld || state.name.trim() === n || (window.ocKoppel && ocKoppel.toestand && ocKoppel.toestand().fase !== 'uit')) return false;
-  const n0 = state.name, a0 = autoName; state.name = ''; autoName = false; const leeg = !hasContent(); state.name = n0; autoName = a0;
-  if (!autoName && !leeg) return false;
-  state.name = n; autoName = true; return true;   // zoals een voorgestelde naam: pas bewaard als je zelf iets doet
+/* Projecten: een tab kiezen, een nieuw project, een project verwijderen (met Ongedaan) */
+function wissel(id) { ontsuggereer(); kies(id); suggestSponsor(); }
+function newProject() {
+  ontsuggereer(); const p = fresh('Nieuw project'); book.plannen.push(p); kies(p.id); save(); suggestSponsor(); render();
+  $('project').focus(); $('project').select();
+  requestAnimationFrame(() => { const a = document.querySelector('.tab.active'); if (a) a.scrollIntoView({ inline:'nearest', block:'nearest' }); });
 }
-ocProjectVolg(() => { if (ocVolgProject()) render(); });   // open in de app en daar een ander project gekozen
+function deleteProject() {
+  ontsuggereer();
+  const copy = snapshot(), p = state, i = book.plannen.indexOf(p);
+  book.plannen.splice(i, 1);
+  if (!book.plannen.length) book.plannen.push(fresh());
+  kies(book.plannen[Math.min(Math.max(i - 1, 0), book.plannen.length - 1)].id);
+  save(); suggestSponsor(); render();
+  toast(`${String(p.name || '').trim() || 'Project'} verwijderd`, undoable(copy));
+}
+$('del-unit').addEventListener('click', deleteProject);
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-list]');
+  if (t) {
+    // Een ander tabblad openen is geen wijziging: Ongedaan blijft werken.
+    if (t.dataset.list !== state.id) { wissel(t.dataset.list); persist(); render(); clearTimeout(save.t); save.t = setTimeout(publish, 300); }
+    return;
+  }
+  if (e.target.closest('#new-project')) newProject();
+});
+// Open in de app en daar een ander project gekozen: dat project openen of er een plan voor beginnen. Het vorige blijft in zijn tabblad.
+ocProjectVolg(() => {
+  ontsuggereer(); const voor = JSON.stringify(book);
+  ocPickProject(book, 'plannen'); ocNieuwProject();
+  if (JSON.stringify(book) !== voor) save(); else persist();
+  suggestSponsor(); render();
+});
 /* Start */
 (function init() {
+  { const voor = JSON.stringify(book); ocNieuwProject(); if (JSON.stringify(book) !== voor) save(); }
   suggestSponsor();
-  ocVolgProject();
   render();
   setTimeout(publish, 0);
 })();
+// Opnieuw beginnen = Alles wissen (alle projecten, met bevestiging en Ongedaan), zoals in de Gap-analyse. Eén project verwijderen: de prullenbak.
 document.getElementById('oc-restart').addEventListener('click', () => document.querySelector('#menu [data-act="wipe"]').click());
 </script>
 <script>
 /* ---------- Werk samen via een gedeeld bestand: de adapter voor het gedeelde blok oc-koppel ----------
-   Het Communicatieplan heeft één plan per toestel. Dat plan is de enige eenheid en heeft altijd het id 'plan': wie hetzelfde
-   bestand koppelt, werkt in hetzelfde plan (ook wie al een eigen plan had: beide gaan samen). Er valt dus niets aan te vinken;
-   ben je gekoppeld, dan gaat je plan mee (behalve het voorbeeld, dat nooit meegaat).
+   Elk project heeft een eigen plan: één plan = één eenheid, zoals de projecten in de Risicomatrix. Bij het koppelen vink je aan
+   welke plannen meegaan (het voorbeeld nooit). Het plan van vroeger (van voor er meerdere projecten waren) houdt het id 'plan':
+   wie hetzelfde bestand al koppelde, werkt zo verder in hetzelfde plan.
    Items: de doelgroepen, de momenten en de metingen (elk met een id) en de onderdelen (elk ingevuld veld, zie kpVakken).
    Passen twee mensen hetzelfde veld, dezelfde doelgroep of hetzelfde moment aan, dan wint wie het laatst bewaart.
    Volgorde: die van het bestand; iets nieuws van jou blijft na wat ervoor stond. De momenten staan in de tool toch op datum.
-   Het blok verwacht een lijst eenheden: W is die lijst, met als enige eenheid het plan zelf (state). Zet het blok er een andere
-   eenheid in (na het samenvoegen), dan wordt die het plan; de stap en de weergave van dit toestel blijven.
-   Bestand: soort oc-communicatieplan, data 'communicatie.v1' = {plannen:[plan], weg}. "Open bestand" kan het openen. */
+   Het blok werkt rechtstreeks op 'book' (plannen, current, weg). Zet het blok er een samengevoegd plan in de plaats, dan wordt dat
+   het open plan; de stap en de weergave van dit toestel blijven.
+   Bestand: soort oc-communicatieplan, data 'communicatie.v1' = {plannen, weg}. "Open bestand" kan het openen. */
 (() => {
-  let lijst = [state], van = state, laatsteWeg = null;
-  const gekoppeld = () => ocKoppel.toestand().fase !== 'uit';
-  function kies() {
-    const L = lijst.filter(u => u && typeof u === 'object');
-    let p = L.find(u => u.gedeeld === true && !u.voorbeeld) || L.find(u => u === state) || L.find(u => u.id === 'plan') || L[0] || fresh();
-    if (p !== state) { p.view = state.view; p.step = state.step; state = p; }
-    lijst = [state]; van = state;
+  const deelt = p => !!p && p.gedeeld === true && !p.voorbeeld;
+  // na het samenvoegen: 'state' wijst weer naar het open plan (het blok kan het door een nieuw object vervangen)
+  function volg() {
+    const oud = state; kies();
+    if (oud && state !== oud && state.id === oud.id) { state.view = oud.view; state.step = oud.step; }
   }
-  const W = {
-    get plannen() { if (van !== state) { lijst = [state]; van = state; } return lijst; },
-    set plannen(v) { lijst = Array.isArray(v) ? v : []; kies(); },
-    get huidig() { return state.id; },
-    set huidig(v) {},
-    // verwijderingen bovenaan (bij één plan met een vast id blijft dit leeg); ze bestaan pas vanaf de eerste koppeling
-    get weg() { if (!state.kpWeg && laatsteWeg && gekoppeld()) state.kpWeg = laatsteWeg; if (state.kpWeg) laatsteWeg = state.kpWeg; return state.kpWeg; },
-    set weg(v) { state.kpWeg = v; laatsteWeg = v; }
-  };
   // een plan uit het bestand heeft alleen wat gedeeld wordt: de rest krijgt de gewone beginwaarden
-  function heel() {
-    const f = fresh(); Object.keys(f).forEach(k => { if (!(k in state)) state[k] = f[k]; });
-    ['groups', 'moments', 'measures'].forEach(k => { if (!Array.isArray(state[k])) state[k] = []; });
-    state.id = 'plan';
+  function heel(p) {
+    const f = fresh(''); Object.keys(f).forEach(k => { if (k !== 'id' && !(k in p)) p[k] = f[k]; });
+    ['groups', 'moments', 'measures'].forEach(k => { if (!Array.isArray(p[k])) p[k] = []; });
+  }
+  // de gedeelde plannen: velden terug uit de onderdelen (de andere plannen raakt het bestand niet)
+  function uitAlles() {
+    let m = null;
+    book.plannen.filter(deelt).forEach(p => { heel(p); const x = kpVakken.uitEen(p); if (p === state) m = x; });
+    return m;
   }
   const een = (v, ids) => ids.includes(v) ? v : '';
   const SID = SENDERS.map(s => s.id), CID = Object.keys(CHANNELS), MID = MEAS.map(m => m.id), GID = GOALS.map(g => g.id);
@@ -3470,30 +3619,30 @@ document.getElementById('oc-restart').addEventListener('click', () => document.q
   };
   ocKoppel.start({
     id:'communicatie', soort:'oc-communicatieplan', naam:'Communicatieplan', bestand:'communicatieplan',
-    sleutel:KEY, lijst:'plannen', verz:{ groups:'wegGroepen', moments:'wegMomenten', measures:'wegMetingen', vakken:'wegVakken' }, vlag:'gedeeld', huidig:'huidig', kopVelden:[], volgorde:'bestand', naamKoppel:false,
+    sleutel:KEY, lijst:'plannen', verz:{ groups:'wegGroepen', moments:'wegMomenten', measures:'wegMetingen', vakken:'wegVakken' }, vlag:'gedeeld', huidig:'current', kopVelden:[], volgorde:'bestand', naamKoppel:false,
     w:{ een:'plan', veel:'plannen', Een:'Het', De:'Het', Deze:'Dit plan', deze:'dit plan', Hij:'Het', werk:'plan', zelfde:'communicatieplannen', item:['doelgroep', 'doelgroepen'] },
     max:{ eenheden:20, items:500 },
-    enkel:'Je communicatieplan gaat mee naar het bestand.',   // één plan: dat gaat mee, er valt niets te kiezen
     uitleg:'Passen twee mensen hetzelfde veld, dezelfde doelgroep of hetzelfde moment aan, dan wint wie het laatst bewaart. Wat iemand anders elders aanpaste, blijft staan.',
-    staat:() => W,
+    staat:() => book,
     kopSchoon:() => ({}),
     schoonItem:(v, it, tijd, H) => ITEM[v] ? ITEM[v](it, H) : null,
     label:u => String(u.name || '').trim() || 'Communicatieplan',
     naamVoorBestand:u => String(u && u.name || '').trim(),
     aantal:u => `${u.groups.length} ${u.groups.length === 1 ? 'doelgroep' : 'doelgroepen'} · ${u.moments.length} ${u.moments.length === 1 ? 'moment' : 'momenten'}`,
     nieuweEenheid:() => fresh(),
-    kiesHuidig:() => kies(),
-    // Gekoppeld? Dan gaat het plan mee (een voorbeeld nooit). Daarna de velden naar de onderdelen.
-    spoel:() => { if (!state.voorbeeld && gekoppeld()) state.gedeeld = true; kpVakken.naar(); },
+    leeg:p => !hasContent(p),
+    kiesHuidig:() => { book.current = (book.plannen.find(p => !p.voorbeeld) || book.plannen[0] || {}).id; },
+    // Voor het schrijven: de velden van elk gedeeld plan naar zijn onderdelen.
+    spoel:() => { book.plannen.filter(deelt).forEach(p => kpVakken.naar(p)); },
     bewaar:() => {
-      kies(); heel();
-      const m = kpVakken.uitEen(state);
+      volg();
+      const m = uitAlles();
       // wat uit het bestand komt, is bevestigd; een leeg veld krijgt weer het voorstel uit een andere tool
-      if (m.has('name')) autoName = false; if (m.has('sponsor')) autoSponsor = false; if (m.has('what')) autoWhat = '';
+      if (m) { if (m.has('name')) autoName = false; if (m.has('sponsor')) autoSponsor = false; if (m.has('what')) autoWhat = ''; }
       suggestSponsor(); persist();
       clearTimeout(save.t); save.t = setTimeout(publish, 300);
     },
-    teken:() => { render(); showRestart(); },
+    teken:() => { volg(); render(); showRestart(); },
     bezig:() => { const a = document.activeElement; return !!(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) && !a.closest('.kp-back')); },
     toast:(msg, undo, ms) => {
       if (!undo) { toast(msg, null, ms); return; }
@@ -3502,7 +3651,8 @@ document.getElementById('oc-restart').addEventListener('click', () => document.q
       toast(msg, f, ms);
     },
     ongedaan:() => undoFn,
-    naOngedaan:() => { kies(); kpVakken.uitEen(state); },
+    naOngedaan:() => { volg(); uitAlles(); },
+    tabs:() => [...document.querySelectorAll('#lists .tab[data-list]')].map(t => [t, t.dataset.list]),
     menu:{ na:() => document.querySelector('#menu [data-bestand="open"]'), tekst:'ocb-t', sluit:() => { menu.classList.remove('open'); menuBtn.setAttribute('aria-expanded', 'false'); }, knop:() => menuBtn },
     plek:() => $('hero'),
     open:{ knop:'[data-bestand="open"]', invoer:'oc-bestand-in' }
@@ -3570,8 +3720,8 @@ window.ocBestand = (function () {
 <script>
 /* Bewaar als bestand / Open bestand */
 (() => {
-  const heeftWerk = () => { try { return hasContent(); } catch (e) { return true; } };
-  const extraNaam = () => { try { return String(state.name || '').trim(); } catch (e) { return ''; } };
+  const heeftWerk = () => { try { return book.plannen.length > 1 || book.plannen.some(p => p.voorbeeld || hasContent(p)); } catch (e) { return true; } };
+  const extraNaam = () => { try { return book.plannen.length === 1 ? String(state.name || '').trim() : ''; } catch (e) { return ''; } };
   const inp = document.getElementById('oc-bestand-in');
   // Een lange melding blijft langer staan (minstens 4,5 s): toon ze opnieuw voor ze verdwijnt.
   const lang = msg => { toast(msg); setTimeout(() => { const t = document.getElementById('toast-text'); if (t && t.textContent === msg) toast(msg); }, 2300); };
