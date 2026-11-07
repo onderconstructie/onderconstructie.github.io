@@ -1649,6 +1649,12 @@ window.ocKoppel = (() => {
 function ocProject(fb) { try { const p = JSON.parse(localStorage.getItem('oc.project')); return p && typeof p.name === 'string' && p.name.trim() ? p.name.trim().slice(0, 80) : fb; } catch { return fb; } }
 // Het project kreeg een nieuwe naam (in de app of in een tool): de vorige namen staan in oc.project.oud. Zo vindt elke tool het terug.
 function ocProjectOud() { try { const p = JSON.parse(localStorage.getItem('oc.project')); return p && Array.isArray(p.oud) ? p.oud.filter(x => typeof x === 'string') : []; } catch { return []; } }
+// Koos je in de app een ander project en heeft de tool er nog geen eigen lijst voor (een voorbeeld telt niet), dan geeft ocProjectNieuw die naam terug: begin dan een nieuwe, lege lijst op de manier van de tool.
+// Eén keer per projectkeuze: st.ocSince onthoudt welke keuze (oc.project.since) al verwerkt is. Is de open lijst nog leeg (o.leeg) en heeft ze een standaardnaam, dan krijgt ze de naam (o.noem) en komt er niets bij.
+// o.cur: eigenschap met de open lijst; o.van(u): het project van een lijst (standaard de naam). Leeg project of een standaardnaam in de app: niets.
+function ocProjectNieuw(st, arr, o = {}) { const n = ocProject(''), cur = o.cur || 'current', van = o.van || (x => x.name); if (!n || !st || !Array.isArray(st[arr])) return ''; let s = n; try { const p = JSON.parse(localStorage.getItem('oc.project')); if (p && p.since) s = String(p.since); } catch {} if (st.ocSince === s) return ''; st.ocSince = s; const std = v => window.ocStandaardNaam ? ocStandaardNaam(v) : !String(v || '').trim() || /^((mijn|nieuwe?) )?(project|analyse|lijst|keuze|kaart|ideeënkaart|doelgroep|matrix|plan|groep|team|tabel|informatietabel|log|retro|sprint|scan|proces)( \d+)?$|^naamloos$|^hele organisatie$/i.test(String(v).trim()); if (std(n)) return ''; const oud = ocProjectOud(); if (st[arr].some(x => x && !x.voorbeeld && (van(x) === n || oud.includes(van(x))))) return ''; const c = st[arr].find(x => x && x.id === st[cur]); if (c && !c.voorbeeld && o.leeg && o.leeg(c) && std(van(c))) { if (o.noem) o.noem(c, n); else c.name = n; return ''; } return n; }
+// De app houdt tools open: kies je daar een ander project, dan voert de tool fn() opnieuw uit (openen of nieuw beginnen). Typ je net in deze tool, dan pas bij de volgende focus of als ze weer zichtbaar wordt.
+function ocProjectVolg(fn) { let wacht = false; const typt = () => { const a = document.activeElement; return document.hasFocus() && !!a && (a.isContentEditable || a.tagName === 'TEXTAREA' || a.tagName === 'SELECT' || (a.tagName === 'INPUT' && !/^(checkbox|radio|button|submit|reset|range|color|file)$/i.test(a.type))); }; const doe = () => { if (!wacht) return; wacht = false; try { fn(); } catch (e) { console.error(e); } }; addEventListener('storage', e => { if (e.key === 'oc.project' && e.newValue !== e.oldValue) { wacht = true; if (!typt()) doe(); } }); addEventListener('focus', doe); document.addEventListener('visibilitychange', doe); }
 function ocPickProject(st, arr, cur = 'current') { const p = ocProject(''); if (!p || !st || !Array.isArray(st[arr])) return; let u = st[arr].find(x => x && x.name === p); if (!u) { const o = ocProjectOud(); u = st[arr].find(x => x && o.includes(x.name)); if (u) u.name = p; } if (u) st[cur] = u.id; }   // open het actieve project uit de app
 /* ---------- Overnemen tussen tools (gedeeld door de Onder Constructie-tools, v2) ----------
    Alle tools draaien op hetzelfde domein en delen dus localStorage. Elke tool legt wat hij te bieden
@@ -2306,6 +2312,8 @@ function load() {
 }
 let state = load();
 ocPickProject(state, 'opdrachten');
+// Een ander project gekozen in de app en nog geen opdracht ervoor: begin er een, zoals met "+ Opdracht". De vorige blijft in haar tabblad.
+function ocNieuwProject() { const n = ocProjectNieuw(state, 'opdrachten', { leeg: o => !begun(o) }); if (n) { const o = nieuw(n); state.opdrachten.push(o); state.current = o.id; } return !!n; }
 let version = 0;
 // Gekoppeld met een gedeeld bestand? Dan gaan de velden eerst naar de onderdelen, krijgt elke wijziging een tijdstempel
 // en gaat ze na een korte pauze ook naar dat bestand. Zonder koppeling verandert er niets.
@@ -3039,6 +3047,9 @@ $('menu').addEventListener('click', async e => {
 window.addEventListener('storage', e => { if (e.key === KEY) { state = load(); render(); } });
 { let rt = 0; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => document.querySelectorAll('#form textarea').forEach(autosize), 120); }); }
 try { document.fonts.ready.then(() => document.querySelectorAll('#form textarea').forEach(autosize)); } catch {}
+if (ocNieuwProject()) save();   // na het laden: nieuw project, nieuwe lijst
+// Open in de app en daar een ander project gekozen: dat project openen of beginnen.
+ocProjectVolg(() => { const voor = JSON.stringify(state); ocPickProject(state, 'opdrachten'); ocNieuwProject(); if (JSON.stringify(state) !== voor) { save(); render(); } });
 render();
 </script>
 <script>

@@ -1015,6 +1015,7 @@ function adoptProject(l) {
   if (!p || !l || l.voorbeeld || l.name !== 'Mijn lijst' || state.lists.some(x => x.name === p)) return false;
   l.name = p; return true;
 }
+ocPickProject(state, 'lists');   // ook onder een vorige naam
 (() => {
   const p = ocProject('').slice(0, 60);
   state.lists.filter(l => !l.items.length).forEach(adoptProject);
@@ -1360,7 +1361,17 @@ function deleteList(l) {
 $('del-btn').addEventListener('click', () => { closeMenu(); deleteList(cur()); });
 
 /* ---------- Printbare checklist voor PDF en afbeelding ---------- */
+/* Het actieve project uit de app (oc.project): nieuwe projecten, analyses en lijsten krijgen die naam. */
 function ocProject(fb) { try { const p = JSON.parse(localStorage.getItem('oc.project')); return p && typeof p.name === 'string' && p.name.trim() ? p.name.trim().slice(0, 80) : fb; } catch { return fb; } }
+// Het project kreeg een nieuwe naam (in de app of in een tool): de vorige namen staan in oc.project.oud. Zo vindt elke tool het terug.
+function ocProjectOud() { try { const p = JSON.parse(localStorage.getItem('oc.project')); return p && Array.isArray(p.oud) ? p.oud.filter(x => typeof x === 'string') : []; } catch { return []; } }
+// Koos je in de app een ander project en heeft de tool er nog geen eigen lijst voor (een voorbeeld telt niet), dan geeft ocProjectNieuw die naam terug: begin dan een nieuwe, lege lijst op de manier van de tool.
+// Eén keer per projectkeuze: st.ocSince onthoudt welke keuze (oc.project.since) al verwerkt is. Is de open lijst nog leeg (o.leeg) en heeft ze een standaardnaam, dan krijgt ze de naam (o.noem) en komt er niets bij.
+// o.cur: eigenschap met de open lijst; o.van(u): het project van een lijst (standaard de naam). Leeg project of een standaardnaam in de app: niets.
+function ocProjectNieuw(st, arr, o = {}) { const n = ocProject(''), cur = o.cur || 'current', van = o.van || (x => x.name); if (!n || !st || !Array.isArray(st[arr])) return ''; let s = n; try { const p = JSON.parse(localStorage.getItem('oc.project')); if (p && p.since) s = String(p.since); } catch {} if (st.ocSince === s) return ''; st.ocSince = s; const std = v => window.ocStandaardNaam ? ocStandaardNaam(v) : !String(v || '').trim() || /^((mijn|nieuwe?) )?(project|analyse|lijst|keuze|kaart|ideeënkaart|doelgroep|matrix|plan|groep|team|tabel|informatietabel|log|retro|sprint|scan|proces)( \d+)?$|^naamloos$|^hele organisatie$/i.test(String(v).trim()); if (std(n)) return ''; const oud = ocProjectOud(); if (st[arr].some(x => x && !x.voorbeeld && (van(x) === n || oud.includes(van(x))))) return ''; const c = st[arr].find(x => x && x.id === st[cur]); if (c && !c.voorbeeld && o.leeg && o.leeg(c) && std(van(c))) { if (o.noem) o.noem(c, n); else c.name = n; return ''; } return n; }
+// De app houdt tools open: kies je daar een ander project, dan voert de tool fn() opnieuw uit (openen of nieuw beginnen). Typ je net in deze tool, dan pas bij de volgende focus of als ze weer zichtbaar wordt.
+function ocProjectVolg(fn) { let wacht = false; const typt = () => { const a = document.activeElement; return document.hasFocus() && !!a && (a.isContentEditable || a.tagName === 'TEXTAREA' || a.tagName === 'SELECT' || (a.tagName === 'INPUT' && !/^(checkbox|radio|button|submit|reset|range|color|file)$/i.test(a.type))); }; const doe = () => { if (!wacht) return; wacht = false; try { fn(); } catch (e) { console.error(e); } }; addEventListener('storage', e => { if (e.key === 'oc.project' && e.newValue !== e.oldValue) { wacht = true; if (!typt()) doe(); } }); addEventListener('focus', doe); document.addEventListener('visibilitychange', doe); }
+function ocPickProject(st, arr, cur = 'current') { const p = ocProject(''); if (!p || !st || !Array.isArray(st[arr])) return; let u = st[arr].find(x => x && x.name === p); if (!u) { const o = ocProjectOud(); u = st[arr].find(x => x && o.includes(x.name)); if (u) u.name = p; } if (u) st[cur] = u.id; }   // open het actieve project uit de app
 /* Bestandsnaam: tool-project-datum (JJJJ-MM-DD), zonder dubbele datum of dubbele toolnaam */
 function ocFileName(tool, project) {
   const d = new Date(), iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -1484,6 +1495,11 @@ $('import-no').addEventListener('click', () => { pending = null; $('import').hid
 /* ---------- Andere tabbladen houden we gelijk ---------- */
 window.addEventListener('storage', e => { if (e.key === KEY) { state = load(); render(); } });
 
+// Een ander project gekozen in de app en nog geen lijst ervoor: begin er een, zoals met "+ Lijst", met de projectnaam. De vorige blijft in haar tabblad.
+function ocNieuwProject() { const p = ocProject(''), k = p.slice(0, 60), n = ocProjectNieuw(state, 'lists', { leeg: l => !l.items.length, van: l => k && l.name === k ? p : l.name, noem: l => { l.name = k; } }); if (n) { const l = { id:uid(), name:k, items:[] }; state.lists.push(l); state.current = l.id; } return !!n; }
+if (ocNieuwProject()) save();   // na het laden: nieuw project, nieuwe lijst
+// Open in de app en daar een ander project gekozen: dat project openen of beginnen.
+ocProjectVolg(() => { const voor = JSON.stringify(state); ocPickProject(state, 'lists'); const k = ocProject('').slice(0, 60), u = k && state.lists.find(l => l.name === k && !l.voorbeeld); if (u) state.current = u.id; ocNieuwProject(); if (JSON.stringify(state) !== voor) { save(); render(); } });
 checkImport();
 render();
 </script>
