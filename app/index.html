@@ -1062,6 +1062,7 @@ body:not(.view-fase) #home[data-tab="projecten"] #alltools-h { cursor:pointer; }
 /* De kop van Projecten: alleen in dat onderdeel; de titel staat er dan visueel, de h2 blijft voor schermlezers */
 .proj-top { display:none !important; }
 #home[data-tab="projecten"] .proj-top { display:grid !important; }
+.th-wrap.proj-wrap { display:none; } #home[data-tab="projecten"] .th-wrap.proj-wrap { display:grid; } body.searching .th-wrap.proj-wrap { display:none !important; }
 .proj-top .group-title, .proj-top .group-note { display:block; }
 .proj-top .group-title { font-size:1.0625rem; font-weight:700; }
 #home[data-tab="projecten"] #alltools-h { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
@@ -1074,6 +1075,38 @@ body.searching .proj-top { display:none !important; }
 .tg-top:active { background:var(--slate-100); }
 .tg-top { display:grid; grid-template-columns:44px 1fr auto; gap:0.75rem; align-items:center; padding:0.25rem 0.25rem 0.875rem; }
 .tabgroup .group.sub .row { padding-left:1rem; }
+/* De paginakop van Projecten, Vergaderen, Zakmes en Reset: overal dezelfde, duidelijk de titel van de pagina */
+.th-wrap { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:1rem; margin:0.25rem 0 1.25rem; padding-bottom:1.125rem; position:relative;
+  background:linear-gradient(var(--accent), var(--accent)) 0 100% / 56px 2px no-repeat, linear-gradient(var(--slate-200), var(--slate-200)) 0 calc(100% - 0.5px) / 100% 1px no-repeat; }
+.tab-hero { display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:1rem; align-items:center; padding:0.25rem 0.25rem 0 0; position:relative; border-radius:0; background:none; }
+.tab-hero.tg-top:active { background:none; }
+.tab-hero.tg-top:active .th-ico { transform:scale(0.97); }
+.th-ico { position:relative; width:64px; height:64px; border-radius:18px; display:grid; place-items:center; background:linear-gradient(155deg, #ffffff 10%, #ecfdf5 100%); box-shadow:inset 0 0 0 1px #a7f3d0, 0 12px 26px -16px rgba(4,120,87,0.55); transition:transform .15s ease; }
+.th-ico svg { width:54px; height:54px; display:block; }
+.th-ico::before, .th-ico::after { content:''; position:absolute; border-radius:50%; pointer-events:none; }
+.th-ico::before { width:7px; height:7px; right:-4px; top:-4px; background:var(--accent); box-shadow:0 0 0 3px #ffffff; }
+.th-ico::after { width:5px; height:5px; left:-3px; bottom:7px; background:#a7f3d0; box-shadow:0 0 0 2px #ffffff; }
+.th-txt { min-width:0; display:flex; flex-direction:column; gap:0.125rem; }
+.th-meta { display:flex; align-items:center; gap:0.5rem; font-size:0.75rem; font-weight:600; letter-spacing:0.07em; text-transform:uppercase; color:var(--slate-500); font-variant-numeric:tabular-nums; }
+.th-title { margin:0; font-size:clamp(1.75rem, 1.35rem + 1.4vw, 2.25rem); line-height:1.08; font-weight:700; letter-spacing:-0.03em; color:var(--slate-900); text-wrap:balance; }
+.th-note { font-size:1rem; line-height:1.4; color:var(--slate-600); }
+.th-hint { display:none; width:40px; height:40px; border-radius:50%; place-items:center; color:var(--accent-dark); background:#ecfdf5; box-shadow:inset 0 0 0 1px #a7f3d0; }
+.th-hint svg { width:20px; height:20px; transition:transform .2s ease; }
+.tab-hero[aria-expanded="true"] .th-hint svg { transform:rotate(180deg); }
+@media (hover:hover) { .tab-hero.tg-top:hover .th-title { color:var(--accent-dark); } }
+.th-wrap .tg-tools { padding:0; margin:0; }
+.th-wrap .tg-tools button { border:1px solid var(--slate-200); border-radius:999px; background:var(--wit); color:var(--slate-600); font-weight:600; font-size:0.875rem; min-height:40px; padding:0 1rem; }
+@media (hover:hover) { .th-wrap .tg-tools button:hover { border-color:#a7f3d0; color:var(--accent-dark); background:#ecfdf5; } }
+@media (max-width:640px) {
+  .th-wrap { grid-template-columns:minmax(0,1fr); margin-bottom:1rem; }
+  .th-ico { width:56px; height:56px; border-radius:16px; } .th-ico svg { width:46px; height:46px; }
+  .tab-hero { gap:0.875rem; }
+  .tab-hero.tg-top .th-hint { display:grid; }
+  .th-note { font-size:0.9375rem; }
+}
+@media (prefers-reduced-motion:reduce) { .th-ico, .th-hint svg { transition:none; } }
+body.view-fase .proj-top .th-hint { display:none !important; }
+.tabgroup .group.solo .list { border-top:0; }
 .cy-more { font-size:0.8125rem; font-weight:600; color:var(--slate-600); padding:0.75rem 1rem 0.5rem; background:var(--slate-50); border-top:1px solid var(--slate-200); }
 .tag.pd.also { text-transform:none; color:var(--slate-600); background:var(--slate-100); box-shadow:none; }
 
@@ -1357,9 +1390,8 @@ body.searching #home #tabgroup { display:none !important; }
 
     <section class="alltools" id="alltools" aria-labelledby="alltools-h">
       <!-- Projecten: dezelfde kop als Vergaderen, Zakmes en Reset (icoon, naam, uitleg, aantal); per onderwerp klapt een tik alles open of dicht -->
-      <div class="tg-top proj-top" id="proj-top" aria-hidden="true"><span class="group-logo"><svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="16" y="18" width="12" height="44" rx="2" fill="#cbd5e1"/><rect x="34" y="18" width="12" height="44" rx="2" fill="#cbd5e1"/><rect x="52" y="18" width="12" height="44" rx="2" fill="#cbd5e1"/><rect x="18" y="22" width="8" height="8" rx="1" fill="#10b981"/></svg></span>
-        <span><span class="group-title">Projecten</span><span class="group-note">Van opzet tot verandering</span></span>
-        <span class="group-meta"><span class="count" id="proj-count"></span></span></div>
+      <div class="th-wrap proj-wrap"><div class="tab-hero tg-top proj-top" id="proj-top" aria-hidden="true"><span class="th-ico"><svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="16" y="18" width="12" height="44" rx="2" fill="#cbd5e1"/><rect x="34" y="18" width="12" height="44" rx="2" fill="#cbd5e1"/><rect x="52" y="18" width="12" height="44" rx="2" fill="#cbd5e1"/><rect x="18" y="22" width="8" height="8" rx="1" fill="#10b981"/></svg></span>
+        <span class="th-txt"><span class="th-meta"><span id="proj-count"></span> tools</span><span class="th-title">Projecten</span><span class="th-note">Van opzet tot verandering</span></span><span class="th-hint" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10l5 5 5-5"/></svg></span></div></div>
       <div class="all-head" id="all-head">
         <h2 class="section-label" id="alltools-h">Alle tools</h2>
         <!-- twee gelijkwaardige ingangen: dezelfde tools, anders geordend. De keuze wordt onthouden. -->
@@ -1419,7 +1451,7 @@ body.searching #home #tabgroup { display:none !important; }
         <a class="ft-link" href="https://www.linkedin.com/in/bartel-volckaert-8a96842/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Maker</a>
         <button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (34 seconden)" title="Bekijk de film (34 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg></button>
       </nav>
-      <p class="ft-meta"><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v14.7</span></p>
+      <p class="ft-meta"><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v14.8</span></p>
     </div>
   </footer>
   <dialog class="film" id="film" aria-labelledby="film-h">
@@ -1912,15 +1944,13 @@ function setTab(id, keep) {
   $('tabbar').querySelectorAll('.tab').forEach(b => b.setAttribute('aria-current', String(b.dataset.tab === id)));
   const g = ['vergaderen', 'zakmes', 'reset'].includes(id) ? GROUPS.find(x => x.id === id) : null;
   const n = g ? TOOLS.filter(t => inGroup(t, id)).length : 0;
+  const hint = '<span class="th-hint" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10l5 5 5-5"/></svg></span>';
+  const kop = (knop, meta) => `<div class="tab-hero${knop ? ' tg-top' : ''}"${knop ? ' role="button" tabindex="0" aria-controls="tabgroup" title="Tik om alles open of dicht te klappen"' : ''}><span class="th-ico" aria-hidden="true">${bare(g.logo)}</span>
+        <span class="th-txt"><span class="th-meta">${meta}</span><h2 class="th-title" id="tabgroup-h" tabindex="-1">${esc(g.label)}</h2><span class="th-note">${esc(g.note)}</span></span>${knop ? hint : ''}</div>`;
   $('tabgroup').innerHTML = !g ? '' : TAB_SUB[id]
-    ? `<div class="tg-top" role="button" tabindex="0" aria-controls="tabgroup" title="Alles open of dicht"><span class="group-logo" aria-hidden="true">${bare(g.logo)}</span>
-        <span><h2 class="group-title" id="tabgroup-h" tabindex="-1">${esc(g.label)}</h2><span class="group-note">${esc(g.note)}</span></span>
-        <span class="group-meta"><span class="count">${n}</span></span></div>
-        <div class="list-tools tg-tools"><button type="button" data-sub-all="open">Alles open</button><button type="button" data-sub-all="dicht">Alles dicht</button></div>${subRows(id)}`
-    : `<div class="group"><div class="tg-head"><span class="group-logo" aria-hidden="true">${bare(g.logo)}</span>
-      <span><h2 class="group-title" id="tabgroup-h" tabindex="-1">${esc(g.label)}</h2><span class="group-note">${esc(g.note)}</span></span>
-      <span class="group-meta"><span class="count">${n}</span></span></div>
-    <div class="list">${groupRows(id)}</div></div>`;
+    ? `<div class="th-wrap">${kop(true, `${n} tools · ${TAB_SUB[id].length} groepen`)}
+        <div class="list-tools tg-tools"><button type="button" data-sub-all="open">Alles open</button><button type="button" data-sub-all="dicht">Alles dicht</button></div></div>${subRows(id)}`
+    : `<div class="th-wrap">${kop(false, `${n} tools`)}</div><div class="group solo"><div class="list">${groupRows(id)}</div></div>`;
   $('alltools-h').textContent = id === 'projecten' ? 'Projecten' : 'Alle tools';
   if (id === 'projecten') $('proj-count').textContent = TOOLS.filter(t => PROJ_GROUPS.includes(t.g)).length;
   if (g) { markLive(); syncSubTools(); }
@@ -3176,7 +3206,7 @@ const SYNONIEMEN = {
   impact:'verandering gevolgen reorganisatie herstructurering nieuwe structuur', klimaat:'verandering cultuur vertrouwen', veranderprofiel:'verandering samenvatting inspanning reorganisatie herstructurering',
   gap:'kloof verschil huidige gewenste situatie projectplan budget doelen', prioriteit:'prioriteren belangrijk dringend snelle winst quick wins projectplan planning', risico:'risico kans gevolg projectplan stuurgroep budget rapport',
   'project-radar':'status gezondheid project rapport rapportering stuurgroep budget planning mijlpalen', retro:'terugblik evaluatie lessen overleg team vergadering verslag actiepunten', paradox:'afstemming overleg groepsgrootte',
-  adem:'angst paniek rustig kalmeren stress rust ademhaling ontspannen kalm', hart:'mediteren meditatie meditatie mildheid ontspannen rust', hier:'angst paniek zintuigen aarden stress rust ontspannen', qr:'qr-code qrcode qr scancode code link delen', opdracht:'projectopdracht opdracht projectfiche projectplan scope afbakening doel doelen opdrachtgever mijlpalen mijlpaal aftekenen budget deadline einddatum opstart', meetplan:'meten meting indicator indicatoren kpi doel doelen nulmeting streefwaarde effect resultaat evaluatie opvolgen cijfers rapport', dossier:'dossier stuurgroep rapport rapportering statusrapport nota overzicht samenvatting voortgang', notities:'notities verslag vergaderverslag notulen notuleren kladblok aantekeningen acties actiepunten besluiten afspraken agenda aanwezigen overleg teamoverleg werkoverleg stuurgroep opvolging wie wat wanneer', kaartjes:'kaartjes kaarten strategiekaartjes strategische vragen vraagkaarten gespreksvragen vergadering strategie meten verbinden meta reflectie discussie trekken', klankkast:'klankkast geluid geluidjes geluiden soundboard effecten badum tss grap punchline applaus tromgeroffel zoemer tadaa metronoom tiktak drama scope alarm brandalarm sirene achteruit vrachtwagen terugkrabbelen treurmars begrafenis chopin champagne feest vieren mijlpaal hamer orde stilte jarig verjaardag happy birthday vergadering plezier knipoog', goesting:'goesting motivatie werkgoesting zin werkplezier autonomie verbondenheid competentie abc basisbehoeften zelfdeterminatie stress energie welzijn thermometer test zelftest', 'check-out':'check-out checkout uitcheck afsluiten afsluiter afronden terugblik evaluatie exitticket exit ticket inzicht vragen workshop sessie opleiding training minuut feedback drie woorden', woordwolk:'woordwolk wordcloud woordenwolk woorden tellen tekst analyse open antwoorden bevraging enquête enquete survey vragenlijst feedback interviews notulen trefwoorden kernwoorden frequentie csv', werkdagen:'werkdagen werkdag termijn termijnen deadline vervaldag kalenderdagen feestdagen feestdag datum datums tellen rekenen antwoordtermijn bezwaar beroep brugdag sluitingsdag', looplicht:'zaklamp joggen lopen fietsen veiligheid licht nacht', schets:'tekenen schetsen schets whiteboard sjablonen sjabloon presenteren plattegrond scherm ontwerp stylus pen krabbel'
+  adem:'angst paniek rustig kalmeren stress rust ademhaling ontspannen kalm', hart:'mediteren meditatie meditatie mildheid ontspannen rust', hier:'angst paniek zintuigen aarden stress rust ontspannen', qr:'qr-code qrcode qr scancode code link delen', opdracht:'projectopdracht opdracht projectfiche projectplan scope afbakening doel doelen opdrachtgever mijlpalen mijlpaal aftekenen budget deadline einddatum opstart', meetplan:'meten meting indicator indicatoren kpi doel doelen nulmeting streefwaarde effect resultaat evaluatie opvolgen cijfers rapport', dossier:'dossier stuurgroep rapport rapportering statusrapport nota overzicht samenvatting voortgang', notities:'notities verslag vergaderverslag notulen notuleren kladblok aantekeningen acties actiepunten besluiten afspraken agenda aanwezigen overleg teamoverleg werkoverleg stuurgroep opvolging wie wat wanneer', kaartjes:'kaartjes kaarten strategiekaartjes strategische vragen vraagkaarten gespreksvragen vergadering strategie meten verbinden meta reflectie discussie trekken', klankkast:'klankkast geluid geluidjes geluiden soundboard effecten badum tss grap punchline applaus tromgeroffel zoemer tadaa metronoom tiktak drama scope alarm brandalarm sirene achteruit vrachtwagen terugkrabbelen treurmars begrafenis chopin hamer orde stilte jarig verjaardag happy birthday vergadering plezier knipoog', goesting:'goesting motivatie werkgoesting zin werkplezier autonomie verbondenheid competentie abc basisbehoeften zelfdeterminatie stress energie welzijn thermometer test zelftest', 'check-out':'check-out checkout uitcheck afsluiten afsluiter afronden terugblik evaluatie exitticket exit ticket inzicht vragen workshop sessie opleiding training minuut feedback drie woorden', woordwolk:'woordwolk wordcloud woordenwolk woorden tellen tekst analyse open antwoorden bevraging enquête enquete survey vragenlijst feedback interviews notulen trefwoorden kernwoorden frequentie csv', werkdagen:'werkdagen werkdag termijn termijnen deadline vervaldag kalenderdagen feestdagen feestdag datum datums tellen rekenen antwoordtermijn bezwaar beroep brugdag sluitingsdag', looplicht:'zaklamp joggen lopen fietsen veiligheid licht nacht', schets:'tekenen schetsen schets whiteboard sjablonen sjabloon presenteren plattegrond scherm ontwerp stylus pen krabbel'
 };
 const fold = v => String(v || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
 function searchTools(q) {
