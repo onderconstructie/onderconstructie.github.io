@@ -1,0 +1,2215 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tijdlijn – Onder Constructie</title>
+<meta name="description" content="Zet de mijlpalen van je project op een tijdlijn. Je ziet meteen wat gehaald is, wat nog komt en wat verschoof.">
+    <meta name="oc:titel" content="Tijdlijn">
+    <meta name="oc:groep" content="projecten">
+    <meta name="oc:labels" content="">
+    <meta name="oc:pdca" content="plan, check">
+    <meta name="oc:kort" content="Je mijlpalen op een tijdlijn, en wat er verschoof">
+    <meta name="oc:volgorde" content="34">
+    <meta name="oc:traject" content="project:1">
+    <meta name="oc:opslag" content="tijdlijn.v1, oc.share.tijdlijn">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40' fill='none' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='20' cy='20' r='18' fill='%23f8fafc' stroke='%23e2e8f0' stroke-width='1.5'/%3E%3Cpath d='M8.5 23.5h23' stroke='%2364748b'/%3E%3Cpath d='M12.5 19.9l3.6 3.6-3.6 3.6-3.6-3.6Z' fill='%2310b981' stroke='%2310b981'/%3E%3Cpath d='M20 20.9l2.6 2.6-2.6 2.6-2.6-2.6Z' fill='%23f8fafc' stroke='%23cbd5e1'/%3E%3Cpath d='M27.5 19.9l3.6 3.6-3.6 3.6-3.6-3.6Z' fill='%23f8fafc' stroke='%2364748b'/%3E%3Cpath d='M20 16c2.2-3.6 5.3-3.6 7.5 0M27.5 16l.3-3M27.5 16l-2.9-.9' stroke='%2364748b'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/fonts/fonts.css">
+<style>
+:root {
+  --slate-900:#0f172a; --slate-800:#1e293b; --slate-700:#334155; --slate-600:#475569;
+  --slate-500:#64748b; --slate-400:#94a3b8; --slate-300:#cbd5e1; --slate-200:#e2e8f0;
+  --slate-100:#f1f5f9; --slate-50:#f8fafc; --wit:#ffffff;
+  --accent:#10b981; --accent-dark:#047857; --accent-hover:#065f46; --accent-light:#d1fae5; --accent-50:#ecfdf5;
+  --rood:#ef4444; --oranje:#d97706; --oranje-50:#fffbeb; --amber-tekst:#92400e; --amber-rand:#fcd34d;
+  --bottom: env(safe-area-inset-bottom, 0px);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body {
+  font-family:'DM Sans', system-ui, sans-serif; background:var(--slate-50); color:var(--slate-700);
+  line-height:1.5; min-height:100vh;min-height:100dvh; -webkit-font-smoothing:antialiased;
+  display:flex; flex-direction:column;
+}
+button, input, textarea, select { font:inherit; color:inherit; }
+button { background:none; border:0; cursor:pointer; }
+[hidden] { display:none !important; }
+
+/* Kop */
+.header { background:var(--wit); border-bottom:1px solid var(--slate-200); padding:1.5rem 1.25rem 1.75rem; position:relative; text-align:center; }
+.back-link {
+  position:absolute; top:1.25rem; left:1.25rem; display:inline-flex; align-items:center; gap:0.5rem;
+  font-size:0.875rem; color:var(--slate-500); text-decoration:none; transition:color 0.2s;
+}
+.back-link:hover { color:var(--accent-dark); }
+.back-link svg { width:16px; height:16px; }
+.logo svg { width:56px; height:56px; }
+.title { font-size:1.625rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.03em; line-height:1.2; margin-top:0.5rem; }
+.subtitle { font-size:0.9375rem; color:var(--slate-500); }
+
+.main { flex:1; width:100%; max-width:720px; margin:0 auto; padding:1.25rem 1rem 3rem; }
+
+/* Projecten (tabs) */
+.lists { display:flex; gap:0.5rem; overflow-x:auto; scrollbar-width:none; margin:-0.25rem -1rem 0.75rem; padding:0.375rem 1rem; }
+.lists::-webkit-scrollbar { display:none; }
+.tab {
+  flex-shrink:0; padding:0.4375rem 0.875rem; border-radius:999px; font-size:0.875rem; font-weight:600;
+  border:1px solid var(--slate-200); background:var(--wit); color:var(--slate-600); white-space:nowrap;
+  display:flex; align-items:center; gap:0.375rem;
+}
+.tab .n { font-size:0.75rem; font-weight:500; color:var(--slate-500); font-variant-numeric:tabular-nums; }
+.tab.active { background:var(--slate-800); border-color:var(--slate-800); color:var(--wit); }
+.tab.active .n { color:var(--slate-300); }
+.tab.add { color:var(--accent-dark); border-style:dashed; }
+.tab.add { padding:0.4375rem 0.875rem; }   /* niet de opvulling van het invoerblok .add */
+
+/* Kaart */
+.card { background:var(--wit); border:1px solid var(--slate-200); border-radius:16px; box-shadow:0 1px 2px rgba(15,23,42,0.04); }
+.card-head { display:flex; align-items:center; gap:0.5rem; padding:1rem 0.75rem 0.25rem 1.125rem; }
+.list-name {
+  flex:1; min-width:0; font-size:1.25rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.02em;
+  border:0; background:none; outline:none; padding:0.125rem 0; border-bottom:1.5px solid transparent;
+}
+.list-name:focus, .list-name:focus-visible { border-bottom-color:var(--accent); }
+.count-line { padding:0 1.125rem 0.875rem; font-size:0.8125rem; color:var(--slate-500); font-variant-numeric:tabular-nums; }
+.count-line .sig { color:var(--amber-tekst); font-weight:600; }
+.icon-btn { width:38px; height:38px; display:flex; align-items:center; justify-content:center; border-radius:10px; color:var(--slate-500); flex-shrink:0; }
+.icon-btn:hover { background:var(--slate-100); color:var(--slate-700); }
+.icon-btn svg { width:20px; height:20px; }
+.icon-btn.icon-del:hover { background:#fef2f2; color:#b91c1c; }
+
+/* Toevoegen: naam en datum op één regel */
+.add { padding:0 0.75rem 0.875rem; }
+.add-row { display:grid; grid-template-columns:minmax(0, 1fr) 10.5rem 46px; gap:0.5rem; }
+.field, .add-input {
+  width:100%; min-width:0; padding:0.6875rem 0.875rem; border:1.5px solid var(--slate-200); border-radius:10px;
+  background:var(--slate-50); outline:none; font-size:1rem; transition:border-color 0.15s, background 0.15s;
+}
+.field:focus, .add-input:focus { border-color:var(--accent); background:var(--wit); }
+.field::placeholder, .add-input::placeholder { color:#64748b; }
+textarea.field { resize:vertical; min-height:4.25rem; line-height:1.45; }
+.add-btn { min-height:46px; border-radius:10px; background:var(--accent-dark); color:var(--wit); display:flex; align-items:center; justify-content:center; }
+.add-btn:hover { background:var(--accent-hover); }
+.add-btn svg { width:22px; height:22px; }
+.add-input[aria-invalid="true"], .field[aria-invalid="true"] { border-color:#dc2626; background:var(--wit); }
+.err { margin:0.375rem 0.125rem 0; font-size:0.875rem; font-weight:500; color:#b91c1c; }
+.imp-row { display:flex; margin-top:0.625rem; }
+.imp-row:has(> .oc-import[hidden]) { display:none; }
+@media (max-width:480px) {
+  .add-row { grid-template-columns:minmax(0, 1fr) 46px; }
+  .add-row .add-input { grid-column:1 / -1; }
+}
+
+/* Bewerken */
+.grid { display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; }
+.grid .full { grid-column:1 / -1; }
+.lbl { display:block; font-size:0.75rem; font-weight:600; color:var(--slate-500); margin-bottom:0.3125rem; letter-spacing:0.01em; }
+.status { display:flex; gap:0.375rem; flex-wrap:wrap; }
+.status button {
+  min-height:44px; padding:0.4375rem 0.875rem; border-radius:999px; border:1px solid var(--slate-200); font-size:0.875rem; font-weight:500; color:var(--slate-600); background:var(--wit);
+  display:inline-flex; align-items:center; gap:0.4375rem;
+}
+.status button[aria-checked="true"] { background:var(--slate-800); border-color:var(--slate-800); color:var(--wit); }
+.status .sd { width:10px; height:10px; border-radius:50%; flex:none; border:2px solid var(--slate-500); background:var(--wit); }
+.status [data-status="gehaald"] .sd { background:var(--accent); border-color:var(--accent); }
+.status [data-status="verschoven"] .sd { border-color:var(--oranje); }
+.status button[aria-checked="true"] .sd { border-color:var(--wit); }
+.status button[aria-checked="true"][data-status="gehaald"] .sd { background:var(--accent); border-color:var(--accent); }
+.status button[aria-checked="true"][data-status="verschoven"] .sd { border-color:#fcd34d; background:var(--slate-800); }
+.oud { display:flex; flex-wrap:wrap; align-items:center; gap:0.25rem 0.75rem; font-size:0.875rem; color:var(--slate-600); padding:0.5rem 0.75rem; border-radius:10px; background:var(--oranje-50); }
+.oud s { text-decoration-color:var(--slate-400); }
+.oud button { min-height:44px; padding:0 0.375rem; border-radius:8px; font-weight:600; color:var(--amber-tekst); text-decoration:underline; text-decoration-color:var(--amber-rand); text-underline-offset:3px; }
+.oud button:hover { background:#fef3c7; }
+.edit-actions { display:flex; align-items:center; gap:0.5rem; margin-top:0.875rem; flex-wrap:wrap; }
+.btn { padding:0.5rem 0.875rem; border-radius:8px; font-weight:600; font-size:0.875rem; white-space:nowrap; }
+.btn-primary { background:var(--accent-dark); color:var(--wit); }
+.btn-primary:hover { background:var(--accent-hover); }
+.btn-danger { color:#dc2626; margin-right:auto; padding-left:0.25rem; }
+.btn-danger:hover { background:#fef2f2; }
+
+/* De tijdlijn op een breed scherm: maanden als schaal, een lijn voor vandaag, labels in rijen boven en onder */
+.tl { position:relative; margin:0 1.125rem 1rem; border:1px solid var(--slate-100); border-radius:12px; background:var(--wit); overflow:hidden; }
+.tl-in { position:relative; }
+.tl-grid { position:absolute; width:1px; background:var(--slate-100); }
+.tl-grid.jaar { background:var(--slate-200); }
+.tl-maand { position:absolute; transform:translateX(-50%); font-size:0.75rem; color:var(--slate-500); white-space:nowrap; font-variant-numeric:tabular-nums; line-height:1; }
+.tl-maand.jaar { color:var(--slate-600); font-weight:600; }
+.tl-as { position:absolute; height:2px; background:var(--slate-300); border-radius:2px; }
+.tl-nu { position:absolute; width:2px; background:var(--accent); border-radius:2px; }
+.tl-nu-t { position:absolute; transform:translateX(-50%); font-size:0.75rem; font-weight:700; color:var(--accent-dark); background:var(--accent-50); border:1px solid var(--accent-light); border-radius:999px; padding:0.0625rem 0.5rem; white-space:nowrap; line-height:1.4; }
+.tl-steel { position:absolute; width:1px; background:var(--slate-300); }
+.tl-pt { position:absolute; width:14px; height:14px; margin:-7px 0 0 -7px; border-radius:50%; background:var(--wit); border:2.5px solid var(--slate-500); }
+.tl-pt.gehaald { background:var(--accent); border-color:var(--accent); }
+.tl-pt.verschoven { border-color:var(--oranje); }
+.tl-pt.laat { border-color:var(--oranje); background:var(--oranje-50); }
+.tl-oud { position:absolute; width:10px; height:10px; margin:-5px 0 0 -5px; border-radius:50%; background:var(--wit); border:2px dashed var(--slate-400); }
+.tl-schuif { position:absolute; height:0; border-top:2px dashed var(--slate-400); }
+.tl-schuif::after { content:''; position:absolute; right:-1px; top:-6px; width:7px; height:7px; border-top:2px solid var(--slate-400); border-right:2px solid var(--slate-400); transform:rotate(45deg); transform-origin:center; }
+.tl-lbl { position:absolute; display:flex; flex-direction:column; justify-content:center; min-height:44px; padding:0.25rem 0.5rem; border:1px solid var(--slate-200); border-radius:10px; background:var(--wit); text-align:left; line-height:1.25; overflow:hidden; }
+button.tl-lbl:hover { border-color:var(--accent); background:var(--accent-50); }
+.tl-lbl .tl-n { display:block; font-size:0.8125rem; font-weight:600; color:var(--slate-800); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.tl-lbl .tl-n.twee { white-space:normal; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow-wrap:anywhere; }
+.tl-lbl .tl-d { display:block; font-size:0.75rem; color:var(--slate-500); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-variant-numeric:tabular-nums; }
+.tl-lbl .tl-d s { text-decoration-color:var(--slate-400); }
+.tl-lbl.gehaald .tl-d b { color:var(--accent-dark); font-weight:600; }
+.tl-lbl.verschoven .tl-d b, .tl-lbl.laat .tl-d b { color:var(--amber-tekst); font-weight:600; }
+.tl-lbl.gehaald .tl-n { color:var(--slate-600); }
+
+/* De lijst: een verticale tijdlijn om te bewerken (op de gsm de enige tijdlijn) */
+.ms { list-style:none; position:relative; border-top:1px solid var(--slate-100); padding:0.375rem 0 0.5rem; }
+.ms::before { content:''; position:absolute; left:calc(1.125rem + 6px); top:1rem; bottom:1rem; width:2px; background:var(--slate-200); border-radius:2px; }
+.ms-kop { position:relative; padding:0.875rem 1.125rem 0.25rem 2.75rem; font-size:0.75rem; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; color:var(--slate-500); }
+.ms-nu { position:relative; display:flex; align-items:center; gap:0.5rem; padding:0.5rem 1.125rem 0.5rem 2.75rem; font-size:0.8125rem; font-weight:700; color:var(--accent-dark); }
+.ms-nu::before { content:''; position:absolute; left:calc(1.125rem - 1px); top:50%; width:16px; height:16px; margin-top:-8px; border-radius:50%; background:var(--accent-50); border:2px solid var(--accent); }
+.ms-nu::after { content:''; flex:1; height:2px; background:var(--accent-light); border-radius:2px; }
+.ms-it { position:relative; }
+.ms-head { width:100%; text-align:left; display:grid; grid-template-columns:14px minmax(0, 1fr) auto 18px; gap:0.25rem 0.75rem; align-items:start; padding:0.75rem 1.125rem; min-height:44px; border-radius:0; }
+.ms-head:hover { background:var(--slate-50); }
+.ms-dot { width:14px; height:14px; margin-top:0.25rem; border-radius:50%; background:var(--wit); border:2.5px solid var(--slate-500); position:relative; z-index:1; }
+.ms-it.gehaald .ms-dot { background:var(--accent); border-color:var(--accent); }
+.ms-it.verschoven .ms-dot { border-color:var(--oranje); }
+.ms-it.laat .ms-dot { border-color:var(--oranje); background:var(--oranje-50); }
+.ms-it.zonder .ms-dot { border-style:dashed; border-color:var(--slate-400); }
+.ms-t { display:block; font-weight:600; color:var(--slate-800); font-size:1rem; line-height:1.4; overflow-wrap:anywhere; }
+.ms-it.gehaald .ms-t { color:var(--slate-600); }
+.ms-meta { display:block; font-size:0.8125rem; color:var(--slate-500); margin-top:0.125rem; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+.ms-meta s { text-decoration-color:var(--slate-400); }
+.ms-noot { display:block; font-size:0.875rem; color:var(--slate-600); margin-top:0.25rem; overflow-wrap:anywhere; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.pil { display:inline-flex; align-items:center; font-size:0.75rem; font-weight:600; line-height:1.3; padding:0.125rem 0.5rem; border-radius:999px; border:1px solid var(--slate-200); background:var(--slate-50); color:var(--slate-600); white-space:nowrap; margin-top:0.125rem; }
+.pil.groen { color:var(--accent-dark); background:var(--accent-50); border-color:#a7f3d0; }
+.pil.amber { color:var(--amber-tekst); background:var(--oranje-50); border-color:#fde68a; }
+.chev { width:18px; height:18px; color:var(--slate-300); margin-top:0.125rem; transition:transform 0.2s; }
+.ms-it.open .chev { transform:rotate(180deg); }
+.ms-it.open > .ms-head { background:var(--slate-50); }
+.ms-it.flash > .ms-head { animation:flash 1.4s ease; }
+@keyframes flash { 0% { background:var(--accent-50); } 100% { background:transparent; } }
+.ms-edit { position:relative; z-index:1; margin:0 0.75rem 0.75rem 2.75rem; padding:0.875rem; border:1px solid var(--slate-200); border-radius:12px; background:var(--wit); }
+@media (max-width:480px) {
+  .ms-head { grid-template-columns:14px minmax(0, 1fr) 18px; }
+  .ms-head .pil { grid-column:2; grid-row:2; justify-self:start; }
+  .ms-head .chev { grid-column:3; grid-row:1; }
+  .ms-edit { margin-left:0.75rem; }
+  .grid { grid-template-columns:1fr; }
+}
+
+.empty { padding:1.75rem 1.25rem 2.25rem; text-align:center; color:var(--slate-500); font-size:0.9375rem; border-top:1px solid var(--slate-100); }
+.empty strong { display:block; color:var(--slate-600); font-weight:600; margin-bottom:0.25rem; }
+/* Wie al aan het typen is, heeft de startknoppen niet meer nodig */
+#card:has(#add-text:not(:placeholder-shown)) #empty .oc-start-btns, #card:has(#add-text:not(:placeholder-shown)) #empty .oc-open-row { display:none; }
+
+/* Menu */
+.menu-wrap { position:relative; }
+.menu {
+  position:absolute; right:0; top:42px; z-index:20; min-width:230px; background:var(--wit); border:1px solid var(--slate-200);
+  border-radius:12px; box-shadow:0 12px 32px rgba(15,23,42,0.14); padding:0.375rem; display:none;
+}
+.menu.open { display:block; }
+.menu button { width:100%; display:flex; align-items:center; gap:0.625rem; padding:0.5625rem 0.625rem; border-radius:8px; font-size:0.9375rem; text-align:left; color:var(--slate-700); white-space:nowrap; }
+.menu button:hover { background:var(--slate-100); }
+.menu button svg { width:18px; height:18px; color:var(--slate-500); flex-shrink:0; }
+.menu .sep { height:1px; background:var(--slate-100); margin:0.25rem 0.375rem; }
+.menu .danger { color:#dc2626; }
+.menu .danger svg { color:#dc2626; }
+
+/* Melding */
+.toast {
+  position:fixed; left:50%; bottom:calc(var(--bottom) + 1.25rem); transform:translate(-50%, calc(100% + 3rem)); visibility:hidden; z-index:50;
+  background:var(--slate-800); color:var(--wit); border-radius:12px; padding:0.625rem 0.625rem 0.625rem 1rem;
+  display:flex; align-items:center; gap:0.875rem; font-size:0.9375rem; box-shadow:0 10px 30px rgba(15,23,42,0.25);
+  transition:transform 0.25s ease, visibility 0s 0.25s; max-width:calc(100% - 2rem);
+}
+.toast.show { transform:translate(-50%, 0); visibility:visible; transition:transform 0.25s ease; }
+.toast button { color:#6ee7b7; font-weight:600; padding:0.25rem 0.5rem; border-radius:6px; min-height:44px; }
+.toast button:hover { background:rgba(255,255,255,0.08); }
+
+.footer { text-align:center; padding:2rem 2rem calc(var(--bottom) + 2rem); border-top:1px solid var(--slate-200); background:var(--wit); }
+.quote { font-size:0.8125rem; color:var(--accent-dark); }
+
+@media (max-width:640px) {
+  .back-link { position:static; margin-bottom:0.75rem; justify-content:center; display:flex; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition:none !important; animation:none !important; } }
+
+/* Toegankelijkheid */
+:focus-visible { outline:2px solid #047857 !important; outline-offset:2px; }
+.back-link { min-height:44px; min-width:44px; }
+.icon-btn, #menu-btn { min-width:44px; min-height:44px; }
+.tab { min-height:44px; }
+.btn { min-height:44px; }
+.list-name { min-height:44px; }
+.menu button { min-height:44px; }
+.ms-head:focus-visible, .tl-lbl:focus-visible { outline-offset:-2px; }
+
+/* Voorbeeld */
+.vb-bar { display:flex; flex-wrap:wrap; align-items:center; gap:0.5rem 0.75rem; margin:0 0 1rem; padding:0.5rem 0.5rem 0.5rem 0.75rem; background:#fffbeb; border:1px solid #fde68a; border-radius:12px; font-size:0.875rem; line-height:1.4; color:#78350f; }
+.vb-bar svg { width:18px; height:18px; flex-shrink:0; color:#b45309; }
+.vb-text { flex:1 1 14rem; min-width:0; display:flex; gap:0.5rem; align-items:flex-start; }
+.vb-btns { display:flex; flex-wrap:wrap; gap:0.375rem; }
+.vb-btn { min-height:44px; padding:0.375rem 0.625rem; border-radius:10px; font-size:0.875rem; font-weight:600; background:#fff; border:1px solid #e2e8f0; }
+.vb-wis { color:#b91c1c; border-color:#fecaca; }
+.vb-eigen { color:#047857; border-color:#a7f3d0; }
+.vb-tag { font-size:0.75rem; font-weight:600; padding:0 0.375rem; border-radius:999px; background:#fef3c7; color:#92400e; }
+.tab.active .vb-tag { background:#fde68a; }
+
+/* Delen: kopie links, downloads rechts */
+.export-row { display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:1rem; }
+.export-row .exp-btn { min-height:44px; display:inline-flex; align-items:center; gap:0.5rem; padding:0 0.875rem; border-radius:10px; background:#f1f5f9; color:#475569; font-size:0.875rem; font-weight:600; white-space:nowrap; }
+.export-row .exp-btn:hover { background:#e2e8f0; color:#1e293b; }
+.export-row .exp-btn svg { width:16px; height:16px; flex:none; }
+.export-row > [data-exp="png"] { margin-left:auto; }
+@media (max-width:480px) {
+  .export-row { display:grid; grid-template-columns:1fr 1fr; }
+  .export-row[hidden] { display:none; }
+  .export-row #copy-txt { grid-column:1 / -1; }
+  .export-row .exp-btn { justify-content:center; padding:0 0.5rem; }
+  .export-row > [data-exp="png"] { margin-left:0; }
+}
+.ocw-row .ocw-yes { background:#dc2626; } .ocw-row .ocw-yes:hover { background:#b91c1c; }
+.ocw-row button { min-height:44px; }
+button.oc-import { color:#047857; min-height:44px; }
+
+/* Opnieuw beginnen (zelfde knop in elke tool) */
+.oc-restart-row { display:flex; justify-content:center; padding:0.5rem 0 0; }
+.oc-restart-row[hidden] { display:none !important; }
+.oc-restart { min-height:44px; padding:0.5rem 1rem; font:inherit; font-size:0.875rem; font-weight:500; color:#64748b; background:none; border:0; border-radius:10px; cursor:pointer; text-decoration:underline; text-decoration-color:#cbd5e1; text-underline-offset:3px; }
+.oc-restart:hover { color:#b91c1c; background:#fef2f2; text-decoration-color:currentColor; }
+/* Hoe werkt dit? Zonder JavaScript een gewone uitklapper; het gedeelde blok hieronder maakt er een kaart van. */
+.explain { margin-top:1.5rem; background:#ffffff; border:1px solid #e2e8f0; border-radius:16px; }
+.explain summary { min-height:44px; padding:0.875rem 1.125rem; font-weight:600; color:#334155; cursor:pointer; }
+.explain .inner { padding:0 1.125rem 1.125rem; font-size:0.9375rem; line-height:1.55; color:#475569; }
+.explain .inner > * + * { margin-top:0.5rem; }
+.explain .inner ul { padding-left:1.25rem; }
+
+/* Soepel op gsm: geen tikvertraging, zichtbare tikfeedback, vensters scrollen de pagina niet mee */
+a, button, summary, select, label, [role="button"], [role="tab"] { touch-action: manipulation; }
+button:not(:disabled):active, summary:active, [role="button"]:active { filter: brightness(0.93); }
+dialog, [role="dialog"], [role="alertdialog"], .modal, .modal-backdrop { overscroll-behavior: contain; }
+
+/* Bewaar als bestand / Open bestand */
+.menu [data-bestand] { min-height:44px; }
+.menu .ocb-t { display:flex; flex-direction:column; min-width:0; white-space:normal; line-height:1.3; }
+.menu .ocb-t small { font-size:0.8125rem; color:var(--slate-500, #64748b); margin-top:0.125rem; }
+.menu .ocb-note { margin:0; padding:0.25rem 0.625rem 0.375rem; font-size:0.8125rem; line-height:1.35; color:var(--slate-500, #64748b); white-space:normal; }
+/* Safari op iPhone en iPad geeft een datumveld een eigen vaste breedte; zonder dit schuift het over het vak ernaast. */
+input[type="date"] { -webkit-appearance:none; appearance:none; max-width:100%; min-width:0; font-variant-numeric:tabular-nums; }
+input[type="date"]::-webkit-date-and-time-value { text-align:left; min-height:1.5em; }
+input[type="date"]::-webkit-calendar-picker-indicator { cursor:pointer; opacity:0.6; }
+/* voorbeeldtekst in velden: contrast minstens 4,5:1 */
+input::placeholder, textarea::placeholder { color:#64748b; opacity:1; }
+
+/* Eenheid: startscherm zonder gegevens (Begin als hoofdknop, Voorbeeld bekijken rustig, Open bestand als link) */
+.oc-start-btns { display:flex; gap:0.5rem; justify-content:center; flex-wrap:wrap; margin-top:0.875rem; }
+.oc-start-btns .oc-begin, .oc-start-btns .oc-vb { display:inline-flex; align-items:center; justify-content:center; min-height:44px; padding:0.5rem 1rem; border:0; border-radius:10px; font:inherit; font-weight:600; font-size:0.9375rem; line-height:1.3; cursor:pointer; text-align:center; }
+.oc-start-btns .oc-begin { background:#047857; color:#fff; }
+.oc-start-btns .oc-begin:hover { background:#065f46; }
+.oc-start-btns .oc-vb { background:#f1f5f9; color:#334155; }
+.oc-start-btns .oc-vb:hover { background:#e2e8f0; }
+.oc-start-btns [hidden] { display:none !important; }
+.oc-open-row { display:flex; justify-content:center; margin:0.5rem 0 0; }
+.oc-open-row .oc-open-link { display:inline-flex; align-items:center; gap:0.5rem; min-height:44px; padding:0.5rem 1rem; border:0; background:none; border-radius:10px; font:inherit; font-size:0.875rem; font-weight:600; color:#047857; cursor:pointer; text-decoration:none; }
+.oc-open-row .oc-open-link:hover { background:#ecfdf5; }
+.oc-open-row .oc-open-link svg { width:18px; height:18px; flex:none; }
+/* oc-uitleg v1 begin */
+/* "Hoe werkt dit?": één blok voor alle tools. Zonder JavaScript blijft de gewone uitklapper leesbaar.
+   Het script zet .oc-u op <details class="explain"> en bouwt de inhoud om tot inleiding, stappen, tip en verwijzingen. */
+details.explain { scroll-margin-top:1rem; }
+details.explain.oc-u { --u-groen:#10b981; --u-donker:#047857; --u-licht:#a7f3d0; --u-zacht:#ecfdf5;
+  background:#ffffff; border:1px solid #e2e8f0; border-radius:18px; box-shadow:0 1px 2px rgba(15,23,42,0.04); transition:border-color 0.2s, box-shadow 0.2s; }
+details.explain.oc-u:hover, details.explain.oc-u[open] { border-color:#cbd5e1; }
+details.explain.oc-u[open] { box-shadow:0 1px 2px rgba(15,23,42,0.04), 0 12px 32px -18px rgba(15,23,42,0.18); }
+
+/* ingeklapt: een uitnodigende kaart */
+details.explain.oc-u > summary { display:flex; align-items:center; gap:0.875rem; min-height:76px; padding:0.875rem 1rem 0.875rem 0.875rem; border-radius:17px; cursor:pointer; list-style:none; color:#1e293b; font-weight:400; outline:none; -webkit-tap-highlight-color:transparent; }
+details.explain.oc-u > summary::-webkit-details-marker { display:none; }
+details.explain.oc-u > summary::after, details.explain.oc-u > summary::before { content:none; }
+details.explain.oc-u > summary svg { transform:none; margin:0; }
+details.explain.oc-u > summary:focus-visible { box-shadow:0 0 0 2px #ffffff, 0 0 0 4px var(--u-groen); }
+details.explain.oc-u[open] > summary { border-bottom-left-radius:0; border-bottom-right-radius:0; }
+details.explain.oc-u .oc-u-ico { flex-shrink:0; width:48px; height:48px; border-radius:14px; background:var(--u-zacht); display:flex; align-items:center; justify-content:center; transition:background-color 0.2s; }
+details.explain.oc-u .oc-u-ico svg { width:28px; height:28px; display:block; }
+details.explain.oc-u .oc-u-kop { flex:1; min-width:0; display:flex; flex-direction:column; gap:0.125rem; }
+details.explain.oc-u .oc-u-titel { font-size:1.0625rem; font-weight:700; color:#1e293b; letter-spacing:-0.01em; line-height:1.3; }
+details.explain.oc-u .oc-u-meta { font-size:0.8125rem; color:#64748b; line-height:1.35; font-variant-numeric:tabular-nums; }
+details.explain.oc-u .oc-u-pijl { flex-shrink:0; width:40px; height:40px; border-radius:50%; background:#f1f5f9; color:#475569; display:flex; align-items:center; justify-content:center; transition:background-color 0.2s, color 0.2s, transform 0.35s cubic-bezier(0.2,0.7,0.2,1); }
+details.explain.oc-u .oc-u-pijl svg { width:20px; height:20px; }
+details.explain.oc-u > summary:hover .oc-u-pijl { background:var(--u-zacht); color:var(--u-donker); }
+details.explain.oc-u[open] .oc-u-pijl { transform:rotate(180deg); background:var(--u-zacht); color:var(--u-donker); }
+
+/* op brede schermen: de stappen als kleine route, die plaats maakt voor de echte stappen bij openen */
+details.explain.oc-u .oc-u-route { display:none; align-items:center; flex-shrink:0; margin-right:0.75rem; transition:opacity 0.25s, visibility 0.25s; }
+details.explain.oc-u .oc-u-route i { position:relative; display:flex; align-items:center; justify-content:center; width:26px; height:26px; margin-left:16px; border-radius:50%; border:1.5px solid var(--u-licht); background:#ffffff; color:var(--u-donker); font-style:normal; font-size:0.75rem; font-weight:700; line-height:1; font-variant-numeric:tabular-nums; transition:border-color 0.2s, background-color 0.2s; }
+details.explain.oc-u .oc-u-route i:first-child { margin-left:0; }
+details.explain.oc-u .oc-u-route i + i::before { content:''; position:absolute; right:calc(100% + 1.5px); top:calc(50% - 0.75px); width:16px; height:1.5px; background:var(--u-licht); }
+details.explain.oc-u > summary:hover .oc-u-route i { border-color:var(--u-groen); }
+details.explain.oc-u[open] .oc-u-route { opacity:0; visibility:hidden; }
+@media (min-width:700px) { details.explain.oc-u .oc-u-route { display:flex; } }
+
+/* uitgeklapt */
+details.explain.oc-u > .inner { padding:0; margin:0; border:0; border-radius:0; background:none; font-size:0.9375rem; color:#475569; container-type:inline-size; }
+details.explain.oc-u > .inner p, details.explain.oc-u > .inner ul, details.explain.oc-u > .inner ol, details.explain.oc-u > .inner li { margin:0; }
+details.explain.oc-u .oc-u-raam { border-top:1px solid #f1f5f9; margin:0 1.25rem; padding:1.25rem 0 1.5rem; display:grid; gap:1.375rem; }
+details.explain.oc-u .oc-u-lees, details.explain.oc-u .oc-u-doe { display:flex; flex-direction:column; gap:1.125rem; min-width:0; }
+details.explain.oc-u .oc-u-intro { font-size:1.0625rem; line-height:1.55; color:#334155; letter-spacing:-0.005em; margin:0; max-width:40em; text-wrap:pretty; }
+details.explain.oc-u .oc-u-noot { margin:0; line-height:1.6; max-width:42em; text-wrap:pretty; }
+details.explain.oc-u .oc-u-noot b { color:#1e293b; }
+
+/* stappen: genummerde tijdlijn */
+details.explain.oc-u ol.oc-u-stappen { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; }
+details.explain.oc-u .oc-u-stap { position:relative; display:grid; grid-template-columns:2.25rem minmax(0,1fr); column-gap:0.875rem; padding-bottom:1.125rem; }
+details.explain.oc-u .oc-u-stap:last-child { padding-bottom:0; }
+details.explain.oc-u .oc-u-stap::before { content:''; position:absolute; left:calc(1.125rem - 1px); top:2.5rem; bottom:0.25rem; width:2px; border-radius:2px; background:var(--u-licht); transform-origin:top; }
+details.explain.oc-u .oc-u-stap:last-child::before { content:none; }
+details.explain.oc-u .oc-u-nr { width:2.25rem; height:2.25rem; border-radius:50%; background:#ffffff; border:2px solid var(--u-groen); color:var(--u-donker); font-size:0.9375rem; font-weight:700; display:flex; align-items:center; justify-content:center; font-variant-numeric:tabular-nums; line-height:1; }
+details.explain.oc-u .oc-u-stap-tekst { padding-top:0.3125rem; min-width:0; }
+details.explain.oc-u .oc-u-stap-titel { display:block; font-size:1rem; font-weight:700; color:#1e293b; line-height:1.35; letter-spacing:-0.005em; }
+details.explain.oc-u .oc-u-stap-uitleg { display:block; margin-top:0.25rem; line-height:1.55; color:#475569; text-wrap:pretty; }
+details.explain.oc-u .oc-u-stap-uitleg b { color:#1e293b; }
+
+details.explain.oc-u .oc-u-stap-uitleg.oc-u-enkel { margin-top:0; color:#334155; }
+details.explain.oc-u .oc-u-doe > ul:not([class]), details.explain.oc-u .oc-u-doe > ol:not([class]) { padding-left:1.25rem; display:grid; gap:0.375rem; line-height:1.55; }
+details.explain.oc-u .oc-u-doe > ul:not([class]) > li::marker { color:var(--u-groen); }
+
+/* begrippen: dezelfde opbouw zonder nummers, voor lijsten die geen volgorde zijn */
+details.explain.oc-u ul.oc-u-begrippen { list-style:none; margin:0; padding:0; display:grid; gap:0.875rem; }
+details.explain.oc-u .oc-u-begrip { display:grid; grid-template-columns:0.5rem minmax(0,1fr); column-gap:0.875rem; }
+details.explain.oc-u .oc-u-begrip::before { content:''; width:0.5rem; height:0.5rem; border-radius:50%; background:var(--u-groen); margin-top:0.5rem; }
+
+/* tip */
+details.explain.oc-u .oc-u-tip { display:grid; grid-template-columns:auto minmax(0,1fr); column-gap:0.75rem; align-items:start; background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:0.875rem 1rem; }
+details.explain.oc-u .oc-u-tip svg { width:22px; height:22px; color:var(--u-donker); margin-top:0.0625rem; }
+details.explain.oc-u .oc-u-tip-titel { display:block; font-weight:700; color:#1e293b; font-size:0.9375rem; line-height:1.4; }
+details.explain.oc-u .oc-u-tip-tekst { display:block; line-height:1.55; color:#475569; margin-top:0.125rem; }
+details.explain.oc-u kbd { display:inline-block; font:inherit; font-size:0.8125rem; font-weight:600; line-height:1.35; color:#334155; background:#ffffff; border:1px solid #cbd5e1; border-bottom-width:2px; border-radius:6px; padding:0 0.4375rem; margin:0 0.0625rem; vertical-align:0.0625rem; white-space:nowrap; }
+
+/* stil: alles blijft op dit toestel */
+details.explain.oc-u .oc-u-stil { display:flex; gap:0.5rem; align-items:flex-start; font-size:0.875rem; color:#64748b; line-height:1.5; margin:0; }
+details.explain.oc-u .oc-u-stil svg { flex-shrink:0; width:18px; height:18px; margin-top:0.0625rem; color:#64748b; }
+
+/* verwijzingen naar andere tools */
+details.explain.oc-u .oc-u-samen { display:flex; flex-direction:column; gap:0.5rem; }
+details.explain.oc-u .oc-u-samen-titel { font-size:0.875rem; font-weight:600; color:#475569; }
+details.explain.oc-u .oc-u-chips { display:flex; flex-wrap:wrap; gap:0.5rem; }
+details.explain.oc-u a.oc-u-chip { display:inline-flex; align-items:center; gap:0.5rem; min-height:44px; margin:0; padding:0 0.875rem 0 0.5rem; border:1px solid var(--u-licht); border-radius:999px; background:#ffffff; color:var(--u-donker); font-size:0.9375rem; font-weight:600; text-decoration:none; line-height:1.2; transition:background-color 0.2s, border-color 0.2s; }
+details.explain.oc-u .oc-u-chip-ico { width:28px; height:28px; border-radius:50%; background:var(--u-zacht); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+details.explain.oc-u .oc-u-chip-ico svg { width:15px; height:15px; }
+details.explain.oc-u a.oc-u-chip:hover { background:var(--u-zacht); border-color:var(--u-groen); }
+details.explain.oc-u a.oc-u-chip:focus-visible { outline:2px solid var(--u-groen); outline-offset:2px; }
+details.explain.oc-u .oc-u-noot a, details.explain.oc-u .oc-u-stap-uitleg a, details.explain.oc-u .oc-u-tip-tekst a { color:var(--u-donker); font-weight:600; text-decoration:underline; text-decoration-color:var(--u-licht); text-decoration-thickness:2px; text-underline-offset:3px; }
+details.explain.oc-u .oc-u-noot a:hover { text-decoration-color:var(--u-donker); }
+/* tikdoel: de link blijft gewoon in de zin, maar is minstens 44 px hoog; de regels schuiven niet uit elkaar */
+details.explain.oc-u .oc-u-noot a, details.explain.oc-u .oc-u-stap-uitleg a, details.explain.oc-u .oc-u-tip-tekst a { padding-block:calc(22.5px - 0.6em); padding-inline:3px; margin-inline:-3px; }
+
+/* breed: links lezen, rechts doen */
+@container (min-width:720px) and (max-width:999.98px) {
+  details.explain.oc-u .oc-u-raam.oc-u-lang { grid-template-columns:minmax(0,1fr); grid-template-rows:none; }
+  details.explain.oc-u .oc-u-lang .oc-u-lees, details.explain.oc-u .oc-u-lang .oc-u-doe, details.explain.oc-u .oc-u-lang .oc-u-samen { grid-column:1; grid-row:auto; }
+}
+@container (min-width:720px) {
+  details.explain.oc-u .oc-u-raam { grid-template-columns:minmax(0,5fr) minmax(0,7fr); grid-template-rows:auto 1fr; column-gap:3rem; row-gap:1.75rem; align-items:start; padding:1.75rem 0.5rem 2rem; }
+  details.explain.oc-u .oc-u-lees { grid-column:1; grid-row:1; }
+  details.explain.oc-u .oc-u-doe { grid-column:2; grid-row:1 / span 2; }
+  details.explain.oc-u .oc-u-samen { grid-column:1; grid-row:2; }
+  details.explain.oc-u .oc-u-zonder-intro { grid-template-columns:minmax(0,1fr); }
+  details.explain.oc-u .oc-u-zonder-intro .oc-u-doe, details.explain.oc-u .oc-u-zonder-intro .oc-u-samen { grid-column:1; grid-row:auto; }
+  details.explain.oc-u .oc-u-intro { font-size:1.25rem; line-height:1.5; }
+}
+@media (min-width:760px) { details.explain.oc-u .oc-u-raam { margin:0 1.5rem; } details.explain.oc-u > summary { padding:1rem 1.25rem 1rem 1rem; } }
+
+/* beweging enkel als antwoord op openen */
+@media (prefers-reduced-motion:reduce) {
+  details.explain.oc-u, details.explain.oc-u .oc-u-pijl, details.explain.oc-u .oc-u-ico, details.explain.oc-u .oc-u-route, details.explain.oc-u .oc-u-route i, details.explain.oc-u a.oc-u-chip { transition:none; }
+}
+@media print { details.explain { display:none; } }
+/* oc-uitleg v1 einde */
+</style>
+</head>
+<body>
+
+<header class="header">
+  <a href="/projectmanagement/" class="back-link" aria-label="Terug naar Projectmanagement">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Projectmanagement
+  </a>
+  <div class="logo">
+    <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="20" cy="20" r="18" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.5"/><path d="M8.5 23.5h23" stroke="#64748b"/><path d="M12.5 19.9l3.6 3.6-3.6 3.6-3.6-3.6Z" fill="#10b981" stroke="#10b981"/><path d="M20 20.9l2.6 2.6-2.6 2.6-2.6-2.6Z" fill="#f8fafc" stroke="#cbd5e1"/><path d="M27.5 19.9l3.6 3.6-3.6 3.6-3.6-3.6Z" fill="#f8fafc" stroke="#64748b"/><path d="M20 16c2.2-3.6 5.3-3.6 7.5 0M27.5 16l.3-3M27.5 16l-2.9-.9" stroke="#64748b"/></svg>
+  </div>
+  <h1 class="title">Tijdlijn</h1>
+  <p class="subtitle">Je mijlpalen op een tijdlijn, en wat er verschoof</p>
+</header>
+
+<main class="main">
+  <nav class="lists" id="lists" aria-label="Projecten"></nav>
+  <div class="vb-bar" id="vb-bar" hidden>
+    <div class="vb-text"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg><span>Dit is een voorbeeld om de tool te verkennen. Het telt niet mee in andere tools.</span></div>
+    <div class="vb-btns"><button type="button" class="vb-btn vb-wis" id="vb-wis">Wis voorbeeld</button><button type="button" class="vb-btn vb-eigen" id="vb-eigen">Maak er mijn eigen van</button></div>
+  </div>
+
+  <section class="card" id="card">
+    <div class="card-head">
+      <input class="list-name" id="list-name" data-oc-titel data-oc-projectnaam placeholder="Naam van je project" aria-label="Naam van je project" maxlength="60" spellcheck="false" enterkeyhint="next">
+      <button class="icon-btn icon-del" id="del-btn" type="button" aria-label="Verwijder tijdlijn" title="Verwijder tijdlijn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg></button>
+      <div class="menu-wrap">
+        <button class="icon-btn" id="menu-btn" type="button" aria-label="Meer acties" aria-haspopup="true" aria-expanded="false" aria-controls="menu">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
+        </button>
+        <div class="menu" id="menu" role="menu">
+          <button type="button" data-bestand="bewaar" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M12 11v6M9 14l3 3 3-3"/></svg><span class="ocb-t">Bewaar als bestand<small>Om later verder te werken, of door te geven</small></span></button>
+          <button type="button" data-bestand="open" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 10v6M9 13l3-3 3 3"/></svg>Open bestand</button>
+          <div class="sep"></div>
+          <button type="button" data-act="pdf" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M9 15h6M12 12v6"/></svg>Download als PDF</button>
+          <button type="button" data-act="png" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>Download als afbeelding</button>
+          <button type="button" data-act="copy" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Kopieer als tekst</button>
+          <p class="ocb-note">Een afbeelding, PDF of tekst kan je niet terug openen.</p>
+          <div class="sep"></div>
+          <button type="button" data-act="wipe" class="danger" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>Alles wissen</button>
+        </div>
+      </div>
+    </div>
+    <p class="count-line" id="count-line" hidden></p>
+
+    <div class="tl" id="tl" hidden></div>
+
+    <form class="add" id="add-form" autocomplete="off" novalidate>
+      <div class="add-row">
+        <input class="add-input" id="add-text" placeholder="Nieuwe mijlpaal, bv. Ontwerp goedgekeurd" aria-label="Naam van de mijlpaal" maxlength="120" enterkeyhint="next" autocomplete="off" autocapitalize="sentences" aria-describedby="add-err">
+        <input class="field" id="add-date" type="date" aria-label="Datum van de mijlpaal" aria-describedby="add-err">
+        <button type="submit" class="add-btn" aria-label="Voeg mijlpaal toe" title="Voeg mijlpaal toe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+      </div>
+      <p class="err" id="add-err" hidden></p>
+      <div class="imp-row"><button type="button" class="oc-import" data-oc-types="mijlpaal,taak" id="oc-imp" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v11M7.5 9.5L12 14l4.5-4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>Overnemen uit…</button></div>
+      <datalist id="who-list"></datalist>
+    </form>
+
+    <ol class="ms" id="ms" aria-label="Mijlpalen"></ol>
+    <div class="empty" id="empty" hidden></div>
+  </section>
+  <div class="export-row" id="export-row" hidden>
+    <button type="button" class="exp-btn" id="copy-txt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Kopieer als tekst</button>
+    <button type="button" class="exp-btn" data-exp="png" title="Download als afbeelding"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>Afbeelding</button>
+    <button type="button" class="exp-btn" data-exp="pdf" title="Download als PDF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M9 13h6M9 17h4"/></svg>PDF</button>
+  </div>
+<div class="oc-tb" id="oc-tb" hidden><a class="oc-tb-btn" href="../kanban/?van=tijdlijn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="11" rx="1.5"/><rect x="17" y="4" width="4" height="7" rx="1.5"/></svg>Zet in Takenbord</a><p>Takenbord opent. Vink daar de mijlpalen aan die je wil overnemen. Ze komen in Te doen.</p></div>
+<div class="oc-restart-row" id="oc-restart-row" hidden><button type="button" class="oc-restart" id="oc-restart-btn">Opnieuw beginnen</button></div>
+  <details class="explain">
+    <summary>Hoe werkt dit?</summary>
+    <div class="inner">
+      <p>Op de Tijdlijn zie je de grote momenten van je project: wat al gehaald is, wat nog komt en wat verschoof. Precies wat een stuurgroep wil weten.</p>
+      <ul>
+        <li><b>Zet je mijlpalen erop.</b> Typ een naam, kies een datum en druk op Enter. Mijlpalen uit de Projectopdracht neem je over met "Overnemen uit andere tools". Met "+&nbsp;Project" maak je een tijdlijn voor een ander project.</li>
+        <li><b>Hou de stand bij.</b> Tik op een mijlpaal en kies Gepland, Gehaald of Verschoven. Zet je de datum later, dan blijft de oude datum zichtbaar, doorstreept en als lichte stip op de lijn.</li>
+        <li><b>Lees de lijn.</b> De groene lijn is vandaag. Een gevuld groen punt is gehaald. Een oranje rand betekent verschoven of voorbij de datum.</li>
+        <li><b>Deel het.</b> Download de tijdlijn als afbeelding of PDF, of kopieer ze als tekst voor een mail. Elke mijlpaal gaat ook naar andere tools: het Takenbord neemt ze over als taak, het Projectdossier toont ze aan de stuurgroep.</li>
+      </ul>
+      <p>Tip: Enter in het naamveld springt naar de datum. Escape sluit een mijlpaal die openstaat.</p>
+      <p>De mijlpalen komen uit de <a href="../opdracht/">Projectopdracht</a>. Zet ze als taak in het <a href="../kanban/">Takenbord</a>, en toon de stand in het <a href="../dossier/">Projectdossier</a>.</p>
+    </div>
+  </details>
+</main>
+
+<footer class="footer">
+  <p class="quote">Een datum die schuift, is ook nieuws.</p>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-text"></span><button type="button" id="toast-btn" hidden>Ongedaan</button></div>
+
+<script>
+/* Het actieve project uit de app (oc.project): nieuwe projecten, analyses en lijsten krijgen die naam. */
+function ocProject(fb) { try { const p = JSON.parse(localStorage.getItem('oc.project')); return p && typeof p.name === 'string' && p.name.trim() ? p.name.trim().slice(0, 80) : fb; } catch { return fb; } }
+// Het project kreeg een nieuwe naam (in de app of in een tool): de vorige namen staan in oc.project.oud. Zo vindt elke tool het terug.
+function ocProjectOud() { try { const p = JSON.parse(localStorage.getItem('oc.project')); return p && Array.isArray(p.oud) ? p.oud.filter(x => typeof x === 'string') : []; } catch { return []; } }
+function ocPickProject(st, arr, cur = 'current') { const p = ocProject(''); if (!p || !st || !Array.isArray(st[arr])) return; let u = st[arr].find(x => x && x.name === p); if (!u) { const o = ocProjectOud(); u = st[arr].find(x => x && o.includes(x.name)); if (u) u.name = p; } if (u) st[cur] = u.id; }   // open het actieve project uit de app
+/* ---------- Overnemen tussen tools (gedeeld door de Onder Constructie-tools, v2) ----------
+   Alle tools draaien op hetzelfde domein en delen dus localStorage. Elke tool legt wat hij te bieden
+   heeft klaar onder 'oc.share.<tool-id>', in een vaste vorm, zodat andere tools het kunnen overnemen
+   zonder elkaars binnenkant te kennen.
+
+   Soorten (type):
+     'betrokkene'  persoon, rol, stakeholder, doelgroep of team   { text, note? }
+     'taak'        iets dat gedaan moet worden                     { text, note? }
+     'actie'       taak met eigenaar en/of termijn                 { text, who?, when? }
+     'risico'      risico met kans en impact                       { text, note? }
+     'besluit'     beslissing (Beslissingslog)                     { text, note?, who?, when? }
+     'doel'        wat er beter moet worden (Projectopdracht)      { text, note? }
+     'mijlpaal'    mijlpaal met datum (Tijdlijn, Projectopdracht)  { text, when, note? }   note = gepland, gehaald of verschoven
+     'agendapunt'  punt op een agenda (Agenda)                     { text, who?, when?, note? }   when = startuur (UU:MM), note = doel en materiaal
+     'leerpunt'    les voor een volgend project (Leerpuntenlog)    { text, note? }
+                   Andere tools kiezen zelf welke soorten ze tonen (types in pick/count/sources) en slaan onbekende soorten dus over.
+   'when' is bij voorkeur een datum als JJJJ-MM-DD; in "Overnemen uit…" staat die als 15 februari 2027.
+
+   Gebruik:
+     ocShare.publish('raci', 'RACI-matrix', [
+       { name:'Heraanleg stadspark', items:[ { type:'betrokkene', text:'Projectleider' }, { type:'taak', text:'Budget goedkeuren' } ] }
+     ]);                                   // aanroepen na elke bewaring
+     ocShare.clear('raci');                // bij "Alles wissen"
+     const gekozen = await ocShare.pick({ types:['betrokkene'], self:'weerstand', title:'Doelgroepen overnemen' });
+     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source, .bronId en .list erbij)
+     // Afspraak: een tool geeft wat ze overnam (bronId) NIET opnieuw door, tenzij ze er een eigen oordeel aan toevoegde
+     // (een score, een eigenaar, een datum). Zo blijft de bron de baas en komt wat daar verwijderd is niet terug.
+     ocShare.pick({ ..., have:['Budget goedkeuren'] })  // optioneel: wat de tool al heeft, staat uitgegrijsd ("staat er al")
+     ocShare.pick({ ..., vink:false })    // niets vooraf aanvinken;  notes:false  toont geen notities (voor wie alleen namen neemt)
+     window.ocHave = types => [...]       // optioneel per tool: dan telt de knop "Overnemen uit andere tools" alleen wat nieuw is
+   Dezelfde tekst van dezelfde soort uit meerdere tools tonen en tellen we één keer (tools geven overgenomen werk ook weer door).
+   ?van=<tool> vinkt alleen die bron aan, en daarin de lijst van het actieve project als die er is (ook onder een vorige naam,
+   of een lijst die met de projectnaam begint). &lijst=<naam> vinkt precies die lijst aan. Anders: de lijst die het laatst veranderde.
+   Dezelfde tekst als taak en als actie is één item: de rijkste versie (met wie en wanneer) blijft.
+*/
+const ocShare = (() => {
+  const PREFIX = 'oc.share.';
+  const LABEL = { betrokkene:'betrokkenen', taak:'taken', actie:'acties', risico:"risico's", besluit:'besluiten', doel:'doelen', mijlpaal:'mijlpalen', agendapunt:'agendapunten', leerpunt:'leerpunten' };
+  const esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+  // Een datum als JJJJ-MM-DD tonen we zoals in de tools: 15 februari 2027. Andere tekst blijft zoals ze is.
+  const datum = v => { const s = String(v || '').trim(), d = /^\d{4}-\d{2}-\d{2}$/.test(s) ? new Date(s + 'T12:00:00') : null;
+    return d && !isNaN(d) ? d.toLocaleDateString('nl-BE', { day:'numeric', month:'long', year:'numeric' }) : s; };
+
+  function publish(id, tool, lists) {
+    try {
+      const clean = (lists || []).map(l => ({
+        name: String(l.name || '').slice(0, 80),
+        items: (l.items || []).filter(i => i && i.type && String(i.text || '').trim())
+          .slice(0, 300).map(i => ({ type:i.type, text:String(i.text).trim().slice(0, 300),
+            note: i.note ? String(i.note).slice(0, 200) : undefined, who: typeof i.who === 'string' && i.who.trim() ? i.who.trim().slice(0, 120) : undefined,
+            when: typeof i.when === 'string' && i.when.trim() ? i.when.trim().slice(0, 40) : undefined }))
+      })).filter(l => l.items.length);
+      if (!clean.length) { localStorage.removeItem(PREFIX + id); return; }
+      // per lijst: wanneer veranderde ze laatst (zo weet de kiezer aan welke lijst je net werkte)
+      let vorig = {}; try { (JSON.parse(localStorage.getItem(PREFIX + id)) || {}).lists.forEach(l => { vorig[l.name] = l; }); } catch {}
+      const nu = Date.now(), hash = s => { let h = 5381; for (let i = 0; i < s.length; i++) h = (h * 33 + s.charCodeAt(i)) | 0; return h; };
+      clean.forEach(l => { const h = hash(JSON.stringify(l.items)), v = vorig[l.name]; l.h = h; l.ch = v && v.h === h && v.ch ? v.ch : nu; });
+      localStorage.setItem(PREFIX + id, JSON.stringify({ id, tool, updated: nu, lists: clean }));
+    } catch {}
+  }
+  function clear(id) { try { localStorage.removeItem(PREFIX + id); } catch {} }
+
+  // Elke bron apart: één kapotte sleutel mag de andere niet verbergen.
+  function sources(types, self, voorkeur) {
+    const out = [];
+    let keys = [];
+    try { for (let i = 0; i < localStorage.length; i++) keys.push(localStorage.key(i)); } catch { return out; }
+    keys.forEach(k => {
+      if (!k || !k.startsWith(PREFIX) || k === PREFIX + self) return;
+      try {
+        const d = JSON.parse(localStorage.getItem(k));
+        if (!d || !Array.isArray(d.lists)) return;
+        d.lists.forEach(l => {
+          if (!l || !Array.isArray(l.items)) return;
+          const items = l.items.filter(it => it && types.includes(it.type) && typeof it.text === 'string' && it.text.trim())
+            .map(it => ({ ...it, who: typeof it.who === 'string' ? it.who : undefined, when: typeof it.when === 'string' ? it.when : undefined }));
+          if (items.length) out.push({ tool: String(d.tool || d.id || k.slice(PREFIX.length)), id: d.id, updated: +d.updated || 0, ch: +l.ch || 0, list: String(l.name || ''), items });
+        });
+      } catch {}
+    });
+    out.sort((a, b) => (b.updated || 0) - (a.updated || 0));
+    // Elke tekst van elke soort één keer. Wie houdt hem? De bron uit ?van=, dan de rijkste (notitie, wie, wanneer),
+    // dan de grootste lijst (meestal het origineel, niet een tool die het overnam), dan de recentste.
+    // Mist de gekozen versie een wie of wanneer die een andere bron wel heeft, dan vullen we aan.
+    const score = (s, it) => [s.id === voorkeur ? 1 : 0, (it.note ? 2 : 0) + (it.who ? 1 : 0) + (it.when ? 1 : 0), s.items.length, s.updated || 0];
+    const beter = (a, b) => { for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] > b[i]; return false; };
+    const best = new Map(), sl = it => (it.type === 'actie' ? 'taak' : it.type) + '|' + norm(it.text);   // een taak en een actie met dezelfde tekst zijn één item
+    out.forEach(s => s.items.forEach(it => { const k = sl(it), sc = score(s, it), e = best.get(k); if (!e || beter(sc, e.sc)) best.set(k, { it, sc }); }));
+    out.forEach(s => s.items.forEach(it => { const e = best.get(sl(it)).it; if (e !== it) { if (!e.who && it.who) e.who = it.who; if (!e.when && it.when) e.when = it.when; } }));
+    return out.map(s => ({ ...s, items: s.items.filter(it => best.get(sl(it)).it === it) }))
+      .filter(s => s.items.length);
+  }
+  // Vergelijken zonder hoofdletters, dubbele spaties of leestekens aan de rand
+  function norm(v) { return String(v || '').normalize('NFC').toLowerCase().replace(/\s+/g, ' ').trim().replace(/^[\s.,;:!?·-]+|[\s.,;:!?·-]+$/g, ''); }
+
+  let styled = false;
+  function style() {
+    if (styled) return; styled = true;
+    const s = document.createElement('style');
+    s.textContent = `
+      .ocs-back{position:fixed;inset:0;z-index:10000;display:flex;align-items:flex-end;justify-content:center;background:rgba(15,23,42,.45);
+        backdrop-filter:blur(3px);opacity:0;transition:opacity .15s;font-family:'DM Sans',system-ui,sans-serif}
+      @media(min-width:640px){.ocs-back{align-items:center;padding:1rem}}
+      .ocs-back.open{opacity:1}
+      .ocs{width:100%;max-width:520px;max-height:min(86vh,720px);display:flex;flex-direction:column;background:#fff;border-radius:18px 18px 0 0;
+        box-shadow:0 20px 50px rgba(15,23,42,.25);transform:translateY(12px);transition:transform .15s;color:#1e293b;-webkit-hyphens:manual;hyphens:manual}
+      @media(min-width:640px){.ocs{border-radius:18px}}
+      .ocs-back.open .ocs{transform:none}
+      .ocs-head{padding:1.125rem 1.25rem .75rem;border-bottom:1px solid #e2e8f0}
+      .ocs-title{font-size:1.125rem;font-weight:700;letter-spacing:-.02em}
+      .ocs-sub{font-size:.8125rem;color:#64748b;margin-top:.125rem}
+      .ocs-body{overflow:auto;padding:.5rem 1.25rem 1rem;flex:1}
+      .ocs-src{margin-top:.875rem}
+      .ocs-src-head{display:flex;flex-wrap:wrap;align-items:center;column-gap:.5rem;padding:.375rem 0}
+      .ocs-src-head b{font-size:.9375rem}
+      .ocs-src-head span{font-size:.75rem;color:#64748b;flex:1 1 8rem}
+      .ocs-all{margin-left:auto;font:inherit;font-size:.8125rem;color:#047857;background:none;border:0;cursor:pointer;padding:.25rem .5rem;min-height:44px;min-width:44px;border-radius:6px}
+      .ocs-all:hover{background:#d1fae5}
+      .ocs-item{display:flex;align-items:flex-start;gap:.625rem;padding:.625rem .25rem;min-height:44px;box-sizing:border-box;border-top:1px solid #f1f5f9;cursor:pointer;font-size:.9375rem;line-height:1.4;overflow-wrap:anywhere;min-width:0}
+      .ocs-item.al{cursor:default;color:#64748b}.ocs-item.al em{font-style:normal;font-size:.75rem;font-weight:600;color:#047857;margin-left:.375rem;white-space:nowrap}
+      .ocs-src-head b,.ocs-src-head span{overflow-wrap:break-word;min-width:0}.ocs-src-head b{flex:0 1 auto;min-width:auto;max-width:100%}.ocs-note{margin:.25rem 0 .5rem;padding:.5rem .75rem;border-radius:10px;background:#f8fafc;color:#475569;font-size:.875rem;line-height:1.45}
+      .ocs-item input{width:18px;height:18px;margin-top:.125rem;accent-color:#10b981;flex:none}
+      .ocs-item small{display:block;font-size:.75rem;color:#64748b}
+      .ocs-empty{padding:1.5rem .25rem;color:#64748b;font-size:.9375rem;line-height:1.5}
+      .ocs-foot{display:flex;align-items:center;gap:.5rem;justify-content:flex-end;padding:.875rem 1.25rem calc(.875rem + env(safe-area-inset-bottom,0px));border-top:1px solid #e2e8f0}
+      .ocs-btn{font:inherit;font-size:.9375rem;font-weight:600;padding:.625rem 1rem;min-height:44px;border-radius:10px;border:0;cursor:pointer}
+      .ocs-hint{margin-right:auto;font-size:.8125rem;line-height:1.3;color:#64748b}
+      .ocs-cancel{background:#f1f5f9;color:#475569}
+      .ocs-ok{background:#047857;color:#fff}.ocs-ok:hover{background:#065f46}
+      .ocs-ok:disabled{background:#cbd5e1;color:#334155;cursor:default}
+      .ocs-back :focus-visible{outline:2px solid #047857;outline-offset:2px}`;
+    document.head.appendChild(s);
+  }
+
+  function pick({ types, self, title, intro, have, vink, notes }) {
+    style();
+    return new Promise(resolve => {
+      let van = window.ocVan || ''; try { van = van || new URLSearchParams(location.search).get('van') || ''; } catch {}
+      const src = sources(types, self, van), terug = document.activeElement;
+      const heeft = new Set((have || []).map(norm));
+      const vanNaam = van && !src.some(s => s.id === van) ? van : '';
+      const vol = s => s.items.every(it => heeft.has(norm(it.text))), alles = src.length > 0 && src.every(vol);
+      const back = document.createElement('div');
+      back.className = 'ocs-back';
+      const what = types.map(t => LABEL[t] || t).join(' of ');
+      back.innerHTML = `<div class="ocs" role="dialog" aria-modal="true" aria-label="${esc(title || 'Overnemen')}">
+        <div class="ocs-head"><div class="ocs-title">${esc(title || 'Overnemen uit een andere tool')}</div>
+          <div class="ocs-sub">${esc(intro || `Kies welke ${what} je wil overnemen.`)}</div></div>
+        <div class="ocs-body">${vanNaam ? `<p class="ocs-note">Uit die tool ligt nog niets klaar. Hieronder staat wat andere tools aanbieden.</p>` : ''}${src.length && alles ? `<p class="ocs-empty">Alles staat er al. Er is niets nieuws om over te nemen.</p>` : ''}${src.length && !alles ? src.map((s, si) => vol(s) ? `
+          <div class="ocs-src"><div class="ocs-src-head"><b>${esc(s.tool)}</b><span>${esc(s.list)} · alles staat er al</span></div></div>` : `
+          <div class="ocs-src"><div class="ocs-src-head"><b>${esc(s.tool)}</b><span>${esc(s.list)} · ${s.items.length}</span>
+            <button class="ocs-all" type="button" data-all="${si}">alles</button></div>
+            ${s.items.map((it, ii) => { const al = heeft.has(norm(it.text)); return `<label class="ocs-item${al ? ' al' : ''}"><input type="checkbox" data-s="${si}" data-i="${ii}"${al ? ' disabled' : ''}>
+              <span>${esc(it.text)}${al ? '<em>staat er al</em>' : ''}${it.who || it.when || (notes !== false && it.note) ? `<small>${esc([it.who, datum(it.when), notes !== false && it.note].filter(Boolean).join(' · '))}</small>` : ''}</span></label>`; }).join('')}
+          </div>`).join('') : ''}${!src.length ? `<p class="ocs-empty">Er zijn nog geen ${esc(what)} om over te nemen. Vul ze eerst in een andere tool van Onder Constructie in, dan verschijnen ze hier.</p>` : ''}
+        </div>
+        <div class="ocs-foot"><span class="ocs-hint">Vink eerst iets aan</span><button class="ocs-btn ocs-cancel" type="button">Annuleer</button>
+          <button class="ocs-btn ocs-ok" type="button" disabled>Neem over</button></div></div>`;
+      document.body.appendChild(back);
+      requestAnimationFrame(() => back.classList.add('open'));
+      const ok = back.querySelector('.ocs-ok'), hint = back.querySelector('.ocs-hint');
+      const boxes = () => [...back.querySelectorAll('input[type=checkbox]:not(:disabled)')];
+      // Grijze knop: er staat bij wat je eerst doet. Is er niets om aan te vinken, dan zegt het venster dat al zelf.
+      const sync = () => { const n = boxes().filter(b => b.checked).length; ok.disabled = !n; ok.textContent = n ? `Neem ${n} over` : 'Neem over'; hint.hidden = !!n || !boxes().length; };
+      // Geopend vanuit een tool (?van=<tool>): alleen die bron aanvinken, en daarin de lijst van het actieve project als die er is.
+      // Zonder ?van= en met één bron: die staat aangevinkt.
+      let namen = [], lijst = ''; try { const pp = JSON.parse(localStorage.getItem('oc.project') || 'null') || {}; namen = [pp.name].concat(Array.isArray(pp.oud) ? pp.oud : []).map(norm).filter(Boolean); } catch {}
+      try { lijst = norm(window.ocLijst || new URLSearchParams(location.search).get('lijst') || ''); } catch {}
+      const vanSrc = van ? src.filter(s => s.id === van && !vol(s)) : [];
+      const vanLijst = lijst ? vanSrc.filter(s => norm(s.list) === lijst) : [];
+      const vanProj = vanLijst.length ? vanLijst : vanSrc.filter(s => namen.some(p => norm(s.list) === p || norm(s.list).startsWith(p + ' ')));
+      // geen lijst van het project: dan alleen de lijst die het laatst veranderde (daar werkte je net aan), nooit alles
+      const laatst = vanSrc.length > 1 ? vanSrc.filter(s => s.ch && s.ch === Math.max(...vanSrc.map(x => x.ch || 0))).slice(0, 1) : vanSrc;
+      // Alleen vanuit een link (?van=) staat iets vooraf aangevinkt. Anders kies je zelf (of tik op "alles"):
+      // één tik op het punt dat je wil, mag nooit de rest overnemen.
+      const aan = vink === false || !van ? [] : (vanProj.length ? vanProj : laatst);
+      boxes().forEach(b => { if (aan.includes(src[+b.dataset.s])) b.checked = true; }); sync();
+      back.addEventListener('change', sync);
+      back.addEventListener('click', e => {
+        const a = e.target.closest('[data-all]');
+        if (a) { const bs = boxes().filter(b => b.dataset.s === a.dataset.all); const all = bs.every(b => b.checked); bs.forEach(b => b.checked = !all); sync(); }
+        if (e.target === back) close([]);
+      });
+      function close(v) { document.removeEventListener('keydown', onKey, true); back.remove(); try { if (terug && terug.isConnected) terug.focus({ preventScroll:true }); } catch {} resolve(v); }
+      function onKey(e) {
+        if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close([]); return; }
+        if (e.key !== 'Tab') return;   // de focus blijft in de kiezer
+        const f = [...back.querySelectorAll('input:not(:disabled),button:not(:disabled)')].filter(x => x.offsetParent !== null);
+        if (!f.length) return;
+        const i = f.indexOf(document.activeElement);
+        if (e.shiftKey && i <= 0) { e.preventDefault(); f[f.length - 1].focus(); }
+        else if (!e.shiftKey && (i === f.length - 1 || i < 0)) { e.preventDefault(); f[0].focus(); }
+      }
+      document.addEventListener('keydown', onKey, true);
+      back.querySelector('.ocs-cancel').addEventListener('click', () => close([]));
+      ok.addEventListener('click', () => close(boxes().filter(b => b.checked).map(b => {
+        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, bronId: s.id, list: s.list };
+      })));
+      const first = back.querySelector('input:not(:disabled),.ocs-cancel'); first && first.focus();
+    });
+  }
+
+  // Hoeveel er klaarligt voor deze soorten (om een knop te tonen of een teller te zetten).
+  const count = (types, self) => sources(types, self).reduce((n, s) => n + s.items.length, 0);
+  return { publish, clear, pick, count, sources, esc };
+})();
+// Bevestiging in de pagina (geen pop-up van de browser).
+// Stijl van de bevestiging en de knoppen 'Overnemen uit…': meteen laden.
+function ocStyle() {
+  if (!document.getElementById('ocw-style')) {
+    const s = document.createElement('style'); s.id = 'ocw-style';
+    s.textContent = `.ocw-back{position:fixed;inset:0;z-index:10001;display:flex;align-items:center;justify-content:center;padding:1rem;background:rgba(15,23,42,.45);backdrop-filter:blur(3px);font-family:'DM Sans',system-ui,sans-serif}
+      .ocw{width:100%;max-width:400px;background:#fff;border-radius:16px;padding:1.375rem 1.375rem 1.125rem;box-shadow:0 20px 50px rgba(15,23,42,.25);color:#1e293b}
+      .ocw b{display:block;font-size:1.0625rem;letter-spacing:-.01em;margin-bottom:.375rem}
+      .ocw p{font-size:.9375rem;line-height:1.5;color:#475569}
+      .ocw-row{display:flex;justify-content:flex-end;gap:.5rem;margin-top:1.25rem}
+      .ocw-row button{font:inherit;font-size:.9375rem;font-weight:600;padding:.625rem 1rem;min-height:44px;border-radius:10px;border:0;cursor:pointer}
+      .ocw-no{background:#f1f5f9;color:#475569} .ocw-yes{background:#dc2626;color:#fff} .ocw-yes:hover{background:#b91c1c}
+      .oc-import{display:inline-flex;align-items:center;gap:.375rem;font:inherit;font-size:.8125rem;font-weight:600;color:#059669;background:#fff;border:1px dashed #a7f3d0;border-radius:999px;padding:.3125rem .75rem;cursor:pointer;white-space:nowrap}
+      .oc-import:hover{background:#ecfdf5;border-color:#10b981} .oc-import svg{width:15px;height:15px} .oc-import[hidden]{display:none}`;
+    document.head.appendChild(s);
+  }
+}
+ocStyle();
+function ocConfirm(title, text, okText) {
+  return new Promise(resolve => {
+    const back = document.createElement('div'); back.className = 'ocw-back';
+    back.innerHTML = '<div class="ocw" role="alertdialog" aria-modal="true"><b></b><p></p><div class="ocw-row"><button class="ocw-no" type="button">Annuleer</button><button class="ocw-yes" type="button"></button></div></div>';
+    back.querySelector('b').textContent = title; back.querySelector('p').textContent = text; back.querySelector('.ocw-yes').textContent = okText;
+    document.body.appendChild(back);
+    const done = v => { document.removeEventListener('keydown', key, true); back.remove(); resolve(v); };
+    const key = e => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); done(false); } };
+    document.addEventListener('keydown', key, true);
+    back.querySelector('.ocw-no').onclick = () => done(false);
+    back.querySelector('.ocw-yes').onclick = () => done(true);
+    back.addEventListener('click', e => { if (e.target === back) done(false); });
+    back.querySelector('.ocw-no').focus();
+  });
+}
+// Ongedaan maken van een wisbeurt kan alleen zolang er sindsdien niets anders bewaard werd.
+function ocUndoable(restore) {
+  const mark = ocSaves;
+  return () => {
+    if (ocSaves !== mark) { setTimeout(() => toast('Ongedaan maken kan niet meer: er is intussen iets veranderd'), 60); return; }
+    restore();
+  };
+}
+/* ---------- Download als afbeelding of PDF (gedeeld door de Onder Constructie-tools, v3) ----------
+   Gebruik:
+     ocExport.png(bouwFn, 'bestandsnaam', { landscape:true })
+     ocExport.pdf(bouwFn, 'bestandsnaam', { landscape:true })
+   bouwFn() geeft { node, title, subtitle } terug: een DOM-knoop met inline styles, zonder knoppen of invoervelden.
+   Die komt buiten beeld op een witte pagina met kop (titel, ondertitel, datum) en voet.
+   Zet data-oc-keep op blokken die in een PDF niet over twee pagina's gesplitst mogen worden
+   (een beslissing, een kaartje, een rij); ze schuiven dan door naar de volgende pagina.
+   Een browser tekent geen canvas boven een maximale grootte (Chrome: 65.535 px hoog of breed; iPad en iPhone:
+   ongeveer 16 miljoen pixels). Daarboven wordt de PDF of afbeelding zwart of leeg. Daarom tekent de PDF
+   telkens een paar hele pagina's tegelijk, op volle scherpte, en wordt een heel lange afbeelding net zo
+   scherp getekend als binnen die grens kan.
+   html2canvas en jsPDF worden pas geladen bij de eerste download, van dezelfde adressen als de
+   andere tools, zodat de app ze offline kan bewaren. */
+const ocExport = (() => {
+  const LIBS = {
+    h2c: '/lib/html2canvas-1.4.1.min.js',
+    pdf: '/lib/jspdf-2.5.1.umd.min.js'
+  };
+  const A4 = { w: 210, h: 297 }, MARGIN = 10;   // mm
+  // Grenzen van een canvas: iPad en iPhone ongeveer 16 miljoen pixels; Chrome en Edge tot 65.535 px hoog of breed; andere browsers 32.767 px.
+  const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const CHROME = !IOS && /Chrome\//.test(navigator.userAgent);
+  const SCALE = 2, MAX_SIDE = CHROME ? 65000 : 32000, MAX_AREA = IOS ? 16e6 : 120e6;   // scherpte; langste zijde en oppervlakte in pixels
+  // Grootste schaal (tot SCALE) waarbij een canvas van w × h CSS-pixels nog getekend wordt.
+  const fit = (w, h, area = MAX_AREA) => Math.floor(Math.min(SCALE, Math.sqrt(area / (w * h)), MAX_SIDE / h, MAX_SIDE / w) * 100) / 100;
+  const loaded = {};
+  function load(url) {
+    if (!loaded[url]) loaded[url] = new Promise((ok, fail) => {
+      const s = document.createElement('script');
+      s.src = url; s.onload = ok; s.onerror = () => { delete loaded[url]; fail(new Error('laden mislukt')); };
+      document.head.appendChild(s);
+    });
+    return loaded[url];
+  }
+  const today = () => new Date().toLocaleDateString('nl-BE', { day: 'numeric', month: 'long', year: 'numeric' });
+  function page(content, { title, subtitle, width }) {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = `position:fixed;left:-20000px;top:0;width:${width}px;background:#fff;padding:36px 40px 28px;
+      font-family:'DM Sans',system-ui,-apple-system,sans-serif;color:#1e293b;-webkit-font-smoothing:antialiased;box-sizing:border-box;`;
+    const head = document.createElement('div');
+    head.style.cssText = 'display:flex;align-items:flex-end;justify-content:space-between;gap:24px;border-bottom:2px solid #10b981;padding-bottom:12px;margin-bottom:20px;';
+    head.innerHTML = `<div><div style="font-size:22px;font-weight:700;letter-spacing:-0.02em;color:#1e293b"></div>
+      <div style="font-size:14px;color:#64748b;margin-top:2px"></div></div>
+      <div style="font-size:12px;color:#94a3b8;white-space:nowrap">${today()}</div>`;
+    head.children[0].children[0].textContent = title || '';
+    head.children[0].children[1].textContent = subtitle || '';
+    const foot = document.createElement('div');
+    foot.style.cssText = 'margin-top:22px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;display:flex;justify-content:space-between;';
+    foot.innerHTML = '<span>Onder Constructie</span><span>onderconstructie.github.io</span>';
+    wrap.append(head, content, foot);
+    document.body.appendChild(wrap);
+    return wrap;
+  }
+  // Schuift blokken met data-oc-keep die over een paginagrens zouden vallen naar de volgende pagina.
+  function keepTogether(wrap, pageH) {
+    const top0 = () => wrap.getBoundingClientRect().top;
+    for (const el of wrap.querySelectorAll('[data-oc-keep]')) {
+      const r = el.getBoundingClientRect(), t = r.top - top0(), b = t + r.height;
+      if (r.height > pageH * 0.85) continue;            // te groot om heel te houden
+      const boundary = Math.ceil(t / pageH) * pageH;     // eerstvolgende grens na de bovenkant
+      if (t % pageH !== 0 && b > boundary && t < boundary) {
+        const gap = document.createElement('div');
+        gap.style.cssText = `height:${boundary - t + 6}px;`;
+        el.parentNode.insertBefore(gap, el);
+      }
+    }
+  }
+  // Zet de exportpagina buiten beeld, wacht op de lettertypes en geeft ze aan fn; ruimt daarna op.
+  async function withPage(build, width, fn) {
+    const built = build();
+    const node = page(built.node, { title: built.title, subtitle: built.subtitle, width });
+    try {
+      if (document.fonts && document.fonts.ready) await document.fonts.ready;
+      return await fn(node);
+    } finally { node.remove(); }
+  }
+  const heightOf = node => Math.ceil(node.getBoundingClientRect().height);
+  // Alleen de exportpagina gaat mee in de kopie die html2canvas maakt: de rest van de tool overslaan scheelt veel tijd.
+  const draw = (node, o) => window.html2canvas(node, Object.assign({ scale: SCALE, backgroundColor: '#ffffff', logging: false, useCORS: true,
+    ignoreElements: el => el.parentNode === document.body && el !== node && !/^(STYLE|LINK)$/.test(el.tagName) }, o));
+  const free = c => { c.width = c.height = 0; };     // geheugen meteen vrijgeven (iPad)
+  function save(blob, name) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }
+  const widthFor = opts => opts.width || (opts.landscape ? 1120 : 800);
+  async function png(build, name, opts = {}) {
+    const width = widthFor(opts);
+    await load(LIBS.h2c);
+    const c = await withPage(build, width, node => draw(node, { scale: fit(width, heightOf(node)) }));
+    await new Promise(ok => c.toBlob(b => { save(b, name + '.png'); free(c); ok(); }, 'image/png'));
+  }
+  async function pdf(build, name, opts = {}) {
+    const landscape = !!opts.landscape, width = widthFor(opts);
+    const pw = landscape ? A4.h : A4.w, ph = landscape ? A4.w : A4.h, w = pw - 2 * MARGIN;
+    const pageCss = (ph - 2 * MARGIN) / w * width;       // paginahoogte in CSS-pixels van de exportknoop
+    await Promise.all([load(LIBS.h2c), load(LIBS.pdf)]);
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: landscape ? 'landscape' : 'portrait', unit: 'mm', format: 'a4' });
+    await withPage(build, width, async node => {
+      const H0 = heightOf(node);
+      // Net te hoog voor één pagina (bv. alleen de voettekst): verkleinen tot het past, geen lege tweede pagina.
+      if (H0 > pageCss && H0 <= pageCss * 1.2) {
+        const c = await draw(node, { scale: fit(width, H0) }), ww = w * pageCss / H0;
+        doc.addImage(c.toDataURL('image/jpeg', 0.92), 'JPEG', MARGIN + (w - ww) / 2, MARGIN, ww, ph - 2 * MARGIN);
+        free(c); return;
+      }
+      keepTogether(node, pageCss);
+      const H = heightOf(node), s = fit(width, pageCss), pagePx = pageCss * s;
+      const n = Math.max(1, Math.ceil((H - 1) / pageCss));                       // aantal pagina's
+      const per = Math.max(1, Math.floor(Math.min(MAX_AREA / (width * s * pagePx), MAX_SIDE / pagePx)));   // pagina's per stuk
+      for (let i = 0; i < n; i += per) {
+        const y = i * pageCss, k = Math.min(per, n - i);
+        const c = await draw(node, { scale: s, y, height: Math.ceil(Math.min(k * pageCss, H - y)) });
+        for (let j = 0; j < k; j++) {
+          const top = Math.round(j * pagePx), h = Math.min(Math.round((j + 1) * pagePx), c.height) - top;
+          if (h < 1) break;
+          const part = document.createElement('canvas'); part.width = c.width; part.height = h;
+          part.getContext('2d').drawImage(c, 0, top, c.width, h, 0, 0, c.width, h);
+          if (i + j) doc.addPage();
+          doc.addImage(part.toDataURL('image/jpeg', 0.92), 'JPEG', MARGIN, MARGIN, w, h * w / c.width);
+          free(part);
+        }
+        free(c);
+      }
+    });
+    save(doc.output('blob'), name + '.pdf');
+  }
+  return { png, pdf };
+})();
+/* Soepel: de hulpbibliotheken voor Afbeelding en PDF alvast ophalen zodra iemand naar een downloadknop gaat (niet bij het laden). */
+(() => {
+  let warm = false;
+  const go = () => {
+    warm = true;
+    ['/lib/html2canvas-1.4.1.min.js', '/lib/jspdf-2.5.1.umd.min.js'].forEach(h => {
+      const l = document.createElement('link');
+      if (l.relList && l.relList.supports && l.relList.supports('prefetch')) { l.rel = 'prefetch'; l.as = 'script'; l.href = h; document.head.appendChild(l); }
+      else try { fetch(h).catch(() => {}); } catch (e) {}
+    });
+  };
+  const SEL = '[data-exp], #menu-btn';
+  ['pointerdown', 'focusin', 'mouseover'].forEach(t => document.addEventListener(t, e => { if (!warm && e.target.closest && e.target.closest(SEL)) go(); }, { passive:true, capture:true }));
+})();
+/* ---------- Tijdlijn: mijlpalen per project, met wat er verschoof ----------
+   tijdlijn.v1 = { lists:[{ id, name, voorbeeld?, items:[{ id, text, date, orig?, status, who, note, created, bron?, van?, vanWas? }] }], current }
+   date en orig zijn JJJJ-MM-DD. orig = de datum van voor het verschuiven (alleen als de mijlpaal later viel dan eerst gepland).
+   status: gepland, gehaald of verschoven. Een mijlpaal zonder datum kan (bv. overgenomen zonder datum): die staat onderaan de lijst. */
+const OC_ID = 'tijdlijn', OC_TOOL = 'Tijdlijn';
+const TYPES = ['mijlpaal', 'taak'];
+let ocSaves = 0, ocPubT = null;
+// Wordt bij elke bewaring aangeroepen: telt (voor 'Ongedaan') en legt na een korte pauze klaar voor andere tools.
+function ocAfterSave() { ocSaves++; clearTimeout(ocPubT); ocPubT = setTimeout(() => { try { ocPublish(); } catch {} ocRefreshImports(); }, 300); }
+
+/* ---------- Hulpjes ---------- */
+const uid = () => Math.random().toString(36).slice(2, 10);
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const escA = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+const obj = x => !!x && typeof x === 'object' && !Array.isArray(x);
+const arr = v => Array.isArray(v) ? v : [];
+const str = v => typeof v === 'string' ? v : typeof v === 'number' ? String(v) : '';
+const isoVan = d => new Date(d.getTime() - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10);
+const today = () => isoVan(new Date());
+const okDate = s => { if (typeof s !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return false; const [y, m, d] = s.split('-').map(Number), t = new Date(y, m - 1, d);
+  return y >= 1900 && y <= 2200 && t.getFullYear() === y && t.getMonth() === m - 1 && t.getDate() === d; };
+const dagNr = s => Math.round(Date.UTC(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10)) / 864e5);
+const vanDagNr = n => new Date(n * 864e5).toISOString().slice(0, 10);
+const fmtLang = s => okDate(s) ? new Date(s + 'T12:00:00').toLocaleDateString('nl-BE', { day:'numeric', month:'long', year:'numeric' }) : '';
+const fmtKort = s => okDate(s) ? new Date(s + 'T12:00:00').toLocaleDateString('nl-BE', { day:'numeric', month:'short', year:'numeric' }) : '';
+const fmtDag = s => okDate(s) ? new Date(s + 'T12:00:00').toLocaleDateString('nl-BE', { day:'numeric', month:'short' }) : '';
+const meer = (n, een, veel) => `${n} ${n === 1 ? een : veel}`;
+// Vergelijken zoals de kiezer: zonder hoofdletters, dubbele spaties of leestekens aan de rand.
+const ocNorm = v => String(v || '').normalize('NFC').toLowerCase().replace(/\s+/g, ' ').trim().replace(/^[\s.,;:!?·-]+|[\s.,;:!?·-]+$/g, '');
+const STATUS = { gepland:'Gepland', gehaald:'Gehaald', verschoven:'Verschoven' };
+// Voorbij de datum en nog niet gehaald: een signaal, geen status die je kiest.
+const isLaat = it => it.status !== 'gehaald' && okDate(it.date) && it.date < today();
+
+/* Een datum uit een andere tool wordt JJJJ-MM-DD. We lezen ook 20/11/2026, 20-11-2026, 20.11.2026 en 20 november 2026 (zoals het Beslissingslog). */
+const OC_MAANDEN = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+function ocDatum(v) {
+  if (typeof v !== 'string') return '';
+  const s = v.trim().toLowerCase();
+  let y, m, d, x;
+  if ((x = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:$|[t\s])/))) [, y, m, d] = x;
+  else if ((x = s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/))) [, d, m, y] = x;
+  else if ((x = s.match(/^(\d{1,2})\s+([a-z]+)\.?\s+(\d{4})$/))) {
+    const i = x[2] === 'mrt' ? 2 : OC_MAANDEN.findIndex(n => n === x[2] || (x[2].length >= 3 && n.startsWith(x[2])));
+    if (i < 0) return '';
+    [d, m, y] = [x[1], i + 1, x[3]];
+  } else return '';
+  const r = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  return okDate(r) ? r : '';
+}
+
+/* ---------- Overnemen: wat andere tools klaarleggen, lezen we als mijlpalen ----------
+   Soort 'mijlpaal' (bv. uit de Projectopdracht) komt zoals ze is. Soort 'taak' alleen als ze met "Mijlpaal:" begint of een datum heeft.
+   "Mijlpaal: " vooraan valt weg. Zo toont de kiezer elke mijlpaal één keer, ook als een tool ze als mijlpaal én als taak klaarlegt.
+   Het gedeelde blok blijft ongewijzigd: deze pagina leest de klaargelegde lijsten van ANDERE tools (oc.share.*, niet de eigen)
+   door deze bril. Niets wordt weggeschreven; de lijsten zelf blijven zoals ze zijn. */
+const MP = /^\s*mijlpaal\s*:\s*/i;
+function alsMijlpalen(d) {
+  if (!obj(d) || !Array.isArray(d.lists)) return d;
+  return Object.assign({}, d, { lists: d.lists.map(l => {
+    if (!obj(l) || !Array.isArray(l.items)) return l;
+    const items = [];
+    l.items.forEach(it => {
+      if (!obj(it) || typeof it.text !== 'string') return;
+      const text = it.text.replace(MP, '').trim(), when = ocDatum(str(it.when)) || undefined, who = typeof it.who === 'string' ? it.who : undefined;
+      if (!text) return;
+      if (it.type === 'mijlpaal') items.push({ type:'mijlpaal', text, when, who, note: STATUS[it.note] ? it.note : undefined });
+      else if (it.type === 'taak' && (MP.test(it.text) || when)) items.push({ type:'mijlpaal', text, when, who });
+    });
+    return Object.assign({}, l, { items });
+  }) });
+}
+(() => {
+  const P = Storage.prototype, lees = P.getItem;
+  P.getItem = function (k) {
+    const v = lees.call(this, k);
+    try {
+      if (v == null || typeof k !== 'string' || k.indexOf('oc.share.') !== 0 || k === 'oc.share.' + OC_ID || this !== window.localStorage) return v;
+      return JSON.stringify(alsMijlpalen(JSON.parse(v)));
+    } catch { return v; }
+  };
+})();
+
+/* ---------- Opslag ---------- */
+const KEY = 'tijdlijn.v1';
+function normItem(it) {
+  const okId = v => { const s = str(v); return s && s !== '__proto__' && s !== 'constructor' && s !== 'prototype' ? s.slice(0, 40) : ''; };
+  const o = { id: okId(it.id) || uid(), text: str(it.text).trim().slice(0, 120) || 'Zonder naam', date: okDate(it.date) ? it.date : '',
+    status: STATUS[it.status] ? it.status : 'gepland', who: str(it.who).slice(0, 80), note: str(it.note).slice(0, 600), created: +it.created || 0 };
+  if (okDate(it.orig) && it.orig !== o.date) o.orig = it.orig;
+  if (typeof it.bron === 'string' && it.bron) o.bron = it.bron.slice(0, 60);
+  if (typeof it.van === 'string' && it.van) { o.van = it.van.slice(0, 40); o.vanWas = str(it.vanWas); }
+  return o;
+}
+function load() {
+  try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && Array.isArray(d.lists)) {
+    // Elke tijdlijn en mijlpaal apart nakijken: één kapot stuk mag de rest niet meenemen.
+    const lists = d.lists.filter(obj).map(l => {
+      const n = { id: typeof l.id === 'string' && l.id && l.id !== '__proto__' ? l.id.slice(0, 40) : uid(), name: str(l.name).slice(0, 80) || 'Naamloos', items: arr(l.items).filter(obj).map(normItem) };
+      if (l.voorbeeld === true) n.voorbeeld = true;
+      return n;
+    });
+    if (lists.length) return { lists, current: lists.some(l => l.id === d.current) ? d.current : lists[0].id };
+  } } catch {}
+  const first = { id:uid(), name:ocProject('Mijn project'), items:[] };
+  return { lists:[first], current:first.id };
+}
+let state = load();
+ocPickProject(state, 'lists');
+// Een nog lege tijdlijn met een standaardnaam krijgt de naam van het actieve project uit de app.
+const isStd = v => window.ocStandaardNaam ? ocStandaardNaam(v) : /^((mijn|nieuwe?) )?project( \d+)?$|^naamloos$/i.test(String(v || '').trim());
+(() => { const p = ocProject(''), l = cur(); if (p && !l.items.length && !l.voorbeeld && isStd(l.name) && !state.lists.some(x => x.name === p)) l.name = p; })();
+function cur() { return state.lists.find(l => l.id === state.current) || state.lists[0]; }
+let bewaarFout = false;
+function save() {
+  ocAfterSave();
+  try { localStorage.setItem(KEY, JSON.stringify(state)); bewaarFout = false; }
+  catch { if (!bewaarFout) { bewaarFout = true; setTimeout(() => toast('Bewaren lukt niet op dit toestel. Kies in het menu Bewaar als bestand.', null, 6000), 50); } }
+}
+// Op datum, oudste eerst; zonder datum achteraan
+const sorted = items => [...items].sort((a, b) => (a.date || '9999') < (b.date || '9999') ? -1 : (a.date || '9999') > (b.date || '9999') ? 1 : a.created - b.created);
+
+/* ---------- Klaarleggen voor andere tools ----------
+   Elke mijlpaal als 'mijlpaal' { text, when, note: status }. Nog niet gehaald? Dan ook als 'taak' "Mijlpaal: …" met een datum,
+   zodat het Takenbord ze zonder aanpassing overneemt. Een voorbeeld wordt nooit klaargelegd.
+   Herkomst: een overgenomen mijlpaal (van = de tool waar ze vandaan komt) geven we alleen door als je hier een eigen status of
+   datum koos (vanWas is wat binnenkwam). Zo blijft de bron de baas. Hernoem je ze, dan is ze van jou. */
+const ocStand = it => it.status + '|' + (it.date || '');
+const ocEigen = it => !it.van || ocStand(it) !== (it.vanWas || '');
+// Komma's tussen namen ("Fatima, Pieter") worden "; ": zo maakt het Takenbord er aparte mensen van.
+function ocWie(w) { return typeof w === 'string' && w.trim() ? w.split(/\s*[,;]\s*/).map(x => x.trim()).filter(Boolean).join('; ') || undefined : undefined; }
+function ocPublish() {
+  ocShare.publish(OC_ID, OC_TOOL, state.lists.filter(l => !l.voorbeeld).map(l => {
+    const eigen = sorted(l.items).filter(ocEigen);
+    return { name:l.name, items:[
+      ...eigen.map(it => ({ type:'mijlpaal', text:it.text, when:it.date || undefined, note:it.status, who:ocWie(it.who) })),
+      ...eigen.filter(it => it.status !== 'gehaald').map(it => ({ type:'taak', text:'Mijlpaal: ' + it.text, when:it.date || undefined, who:ocWie(it.who) }))
+    ] };
+  }));
+}
+// Wat deze tijdlijn al heeft: de kiezer grijst het uit, en de knop telt het niet als nieuw
+const ocAl = () => cur().items.map(i => i.text);
+window.ocHave = types => { try { return types.some(t => TYPES.includes(t)) ? ocAl() : []; } catch { return []; } };
+// Hoeveel er nieuw klaarligt (wat er al staat, telt niet)
+function ocNieuw() {
+  try { if (!ocShare.count(TYPES, OC_ID)) return 0;
+    const al = new Set(ocAl().map(ocNorm));
+    return ocShare.sources(TYPES, OC_ID).reduce((n, s) => n + s.items.filter(it => !al.has(ocNorm(it.text))).length, 0);
+  } catch { return 0; }
+}
+function ocRefreshImports() {
+  const vb = !!cur().voorbeeld;
+  document.querySelectorAll('[data-oc-types]').forEach(b => { b.hidden = vb || !ocNieuw(); });
+}
+['focus', 'storage'].forEach(ev => window.addEventListener(ev, () => setTimeout(ocRefreshImports, 50)));
+document.addEventListener('visibilitychange', () => { if (!document.hidden) ocRefreshImports(); });
+
+document.addEventListener('click', e => { if (e.target.closest('#oc-imp')) ocOvernemen(); });
+async function ocOvernemen() {
+  const picked = await ocShare.pick({ types:TYPES, self:OC_ID, title:'Mijlpalen overnemen',
+    intro:'Kies mijlpalen uit andere tools. Ze komen op deze tijdlijn, met hun datum.', have:ocAl() });
+  if (!picked.length) return;
+  const l = cur(), have = new Set(l.items.map(i => ocNorm(i.text))), restore = snapshot();
+  let al = 0; try { al = ocShare.sources(TYPES, OC_ID).reduce((n, s) => n + s.items.filter(it => have.has(ocNorm(it.text))).length, 0); } catch {}
+  let n = 0, zonder = 0;
+  picked.forEach(p => {
+    const text = String(p.text || '').replace(MP, '').trim().slice(0, 120), k = ocNorm(text);
+    if (!text || have.has(k)) return; have.add(k);
+    const it = normItem({ id:uid(), text, date:ocDatum(p.when), status: STATUS[p.note] ? p.note : 'gepland', who:typeof p.who === 'string' ? p.who.replace(/;\s*/g, ', ') : '',
+      created:Date.now() + n, bron:String(p.source || '').slice(0, 60) || undefined });
+    if (typeof p.bronId === 'string' && p.bronId) { it.van = p.bronId.slice(0, 40); it.vanWas = ocStand(it); }   // herkomst
+    if (!it.date) zonder++;
+    l.items.push(it); n++;
+  });
+  openId = null; save(); render();
+  const nieuw = n ? `${meer(n, 'mijlpaal', 'mijlpalen')} overgenomen` : 'Niets nieuws overgenomen';
+  toast([nieuw, zonder && `${zonder === 1 ? 'Eén heeft' : zonder + ' hebben'} nog geen datum`, al && `${al} ${al === 1 ? 'stond' : 'stonden'} er al`].filter(Boolean).join('. ') + (zonder || al ? '.' : ''), n ? restore : undefined);
+}
+/* Een andere tool opende de Tijdlijn met ?van=<tool>: meteen kiezen wat je overneemt, zoals in de andere tools. */
+function ocOpenOvernemen() {
+  let van = '';
+  try { const u = new URL(location.href); van = u.searchParams.get('van') || ''; if (van) { window.ocVan = van; u.searchParams.delete('van'); history.replaceState(null, '', u.pathname + u.search + u.hash); } } catch { return; }
+  if (!van || van === OC_ID || !ocShare.count(TYPES, OC_ID)) { window.ocVan = ''; return; }
+  if (cur().voorbeeld) { window.ocVan = ''; toast('Dit is het voorbeeld. Maak er je eigen tijdlijn van, dan kan je overnemen.'); return; }
+  setTimeout(async () => { try { await ocOvernemen(); } finally { window.ocVan = ''; } }, 300);
+}
+
+async function ocWipeAll() {
+  if (!await ocConfirm(`Alles wissen in ${OC_TOOL}?`, 'Alle tijdlijnen en mijlpalen verdwijnen. Je kan dit nog ongedaan maken tot je iets anders doet.', 'Alles wissen')) return;
+  const copy = JSON.parse(JSON.stringify(state));
+  try { localStorage.removeItem(KEY); } catch {}
+  state = load(); openId = null; save(); render();
+  ocShare.clear(OC_ID);
+  toast('Alles gewist', ocUndoable(() => { state = copy; }));
+}
+document.addEventListener('click', e => { if (e.target.closest('[data-act="wipe"]')) ocWipeAll(); });
+
+/* ---------- Datum en status ----------
+   Zet je de datum later dan eerst gepland, dan onthouden we die eerste datum (orig) en wordt de mijlpaal "verschoven".
+   Terug naar die datum of vroeger: de oude datum valt weg. Een gehaalde mijlpaal blijft gehaald, met de oude datum erbij. */
+function zetDatum(it, d) {
+  if (!okDate(d)) { it.date = ''; return; }
+  const basis = it.orig || it.date;
+  if (basis && d > basis) { it.orig = basis; if (it.status !== 'gehaald') it.status = 'verschoven'; }
+  else if (it.orig) { delete it.orig; if (it.status === 'verschoven') it.status = 'gepland'; }
+  it.date = d;
+}
+
+/* ---------- Toevoegen: naam en datum op één regel. Enter bewaart. ---------- */
+let openId = null;
+function toonFout(msg, veld) {
+  $('add-err').hidden = !msg; $('add-err').textContent = msg || '';
+  ['add-text', 'add-date'].forEach(id => { if (msg && id === veld) $(id).setAttribute('aria-invalid', 'true'); else $(id).removeAttribute('aria-invalid'); });
+}
+$('add-text').addEventListener('keydown', e => {
+  if (e.key !== 'Enter' || e.isComposing) return;
+  // Nog geen datum? Dan eerst naar de datum, niet meteen bewaren.
+  if ($('add-text').value.trim() && !okDate($('add-date').value)) { e.preventDefault(); toonFout('', ''); $('add-date').focus(); try { $('add-date').showPicker && matchMedia('(pointer: coarse)').matches && $('add-date').showPicker(); } catch {} }
+});
+$('add-date').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('add-form').requestSubmit(); } });
+['add-text', 'add-date'].forEach(id => $(id).addEventListener('input', () => { if (!$('add-err').hidden) toonFout('', ''); }));
+$('add-form').addEventListener('submit', e => {
+  e.preventDefault();
+  const text = $('add-text').value.trim(), d = $('add-date').value;
+  if (!text) { toonFout('Typ eerst de naam van de mijlpaal.', 'add-text'); $('add-text').focus(); return; }
+  if (!okDate(d)) { toonFout('Kies nog een datum.', 'add-date'); $('add-date').focus(); return; }
+  toonFout('', '');
+  const l = cur(), it = normItem({ id:uid(), text, date:d, status:'gepland', created:Date.now() });
+  l.items.push(it);
+  $('add-text').value = ''; $('add-date').value = '';
+  openId = null; save(); render();
+  const li = document.querySelector(`.ms-it[data-id="${escA(it.id)}"]`);
+  if (li) { li.classList.add('flash'); setTimeout(() => li.classList.remove('flash'), 1500); }
+  $('add-text').focus();
+});
+
+/* ---------- Tekenen: de lijst als verticale tijdlijn ---------- */
+const CHEV = '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+const klasse = it => !it.date ? 'zonder' : isLaat(it) ? 'laat' : it.status;
+function pilVan(it) {
+  if (it.status === 'gehaald') return `<span class="pil groen">Gehaald</span>`;
+  if (it.status === 'verschoven') return `<span class="pil amber">Verschoven</span>`;
+  if (isLaat(it)) return `<span class="pil amber">Datum voorbij</span>`;
+  if (!it.date) return `<span class="pil">Zonder datum</span>`;
+  const n = dagNr(it.date) - dagNr(today());
+  // Gewoon gepland en nog ver weg: geen label, dat houdt de lijst rustig. Het punt zegt het al.
+  return n <= 31 ? `<span class="pil">${n === 0 ? 'Vandaag' : `Over ${meer(n, 'dag', 'dagen')}`}</span>` : '';
+}
+function metaVan(it) {
+  const datum = it.date ? (it.orig ? `<s aria-label="eerst ${escA(fmtLang(it.orig))}">${esc(fmtKort(it.orig))}</s> ${esc(fmtLang(it.date))}` : esc(fmtLang(it.date))) : 'Nog geen datum';
+  return [datum, it.who && esc(it.who), it.bron && 'uit ' + esc(it.bron)].filter(Boolean).join(' · ');
+}
+function rijKop(it) {
+  return `<span class="ms-dot" aria-hidden="true"></span><span><span class="ms-t">${esc(it.text)}</span><span class="ms-meta">${metaVan(it)}</span>${it.note && it.id !== openId ? `<span class="ms-noot">${esc(it.note)}</span>` : ''}</span>${pilVan(it)}${CHEV}`;
+}
+const oudBinnen = it => `<span>Eerst gepland op <s>${esc(fmtLang(it.orig))}</s>. Nu op ${esc(fmtLang(it.date) || 'geen datum')}.</span><button type="button" data-act="vergeet">Wis de oude datum</button>`;
+function editHTML(it) {
+  return `<div class="ms-edit"><div class="grid">
+    <label class="full"><span class="lbl">Mijlpaal</span><input class="field" data-f="text" value="${escA(it.text)}" maxlength="120" enterkeyhint="done"></label>
+    <label><span class="lbl">Datum</span><input class="field" data-f="date" type="date" value="${escA(it.date)}"></label>
+    <label><span class="lbl">Wie</span><input class="field" data-f="who" value="${escA(it.who)}" maxlength="80" list="who-list" placeholder="Bv. projectleider" enterkeyhint="done"></label>
+    <div class="full"><span class="lbl" id="st-${escA(it.id)}">Stand</span>
+      <div class="status" role="radiogroup" aria-labelledby="st-${escA(it.id)}">
+        ${Object.entries(STATUS).map(([k, v]) => `<button type="button" role="radio" data-status="${escA(k)}" aria-checked="${it.status === k}"><span class="sd" aria-hidden="true"></span>${v}</button>`).join('')}
+      </div></div>
+    ${it.orig ? `<p class="full oud">${oudBinnen(it)}</p>` : ''}
+    <label class="full"><span class="lbl">Notitie</span><textarea class="field" data-f="note" rows="2" maxlength="600" placeholder="Bv. wat er nodig is, of waarom het schoof">${esc(it.note)}</textarea></label>
+  </div>
+  <div class="edit-actions"><button type="button" class="btn btn-danger" data-act="del">Verwijder</button><button type="button" class="btn btn-primary" data-act="close">Klaar</button></div></div>`;
+}
+function itemHTML(it) {
+  const open = it.id === openId;
+  return `<li class="ms-it ${escA(klasse(it))}${open ? ' open' : ''}" data-id="${escA(it.id)}"><button type="button" class="ms-head" aria-expanded="${open}">${rijKop(it)}</button>${open ? editHTML(it) : ''}</li>`;
+}
+const maandNaam = s => new Date(s.slice(0, 7) + '-15T12:00:00').toLocaleDateString('nl-BE', { month:'long', year:'numeric' });
+function lijstHTML(l) {
+  const its = sorted(l.items), nu = today();
+  let h = '', maand = '', nuGezet = false, zonderGezet = false;
+  const nuRij = `<li class="ms-nu" aria-label="Vandaag, ${escA(fmtLang(nu))}">Vandaag, ${esc(fmtDag(nu))}</li>`;
+  its.forEach(it => {
+    if (it.date && !nuGezet && it.date > nu) { h += nuRij; nuGezet = true; maand = ''; }
+    if (it.date && it.date.slice(0, 7) !== maand) { maand = it.date.slice(0, 7); h += `<li class="ms-kop">${esc(maandNaam(it.date))}</li>`; }
+    if (!it.date && !zonderGezet) { if (!nuGezet) { h += nuRij; nuGezet = true; } h += `<li class="ms-kop">Nog zonder datum</li>`; zonderGezet = true; }
+    h += itemHTML(it);
+  });
+  if (!nuGezet && its.length) h += nuRij;
+  return h;
+}
+
+function renderTabs() {
+  $('lists').innerHTML = state.lists.map(l =>
+    `<button type="button" class="tab${l.id === state.current ? ' active' : ''}" data-list="${escA(l.id)}"${l.id === state.current ? ' aria-current="true"' : ''}>${esc(l.name || 'Naamloos')}${l.voorbeeld ? '<span class="vb-tag">voorbeeld</span>' : ''}<span class="n">${l.items.length || ''}</span></button>`
+  ).join('') + `<button type="button" class="tab add" id="new-list" aria-label="Nieuwe tijdlijn voor een ander project">+ Project</button>`;
+}
+function telling(l) {
+  const t = l.items.length, g = l.items.filter(i => i.status === 'gehaald').length, v = l.items.filter(i => i.status === 'verschoven' || (i.orig && i.status !== 'gehaald')).length;
+  const laat = l.items.filter(isLaat).length, z = l.items.filter(i => !i.date).length;
+  return { t, g, v, laat, z };
+}
+function renderCount() {
+  const l = cur(), c = telling(l);
+  $('count-line').hidden = !c.t;
+  $('count-line').innerHTML = c.t ? [meer(c.t, 'mijlpaal', 'mijlpalen'), c.g && `${c.g} gehaald`, c.v && `<span class="sig">${c.v} verschoven</span>`,
+    c.laat && `<span class="sig">${c.laat} voorbij de datum</span>`, c.z && `${c.z} zonder datum`].filter(Boolean).join(' · ') : '';
+}
+function render() {
+  const l = cur();
+  if (document.activeElement !== $('list-name')) $('list-name').value = l.name;
+  $('list-name').readOnly = false;
+  const dl = `Verwijder tijdlijn ${l.name || ''}`.trim(); $('del-btn').setAttribute('aria-label', dl); $('del-btn').title = dl;
+  renderCount();
+  $('ms').innerHTML = lijstHTML(l);
+  $('ms').hidden = !l.items.length;
+  $('empty').hidden = !!l.items.length;
+  $('empty').innerHTML = l.items.length ? '' : '<strong>Nog geen mijlpalen</strong>Zet de grote momenten van je project op een lijn. Zo zie je wat gehaald is en wat verschoof.'
+    + (state.lists.some(x => x.voorbeeld) ? '' : '<div class="oc-start-btns"><button type="button" class="oc-begin" data-oc-begin="#add-text">Begin met een mijlpaal</button><button type="button" class="oc-vb" id="vb-show">Voorbeeld bekijken</button></div><p class="oc-open-row"><button type="button" class="oc-open-link" data-bestand="open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 16v-5M9.5 13.5 12 11l2.5 2.5"/></svg>Open bestand</button></p>');
+  $('vb-bar').hidden = !l.voorbeeld;
+  $('export-row').hidden = !l.items.length;
+  const whos = [...new Set(state.lists.flatMap(x => x.items.map(i => i.who.trim())).filter(Boolean))];
+  $('who-list').innerHTML = whos.map(w => `<option value="${escA(w)}">`).join('');
+  document.querySelectorAll('.ms-edit textarea').forEach(grow);
+  renderTabs();
+  renderChart();
+  ocRefreshImports();
+}
+function grow(t) { t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight + 3, 320) + 'px'; }
+
+/* ---------- De tijdlijn op een breed scherm ----------
+   Maanden als schaal, een groene lijn voor vandaag, elke mijlpaal een punt op de lijn met haar naam in een label.
+   Labels overlappen nooit: om en om boven en onder de lijn, en waar het te krap is in een volgende rij.
+   Dezelfde tekening dient voor de download (zonder knoppen). */
+let meetCtx = null;
+function breedte(t, font) {
+  if (!meetCtx) meetCtx = document.createElement('canvas').getContext('2d');
+  meetCtx.font = font; return meetCtx.measureText(t).width;
+}
+const MAAND_KORT = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
+function chartHTML(l, W, ex) {
+  const its = sorted(l.items).filter(i => i.date), nu = today();
+  if (!its.length) return { html:'', h:0 };
+  const alle = its.flatMap(i => [i.date, i.orig].filter(Boolean)).concat([nu]).map(dagNr);
+  let a = Math.min(...alle), b = Math.max(...alle);
+  const span = Math.max(b - a, 60), pad = Math.max(12, Math.round(span * 0.06));
+  if (b - a < 60) { const m = (a + b) / 2; a = Math.round(m - 30); b = Math.round(m + 30); }
+  a -= pad; b += pad;
+  const M = 14, x = n => M + (n - a) / (b - a) * (W - 2 * M);
+  // Labels: breedte meten, dan per label de eerste vrije rij (om en om boven en onder beginnen)
+  // Een label is hoogstens zo breed als LW; een langere naam krijgt een tweede regel (dan zijn alle labels even hoog).
+  const LW = Math.min(184, Math.max(132, Math.floor(W / 4))), GAP = 8;
+  const lbl = its.map((it, i) => {
+    const datum = labelDatum(it), nw = breedte(it.text, "600 13px 'DM Sans', system-ui, sans-serif");
+    const w = Math.ceil(Math.min(LW, Math.max(nw, breedte(datum.tekst, "400 12px 'DM Sans', system-ui, sans-serif")) + 20));
+    const cx = x(dagNr(it.date)), left = Math.max(0, Math.min(W - w, cx - w / 2));
+    return { it, i, cx, w, left, right:left + w, datum, twee:nw + 20 > w + 0.5 };
+  });
+  const BH = lbl.some(L => L.twee) ? 60 : 44, LH = BH + 6;
+  const rijen = { boven:[], onder:[] };
+  lbl.forEach((L, i) => {
+    const pref = i % 2 ? 'onder' : 'boven', ander = pref === 'boven' ? 'onder' : 'boven';
+    for (let r = 0; ; r++) {
+      const kant = [pref, ander].find(k => (rijen[k][r] == null || rijen[k][r] + GAP <= L.left));
+      if (kant) { L.kant = kant; L.rij = r; rijen[kant][r] = L.right; break; }
+    }
+  });
+  const NB = rijen.boven.length, NO = rijen.onder.length;
+  const TOP = 30, asY = TOP + NB * LH + (NB ? 16 : 10), onderY = asY + (NO ? 16 : 10), maandY = onderY + NO * LH + 8, H = maandY + 26;
+  let h = '';
+  // maanden: rasterlijnen en namen; bij weinig plaats niet elke maand
+  const d0 = vanDagNr(a), d1 = vanDagNr(b);
+  let y = +d0.slice(0, 4), m = +d0.slice(5, 7);   // de eerste maand na het begin
+  const maanden = [];
+  for (;;) { m++; if (m > 12) { m = 1; y++; } const s = `${y}-${String(m).padStart(2, '0')}-01`; if (s > d1) break; maanden.push({ s, y, m }); }
+  const perMaand = maanden.length ? (W - 2 * M) / ((b - a) / 30.4) : W;
+  const stap = [1, 2, 3, 6, 12].find(s => perMaand * s >= 46) || 12;
+  let eerste = true;
+  maanden.forEach(mm => {
+    const px = x(dagNr(mm.s)), jaar = mm.m === 1;
+    h += `<div class="tl-grid${jaar ? ' jaar' : ''}" style="left:${px.toFixed(1)}px;top:${TOP - 4}px;height:${maandY - TOP + 2}px"></div>`;
+    if ((mm.m - 1) % stap === 0 || (stap === 12 && jaar)) {
+      const t = MAAND_KORT[mm.m - 1] + (jaar || eerste ? ' ' + mm.y : '');
+      const tw = breedte(t, "600 12px 'DM Sans', system-ui, sans-serif") / 2 + 2;
+      if (px - tw >= 0 && px + tw <= W) { eerste = false; h += `<div class="tl-maand${jaar ? ' jaar' : ''}" style="left:${px.toFixed(1)}px;top:${maandY + 6}px">${esc(t)}</div>`; }
+    }
+  });
+  // de lijn en vandaag
+  h += `<div class="tl-as" style="left:${M - 6}px;width:${W - 2 * M + 12}px;top:${asY - 1}px"></div>`;
+  const nx = x(dagNr(nu)), nw = breedte('Vandaag', "700 12px 'DM Sans', system-ui, sans-serif") / 2 + 10;
+  h += `<div class="tl-nu" style="left:${(nx - 1).toFixed(1)}px;top:${TOP - 6}px;height:${maandY - TOP + 4}px"></div>`;
+  h += `<div class="tl-nu-t" style="left:${Math.max(nw, Math.min(W - nw, nx)).toFixed(1)}px;top:4px">Vandaag</div>`;
+  // eerst de stelen, verschuivingen en punten, dan de labels erboven: een steel loopt nooit over een label
+  lbl.forEach(L => { L.ly = L.kant === 'boven' ? TOP + (NB - 1 - L.rij) * LH : onderY + L.rij * LH; });
+  lbl.forEach(L => {
+    const it = L.it, k = klasse(it), boven = L.kant === 'boven', ly = L.ly;
+    const sy = boven ? ly + BH : asY, sh = boven ? asY - (ly + BH) : ly - asY;
+    h += `<div class="tl-steel" style="left:${L.cx.toFixed(1)}px;top:${sy}px;height:${Math.max(0, sh)}px"></div>`;
+    if (it.orig) {
+      const ox = x(dagNr(it.orig));
+      if (Math.abs(L.cx - ox) > 10) h += `<div class="tl-schuif" style="left:${(ox + 6).toFixed(1)}px;width:${Math.max(0, L.cx - ox - 16).toFixed(1)}px;top:${asY - 11}px"></div>`;
+      h += `<div class="tl-oud" style="left:${ox.toFixed(1)}px;top:${asY}px" title="Eerst gepland: ${escA(fmtLang(it.orig))}"></div>`;
+    }
+    h += `<div class="tl-pt ${escA(k)}" style="left:${L.cx.toFixed(1)}px;top:${asY}px"></div>`;
+  });
+  lbl.forEach(L => {
+    const it = L.it, k = klasse(it), ly = L.ly;
+    const tag = ex ? 'div' : 'button';
+    const aria = ex ? '' : ` type="button" data-open="${escA(it.id)}" aria-label="${escA(`${it.text}, ${fmtLang(it.date)}${it.orig ? ', eerst ' + fmtLang(it.orig) : ''}, ${(isLaat(it) && it.status === 'gepland') ? 'datum voorbij' : STATUS[it.status].toLowerCase()}. Toon in de lijst.`)}"`;
+    h += `<${tag} class="tl-lbl ${escA(k)}"${aria} style="left:${L.left.toFixed(1)}px;top:${ly}px;width:${L.w}px;height:${BH}px"><span class="tl-n${L.twee ? ' twee' : ''}">${esc(it.text)}</span><span class="tl-d">${L.datum.html}</span></${tag}>`;
+  });
+  return { html:`<div class="tl-in" style="height:${H}px">${h}</div>`, h:H };
+}
+function labelDatum(it) {
+  const d = fmtDag(it.date), j = it.date.slice(0, 4) !== today().slice(0, 4) ? ' ' + it.date.slice(0, 4) : '';
+  if (it.orig) return { tekst:`${fmtDag(it.orig)} ${d}${j}`, html:`<s>${esc(fmtDag(it.orig))}</s> <b>${esc(d + j)}</b>` };
+  if (it.status === 'gehaald') return { tekst:`${d}${j} · gehaald`, html:`${esc(d + j)} · <b>gehaald</b>` };
+  if (it.status === 'verschoven') return { tekst:`${d}${j} · verschoven`, html:`${esc(d + j)} · <b>verschoven</b>` };
+  if (isLaat(it)) return { tekst:`${d}${j} · voorbij`, html:`${esc(d + j)} · <b>voorbij</b>` };
+  return { tekst:d + j, html:esc(d + j) };
+}
+function renderChart() {
+  const el = $('tl'), l = cur(), heeft = l.items.some(i => i.date);
+  // Alleen als er plaats is: op de gsm is de lijst zelf de tijdlijn
+  const W0 = $('card').clientWidth - 2 - 36;
+  if (!heeft || W0 < 520) { el.hidden = true; el.innerHTML = ''; return; }
+  el.hidden = false;
+  const W = el.clientWidth - 2, c = chartHTML(l, W, false), n = l.items.filter(i => i.date);
+  const van = sorted(n)[0].date, tot = sorted(n)[n.length - 1].date;
+  el.setAttribute('role', 'group');
+  el.setAttribute('aria-label', `Tijdlijn met ${meer(n.length, 'mijlpaal', 'mijlpalen')}, van ${fmtLang(van)} tot ${fmtLang(tot)}`);
+  el.innerHTML = c.html;
+}
+{ let rt = 0, w0 = 0; const ro = new ResizeObserver(() => { const w = $('card').clientWidth; if (w === w0) return; w0 = w; cancelAnimationFrame(rt); rt = requestAnimationFrame(renderChart); }); ro.observe($('card')); }
+try { document.fonts.ready.then(renderChart); } catch {}
+
+/* Een label op de tijdlijn opent de mijlpaal in de lijst eronder */
+$('tl').addEventListener('click', e => {
+  const b = e.target.closest('[data-open]'); if (!b) return;
+  openMijlpaal(b.dataset.open, true);
+});
+function openMijlpaal(id, focus) {
+  openId = id; render();
+  const li = document.querySelector(`.ms-it[data-id="${escA(id)}"]`); if (!li) return;
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  li.scrollIntoView({ block:'nearest', behavior: still ? 'auto' : 'smooth' });
+  if (focus) { const f = li.querySelector('[data-f="text"]'); f && f.focus({ preventScroll:true }); }
+}
+
+/* ---------- Bewerken in de lijst ---------- */
+const vindIt = el => { const li = el.closest('.ms-it'); if (!li) return {}; const l = cur(), idx = l.items.findIndex(i => i.id === li.dataset.id); return { li, l, idx, it:l.items[idx] }; };
+// Alleen de kop van één rij, de telling en de tijdlijn bijwerken: zo blijft de cursor in het veld waarin je typt.
+function bijwerken(it) {
+  const li = document.querySelector(`.ms-it[data-id="${escA(it.id)}"]`);
+  if (li) { li.className = `ms-it ${klasse(it)}${it.id === openId ? ' open' : ''}`; li.querySelector('.ms-head').innerHTML = rijKop(it); }
+  renderCount(); renderChart(); renderTabs();
+}
+$('ms').addEventListener('click', e => {
+  const head = e.target.closest('.ms-head');
+  if (head) {
+    const { it } = vindIt(head); if (!it) return;
+    openId = openId === it.id ? null : it.id; render();
+    const li = document.querySelector(`.ms-it[data-id="${escA(it.id)}"]`);
+    if (li) { li.querySelector('.ms-head').focus({ preventScroll:true }); if (openId) li.scrollIntoView({ block:'nearest', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); }
+    return;
+  }
+  const st = e.target.closest('[data-status]');
+  if (st) {
+    const { it } = vindIt(st); if (!it) return;
+    const restore = snapshot(), had = it.orig, nieuw = st.dataset.status;
+    if (it.status === nieuw) return;
+    it.status = nieuw;
+    // Terug naar gepland: de nieuwe datum is het plan. De oude datum valt weg (met Ongedaan).
+    if (nieuw === 'gepland' && it.orig) delete it.orig;
+    save(); render();
+    const again = document.querySelector(`.ms-it[data-id="${escA(it.id)}"] [data-status="${escA(nieuw)}"]`); again && again.focus();
+    if (had && !it.orig) toast('Gepland op de nieuwe datum. De oude datum is weg.', restore);
+    return;
+  }
+  const act = e.target.closest('[data-act]'); if (!act) return;
+  const { l, idx, it } = vindIt(act); if (!it) return;
+  if (act.dataset.act === 'close') { openId = null; render(); const h = document.querySelector(`.ms-it[data-id="${escA(it.id)}"] .ms-head`); h && h.focus(); }
+  if (act.dataset.act === 'vergeet') {
+    const restore = snapshot(); delete it.orig; if (it.status === 'verschoven') it.status = 'gepland';
+    save(); render(); toast('Oude datum gewist', restore);
+    const f = document.querySelector(`.ms-it[data-id="${escA(it.id)}"] [data-f="date"]`); f && f.focus();
+  }
+  if (act.dataset.act === 'del') {
+    const restore = snapshot();
+    l.items.splice(idx, 1); openId = null; save(); render();
+    toast(`${it.text.length > 40 ? it.text.slice(0, 39) + '…' : it.text} verwijderd`, restore);
+    // naar de volgende mijlpaal (niet naar een tekstveld: dan blijft Ctrl+Z het Ongedaan van de melding)
+    const heads = [...document.querySelectorAll('.ms-head')], nx = heads[Math.min(idx, heads.length - 1)];
+    (nx || document.querySelector('.add-btn')).focus({ preventScroll:true });
+  }
+});
+// De datum: tijdens het typen geeft het veld tussenstappen (0002, 0020, 2027 …). We rekenen telkens vanaf de stand van vóór het bewerken.
+let voorDatum = null;
+$('ms').addEventListener('focusin', e => {
+  if (e.target.dataset && e.target.dataset.f === 'date') { const { it } = vindIt(e.target); if (it && (!voorDatum || voorDatum.id !== it.id)) voorDatum = { id:it.id, date:it.date, orig:it.orig, status:it.status }; }
+});
+function datumVeld(el) {
+  const { it } = vindIt(el); if (!it) return;
+  if (!voorDatum || voorDatum.id !== it.id) voorDatum = { id:it.id, date:it.date, orig:it.orig, status:it.status };
+  it.date = voorDatum.date; it.status = voorDatum.status; if (voorDatum.orig) it.orig = voorDatum.orig; else delete it.orig;
+  if (el.value && !okDate(el.value)) return;   // nog niet af
+  zetDatum(it, el.value);
+  save(); bijwerken(it);
+  // de regel met de oude datum verschijnt, verandert of verdwijnt meteen; het datumveld zelf blijft staan (je typt er nog in)
+  const li = document.querySelector(`.ms-it[data-id="${escA(it.id)}"]`), oud = li && li.querySelector('.oud');
+  if (li && it.orig) {
+    if (oud) oud.innerHTML = oudBinnen(it);
+    else { const st = li.querySelector('.ms-edit .status'); st && st.parentElement.insertAdjacentHTML('afterend', `<p class="full oud">${oudBinnen(it)}</p>`); }
+  } else if (oud) oud.remove();
+  const radio = li && li.querySelectorAll('[data-status]'); if (radio) radio.forEach(r => r.setAttribute('aria-checked', String(r.dataset.status === it.status)));
+}
+$('ms').addEventListener('input', e => {
+  const f = e.target.dataset && e.target.dataset.f; if (!f) return;
+  if (f === 'date') { datumVeld(e.target); return; }
+  const { it } = vindIt(e.target); if (!it) return;
+  if (f === 'note') grow(e.target);
+  it[f] = e.target.value.slice(0, f === 'text' ? 120 : f === 'who' ? 80 : 600);
+  // een overgenomen mijlpaal die je hernoemt, is nu je eigen mijlpaal
+  if (f === 'text' && it.van && ocNorm(it.text) && ocNorm(it.text) !== ocNorm(e.target.defaultValue)) { delete it.van; delete it.vanWas; }
+  save(); bijwerken(it);
+});
+$('ms').addEventListener('change', e => { if (e.target.dataset && e.target.dataset.f === 'date') datumVeld(e.target); });
+$('ms').addEventListener('focusout', e => {
+  const f = e.target.dataset && e.target.dataset.f; if (!f) return;
+  if (f === 'date') {   // weg uit het datumveld van deze mijlpaal (niet: het veld werd net opnieuw getekend)
+    setTimeout(() => { const a = document.activeElement, x = a && a.dataset && a.dataset.f === 'date' && vindIt(a).it; if (!x || !voorDatum || x.id !== voorDatum.id) voorDatum = null; }, 0);
+    return;
+  }
+  const { it } = vindIt(e.target); if (!it) return;
+  if (f === 'text' && !it.text.trim()) { it.text = e.target.defaultValue || 'Zonder naam'; e.target.value = it.text; }
+  if (typeof it[f] === 'string') it[f] = it[f].trim();
+  save(); bijwerken(it);
+});
+$('ms').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.matches('input.field')) { e.preventDefault(); const { it } = vindIt(e.target); openId = null; render(); const h = it && document.querySelector(`.ms-it[data-id="${escA(it.id)}"] .ms-head`); h && h.focus(); }
+});
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape' || !openId || e.defaultPrevented || document.querySelector('.ocs-back, .ocw-back')) return;
+  const id = openId; openId = null; render();
+  const h = document.querySelector(`.ms-it[data-id="${escA(id)}"] .ms-head`); h && h.focus();
+});
+
+/* ---------- Ongedaan maken ---------- */
+let undoFn = null, toastTimer = null;
+function toast(msg, undo, ms) {
+  undoFn = undo || null;
+  $('toast-text').textContent = msg;
+  $('toast-btn').hidden = !undo;
+  $('toast').classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { $('toast').classList.remove('show'); undoFn = null; }, ms || (undo ? 6000 : 2600));
+}
+$('toast-btn').addEventListener('click', () => {
+  if (undoFn) { undoFn(); undoFn = null; openId = null; save(); render(); }
+  $('toast').classList.remove('show');
+});
+function snapshot() { const copy = JSON.parse(JSON.stringify(state)); return () => { state = copy; }; }
+
+/* ---------- Projecten (een tijdlijn per project) ---------- */
+$('lists').addEventListener('click', e => {
+  if (e.target.closest('#new-list')) { nieuweLijst(); return; }
+  const t = e.target.closest('[data-list]'); if (!t) return;
+  state.current = t.dataset.list; openId = null; toonFout('', ''); save(); render();
+});
+function nieuweLijst() {
+  const p = ocProject(''), name = p && !state.lists.some(x => x.name === p) ? p : 'Nieuw project';
+  const l = { id:uid(), name, items:[] };
+  state.lists.push(l); state.current = l.id; openId = null; save(); render();
+  $('list-name').focus(); $('list-name').select();
+  requestAnimationFrame(() => { const a = document.querySelector('.tab.active'); a && a.scrollIntoView({ inline:'nearest', block:'nearest' }); });
+}
+$('list-name').addEventListener('input', () => { cur().name = $('list-name').value.slice(0, 60); save(); renderTabs(); });
+$('list-name').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('add-text').focus(); } });
+$('list-name').addEventListener('blur', () => { if (!cur().name.trim()) { cur().name = 'Naamloos'; save(); render(); } });
+function verwijderLijst(l) {
+  const restore = snapshot(), idx = state.lists.findIndex(x => x.id === l.id);
+  state.lists = state.lists.filter(x => x.id !== l.id);
+  if (!state.lists.length) state.lists.push({ id:uid(), name:ocProject('Mijn project'), items:[] });
+  state.current = state.lists[Math.min(Math.max(idx - 1, 0), state.lists.length - 1)].id;
+  openId = null; save(); render();
+  toast(`${l.name || 'Naamloos'} verwijderd`, restore);
+}
+$('del-btn').addEventListener('click', () => { closeMenu(); verwijderLijst(cur()); });
+
+/* ---------- Menu ---------- */
+function closeMenu() { $('menu').classList.remove('open'); $('menu-btn').setAttribute('aria-expanded', 'false'); }
+$('menu-btn').addEventListener('click', e => {
+  e.stopPropagation();
+  const open = !$('menu').classList.contains('open');
+  $('menu').classList.toggle('open', open); $('menu-btn').setAttribute('aria-expanded', String(open));
+  if (open) { const f = $('menu').querySelector('button'); f && f.focus(); }
+});
+document.addEventListener('click', e => { if (!e.target.closest('.menu-wrap')) closeMenu(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('menu').classList.contains('open')) { closeMenu(); $('menu-btn').focus(); } });
+$('menu').addEventListener('keydown', e => {
+  if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+  e.preventDefault(); const b = [...$('menu').querySelectorAll('button')], i = b.indexOf(document.activeElement);
+  b[(i + (e.key === 'ArrowDown' ? 1 : -1) + b.length) % b.length].focus();
+});
+$('menu').addEventListener('click', async e => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  closeMenu();
+  const act = b.dataset.act;
+  if (act === 'pdf' || act === 'png') await download(act);
+  if (act === 'copy') await kopieerTekst();
+});
+document.addEventListener('click', e => { const b = e.target.closest('[data-exp]'); if (b) download(b.dataset.exp); });
+$('copy-txt').addEventListener('click', kopieerTekst);
+
+/* ---------- Delen: afbeelding, PDF en tekst ---------- */
+/* Bestandsnaam: tool-project-datum (JJJJ-MM-DD), zoals in de andere tools */
+function ocFileName(tool, project) {
+  const slug = s => String(s || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const t = slug(tool);
+  let p = slug(project).replace(/(^|-)\d{1,4}-\d{1,2}-\d{1,4}(?=-|$)/g, '').replace(/^-+|-+$/g, '');
+  if (p === t) p = ''; else if (p.startsWith(t + '-')) p = p.slice(t.length + 1);
+  p = p.slice(0, 50).replace(/-+$/, '');
+  return [t, p, today()].filter(Boolean).join('-');
+}
+async function download(act) {
+  const l = cur();
+  if (!l.items.length) { toast('De tijdlijn is nog leeg'); return; }
+  toast('Bezig…');
+  try {
+    const name = ocFileName('tijdlijn', l.name || ocProject(''));
+    if (act === 'pdf') { await ocExport.pdf(() => buildExport(l), name, { landscape:true }); toast('PDF gedownload'); }
+    else { await ocExport.png(() => buildExport(l), name, { landscape:true }); toast('Afbeelding gedownload'); }
+  } catch { toast('Downloaden lukt nu niet: geen verbinding?'); }
+}
+// Exportweergave: de tijdlijn zelf en daaronder elke mijlpaal op een rij. Zonder knoppen of velden.
+function buildExport(l) {
+  const W = 1038, node = document.createElement('div'), c = chartHTML(l, W, true), its = sorted(l.items), t = telling(l);
+  const C = { text:'#1e293b', soft:'#475569', muted:'#64748b', line:'#e2e8f0' };
+  const pil = it => {
+    const [tx, col, bg, rand] = it.status === 'gehaald' ? ['Gehaald', '#047857', '#ecfdf5', '#a7f3d0'] : it.status === 'verschoven' ? ['Verschoven', '#92400e', '#fffbeb', '#fde68a']
+      : isLaat(it) ? ['Datum voorbij', '#92400e', '#fffbeb', '#fde68a'] : !it.date ? ['Zonder datum', '#475569', '#f8fafc', '#e2e8f0'] : ['Gepland', '#475569', '#f8fafc', '#e2e8f0'];
+    return `<span style="display:inline-block;padding:1px 9px;border-radius:999px;font-size:12px;font-weight:600;color:${col};background:${bg};border:1px solid ${rand};white-space:nowrap">${tx}</span>`;
+  };
+  const rijen = its.map((it, i) => `<div data-oc-keep style="display:grid;grid-template-columns:170px minmax(0,1fr) 130px;gap:0 16px;align-items:start;padding:9px 0;${i ? `border-top:1px solid ${C.line};` : ''}">
+      <div style="font-size:13.5px;font-weight:600;color:${C.soft};font-variant-numeric:tabular-nums">${it.date ? esc(fmtLang(it.date)) : 'zonder datum'}${it.orig ? `<div style="font-size:12px;font-weight:400;color:${C.muted}">eerst <s>${esc(fmtLang(it.orig))}</s></div>` : ''}</div>
+      <div style="font-size:14.5px;line-height:1.45;color:${C.text};font-weight:600;word-break:break-word">${esc(it.text)}${it.who || it.note ? `<div style="font-size:13px;font-weight:400;color:${C.soft};margin-top:1px">${esc([it.who, it.note].filter(Boolean).join(' · '))}</div>` : ''}</div>
+      <div style="text-align:right">${pil(it)}</div></div>`).join('');
+  node.innerHTML = (c.html ? `<div class="tl" style="position:relative;width:${W + 2}px;margin:0 0 22px;border:1px solid #f1f5f9;border-radius:12px;overflow:hidden">${c.html}</div>` : '') + `<div>${rijen}</div>`;
+  const sub = ['Tijdlijn', meer(t.t, 'mijlpaal', 'mijlpalen'), t.g && `${t.g} gehaald`, t.v && `${t.v} verschoven`, t.laat && `${t.laat} voorbij de datum`].filter(Boolean).join(' · ') + (l.voorbeeld ? ' (voorbeeld)' : '');
+  return { node, title:l.name || 'Tijdlijn', subtitle:sub };
+}
+function alsTekst(l) {
+  const L = [`Tijdlijn: ${l.name || 'Naamloos'}`, `Stand op ${fmtLang(today())}`, ''];
+  const regel = it => {
+    const st = it.status === 'gehaald' ? 'gehaald' : it.status === 'verschoven' ? 'verschoven' : isLaat(it) ? 'datum voorbij' : 'gepland';
+    const extra = [st + (it.orig ? `, eerst ${fmtLang(it.orig)}` : ''), it.who].filter(Boolean).join('; ');
+    return `- ${it.date ? fmtLang(it.date) + ': ' : ''}${it.text} (${extra})${it.note ? `\n  ${it.note.replace(/\s*\n\s*/g, ' ')}` : ''}`;
+  };
+  const its = sorted(l.items), met = its.filter(i => i.date), zonder = its.filter(i => !i.date);
+  met.forEach(it => L.push(regel(it)));
+  if (zonder.length) L.push('', 'Nog zonder datum:', ...zonder.map(regel));
+  return L.join('\n').trim() + '\n';
+}
+async function copy(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch {}
+  try { const t = document.createElement('textarea'); t.value = text; t.style.position = 'fixed'; t.style.opacity = '0'; document.body.appendChild(t); t.select(); const ok = document.execCommand('copy'); t.remove(); return ok; } catch { return false; }
+}
+async function kopieerTekst() {
+  const l = cur();
+  if (!l.items.length) { toast('De tijdlijn is nog leeg'); return; }
+  toast(await copy(alsTekst(l)) ? 'Gekopieerd als tekst. Plak het in je mail.' : 'Kopiëren lukt hier niet');
+}
+
+/* ---------- Voorbeeld: een eigen tijdlijn, gemarkeerd, telt niet mee in andere tools ---------- */
+document.addEventListener('click', e => {
+  if (!e.target.closest('#vb-show')) return;
+  const d = n => { const x = new Date(); x.setDate(x.getDate() + n); return isoVan(x); };
+  const mk = (text, dag, extra) => normItem(Object.assign({ id:uid(), text, date:d(dag), status:'gepland', created:Date.now() + dag }, extra || {}));
+  const l = { id:uid(), name:'Digitaal premieloket voor renovatie', voorbeeld:true, items:[
+    mk('Ontwerp van het loket goedgekeurd', -75, { status:'gehaald', who:'Stuurgroep' }),
+    mk('Advies over gegevensbescherming binnen', -6, { who:'Projectleider', note:'Aangevraagd, nog geen antwoord.' }),
+    mk('Proefversie getest met 20 aanvragers', 24, { status:'verschoven', orig:d(-10), who:'Sara', note:'De testomgeving van de leverancier lag twee weken stil.' }),
+    mk('Koppeling met het dossierbeheer werkt', 120, { who:'Dienst ICT' }),
+    mk('Dossierbeheerders opgeleid', 210),
+    mk('Loket open voor alle aanvragers', 300, { who:'Opdrachtgever' }) ] };
+  state.lists.push(l); state.current = l.id; openId = null; save(); render(); toast('Voorbeeld geladen');
+});
+$('vb-wis').addEventListener('click', () => {
+  const restore = snapshot();
+  state.lists = state.lists.filter(x => !x.voorbeeld);
+  if (!state.lists.length) state.lists.push({ id:uid(), name:ocProject('Mijn project'), items:[] });
+  state.current = state.lists[0].id; openId = null; save(); render(); toast('Voorbeeld gewist', restore);
+});
+$('vb-eigen').addEventListener('click', () => { delete cur().voorbeeld; save(); render(); toast('Het voorbeeld is nu van jou'); });
+
+/* ---------- Andere tabbladen gelijk houden ---------- */
+window.addEventListener('storage', e => { if (e.key === KEY && $('ms')) { state = load(); openId = null; render(); } });
+
+// Voor de tests: de stand lezen zonder de opslag te raken
+window.tijdlijn = { staat: () => JSON.parse(JSON.stringify(state)) };
+render();
+try { ocPublish(); } catch {}
+ocOpenOvernemen();
+</script>
+<script>
+/* Opnieuw beginnen: zichtbaar zodra er echt iets ingevuld is; start de eigen 'Alles wissen' van de tool.
+   'Leeg' = wat de tool zelf bewaart zonder inbreng van de gebruiker (na een eerste bezoek of na wissen). */
+(() => {
+  const meta = document.querySelector('meta[name="oc:opslag"]');
+  const keys = meta ? meta.content.split(',').map(s => s.trim()).filter(k => k && !k.startsWith('oc.share.') && !k.endsWith('*')) : [];
+  const BASE = 'oc.leeg.' + location.pathname;   // niet onder oc-app.*: dat wist het gegevensscherm apart
+  const get = k => { try { return localStorage.getItem(k); } catch { return null; } };
+  const vals = () => Object.fromEntries(keys.map(k => [k, get(k)]));
+  const has = v => Array.isArray(v) ? v.length > 0 : v && typeof v === 'object' ? Object.values(v).some(has) : typeof v === 'string' && v.trim().length > 0;
+  const content = raw => { try { return has(JSON.parse(raw)); } catch { return !!raw; } };
+  let base = null; try { base = JSON.parse(get(BASE) || 'null'); } catch {}
+  const setBase = () => { base = vals(); try { localStorage.setItem(BASE, JSON.stringify(base)); } catch {} sync(); };
+  const filled = () => { const v = vals(); return keys.some(k => v[k] != null && content(v[k]) && !(base && v[k] === base[k])); };
+  const row = document.getElementById('oc-restart-row');
+  function sync() { row.hidden = !filled() || !document.querySelector('[data-act="wipe"]'); }
+  let t; const later = () => { clearTimeout(t); t = setTimeout(sync, 350); };
+  ['click', 'input', 'change', 'keyup'].forEach(ev => document.addEventListener(ev, later, true));
+  window.addEventListener('storage', later); window.addEventListener('focus', later);
+  // Eerste bezoek: wat de tool zelf meteen bewaart, telt als leeg. Een tool die nog niets klaarlegde
+  // voor andere tools (oc.share.*), heeft nog geen echte inhoud.
+  const share = meta ? meta.content.split(',').map(s => s.trim()).find(k => k.startsWith('oc.share.')) : null;
+  if (!base && share && get(share) == null && keys.every(k => get(k) == null)) setBase();
+  else if (keys.every(k => get(k) == null)) setTimeout(setBase, 900);
+  // Na wissen (via deze knop of het menu): de nieuwe toestand is de lege toestand.
+  document.addEventListener('click', e => {
+    if (!e.target.closest('[data-act="wipe"]')) return;
+    const before = JSON.stringify(vals()); let n = 0;
+    const iv = setInterval(() => {
+      if (++n > 40) return clearInterval(iv);
+      if (document.querySelector('.ocw-back')) return;               // bevestiging staat nog open
+      if (JSON.stringify(vals()) !== before) { clearInterval(iv); setTimeout(setBase, 400); }
+      else if (n > 5) clearInterval(iv);                              // geannuleerd
+    }, 150);
+  }, true);
+  document.getElementById('oc-restart-btn').addEventListener('click', () => { const w = document.querySelector('[data-act="wipe"]'); w && w.click(); });
+  sync();
+})();
+</script>
+<input type="file" id="oc-bestand-in" accept=".json,application/json" hidden>
+<script>
+/* oc-bestand: je werk in deze tool bewaren als bestand en later (of op een ander toestel) weer openen.
+   Formaat = dat van de reservekopie in de app: { app:'Onder Constructie', version:1, created, tool, data:{ sleutel: tekst } }.
+   Een reservekopie uit de app kan je hier ook openen: de tool neemt er alleen zijn eigen deel uit. */
+window.ocBestand = (function () {
+  function patronen() {
+    var m = document.querySelector('meta[name="oc:opslag"]');
+    return m ? m.content.split(',').map(function (s) { return s.trim(); }).filter(Boolean) : [];
+  }
+  function past(k, p) { return p.slice(-1) === '*' ? k.indexOf(p.slice(0, -1)) === 0 : k === p; }
+  function eigen(k) { return patronen().some(function (p) { return past(k, p); }); }
+  function sleutels() {
+    var uit = [];
+    try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k && eigen(k)) uit.push(k); } } catch (e) {}
+    return uit;
+  }
+  function naam() {
+    var m = document.querySelector('meta[name="oc:titel"]') || document.querySelector('meta[name="application-name"]');
+    return (m && m.content) || (document.title.split(/\s[–-]\s/)[0] || 'tool').trim();
+  }
+  function slug(s) { return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
+  /* bewaar(): downloadt het bestand. Geeft het aantal bewaarde sleutels terug (0 = niets om te bewaren). */
+  function bewaar(extraNaam) {
+    var keys = sleutels(); if (!keys.length) return 0;
+    var data = {}; keys.forEach(function (k) { try { data[k] = localStorage.getItem(k); } catch (e) {} });
+    var id = location.pathname.replace(/\/index\.html$/, '').split('/').filter(Boolean).pop() || 'tool';
+    var blob = new Blob([JSON.stringify({ app: 'Onder Constructie', version: 1, created: new Date().toISOString(), tool: id, data: data }, null, 1)], { type: 'application/json' });
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    var stuk = slug(naam()) + (extraNaam ? '-' + slug(extraNaam) : '');
+    a.download = stuk + '-' + new Date().toISOString().slice(0, 10) + '.json';
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+    return keys.length;
+  }
+  /* lees(file): Promise met { data: {sleutel: tekst} } van alleen de eigen sleutels.
+     Fout 'vorm' = geen bestand van Onder Constructie; fout 'leeg' = niets van deze tool in het bestand. */
+  function lees(file) {
+    return file.text().then(function (t) {
+      var d; try { d = JSON.parse(t); } catch (e) { throw new Error('vorm'); }
+      if (!d || d.app !== 'Onder Constructie' || typeof d.data !== 'object' || !d.data) throw new Error('vorm');
+      var uit = {}, n = 0;
+      Object.keys(d.data).forEach(function (k) { if (eigen(k) && typeof d.data[k] === 'string') { uit[k] = d.data[k]; n++; } });
+      if (!n) throw new Error('leeg');
+      return { data: uit, aantal: n, created: d.created || null };
+    });
+  }
+  /* zetTerug(gelezen): vervangt het huidige werk van deze tool door wat in het bestand staat, en laat andere tabbladen herladen. */
+  function zetTerug(g) {
+    sleutels().forEach(function (k) { try { localStorage.removeItem(k); } catch (e) {} });
+    Object.keys(g.data).forEach(function (k) { try { localStorage.setItem(k, g.data[k]); } catch (e) {} });
+  }
+  function melding(err) {
+    return err && err.message === 'leeg' ? 'In dit bestand staat niets van ' + naam() + '.'
+      : 'Dit bestand kan ik niet openen. Kies een bestand dat je met "Bewaar als bestand" of als reservekopie maakte.';
+  }
+  return { bewaar: bewaar, lees: lees, zetTerug: zetTerug, melding: melding, sleutels: sleutels, naam: naam };
+})();
+</script>
+<script>
+/* Bewaar als bestand / Open bestand */
+(() => {
+  const heeftWerk = () => { try { return !document.getElementById('oc-restart-row').hidden; } catch (e) { return true; } };
+  const extraNaam = () => { try { return String((L => Array.isArray(L) && L.length === 1 ? L[0].name : '')(state.lists) || '').trim(); } catch (e) { return ''; } };
+  const inp = document.getElementById('oc-bestand-in');
+  // Een lange melding blijft langer staan (minstens 4,5 s): toon ze opnieuw voor ze verdwijnt.
+  const lang = msg => { toast(msg); setTimeout(() => { const t = document.getElementById('toast-text'); if (t && t.textContent === msg) toast(msg); }, 2300); };
+  const sluit = () => { const m = document.getElementById('menu'), b = document.getElementById('menu-btn'); if (m) m.classList.remove('open'); if (b) b.setAttribute('aria-expanded', 'false'); };
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-bestand]'); if (!b) return;
+    sluit();
+    if (b.dataset.bestand === 'bewaar') {
+      if (!heeftWerk() || !ocBestand.bewaar(extraNaam())) { toast('Er is nog niets om te bewaren.'); return; }
+      toast('Bestand gedownload');
+    } else { inp.value = ''; inp.click(); }
+  });
+  inp.addEventListener('change', async () => {
+    const f = inp.files && inp.files[0]; if (!f) return;
+    let g; try { g = await ocBestand.lees(f); } catch (err) { lang(ocBestand.melding(err)); return; }
+    if (heeftWerk() && !await ocConfirm('Bestand openen?', 'Dit vervangt wat nu in ' + ocBestand.naam() + ' staat. Doorgaan?', 'Vervang')) return;
+    // Tot de herlaadbeurt mag niets het teruggezette werk nog overschrijven (uitgestelde bewaring, pagehide, ander tabblad).
+    const pat = (document.querySelector('meta[name="oc:opslag"]') || {}).content || '';
+    const eigen = k => pat.split(',').map(s => s.trim()).filter(Boolean).some(p => p.slice(-1) === '*' ? String(k).indexOf(p.slice(0, -1)) === 0 : k === p);
+    ocBestand.zetTerug(g);
+    try {
+      const set = Storage.prototype.setItem, rem = Storage.prototype.removeItem;
+      Storage.prototype.setItem = function (k, v) { if (this === localStorage && eigen(k)) return; return set.call(this, k, v); };
+      Storage.prototype.removeItem = function (k) { if (this === localStorage && eigen(k)) return; return rem.call(this, k); };
+    } catch (e) {}
+    location.reload();
+  });
+})();
+</script>
+<script>
+/* oc-sync: reageert op "Wissen" in de app (ook in andere tabbladen) en geeft Esc door aan de app */
+(function () {
+  if (window.__ocSync) return; window.__ocSync = true;
+  var gewist = false;
+  function wis() {
+    if (gewist) return; gewist = true;
+    try { var orig = Storage.prototype.setItem; Storage.prototype.setItem = function (k, v) { if (k === 'oc.wis') return orig.call(this, k, v); }; } catch (e) {}
+    try { document.body.innerHTML = '<p role="status" style="font-family:\'DM Sans\',system-ui,sans-serif;padding:3rem 1.5rem;text-align:center;color:#475569;font-size:1.0625rem">Er is iets veranderd op dit toestel. Deze pagina laadt opnieuw…</p>'; } catch (e) {}
+    setTimeout(function () { location.reload(); }, 400);
+  }
+  try { var bc = new BroadcastChannel('oc-sync'); bc.onmessage = function (e) { if (e.data && e.data.type === 'wis') wis(); }; } catch (e) {}
+  addEventListener('storage', function (e) { if (e.key === 'oc.wis' || e.key === null) wis(); });
+  /* Gebruikerstest november 2026, voor alle tools:
+     Ctrl/Cmd+Z doet "Ongedaan" zolang die melding zichtbaar is (in een tekstveld doet de browser zijn eigen ongedaan);
+     een rij keuzeknoppen (role="radiogroup") is één Tab-stop, de pijltjes gaan naar een andere keuze, Spatie of Enter kiest;
+     een naamveld met data-oc-titel ziet eruit als een veld (potloodje, onderlijn bij aanwijzen of typen);
+     een naam getypt in een veld met data-oc-projectnaam wordt de projectnaam van de app, als die nog leeg is. */
+  var STANDAARD = /^((mijn|nieuwe?) )?(project|analyse|lijst|keuze|kaart|ideeënkaart|doelgroep|matrix|plan|groep|team|tabel|informatietabel|log|retro|sprint|scan|proces)( \d+)?$|^naamloos$|^hele organisatie$/i;
+  window.ocStandaardNaam = function (v) { v = String(v || '').trim(); return !v || STANDAARD.test(v); };
+  function typt(a) { return a && (a.isContentEditable || a.tagName === 'TEXTAREA' || a.tagName === 'SELECT' || (a.tagName === 'INPUT' && !/^(checkbox|radio|button|submit|reset|range|color|file)$/i.test(a.type))); }
+  function zichtbaar(x) {
+    if (x.disabled || x.hidden || !x.getClientRects().length) return false;
+    for (var el = x; el && el.nodeType === 1; el = el.parentElement) { var cs = getComputedStyle(el); if (cs.display === 'none' || cs.visibility === 'hidden' || +cs.opacity < 0.1) return false; }
+    var r = x.getBoundingClientRect(); return r.bottom > 0 && r.right > 0 && r.top < innerHeight && r.left < innerWidth;
+  }
+  addEventListener('keydown', function (e) {
+    if (e.defaultPrevented || !(e.ctrlKey || e.metaKey) || e.shiftKey || e.altKey || String(e.key).toLowerCase() !== 'z' || typt(document.activeElement)) return;
+    var b = [].filter.call(document.querySelectorAll('[role="status"] button, [aria-live] button'), function (x) { return /^\s*ongedaan/i.test(x.textContent) && zichtbaar(x); }).pop();
+    if (b) { e.preventDefault(); b.click(); }
+  });
+  function radios(g) { return [].filter.call(g.querySelectorAll('[role="radio"]'), function (x) { return x.closest('[role="radiogroup"]') === g; }); }
+  function bruikbaar(x) { return !x.disabled && x.getAttribute('aria-disabled') !== 'true' && x.getClientRects().length; }
+  // Kiezen met Spatie of Enter laat de tool vaak opnieuw tekenen: de focus blijft dan op de gekozen keuze.
+  var terug = null;
+  document.addEventListener('click', function (e) {
+    var x = e.detail === 0 && e.target && e.target.closest && e.target.closest('[role="radio"]'); if (!x || x.tagName === 'INPUT') return;
+    var s = [].map.call(x.attributes, function (a) { return a.name === 'id' || /^data-/.test(a.name) ? '[' + a.name + '="' + (window.CSS && CSS.escape ? CSS.escape(a.value) : a.value) + '"]' : ''; }).join('');
+    terug = s ? { s: '[role="radio"]' + s, t: Date.now() } : null;
+  }, true);
+  function roving() {
+    var a0 = document.activeElement;
+    if (terug && Date.now() - terug.t < 2000 && (!a0 || a0 === document.body)) { var y = document.querySelector(terug.s); if (y) try { y.focus({ preventScroll: true }); } catch (e) {} terug = null; }
+    [].forEach.call(document.querySelectorAll('[role="radiogroup"]'), function (g) {
+      var r = radios(g); if (!r.length || r.some(function (x) { return x.tagName === 'INPUT'; })) return;
+      var a = document.activeElement, keep = r.indexOf(a) >= 0 ? a : r.filter(function (x) { return x.getAttribute('aria-checked') === 'true' && bruikbaar(x); })[0] || r.filter(bruikbaar)[0] || r[0];
+      r.forEach(function (x) { var t = x === keep ? '0' : '-1'; if (x.getAttribute('tabindex') !== t) x.setAttribute('tabindex', t); });
+    });
+  }
+  document.addEventListener('keydown', function (e) {
+    var x = e.target, d = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1, Home: -2, End: 2 }[e.key];
+    if (!d || e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || !x.getAttribute || x.getAttribute('role') !== 'radio' || x.tagName === 'INPUT') return;
+    var g = x.closest('[role="radiogroup"]'); if (!g) return;
+    var r = radios(g).filter(bruikbaar), i = r.indexOf(x); if (i < 0) return;
+    var n = r[d === -2 ? 0 : d === 2 ? r.length - 1 : (i + d + r.length) % r.length];
+    e.preventDefault(); r.forEach(function (y) { y.setAttribute('tabindex', y === n ? '0' : '-1'); }); n.focus();
+  });
+  var meet = null;
+  function titels() {
+    [].forEach.call(document.querySelectorAll('input[data-oc-titel]'), function (el) {
+      if (!el.offsetParent) return;
+      var cs = getComputedStyle(el), t = el.value || el.placeholder || '';
+      if (!meet) { meet = document.createElement('span'); meet.setAttribute('aria-hidden', 'true'); meet.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden;white-space:pre'; document.body.appendChild(meet); }
+      meet.style.font = cs.font; meet.style.letterSpacing = cs.letterSpacing; meet.textContent = t;
+      var w = meet.getBoundingClientRect().width;
+      var px = Math.ceil(w + parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight) + parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth) + 8) + 'px';
+      if (el.style.width !== px) el.style.width = px;
+    });
+  }
+  function opmaak() {
+    if (!document.getElementById('oc-sync-stijl') && document.querySelector('[data-oc-titel]')) {
+      var s = document.createElement('style'); s.id = 'oc-sync-stijl';
+      s.textContent = 'input[data-oc-titel]{flex:0 1 auto!important;max-width:100%;min-width:5.5em;box-sizing:border-box;text-overflow:ellipsis;cursor:text;border-radius:6px 6px 0 0;padding-right:26px!important;'
+        + 'border-bottom:1.5px dashed transparent!important;background-repeat:no-repeat!important;background-position:right 4px center!important;background-size:15px 15px!important;'
+        + 'background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%2394a3b8%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M12 20h9%27/%3E%3Cpath d=%27M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z%27/%3E%3C/svg%3E")!important}'
+        + 'input[data-oc-titel]:hover{border-bottom-color:#cbd5e1!important}'
+        + 'input[data-oc-titel]:focus{border-bottom:1.5px solid #047857!important;background-image:none!important}'
+        + 'input[data-oc-titel]::placeholder{color:#64748b;opacity:1}'
+        + 'input[data-oc-titel]+*{margin-left:auto}';
+      document.head.appendChild(s);
+    }
+    titels();
+  }
+  var gepland = false;
+  function later() { if (gepland) return; gepland = true; requestAnimationFrame(function () { gepland = false; roving(); opmaak(); }); }
+  function start() {
+    later();
+    try { new MutationObserver(later).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['aria-checked', 'hidden', 'class'] }); } catch (e) {}
+    document.addEventListener('input', function (e) { if (e.target.hasAttribute && e.target.hasAttribute('data-oc-titel')) titels(); }, true);
+    addEventListener('resize', later);
+    try { document.fonts.ready.then(titels); document.fonts.addEventListener('loadingdone', titels); } catch (e) {}   // de letters komen soms pas later binnen
+    setInterval(function () { if (!document.hidden) titels(); }, 700);   // een tool kan de waarde zetten zonder de pagina te wijzigen
+  }
+  document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', start) : start();
+  var eigenNaam = null, naamT = null;
+  function projectNu() { try { var p = JSON.parse(localStorage.getItem('oc.project')); return p && typeof p.name === 'string' ? p.name.trim() : ''; } catch (e) { return ''; } }
+  function deelNaam(el) {
+    var v = String(el.value || '').trim().slice(0, 80), nu = projectNu();
+    // hernoem je de lijst van het actieve project (het veld stond op die naam toen je begon), dan krijgt het project in de app die naam mee
+    if (ocStandaardNaam(v) || (nu && nu !== eigenNaam && nu !== el.__ocWas)) return;
+    if ([].some.call(document.querySelectorAll('.vb-bar'), function (b) { return b.getClientRects().length; })) return;   // in het voorbeeld niet
+    if (v === nu) return;
+    try {
+      var oud = []; try { var p0 = JSON.parse(localStorage.getItem('oc.project')); if (p0 && Array.isArray(p0.oud)) oud = p0.oud.slice(-9); } catch (e) {}
+      oud = oud.filter(function (x) { return x !== v; }); if (nu && oud.indexOf(nu) < 0) oud.push(nu);   // de vorige naam blijft gekend: tools en dossier vinden het project zo terug
+      localStorage.setItem('oc.project', JSON.stringify({ name: v, since: Date.now(), oud: oud })); eigenNaam = v; el.__ocWas = v;
+    } catch (e) {}
+  }
+  document.addEventListener('focusin', function (e) { var el = e.target; if (el.hasAttribute && el.hasAttribute('data-oc-projectnaam')) el.__ocWas = String(el.value || '').trim(); }, true);
+  document.addEventListener('input', function (e) { var el = e.target; if (!el.hasAttribute || !el.hasAttribute('data-oc-projectnaam')) return; clearTimeout(naamT); naamT = setTimeout(function () { deelNaam(el); }, 900); }, true);
+  ['change', 'focusout'].forEach(function (ev) { document.addEventListener(ev, function (e) { var el = e.target; if (el.hasAttribute && el.hasAttribute('data-oc-projectnaam')) { clearTimeout(naamT); deelNaam(el); } }, true); });
+  /* oc-terug: kom je uit een andere tool, dan brengt de terugknop linksboven je daar terug ("← Prioriteren").
+     Anders blijft hij naar de groep gaan (Projectmanagement, Zakmes, Reset). In de app regelt de app dit zelf. */
+  (function () {
+    if (window.__ocTerug) return; window.__ocTerug = true;
+    var ss; try { ss = window.sessionStorage; ss.getItem('x'); } catch (e) { return; }
+    var hier = location.pathname, vorige = null;
+    try { vorige = ss.getItem('oc.hier'); ss.setItem('oc.hier', location.href); } catch (e) {}
+    addEventListener('pageshow', function () { try { ss.setItem('oc.hier', location.href); } catch (e) {} });
+    var naam = (document.title || '').split(/\s+[–-]\s+Onder Constructie/)[0].trim();
+    try { if (naam && naam.length < 60) ss.setItem('oc.naam:' + hier, naam); } catch (e) {}
+    if (window.top !== window) return;
+    function zet() {
+      var a = document.querySelector('a.back-link, a.crumb'); if (!a || a.dataset.ocTerug) return;
+      var ref = document.referrer, u; if (!ref) return;
+      try { u = new URL(ref); } catch (e) { return; }
+      if (u.origin !== location.origin || u.pathname === hier) return;
+      try { if (new URL(a.href, location.href).pathname === u.pathname) return; } catch (e) { return; }
+      var bron = null; try { bron = ss.getItem('oc.naam:' + u.pathname); } catch (e) {}
+      if (!bron) return;
+      a.dataset.ocTerug = '1';
+      var sp = a.querySelector('span');
+      if (sp) sp.textContent = bron;
+      else {
+        var eerste = true;
+        [].slice.call(a.childNodes).forEach(function (n) { if (n.nodeType === 3 && n.nodeValue.trim()) { n.nodeValue = eerste ? ' ' + bron + ' ' : ''; eerste = false; } });
+      }
+      a.setAttribute('aria-label', 'Terug naar ' + bron);
+      a.href = ref;
+      var terug = vorige === ref;   // de vorige pagina in dit tabblad is die tool: echt teruggaan, dan staat alles nog zoals je het liet
+      a.addEventListener('click', function (e) {
+        if (!terug || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button) return;
+        e.preventDefault(); history.back();
+      });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', zet); else zet();
+  }());
+  /* oc-overnemen: de knop "Overnemen uit…" valt op als knop en zegt wat er klaarligt ("5 taken uit Retro en Risicomatrix"). */
+  (function () {
+    var VEEL = { taak: 'taken', actie: 'acties', risico: "risico's", betrokkene: 'betrokkenen', besluit: 'besluiten', doel: 'doelen', mijlpaal: 'mijlpalen', agendapunt: 'agendapunten', leerpunt: 'leerpunten' };
+    var EEN = { taak: 'taak', actie: 'actie', risico: 'risico', betrokkene: 'betrokkene', besluit: 'besluit', doel: 'doel', mijlpaal: 'mijlpaal', agendapunt: 'agendapunt', leerpunt: 'leerpunt' };
+    var zelf = '';
+    try { var mt = document.querySelector('meta[name="oc:opslag"]'), mz = mt && /oc\.share\.([\w-]+)/.exec(mt.content); zelf = mz ? mz[1] : ''; } catch (e) {}
+    function esc(v) { return String(v).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+    function samenvatting(types) {
+      var tools = [], perType = {}, n = 0, al = 0, keys = [], gezien = {}, heeft = {};
+      function norm(v) { return String(v || '').normalize('NFC').toLowerCase().replace(/\s+/g, ' ').trim().replace(/^[\s.,;:!?·-]+|[\s.,;:!?·-]+$/g, ''); }
+      try { for (var i = 0; i < localStorage.length; i++) keys.push(localStorage.key(i)); } catch (e) { return ''; }
+      // Wat de tool al heeft (window.ocHave), telt niet als nieuw
+      try { if (typeof window.ocHave === 'function') (window.ocHave(types) || []).forEach(function (x) { heeft[norm(x)] = 1; }); } catch (e) {}
+      // Zoals de kiezer: elke tekst van elke soort één keer, bij de rijkste bron (notitie, wie, wanneer), dan de grootste lijst, dan de recentste
+      var lijsten = [];
+      keys.forEach(function (k) {
+        if (!k || k.indexOf('oc.share.') !== 0 || k === 'oc.share.' + zelf) return;
+        try { var d = JSON.parse(localStorage.getItem(k)); if (!d || !Array.isArray(d.lists)) return;
+          d.lists.forEach(function (l) {
+            var its = (l && Array.isArray(l.items) ? l.items : []).filter(function (it) { return it && types.indexOf(it.type) >= 0 && typeof it.text === 'string' && it.text.trim(); });
+            if (its.length) lijsten.push({ naam: String(d.tool || d.id || ''), t: +d.updated || 0, items: its });
+          });
+        } catch (e) {}
+      });
+      var best = {};
+      lijsten.forEach(function (l) { l.items.forEach(function (it) {
+        var s = it.type + '|' + norm(it.text), sc = [(it.note ? 2 : 0) + (it.who ? 1 : 0) + (it.when ? 1 : 0), l.items.length, l.t], e = best[s];
+        var beter = !e; for (var i = 0; !beter && e && i < 3; i++) { if (sc[i] !== e.sc[i]) { beter = sc[i] > e.sc[i]; break; } }
+        if (beter) best[s] = { sc: sc, l: l, type: it.type, tekst: it.text };
+      }); });
+      var perTool = {};
+      Object.keys(best).forEach(function (s) {
+        var b = best[s]; if (heeft[norm(b.tekst)]) { al++; return; }
+        n++; perType[b.type] = (perType[b.type] || 0) + 1;
+        var tl = perTool[b.l.naam] || (perTool[b.l.naam] = { naam: b.l.naam, t: 0 }); tl.t = Math.max(tl.t, b.l.t);
+      });
+      tools = Object.keys(perTool).map(function (k) { return perTool[k]; });
+      if (!n) return al ? 'Alles staat er al' : '';
+      tools.sort(function (a, b) { return b.t - a.t; });
+      var nm = tools.map(function (x) { return x.naam; }), soort = Object.keys(perType);
+      var wat = soort.length === 1 && VEEL[soort[0]] ? n + ' ' + (n === 1 ? EEN[soort[0]] : VEEL[soort[0]]) : n + (n === 1 ? ' punt' : ' punten');
+      var uit = nm.length === 1 ? nm[0] : nm.length === 2 ? nm[0] + ' en ' + nm[1] : nm[0] + ', ' + nm[1] + ' en ' + (nm.length - 2) + ' andere';
+      return wat + ' uit ' + uit;
+    }
+    var stijl = false;
+    function css() {
+      if (stijl || document.getElementById('oc-imp-stijl')) return; stijl = true;
+      var s = document.createElement('style'); s.id = 'oc-imp-stijl';
+      s.textContent = 'button.oc-import.oc-imp2{display:inline-flex;align-items:center;gap:.625rem;max-width:100%;min-height:52px;margin:0;padding:.4375rem .75rem .4375rem .4375rem;border:1.5px solid #a7f3d0;border-radius:12px;background:#ecfdf5;color:#065f46;font:inherit;text-align:left;white-space:normal;cursor:pointer;box-shadow:none;transition:background .12s,border-color .12s}'
+        + 'button.oc-import.oc-imp2:hover{background:#d1fae5;border-color:#10b981}button.oc-import.oc-imp2[hidden]{display:none}'
+        + '.oc-imp2 .oc-imp-ico{flex:none;width:34px;height:34px;border-radius:9px;background:#fff;color:#047857;display:grid;place-items:center;box-shadow:inset 0 0 0 1px #a7f3d0}'
+        + '.oc-imp2 .oc-imp-ico svg{width:18px;height:18px}.oc-imp2 .oc-imp-t{display:flex;flex-direction:column;min-width:0;line-height:1.25}'
+        + '.oc-imp2 .oc-imp-t b{font-size:.875rem;font-weight:700;color:#065f46}'
+        + '.oc-imp2 .oc-imp-t small{font-size:.8125rem;font-weight:500;color:#047857;overflow-wrap:anywhere}'
+        + '.oc-imp2 .oc-imp-pijl{flex:none;width:18px;height:18px;margin-left:auto;color:#047857}'
+        + '@media (prefers-reduced-motion:reduce){button.oc-import.oc-imp2{transition:none}}';
+      document.head.appendChild(s);
+    }
+    var ICO = '<span class="oc-imp-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11M7.5 9.5L12 14l4.5-4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg></span>';
+    var PIJL = '<svg class="oc-imp-pijl" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
+    function versier() {
+      var bs = document.querySelectorAll('button.oc-import[data-oc-types]'); if (!bs.length) return;
+      css();
+      [].forEach.call(bs, function (b) {
+        var sam = samenvatting(String(b.dataset.ocTypes).split(',').map(function (x) { return x.trim(); }));
+        if (b.dataset.ocSam === sam && b.querySelector('.oc-imp-t')) return;
+        b.dataset.ocSam = sam; b.classList.add('oc-imp2');
+        b.innerHTML = ICO + '<span class="oc-imp-t"><b>Overnemen uit andere tools</b>' + (sam ? '<small>' + esc(sam) + '</small>' : '') + '</span>' + PIJL;
+      });
+    }
+    var gepland = false;
+    function plan() { if (gepland) return; gepland = true; (window.requestAnimationFrame || setTimeout)(function () { gepland = false; versier(); }); }
+    try { new MutationObserver(plan).observe(document.documentElement, { childList: true, subtree: true }); } catch (e) {}
+    addEventListener('storage', plan); addEventListener('focus', plan); addEventListener('pageshow', plan);
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', plan); else plan();
+  }());
+  if (window.parent === window) return;
+  addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape' || e.defaultPrevented) return;
+    var a = document.activeElement;
+    if (a && (a.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) return;
+    if (document.querySelector('dialog[open], [role="dialog"]:not([hidden]):not([aria-hidden="true"]), [aria-modal="true"]:not([hidden]), [aria-expanded="true"], .open, .show, .active.modal, .is-open')) return;
+    try { parent.postMessage({ type: 'oc-esc' }, location.origin); } catch (err) {}
+  }, true);
+})();
+</script>
+<script>
+/* Eenheid: "Begin met ..." zet de cursor in het eerste veld; staat er een standaardnaam, dan is die geselecteerd zodat je meteen overtypt */
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-oc-begin]'); if (!b) return;
+  const el = [...document.querySelectorAll(b.dataset.ocBegin)].find(x => x.offsetParent !== null); if (!el) return;
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  el.scrollIntoView({ block:'center', behavior: still ? 'auto' : 'smooth' });
+  el.focus({ preventScroll:true });
+  if (el.select && /^(INPUT|TEXTAREA)$/.test(el.tagName) && el.value.trim() && /^((mijn|nieuwe?) )?(project|analyse|lijst|keuze|kaart|ideeënkaart|doelgroep|matrix|plan|groep|team|tabel|informatietabel|log|retro|sprint|scan|proces)( \d+)?$|^naamloos$|^hele organisatie$/i.test(el.value.trim())) el.select();
+});
+</script>
+<style>
+.oc-tb { margin:1rem 0 0; display:flex; flex-wrap:wrap; align-items:center; gap:0.5rem 0.75rem; }
+.oc-tb[hidden] { display:none; }
+.oc-tb-btn { display:inline-flex; align-items:center; gap:0.375rem; min-height:44px; padding:0 0.875rem; border-radius:10px; border:1.5px solid #e2e8f0; background:#fff; color:#047857; font-size:0.875rem; font-weight:600; text-decoration:none; }
+.oc-tb-btn:hover { border-color:#a7f3d0; background:#ecfdf5; }
+.oc-tb-btn:focus-visible { outline:2px solid #047857; outline-offset:2px; }
+.oc-tb-btn svg { width:16px; height:16px; flex:none; }
+.oc-tb p { font-size:0.8125rem; color:#64748b; flex:1; min-width:12rem; margin:0; }
+</style>
+<script>
+/* Volgende stap: liggen er acties of taken klaar, dan staat "Zet in Takenbord" erbij (zoals in Schildpaddiagram en Visgraatdiagram) */
+(function () {
+  var box = document.getElementById('oc-tb'); if (!box) return;
+  var id = (box.querySelector('a').getAttribute('href').match(/van=([\w-]+)/) || [])[1];
+  function klaar() { try { var d = JSON.parse(localStorage.getItem('oc.share.' + id)); return !!(d && d.lists && d.lists.some(function (l) { return (l.items || []).some(function (i) { return i.type === 'actie' || i.type === 'taak'; }); })); } catch (e) { return false; } }
+  function toon() { var k = klaar(); if (box.hidden === k) box.hidden = !k; }
+  toon(); setInterval(toon, 1000); addEventListener('storage', toon);
+  // meteen klaarleggen (niet wachten op de korte pauze na het bewaren), dan pas naar Takenbord
+  box.addEventListener('click', function (e) { if (!e.target.closest('a')) return; try { if (typeof ocPublish === 'function') ocPublish(); else if (typeof publish === 'function') publish(); } catch (er) {} });
+})();
+</script>
+<script>
+/* oc-uitleg v1 begin */
+/* "Hoe werkt dit?": zet de gewone uitleg in <details class="explain"><div class="inner"> om tot een kaart met
+   inleiding, genummerde stappen, tip en verwijzingen naar andere tools. De tekst zelf blijft in de HTML staan,
+   dus zonder JavaScript is alles nog gewoon leesbaar. Sturen per tool kan met data-uitleg op een lijst of alinea:
+   "stappen" (genummerd), "begrippen" (zonder nummers), "lijst" (laten zoals hij is), "tip", "noot", "stil". */
+(function () {
+  var d = document.querySelector('details.explain');
+  if (!d || d.classList.contains('oc-u')) return;
+  var sum = d.querySelector(':scope > summary'), inner = d.querySelector(':scope > .inner');
+  if (!sum || !inner) return;
+  var SLUG = 'hoe-werkt-dit';
+  var SVG = function (b, w) { return '<svg viewBox="0 0 ' + (w || 24) + ' ' + (w || 24) + '" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' + b + '</svg>'; };
+  var ICO = {
+    kaart: '<svg viewBox="0 0 28 28" fill="none" aria-hidden="true" focusable="false">'
+      + '<circle cx="7" cy="6.5" r="2.25" fill="#047857"/><circle cx="7" cy="14" r="2.25" fill="#10b981"/><circle cx="7" cy="21.5" r="2.25" fill="#10b981"/>'
+      + '<path d="M13 6.5h9.5M13 14h6.5M13 21.5h8" stroke="#10b981" stroke-width="2.25" stroke-linecap="round"/></svg>',
+    pijl: SVG('<path d="M6 9l6 6 6-6"/>'),
+    tip: SVG('<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.7.6 1.1 1.3 1.1 2.2h5c0-.9.4-1.6 1.1-2.2A6 6 0 0 0 12 3z"/>'),
+    stil: SVG('<rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>'),
+    naar: SVG('<path d="M8 16L16 8M9.5 8H16v6.5"/>')
+  };
+  var maak = function (tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
+  var tekst = function (e) { return (e.textContent || '').replace(/\s+/g, ' ').trim(); };
+  var soort = function (e) { return (e.getAttribute('data-uitleg') || '').toLowerCase(); };
+
+  // eerste tekst van een stuk DOM netjes laten beginnen: leestekens weg, hoofdletter
+  function netjesBegin(node) {
+    var w = document.createTreeWalker(node, NodeFilter.SHOW_TEXT), t;
+    while ((t = w.nextNode())) {
+      var s = t.nodeValue.replace(/^[\s:.,;]+/, '');
+      if (!s) { t.nodeValue = ''; continue; }
+      t.nodeValue = s.charAt(0).toUpperCase() + s.slice(1);
+      return true;
+    }
+    return false;
+  }
+  // toetsen als toets tonen
+  var TOETS = /(^|[^\wÀ-ÿ+])(Shift\+Tab|Alt\+↑|Alt\+↓|Enter|Escape|Esc|Backspace|Delete|F2|Tab)(?![\wÀ-ÿ])/g;
+  function toetsen(root) {
+    var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), lijst = [], t;
+    while ((t = w.nextNode())) { TOETS.lastIndex = 0; if (TOETS.test(t.nodeValue) && !t.parentNode.closest('a, kbd, code')) lijst.push(t); }
+    lijst.forEach(function (t) {
+      var s = t.nodeValue, frag = document.createDocumentFragment(), van = 0, m;
+      TOETS.lastIndex = 0;
+      while ((m = TOETS.exec(s))) {
+        var start = m.index + m[1].length;
+        frag.appendChild(document.createTextNode(s.slice(van, start)));
+        var k = document.createElement('kbd'); k.textContent = m[2]; frag.appendChild(k);
+        van = start + m[2].length;
+      }
+      frag.appendChild(document.createTextNode(s.slice(van)));
+      t.parentNode.replaceChild(frag, t);
+    });
+  }
+  // begint dit lijstitem met een vetgedrukte titel?
+  function kopVan(li) {
+    for (var n = li.firstChild; n; n = n.nextSibling) {
+      if (n.nodeType === 3 && !n.nodeValue.trim()) continue;
+      return n.nodeType === 1 && /^(B|STRONG)$/.test(n.tagName) ? n : null;
+    }
+    return null;
+  }
+
+  var kids = Array.prototype.slice.call(inner.children);
+  var lijsten = kids.filter(function (k) { return /^(UL|OL)$/.test(k.tagName) && soort(k) !== 'lijst'; });
+  var metKop = lijsten.filter(function (l) { var li = l.querySelectorAll(':scope > li'); return li.length > 1 && Array.prototype.every.call(li, kopVan); });
+  // stappen: uitdrukkelijk gevraagd, of de enige lijst waarvan elk item met een vette titel begint
+  var stapLijst = lijsten.filter(function (l) { return soort(l) === 'stappen'; })[0]
+    || (metKop.length === 1 && soort(metKop[0]) !== 'begrippen' ? metKop[0] : null);
+
+  var raam = maak('div', 'oc-u-raam'), lees = maak('div', 'oc-u-lees'), doe = maak('div', 'oc-u-doe'), aantal = 0;
+  kids.forEach(function (k, i) {
+    var s = soort(k), t = tekst(k);
+    if (i === 0 && k.tagName === 'P' && !/^Tip\b/.test(t) && !/^(tip|noot|stil)$/.test(s)) { k.classList.add('oc-u-intro'); lees.appendChild(k); return; }
+    if (k === stapLijst) {
+      var ol = maak('ol', 'oc-u-stappen');
+      Array.prototype.forEach.call(k.querySelectorAll(':scope > li'), function (li) {
+        var b = kopVan(li), stap = maak('li', 'oc-u-stap'), tx = maak('div', 'oc-u-stap-tekst');
+        aantal++;
+        stap.appendChild(maak('span', 'oc-u-nr', String(aantal))).setAttribute('aria-hidden', 'true');
+        var titel = maak('span', 'oc-u-stap-titel'), rest = maak('span', 'oc-u-stap-uitleg');
+        if (b) { titel.innerHTML = b.innerHTML.replace(/\s*[.:]\s*$/, ''); b.remove(); }
+        while (li.firstChild) rest.appendChild(li.firstChild);
+        if (b) tx.appendChild(titel); else rest.classList.add('oc-u-enkel');
+        if (netjesBegin(rest)) tx.appendChild(rest);
+        stap.appendChild(tx); ol.appendChild(stap);
+      });
+      doe.appendChild(ol); k.remove(); return;
+    }
+    if (/^(UL|OL)$/.test(k.tagName) && s !== 'lijst' && (s === 'begrippen' || metKop.indexOf(k) > -1)) {
+      k.className = 'oc-u-begrippen';
+      Array.prototype.forEach.call(k.children, function (li) { var w = maak('span', 'oc-u-begrip-tekst'); while (li.firstChild) w.appendChild(li.firstChild); li.className = 'oc-u-begrip'; li.appendChild(w); });
+      doe.appendChild(k); return;
+    }
+    var tip = k.tagName === 'P' && (s === 'tip' || /^Tip\b[^:.]{0,40}:/.test(t));
+    if (tip) {
+      var kaart = maak('div', 'oc-u-tip'), m = t.match(/^(Tip\b[^:.]{0,40}):/);
+      kaart.setAttribute('role', 'note');
+      kaart.innerHTML = ICO.tip;
+      var tt = maak('div'), tk = maak('span', 'oc-u-tip-titel', m ? m[1] : 'Tip'), tb = maak('span', 'oc-u-tip-tekst');
+      while (k.firstChild) tb.appendChild(k.firstChild);
+      if (m) { // "Tip:" of "Tip voor ...:" weghalen uit de tekst zelf
+        var w = document.createTreeWalker(tb, NodeFilter.SHOW_TEXT), n, weg = m[0].length;
+        while (weg > 0 && (n = w.nextNode())) { var l = n.nodeValue.replace(/^\s+/, '').length, voor = n.nodeValue.length - l; var x = Math.min(weg, l); n.nodeValue = n.nodeValue.slice(voor + x); weg -= x; }
+        netjesBegin(tb);
+      }
+      tt.appendChild(tk); tt.appendChild(tb); kaart.appendChild(tt);
+      doe.appendChild(kaart); k.remove(); return;
+    }
+    if (s === 'stil' || (k.tagName === 'P' && /^Alles blijft op dit toestel/.test(t))) {
+      k.className = 'oc-u-stil'; var sp = maak('span'); while (k.firstChild) sp.appendChild(k.firstChild);
+      k.innerHTML = ICO.stil; k.appendChild(sp); doe.appendChild(k); return;
+    }
+    if (k.tagName === 'P') k.classList.add('oc-u-noot');
+    doe.appendChild(k);
+  });
+
+  // verwijzingen naar andere tools als chips, elk één keer
+  var hier = location.pathname.replace(/index\.html$/, ''), gezien = {}, chips = [];
+  Array.prototype.forEach.call(doe.querySelectorAll('a[href]'), function (a) {
+    var u; try { u = new URL(a.getAttribute('href'), location.href); } catch (e) { return; }
+    var thuis = u.host === location.host || /(^|\.)onderconstructie\.github\.io$/.test(u.host);
+    var pad = u.pathname.replace(/index\.html$/, '');
+    if (!thuis || pad === hier || pad === '/' || gezien[pad] || u.hash) return;
+    gezien[pad] = 1;
+    var c = maak('a', 'oc-u-chip'); c.href = a.getAttribute('href');
+    c.innerHTML = '<span class="oc-u-chip-ico">' + ICO.naar + '</span>';
+    c.appendChild(document.createTextNode(tekst(a)));
+    chips.push(c);
+  });
+  if (lees.firstChild) raam.appendChild(lees); else raam.classList.add('oc-u-zonder-intro');
+  // een lange inleiding krijgt pas naast de stappen plaats op een echt breed scherm
+  if (lees.firstChild && tekst(lees.firstChild).split(' ').length > 50) raam.classList.add('oc-u-lang');
+  raam.appendChild(doe);
+  if (chips.length) {
+    var samen = maak('div', 'oc-u-samen'), id = 'oc-u-samen-' + Math.random().toString(36).slice(2, 7);
+    samen.appendChild(maak('span', 'oc-u-samen-titel', 'Werkt samen met')).id = id;
+    var rij = maak('div', 'oc-u-chips'); rij.setAttribute('role', 'group'); rij.setAttribute('aria-labelledby', id);
+    chips.forEach(function (c) { rij.appendChild(c); });
+    samen.appendChild(rij); raam.appendChild(samen);
+  }
+  toetsen(raam);
+  inner.innerHTML = ''; inner.appendChild(raam);
+
+  // kop: icoon, titel, belofte, pijl
+  var titel = tekst(sum) || 'Hoe werkt dit?';
+  var woorden = tekst(raam).split(' ').length, min = Math.max(1, Math.round(woorden / 180));
+  var belofte = (aantal ? aantal + ' stappen, ' : '') + min + (min === 1 ? ' minuut' : ' minuten') + ' lezen';
+  sum.innerHTML = '<span class="oc-u-ico" aria-hidden="true">' + ICO.kaart + '</span>'
+    + '<span class="oc-u-kop"><span class="oc-u-titel"></span><span class="oc-u-meta"></span></span>'
+    + (aantal > 1 && aantal < 10 ? '<span class="oc-u-route" aria-hidden="true">' + Array.apply(null, Array(aantal)).map(function (x, i) { return '<i>' + (i + 1) + '</i>'; }).join('') + '</span>' : '')
+    + '<span class="oc-u-pijl" aria-hidden="true">' + ICO.pijl + '</span>';
+  sum.querySelector('.oc-u-titel').textContent = titel;
+  sum.querySelector('.oc-u-meta').textContent = belofte;
+  if (!d.id) d.id = SLUG;
+  d.classList.add('oc-u');
+
+  // vloeiend openen en sluiten (niet bij minder beweging)
+  var rustig = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : { matches: true };
+  var ease = 'cubic-bezier(0.2, 0.7, 0.2, 1)', loopt = null, staat = d.open;
+  function klaar() { loopt = null; inner.style.overflow = ''; inner.style.height = ''; }
+  function zet(open, vloeiend) {
+    staat = open;
+    if (!vloeiend || rustig.matches || !inner.animate) { if (loopt) loopt.cancel(); klaar(); d.open = open; return; }
+    var nu = d.open ? inner.getBoundingClientRect().height : 0;
+    if (loopt) loopt.cancel();
+    d.open = true; inner.style.overflow = 'hidden';
+    var doel = open ? inner.scrollHeight : 0;
+    loopt = inner.animate([{ height: nu + 'px', opacity: open ? (nu ? 1 : 0) : 1 }, { height: doel + 'px', opacity: open ? 1 : 0 }],
+      { duration: open ? 420 : 260, easing: ease });
+    loopt.onfinish = function () { klaar(); if (!open) d.open = false; };
+    loopt.oncancel = function () { inner.style.overflow = ''; };
+    if (open && !nu) {
+      var stukken = raam.querySelectorAll('.oc-u-intro, .oc-u-stap, .oc-u-begrip, .oc-u-tip, .oc-u-noot, .oc-u-stil, .oc-u-samen');
+      Array.prototype.forEach.call(stukken, function (e, i) {
+        e.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 380, delay: 80 + Math.min(i, 8) * 55, easing: ease, fill: 'backwards' });
+      });
+      Array.prototype.forEach.call(raam.querySelectorAll('.oc-u-stap'), function (e, i) {
+        try { e.animate([{ transform: 'scaleY(0)' }, { transform: 'scaleY(1)' }], { pseudoElement: '::before', duration: 360, delay: 200 + i * 55, easing: ease, fill: 'backwards' }); } catch (x) {}
+      });
+    }
+  }
+  sum.addEventListener('click', function (e) { e.preventDefault(); zet(!staat, true); });
+  d.addEventListener('toggle', function () { if (!loopt) staat = d.open; });
+
+  // #hoe-werkt-dit opent het blok
+  function vanAdres(vloeiend) {
+    var h = location.hash.slice(1); try { h = decodeURIComponent(h); } catch (x) {}
+    if (h !== SLUG && h !== d.id) return;
+    if (!staat) zet(true, vloeiend);
+    requestAnimationFrame(function () { d.scrollIntoView({ behavior: vloeiend && !rustig.matches ? 'smooth' : 'auto', block: 'start' }); });
+  }
+  window.addEventListener('hashchange', function () { vanAdres(true); });
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[href="#' + SLUG + '"]');
+    if (a && location.hash === '#' + SLUG) { e.preventDefault(); vanAdres(true); }
+  });
+  vanAdres(false);
+})();
+/* oc-uitleg v1 einde */
+</script>
+</body>
+</html>

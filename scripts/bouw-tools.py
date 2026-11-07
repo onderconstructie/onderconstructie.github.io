@@ -35,7 +35,7 @@ PADEN = [
     '/project-radar/', '/kanban/', '/stakeholders/', '/risico/', '/mixer/', '/paradox/',
     '/fortuna/', '/check-in/', '/project-realisme/', '/sprint/', '/vinkje/',
     '/beslissingen/', '/notities/', '/raci/', '/prioriteit/', '/retro/', '/vergaderkost/', '/ijsbreker/', '/kaartjes/', '/check-out/', '/goesting/',
-    '/gap/', '/weerstand/', '/impact/', '/klimaat/', '/veranderprofiel/', '/sponsor/', '/communicatie/', '/stroom/', '/mindmap/', '/gedrag/', '/visgraat/', '/schildpad/', '/informatie/', '/beslisscore/', '/opdracht/', '/meetplan/', '/dossier/',
+    '/gap/', '/weerstand/', '/impact/', '/klimaat/', '/veranderprofiel/', '/sponsor/', '/communicatie/', '/stroom/', '/mindmap/', '/gedrag/', '/visgraat/', '/schildpad/', '/informatie/', '/beslisscore/', '/opdracht/', '/tijdlijn/', '/meetplan/', '/dossier/',
     '/qr/', '/focus/', '/zakmes/looplicht/', '/zakmes/memomiles/', '/zakmes/schets/', '/zakmes/werkdagen/', '/zakmes/woordwolk/', '/zakmes/klankkast/', '/zakmes/pdf/',
     '/hier/', '/adem/', '/hart/',
 ]

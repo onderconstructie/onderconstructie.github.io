@@ -554,7 +554,7 @@ details.explain.oc-u .oc-u-noot a, details.explain.oc-u .oc-u-stap-uitleg a, det
         <li><b>Werk samen via een gedeeld bestand.</b> Standaard blijft alles op dit toestel. Wil je met je team aan één opdracht werken? Kies dan in het menu ⋮ "Werk samen via een gedeeld bestand", vink aan welke opdrachten meegaan en zet het bestand in een gedeelde map die je computer synchroniseert. Dit kan in Chrome of Edge op een computer en in Chrome op Android, niet op een iPhone of iPad. Passen twee mensen hetzelfde veld aan, dan wint wie het laatst bewaart.</li>
       </ul>
       <p>Tip: begin bij wat er niet bij hoort. Wat het project moet doen, weet iedereen. Over wat het niet doet, is men het zelden eens.</p>
-      <p>De mijlpalen zet je in het <a href="/kanban/">Takenbord</a>. De risico's schat je in met de <a href="/risico/">Risicomatrix</a>. De opdrachtgever en wie akkoord geeft, neem je over in de <a href="/stakeholders/">Betrokkenenradar</a>. Hoe je meet of de doelen gehaald zijn, werk je uit in het <a href="/meetplan/">Meetplan</a>. Waar je vandaag staat, staat in de <a href="/gap/">Gap-analyse</a>.</p>
+      <p>De mijlpalen zet je in het <a href="/kanban/">Takenbord</a> of op de <a href="/tijdlijn/">Tijdlijn</a>. De risico's schat je in met de <a href="/risico/">Risicomatrix</a>. De opdrachtgever en wie akkoord geeft, neem je over in de <a href="/stakeholders/">Betrokkenenradar</a>. Hoe je meet of de doelen gehaald zijn, werk je uit in het <a href="/meetplan/">Meetplan</a>. Waar je vandaag staat, staat in de <a href="/gap/">Gap-analyse</a>.</p>
     </div>
   </details>
 <div class="oc-restart-row" id="oc-restart-row" hidden><button type="button" class="oc-restart" id="oc-restart-btn">Opnieuw beginnen</button></div>
@@ -1921,6 +1921,8 @@ function ocPublish() {
     return { name:o.name, items:[
       ...vol(o.doelen).filter(t => !ocDoelVan(o, t)).map(t => ({ type:'doel', text:t, note:tegen })),
       ...o.mijlpalen.filter(m => m.text.trim()).map(m => ({ type:'taak', text:'Mijlpaal: ' + m.text.trim(), when:m.date || undefined })),
+      // Ook als mijlpaal (met de datum): zo zet de Tijdlijn ze op de lijn. De taken hierboven blijven voor het Takenbord.
+      ...o.mijlpalen.filter(m => m.text.trim()).map(m => ({ type:'mijlpaal', text:m.text.trim(), when:m.date || undefined })),
       ...vol(o.risicos).map(t => ({ type:'risico', text:t })),
       ...(o.opdrachtgever.trim() ? [{ type:'betrokkene', text:o.opdrachtgever.trim(), note:'Opdrachtgever' }] : []),
       ...vol(o.akkoord).map(t => ({ type:'betrokkene', text:t, note:'Moet akkoord geven' })) ] };
@@ -3380,8 +3382,8 @@ window.ocBestand = (function () {
   }());
   /* oc-overnemen: de knop "Overnemen uit…" valt op als knop en zegt wat er klaarligt ("5 taken uit Retro en Risicomatrix"). */
   (function () {
-    var VEEL = { taak: 'taken', actie: 'acties', risico: "risico's", betrokkene: 'betrokkenen', besluit: 'besluiten', doel: 'doelen' };
-    var EEN = { taak: 'taak', actie: 'actie', risico: 'risico', betrokkene: 'betrokkene', besluit: 'besluit', doel: 'doel' };
+    var VEEL = { taak: 'taken', actie: 'acties', risico: "risico's", betrokkene: 'betrokkenen', besluit: 'besluiten', doel: 'doelen', mijlpaal: 'mijlpalen', agendapunt: 'agendapunten', leerpunt: 'leerpunten' };
+    var EEN = { taak: 'taak', actie: 'actie', risico: 'risico', betrokkene: 'betrokkene', besluit: 'besluit', doel: 'doel', mijlpaal: 'mijlpaal', agendapunt: 'agendapunt', leerpunt: 'leerpunt' };
     var zelf = '';
     try { var mt = document.querySelector('meta[name="oc:opslag"]'), mz = mt && /oc\.share\.([\w-]+)/.exec(mt.content); zelf = mz ? mz[1] : ''; } catch (e) {}
     function esc(v) { return String(v).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
