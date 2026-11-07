@@ -78,6 +78,10 @@ a { color:var(--accent-dark); }
 
 /* Sprint en capaciteit */
 .set-row { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:0.625rem; padding:0 1.125rem 0.875rem; }
+.set-row .sp-end-l { grid-column:1 / -1; }
+.sp-end-wrap { display:flex; align-items:center; gap:0.625rem; flex-wrap:wrap; }
+.sp-end-wrap .field { flex:0 1 11.5rem; min-width:0; }
+.sp-end-tip { flex:1 1 12rem; min-width:0; font-size:0.8125rem; color:var(--slate-500); line-height:1.4; }
 .unit-wrap { position:relative; display:block; }
 .unit-wrap .field { padding-right:3.75rem; }
 .unit-wrap .u { position:absolute; right:0.75rem; top:50%; transform:translateY(-50%); font-size:0.8125rem; color:var(--slate-500); pointer-events:none; }
@@ -552,6 +556,7 @@ input::placeholder, textarea::placeholder { color:#64748b; opacity:1; }
       <div class="set-row">
         <label><span class="lbl">Werkdagen in de sprint</span><span class="unit-wrap"><input class="field num" id="sp-days" inputmode="decimal" autocomplete="off" enterkeyhint="next" maxlength="5"><span class="u">dagen</span></span></label>
         <label><span class="lbl">Ruimte voor onvoorzien</span><span class="unit-wrap"><input class="field num" id="sp-buf" inputmode="numeric" autocomplete="off" enterkeyhint="next" maxlength="3"><span class="u">%</span></span></label>
+        <div class="sp-end-l"><label class="lbl" for="sp-end">Laatste dag van de sprint</label><div class="sp-end-wrap"><input class="field" id="sp-end" type="date" aria-describedby="sp-end-tip"><span class="sp-end-tip" id="sp-end-tip">Niet verplicht. Het einde van de sprint komt dan als mijlpaal op de Tijdlijn.</span></div></div>
       </div>
       <div class="cap">
         <div class="label">Wat past er in deze sprint</div>
@@ -604,6 +609,7 @@ input::placeholder, textarea::placeholder { color:#64748b; opacity:1; }
         <li><b>Stories</b>: zet ze in volgorde van belang. De tool vult de sprint van boven naar onder, tot hij vol is. Wat eronder staat, is voor de volgende sprint.</li>
         <li><b>Schatten</b>: iedereen kiest gedekt een kaart, op tafel of op de eigen gsm. Draai samen om. Liggen de kaarten ver uiteen, laat dan de laagste en de hoogste uitleggen waarom, en doe nog een ronde.</li>
         <li><b>?</b> betekent: te onduidelijk om te schatten. Maak de story eerst duidelijker of kleiner.</li>
+        <li><b>Laatste dag</b>: niet verplicht. Vul je ze in, dan komt het einde van de sprint als mijlpaal op de <a href="/tijdlijn/">Tijdlijn</a>. Bij "Volgende sprint" schuift de laatste dag evenveel werkdagen op.</li>
         <li><b>Werk samen via een gedeeld bestand</b>: standaard blijft alles op dit toestel. Wil je met je team in één sprint plannen? Kies dan in het menu ⋮ "Werk samen via een gedeeld bestand", vink aan welke sprints meegaan en zet het bestand in een gedeelde map die je computer synchroniseert. Dit kan in Chrome of Edge op een computer en in Chrome op Android, niet op een iPhone of iPad. Passen twee mensen dezelfde story aan, dan wint wie het laatst bewaart.</li>
       </ul>
       <p>Is de sprint klaar, kies dan "Zet in Takenbord". <a href="/kanban/">Takenbord</a> opent dan met de stories uit deze sprint, met hun schatting en je team. Stories zonder schatting of met ? gaan niet mee.</p>
@@ -2143,9 +2149,16 @@ function norm(s) {
   s.stories = Array.isArray(s.stories) ? s.stories.filter(x => x && typeof x.title === 'string').map(x => ({ id:x.id || uid(), title:x.title.slice(0, 160), note:String(x.note || '').slice(0, 300), est:estOk(x.est), rounds:+x.rounds || 0, ...(x.src ? { src:String(x.src).slice(0, 120) } : {}),
     ...(typeof x.who === 'string' && x.who.trim() ? { who:x.who.trim().slice(0, 60) } : {}), ...(typeof x.when === 'string' && x.when.trim() ? { when:x.when.trim().slice(0, 40) } : {}),
     ...(typeof x.van === 'string' && x.van ? { van:x.van.slice(0, 40) } : {}), ...(typeof x.pos === 'number' && isFinite(x.pos) ? { pos:x.pos } : {}), ...kpTijd(x) })) : [];
+  s.end = okEnd(s.end) || undefined;
   s.voorbeeld = !!s.voorbeeld || undefined;
   return s;
 }
+// De laatste dag van de sprint (JJJJ-MM-DD), niet verplicht
+function okEnd(v) { if (typeof v !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return ''; const d = new Date(v + 'T12:00:00'); return isNaN(d) || d.toISOString().slice(0, 10) !== v ? '' : v; }
+// Zoveel werkdagen (ma tot vr) na een datum: de laatste dag van de volgende sprint
+function plusWerkdagen(v, n) { const d = new Date(v + 'T12:00:00'); let k = Math.max(1, Math.round(n)); while (k > 0) { d.setDate(d.getDate() + 1); const w = d.getDay(); if (w && w < 6) k--; } return d.toISOString().slice(0, 10); }
+// "Sprint 14 · Premieloket" wordt "Einde sprint 14"
+function eindeTekst(n) { const k = (n || '').indexOf(' · '), kop = (k > 0 ? n.slice(0, k) : n || 'Sprint').trim(); return /^sprint\b/i.test(kop) ? 'Einde s' + kop.slice(1) : 'Einde sprint ' + kop; }
 // Werk samen via een gedeeld bestand: de tijd van de laatste wijziging (gewijzigd, in ms) blijft bij een teamlid en een story
 function kpTijd(x) { const t = Math.round(+(x && x.gewijzigd)); return t > 0 && Number.isFinite(t) ? { gewijzigd:t } : {}; }
 function load() {
@@ -2322,6 +2335,7 @@ function render() {
   if (document.activeElement !== $('sp-name')) $('sp-name').value = s.name;
   if (document.activeElement !== $('sp-days')) $('sp-days').value = nl(s.days);
   if (document.activeElement !== $('sp-buf')) $('sp-buf').value = nl(s.buffer);
+  if (document.activeElement !== $('sp-end')) $('sp-end').value = s.end || '';
   renderTabs(); renderTeam();
   const f = renderCap(); renderStories(f);
 }
@@ -2364,6 +2378,7 @@ $('sp-days').addEventListener('change', () => {
   s.team.forEach(m => { if (m.days > s.days) { m.days = s.days; n++; const el = document.querySelector(`.tm[data-id="${CSS.escape(m.id)}"] .tm-days`); if (el) el.value = nl(m.days); } });
   if (n) { save(); refresh(); }
 });
+$('sp-end').addEventListener('change', () => { const s = cur(), v = okEnd($('sp-end').value); if (v) s.end = v; else delete s.end; save(); refresh(); });
 $('sp-buf').addEventListener('input', () => { const v = numIn($('sp-buf').value); if (!isFinite(v)) return; cur().buffer = clamp(Math.round(v), 0, 90); save(); refresh(); });
 ['sp-days', 'sp-buf'].forEach(id => {
   $(id).addEventListener('blur', () => { const s = cur(); $(id).value = nl(id === 'sp-days' ? s.days : s.buffer); });
@@ -2706,7 +2721,9 @@ function ocPublish() {
   const own = state.sprints.filter(s => !s.voorbeeld), c = cur();
   const list = (c && !c.voorbeeld ? [c] : []).concat(own.filter(s => s !== c).reverse().slice(0, 2));
   // Met de eigenaar (who) en de datum (when) als die er zijn
-  ocShare.publish(OC_ID, OC_TOOL, list.map(s => ({ name:s.name, items:fill(s).inSprint.map(x => ({ type:'taak', text:x.title, note:estNote(x), who:x.who, when:x.when })) })));
+  // Met een laatste dag ook de mijlpaal "Einde sprint …" (voor de Tijdlijn)
+  ocShare.publish(OC_ID, OC_TOOL, list.map(s => ({ name:s.name, items:[...fill(s).inSprint.map(x => ({ type:'taak', text:x.title, note:estNote(x), who:x.who, when:x.when })),
+    ...(s.end ? [{ type:'mijlpaal', text:eindeTekst(s.name), when:s.end }] : [])] })));
 }
 // Zet in Takenbord: leg de sprint klaar onder 'oc.naar.kanban' en open meteen Takenbord, dat hem op het bord zet.
 // oc.share.sprint blijft bestaan als terugval voor "Overnemen uit…".
@@ -2739,7 +2756,7 @@ $('next-sprint').addEventListener('click', () => {
   const s = cur(), f = fill(s);
   const rest = s.stories.filter(x => f.st[x.id] !== 'in');
   const restore = snapshot();
-  const nw = { id:uid(), name:nextName(s.name), days:s.days, buffer:s.buffer, team:s.team.map(m => ({ id:uid(), name:m.name, days:s.days, pct:m.pct })), stories:rest.map(x => ({ ...x })), ...(s.voorbeeld ? { voorbeeld:true } : {}) };
+  const nw = { id:uid(), name:nextName(s.name), days:s.days, buffer:s.buffer, ...(s.end ? { end:plusWerkdagen(s.end, s.days) } : {}), team:s.team.map(m => ({ id:uid(), name:m.name, days:s.days, pct:m.pct })), stories:rest.map(x => ({ ...x })), ...(s.voorbeeld ? { voorbeeld:true } : {}) };
   const deel = !s.voorbeeld && s.gedeeld === true && window.ocKoppel && ocKoppel.toestand().fase !== 'uit';
   if (deel) nw.gedeeld = true;
   s.stories = s.stories.filter(x => f.st[x.id] === 'in');
@@ -2765,7 +2782,7 @@ function loadExample() {
   if (bestaand) { state.current = bestaand.id; editing = null; save(); render(); toast('Dit is het voorbeeld'); return; }
   let s = cur();
   if (s.stories.length || s.team.length || s.gedeeld === true) { s = blankSprint(); state.sprints.push(s); state.current = s.id; }
-  Object.assign(s, { voorbeeld:true, name:'Sprint 14 · Digitaal premieloket voor renovatie', days:10, buffer:20 });
+  Object.assign(s, { voorbeeld:true, name:'Sprint 14 · Digitaal premieloket voor renovatie', days:10, buffer:20, end:plusWerkdagen(new Date().toISOString().slice(0, 10), 9) });
   s.team = [['Sofie', 10, 100], ['Mehdi', 7, 100], ['Griet', 10, 50], ['Tom', 10, 100]].map(([name, days, pct]) => ({ id:uid(), name, days, pct }));
   s.stories = [
     ['Formulier herschrijven in eenvoudige taal', 8, 'Samen met de schrijfcel van communicatie', 1],
@@ -2870,7 +2887,7 @@ function buildExport() {
     ${f.inSprint.length ? table(f.inSprint, false) : '<div style="font-size:14px;color:#64748b">Nog niets.</div>'}
     ${notIn.length ? head('Volgende sprint').replace('#047857', '#64748b') + table(notIn, true) : ''}
     ${loose.length ? head('Nog in te schatten of te onduidelijk').replace('#047857', '#64748b') + table(loose, true) : ''}`;
-  return { node, title:'Sprintplanning', subtitle:`${s.name} · ${s.days} werkdagen · ${f.inSprint.length} ${f.inSprint.length === 1 ? 'story' : 'stories'} in de sprint` };
+  return { node, title:'Sprintplanning', subtitle:`${s.name} · ${s.days} werkdagen${s.end ? ' tot ' + new Date(s.end + 'T12:00:00').toLocaleDateString('nl-BE', { day:'numeric', month:'long', year:'numeric' }) : ''} · ${f.inSprint.length} ${f.inSprint.length === 1 ? 'story' : 'stories'} in de sprint` };
 }
 $('menu').addEventListener('click', async e => {
   const b = e.target.closest('[data-act]'); if (!b) return;
@@ -2962,13 +2979,13 @@ if (!window.OC_KAART) (() => {
   const STR = (v, n) => (typeof v === 'string' ? v : typeof v === 'number' ? String(v) : '').slice(0, n);
   ocKoppel.start({
     id:'sprint', soort:'oc-sprintplanning', naam:'Sprintplanning', bestand:'sprintplanning',
-    sleutel:KEY, lijst:'sprints', verz:{ stories:'wegStories', team:'wegTeam' }, vlag:'gedeeld', huidig:'current', kopVelden:['name', 'days', 'buffer'], kopPerVeld:true, volgorde:'bestand',
+    sleutel:KEY, lijst:'sprints', verz:{ stories:'wegStories', team:'wegTeam' }, vlag:'gedeeld', huidig:'current', kopVelden:['name', 'days', 'buffer', 'end'], kopPerVeld:true, volgorde:'bestand',
     w:{ een:'sprint', veel:'sprints', Een:'Een', De:'De', Deze:'Deze sprint', deze:'deze sprint', Hij:'Ze', werk:'werk', zelfde:'sprints', item:['story', 'stories'] },
     max:{ eenheden:200, items:1000 },
     uitleg:'Passen twee mensen dezelfde story of hetzelfde teamlid aan, of verschuiven ze dezelfde story, dan wint wie het laatst bewaart.',
     regel:'Een volgende sprint van een gedeelde sprint gaat vanzelf mee.',
     staat:() => state,
-    kopSchoon:(s, H) => ({ name:STR(s.name, 80) || 'Sprint', days:num(s.days, 10, 0, 60), buffer:num(s.buffer, 20, 0, 90) }),
+    kopSchoon:(s, H) => ({ name:STR(s.name, 80) || 'Sprint', days:num(s.days, 10, 0, 60), buffer:num(s.buffer, 20, 0, 90), ...(okEnd(s.end) ? { end:s.end } : {}) }),
     schoonItem:(v, x, tijd, H) => {
       if (v === 'team') return { id:H.sid(x.id), name:STR(x.name, 60), days:num(x.days, 10, 0, 60), pct:num(x.pct, 100, 0, 100) };
       const o = { id:H.sid(x.id), title:STR(x.title, 160), note:STR(x.note, 300), est:estOk(x.est), rounds:Math.max(0, Math.min(99, Math.round(+x.rounds) || 0)) };

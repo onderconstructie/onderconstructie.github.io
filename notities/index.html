@@ -154,6 +154,15 @@ input[type="date"].field { width:11.5rem; font-variant-numeric:tabular-nums; }
 
 /* Notities */
 .notes { padding:0.5rem 0.5rem 0.75rem; }
+/* Agenda overnemen: dezelfde knop als "Overnemen uit andere tools" (de stijl van het gedeelde blok, hier vast omdat die knop hier geen soorten telt) */
+.ag-rij { padding:0.25rem 0.375rem 0.625rem; }
+button.oc-import.oc-imp2{display:inline-flex;align-items:center;gap:.625rem;max-width:100%;min-height:52px;margin:0;padding:.4375rem .75rem .4375rem .4375rem;border:1.5px solid #a7f3d0;border-radius:12px;background:#ecfdf5;color:#065f46;font:inherit;text-align:left;white-space:normal;cursor:pointer;box-shadow:none;transition:background .12s,border-color .12s}
+button.oc-import.oc-imp2:hover{background:#d1fae5;border-color:#10b981}button.oc-import.oc-imp2[hidden]{display:none}
+.oc-imp2 .oc-imp-ico{flex:none;width:34px;height:34px;border-radius:9px;background:#fff;color:#047857;display:grid;place-items:center;box-shadow:inset 0 0 0 1px #a7f3d0}
+.oc-imp2 .oc-imp-ico svg{width:18px;height:18px}.oc-imp2 .oc-imp-t{display:flex;flex-direction:column;min-width:0;line-height:1.25}
+.oc-imp2 .oc-imp-t b{font-size:.875rem;font-weight:700;color:#065f46}
+.oc-imp2 .oc-imp-t small{font-size:.8125rem;font-weight:500;color:#047857;overflow-wrap:anywhere}
+.oc-imp2 .oc-imp-pijl{flex:none;width:18px;height:18px;margin-left:auto;color:#047857}
 .sectie + .sectie { margin-top:0.5rem; padding-top:0.5rem; border-top:1px solid var(--slate-100); }
 .sectie-kop { display:flex; align-items:center; gap:0.25rem; padding:0.25rem 0 0.125rem 0.375rem; }
 .sectie-kop { align-items:flex-start; }
@@ -812,6 +821,7 @@ details.explain.oc-u .oc-u-noot a, details.explain.oc-u .oc-u-stap-uitleg a, det
   <div class="werk" id="werk" hidden>
     <div class="links">
       <section class="card notes" id="notes" aria-label="Notities">
+        <div class="ag-rij" id="ag-rij" hidden><button type="button" class="oc-import oc-imp2" id="ag-imp"></button></div>
         <div id="secties"></div>
         <div class="notes-voet">
           <button type="button" class="add-punt" id="add-punt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Agendapunt</button>
@@ -2734,6 +2744,7 @@ function render() {
   if (!m) { $('vorige').hidden = true; $('balk').hidden = true; document.body.classList.remove('met-balk'); zetBalkMaat(); return; }
   renderKop(m); renderVorige(m); renderModus(); renderOpv(true);
   if (state.modus === 'verslag') renderVerslag(); else renderNotes();
+  renderAgendaKnop();
 }
 function renderTabs() {
   const alle = gesorteerd(), c = cur(), el = $('lists');
@@ -4043,10 +4054,84 @@ $('mb-kapot-x').addEventListener('click', () => { $('mb-kapot').hidden = true; }
 if (kapotNu) { $('mb-kapot-t').textContent = kapotNu === 'alles' ? 'Je vorige notities konden niet geopend worden. Ze staan apart bewaard.' : 'Een deel van je vorige notities kon niet geopend worden. Dat deel staat apart bewaard.'; $('mb-kapot').hidden = false; }
 if (blokkeer) zetNietBewaard(true);
 
+/* ---------- Agenda overnemen: de punten uit de tool Agenda worden de kopjes van je verslag ----------
+   De Agenda legt elk punt klaar als 'agendapunt' { text, who, when (UU:MM), note: "doel · minuten · Materiaal: …" }.
+   Elke lijst heet "<project> · <titel> <datum>". Een kopje wordt "<onderwerp> · <doel> · <wie>", in de volgorde van de agenda.
+   Wat al als kopje staat (zelfde onderwerp), telt niet als nieuw. */
+const AG_DOEL = ['Informeren', 'Bespreken', 'Beslissen'];
+const agNorm = v => String(v || '').normalize('NFC').toLowerCase().replace(/\s+/g, ' ').trim().replace(/^[\s.,;:!?·-]+|[\s.,;:!?·-]+$/g, '');
+const agOnderwerp = t => String(t || '').split(' · ')[0];
+const agAl = m => m ? m.agenda.map(a => agOnderwerp(a.t)).filter(x => x.trim()) : [];
+function agBronnen() { try { return ocShare.sources(['agendapunt'], OC_ID); } catch { return []; } }
+function agKopje(it) {
+  const doel = AG_DOEL.find(d => String(it.note || '').split(' · ')[0] === d);
+  const wie = String(it.who || '').split(/\s*;\s*/).filter(Boolean).join(', ');
+  return [String(it.text || '').trim(), doel, wie].filter(Boolean).join(' · ').slice(0, 200);
+}
+// Titel en datum uit de naam van de lijst: "Project · Stuurgroep 12 november 2026"
+function agLijst(naam) {
+  const x = new RegExp('^(?:.* · )?(.*?)\\s*(\\d{1,2}) (' + MAANDEN.join('|') + ') (\\d{4})$').exec(String(naam || '').trim());
+  if (!x) return { titel:String(naam || '').split(' · ').pop().trim(), datum:'' };
+  const iso = `${x[4]}-${pad(MAANDEN.indexOf(x[3]) + 1)}-${pad(+x[2])}`;
+  return { titel:x[1].trim(), datum:okIso(iso) ? iso : '' };
+}
+function renderAgendaKnop() {
+  const m = cur(), b = $('ag-imp'), rij = $('ag-rij');
+  if (!m || m.voorbeeld || state.modus !== 'notities') { rij.hidden = true; return; }
+  const al = new Set(agAl(m).map(agNorm)), bron = agBronnen();
+  const nieuw = bron.map(s => ({ s, n:s.items.filter(it => !al.has(agNorm(it.text))).length })).filter(x => x.n);
+  rij.hidden = !nieuw.length; if (!nieuw.length) return;
+  const n = nieuw.reduce((t, x) => t + x.n, 0), lijst = nieuw.length === 1 ? agLijst(nieuw[0].s.list).titel || nieuw[0].s.list : '';
+  const sam = meer(n, 'punt', 'punten') + (lijst ? ' uit ' + lijst : ' uit ' + nieuw.length + ' agenda\'s');
+  const html = '<span class="oc-imp-ico" aria-hidden="true">' + I('<path d="M12 3v11M7.5 9.5L12 14l4.5-4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>') + '</span><span class="oc-imp-t"><b>Agenda overnemen</b><small>' + esc(sam) + '</small></span>'
+    + '<svg class="oc-imp-pijl" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
+  if (b.innerHTML !== html) b.innerHTML = html;
+}
+// van: de link uit de Agenda (?van=agenda). Dan hoort de agenda bij het overleg van die dag: bestaat dat, dan gaan we erheen;
+// is het huidige overleg nog leeg, dan krijgt het de titel en de datum van de agenda; anders komt er een nieuw overleg.
+async function agendaOvernemen(van) {
+  let m = cur();
+  if (m && m.voorbeeld && !van) { toast('Dit is het voorbeeld. Begin je eigen overleg, dan kan je de agenda overnemen.'); return; }
+  // Wat staat er al? Vanuit de Agenda: in het overleg van de dag van de laatst gewijzigde agenda (daar komen de punten).
+  let doelM = m;
+  if (van) { const l = agBronnen().sort((x, y) => (y.ch || 0) - (x.ch || 0))[0], d = l ? agLijst(l.list).datum : ''; doelM = (d && gesorteerd().reverse().find(x => !x.voorbeeld && x.datum === d)) || (m && !m.voorbeeld ? m : null); }
+  const gekozen = await ocShare.pick({ types:['agendapunt'], self:OC_ID, title:'Agenda overnemen', intro:'Kies de punten. Ze worden de kopjes van je notities, in de volgorde van de agenda, met het doel en wie het trekt.', have:agAl(doelM) });
+  if (!gekozen.length) return;
+  if (saveT) schrijf();
+  const restore = snapshot();
+  if (van) {
+    const info = agLijst(gekozen[0].list), titel = info.titel && !/^vergadering$/i.test(info.titel) ? info.titel : '';
+    const zelfde = info.datum ? gesorteerd().reverse().find(x => !x.voorbeeld && x.datum === info.datum && (!titel || zacht(x.titel) === zacht(titel) || isStandaard(x.titel))) : null;
+    if (zelfde) { state.current = zelfde.id; m = zelfde; if (titel && isStandaard(m.titel)) m.titel = titel; }
+    else if (m && !m.voorbeeld && !heeftInhoud(m) && !m.agenda.length) { if (titel) m.titel = titel; if (info.datum) m.datum = info.datum; }
+    else { m = maakOverleg(null, titel); if (info.datum) { m.datum = info.datum; if (!titel) m.titel = standaardTitel(m.datum); } }
+    state.modus = 'notities';
+  }
+  const al = new Set(agAl(m).map(agNorm));
+  const nieuw = gekozen.filter(it => !al.has(agNorm(it.text)) && al.add(agNorm(it.text))).slice(0, Math.max(0, 60 - m.agenda.length));
+  if (!nieuw.length) { save(true); render(); toast('Die punten staan al in je notities.'); return; }
+  // Nog geen agenda en nog niets getypt: de lege eerste regel maakt plaats voor de kopjes
+  if (!m.agenda.length && m.regels.filter(r => r.p === '').every(r => !r.t.trim() && !r.s)) m.regels = m.regels.filter(r => r.p !== '');
+  nieuw.forEach(it => { const p = { id:uid(), t:agKopje(it) }; m.agenda.push(p); m.regels.push(nieuweRegel(p.id)); });
+  zorg(m); save(true); render();
+  const pt = $('secties').querySelector('.regel .tx'); if (pt && !matchMedia('(pointer:coarse)').matches) pt.focus({ preventScroll:true });
+  toast(meer(nieuw.length, 'agendapunt', 'agendapunten') + ' overgenomen', ocUndoable(restore));
+}
+$('ag-imp').addEventListener('click', () => agendaOvernemen(false));
+['focus', 'pageshow'].forEach(t => addEventListener(t, () => { try { renderAgendaKnop(); } catch {} }));
+addEventListener('storage', e => { if (e.key && e.key.startsWith('oc.share.')) try { renderAgendaKnop(); } catch {} });
+
 /* Voor de test: de herkenning en een vaste "vandaag" */
 window.ocNotities = { herken, zetVandaag: iso => { NU = okIso(iso) ? iso : ''; }, staat: () => state, tekst: () => cur() && verslagTekst(cur()), onderwerp: () => cur() && onderwerp(cur()) };
 
 render();
+// Geopend vanuit de Agenda (?van=agenda): meteen kiezen welke punten de kopjes worden
+try {
+  if (new URLSearchParams(location.search).get('van') === 'agenda' && agBronnen().length) {
+    window.ocVan = 'agenda'; try { history.replaceState(history.state, '', location.pathname + location.hash); } catch {}   // herladen opent de kiezer niet opnieuw
+    setTimeout(async () => { try { await agendaOvernemen(true); } finally { window.ocVan = ''; } }, 300);
+  }
+} catch {}
 
 /* ---------- Werk samen via een gedeeld bestand: de adapter voor het gedeelde blok oc-koppel ----------
    Eén overleg = één eenheid, met zijn reeks: zo hoort het volgende overleg bij dezelfde reeks, ook op een ander toestel.

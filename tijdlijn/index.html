@@ -495,7 +495,7 @@ details.explain.oc-u .oc-u-noot a, details.explain.oc-u .oc-u-stap-uitleg a, det
     <div class="inner">
       <p>Op de Tijdlijn zie je de grote momenten van je project: wat al gehaald is, wat nog komt en wat verschoof. Precies wat een stuurgroep wil weten.</p>
       <ul>
-        <li><b>Zet je mijlpalen erop.</b> Typ een naam, kies een datum en druk op Enter. Mijlpalen uit de Projectopdracht neem je over met "Overnemen uit andere tools". Met "+&nbsp;Project" maak je een tijdlijn voor een ander project.</li>
+        <li><b>Zet je mijlpalen erop.</b> Typ een naam, kies een datum en druk op Enter. Mijlpalen uit de Projectopdracht en het einde van een sprint uit de <a href="/sprint/">Sprintplanning</a> neem je over met "Overnemen uit andere tools". Met "+&nbsp;Project" maak je een tijdlijn voor een ander project.</li>
         <li><b>Hou de stand bij.</b> Tik op een mijlpaal en kies Gepland, Gehaald of Verschoven. Zet je de datum later, dan blijft de oude datum zichtbaar, doorstreept en als lichte stip op de lijn.</li>
         <li><b>Lees de lijn.</b> De groene lijn is vandaag. Een gevuld groen punt is gehaald. Een oranje rand betekent verschoven of voorbij de datum.</li>
         <li><b>Deel het.</b> Download de tijdlijn als afbeelding of PDF, of kopieer ze als tekst voor een mail. Elke mijlpaal gaat ook naar andere tools: het Takenbord neemt ze over als taak, het Projectdossier toont ze aan de stuurgroep.</li>
@@ -964,7 +964,8 @@ function ocDatum(v) {
 }
 
 /* ---------- Overnemen: wat andere tools klaarleggen, lezen we als mijlpalen ----------
-   Soort 'mijlpaal' (bv. uit de Projectopdracht) komt zoals ze is. Soort 'taak' alleen als ze met "Mijlpaal:" begint of een datum heeft.
+   Soort 'mijlpaal' (Projectopdracht, het einde van een sprint) komt zoals ze is. Soort 'taak' alleen als ze met "Mijlpaal:" begint:
+   een gewone taak met een einddatum is geen mijlpaal.
    "Mijlpaal: " vooraan valt weg. Zo toont de kiezer elke mijlpaal één keer, ook als een tool ze als mijlpaal én als taak klaarlegt.
    Het gedeelde blok blijft ongewijzigd: deze pagina leest de klaargelegde lijsten van ANDERE tools (oc.share.*, niet de eigen)
    door deze bril. Niets wordt weggeschreven; de lijsten zelf blijven zoals ze zijn. */
@@ -979,7 +980,7 @@ function alsMijlpalen(d) {
       const text = it.text.replace(MP, '').trim(), when = ocDatum(str(it.when)) || undefined, who = typeof it.who === 'string' ? it.who : undefined;
       if (!text) return;
       if (it.type === 'mijlpaal') items.push({ type:'mijlpaal', text, when, who, note: STATUS[it.note] ? it.note : undefined });
-      else if (it.type === 'taak' && (MP.test(it.text) || when)) items.push({ type:'mijlpaal', text, when, who });
+      else if (it.type === 'taak' && MP.test(it.text)) items.push({ type:'mijlpaal', text, when, who });
     });
     return Object.assign({}, l, { items });
   }) });
