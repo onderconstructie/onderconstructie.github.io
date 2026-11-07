@@ -11,7 +11,7 @@ Elke tool beschrijft zichzelf in zijn <head>:
     <meta name="oc:volgorde" content="20">               volgorde zolang je een tool nog niet gebruikte
     <meta name="oc:achtergrond" content="nee">           optioneel: niet open laten in de app
     <meta name="oc:opslag" content="vinkje.v1, oc.share.vinkje">  optioneel: localStorage-sleutels van de tool
-                                                          (een * achteraan is een voorvoegsel, bv. mm.*)
+                                                          (een * achteraan is een voorvoegsel, bv. oc.memomiles.*)
     <meta name="oc:traject" content="verandering:2">     optioneel: plaats in een stappenplan (naam:stap, komma's)
     <link rel="icon" href="data:image/svg+xml,...">      het icoon in de app
 

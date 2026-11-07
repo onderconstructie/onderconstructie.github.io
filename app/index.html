@@ -1544,7 +1544,7 @@ body.searching #home #tabgroup { display:none !important; }
         <a class="ft-link" href="https://www.linkedin.com/in/bartel-volckaert-8a96842/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Maker</a>
         <button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (34 seconden)" title="Bekijk de film (34 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg></button>
       </nav>
-      <p class="ft-meta"><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v15.16</span></p>
+      <p class="ft-meta"><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v15.17</span></p>
     </div>
   </footer>
   <dialog class="film" id="film" aria-labelledby="film-h">
@@ -1705,6 +1705,32 @@ function ocRisicoSchaal5() {
   } catch {}
 }
 ocRisicoSchaal5();
+/* Oude, algemene sleutelnamen kregen een eigen naam met voorvoegsel (oc.<tool>.*). De tool zet ze zelf één keer om bij het lezen
+   (meta oc:opslag-oud). Tot dan horen de oude namen nog bij die tool, maar alleen als de inhoud eruitziet zoals die tool ze bewaarde:
+   een andere app met toevallig dezelfde naam blijft ongemoeid bij Wissen en Reservekopie. Een oude reservekopie komt onder de nieuwe
+   naam terug. Alleen deze exacte namen, nooit een voorvoegsel: een vreemde sleutel als mm.ander blijft altijd staan. */
+const ocJ = v => { try { return JSON.parse(v); } catch { return undefined; } };
+const ocObj = (v, ks) => { const o = ocJ(v); return !!o && typeof o === 'object' && !Array.isArray(o) && ks.some(k => k in o); };
+const OUDE_NAMEN = {
+  focusSettings: ['oc.focus.instellingen', v => ocObj(v, ['focusTime', 'breakTime', 'longBreakTime', 'sessionsCount', 'soundEnabled'])],
+  focusRun: ['oc.focus.sessie', v => { const o = ocJ(v); return !!o && typeof o === 'object' && ['focus', 'break', 'long-break'].includes(o.mode); }],
+  'll-color': ['oc.looplicht.kleur', v => ['wit', 'geel', 'groen', 'oranje', 'rood', 'disco'].includes(v)],
+  'll-mode': ['oc.looplicht.modus', v => ['vast', 'knipper', 'flits'].includes(v)],
+  'mm.cfg': ['oc.memomiles.cfg', v => ocObj(v, ['addr', 'prefix', 'lang', 'auto', 'quick'])],
+  'mm.draft': ['oc.memomiles.draft', v => { const o = ocJ(v); return o === null || (!!o && typeof o === 'object' && typeof o.t === 'string'); }],
+  'mm.hist': ['oc.memomiles.hist', v => Array.isArray(ocJ(v))],
+  'mm.camOff': ['oc.memomiles.camOff', v => typeof ocJ(v) === 'boolean'],
+  'mm.srBroken': ['oc.memomiles.srBroken', v => typeof ocJ(v) === 'boolean'],
+  lk_entries: ['oc.hart.dagboek', v => { const o = ocJ(v); return Array.isArray(o) && (!o.length || o.some(e => e && typeof e === 'object' && 'mood' in e)); }],
+  lk_breath: ['oc.hart.adem', v => ocObj(v, ['inhale', 'hold', 'exhale'])],
+  lk_privacy_accepted: ['oc.hart.privacy', v => v === 'true']
+};
+const ocNieuweNaam = k => Object.prototype.hasOwnProperty.call(OUDE_NAMEN, k) ? OUDE_NAMEN[k][0] : null;
+// Een oude naam telt alleen als eigen sleutel als de inhoud herkend wordt; elke andere sleutel gaat gewoon door
+const ocEigenOud = (k, st = localStorage) => { if (!ocNieuweNaam(k)) return true; try { return !!OUDE_NAMEN[k][1](st.getItem(k)); } catch { return false; } };
+/* Blijvende opslag: de browser ruimt je werk dan niet zomaar op (vooral op iOS). Alleen na iets wat je zelf doet: je eerste project
+   bewaren of de app installeren. Firefox stelt daar een vraag, dus nooit bij het laden. Lukt het niet, dan toon je niets. */
+function vraagBlijvend() { try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); } catch {} }
 /* De lijst van tools komt uit /tools.json. Die wordt gebouwd uit de metatags in de tools zelf (scripts/bouw-tools.py). */
 let TOOLS = [];
 let byId = {};
@@ -2184,6 +2210,7 @@ document.addEventListener('submit', e => {
   // Hernoemen: de vorige naam blijft gekend (oud), zodat elke tool en het dossier het project terugvinden. Wisselen: een nieuw begin.
   const oud = hernoem ? [...(Array.isArray(vorig.oud) ? vorig.oud : []).filter(x => x !== name), was].slice(-10) : [];
   try { name ? localStorage.setItem(PROJ_KEY, JSON.stringify(oud.length ? { name, since: Date.now(), oud } : { name, since: Date.now() })) : localStorage.removeItem(PROJ_KEY); } catch {}
+  if (name && !was) vraagBlijvend();   // je eerste project: vraag de browser om je werk te bewaren
   if (hernoem) store.set('projects', store.get('projects', []).filter(n => n !== was));
   if (name) store.set('projects', [name, ...store.get('projects', []).filter(n => n !== name)].slice(0, 8));
   if (name !== was) dropPre();   // een vooraf geladen tool kent het nieuwe project nog niet
@@ -2575,11 +2602,13 @@ window.addEventListener('beforeinstallprompt', e => {
   showInstall('<strong>Zet de app op je toestel.</strong> Eigen icoon, eigen venster, ook offline.', true);
 });
 $('install-btn').addEventListener('click', async () => {
+  vraagBlijvend();   // Installeer als app: vraag de browser om je werk te bewaren
   if (!deferred) return;
   deferred.prompt(); await deferred.userChoice; deferred = null;
   $('install').classList.remove('show');
 });
 $('wk-inst').addEventListener('click', async () => {
+  vraagBlijvend();
   if (installKind === 'ios') { $('wk-ios').hidden = !$('wk-ios').hidden; return; }
   if (!deferred) return;
   deferred.prompt(); const r = await deferred.userChoice; deferred = null;
@@ -2664,7 +2693,7 @@ if ('serviceWorker' in navigator) {
    De app zelf bewaart onder 'oc-app.' (laatst gebruikt, inklapstand, gebruik). */
 const APP_ENTRY = { id:'__app', title:'Instellingen van de app', sub:'laatst gebruikt, volgorde, ingeklapte blokken', storage:['oc-app.*', 'oc.project'],
   icon:'<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="16" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/><path d="M14 15h12M14 20h12M14 25h8" stroke="#64748b" stroke-width="2" stroke-linecap="round"/></svg>' };
-function lsKeys() { const out = []; try { for (let i = 0; i < localStorage.length; i++) out.push(localStorage.key(i)); } catch {} return out; }
+function lsKeys() { const out = []; try { for (let i = 0; i < localStorage.length; i++) out.push(localStorage.key(i)); } catch {} return out.filter(k => ocEigenOud(k)); }   // een oude naam met vreemde inhoud is niet van ons
 function keysFor(patterns, all = lsKeys()) {
   return all.filter(k => patterns.some(p => p.endsWith('*') ? k.startsWith(p.slice(0, -1)) : k === p));
 }
@@ -2732,7 +2761,7 @@ function fullExit() {
   const pats = [...new Set(TOOLS.flatMap(t => t.storage || []).concat(APP_ENTRY.storage, ['oc.*', 'oc-app*']))];
   let snap = [];   // alleen in het geheugen van deze pagina, 30 seconden lang, voor Ongedaan maken
   [localStorage, sessionStorage].forEach(st => {
-    try { const ks = []; for (let i = 0; i < st.length; i++) ks.push(st.key(i)); keysFor(pats, ks).forEach(k => { snap.push([st, k, st.getItem(k)]); st.removeItem(k); }); } catch {}
+    try { const ks = []; for (let i = 0; i < st.length; i++) ks.push(st.key(i)); keysFor(pats, ks).filter(k => ocEigenOud(k, st)).forEach(k => { snap.push([st, k, st.getItem(k)]); st.removeItem(k); }); } catch {}
   });
   // Ook de koppelingen met een gedeeld bestand (Beslissingen); het bestand zelf blijft altijd staan
   try { indexedDB.deleteDatabase('oc-koppel'); } catch {}
@@ -3063,7 +3092,9 @@ async function readRestore(file) {
     if (!d || d.app !== 'Onder Constructie' || !d.data || typeof d.data !== 'object') throw new Error('vorm');
     const allowed = [...TOOLS, APP_ENTRY].flatMap(t => t.storage || []).concat(['oc.share.*'], TOOLS.filter(t => t.path).map(leegKey));
     const never = ['oc-app.tools-cache'];   // de toollijst komt altijd van de site zelf, nooit uit een bestand
-    const put = Object.entries(d.data).filter(([k, v]) => typeof v === 'string' && !never.includes(k) && keysFor(allowed, [k]).length);
+    // Een oude sleutelnaam (OUDE_NAMEN) komt onder de nieuwe naam terug; staat de nieuwe naam ook in het bestand, dan wint die
+    const put = Object.entries(d.data).filter(([k, v]) => typeof v === 'string' && !never.includes(k) && keysFor(allowed, [k]).length)
+      .flatMap(([k, v]) => { const n = ocNieuweNaam(k); return !n ? [[k, v]] : Object.prototype.hasOwnProperty.call(d.data, n) ? [] : [[n, v]]; });
     if (!put.length) throw new Error('leeg');
     const cur = k => { try { return localStorage.getItem(k); } catch { return null; } };
     // per app: welke sleutels, en staat er nu iets anders (dan wordt het vervangen)? De instellingen van de app tellen daar niet bij.
@@ -3114,8 +3145,21 @@ $('restore-yes').addEventListener('click', () => {
   // Zo legt de tool de teruggezette inhoud bij het openen niet vast als "leeg". Een nieuwe kopie zet ze gewoon terug zoals ze waren.
   if (pendingRestore.oud) ch.forEach(g => { if (g.t.path && TOOLS.includes(g.t)) put.push([leegKey(g.t), '{}']); });
   const cur = k => { try { return localStorage.getItem(k); } catch { return null; } };
-  const before = Object.fromEntries(put.map(([k]) => [k, cur(k)]));
-  put.forEach(([k, v]) => { try { localStorage.setItem(k, v); } catch {} });
+  // Staat een eigen sleutel nog onder zijn oude naam, dan vervangt het terugzetten die ook
+  const oudWeg = Object.keys(OUDE_NAMEN).filter(o => put.some(([k]) => k === OUDE_NAMEN[o][0]) && cur(o) != null && ocEigenOud(o));
+  const before = Object.fromEntries(put.map(([k]) => [k, cur(k)]).concat(oudWeg.map(o => [o, cur(o)])));
+  // Veilig: schrijven en nalezen. Lukt dat niet (opslag vol), dan alles terug zoals het was, met een melding. Pas daarna oude namen weg.
+  let mislukt = false;
+  for (const [k, v] of put) { try { localStorage.setItem(k, v); if (localStorage.getItem(k) !== v) throw new Error('nalezen'); } catch { mislukt = true; break; } }
+  if (mislukt) {
+    const mis = [];
+    Object.entries(before).forEach(([k, v]) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch { mis.push(k); } });
+    Object.entries(before).forEach(([k, v]) => { if (v == null) { try { localStorage.removeItem(k); } catch {} } });
+    mis.forEach(k => { try { localStorage.removeItem(k); localStorage.setItem(k, before[k]); } catch {} });
+    dataMsg('Terugzetten lukt niet: de opslag van je browser is vol of geblokkeerd. Je werk staat nog zoals het was.', true);
+    return;
+  }
+  oudWeg.forEach(k => { try { localStorage.removeItem(k); } catch {} });
   ocRisicoSchaal5();   // een oude reservekopie kan risico's op de schaal 1-10 bevatten
   showRestore(false);
   const refresh = () => { [...frames.keys()].forEach(id => dropFrame(id)); dropPre(); renderGroups(); renderRecent(); renderFilter(); renderPaths(); markLive(); renderData(); };
@@ -3737,6 +3781,8 @@ let toolsRaw = null;
 function useTools(list, raw) {
   toolsRaw = raw; TOOLS = list;
   TOOLS.forEach(t => { t.g = subGroup(t); (FASE_EXTRA[t.id] || []).forEach(p => { t.pdca = t.pdca || []; if (!t.pdca.includes(p)) t.pdca.push(p); }); });
+  // De oude namen van de eigen sleutels horen bij dezelfde tool (zie OUDE_NAMEN)
+  TOOLS.forEach(t => { const st = Array.isArray(t.storage) ? t.storage : [], oud = Object.keys(OUDE_NAMEN).filter(o => !st.includes(o) && keysFor(st, [OUDE_NAMEN[o][0]]).length); if (oud.length) t.storage = st.concat(oud); });
   byId = Object.fromEntries(TOOLS.map(t => [t.id, t]));
 }
 // Eerste bezoek: toon de uitleg zolang er nog niets bewaard is en ze niet gesloten werd

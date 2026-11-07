@@ -10,7 +10,7 @@
 <meta name="oc:pdca" content="plan">
 <meta name="oc:kort" content="Je vergadering in tijdsblokken: wie, doel en materiaal">
 <meta name="oc:volgorde" content="79">
-<meta name="oc:opslag" content="agenda.v1, oc.share.agenda">
+<meta name="oc:opslag" content="agenda.v1, agenda.v1.kapot*, oc.share.agenda">
 <meta name="oc:titel" content="Agenda">
 <meta name="theme-color" content="#ffffff">
 <meta name="color-scheme" content="light">
@@ -527,6 +527,173 @@ details.explain.oc-u .oc-u-noot a, details.explain.oc-u .oc-u-stap-uitleg a, det
 @media print { details.explain { display:none; } }
 /* oc-uitleg v1 einde */
 </style>
+<script>
+/* oc-opslag v1 begin */
+/* oc-opslag: bewaren zonder stil verlies, in elke tool die iets bewaart. Bron: scratchpad/oc-opslag.js, byte-gelijk in elke tool.
+   ocLees(sleutel, geldig)    leest en parst. Is de tekst onleesbaar, of verwerpt geldig(data) ze, dan blijft de ruwe tekst ongewijzigd
+                              apart staan onder <sleutel>.kapot (staat daar al iets anders: .kapot.2, .kapot.3 ...). Er komt één rustige
+                              melding met "Download de kopie" en je krijgt null terug: de tool begint leeg. Verder schrijft de laag
+                              bij het openen niets weg (behalve die kopie, en een oude naam die ze omzet).
+   ocKapot(sleutel)           hetzelfde, als de tool pas later merkt dat ze de data niet kan gebruiken.
+   ocSchrijf(sleutel, waarde, { stil }) bewaart (tekst, anders JSON; null wist de sleutel) en geeft true of false terug. Mislukt het, dan een melding (hooguit
+                              één per minuut) met "Bewaar als bestand". Wat niet bewaard kon worden, gaat mee in dat bestand.
+                              stil: de tool toont zelf een melding.
+   Oude sleutelnamen: <meta name="oc:opslag-oud" content="oud>nieuw, oud>nieuw">. ocLees(nieuw) en ocOpslag.tekst(nieuw) zetten de oude
+   sleutel één keer om, als geldig() de inhoud herkent, en wissen dan alleen die oude sleutel. Staan beide er al met een andere inhoud,
+   dan blijft de oude apart staan onder <nieuw>.oud. */
+(function () {
+  if (window.ocOpslag) return;
+  var wacht = {}, open = {}, kapot = {}, gelezen = {}, laatsteVol = 0, plek = null, oudVan = {};
+  function ls() { try { return window.localStorage; } catch (e) { return null; } }
+  function get(k) { try { return ls().getItem(k); } catch (e) { return null; } }
+  function zet(k, v) { try { ls().setItem(k, v); return ls().getItem(k) === v; } catch (e) { return false; } }
+  function niets(raw) { var t = String(raw).trim(); return !t || t === 'null' || t === '{}' || t === '[]' || t === '""'; }
+  // Een plaats voor een kopie: daar staat al precies dezelfde tekst, of ze is vrij. Een andere kopie wordt nooit overschreven.
+  function apart(basis, raw) {
+    for (var i = 1; i < 100; i++) {
+      var k = basis + (i > 1 ? '.' + i : ''), oud = get(k);
+      if (oud === raw) return k;
+      if (oud == null) return zet(k, raw) ? k : null;
+    }
+    return null;
+  }
+  function bewaarKopie(k, raw) {
+    if (raw == null || niets(raw)) return;
+    var ok = !!apart(k + '.kapot', raw);
+    if (ok) delete open[k]; else open[k] = raw;   // kopie lukt niet (opslag vol): het origineel blijft onaangeroerd staan
+    if (kapot[k] === raw) return;   // al gemeld
+    kapot[k] = raw;
+    toon('kapot', ok ? '' : 'Een deel van je gegevens kon niet gelezen worden. Bewaar ze als bestand, dan gaat er niets verloren.');
+  }
+  /* Oude namen (meta oc:opslag-oud): omzetten bij het eerste lezen, en alleen als de tekst eruitziet zoals de tool verwacht (geldig).
+     Zo blijft een sleutel van een andere app met toevallig dezelfde naam onaangeroerd. Nieuw schrijven en nalezen, pas dan de oude
+     sleutel wissen. Lukt schrijven niet (opslag vol), dan blijft de oude staan en lezen we die. */
+  (function () {
+    var m = document.querySelector('meta[name="oc:opslag-oud"]'); if (!m) return;
+    m.content.split(',').forEach(function (p) {
+      var d = p.split('>'); if (d.length !== 2) return;
+      var oud = d[0].trim(), nieuw = d[1].trim(); if (oud && nieuw && oud !== nieuw) oudVan[nieuw] = oud;
+    });
+  })();
+  function omzetten(k, geldig, json) {
+    var oud = oudVan[k], v = oud ? get(oud) : null; if (v == null) return null;
+    if (geldig) { var ok = false; try { ok = !!geldig(json ? JSON.parse(v) : v); } catch (e) {} if (!ok) return null; }
+    var n = get(k);
+    if (n == null) { if (!zet(k, v)) return v; }
+    else if (n !== v && !apart(k + '.oud', v)) return null;   // beide bestaan met een andere inhoud: de oude blijft apart staan
+    try { ls().removeItem(oud); } catch (e) {}
+    return null;
+  }
+  // De ruwe tekst (ook voor sleutels zonder JSON)
+  function tekst(k, geldig) { gelezen[k] = 1; var oud = omzetten(k, geldig, false), raw = get(k); return raw == null ? oud : raw; }
+  function lees(k, geldig) {
+    gelezen[k] = 1;
+    var oud = omzetten(k, geldig, true), raw = get(k); if (raw == null) raw = oud; if (raw == null) return null;
+    var d; try { d = JSON.parse(raw); } catch (e) { bewaarKopie(k, raw); return null; }
+    if (geldig) { var ok = false; try { ok = !!geldig(d); } catch (e) {} if (!ok) { bewaarKopie(k, raw); return null; } }
+    return d;
+  }
+  function schrijf(k, v, o) {
+    var s = v == null ? null : typeof v === 'string' ? v : JSON.stringify(v), stil = !!(o && o.stil);   // null: de sleutel wissen
+    if (!gelezen[k]) {   // eerst bewaren zonder te lezen: staat er onleesbare tekst, dan die eerst apart
+      gelezen[k] = 1; var r0 = get(k);
+      if (r0 != null && !niets(r0)) { try { JSON.parse(r0); } catch (e) { bewaarKopie(k, r0); } }
+    }
+    if (open[k] != null) {   // de onleesbare tekst staat nog nergens anders: eerst die kopie, anders niet overschrijven
+      if (get(k) !== open[k] || apart(k + '.kapot', open[k])) delete open[k];
+      else { wacht[k] = s; if (!stil) vol(); return false; }
+    }
+    try { if (s == null) ls().removeItem(k); else ls().setItem(k, s); } catch (e) { wacht[k] = s; if (!stil) vol(); return false; }
+    delete wacht[k];
+    if (!Object.keys(wacht).length) verberg('vol');
+    return true;
+  }
+  function vol() { var nu = Date.now(); if (nu - laatsteVol < 60000) return; laatsteVol = nu; toon('vol'); }
+
+  /* De melding: een rustige band onderaan, in de stijl van de familie */
+  var TEKST = {
+    kapot: ['Een deel van je gegevens kon niet gelezen worden. Er staat een kopie apart.', 'Download de kopie'],
+    vol: ['Bewaren lukt niet: de opslag van je browser is vol. Bewaar je werk als bestand.', 'Bewaar als bestand'],
+    fout: ['', '']
+  };
+  var ICOON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 7.5v5.5M12 16.5h.01"/></svg>';
+  function stijl() {
+    if (document.getElementById('oc-op-stijl')) return;
+    var s = document.createElement('style'); s.id = 'oc-op-stijl';
+    s.textContent = '.oc-op-plek{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 5.5rem);z-index:60;display:flex;flex-direction:column;gap:.5rem;width:min(34rem,calc(100% - 2rem));pointer-events:none}'
+      + '.oc-op{pointer-events:auto;box-sizing:border-box;display:flex;flex-wrap:wrap;align-items:center;gap:.5rem .75rem;margin:0;padding:.5rem .5rem .5rem .875rem;border:1px solid #e2e8f0;border-radius:12px;background:#fff;color:#334155;font:500 .9375rem/1.4 "DM Sans",system-ui,sans-serif;text-align:left;box-shadow:0 10px 30px rgba(15,23,42,.14)}'
+      + '.oc-op[hidden]{display:none}.oc-op.vol,.oc-op.fout{border-color:#fcd34d;background:#fffbeb}'
+      + '.oc-op svg{flex:none;width:20px;height:20px;color:#64748b}.oc-op.vol svg,.oc-op.fout svg{color:#b45309}'
+      + '.oc-op-t{flex:1 1 14rem;min-width:0;margin:0}'
+      + '.oc-op button{flex:none;min-height:44px;margin:0;border:0;border-radius:10px;font:inherit;font-weight:600;cursor:pointer}'
+      + '.oc-op .oc-op-k{padding:0 .875rem;background:#047857;color:#fff}.oc-op .oc-op-k:hover{background:#065f46}'
+      + '.oc-op .oc-op-x{width:44px;padding:0;background:transparent;color:#64748b;font-size:1.375rem;font-weight:400;line-height:1}.oc-op .oc-op-x:hover{background:#f1f5f9;color:#334155}'
+      + '.oc-op button:focus-visible{outline:2px solid #047857;outline-offset:2px}'
+      + '@media print{.oc-op-plek{display:none!important}}';
+    (document.head || document.documentElement).appendChild(s);
+  }
+  function toon(soort, t) {
+    if (!document.body) { document.addEventListener('DOMContentLoaded', function () { toon(soort, t); }); return; }
+    stijl();
+    if (!plek || !plek.isConnected) { plek = document.createElement('div'); plek.className = 'oc-op-plek'; document.body.appendChild(plek); }
+    var el = plek.querySelector('[data-oc-op="' + soort + '"]');
+    if (!el) {
+      el = document.createElement('div'); el.className = 'oc-op ' + soort; el.setAttribute('data-oc-op', soort);
+      el.setAttribute('role', soort === 'kapot' ? 'status' : 'alert');
+      el.innerHTML = ICOON + '<p class="oc-op-t"></p>' + (TEKST[soort][1] ? '<button type="button" class="oc-op-k"></button>' : '')
+        + '<button type="button" class="oc-op-x" aria-label="Sluit de melding">&times;</button>';
+      var k = el.querySelector('.oc-op-k');
+      if (k) { k.textContent = TEKST[soort][1]; k.addEventListener('click', soort === 'kapot' ? downloadKopie : bewaarBestand); }
+      el.querySelector('.oc-op-x').addEventListener('click', function () { el.hidden = true; });
+      plek.appendChild(el);
+    }
+    el.querySelector('.oc-op-t').textContent = t || TEKST[soort][0];
+    el.hidden = false;
+  }
+  function verberg(soort) { var el = plek && plek.querySelector('[data-oc-op="' + soort + '"]'); if (el) el.hidden = true; }
+
+  /* Bestanden */
+  function naam() {
+    var m = document.querySelector('meta[name="oc:titel"]') || document.querySelector('meta[name="application-name"]');
+    return (m && m.content) || (document.title.split(/\s[–-]\s/)[0] || 'tool').trim();
+  }
+  function slug(s) { return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'tool'; }
+  function download(inhoud, bestand) {
+    var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([inhoud], { type: 'application/json' })); a.download = bestand;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+  }
+  function datum() { return new Date().toISOString().slice(0, 10); }
+  // De kopie zoals ze was, ongewijzigd. Meer dan één sleutel: één JSON-bestand met per sleutel de ruwe tekst.
+  function downloadKopie() {
+    var ks = Object.keys(kapot); if (!ks.length) return;
+    download(ks.length === 1 ? kapot[ks[0]] : JSON.stringify(kapot, null, 1), slug(naam()) + '-kopie-' + datum() + '.json');
+  }
+  // "Bewaar als bestand" van de tool, met wat niet bewaard kon worden. Heeft de tool dat niet, dan hetzelfde formaat hier.
+  // Een tool met een eigen manier (bv. tekeningen buiten localStorage) zet die in window.ocBewaarBestand.
+  function bewaarBestand() {
+    if (typeof window.ocBewaarBestand === 'function') { try { window.ocBewaarBestand(); return; } catch (e) {} }
+    if (window.ocBestand && typeof window.ocBestand.bewaar === 'function') { try { if (window.ocBestand.bewaar()) return; } catch (e) {} }
+    var m = document.querySelector('meta[name="oc:opslag"]'), pat = m ? m.content.split(',').map(function (s) { return s.trim(); }).filter(Boolean) : [];
+    var eigen = function (k) { return pat.some(function (p) { return p.slice(-1) === '*' ? k.indexOf(p.slice(0, -1)) === 0 : k === p; }); };
+    var data = {};
+    try { for (var i = 0; i < ls().length; i++) { var k = ls().key(i); if (k && eigen(k)) data[k] = get(k); } } catch (e) {}
+    Object.keys(wacht).forEach(function (k) { if (eigen(k)) { if (wacht[k] == null) delete data[k]; else data[k] = wacht[k]; } });
+    if (!Object.keys(data).length) return;
+    var id = location.pathname.replace(/\/index\.html$/, '').split('/').filter(Boolean).pop() || 'tool';
+    download(JSON.stringify({ app: 'Onder Constructie', version: 1, created: new Date().toISOString(), tool: id, data: data }, null, 1), slug(naam()) + '-' + datum() + '.json');
+  }
+
+  window.ocOpslag = {
+    lees: lees, schrijf: schrijf, tekst: tekst,
+    kapot: function (k) { bewaarKopie(k, get(k)); },
+    meld: function (t) { toon('fout', t); },
+    wachtend: function () { var o = {}; Object.keys(wacht).forEach(function (k) { o[k] = wacht[k]; }); return o; },
+    bewaarBestand: bewaarBestand
+  };
+  window.ocLees = lees; window.ocSchrijf = schrijf; window.ocKapot = window.ocOpslag.kapot;
+})();
+/* oc-opslag v1 einde */
+</script>
 </head>
 <body>
 <header class="header">
@@ -1202,16 +1369,17 @@ function valid(d) {
 }
 let kapot = false;
 function load() {
-  let raw = null; try { raw = localStorage.getItem(KEY); } catch { return leeg(); }
-  if (!raw) return leeg();
-  try { return valid(JSON.parse(raw)); } catch { kapot = true; return leeg(); }
+  const d = ocLees(KEY);   // onleesbaar: de opslaglaag zet de ruwe tekst apart en meldt het
+  if (d == null) return leeg();
+  // niets bruikbaars (geen enkele agenda): een kopie apart, zoals bij onleesbare tekst
+  try { if (d && typeof d === 'object' && !Array.isArray(d) && (Array.isArray(d.lists) ? d.lists : []).some(a => agValid(a, new Set()))) return valid(d); } catch {}
+  ocKapot(KEY); return leeg();
 }
 let state = load(), opslagFout = false;
 function save() {
   clearTimeout(saveT); saveT = null;
   ocSaves++;
-  try { localStorage.setItem(KEY, JSON.stringify(state)); opslagFout = false; }
-  catch { if (!opslagFout) { opslagFout = true; toast('Bewaren op dit toestel lukt niet. Kies Bewaar als bestand in het menu.'); } }
+  if (ocSchrijf(KEY, JSON.stringify(state))) opslagFout = false;   // mislukt het, dan meldt de opslaglaag het (met Bewaar als bestand)
   ocAfterSave();
 }
 let saveT = null;
@@ -1887,10 +2055,9 @@ function ocNieuwProject() {
   if (state.lists.length > MAXL) state.lists.shift();
   state.current = a.id; state.view = 'agenda'; return true;
 }
-if (ocNieuwProject()) save();   // na het laden: nieuw project, nieuwe lijst
+ocNieuwProject();   // na het laden: nieuw project, nieuwe lijst. Pas bewaard als je iets wijzigt (nooit wegschrijven bij het openen alleen)
 // Open in de app en daar een ander project gekozen: dat project openen of beginnen.
 ocProjectVolg(() => { const voor = JSON.stringify(state); kiesProject(); ocNieuwProject(); if (JSON.stringify(state) !== voor) { save(); render(); } });
-if (kapot) setTimeout(() => toast('Je vorige agenda kon niet geopend worden. Je begint opnieuw.'), 600);
 render();
 toonImport();
 setTimeout(() => { try { ocPublish(); } catch {} }, 0);
@@ -1963,6 +2130,13 @@ window.ocBestand = (function () {
   }
   function past(k, p) { return p.slice(-1) === '*' ? k.indexOf(p.slice(0, -1)) === 0 : k === p; }
   function eigen(k) { return patronen().some(function (p) { return past(k, p); }); }
+  // Een oude naam van een eigen sleutel (meta oc:opslag-oud, "oud>nieuw"): zo blijft een ouder bestand te openen
+  function nieuweNaam(k) {
+    var m = document.querySelector('meta[name="oc:opslag-oud"]'), uit = null;
+    if (m) m.content.split(',').forEach(function (p) { var d = p.split('>'); if (d.length === 2 && d[0].trim() === k) uit = d[1].trim(); });
+    return uit && eigen(uit) ? uit : null;
+  }
+  function kopie(k) { return /\.kapot(\.\d+)?$/.test(k); }   // een apart bewaarde kopie van onleesbare data
   function sleutels() {
     var uit = [];
     try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k && eigen(k)) uit.push(k); } } catch (e) {}
@@ -1975,8 +2149,10 @@ window.ocBestand = (function () {
   function slug(s) { return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
   /* bewaar(): downloadt het bestand. Geeft het aantal bewaarde sleutels terug (0 = niets om te bewaren). */
   function bewaar(extraNaam) {
-    var keys = sleutels(); if (!keys.length) return 0;
-    var data = {}; keys.forEach(function (k) { try { data[k] = localStorage.getItem(k); } catch (e) {} });
+    var w = window.ocOpslag ? window.ocOpslag.wachtend() : {};   // wat niet bewaard kon worden (opslag vol), gaat ook mee
+    var keys = sleutels(); Object.keys(w).forEach(function (k) { if (eigen(k) && keys.indexOf(k) < 0) keys.push(k); });
+    if (!keys.length) return 0;
+    var data = {}; keys.forEach(function (k) { if (k in w) { if (w[k] != null) data[k] = w[k]; } else try { data[k] = localStorage.getItem(k); } catch (e) {} });
     var id = location.pathname.replace(/\/index\.html$/, '').split('/').filter(Boolean).pop() || 'tool';
     var blob = new Blob([JSON.stringify({ app: 'Onder Constructie', version: 1, created: new Date().toISOString(), tool: id, data: data }, null, 1)], { type: 'application/json' });
     var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
@@ -1993,15 +2169,38 @@ window.ocBestand = (function () {
       if (!d || d.app !== 'Onder Constructie' || typeof d.data !== 'object' || !d.data) throw new Error('vorm');
       var uit = {}, n = 0;
       Object.keys(d.data).forEach(function (k) { if (eigen(k) && typeof d.data[k] === 'string') { uit[k] = d.data[k]; n++; } });
+      Object.keys(d.data).forEach(function (k) { var kk = !eigen(k) && nieuweNaam(k); if (kk && !(kk in uit) && typeof d.data[k] === 'string') { uit[kk] = d.data[k]; n++; } });
       if (!n) throw new Error('leeg');
       return { data: uit, aantal: n, created: d.created || null };
     });
   }
-  /* zetTerug(gelezen): vervangt het huidige werk van deze tool door wat in het bestand staat, en laat andere tabbladen herladen. */
+  /* zetTerug(gelezen): vervangt het huidige werk van deze tool door wat in het bestand staat, en laat andere tabbladen herladen.
+     Veilig: eerst alles nakijken, dan schrijven en nalezen, en pas daarna wissen wat niet in het bestand stond (een kopie .kapot blijft).
+     Lukt schrijven niet, dan komt de vorige toestand terug, met een melding. Geeft true terug als het lukte, anders false. */
   function zetTerug(g) {
-    sleutels().forEach(function (k) { try { localStorage.removeItem(k); } catch (e) {} });
-    Object.keys(g.data).forEach(function (k) { try { localStorage.setItem(k, g.data[k]); } catch (e) {} });
+    var nieuw = g && g.data, ks = nieuw && typeof nieuw === 'object' ? Object.keys(nieuw) : [];
+    if (!ks.length || ks.some(function (k) { return !eigen(k) || typeof nieuw[k] !== 'string'; })) { fout('Dit bestand kan ik niet terugzetten. Er is niets veranderd.'); return false; }
+    var oud = {}; sleutels().forEach(function (k) { try { oud[k] = localStorage.getItem(k); } catch (e) {} });
+    var gedaan = [];
+    try {
+      ks.forEach(function (k) { gedaan.push(k); localStorage.setItem(k, nieuw[k]); if (localStorage.getItem(k) !== nieuw[k]) throw new Error('nalezen'); });
+    } catch (e) {
+      herstel(gedaan, oud);
+      fout('Terugzetten lukt niet: de opslag van je browser is vol of geblokkeerd. Je werk staat nog zoals het was.');
+      return false;
+    }
+    Object.keys(oud).forEach(function (k) { if (!(k in nieuw) && !kopie(k)) { try { localStorage.removeItem(k); } catch (e) {} } });
+    return true;
   }
+  // De vorige toestand terug. Past een oude waarde niet meer, dan eerst plaats maken: wat nieuw bijkwam weg, en dan opnieuw.
+  function herstel(ks, oud) {
+    var mis = [];
+    ks.forEach(function (k) { try { if (k in oud) localStorage.setItem(k, oud[k]); else localStorage.removeItem(k); } catch (e) { mis.push(k); } });
+    if (!mis.length) return;
+    ks.forEach(function (k) { if (!(k in oud)) { try { localStorage.removeItem(k); } catch (e) {} } });
+    mis.forEach(function (k) { try { localStorage.removeItem(k); localStorage.setItem(k, oud[k]); } catch (e) {} });
+  }
+  function fout(t) { if (window.ocOpslag) window.ocOpslag.meld(t); else { try { alert(t); } catch (e) {} } }
   function melding(err) {
     return err && err.message === 'leeg' ? 'In dit bestand staat niets van ' + naam() + '.'
       : 'Dit bestand kan ik niet openen. Kies een bestand dat je met "Bewaar als bestand" of als reservekopie maakte.';
@@ -2033,7 +2232,7 @@ window.ocBestand = (function () {
     // Tot de herlaadbeurt mag niets het teruggezette werk nog overschrijven (uitgestelde bewaring, pagehide, ander tabblad).
     const pat = (document.querySelector('meta[name="oc:opslag"]') || {}).content || '';
     const eigen = k => pat.split(',').map(s => s.trim()).filter(Boolean).some(p => p.slice(-1) === '*' ? String(k).indexOf(p.slice(0, -1)) === 0 : k === p);
-    ocBestand.zetTerug(g);
+    if (!ocBestand.zetTerug(g)) return;
     try {
       const set = Storage.prototype.setItem, rem = Storage.prototype.removeItem;
       Storage.prototype.setItem = function (k, v) { if (this === localStorage && eigen(k)) return; return set.call(this, k, v); };
