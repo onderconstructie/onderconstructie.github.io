@@ -636,7 +636,7 @@ input::placeholder, textarea::placeholder { color:#64748b; opacity:1; }
         <li><b>Werk samen via een gedeeld bestand.</b> Standaard blijft alles op dit toestel. Wil je dat iedereen op zijn eigen toestel kaartjes toevoegt en stemt? Kies dan in het menu ⋮ "Werk samen via een gedeeld bestand", vink aan welke retro's meegaan en zet het bestand in een gedeelde map die je computer synchroniseert. Dit kan in Chrome of Edge op een computer en in Chrome op Android, niet op een iPhone of iPad. Iedereen met toegang tot het bestand ziet wat erin staat. Stemmen twee mensen tegelijk, dan tellen beide stemmen.</li>
       </ul>
       <p>Tip: plak een lijst in een invulveld en elke regel wordt een kaartje. Enter bewaart een aangepast kaartje, Escape zet het terug.</p>
-      <p>De open acties zet je met "Zet in Takenbord" in het <a href="../kanban/">Takenbord</a>. Vink daar aan welke je overneemt.</p>
+      <p>De open acties zet je met "Zet in Takenbord" in het <a href="../kanban/">Takenbord</a>. Vink daar aan welke je overneemt. Wat goed ging en wat beter kan, bewaar je in het <a href="../leerpunten/">Leerpuntenlog</a>.</p>
     </div>
   </details>
 </main>
@@ -1993,12 +1993,19 @@ function ocUndoable(restore) {
    De recentste retro komt eerst: bij dezelfde tekst wint in andere tools de recentste versie. */
 // Komma's tussen namen ("Fatima, Pieter") worden "; ": zo maakt het Takenbord er aparte mensen van. Het veld zelf blijft zoals je het typte.
 function ocWie(w) { return typeof w === 'string' && w.trim() ? w.split(/\s*[,;]\s*/).map(x => x.trim()).filter(Boolean).join('; ') || undefined : undefined; }
+/* Leerpunten voor het Leerpuntenlog. Elke retro heeft drie kolommen. De eerste (Wat hielp, Goed, Energie) is wat goed werkte.
+   De tweede (Wat remde, Beter, Moeite) en de derde (Wat proberen we, Proberen, Wat helpt) zeggen wat volgende keer anders moet.
+   Per kaartje een 'leerpunt' { text, note }, de kaartjes met de meeste stemmen eerst. Ze komen na de acties: die gaan altijd mee. */
+const OC_LES = ['Werkte goed', 'Volgende keer anders', 'Volgende keer anders'];
+const ocLeerpunten = r => (r.cards || []).filter(c => c && typeof c.text === 'string' && c.text.trim())
+  .slice().sort((a, b) => ((+b.votes || 0) - (+a.votes || 0)) || ((a.col || 0) - (b.col || 0)))
+  .map(c => ({ type:'leerpunt', text:c.text, note:OC_LES[c.col] || OC_LES[1] }));
 function ocPublish() {
   const echt = state.retros.filter(r => !r.voorbeeld);
   ocShare.publish(OC_ID, OC_TOOL, echt.map((r, i) => {
     const later = new Set(echt.slice(i + 1).flatMap(x => (x.carried || []).filter(a => !a.from).map(a => actKey(a.text))));
     return { name:r.name, items:[...(r.carried || []), ...r.actions]
-      .filter(a => a && !a.done && a.text && a.text.trim() && !movedTo(a) && !later.has(actKey(a.text))).map(a => ({ type:'actie', text:a.text, who:ocWie(a.who), when:a.when })) };
+      .filter(a => a && !a.done && a.text && a.text.trim() && !movedTo(a) && !later.has(actKey(a.text))).map(a => ({ type:'actie', text:a.text, who:ocWie(a.who), when:a.when })).concat(ocLeerpunten(r)) };
   }).reverse());
 }
 

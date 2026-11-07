@@ -593,7 +593,7 @@ details.explain.oc-u .oc-u-noot a, details.explain.oc-u .oc-u-stap-uitleg a, det
         <li><b>Deel de nota.</b> Download ze als PDF of afbeelding, of kopieer ze als tekst voor een mail. Een PDF of een gekopieerde tekst telt als nota: de volgende nota toont bij Besluiten alleen wat erna beslist werd.</li>
       </ul>
       <p>Tip: stel een vraag waarop de stuurgroep ja of nee kan zeggen. Die krijgt sneller een antwoord dan een open vraag.</p>
-      <p>De inhoud komt uit de <a href="/opdracht/">Projectopdracht</a>, de <a href="/tijdlijn/">Tijdlijn</a>, <a href="/project-radar/">Project Radar</a>, het <a href="/meetplan/">Meetplan</a>, de <a href="/risico/">Risicomatrix</a>, het <a href="/beslissingen/">Beslissingslog</a>, het <a href="/kanban/">Takenbord</a> en de <a href="/raci/">RACI-matrix</a>. Pas je daar iets aan, dan toont het dossier het meteen.</p>
+      <p>De inhoud komt uit de <a href="/opdracht/">Projectopdracht</a>, de <a href="/tijdlijn/">Tijdlijn</a>, <a href="/project-radar/">Project Radar</a>, het <a href="/meetplan/">Meetplan</a>, de <a href="/risico/">Risicomatrix</a>, het <a href="/beslissingen/">Beslissingslog</a>, het <a href="/kanban/">Takenbord</a>, de <a href="/raci/">RACI-matrix</a> en het <a href="/leerpunten/">Leerpuntenlog</a>. Pas je daar iets aan, dan toont het dossier het meteen.</p>
     </div>
   </details>
 <div class="oc-restart-row" id="oc-restart-row" hidden><button type="button" class="oc-restart" id="oc-restart-btn">Opnieuw beginnen</button></div>
@@ -1049,6 +1049,7 @@ const TOOLS = [
   // Het Takenbord opent met ?van= meteen "Overnemen": daarom zonder.
   { id:'kanban',    naam:'Takenbord',        pad:'../kanban/',            key:'sprintflow_kanban_v5', geenVan:true },
   { id:'raci',      naam:'RACI-matrix',      pad:'../raci/',              key:'raci.v1' },
+  { id:'leerpunten', naam:'Leerpuntenlog',   pad:'../leerpunten/',        key:'leerpunten.v1' },
   { id:'gap',       naam:'Gap-analyse',      pad:'../gap/',               key:'gap.v1' },
   { id:'prio',      naam:'Prioriteren',      pad:'../prioriteit/',        key:'prioriteit.v1' },
   { id:'betrokken', naam:'Betrokkenenradar', pad:'../stakeholders/',      key:'stakeholders.v1' },
@@ -1266,6 +1267,25 @@ function tlStand(m) {
 // Staat de Tijdlijn in de nota, dan toont de Opdracht haar mijlpalen niet nog eens.
 const tlAan = () => isAan(M.d, 'mijlpalen') && !!M.bron.tijdlijn.item;
 
+/* Leerpuntenlog: leerpunten.v1 = { items:[{ text, soort, thema, wat, project, date, created }], voorbeeld? }.
+   Eén log over alle projecten heen: per project wordt het één item (naam = het project). soort: goed of anders. */
+const LP_THEMA = { planning:'Planning', budget:'Budget', betrokkenen:'Betrokkenen', communicatie:'Communicatie', team:'Team', leverancier:'Leverancier', kwaliteit:'Kwaliteit', overig:'Overig' };
+function lpLees(d) {
+  if (!obj(d) || !Array.isArray(d.items)) return null;
+  const per = new Map();
+  d.items.filter(obj).forEach(x => {
+    const text = str(x.text, 200).replace(/\s+/g, ' ').trim(); if (!text) return;
+    const p = str(x.project, 80).replace(/\s+/g, ' ').trim();
+    if (!per.has(p)) per.set(p, []);
+    per.get(p).push({ text, soort: x.soort === 'goed' ? 'goed' : 'anders', thema: Object.prototype.hasOwnProperty.call(LP_THEMA, x.thema) ? LP_THEMA[x.thema] : '',
+      date: okDate(x.date) ? x.date : '', created: +x.created || 0 });
+  });
+  return [...per].map(([p, its]) => {
+    its.sort((a, b) => (b.date || '').localeCompare(a.date || '') || b.created - a.created);
+    return { id:'lp:' + (pk(p) || '-'), name:p, voorbeeld:d.voorbeeld === true, data:{ goed:its.filter(x => x.soort === 'goed'), anders:its.filter(x => x.soort === 'anders') }, inhoud:true };
+  });
+}
+
 /* Gap-analyse en Prioriteren: zelfde getallen en kwadranten als die tools. */
 function gapNorm(g) {
   const a = obj(g.asis) ? g.asis : {}, b = obj(g.tobe) ? g.tobe : {};
@@ -1332,6 +1352,7 @@ const LEES = {
     const tasks = arr(m.tasks).filter(obj).map(t => ({ name:str(t.name, 200).trim(), cells:obj(t.cells) ? t.cells : {} })).filter(t => t.name);
     return { id:itemId(m, i), name:str(m.name, 200), voorbeeld:m.voorbeeld === true, data:{ roles, tasks }, inhoud:tasks.length > 0 };
   }),
+  leerpunten: lpLees,
   gap: d => arr(d && d.analyses).filter(obj).map((a, i) => {
     const gaps = arr(a.gaps).filter(obj).map(gapNorm).filter(g => g.theme);
     return { id:itemId(a, i), name:str(a.name, 200), voorbeeld:a.voorbeeld === true, data:{ gaps }, inhoud:gaps.length > 0 };
@@ -1477,6 +1498,11 @@ function VOORBEELD() {
         { id:'x3', name:'Proefversie testen met aanvragers', cells:{ r2:'A', r4:'R', r5:'C' } },
         { id:'x4', name:'Dossierbeheerders opleiden', cells:{ r4:'AR', r2:'I' } },
         { id:'x5', name:'Lancering aankondigen', cells:{ r1:'I', r5:'R' } } ] }], current:'vb-rc' },
+    'leerpunten.v1': { items:[
+      { id:'l1', text:'Test een proefversie met echte aanvragers', soort:'goed', thema:'kwaliteit', project:N, date:d(-20), created:3 },
+      { id:'l2', text:'Stuur elke maand een korte stand van zaken naar de stuurgroep', soort:'goed', thema:'communicatie', project:N, date:d(-30), created:2 },
+      { id:'l3', text:'Betrek de dienst ICT vóór de aanbesteding', soort:'anders', thema:'betrokkenen', project:N, date:d(-20), created:4 },
+      { id:'l4', text:'Leg een testomgeving vast in het contract met de leverancier', soort:'anders', thema:'leverancier', project:N, date:d(-5), created:5 } ] },
     'gap.v1': { analyses:[{ id:'vb-gp', name:N, question:'', gaps:[
       { id:'g1', theme:'Behandeltijd van een aanvraag', asis:{ text:'Een aanvraag wacht gemiddeld 21 werkdagen op een beslissing.', indicator:'Behandeltijd', value:'21', unit:'werkdagen' },
         tobe:{ text:'Een volledige aanvraag krijgt binnen 10 werkdagen een beslissing.', value:'10', by:d(395) }, impact:4, feas:3,
@@ -1512,6 +1538,7 @@ const SECS = [
   { id:'besluit',   titel:'Besluiten',                 tools:['besluit'] },
   { id:'werk',      titel:'Werk',                      tools:['kanban'] },
   { id:'rollen',    titel:'Wie beslist',               tools:['raci'] },
+  { id:'leerpunten', titel:'Leerpunten',               tools:['leerpunten'] },
   { id:'gap',       titel:'Grootste verschil',         tools:['gap'], opt:true },
   { id:'prio',      titel:'Snelle winsten',            tools:['prio'], opt:true },
   { id:'betrokken', titel:'Wie vraagt extra aandacht', tools:['betrokken'], opt:true },
@@ -1761,6 +1788,11 @@ const INHOUD = {
     return `<div class="rijen">${toon.map(t => { const a = namen(t, A), u = namen(t, R);
       return `<div class="rij" data-oc-keep style="grid-template-columns:minmax(0,1fr)"><span><b style="font-weight:600;color:#1e293b">${esc(t.name)}</b><small>Beslist: ${a.length ? esc(a.join(', ')) : '<span style="color:#92400e">nog niemand</span>'} · Voert uit: ${u.length ? esc(u.join(', ')) : '<span style="color:#92400e">nog niemand</span>'}</small></span></div>`; }).join('')}</div>${meerTekst(r.tasks.length - toon.length, ['taak', 'taken'], 'de RACI-matrix')}`;
   },
+  leerpunten(ex) {
+    const l = M.data('leerpunten'); if (!l) return '';
+    const kol = (lijst, titel, teken, cls) => lijst.length ? `<div><div class="sub-t">${titel}</div>${lijstHTML(lijst.slice(0, 6).map(x => esc(x.text) + (x.thema ? `<small>${esc(x.thema)}</small>` : '')), teken, cls)}${meerTekst(lijst.length - 6, ['leerpunt', 'leerpunten'], 'het Leerpuntenlog')}</div>` : '';
+    return `<div class="${l.goed.length && l.anders.length ? 'twee' : ''}">${kol(l.goed, 'Werkte goed', '✓', 'groen')}${kol(l.anders, 'Volgende keer anders', '→')}</div>`;
+  },
   gap(ex) {
     const g = M.data('gap'); if (!g) return '';
     const x = gapTop(g), lijn = gapLijn(x);
@@ -1804,6 +1836,7 @@ const TEASER = {
   besluit: () => meer(M.data('besluit').items.length, 'beslissing', 'beslissingen'),
   werk: () => meer(M.data('kanban').cards.length, 'taak', 'taken'),
   rollen: () => meer(M.data('raci').tasks.length, 'taak', 'taken') + ' met wie beslist en wie uitvoert',
+  leerpunten: () => { const l = M.data('leerpunten'); return meer(l.goed.length + l.anders.length, 'leerpunt', 'leerpunten') + (l.anders.length ? `, ${l.anders.length} volgende keer anders` : ''); },
   gap: () => { const x = gapTop(M.data('gap')); return x ? x.theme : ''; },
   prio: () => { const n = M.data('prio').items.filter(i => !i.done && !i.nieuw && i.impact >= 3 && i.effort <= 2).length; return n ? meer(n, 'snelle winst', 'snelle winsten') : 'Nog geen snelle winsten'; },
   betrokken: () => meer(M.data('betrokken').items.length, 'betrokkene', 'betrokkenen'),
@@ -1884,6 +1917,7 @@ function samenvat(id, x) {
   const v = x.data;
   return ({ opdracht:'een opdracht', tijdlijn:meer(v.items ? v.items.length : 0, 'mijlpaal', 'mijlpalen'), radar:'een stand van zaken', meetplan:meer(v.doelen ? v.doelen.length : 0, 'doel', 'doelen'), risico:meer((v.items ? v.items.length : 0) + arr(v.teSchatten).length, 'risico', "risico's"),
     besluit:meer(v.items ? v.items.length : 0, 'beslissing', 'beslissingen'), kanban:meer(v.cards ? v.cards.length : 0, 'taak', 'taken'), raci:meer(v.tasks ? v.tasks.length : 0, 'taak', 'taken'),
+    leerpunten:meer((v.goed ? v.goed.length : 0) + (v.anders ? v.anders.length : 0), 'leerpunt', 'leerpunten'),
     gap:meer(v.gaps ? v.gaps.length : 0, 'thema', "thema's"), prio:meer(v.items ? v.items.length : 0, 'item', 'items'), betrokken:meer(v.items ? v.items.length : 0, 'betrokkene', 'betrokkenen'), realisme:'een schatting' })[id] || '';
 }
 function renderVoorstel() {
@@ -2204,6 +2238,8 @@ function alsTekst() {
     blok('Werk', [KOLOMMEN.map(c => `${c.naam}: ${k.cards.filter(x => x.status === c.id).length}`).join(' · '), laat.length ? 'Te laat:' : 'Geen enkele taak is te laat.', ...laat.slice(0, 6).map(c => `- ${c.title}, te laat sinds ${fmtDate(c.dueDate)}`)]); }
   if (aan('rollen')) { const r = M.data('raci'), nm = (t, f) => r.roles.filter(x => f(t.cells[x.id])).map(x => x.name).filter(Boolean).join(', ') || 'nog niemand';
     blok('Wie beslist', r.tasks.slice(0, 8).map(t => `- ${t.name}: beslist ${nm(t, v => v === 'A' || v === 'AR')}, voert uit ${nm(t, v => v === 'R' || v === 'AR')}`)); }
+  if (aan('leerpunten')) { const l = M.data('leerpunten'), r = x => `- ${x.text}${x.thema ? ` (${x.thema.toLowerCase()})` : ''}`;
+    blok('Leerpunten', [l.goed.length && 'Werkte goed:', ...l.goed.map(r), l.anders.length && 'Volgende keer anders:', ...l.anders.map(r)]); }
   if (aan('gap')) { const x = gapTop(M.data('gap')); blok('Grootste verschil', [x.theme, x.asis.text && 'Nu: ' + x.asis.text, x.tobe.text && 'Waar we heen willen: ' + x.tobe.text, gapLijn(x)]); }
   if (aan('prio')) blok('Snelle winsten', M.data('prio').items.filter(i => !i.done && !i.nieuw && i.impact >= 3 && i.effort <= 2).slice(0, 5).map(i => '- ' + i.name));
   if (aan('betrokken')) blok('Wie vraagt extra aandacht', M.data('betrokken').items.filter(x => !x.todo).sort((a, c) => (c.c * (11 - c.w)) - (a.c * (11 - a.w))).slice(0, 3).map(x => `- ${x.name} (${BR_KWADRANT(x.c, x.w).toLowerCase()})${x.next ? ': ' + x.next : ''}`));
