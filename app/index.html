@@ -425,9 +425,10 @@ body.filtering #groups, body.filtering #list-tools { display:none; }
 .pb-prev { width:44px; height:44px; border-radius:10px; display:flex; align-items:center; justify-content:center; color:var(--slate-600); }
 .pb-prev:hover { background:#e2f5ec; }
 .pb-prev svg, .pb-next svg { width:20px; height:20px; flex-shrink:0; }
-.pb-next { display:inline-flex; align-items:center; justify-content:center; gap:0.25rem; width:44px; height:44px; border-radius:10px; background:var(--accent-dark); color:var(--wit); font-size:0.8125rem; font-weight:600; white-space:nowrap; overflow:hidden; }
+.pb-next { display:inline-flex; align-items:center; justify-content:center; gap:0.25rem; width:auto; min-width:44px; padding:0 0.375rem 0 0.75rem; height:44px; border-radius:10px; background:var(--accent-dark); color:var(--wit); font-size:0.8125rem; font-weight:600; white-space:nowrap; overflow:hidden; }
 .pb-next:hover { background:#065f46; }
-.pb-lbl, .pb-nm { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+.pb-nm { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+.pb-lbl { flex-shrink:0; }
 .pb-end { display:none; font-size:0.8125rem; color:var(--slate-500); padding:0 0.5rem; white-space:nowrap; }
 /* gsm: terug zonder woord (het pijltje en de naam voor schermlezers blijven), voortgang als dunne lijn onderaan */
 .topbar.has-path .back { width:44px; padding:0; justify-content:center; }
@@ -644,6 +645,11 @@ body.filtering #groups, body.filtering #list-tools { display:none; }
 .proj-save { min-height:44px; padding:0 1rem; border-radius:10px; background:var(--accent-dark); color:var(--wit); font-weight:600; font-size:0.875rem; }
 .proj-cancel { min-height:44px; padding:0 0.75rem; border-radius:10px; color:var(--slate-600); font-weight:600; font-size:0.875rem; }
 .proj-hint { font-size:0.8125rem; color:var(--slate-600); margin-top:0.5rem; line-height:1.45; }
+.proj-form .proj-hernoem { display:flex; gap:0.625rem; align-items:flex-start; margin:0.75rem 0 0; padding:0.75rem 0.875rem; border:1px solid #d1fae5; border-radius:12px; background:#f3fcf8; cursor:pointer; font-size:0.9375rem; font-weight:600; color:var(--slate-800); }
+.proj-form .proj-hernoem[hidden] { display:none; }
+.proj-form .proj-hernoem input { width:20px; height:20px; min-height:0; margin:1px 0 0; padding:0; border:0; border-radius:4px; box-shadow:none; background:none; accent-color:#047857; flex:none; }
+.proj-hernoem > span { min-width:0; }
+.proj-form .proj-hernoem small { display:block; font-weight:400; font-size:0.8125rem; color:var(--slate-600); margin-top:0.125rem; }
 .proj-clear { color:var(--slate-600); text-decoration:underline; font-size:0.8125rem; min-height:32px; }
 body.searching .proj { display:none; }
 .manage { margin-left:auto; min-height:44px; padding:0 0.625rem; border-radius:10px; font-size:0.8125rem; font-weight:600; color:var(--slate-600); }
@@ -1497,7 +1503,7 @@ body.searching #home #tabgroup { display:none !important; }
         <a class="ft-link" href="https://www.linkedin.com/in/bartel-volckaert-8a96842/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Maker</a>
         <button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (34 seconden)" title="Bekijk de film (34 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg></button>
       </nav>
-      <p class="ft-meta"><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v15.4</span></p>
+      <p class="ft-meta"><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v15.5</span></p>
     </div>
   </footer>
   <dialog class="film" id="film" aria-labelledby="film-h">
@@ -2110,9 +2116,12 @@ function renderProject() {
       <div class="proj-row"><input id="proj-name" list="proj-list" maxlength="80" autocomplete="off" enterkeyhint="done" autocapitalize="sentences" placeholder="Bv. Digitaal premieloket" value="${esc(p ? p.name : '')}">
         <datalist id="proj-list">${hist.map(n => `<option value="${esc(n)}">`).join('')}</datalist>
         <button type="submit" class="proj-save">Bewaar</button><button type="button" class="proj-cancel" id="proj-cancel">Annuleer</button></div>
-      <p class="proj-hint">Nieuwe projecten, analyses en lijsten in de tools krijgen deze naam. Wat al bestaat, blijft zoals het is.${p ? ' <button type="button" class="proj-clear" id="proj-clear">Geen project</button>' : ''}</p>
+      ${p ? `<label class="proj-hernoem" id="proj-hernoem-l" hidden><input type="checkbox" id="proj-hernoem"><span>Hetzelfde project, nieuwe naam<small>Wat je al in de tools invulde, verhuist mee naar de nieuwe naam.</small></span></label>` : ''}
+      <p class="proj-hint">Nieuwe projecten, analyses en lijsten in de tools krijgen deze naam.${p ? ' <button type="button" class="proj-clear" id="proj-clear">Geen project</button>' : ''}</p>
     </form>`;
     const i = $('proj-name'); i.focus(); i.select();
+    // de keuze "nieuwe naam" verschijnt pas als je de naam echt verandert
+    if (p) i.addEventListener('input', () => { $('proj-hernoem-l').hidden = !i.value.trim() || i.value.trim() === p.name; });
     return;
   }
   // Eén compacte knop: zonder project "Kies je project", met project de naam zelf. De uitleg staat in het venster dat opent.
@@ -2128,12 +2137,17 @@ document.addEventListener('click', e => {
 document.addEventListener('submit', e => {
   if (e.target.id !== 'proj-form') return;
   e.preventDefault();
-  const name = $('proj-name').value.trim().slice(0, 80), was = (getProject() || {}).name;
-  try { name ? localStorage.setItem(PROJ_KEY, JSON.stringify({ name, since: Date.now() })) : localStorage.removeItem(PROJ_KEY); } catch {}
+  const name = $('proj-name').value.trim().slice(0, 80), vorig = getProject() || {}, was = vorig.name;
+  const hernoem = !!(was && name && name !== was && $('proj-hernoem') && $('proj-hernoem').checked);
+  // Hernoemen: de vorige naam blijft gekend (oud), zodat elke tool en het dossier het project terugvinden. Wisselen: een nieuw begin.
+  const oud = hernoem ? [...(Array.isArray(vorig.oud) ? vorig.oud : []).filter(x => x !== name), was].slice(-10) : [];
+  try { name ? localStorage.setItem(PROJ_KEY, JSON.stringify(oud.length ? { name, since: Date.now(), oud } : { name, since: Date.now() })) : localStorage.removeItem(PROJ_KEY); } catch {}
+  if (hernoem) store.set('projects', store.get('projects', []).filter(n => n !== was));
   if (name) store.set('projects', [name, ...store.get('projects', []).filter(n => n !== name)].slice(0, 8));
   if (name !== was) dropPre();   // een vooraf geladen tool kent het nieuwe project nog niet
   projEdit = false; renderProject();
-  if (name && was && was !== name) appToast(`Project: ${name}. Tools openen dit project als het er al is; anders maak je het met + aan.`);
+  if (hernoem) appToast(`Je project heet nu ${name}. De tools nemen de nieuwe naam over.`);
+  else if (name && was && was !== name) appToast(`Project: ${name}. Tools openen dit project als het er al is; anders maak je het met + aan.`);
   else if (name) appToast(`Project: ${name}`);
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && projEdit && e.target.id === 'proj-name') { projEdit = false; renderProject(); $('proj-open').focus(); } });
@@ -3157,17 +3171,17 @@ function renderPathbar(id) {
   const st = startedPaths(), trId = plans.includes(pathCtx) ? pathCtx : plans.find(n => st.includes(n)) || plans[0], tr = TRAJECTEN.find(x => x.id === trId);
   const steps = stepsOf(trId), i = steps.findIndex(s => s.t.id === id);
   if (steps.length < 2 || i < 0) { show(false); return; }
-  const prev = steps[i - 1], next = steps[i + 1], q = tr.q[id] || t.sub || '', n = `stap ${i + 1} van ${steps.length}`;
+  const prev = steps[i - 1], next = steps[i + 1], q = tr.q[id] || t.sub || '', pr = isPrivate() ? '' : ((getProject() || {}).name || ''), n = `stap ${i + 1} van ${steps.length}${pr ? ' · ' + pr : ''}`;
   const arrow = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
   bar.dataset.path = trId;
   bar.setAttribute('aria-label', `Stappenplan: ${tr.title}`);
   $('topbar').style.setProperty('--pb', `${Math.round((i + 1) / steps.length * 100)}%`);
   bar.innerHTML = `
-    <span class="pb-where" title="${esc(`${tr.title} · ${n}${q ? ' · ' + q : ''}`)}"><span class="pb-tool">${esc(t.title)}</span><span class="pb-sub"><span class="pb-plan">${esc(tr.title)} · </span>${n}${q ? ` · ${esc(q)}` : ''}</span></span>
+    <span class="pb-where" title="${esc(`${tr.title} · ${n}${q ? ' · ' + q : ''}`)}"><span class="pb-tool">${esc(t.title)}</span><span class="pb-sub"><span class="pb-plan">${esc(tr.title)} · </span>${esc(n)}${q ? ` · ${esc(q)}` : ''}</span></span>
     <span class="pb-dots" aria-hidden="true">${steps.map((s, k) => `<span class="${k === i ? 'here' : s.done ? 'done' : ''}"></span>`).join('')}</span>
     <span class="pb-nav">
       ${prev ? `<button type="button" class="pb-prev" data-id="${esc(prev.t.id)}" aria-label="Vorige stap: ${esc(prev.t.title)}" title="Vorige: ${esc(prev.t.title)}">${arrow('M15 18l-6-6 6-6')}</button>` : ''}
-      ${next ? `<button type="button" class="pb-next" data-id="${esc(next.t.id)}" title="Volgende stap: ${esc(next.t.title)}"><span class="pb-lbl">Volgende:</span> <span class="pb-nm">${esc(next.t.title)}</span>${arrow('M9 6l6 6-6 6')}</button>`
+      ${next ? `<button type="button" class="pb-next" data-id="${esc(next.t.id)}" title="Volgende stap: ${esc(next.t.title)}"><span class="pb-lbl">Volgende</span><span class="pb-nm">: ${esc(next.t.title)}</span>${arrow('M9 6l6 6-6 6')}</button>`
         : `<span class="pb-end">Laatste stap</span>`}
     </span>`;
   show(true);

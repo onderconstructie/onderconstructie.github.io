@@ -401,7 +401,7 @@ details.explain.oc-u .oc-u-noot a, details.explain.oc-u .oc-u-stap-uitleg a, det
 <body>
 
 <header class="header">
-  <a href="https://onderconstructie.github.io/projectmanagement/#vergaderen" class="back-link" aria-label="Terug naar Vergaderen">
+  <a href="/projectmanagement/#vergaderen" class="back-link" aria-label="Terug naar Vergaderen">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
     Vergaderen
   </a>
@@ -532,7 +532,9 @@ details.explain.oc-u .oc-u-noot a, details.explain.oc-u .oc-u-stap-uitleg a, det
      ocShare.pick({ ..., vink:false })    // niets vooraf aanvinken;  notes:false  toont geen notities (voor wie alleen namen neemt)
      window.ocHave = types => [...]       // optioneel per tool: dan telt de knop "Overnemen uit andere tools" alleen wat nieuw is
    Dezelfde tekst van dezelfde soort uit meerdere tools tonen en tellen we één keer (tools geven overgenomen werk ook weer door).
-   ?van=<tool> vinkt alleen die bron aan, en daarin de lijst van het actieve project als die er is.
+   ?van=<tool> vinkt alleen die bron aan, en daarin de lijst van het actieve project als die er is (ook onder een vorige naam,
+   of een lijst die met de projectnaam begint). &lijst=<naam> vinkt precies die lijst aan. Anders: de lijst die het laatst veranderde.
+   Dezelfde tekst als taak en als actie is één item: de rijkste versie (met wie en wanneer) blijft.
 */
 const ocShare = (() => {
   const PREFIX = 'oc.share.';
@@ -552,7 +554,11 @@ const ocShare = (() => {
             when: typeof i.when === 'string' && i.when.trim() ? i.when.trim().slice(0, 40) : undefined }))
       })).filter(l => l.items.length);
       if (!clean.length) { localStorage.removeItem(PREFIX + id); return; }
-      localStorage.setItem(PREFIX + id, JSON.stringify({ id, tool, updated: Date.now(), lists: clean }));
+      // per lijst: wanneer veranderde ze laatst (zo weet de kiezer aan welke lijst je net werkte)
+      let vorig = {}; try { (JSON.parse(localStorage.getItem(PREFIX + id)) || {}).lists.forEach(l => { vorig[l.name] = l; }); } catch {}
+      const nu = Date.now(), hash = s => { let h = 5381; for (let i = 0; i < s.length; i++) h = (h * 33 + s.charCodeAt(i)) | 0; return h; };
+      clean.forEach(l => { const h = hash(JSON.stringify(l.items)), v = vorig[l.name]; l.h = h; l.ch = v && v.h === h && v.ch ? v.ch : nu; });
+      localStorage.setItem(PREFIX + id, JSON.stringify({ id, tool, updated: nu, lists: clean }));
     } catch {}
   }
   function clear(id) { try { localStorage.removeItem(PREFIX + id); } catch {} }
@@ -571,7 +577,7 @@ const ocShare = (() => {
           if (!l || !Array.isArray(l.items)) return;
           const items = l.items.filter(it => it && types.includes(it.type) && typeof it.text === 'string' && it.text.trim())
             .map(it => ({ ...it, who: typeof it.who === 'string' ? it.who : undefined, when: typeof it.when === 'string' ? it.when : undefined }));
-          if (items.length) out.push({ tool: String(d.tool || d.id || k.slice(PREFIX.length)), id: d.id, updated: +d.updated || 0, list: String(l.name || ''), items });
+          if (items.length) out.push({ tool: String(d.tool || d.id || k.slice(PREFIX.length)), id: d.id, updated: +d.updated || 0, ch: +l.ch || 0, list: String(l.name || ''), items });
         });
       } catch {}
     });
@@ -581,10 +587,10 @@ const ocShare = (() => {
     // Mist de gekozen versie een wie of wanneer die een andere bron wel heeft, dan vullen we aan.
     const score = (s, it) => [s.id === voorkeur ? 1 : 0, (it.note ? 2 : 0) + (it.who ? 1 : 0) + (it.when ? 1 : 0), s.items.length, s.updated || 0];
     const beter = (a, b) => { for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] > b[i]; return false; };
-    const best = new Map();
-    out.forEach(s => s.items.forEach(it => { const k = it.type + '|' + norm(it.text), sc = score(s, it), e = best.get(k); if (!e || beter(sc, e.sc)) best.set(k, { it, sc }); }));
-    out.forEach(s => s.items.forEach(it => { const e = best.get(it.type + '|' + norm(it.text)).it; if (e !== it) { if (!e.who && it.who) e.who = it.who; if (!e.when && it.when) e.when = it.when; } }));
-    return out.map(s => ({ ...s, items: s.items.filter(it => best.get(it.type + '|' + norm(it.text)).it === it) }))
+    const best = new Map(), sl = it => (it.type === 'actie' ? 'taak' : it.type) + '|' + norm(it.text);   // een taak en een actie met dezelfde tekst zijn één item
+    out.forEach(s => s.items.forEach(it => { const k = sl(it), sc = score(s, it), e = best.get(k); if (!e || beter(sc, e.sc)) best.set(k, { it, sc }); }));
+    out.forEach(s => s.items.forEach(it => { const e = best.get(sl(it)).it; if (e !== it) { if (!e.who && it.who) e.who = it.who; if (!e.when && it.when) e.when = it.when; } }));
+    return out.map(s => ({ ...s, items: s.items.filter(it => best.get(sl(it)).it === it) }))
       .filter(s => s.items.length);
   }
   // Vergelijken zonder hoofdletters, dubbele spaties of leestekens aan de rand
@@ -636,18 +642,20 @@ const ocShare = (() => {
       const src = sources(types, self, van), terug = document.activeElement;
       const heeft = new Set((have || []).map(norm));
       const vanNaam = van && !src.some(s => s.id === van) ? van : '';
+      const vol = s => s.items.every(it => heeft.has(norm(it.text))), alles = src.length > 0 && src.every(vol);
       const back = document.createElement('div');
       back.className = 'ocs-back';
       const what = types.map(t => LABEL[t] || t).join(' of ');
       back.innerHTML = `<div class="ocs" role="dialog" aria-modal="true" aria-label="${esc(title || 'Overnemen')}">
         <div class="ocs-head"><div class="ocs-title">${esc(title || 'Overnemen uit een andere tool')}</div>
           <div class="ocs-sub">${esc(intro || `Kies welke ${what} je wil overnemen.`)}</div></div>
-        <div class="ocs-body">${vanNaam ? `<p class="ocs-note">Uit die tool ligt nog niets klaar. Hieronder staat wat andere tools aanbieden.</p>` : ''}${src.length ? src.map((s, si) => `
+        <div class="ocs-body">${vanNaam ? `<p class="ocs-note">Uit die tool ligt nog niets klaar. Hieronder staat wat andere tools aanbieden.</p>` : ''}${src.length && alles ? `<p class="ocs-empty">Alles staat er al. Er is niets nieuws om over te nemen.</p>` : ''}${src.length && !alles ? src.map((s, si) => vol(s) ? `
+          <div class="ocs-src"><div class="ocs-src-head"><b>${esc(s.tool)}</b><span>${esc(s.list)} · alles staat er al</span></div></div>` : `
           <div class="ocs-src"><div class="ocs-src-head"><b>${esc(s.tool)}</b><span>${esc(s.list)} · ${s.items.length}</span>
             <button class="ocs-all" type="button" data-all="${si}">alles</button></div>
             ${s.items.map((it, ii) => { const al = heeft.has(norm(it.text)); return `<label class="ocs-item${al ? ' al' : ''}"><input type="checkbox" data-s="${si}" data-i="${ii}"${al ? ' disabled' : ''}>
               <span>${esc(it.text)}${al ? '<em>staat er al</em>' : ''}${it.who || it.when || (notes !== false && it.note) ? `<small>${esc([it.who, datum(it.when), notes !== false && it.note].filter(Boolean).join(' · '))}</small>` : ''}</span></label>`; }).join('')}
-          </div>`).join('') : `<p class="ocs-empty">Er zijn nog geen ${esc(what)} om over te nemen. Vul ze eerst in een andere tool van Onder Constructie in, dan verschijnen ze hier.</p>`}
+          </div>`).join('') : ''}${!src.length ? `<p class="ocs-empty">Er zijn nog geen ${esc(what)} om over te nemen. Vul ze eerst in een andere tool van Onder Constructie in, dan verschijnen ze hier.</p>` : ''}
         </div>
         <div class="ocs-foot"><span class="ocs-hint">Vink eerst iets aan</span><button class="ocs-btn ocs-cancel" type="button">Annuleer</button>
           <button class="ocs-btn ocs-ok" type="button" disabled>Neem over</button></div></div>`;
@@ -659,12 +667,16 @@ const ocShare = (() => {
       const sync = () => { const n = boxes().filter(b => b.checked).length; ok.disabled = !n; ok.textContent = n ? `Neem ${n} over` : 'Neem over'; hint.hidden = !!n || !boxes().length; };
       // Geopend vanuit een tool (?van=<tool>): alleen die bron aanvinken, en daarin de lijst van het actieve project als die er is.
       // Zonder ?van= en met één bron: die staat aangevinkt.
-      let proj = ''; try { proj = norm((JSON.parse(localStorage.getItem('oc.project') || 'null') || {}).name); } catch {}
-      const vanSrc = van ? src.filter(s => s.id === van) : [];
-      const vanProj = proj ? vanSrc.filter(s => norm(s.list) === proj) : [];
+      let namen = [], lijst = ''; try { const pp = JSON.parse(localStorage.getItem('oc.project') || 'null') || {}; namen = [pp.name].concat(Array.isArray(pp.oud) ? pp.oud : []).map(norm).filter(Boolean); } catch {}
+      try { lijst = norm(window.ocLijst || new URLSearchParams(location.search).get('lijst') || ''); } catch {}
+      const vanSrc = van ? src.filter(s => s.id === van && !vol(s)) : [];
+      const vanLijst = lijst ? vanSrc.filter(s => norm(s.list) === lijst) : [];
+      const vanProj = vanLijst.length ? vanLijst : vanSrc.filter(s => namen.some(p => norm(s.list) === p || norm(s.list).startsWith(p + ' ')));
+      // geen lijst van het project: dan alleen de lijst die het laatst veranderde (daar werkte je net aan), nooit alles
+      const laatst = vanSrc.length > 1 ? vanSrc.filter(s => s.ch && s.ch === Math.max(...vanSrc.map(x => x.ch || 0))).slice(0, 1) : vanSrc;
       // Alleen vanuit een link (?van=) staat iets vooraf aangevinkt. Anders kies je zelf (of tik op "alles"):
       // één tik op het punt dat je wil, mag nooit de rest overnemen.
-      const aan = vink === false || !van ? [] : (vanProj.length ? vanProj : vanSrc);
+      const aan = vink === false || !van ? [] : (vanProj.length ? vanProj : laatst);
       boxes().forEach(b => { if (aan.includes(src[+b.dataset.s])) b.checked = true; }); sync();
       back.addEventListener('change', sync);
       back.addEventListener('click', e => {
@@ -1701,11 +1713,17 @@ window.ocBestand = (function () {
   function projectNu() { try { var p = JSON.parse(localStorage.getItem('oc.project')); return p && typeof p.name === 'string' ? p.name.trim() : ''; } catch (e) { return ''; } }
   function deelNaam(el) {
     var v = String(el.value || '').trim().slice(0, 80), nu = projectNu();
-    if (ocStandaardNaam(v) || (nu && nu !== eigenNaam)) return;
+    // hernoem je de lijst van het actieve project (het veld stond op die naam toen je begon), dan krijgt het project in de app die naam mee
+    if (ocStandaardNaam(v) || (nu && nu !== eigenNaam && nu !== el.__ocWas)) return;
     if ([].some.call(document.querySelectorAll('.vb-bar'), function (b) { return b.getClientRects().length; })) return;   // in het voorbeeld niet
     if (v === nu) return;
-    try { localStorage.setItem('oc.project', JSON.stringify({ name: v, since: Date.now() })); eigenNaam = v; } catch (e) {}
+    try {
+      var oud = []; try { var p0 = JSON.parse(localStorage.getItem('oc.project')); if (p0 && Array.isArray(p0.oud)) oud = p0.oud.slice(-9); } catch (e) {}
+      oud = oud.filter(function (x) { return x !== v; }); if (nu && oud.indexOf(nu) < 0) oud.push(nu);   // de vorige naam blijft gekend: tools en dossier vinden het project zo terug
+      localStorage.setItem('oc.project', JSON.stringify({ name: v, since: Date.now(), oud: oud })); eigenNaam = v; el.__ocWas = v;
+    } catch (e) {}
   }
+  document.addEventListener('focusin', function (e) { var el = e.target; if (el.hasAttribute && el.hasAttribute('data-oc-projectnaam')) el.__ocWas = String(el.value || '').trim(); }, true);
   document.addEventListener('input', function (e) { var el = e.target; if (!el.hasAttribute || !el.hasAttribute('data-oc-projectnaam')) return; clearTimeout(naamT); naamT = setTimeout(function () { deelNaam(el); }, 900); }, true);
   ['change', 'focusout'].forEach(function (ev) { document.addEventListener(ev, function (e) { var el = e.target; if (el.hasAttribute && el.hasAttribute('data-oc-projectnaam')) { clearTimeout(naamT); deelNaam(el); } }, true); });
   /* oc-terug: kom je uit een andere tool, dan brengt de terugknop linksboven je daar terug ("← Prioriteren").
