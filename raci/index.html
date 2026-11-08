@@ -971,7 +971,7 @@ input::placeholder, textarea::placeholder { color:#64748b; opacity:1; }
         <li><b>Werk samen via een gedeeld bestand.</b> Standaard blijft alles op dit toestel. Wil je met je team in één matrix werken? Kies dan in het menu ⋮ "Werk samen via een gedeeld bestand", vink aan welke matrices meegaan en zet het bestand in een gedeelde map die je computer synchroniseert. Dit kan in Chrome of Edge op een computer en in Chrome op Android, niet op een iPhone of iPad. Iedereen met toegang tot het bestand ziet wat erin staat, ook namen. Vullen twee mensen tegelijk een ander vak in, dan blijven beide letters staan.</li>
       </ul>
       <p>Tip: kies een vak en typ <kbd>R</kbd>, <kbd>A</kbd>, <kbd>C</kbd> of <kbd>I</kbd>. Delete maakt het vak leeg.</p>
-      <p>Taken haal je binnen met "Taken overnemen uit…", bijvoorbeeld uit het <a href="../kanban/">Takenbord</a> of <a href="../prioriteit/">Prioriteren</a>. De rollen gaan op hun beurt mee naar het <a href="../communicatie/">Communicatieplan</a> en het <a href="../schildpad/">Schildpaddiagram</a>, met wat ze doen erbij.</p>
+      <p>Taken haal je binnen met "Taken overnemen uit…", bijvoorbeeld uit het <a href="../kanban/">Takenbord</a> of <a href="../prioriteit/">Prioriteren</a>. Staat de eigenaar van zo een taak ook als rol in de matrix, dan krijgt die meteen een R. A, C en I kies je zelf. De rollen gaan op hun beurt mee naar het <a href="../communicatie/">Communicatieplan</a> en het <a href="../schildpad/">Schildpaddiagram</a>, met wat ze doen erbij.</p>
     </div>
   </details>
 </main>
@@ -2373,6 +2373,14 @@ document.addEventListener('click', e => { if (e.target.closest('[data-act="wipe"
 // Wat er al staat in de matrix: rollen (kolommen) of taken (rijen). De kiezer grijst het uit, en de knop telt het niet als nieuw.
 const ocAlRaci = roles => { const m = cur(); return (roles ? m.roles : m.tasks).flatMap(x => roles ? [x.name] : [x.name, ocGapText(x.name)]); };
 window.ocHave = types => { try { return types.includes('betrokkene') ? ocAlRaci(true) : types.some(t => t === 'taak' || t === 'actie') ? ocAlRaci(false) : []; } catch { return []; } };
+// Wie een taak doet, staat in de bron ("Els" of "Els en Jonas"). Is die persoon een rol in de matrix, dan zet dit een R in de lege cel.
+const ocEigenaars = who => String(who || '').split(/\s*(?:[,;\/&+]|\s+en\s+)\s*/i).map(ocNorm).filter(Boolean);
+function ocEigenaarR(m, taken, rollen) {
+  let r = 0;
+  taken.forEach(t => { const wie = ocEigenaars(t.who); if (!wie.length) return;
+    rollen.forEach(rol => { if (!t.cells[rol.id] && wie.includes(ocNorm(rol.name))) { t.cells[rol.id] = 'R'; kpTijd(t, rol.id); r++; } }); });
+  return r;
+}
 document.addEventListener('click', async e => {
   const b = e.target.closest('[data-oc-target]'); if (!b) return;
   e.preventDefault();
@@ -2386,18 +2394,22 @@ document.addEventListener('click', async e => {
   // Regeleinden in een overgenomen tekst worden een spatie
   picked.forEach(p => { p.text = String(p.text || '').replace(/\s*[\r\n]+\s*/g, ' ').trim(); });
   const have = new Set(list.map(x => ocNorm(roles ? x.name : ocGapText(x.name)))), restore = snapshot();
-  let n = 0, dubbel = 0;
+  let n = 0, dubbel = 0; const nieuw = [];
   picked.forEach(p => { const name = (roles ? p.text : ocGapText(p.text)).trim().slice(0, 120); if (have.has(ocNorm(name))) { dubbel++; return; } have.add(ocNorm(name));
     // Bij een taak bewaren we ook de eigenaar en de datum uit de bron: zo geeft de matrix ze weer door.
     const t = { id:uid(), name, cells:{} };
     if (!roles) { if (p.who) t.who = String(p.who).slice(0, 120); if (p.when) t.when = String(p.when).slice(0, 40); }
     const x = roles ? { id:uid(), name } : t;
     if (p.bronId) x.van = String(p.bronId).slice(0, 60);   // herkomst: zie ocPublish
-    list.push(x); n++; });
+    list.push(x); n++; nieuw.push(x); });
+  // De eigenaar van een taak uit de bron (bv. het Takenbord) staat ook als rol in de matrix: die cel krijgt meteen een R.
+  // Alleen bij wat net binnenkwam, en alleen in een lege cel: een letter die je zelf koos, blijft staan.
+  const r = ocEigenaarR(m, roles ? m.tasks : nieuw, roles ? nieuw : m.roles);
   const stond = ocAlAangeboden(types, al) + dubbel;
   save(); render();
   const alZin = stond ? `. ${stond} ${stond === 1 ? 'stond' : 'stonden'} er al.` : '';
-  toast(n ? `${n} ${roles ? (n === 1 ? 'rol' : 'rollen') : (n === 1 ? 'taak' : 'taken')} overgenomen${alZin}` : 'Alles stond al in de matrix', n ? restore : undefined);
+  const rZin = r ? `, ${r} keer R ingevuld voor de eigenaar` : '';
+  toast(n ? `${n} ${roles ? (n === 1 ? 'rol' : 'rollen') : (n === 1 ? 'taak' : 'taken')} overgenomen${rZin}${alZin}` : 'Alles stond al in de matrix', n ? restore : undefined);
 });
 
 /* ---------- Download als afbeelding of PDF (gedeeld door de Onder Constructie-tools, v3) ----------
