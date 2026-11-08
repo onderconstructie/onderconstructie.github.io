@@ -1736,7 +1736,8 @@ function migrate(d) {
 function ocVeilig(v, k, getal) {
   if (Array.isArray(v)) return v.map(x => ocVeilig(x, k, getal));
   if (v && typeof v === 'object') { Object.keys(v).forEach(x => { const r = ocVeilig(v[x], x, getal); if (r === undefined) delete v[x]; else v[x] = r; }); return v; }
-  if (/^(when|by|date|datum|due|deadline)$/.test(k) && typeof v === 'string' && v && !/^\d{4}-\d{2}-\d{2}(T[\d:.]+Z?)?$/.test(v)) return '';
+  // Alleen echte datumvelden (een scan). 'due' is vrije tekst ("eind volgende maand") en 'when' is voor, rond of na de start.
+  if (/^(date|datum)$/.test(k) && typeof v === 'string' && v && !/^\d{4}-\d{2}-\d{2}(T[\d:.]+Z?)?$/.test(v)) return '';
   if (getal.test(k) && v != null && typeof v !== 'number') { const n = typeof v === 'string' && v.trim() !== '' ? Number(v) : NaN; return Number.isFinite(n) ? n : undefined; }
   if (typeof v === 'number' && !Number.isFinite(v)) return undefined;
   return v;

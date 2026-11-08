@@ -2767,6 +2767,10 @@ function plan(s) {
       ['groups', 'moments', 'measures'].forEach(k => { st[k] = Array.isArray(st[k]) ? st[k].filter(x => x && typeof x === 'object' && !Array.isArray(x)) : []; });
       // een doelgroep mist nooit een veld (wat er al stond, blijft)
       st.groups = st.groups.map(g => { const n = Object.assign(newGroup(''), g); ['name', 'change', 'hint', 'source', 'msg', 'senderOther', 'channelOther'].forEach(k => { if (typeof n[k] !== 'string') n[k] = ''; }); ['goals', 'channels'].forEach(k => { if (!Array.isArray(n[k])) n[k] = []; }); return n; });
+      // een moment en een meting missen ook nooit een veld: een vreemd bestand of een oude opslag breekt de tool niet
+      const tekst = (n, ks) => ks.forEach(k => { if (typeof n[k] === 'number') n[k] = String(n[k]); else if (typeof n[k] !== 'string') n[k] = ''; });
+      st.moments = st.moments.map(m => { const n = { ...m }; tekst(n, ['date', 'channel', 'sender', 'msg']); n.groups = Array.isArray(n.groups) ? n.groups.filter(x => typeof x === 'string') : []; n.done = n.done === true; return n; });
+      st.measures = st.measures.map(x => { const n = { ...x }; tekst(n, ['kind', 'group', 'target', 'date', 'label']); return n; });
       if (!st.ident || typeof st.ident !== 'object') st.ident = { ...f.ident };
       if (!['wizard', 'plan', 'kal'].includes(st.view)) st.view = 'wizard';
       st.step = Math.max(0, Math.min(8, Math.round(+st.step) || 0));
