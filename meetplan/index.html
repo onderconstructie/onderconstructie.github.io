@@ -482,6 +482,26 @@ details.explain.oc-u .oc-u-noot a, details.explain.oc-u .oc-u-stap-uitleg a, det
 }
 @media print { details.explain { display:none; } }
 /* oc-uitleg v1 einde */
+/* oc-smarti v1: zes kleine letters onder een doel. Grijs omlijnd = nog niet, groen = aangevinkt, groene stippellijn = de tekst doet het vermoeden. */
+.oc-sm { position:relative; display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin:6px 0 2px; }
+.oc-sm[hidden] { display:none; }
+.oc-sm-l { width:28px; height:28px; display:inline-grid; place-items:center; padding:0; border-radius:8px; border:1.5px solid #94a3b8; background:#fff; color:#475569; font:inherit; font-size:0.8125rem; font-weight:700; line-height:1; cursor:pointer; transition:background-color .15s, border-color .15s, color .15s; }
+.oc-sm-l.sug { border-style:dashed; border-color:#0c8660; color:#047857; background:#f6fefa; }
+.oc-sm-l[aria-pressed="true"] { background:#0c8660; border-color:#0c8660; color:#fff; }
+@media (hover:hover) { .oc-sm-l[aria-pressed="false"]:hover { border-color:#047857; color:#047857; } .oc-sm-l[aria-pressed="true"]:hover { background:#047857; border-color:#047857; } }
+.oc-sm-l:focus-visible { outline:2px solid #047857; outline-offset:2px; }
+.oc-sm-ok { display:inline-flex; align-items:center; gap:3px; margin-left:4px; font-size:0.8125rem; font-weight:700; color:#047857; letter-spacing:0.02em; }
+.oc-sm-ok[hidden] { display:none; }
+.oc-sm-ok svg { width:15px; height:15px; }
+.oc-sm-sr { position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap; border:0; }
+.oc-sm-vraag { position:absolute; z-index:30; top:calc(100% + 6px); left:clamp(0px, var(--x, 0px), max(0px, 100% - 16rem)); width:max-content; max-width:min(20rem, 100%); padding:7px 10px; border-radius:10px; background:#fff; border:1px solid #cbd5e1; box-shadow:0 6px 20px -6px rgba(15,23,42,0.25); font-size:0.8125rem; line-height:1.4; font-weight:400; color:#334155; text-align:left; pointer-events:auto; }
+.oc-sm-vraag[hidden] { display:none; }
+.oc-sm-vraag b { font-weight:700; color:#047857; }
+.oc-sm-hint { display:block; margin-top:2px; color:#047857; }
+.oc-sm-pijl { display:none; margin-top:3px; font-size:0.75rem; color:#64748b; }
+.oc-sm:has(.oc-sm-l:focus-visible) .oc-sm-pijl { display:block; }
+@media (pointer:coarse) { .oc-sm { gap:8px; } .oc-sm-l { width:32px; height:32px; font-size:0.875rem; } }
+.sec > .oc-sm { margin-top:8px; }
 </style>
 <script>
 /* oc-opslag v1 begin */
@@ -1300,7 +1320,7 @@ window.ocProjectkiezer = function (plek, o) {
     <div class="inner">
       <p>Een project is geslaagd als er iets beter wordt, niet als het klaar is. Maak daarom per doel een klein meetplan: waaraan zie je het, waar haal je het cijfer, waar vertrek je en waar wil je heen.</p>
       <ul>
-        <li><b>Schrijf het doel op.</b> In gewone woorden: wat moet er beter worden, en voor wie?</li>
+        <li><b>Schrijf het doel op.</b> In gewone woorden: wat moet er beter worden, en voor wie? Onder het doel staan zes letters. S is specifiek: je weet wat er beter wordt, en voor wie. M is meetbaar: je kan zien of het gelukt is. A is acceptabel: wie het moet doen, staat erachter. R is realistisch: het lukt met de tijd, het geld en de mensen die je hebt. T is tijdsgebonden: er staat een datum bij. I is inspirerend: het geeft mensen zin om eraan te werken. Tik een letter aan als ze klopt. Een getal of een datum in je doel geeft M of T een stippellijn. Kijk dan zelf of het klopt.</li>
         <li><b>Kies waaraan je het ziet.</b> Tel liefst wat er beter wordt, niet alleen wat je doet. Hooguit drie per doel.</li>
         <li><b>Leg vast hoe en waar je meet.</b> Wat tel je precies, uit welke bron, en wie beheert die bron?</li>
         <li><b>Meet eerst.</b> Zonder nulmeting kan je later geen verschil tonen. Zet er een streefwaarde en een datum bij.</li>
@@ -2395,6 +2415,98 @@ window.ocKoppel = (() => {
 /* oc-koppel v1.1 einde */
 </script>
 <script>
+/* oc-smarti v1 begin */
+/* SMARTI onder een doel: zes kleine letters die je zelf aanvinkt (specifiek, meetbaar, acceptabel, realistisch, tijdsgebonden, inspirerend).
+   De tool helpt zacht: een getal in de tekst maakt M waarschijnlijk, een datum of jaartal T. Dat is een suggestie (stippellijn), nooit een vink.
+   Gebruik: ocSmarti.rij(sleutel, letters, tekst) geeft de HTML; ocSmarti.zet(rij, letters, tekst) werkt een rij bij;
+   ocSmarti.op(fn) krijgt (rij, nieuweLetters) na een tik. De tool bewaart de letters zelf (een tekst zoals "SMT").
+   De vraag bij elke letter staat in een verborgen element (hidden) waar aria-describedby naar wijst: zo hoort een schermlezer ze ook. */
+window.ocSmarti = (function () {
+  var L = [
+    ['S', 'specifiek', 'Is het duidelijk wat er beter wordt, en voor wie?'],
+    ['M', 'meetbaar', 'Hoe weet je dat het gelukt is?'],
+    ['A', 'acceptabel', 'Staan de mensen die het moeten doen erachter?'],
+    ['R', 'realistisch', 'Lukt het met de tijd, het geld en de mensen die je hebt?'],
+    ['T', 'tijdsgebonden', 'Tegen wanneer moet het bereikt zijn?'],
+    ['I', 'inspirerend', 'Krijgen mensen er zin van om eraan te werken?']
+  ];
+  var MAAND = '(januari|februari|maart|april|mei|juni|juli|augustus|september|oktober|november|december|jan|feb|mrt|apr|jun|jul|aug|sep|sept|okt|nov|dec)';
+  var DATUM = new RegExp('\\b\\d{1,2}\\s*' + MAAND + '\\b\\.?|\\b\\d{1,2}[\\/.-]\\d{1,2}([\\/.-]\\d{2,4})?\\b|\\b(19|20)\\d{2}\\b', 'gi');
+  var TIJD = new RegExp('\\b(19|20)\\d{2}\\b|\\b\\d{1,2}[\\/.-]\\d{1,2}([\\/.-]\\d{2,4})?\\b|\\b\\d{1,2}\\s*' + MAAND + '\\b|\\b(tegen|vóór|voor|tot|eind|einde|begin|midden)\\s+' + MAAND + '\\b', 'i');
+  var GETAL = /\d|%|procent|\bhelft\b|halver|verdubbel/i;
+  var teller = 0, opWijziging = null;
+  function schoon(v) { var s = String(v || '').toUpperCase(); return L.map(function (x) { return s.indexOf(x[0]) >= 0 ? x[0] : ''; }).join(''); }
+  // Wat de tekst doet vermoeden (alleen als suggestie): T bij een datum of jaartal, M bij een getal dat geen datum is
+  function vermoed(tekst) {
+    var t = String(tekst || ''), uit = '';
+    if (GETAL.test(t.replace(DATUM, ' '))) uit += 'M';
+    if (TIJD.test(t)) uit += 'T';
+    return uit;
+  }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]; }); }
+  function naam(x, aan, sug) { return x[0] + ', ' + x[1] + ': ' + (aan ? 'in orde' : 'nog niet') + (!aan && sug ? ', waarschijnlijk wel (' + (x[0] === 'M' ? 'er staat een getal in' : 'er staat een datum in') + ')' : ''); }
+  function rij(sleutel, letters, tekst) {
+    var id = 'ocsm' + (++teller), v = schoon(letters), s = vermoed(tekst), alles = v.length === 6;
+    return '<div class="oc-sm" role="toolbar" aria-label="SMARTI voor dit doel" data-sm-key="' + esc(sleutel) + '" data-sm="' + v + '"' + (String(tekst || '').trim() ? '' : ' hidden') + '>'
+      + L.map(function (x, i) {
+        var aan = v.indexOf(x[0]) >= 0, sug = !aan && s.indexOf(x[0]) >= 0;
+        return '<button type="button" class="oc-sm-l' + (sug ? ' sug' : '') + '" data-sm-l="' + x[0] + '" aria-pressed="' + aan + '" tabindex="' + (i ? -1 : 0) + '" aria-label="' + esc(naam(x, aan, sug)) + '" aria-describedby="' + id + x[0] + '">' + x[0] + '</button>'
+          + '<span class="oc-sm-sr" hidden id="' + id + x[0] + '">' + esc(x[2]) + '</span>';
+      }).join('')
+      + '<span class="oc-sm-ok"' + (alles ? '' : ' hidden') + '><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>SMARTI</span>'
+      + '<span class="oc-sm-vraag" aria-hidden="true" hidden></span></div>';
+  }
+  function zet(r, letters, tekst) {
+    if (!r) return;
+    var v = schoon(letters), s = vermoed(tekst);
+    r.dataset.sm = v; r.hidden = !String(tekst || '').trim();
+    [].forEach.call(r.querySelectorAll('[data-sm-l]'), function (b) {
+      var x = L.filter(function (y) { return y[0] === b.dataset.smL; })[0], aan = v.indexOf(x[0]) >= 0, sug = !aan && s.indexOf(x[0]) >= 0;
+      b.setAttribute('aria-pressed', String(aan)); b.classList.toggle('sug', sug); b.setAttribute('aria-label', naam(x, aan, sug));
+    });
+    r.querySelector('.oc-sm-ok').hidden = v.length !== 6;
+    var a = r.querySelector('.oc-sm-l:focus, .oc-sm-l:hover'); if (a && !r.querySelector('.oc-sm-vraag').hidden) toon(a);
+  }
+  function toon(b) {
+    var r = b.closest('.oc-sm'), q = r.querySelector('.oc-sm-vraag'), x = L.filter(function (y) { return y[0] === b.dataset.smL; })[0];
+    var sug = b.classList.contains('sug') ? ' <span class="oc-sm-hint">' + (x[0] === 'M' ? 'Er staat een getal in je doel.' : 'Er staat een datum in je doel.') + '</span>' : '';
+    q.innerHTML = '<b>' + x[0] + ' · ' + x[1] + '</b> ' + esc(x[2]) + sug + '<span class="oc-sm-pijl">Pijltjes: andere letter. Spatie: aanvinken.</span>';
+    q.style.setProperty('--x', Math.max(0, b.offsetLeft - 4) + 'px');
+    q.hidden = false;
+  }
+  function verberg(r) { var q = r && r.querySelector('.oc-sm-vraag'); if (q) q.hidden = true; }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('.oc-sm-l'); if (!b) return;
+    var r = b.closest('.oc-sm'), v = r.dataset.sm || '', l = b.dataset.smL;
+    v = schoon(v.indexOf(l) >= 0 ? v.replace(l, '') : v + l);
+    [].forEach.call(r.querySelectorAll('.oc-sm-l'), function (x) { x.tabIndex = x === b ? 0 : -1; });
+    if (opWijziging) opWijziging(r, v);
+    else zet(r, v, '');
+    if (document.activeElement !== b) b.focus({ preventScroll:true });
+    toon(b);
+  });
+  document.addEventListener('keydown', function (e) {
+    var b = e.target.closest && e.target.closest('.oc-sm-l'); if (!b) return;
+    if (e.key === 'Escape') { var q = b.closest('.oc-sm').querySelector('.oc-sm-vraag'); if (!q.hidden) { e.preventDefault(); e.stopPropagation(); q.hidden = true; } return; }
+    var bs = [].slice.call(b.closest('.oc-sm').querySelectorAll('.oc-sm-l')), i = bs.indexOf(b), j = -1;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') j = (i + 1) % bs.length;
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') j = (i - 1 + bs.length) % bs.length;
+    else if (e.key === 'Home') j = 0; else if (e.key === 'End') j = bs.length - 1;
+    if (j < 0) return;
+    e.preventDefault(); bs.forEach(function (x, k) { x.tabIndex = k === j ? 0 : -1; }); bs[j].focus();
+  });
+  document.addEventListener('focusin', function (e) { var b = e.target.closest && e.target.closest('.oc-sm-l'); if (b) toon(b); });
+  document.addEventListener('focusout', function (e) { var b = e.target.closest && e.target.closest('.oc-sm-l'); if (!b) return; var r = b.closest('.oc-sm'); setTimeout(function () { if (!r.contains(document.activeElement) && !r.matches(':hover')) verberg(r); }, 0); });
+  document.addEventListener('mouseover', function (e) { var b = e.target.closest && e.target.closest('.oc-sm-l'); if (b) toon(b); });
+  document.addEventListener('mouseout', function (e) {
+    var r = e.target.closest && e.target.closest('.oc-sm'); if (!r || (e.relatedTarget && r.contains(e.relatedTarget))) return;
+    if (!r.contains(document.activeElement)) verberg(r);
+  });
+  return { rij: rij, zet: zet, schoon: schoon, vermoed: vermoed, op: function (fn) { opWijziging = fn; }, LETTERS: L };
+})();
+/* oc-smarti v1 einde */
+</script>
+<script>
 /* Het actieve project uit de app (oc.project): nieuwe projecten, analyses en lijsten krijgen die naam. */
 function ocProject(fb) { try { const p = JSON.parse(localStorage.getItem('oc.project')); return p && typeof p.name === 'string' && p.name.trim() ? p.name.trim().slice(0, 80) : fb; } catch { return fb; } }
 // Het project kreeg een nieuwe naam (in de app of in een tool): de vorige namen staan in oc.project.oud. Zo vindt elke tool het terug.
@@ -2421,6 +2533,7 @@ function ocPickProject(st, arr, cur = 'current') { const p = ocProject(''); if (
      'mijlpaal'    mijlpaal met datum (Tijdlijn, Projectopdracht)  { text, when, note? }   note = gepland, gehaald of verschoven
      'agendapunt'  punt op een agenda (Agenda)                     { text, who?, when?, note? }   when = startuur (UU:MM), note = doel en materiaal
      'leerpunt'    les voor een volgend project (Leerpuntenlog)    { text, note? }
+     'omgevingsfactor' wat er rond het project gebeurt (PESTLE-analyse) { text, note }   note = "Kans · Politiek · grote impact" (Kans, Bedreiging, Kans en bedreiging of Nog niet zeker)
                    Andere tools kiezen zelf welke soorten ze tonen (types in pick/count/sources) en slaan onbekende soorten dus over.
    'when' is bij voorkeur een datum als JJJJ-MM-DD; in "Overnemen uit…" staat die als 15 februari 2027.
 
@@ -2440,10 +2553,11 @@ function ocPickProject(st, arr, cur = 'current') { const p = ocProject(''); if (
    ?van=<tool> vinkt alleen die bron aan, en daarin de lijst van het actieve project als die er is (ook onder een vorige naam,
    of een lijst die met de projectnaam begint). &lijst=<naam> vinkt precies die lijst aan. Anders: de lijst die het laatst veranderde.
    Dezelfde tekst als taak en als actie is één item: de rijkste versie (met wie en wanneer) blijft.
+   Zo ook dezelfde tekst als omgevingsfactor en als risico (de PESTLE legt een grote bedreiging als allebei klaar).
 */
 const ocShare = (() => {
   const PREFIX = 'oc.share.';
-  const LABEL = { betrokkene:'betrokkenen', taak:'taken', actie:'acties', risico:"risico's", besluit:'besluiten', doel:'doelen', mijlpaal:'mijlpalen', agendapunt:'agendapunten', leerpunt:'leerpunten' };
+  const LABEL = { betrokkene:'betrokkenen', taak:'taken', actie:'acties', risico:"risico's", besluit:'besluiten', doel:'doelen', mijlpaal:'mijlpalen', agendapunt:'agendapunten', leerpunt:'leerpunten', omgevingsfactor:'omgevingsfactoren' };
   const esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
   // Een datum als JJJJ-MM-DD tonen we zoals in de tools: 15 februari 2027. Andere tekst blijft zoals ze is.
   const datum = v => { const s = String(v || '').trim(), d = /^\d{4}-\d{2}-\d{2}$/.test(s) ? new Date(s + 'T12:00:00') : null;
@@ -2492,7 +2606,7 @@ const ocShare = (() => {
     // Mist de gekozen versie een wie of wanneer die een andere bron wel heeft, dan vullen we aan.
     const score = (s, it) => [s.id === voorkeur ? 1 : 0, (it.note ? 2 : 0) + (it.who ? 1 : 0) + (it.when ? 1 : 0), s.items.length, s.updated || 0];
     const beter = (a, b) => { for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] > b[i]; return false; };
-    const best = new Map(), sl = it => (it.type === 'actie' ? 'taak' : it.type) + '|' + norm(it.text);   // een taak en een actie met dezelfde tekst zijn één item
+    const best = new Map(), sl = it => (it.type === 'actie' ? 'taak' : it.type === 'omgevingsfactor' ? 'risico' : it.type) + '|' + norm(it.text);   // een taak en een actie (of een omgevingsfactor en een risico) met dezelfde tekst zijn één item
     out.forEach(s => s.items.forEach(it => { const k = sl(it), sc = score(s, it), e = best.get(k); if (!e || beter(sc, e.sc)) best.set(k, { it, sc }); }));
     out.forEach(s => s.items.forEach(it => { const e = best.get(sl(it)).it; if (e !== it) { if (!e.who && it.who) e.who = it.who; if (!e.when && it.when) e.when = it.when; } }));
     return out.map(s => ({ ...s, items: s.items.filter(it => best.get(sl(it)).it === it) }))
@@ -3002,6 +3116,7 @@ function normInd(i) {
 function normDoel(d) {
   const o = Object.assign({ id:uid(), text:'', open:false, inds:[] }, d && typeof d === 'object' ? d : {});
   o.text = str(o.text); o.id = str(o.id) || uid(); o.open = !!o.open; delete o.fresh;
+  const sm = ocSmarti.schoon(o.smarti); if (sm) o.smarti = sm; else delete o.smarti;   // SMARTI: de letters die je aanvinkte (oude doelen: geen)
   o.inds = Array.isArray(o.inds) ? o.inds.map(normInd) : [];
   return o;
 }
@@ -3029,6 +3144,12 @@ let version = 0;
 function save() { ocAfterSave(); version++; if (window.ocKoppel) ocKoppel.stempel(); ocSchrijf(KEY, JSON.stringify(state)); if (window.ocKoppel) ocKoppel.na(); }
 const cur = () => state.plans.find(p => p.id === state.current) || state.plans[0];
 const doelById = id => cur().doelen.find(d => d.id === id);
+// SMARTI: een tik op een letter
+ocSmarti.op((rij, letters) => {
+  const d = doelById(rij.dataset.smKey); if (!d) return;
+  if (letters) d.smarti = letters; else delete d.smarti;
+  save(); ocSmarti.zet(rij, d.smarti, d.text);
+});
 
 /* ---------- Getallen en datums ---------- */
 // Leest getallen zoals je ze schrijft: 1.240 (duizendtal), 1,5 en 1.5 (komma of punt), 85%, −3, +5, 0.250 en "24 minuten".
@@ -3389,6 +3510,7 @@ function doelHTML(d) {
       <div class="chips" data-chips>${chipsHTML(d)}</div>
       <div class="sec"><span class="sec-label"><span class="nr" aria-hidden="true">1</span><label for="f-${esc(d.id)}-doel">Doel</label> <span class="hint">wat moet er beter worden, en voor wie?</span></span>
         <textarea class="field" rows="1" id="f-${esc(d.id)}-doel" data-df="text" placeholder="Bv. aanvragers moeten minder bellen om te weten waar hun aanvraag staat" maxlength="300">${esc(d.text)}</textarea>
+        ${ocSmarti.rij(d.id, d.smarti, d.text)}
         ${src}
       </div>
       ${d.inds.map((i, k) => indHTML(d, i, k)).join('')}
@@ -3513,7 +3635,7 @@ document.addEventListener('input', e => {
   const d = doelById(card.dataset.doel); if (!d) return;
   let wasPct = null, i0 = null;
   // Pas je de tekst van een overgenomen doel aan, dan wordt het eigen werk: de herkomst valt weg.
-  if (t.dataset.df === 'text') { if (d.van && ocNorm(t.value) !== ocNorm(d.text)) delete d.van; d.text = t.value; }
+  if (t.dataset.df === 'text') { if (d.van && ocNorm(t.value) !== ocNorm(d.text)) delete d.van; d.text = t.value; ocSmarti.zet(card.querySelector('.oc-sm'), d.smarti, d.text); }
   else if (t.dataset.f) { const i = i0 = indOf(d, t); if (!i) return; wasPct = isPct(i); setPath(i, t.dataset.f, t.value); }
   else if (t.dataset.mf) { const i = indOf(d, t), m = i && i.metingen.find(x => x.id === t.closest('[data-met]').dataset.met); if (!m) return; m[t.dataset.mf] = t.value; }
   else return;
@@ -4198,8 +4320,8 @@ window.ocBestand = (function () {
   }());
   /* oc-overnemen: de knop "Overnemen uit…" valt op als knop en zegt wat er klaarligt ("5 taken uit Retro en Risicomatrix"). */
   (function () {
-    var VEEL = { taak: 'taken', actie: 'acties', risico: "risico's", betrokkene: 'betrokkenen', besluit: 'besluiten', doel: 'doelen', mijlpaal: 'mijlpalen', agendapunt: 'agendapunten', leerpunt: 'leerpunten' };
-    var EEN = { taak: 'taak', actie: 'actie', risico: 'risico', betrokkene: 'betrokkene', besluit: 'besluit', doel: 'doel', mijlpaal: 'mijlpaal', agendapunt: 'agendapunt', leerpunt: 'leerpunt' };
+    var VEEL = { taak: 'taken', actie: 'acties', risico: "risico's", betrokkene: 'betrokkenen', besluit: 'besluiten', doel: 'doelen', mijlpaal: 'mijlpalen', agendapunt: 'agendapunten', leerpunt: 'leerpunten', omgevingsfactor: 'omgevingsfactoren' };
+    var EEN = { taak: 'taak', actie: 'actie', risico: 'risico', betrokkene: 'betrokkene', besluit: 'besluit', doel: 'doel', mijlpaal: 'mijlpaal', agendapunt: 'agendapunt', leerpunt: 'leerpunt', omgevingsfactor: 'omgevingsfactor' };
     var zelf = '';
     try { var mt = document.querySelector('meta[name="oc:opslag"]'), mz = mt && /oc\.share\.([\w-]+)/.exec(mt.content); zelf = mz ? mz[1] : ''; } catch (e) {}
     function esc(v) { return String(v).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
@@ -4222,7 +4344,7 @@ window.ocBestand = (function () {
       });
       var best = {};
       lijsten.forEach(function (l) { l.items.forEach(function (it) {
-        var s = it.type + '|' + norm(it.text), sc = [(it.note ? 2 : 0) + (it.who ? 1 : 0) + (it.when ? 1 : 0), l.items.length, l.t], e = best[s];
+        var s = (it.type === 'omgevingsfactor' ? 'risico' : it.type) + '|' + norm(it.text), sc = [(it.note ? 2 : 0) + (it.who ? 1 : 0) + (it.when ? 1 : 0), l.items.length, l.t], e = best[s];
         var beter = !e; for (var i = 0; !beter && e && i < 3; i++) { if (sc[i] !== e.sc[i]) { beter = sc[i] > e.sc[i]; break; } }
         if (beter) best[s] = { sc: sc, l: l, type: it.type, tekst: it.text };
       }); });

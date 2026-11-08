@@ -1943,7 +1943,7 @@ html.oc-stil .n-puls, html.oc-stil .n-halo, html.oc-stil .n-far circle { animati
         <a class="ft-link" href="https://www.linkedin.com/in/bartel-volckaert-8a96842/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Maker</a>
         <button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (34 seconden)" title="Bekijk de film (34 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg></button>
       </nav>
-      <p class="ft-meta"><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v15.39</span></p>
+      <p class="ft-meta"><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v15.40</span></p>
     </div>
   </footer>
   <dialog class="film" id="film" aria-labelledby="film-h">
@@ -2587,13 +2587,14 @@ function setFilter(kind, value) {
     let list, title;
     if (active.kind === 'search') {
       list = searchTools(active.value);
-      const hits = searchContent(active.value), projs = searchProjects(active.value), priv = isPrivate();
+      const hits = searchContent(active.value), projs = searchProjects(active.value), priv = isPrivate(), sjab = searchSjablonen(active.value);
       const n = hits.reduce((k, h) => k + h.snippets.length, 0);
-      const parts = [projs.length && `${projs.length} ${projs.length === 1 ? 'project' : 'projecten'}`, list.length && `${list.length} ${list.length === 1 ? 'tool' : 'tools'}`, n && `${n} ${n === 1 ? 'treffer' : 'treffers'} in je gegevens`].filter(Boolean);
+      const parts = [projs.length && `${projs.length} ${projs.length === 1 ? 'project' : 'projecten'}`, sjab.length && `${sjab.length} ${sjab.length === 1 ? 'sjabloon' : 'sjablonen'}`, list.length && `${list.length} ${list.length === 1 ? 'tool' : 'tools'}`, n && `${n} ${n === 1 ? 'treffer' : 'treffers'} in je gegevens`].filter(Boolean);
       title = `Zoeken: “${esc(active.value)}” <span class="grp">${parts.join(' · ')}</span>`;
       $('results-title').innerHTML = title;
-      const none = !list.length && !hits.length && !projs.length;
+      const none = !list.length && !hits.length && !projs.length && !sjab.length;
       $('results-list').innerHTML = (projs.length ? `<h3 class="res-h">Projecten</h3><div class="res-tip">${projs.map(projCardHTML).join('')}</div>` : '')
+        + (sjab.length ? `<h3 class="res-h">Sjablonen</h3>` + sjab.map(sjabloonRij).join('') : '')
         + (hits.length ? `<h3 class="res-h">In je gegevens</h3>` + hits.map(h => `
           <button class="hit" data-id="${esc(h.t.id)}"><span class="icon">${iconHTML(h.t.icon)}</span>
             <span class="hit-body"><span class="row-title">${esc(h.t.title)}</span>${h.snippets.map(x => `<span class="hit-snip">${x}</span>`).join('')}${h.more ? `<span class="hit-more">en nog ${h.more}</span>` : ''}</span>${chevron}</button>`).join('') : '')
@@ -2800,7 +2801,7 @@ function markLive() {
 }
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-id]');
-  if (b) openTool(b.dataset.id, false, null, '', !!b.closest('#pathbar'));
+  if (b) openTool(b.dataset.id, false, null, b.dataset.zoek || '', !!b.closest('#pathbar'));
 });
 
 /* ---------- Tools openen in de app ---------- */
@@ -2856,7 +2857,7 @@ function openTool(id, fromHistory, van, zoek, stap) {
   let f = frames.get(id);
   if (!f && pre && pre.id === id) { f = pre.f; pre = null; f.inert = false; }
   // Een link met ?van=<tool> ("Zet in Takenbord"): de tool opnieuw laden met die vraag, dan opent ze meteen de kiezer
-  if (f && zoek && /[?&]van=/.test(zoek)) { delete f.dataset.loaded; f.classList.add('loading-frame'); f.src = t.path + zoek; }
+  if (f && zoek && /[?&](van|sjabloon|plan)=/.test(zoek)) { delete f.dataset.loaded; f.classList.add('loading-frame'); try { f.contentWindow.location.replace(t.path + zoek); } catch { f.src = t.path + zoek; } }
   if (!f) f = makeFrame(id, zoek);
   else frames.delete(id);   // opnieuw achteraan zetten
   setLoading(!f.dataset.loaded);
@@ -2997,7 +2998,7 @@ function wire(f, id) {
     const p = norm(u.pathname);
     if (HUBS.includes(p)) { e.preventDefault(); showHome(); return; }
     const t = toolForPath(p);
-    if (t && t.id !== id) { e.preventDefault(); openTool(t.id, false, id, /[?&]van=/.test(u.search) ? u.search : ''); }
+    if (t && t.id !== id) { e.preventDefault(); openTool(t.id, false, id, /[?&](van|sjabloon|plan)=/.test(u.search) ? u.search : ''); }
   }, true);
 }
 
@@ -3658,6 +3659,27 @@ const TRAJECTEN = [
         kanban:'Het werk zelf', 'project-radar':'Hoe staat het project ervoor?', dossier:'Wat leg je voor aan de stuurgroep?', retro:'Wat nemen we mee?' } }
 ];
 const checkIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+/* Een stap kan ook een tool met een vraag in het adres zijn (zoek). De Productboom is de Ideeënkaart met het sjabloon productboom:
+   geen aparte tool, wel een eigen stap, direct na de Projectopdracht. Begonnen = er is een productboom in de Ideeënkaart. */
+const SJ_ICON = { productboom:"<svg viewBox='0 0 40 40' fill='none' xmlns='http://www.w3.org/2000/svg'><circle cx='20' cy='20' r='18' fill='#f8fafc' stroke='#e2e8f0' stroke-width='1.5'/><rect x='14' y='8' width='12' height='7.5' rx='2' fill='#10b981'/><path d='M20 15.5v4M11 19.5h18M11 19.5v4M29 19.5v4' stroke='#94a3b8' stroke-width='2' stroke-linecap='round'/><rect x='5.5' y='23.5' width='11' height='7.5' rx='2' fill='#94a3b8'/><rect x='23.5' y='23.5' width='11' height='7.5' rx='2' fill='#94a3b8'/></svg>", projectkaart:"<svg viewBox='0 0 40 40' fill='none' xmlns='http://www.w3.org/2000/svg'><circle cx='20' cy='20' r='18' fill='#f8fafc' stroke='#e2e8f0' stroke-width='1.5'/><path d='M20 20L9.5 11.5M20 20L30.5 11.5M20 20L9.5 28.5M20 20L30.5 28.5' stroke='#94a3b8' stroke-width='2' stroke-linecap='round'/><circle cx='9.5' cy='11.5' r='3' fill='#94a3b8'/><circle cx='30.5' cy='11.5' r='3' fill='#94a3b8'/><circle cx='9.5' cy='28.5' r='3' fill='#94a3b8'/><circle cx='30.5' cy='28.5' r='3' fill='#94a3b8'/><rect x='12.5' y='16' width='15' height='8' rx='4' fill='#10b981'/></svg>" };
+function heeftSjabloon(k) {
+  try { const d = JSON.parse(localStorage.getItem('mindmap.v1') || 'null');
+    return !!(d && Array.isArray(d.maps) && d.maps.some(m => m && !m.voorbeeld && (m.sjabloon === k || (k === 'productboom' && m.vorm === 'boom' && m.name === 'Productboom')))); } catch { return false; }
+}
+const STAP_EXTRA = {
+  project: [{ na:'opdracht', id:'mindmap', zoek:'?sjabloon=productboom', title:'Productboom', sub:'Wat lever je op?', icon:SJ_ICON.productboom, klaar:() => heeftSjabloon('productboom') }]
+};
+// De stappen van een plan: de tools met oc:traject, aangevuld met de extra stappen hierboven
+function trajectStappen(trId) {
+  const st = TOOLS.flatMap(t => (t.traject || []).filter(x => x.naam === trId).map(x => ({ t, n: x.stap }))).sort((a, b) => a.n - b.n);
+  (STAP_EXTRA[trId] || []).forEach(x => {
+    const b = byId[x.id], i = st.findIndex(s => s.t.id === x.na); if (!b || i < 0) return;
+    st.splice(i + 1, 0, { t: Object.assign({}, b, { title:x.title, sub:x.sub, desc:x.sub, icon:x.icon || b.icon, zoek:x.zoek, extra:x }), n: st[i].n });
+  });
+  return st;
+}
+const stapKlaar = (s, all) => s.t.extra ? s.t.extra.klaar() : hasData(s.t, all);
+const zoekAttr = t => t && t.zoek ? ` data-zoek="${esc(t.zoek)}"` : '';
 // "Begonnen" = de tool heeft iets bewaard op dit toestel. Klaargelegde gegevens (oc.share.*) tellen ook.
 // Een tool die klaarlegt voor andere tools, doet dat pas als er echte inhoud is. Dat is het betrouwbaarste teken.
 // Andere tools: kijk of een eigen sleutel iets anders bevat dan een lege structuur.
@@ -3685,8 +3707,7 @@ function hasData(t, all) {
   } catch { return false; }
 }
 function stepsOf(trId, all = lsKeys()) {
-  return TOOLS.flatMap(t => (t.traject || []).filter(x => x.naam === trId).map(x => ({ t, n: x.stap })))
-    .sort((a, b) => a.n - b.n).map(s => Object.assign(s, { done: hasData(s.t, all) }));
+  return trajectStappen(trId).map(s => Object.assign(s, { done: stapKlaar(s, all) }));
 }
 /* Een stappenplan is pas "begonnen" als je het zelf startte via een stappenplantegel of -knop (data-ctx).
    Gegevens in een tool die ook los gebruikt wordt (bv. Retro), starten geen plan. Bewaard in oc-app.paths-started. */
@@ -3756,24 +3777,24 @@ document.addEventListener('click', e => {
   if (so) { const u = store.get('start-used', []); if (!u.includes(so.dataset.start)) store.set('start-used', [...u, so.dataset.start]); }
 }, true);
 function renderPathbar(id) {
-  const t = byId[id], bar = $('pathbar'), plans = (t && t.traject || []).map(x => x.naam).filter(n => TRAJECTEN.some(tr => tr.id === n));
+  const t = byId[id], bar = $('pathbar'), plans = (t && t.traject || []).map(x => x.naam).concat(Object.keys(STAP_EXTRA).filter(n => STAP_EXTRA[n].some(x => x.id === id))).filter((n, k, a) => a.indexOf(n) === k && TRAJECTEN.some(tr => tr.id === n));
   // Zichtbaar = #pathbar zonder hidden (tools zoals Communicatieplan kijken daarnaar om hun eigen teller te verbergen)
   const show = on => { bar.hidden = !on; if (!on) bar.innerHTML = ''; $('topbar').classList.toggle('has-path', on); };
   if (!plans.length || !viaPad) { show(false); return; }
   const st = startedPaths(), trId = plans.includes(pathCtx) ? pathCtx : plans.find(n => st.includes(n)) || plans[0], tr = TRAJECTEN.find(x => x.id === trId);
   const steps = stepsOf(trId), i = steps.findIndex(s => s.t.id === id);
   if (steps.length < 2 || i < 0) { show(false); return; }
-  const prev = steps[i - 1], next = steps[i + 1], q = tr.q[id] || t.sub || '', pr = isPrivate() ? '' : ((getProject() || {}).name || ''), n = `stap ${i + 1} van ${steps.length}${pr ? ' · ' + pr : ''}`;
+  const prev = steps[i - 1], next = steps[i + 1], q = (steps[i].t.extra ? steps[i].t.sub : tr.q[id]) || t.sub || '', pr = isPrivate() ? '' : ((getProject() || {}).name || ''), n = `stap ${i + 1} van ${steps.length}${pr ? ' · ' + pr : ''}`;
   const arrow = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
   bar.dataset.path = trId;
   bar.setAttribute('aria-label', `Stappenplan: ${tr.title}`);
   $('topbar').style.setProperty('--pb', `${Math.round((i + 1) / steps.length * 100)}%`);
   bar.innerHTML = `
-    <span class="pb-where" title="${esc(`${tr.title} · ${n}${q ? ' · ' + q : ''}`)}"><span class="pb-tool">${esc(t.title)}</span><span class="pb-sub"><span class="pb-plan">${esc(tr.title)} · </span>${esc(n)}${q ? ` · ${esc(q)}` : ''}</span></span>
+    <span class="pb-where" title="${esc(`${tr.title} · ${n}${q ? ' · ' + q : ''}`)}"><span class="pb-tool">${esc(steps[i].t.title)}</span><span class="pb-sub"><span class="pb-plan">${esc(tr.title)} · </span>${esc(n)}${q ? ` · ${esc(q)}` : ''}</span></span>
     <span class="pb-dots" aria-hidden="true">${steps.map((s, k) => `<span class="${k === i ? 'here' : s.done ? 'done' : ''}"></span>`).join('')}</span>
     <span class="pb-nav">
-      ${prev ? `<button type="button" class="pb-prev" data-id="${esc(prev.t.id)}" aria-label="Vorige stap: ${esc(prev.t.title)}" title="Vorige: ${esc(prev.t.title)}">${arrow('M15 18l-6-6 6-6')}</button>` : ''}
-      ${next ? `<button type="button" class="pb-next" data-id="${esc(next.t.id)}" title="Volgende stap: ${esc(next.t.title)}"><span class="pb-lbl">Volgende</span><span class="pb-nm">: ${esc(next.t.title)}</span>${arrow('M9 6l6 6-6 6')}</button>`
+      ${prev ? `<button type="button" class="pb-prev" data-id="${esc(prev.t.id)}"${zoekAttr(prev.t)} aria-label="Vorige stap: ${esc(prev.t.title)}" title="Vorige: ${esc(prev.t.title)}">${arrow('M15 18l-6-6 6-6')}</button>` : ''}
+      ${next ? `<button type="button" class="pb-next" data-id="${esc(next.t.id)}"${zoekAttr(next.t)} title="Volgende stap: ${esc(next.t.title)}"><span class="pb-lbl">Volgende</span><span class="pb-nm">: ${esc(next.t.title)}</span>${arrow('M9 6l6 6-6 6')}</button>`
         : `<span class="pb-end">Laatste stap</span>`}
     </span>`;
   show(true);
@@ -3792,7 +3813,7 @@ function startTileHTML(st, all) {
     const steps = stepsOf(st.path, all), first = steps[0]; if (!first) return '';
     const begun = startedPaths().includes(st.path), next = begun && (steps.find(x => !x.done) || first);
     const go = next || first;
-    return `<button type="button" class="stile" data-id="${esc(go.t.id)}" data-ctx="${st.path}" data-start="${st.path}"><span class="icon">${st.logo ? bare(st.logo) : iconHTML(first.t.icon)}</span><span class="st-body"><b>${esc(st.title)}</b><span>${esc(st.sub)}</span><small class="st-cta">${begun ? `Verder: stap ${steps.indexOf(go) + 1} van ${steps.length}` : 'Begin'}${PIJL_CTA}</small></span></button>`; }
+    return `<button type="button" class="stile" data-id="${esc(go.t.id)}"${zoekAttr(go.t)} data-ctx="${st.path}" data-start="${st.path}"><span class="icon">${st.logo ? bare(st.logo) : iconHTML(first.t.icon)}</span><span class="st-body"><b>${esc(st.title)}</b><span>${esc(st.sub)}</span><small class="st-cta">${begun ? `Verder: stap ${steps.indexOf(go) + 1} van ${steps.length}` : 'Begin'}${PIJL_CTA}</small></span></button>`; }
   const g = GROUPS.find(x => x.id === st.group); if (!g) return '';
   return `<button type="button" class="stile" data-group-open="${g.id}" data-start="${g.id}"><span class="icon g">${bare(g.logo)}</span><span class="st-body"><b>${esc(st.title)}</b><span>${esc(st.sub)}</span><small class="st-cta licht">Open${PIJL_CTA}</small></span></button>`;
 }
@@ -3811,10 +3832,9 @@ document.addEventListener('click', e => {
 function renderPaths() {
   const all = lsKeys(), openSet = store.get('paths-open', []), notStarted = [];
   const html = TRAJECTEN.map(tr => {
-    const steps = TOOLS.flatMap(t => (t.traject || []).filter(x => x.naam === tr.id).map(x => ({ t, n: x.stap })))
-      .sort((a, b) => a.n - b.n);
+    const steps = trajectStappen(tr.id);
     if (steps.length < 2) return '';
-    steps.forEach(s => s.done = hasData(s.t, all));
+    steps.forEach(s => s.done = stapKlaar(s, all));
     const next = steps.find(s => s.done === false) || null;
     const nDone = steps.filter(s => s.done).length, isOpen = openSet.includes(tr.id);
     if (!startedPaths().includes(tr.id)) { notStarted.push({ tr, first: steps[0] }); return ''; }
@@ -3825,10 +3845,10 @@ function renderPaths() {
           <span class="path-bar" aria-hidden="true">${steps.map(s => `<span class="${s.done ? 'done' : ''}"></span>`).join('')}</span></span>
         ${toggleIcon}
       </button>
-      ${next && resumePath !== tr.id ? `<button class="path-next" data-id="${esc(next.t.id)}" data-ctx="${tr.id}"><span class="icon">${iconHTML(next.t.icon)}</span>
+      ${next && resumePath !== tr.id ? `<button class="path-next" data-id="${esc(next.t.id)}"${zoekAttr(next.t)} data-ctx="${tr.id}"><span class="icon">${iconHTML(next.t.icon)}</span>
         <span><small>${nDone ? 'Volgende stap' : 'Begin hier'}</small><b>${esc(next.t.title)}</b></span>${chevron}</button>` : ''}
       <ol class="steps">${steps.map((s, i) => `<li class="step${s.done ? ' done' : ''}${s === next ? ' next' : ''}">
-        <button class="step-btn" data-id="${esc(s.t.id)}" title="${esc(s.t.desc)}">
+        <button class="step-btn" data-id="${esc(s.t.id)}"${zoekAttr(s.t)} title="${esc(s.t.desc)}">
           <span class="step-dot">${s.done ? checkIcon : i + 1}</span><span class="icon">${iconHTML(s.t.icon)}</span>
           <span><span class="step-name">${esc(s.t.title)}</span><span class="step-q">${esc(tr.q[s.t.id] || s.t.sub)}</span></span>
           <span class="step-st">${s.done ? 'begonnen' : s === next ? 'volgende' : ''}</span>
@@ -3914,7 +3934,7 @@ const SYNONIEMEN = {
   tijdlijn:'tijdlijn mijlpalen mijlpaal planning deadline einddatum verschoven vertraging stuurgroep roadmap fasering timing',
   raci:'wie doet wat rollen verantwoordelijk taakverdeling projectplan stuurgroep', kanban:'planning sprint taken bord takenbord to-do mijlpalen mijlpaal actiepunten projectplan deadline',
   vinkje:'checklist todo lijst afvinken boodschappen actiepunten acties agenda', beslissingen:'beslissing besluit afspraak notulen verslag actiepunten agenda mailen e-mail stuurgroep vergadering overleg',
-  ijsbreker:'ijsbreker kennismaken voorstellen opener vergadering team workshop spel', vergaderkost:'vergadering meeting kost tijd agenda', 'check-in':'vergadering overleg team ronde rondje opener beurt spreektijd agenda', stroom:'proces flow schema processchema stroomschema stappen flowchart swimlane', gedrag:'gedrag gewoonte aanpassen anders werken meekrijgen motivatie vaardigheid', mindmap:'mindmap ideeenkaart brainstorm ideeen ordenen structuur boom overzicht productboom producten deelproducten eindresultaat opsplitsen organigram hierarchie', visgraat:'oorzaak gevolg oorzaken probleem analyse visgraat waarom',
+  ijsbreker:'ijsbreker kennismaken voorstellen opener vergadering team workshop spel', vergaderkost:'vergadering meeting kost tijd agenda', 'check-in':'vergadering overleg team ronde rondje opener beurt spreektijd agenda', stroom:'proces flow schema processchema stroomschema stappen flowchart swimlane', gedrag:'gedrag gewoonte aanpassen anders werken meekrijgen motivatie vaardigheid', mindmap:'mindmap ideeenkaart brainstorm ideeen ordenen structuur boom overzicht productboom producten deelproducten eindresultaat opsplitsen organigram hierarchie deliverables deliverable pbs wbs projectkaart projectplanning projectplan projectaanpak', visgraat:'oorzaak gevolg oorzaken probleem analyse visgraat waarom',
   communicatie:'communicatie boodschap mail nieuwsbrief aankondigen mailen reorganisatie herstructurering nieuwe structuur aanspreken', memomiles:'inspreken dicteren spraak mail notitie inbox mailen e-mail', focus:'concentreren concentratie timer concentratie blokken',
   fortuna:'loting willekeurig naam trekken wie begint beurt kiezen rad team vergadering', mixer:'teams verdelen groepen groepjes indelen samenstellen team vergadering',
   'project-realisme':'schatting planning tijd duur mijlpalen budget projectplan deadline',
@@ -3929,6 +3949,17 @@ const SYNONIEMEN = {
   adem:'angst paniek rustig kalmeren stress rust ademhaling ontspannen kalm', hart:'mediteren meditatie meditatie mildheid ontspannen rust', hier:'angst paniek zintuigen aarden stress rust ontspannen', qr:'qr-code qrcode qr scancode code link delen', opdracht:'projectopdracht opdracht projectfiche projectplan scope afbakening doel doelen opdrachtgever mijlpalen mijlpaal aftekenen budget deadline einddatum opstart', meetplan:'meten meting indicator indicatoren kpi doel doelen nulmeting streefwaarde effect resultaat evaluatie opvolgen cijfers rapport', dossier:'dossier stuurgroep rapport rapportering statusrapport nota overzicht samenvatting voortgang', notities:'notities verslag vergaderverslag notulen notuleren kladblok aantekeningen acties actiepunten besluiten afspraken agenda aanwezigen overleg teamoverleg werkoverleg stuurgroep opvolging wie wat wanneer', kaartjes:'kaartjes kaarten strategiekaartjes strategische vragen vraagkaarten gespreksvragen vergadering strategie meten verbinden meta reflectie discussie trekken', klankkast:'klankkast geluid geluidjes geluiden soundboard effecten badum tss grap punchline applaus tromgeroffel zoemer tadaa metronoom tiktak drama scope alarm brandalarm sirene achteruit vrachtwagen terugkrabbelen treurmars begrafenis chopin hamer orde stilte jarig verjaardag happy birthday vergadering plezier knipoog', goesting:'goesting motivatie werkgoesting zin werkplezier autonomie verbondenheid competentie abc basisbehoeften zelfdeterminatie stress energie welzijn thermometer test zelftest', 'check-out':'check-out checkout uitcheck afsluiten afsluiter afronden terugblik evaluatie exitticket exit ticket inzicht vragen workshop sessie opleiding training minuut feedback drie woorden', woordwolk:'woordwolk wordcloud woordenwolk woorden tellen tekst analyse open antwoorden bevraging enquête enquete survey vragenlijst feedback interviews notulen trefwoorden kernwoorden frequentie csv', werkdagen:'werkdagen werkdag termijn termijnen deadline vervaldag kalenderdagen feestdagen feestdag datum datums tellen rekenen antwoordtermijn bezwaar beroep brugdag sluitingsdag', pdf:'pdf pdfs samenvoegen samenvoeging splitsen opsplitsen pagina paginas verwijderen eruit halen draaien roteren herschikken volgorde combineren knippen document bestand scan', looplicht:'zaklamp joggen lopen fietsen veiligheid licht nacht', schets:'tekenen schetsen schets whiteboard sjablonen sjabloon presenteren plattegrond scherm ontwerp stylus pen krabbel'
 };
 const fold = v => String(v || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+/* Sjablonen die je meteen opent vanuit het zoekveld (de Ideeënkaart met een vraag in het adres) */
+const SJABLONEN = [
+  { k:'productboom', title:'Productboom', sub:'Wat lever je op? Splits het eindresultaat op in delen', woorden:'productboom producten product deliverables deliverable pbs wbs deelproducten deelresultaten eindresultaat opsplitsen resultaten opleveren' },
+  { k:'projectkaart', title:'Projectkaart', sub:'Elf takken om je project op te zetten, van doel tot bronnen', woorden:'projectkaart projectplanning projectplan projectaanpak projectvoorbereiding voorbereiden opzetten' }
+];
+function searchSjablonen(q) {
+  const words = fold(q).split(/\s+/).filter(Boolean); if (!words.length || !byId.mindmap) return [];
+  return SJABLONEN.filter(s => { const txt = fold(s.title + ' ' + s.woorden); return words.every(w => txt.includes(w) || (w.length >= 7 && (' ' + txt).includes(' ' + w.slice(0, w.length - 3)))); });
+}
+const sjabloonRij = s => rowHTML(Object.assign({}, byId.mindmap, { title:s.title, sub:s.sub, desc:'Opent de Ideeënkaart met het sjabloon ' + s.title.toLowerCase(), icon:SJ_ICON[s.k], labels:[], pdca:[] }))
+  .replace('data-id="mindmap"', `data-id="mindmap" data-zoek="?sjabloon=${s.k}"`).replace('<span class="live">Staat open</span>', '');   // een sjabloon "staat" niet open
 function searchTools(q) {
   const words = fold(q).split(/\s+/).filter(Boolean);
   return TOOLS.map(t => {
