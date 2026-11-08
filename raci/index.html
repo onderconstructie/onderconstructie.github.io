@@ -156,6 +156,45 @@ td.c { text-align:center; padding:0.25rem; }
 .cell.AR { background:linear-gradient(135deg, var(--slate-800) 50%, var(--accent-dark) 50%); border:1.5px solid var(--slate-700); color:var(--wit); font-size:0.875rem; letter-spacing:0; }
 .cell.C { background:var(--accent-50); border:1.5px solid var(--accent); color:var(--accent-dark); }
 .cell.I { background:var(--wit); border:1.5px solid var(--slate-300); color:var(--slate-500); }
+.cell.open { box-shadow:0 0 0 3px var(--accent-light); }
+
+/* Een letter kiezen: een tik op een vak toont de vier letters, elk met een woord als geheugensteun */
+.kies { position:fixed; z-index:60; background:var(--wit); border:1px solid var(--slate-200); border-radius:14px; box-shadow:0 14px 36px -8px rgba(15,23,42,0.28), 0 2px 6px rgba(15,23,42,0.08); padding:0.5rem 0.375rem 0.375rem; max-width:calc(100vw - 16px); }
+.kies-kop { margin:0 0.375rem 0.375rem; font-size:0.8125rem; color:var(--slate-500); line-height:1.35; overflow-wrap:anywhere; }
+.kies-kop b { color:var(--slate-800); font-weight:600; }
+.kies-rij { display:flex; gap:2px; }
+.kies-o { width:58px; min-height:64px; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:0.25rem; padding:0.375rem 0 0.3125rem; border-radius:10px; background:none; color:var(--slate-600); cursor:pointer; }
+.kies-o:hover { background:var(--slate-50); }
+.kies-o .cell { width:36px; height:36px; font-size:0.9375rem; pointer-events:none; }
+.kies-o .cell:not(.R):not(.A):not(.C):not(.I) { color:var(--slate-500); border-color:#7e8ea4; }
+.kies-w { font-size:0.75rem; font-weight:600; line-height:1.2; text-align:center; }
+.kies-o[aria-pressed="true"] { background:var(--accent-50); color:var(--accent-dark); box-shadow:inset 0 0 0 1.5px var(--accent-dark); }
+.kies-o:focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
+.kies-hint { margin:0.375rem 0.375rem 0.125rem; font-size:0.75rem; line-height:1.4; color:#b45309; max-width:17rem; }
+@media (prefers-reduced-motion:no-preference) { .kies { animation:kiesIn 0.12s ease-out; } @keyframes kiesIn { from { opacity:0; transform:translateY(-3px); } } }
+
+/* Smal scherm: een kaart per taak in plaats van een brede tabel */
+.table-wrap.kaarten { overflow:visible; }
+.k-pers { padding:0.75rem 0.875rem 0.5rem; background:var(--slate-50); border-bottom:1px solid var(--slate-100); }
+.k-kop { margin:0 0 0.25rem; font-size:0.75rem; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:var(--slate-500); }
+.k-pers ul { list-style:none; margin:0; padding:0; }
+.k-pers li { display:flex; align-items:center; gap:0.375rem; min-height:44px; border-bottom:1px solid var(--slate-100); }
+.k-pers li:last-child { border-bottom:0; }
+.k-pers .name { flex:1; min-width:0; font-weight:600; color:var(--slate-800); font-size:0.9375rem; }
+.k-load { font-size:0.75rem; color:var(--slate-500); text-align:right; font-variant-numeric:tabular-nums; line-height:1.3; }
+.k-pers li.sig .k-load { color:#b45309; font-weight:600; }
+.k-load .warn { display:block; }
+.k-pers .x, .k-taak .x { opacity:1; width:44px; height:44px; color:var(--slate-500); }
+.k-taken { list-style:none; margin:0; padding:0.75rem 0.75rem 0.25rem; display:grid; gap:0.75rem; }
+.k-taak { border:1px solid var(--slate-200); border-radius:14px; padding:0.375rem 0.25rem 0.25rem 0.625rem; background:var(--wit); }
+.k-taak .task-cell { align-items:center; }
+.k-taak .task-main > .name { display:block; font-weight:600; color:var(--slate-800); font-size:1rem; padding:0.375rem 0.25rem; }
+.k-rollen { list-style:none; margin:0.125rem 0 0; padding:0; }
+.k-rollen li { display:flex; align-items:center; gap:0.5rem; min-height:52px; padding-right:0.25rem; border-top:1px solid var(--slate-100); }
+.k-naam { flex:1; min-width:0; font-size:0.9375rem; color:var(--slate-700); overflow-wrap:anywhere; padding-left:0.25rem; }
+.k-woord { font-size:0.8125rem; color:var(--slate-500); white-space:nowrap; }
+.k-leeg { margin:0; padding:1rem 1.125rem; font-size:0.9375rem; color:var(--slate-500); }
+.k-taak.flash, .k-pers li.flash { animation:flash 1.4s ease; }
 
 tfoot td, tfoot th { background:var(--slate-50); border-bottom:0; font-size:0.75rem; color:var(--slate-500); padding:0.5rem 0.25rem; text-align:center; font-variant-numeric:tabular-nums; }
 tfoot th { text-align:left; padding-left:1.125rem; font-size:0.75rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--slate-500); font-weight:600; }
@@ -956,7 +995,7 @@ input::placeholder, textarea::placeholder { color:#64748b; opacity:1; }
     <div class="leg" title="C: Denkt vooraf mee"><span class="cell C" aria-hidden="true">C</span><div><strong>Denkt vooraf mee</strong><span>Je vraagt het vóór je beslist. Gesprek in twee richtingen.</span></div></div>
     <div class="leg" title="I: Hoort het achteraf"><span class="cell I" aria-hidden="true">I</span><div><strong>Hoort het achteraf</strong><span>Je laat weten wat beslist is. Eén richting.</span></div></div>
   </div>
-  <p class="tip">Tik op een vak om door R, A, C en I te wisselen. Met het toetsenbord typ je de letter. Lang drukken of rechtsklikken maakt het vak leeg. Tik op een naam om die te wijzigen. Plak meerdere regels om in één keer taken of rollen toe te voegen.</p>
+  <p class="tip">Tik op een vak en kies R, A, C of I. Met het toetsenbord typ je meteen de letter. Lang drukken of rechtsklikken maakt het vak leeg. Tik op een naam om die te wijzigen. Plak meerdere regels om in één keer taken of rollen toe te voegen.</p>
 <div class="oc-restart-row" id="oc-restart-row" hidden><button type="button" class="oc-restart" id="oc-restart-btn">Opnieuw beginnen</button></div>
 
   <details class="explain">
@@ -964,8 +1003,8 @@ input::placeholder, textarea::placeholder { color:#64748b; opacity:1; }
     <div class="inner">
       <p>Met de RACI-matrix leg je per taak vast wie het werk doet, wie beslist, wie vooraf meedenkt en wie het achteraf hoort.</p>
       <ul>
-        <li><b>Zet de taken en de mensen erin.</b> Taken worden rijen, personen of rollen worden kolommen. Plak je een lijst, dan wordt elke regel een aparte taak of rol.</li>
-        <li><b>Kies per vak een letter.</b> R voert het werk uit. A beslist en draagt het resultaat. C denkt vooraf mee: je vraagt het voor je beslist. I hoort achteraf wat er beslist is.</li>
+        <li><b>Zet de taken en de mensen erin.</b> Taken worden rijen, personen of rollen worden kolommen. Op een gsm krijgt elke taak een eigen kaart met de personen eronder. Plak je een lijst, dan wordt elke regel een aparte taak of rol.</li>
+        <li><b>Kies per vak een letter.</b> Tik op een vak: je ziet de vier letters met een woord erbij. R voert het werk uit. A beslist en draagt het resultaat. C denkt vooraf mee: je vraagt het voor je beslist. I hoort achteraf wat er beslist is.</li>
         <li><b>De tool kijkt elke taak na.</b> Elke taak heeft precies één beslisser nodig (A) en minstens één uitvoerder (R). Ontbreekt er een, of beslissen er twee, dan krijgt de taak een oranje label. Bovenaan staat hoeveel taken een probleem hebben. Tik erop en je springt naar het eerste.</li>
         <li><b>Kijk naar de belasting.</b> Onderaan elke kolom staat hoe vaak die rol uitvoert (R) en beslist (A). Vanaf drie rollen krijg je een signaal als één rol minstens vier keer uitvoert of beslist en dubbel zo vaak als de anderen, of als ze bij bijna elke taak betrokken is. Een rol zonder enige letter valt ook op. Dat zijn punten om te bespreken, geen vaste regels.</li>
         <li><b>Werk samen via een gedeeld bestand.</b> Standaard blijft alles op dit toestel. Wil je met je team in één matrix werken? Kies dan in het menu ⋮ "Werk samen via een gedeeld bestand", vink aan welke matrices meegaan en zet het bestand in een gedeelde map die je computer synchroniseert. Dit kan in Chrome of Edge op een computer en in Chrome op Android, niet op een iPhone of iPad. Iedereen met toegang tot het bestand ziet wat erin staat, ook namen. Vullen twee mensen tegelijk een ander vak in, dan blijven beide letters staan.</li>
@@ -2717,12 +2756,38 @@ function render() {
     }).join('')}</tr></tfoot>` : '';
   const sl = $('table-wrap').scrollLeft;
   const sigs = m.tasks.length ? signalLines(m) : [];
-  $('table-wrap').innerHTML = `<table>${head}${body}${foot}</table>`;
+  sluitKies(false);
+  $('table-wrap').classList.toggle('kaarten', KAART.matches);
+  $('table-wrap').innerHTML = KAART.matches ? kaartenHTML(m) : `<table>${head}${body}${foot}</table>`;
   $('load-note').hidden = !sigs.length;
   $('load-note').innerHTML = sigs.length ? `${sigs.map(t => `<b>${esc(t.label)}:</b> ${esc(t.text)}`).join('<br>')}<br>${SIG_NOTE}` : '';
   $('table-wrap').scrollLeft = sl;
   scrollHint();
 }
+// Smal scherm: per taak een kaart met de personen eronder. Zelfde vakken, zelfde knoppen, zelfde regels als de tabel.
+const KAART = matchMedia('(max-width: 640px)');
+const WOORD = { R:'voert uit', A:'beslist', AR:'beslist en voert uit', C:'denkt mee', I:'hoort het' };
+function kaartenHTML(m) {
+  const pers = m.roles.length ? `<div class="k-pers"><p class="k-kop">Personen en rollen</p><ul>${m.roles.map(r => {
+      const l = roleLoad(m, r);
+      return `<li data-role="${escA(r.id)}" data-load="${escA(r.id)}"${l.sig.length ? ' class="sig"' : ''}>
+        <span class="name" contenteditable="plaintext-only" spellcheck="false" data-edit="role" role="textbox" aria-label="Naam van de rol" title="Tik om de naam te wijzigen">${esc(r.name)}</span>
+        <span class="k-load" title="R ${l.r} · A ${l.a} · C ${l.c} · I ${l.i}">${l.r} R · ${l.a} A${l.sig.map(s => `<span class="warn">${SIG_SHORT[s]}</span>`).join('')}</span>
+        <button class="x" data-del-role="${escA(r.id)}" aria-label="Verwijder ${esc(r.name)}">${X}</button></li>`; }).join('')}</ul></div>`
+    : '<p class="k-leeg">Voeg hierboven een persoon of rol toe. Die verschijnt dan bij elke taak.</p>';
+  const taken = m.tasks.length ? `<ol class="k-taken">${m.tasks.map(t => {
+      const flags = rowFlags(m, t);
+      return `<li class="k-taak" data-task="${escA(t.id)}"><div class="task-cell">
+        <div class="task-main"><span class="name" contenteditable="plaintext-only" spellcheck="false" data-edit="task" role="textbox" aria-label="Naam van de taak" title="Tik om de naam te wijzigen">${esc(t.name)}</span>
+        ${t.when ? `<div class="when">Tegen ${esc(ocDatum(t.when))}</div>` : ''}${flags.length ? `<div class="flags">${flags.map(f => `<span class="flag">${FLAG_TEXT[f] || f}</span>`).join('')}</div>` : ''}</div>
+        <button class="x" data-del-task="${escA(t.id)}" aria-label="Verwijder ${esc(t.name)}">${X}</button></div>
+        ${m.roles.length ? `<ul class="k-rollen">${m.roles.map(r => { const v = t.cells[r.id] || '';
+          return `<li><span class="k-naam">${esc(r.name)}</span><span class="k-woord" aria-hidden="true">${v ? WOORD[v] : ''}</span><button class="cell ${escA(v)}" data-t="${escA(t.id)}" data-r="${escA(r.id)}" title="${escA(TIP(v))}" aria-label="${esc(t.name)}, ${esc(r.name)}: ${escA(v ? SHOW(v) + ', ' + LABEL[v] : 'leeg')}">${SHOW(v) || '<span aria-hidden="true">·</span>'}</button></li>`; }).join('')}</ul>` : ''}</li>`;
+    }).join('')}</ol>` : '<p class="k-leeg">Voeg hierboven een taak toe.</p>';
+  return pers + taken;
+}
+KAART.addEventListener('change', () => render());
+
 function unitLabel(m) {
   $('vb-bar').hidden = !m.voorbeeld;
   const dl = `Verwijder ${m.name || 'matrix'}`; $('del-unit').setAttribute('aria-label', dl); $('del-unit').title = dl;
@@ -2870,10 +2935,8 @@ document.addEventListener('click', e => {
   const cell = e.target.closest('.cell[data-t]');
   if (cell) {
     if (longPressed) { longPressed = false; return; }
-    const t = cur().tasks.find(x => x.id === cell.dataset.t); if (!t) return;
-    const v = t.cells[cell.dataset.r] || '';
-    setCell(cell.dataset.t, cell.dataset.r, CYCLE[(CYCLE.indexOf(v) + 1) % CYCLE.length]);
-    if (navigator.vibrate) try { navigator.vibrate(6); } catch {}
+    if (kies && kies.cell === cell) { sluitKies(true); return; }   // nog eens tikken sluit
+    openKies(cell);
     return;
   }
   const dt = e.target.closest('[data-del-task]');
@@ -2915,6 +2978,66 @@ document.addEventListener('keydown', e => {
 });
 const short = s => s.length > 28 ? s.slice(0, 28) + '…' : s;
 
+/* Een letter kiezen. Een tik (of Enter) op een vak toont R, A, C en I naast elkaar, elk met een woord eronder.
+   De huidige keuze is groen omrand. Een korte hint zegt het als een regel van RACI in het gedrang komt.
+   Pijltjes gaan van letter naar letter, de letter zelf typen kiest meteen, Esc sluit en zet de focus terug op het vak. */
+const KIES = [['R', 'Voert uit'], ['A', 'Beslist'], ['C', 'Denkt mee'], ['I', 'Hoort het']];
+let kies = null;
+function sluitKies(terug) {
+  if (!kies) return;
+  const c = kies.cell; kies.el.remove(); kies = null;
+  if (c && c.isConnected) { c.classList.remove('open'); c.removeAttribute('aria-expanded'); if (terug) c.focus({ preventScroll:true }); }
+}
+function zetKies() {
+  if (!kies) return;
+  const { el, cell } = kies, r = cell.getBoundingClientRect(), w = el.offsetWidth, hh = el.offsetHeight;
+  const vw = document.documentElement.clientWidth, vh = window.innerHeight;
+  if (!cell.isConnected || r.bottom < 0 || r.top > vh) { sluitKies(false); return; }   // het vak schoof uit beeld
+  let left = r.left + r.width / 2 - w / 2; left = Math.max(8, Math.min(left, vw - w - 8));
+  let top = r.bottom + 6; if (top + hh > vh - 8) top = r.top - hh - 6; if (top < 8) top = 8;
+  el.style.left = Math.round(left) + 'px'; el.style.top = Math.round(top) + 'px';
+}
+function openKies(cell) {
+  sluitKies(false);
+  const m = cur(), t = m.tasks.find(x => x.id === cell.dataset.t), r = m.roles.find(x => x.id === cell.dataset.r); if (!t || !r) return;
+  const v = t.cells[r.id] || '', nu = v === 'AR' ? 'A' : v;
+  const andereA = m.roles.filter(x => x.id !== r.id && IS_A(t.cells[x.id])).map(x => x.name.trim()).filter(Boolean);
+  const andereR = m.roles.some(x => x.id !== r.id && IS_R(t.cells[x.id]));
+  const hint = andereA.length && nu !== 'A' ? `${andereA.join(' en ')} beslist al. Een taak heeft één A.`
+    : !andereR && nu === 'R' ? 'Dit is de enige R. Zonder R voert niemand deze taak uit.'
+    : !andereA.length && nu === 'A' ? 'Dit is de enige A. Zonder A beslist niemand.' : '';
+  const el = document.createElement('div');
+  el.className = 'kies'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', `Letter voor ${r.name} bij ${t.name}`);
+  el.innerHTML = `<p class="kies-kop"><b>${esc(r.name)}</b> bij ${esc(short(t.name))}</p><div class="kies-rij">${KIES.map(([k, w]) =>
+      `<button type="button" class="kies-o" data-kies="${k}" aria-pressed="${nu === k}" aria-label="${k}, ${LABEL[k]}"><span class="cell ${k}" aria-hidden="true">${k}</span><span class="kies-w" aria-hidden="true">${w}</span></button>`).join('')}${v
+      ? '<button type="button" class="kies-o" data-kies="" aria-label="Maak het vak leeg"><span class="cell" aria-hidden="true">·</span><span class="kies-w" aria-hidden="true">Leeg</span></button>' : ''}</div>${hint ? `<p class="kies-hint">${esc(hint)}</p>` : ''}`;
+  document.body.appendChild(el);
+  kies = { el, cell };
+  cell.classList.add('open'); cell.setAttribute('aria-expanded', 'true');
+  zetKies();
+  (el.querySelector('[aria-pressed="true"]') || el.querySelector('.kies-o')).focus({ preventScroll:true });
+  el.addEventListener('click', e => {
+    const b = e.target.closest('[data-kies]'); if (!b) return;
+    const { t: tId, r: rId } = cell.dataset; sluitKies(false);
+    setCell(tId, rId, b.dataset.kies);
+    if (navigator.vibrate) try { navigator.vibrate(6); } catch {}
+  });
+  el.addEventListener('keydown', e => {
+    const knop = [...el.querySelectorAll('.kies-o')], i = knop.indexOf(document.activeElement), k = e.key.toUpperCase();
+    if (e.key === 'Escape') { e.preventDefault(); sluitKies(true); return; }
+    if (['ArrowRight', 'ArrowDown'].includes(e.key)) { e.preventDefault(); knop[(i + 1) % knop.length].focus(); return; }
+    if (['ArrowLeft', 'ArrowUp'].includes(e.key)) { e.preventDefault(); knop[(i - 1 + knop.length) % knop.length].focus(); return; }
+    if (e.key === 'Home' || e.key === 'End') { e.preventDefault(); knop[e.key === 'Home' ? 0 : knop.length - 1].focus(); return; }
+    if (e.key === 'Tab') { e.preventDefault(); knop[(i + (e.shiftKey ? -1 : 1) + knop.length) % knop.length].focus(); return; }
+    const doel = ['R', 'A', 'C', 'I'].includes(k) ? k : (e.key === 'Delete' || e.key === 'Backspace') ? '' : null;
+    if (doel !== null && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); const { t: tId, r: rId } = cell.dataset; sluitKies(false); setCell(tId, rId, doel); }
+  });
+}
+// Ergens anders tikken, schuiven of het venster draaien sluit de keuze
+document.addEventListener('pointerdown', e => { if (kies && !kies.el.contains(e.target) && e.target.closest('.cell[data-t]') !== kies.cell) sluitKies(false); }, true);
+window.addEventListener('resize', () => sluitKies(false));
+document.addEventListener('scroll', e => { if (kies && !kies.el.contains(e.target)) zetKies(); }, true);
+
 /* Met Tab door de matrix: een cel mag niet verdwijnen achter de vaste takenkolom of buiten de rand. */
 document.addEventListener('focusin', e => {
   const wrap = e.target.closest && e.target.closest('.table-wrap'); if (!wrap) return;
@@ -2939,8 +3062,8 @@ document.addEventListener('focusout', e => {
   const el = e.target; if (!el.dataset || !el.dataset.edit) return;
   const m = cur();
   const obj = el.dataset.edit === 'task'
-    ? m.tasks.find(t => t.id === el.closest('tr').dataset.task)
-    : m.roles.find(r => r.id === el.closest('th').dataset.role);
+    ? m.tasks.find(t => t.id === el.closest('[data-task]').dataset.task)
+    : m.roles.find(r => r.id === el.closest('[data-role]').dataset.role);
   if (!obj) return;
   const v = el.textContent.replace(/\s+/g, ' ').trim().slice(0, 120);
   if (el.dataset.cancel || !v) { delete el.dataset.cancel; el.textContent = obj.name; return; }
@@ -2952,14 +3075,14 @@ document.addEventListener('focusout', e => {
 function jump() {
   const p = problems(cur())[0]; if (!p) return;
   if (p.kind === 'task') {
-    const tr = document.querySelector(`tr[data-task="${escA(p.id)}"]`); if (!tr) return;
+    const tr = document.querySelector(`[data-task="${escA(p.id)}"]`); if (!tr) return;
     tr.scrollIntoView({ behavior:'smooth', block:'center' });
     tr.classList.remove('flash'); void tr.offsetWidth; tr.classList.add('flash');
     const cell = tr.querySelector('.cell'); if (cell) cell.focus({ preventScroll:true });
   } else {
     const td = document.querySelector(`[data-load="${escA(p.id)}"]`); if (!td) return;
     td.scrollIntoView({ behavior:'smooth', block:'center', inline:'center' });
-    td.classList.remove('flash'); void td.offsetWidth; td.parentElement.classList.add('flash');
+    td.classList.remove('flash'); void td.offsetWidth; (td.tagName === 'LI' ? td : td.parentElement).classList.add('flash');
   }
 }
 
