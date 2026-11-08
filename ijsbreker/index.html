@@ -504,6 +504,271 @@ details.explain.oc-u .oc-u-noot a, details.explain.oc-u .oc-u-stap-uitleg a, det
 })();
 /* oc-opslag v1 einde */
 </script>
+<script>
+/* oc-toegang v1 begin */
+/* Toegankelijk in elke tool op dezelfde manier (WCAG 2.2 AA). Eén blok, byte-gelijk in elke tool en in de app.
+   1. De focus valt nooit weg. Verdwijnt het element met de focus, dan geldt één vaste regel per soort actie:
+      - het element komt terug na het opnieuw tekenen (een tab, een keuze, een knop die blijft): de focus blijft erop;
+      - je drukte Tab en het veld werd net opnieuw getekend: de focus gaat naar het volgende (of vorige) element;
+      - een venster of bewerking sluit (Neem over, Bewaar, Annuleer, Esc): de knop die het opende;
+      - een item verdwijnt (verwijderen): het volgende item, anders het vorige, anders de kop van de lijst;
+      - de inhoud wisselt (voorbeeld, wis voorbeeld, wissen, Ongedaan, nieuw): de kop van de inhoud
+        (de voorbeeldband als die er staat, anders [data-oc-kop] of de titel van de tool).
+   2. ocMeld(tekst): één gedeelde live-regio voor schermlezers (toevoegen, verwijderen, een andere status).
+   3. ocWacht(el): een melding met Ongedaan blijft staan zolang ze de focus of de muis heeft, en daarna nog even.
+   4. Een vaste of zwevende balk bedekt het element met de focus niet: de pagina schuift mee.
+      In een laag venster (bv. 400% zoom) plakt niets meer vast bovenaan. */
+(function () {
+  if (window.__ocToegang) return; window.__ocToegang = true;
+  var D = document, nu = null, toets = false, tabT = 0, tabTerug = false, gepland = 0;
+  var FOCUSBAAR = 'a[href],button,input:not([type=hidden]),select,textarea,[tabindex],[contenteditable=""],[contenteditable=true],summary';
+  var VENSTER = 'dialog,[role=dialog],[role=alertdialog],[aria-modal=true],[role=menu],[role=listbox]';
+  var ITEM = 'li,tr,article,[role=listitem],[role=row],[role=tab],[role=option],[data-id],[data-i],[data-idx],[data-index],[data-key],[data-nr]';
+  function getoond(x) {
+    if (!x || !x.isConnected || !x.getClientRects().length) return false;
+    for (var e = x; e && e.nodeType === 1; e = e.parentElement) { if (e.hidden || e.inert) return false; var cs = getComputedStyle(e); if (cs.display === 'none' || cs.visibility === 'hidden') return false; }
+    return true;
+  }
+  function kan(x) { return getoond(x) && !x.disabled && x.getAttribute('aria-disabled') !== 'true' && x.matches(FOCUSBAAR); }
+  function typt(a) { return a && (a.isContentEditable || a.tagName === 'TEXTAREA' || a.tagName === 'SELECT' || (a.tagName === 'INPUT' && !/^(checkbox|radio|button|submit|reset|range|color|file)$/i.test(a.type))); }
+  function sleutel(x, licht) {
+    var s = x.tagName + '|' + (x.getAttribute('role') || '') + '|' + (x.getAttribute('type') || '') + '|' + (x.getAttribute('name') || '') + '|' + (x.getAttribute('class') || '').replace(/\s+/g, ' ').trim(), d = '';
+    for (var i = 0; i < x.attributes.length; i++) { var a = x.attributes[i]; if (/^data-/.test(a.name) && !/^data-oc-(sam|terug)/.test(a.name)) d += '|' + a.name + '=' + a.value; }
+    if (licht) return d || (x.getAttribute('class') || '').trim() ? s + d : '';
+    return s + d + '|' + (x.getAttribute('aria-label') || '') + '|' + (/^(INPUT|TEXTAREA|SELECT)$/.test(x.tagName) ? '' : (x.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 40));
+  }
+  function gelijken(bereik, x, licht) { var k = sleutel(x, licht); if (!k) return []; return [].filter.call(bereik.querySelectorAll(x.tagName), function (y) { return sleutel(y, licht) === k; }); }
+  function venster(x) { return x.closest(VENSTER); }
+  function item(x) {
+    for (var e = x; e && e !== D.body; e = e.parentElement) {
+      if (!e.matches(ITEM) || !e.parentElement) continue;
+      var p = e.parentElement, z = [].filter.call(p.children, function (c) { return c.tagName === e.tagName && c.matches(ITEM); });
+      if (z.length > 1 || e !== x) { var ls = sleutel(p, true); return { el: e, lijst: p, idx: z.indexOf(e), n: z.length, tag: e.tagName, ls: ls, lsi: ls ? gelijken(D, p, true).indexOf(p) : -1, lid: p.id }; }
+    }
+    return null;
+  }
+  function neem(x, vorig) {
+    var r = { el: x, k2: sleutel(x), keten: [], c: venster(x), it: item(x), id: x.id };
+    for (var e = x.parentElement; e && e !== D.documentElement; e = e.parentElement) r.keten.push(e);
+    var g2 = gelijken(D, x), g3 = gelijken(D, x, true); r.i2 = g2.indexOf(x); r.i3 = g3.indexOf(x);
+    if (r.c) r.opener = vorig && vorig.c === r.c ? vorig.opener : vorig;
+    else if (vorig && vorig.el !== x && !getoond(vorig.el)) r.opener = vorig;   // een bewerkveld nam de plaats in van de knop die het opende
+    if (r.opener && r.opener.opener && r.opener.opener.opener) r.opener.opener.opener = null;
+    return r;
+  }
+  function bereik(r) { for (var i = 0; i < r.keten.length; i++) { var e = r.keten[i]; if (e.isConnected && getoond(e)) return e === D.body ? D : e; } return D; }
+  function terugvind(r, licht) {
+    if (kan(r.el)) return r.el;
+    if (r.id) { var y = D.getElementById(r.id); if (y && kan(y)) return y; }
+    var b = bereik(r), lijst = gelijken(b, r.el, false).filter(kan), i = r.i2;
+    if (!lijst.length && licht && b !== D) { lijst = gelijken(b, r.el, true).filter(kan); i = r.i3; }   // zonder naam of tekst: alleen dicht bij de oude plaats
+    if (!lijst.length) return null;
+    return lijst[Math.max(0, Math.min(i, lijst.length - 1))];
+  }
+  function binnen(x) {   // het eerste element in een item dat je kan bedienen; met muis of vinger liever geen tekstveld (geen toetsenbord dat opspringt)
+    if (kan(x)) return x;
+    var f = [].filter.call(x.querySelectorAll(FOCUSBAAR), function (y) { return kan(y) && y.tabIndex >= 0; });
+    return (toets ? f[0] : f.filter(function (y) { return !typt(y); })[0]) || null;
+  }
+  function kopVoor(el) {   // de kop van een lijst: de laatste zichtbare kop vóór de lijst, in dezelfde sectie
+    var hs = [].filter.call(D.querySelectorAll('h1,h2,h3,h4,[role=heading],legend'), function (h) { return getoond(h) && (h.compareDocumentPosition(el) & 4); });
+    return hs.pop() || null;
+  }
+  function kop() {
+    var z = ['.vb-bar', '[data-oc-kop]', 'main h1', 'h1', 'main h2', 'main', '[role=main]'];
+    for (var i = 0; i < z.length; i++) { var k = [].filter.call(D.querySelectorAll(z[i]), getoond)[0]; if (k) return k; }
+    return null;
+  }
+  function tabVolgende(x, terug) {
+    var f = [].filter.call(D.querySelectorAll(FOCUSBAAR), function (y) { return kan(y) && y.tabIndex >= 0 && !y.closest('[inert]'); });
+    var i = f.indexOf(x); if (i < 0) return null;
+    return f[i + (terug ? -1 : 1)] || null;
+  }
+  function itemDoel(r) {
+    var it = r.it; if (!it) return null;
+    var lijst = it.lijst.isConnected ? it.lijst : (it.lid && D.getElementById(it.lid)) || null;
+    if (!lijst && it.ls && it.lsi >= 0) { var zl = [].filter.call(D.getElementsByTagName(it.lijst.tagName), function (y) { return sleutel(y, true) === it.ls; }); lijst = zl[it.lsi] || null; }   // de lijst werd zelf opnieuw getekend
+    if (!lijst || !getoond(lijst)) return null;
+    var z = [].filter.call(lijst.children, function (c) { return c.tagName === it.tag && c.matches(ITEM); });
+    if (z.indexOf(it.el) >= 0 && getoond(it.el)) return null;   // het item staat er nog
+    if (z.length >= it.n) return null;                              // er verdween geen item: opnieuw getekend
+    var kand = [z[it.idx], z[it.idx - 1]].concat(z.slice(it.idx + 1), z.slice(0, Math.max(0, it.idx - 1)).reverse());
+    for (var i = 0; i < kand.length; i++) { if (kand[i] && getoond(kand[i])) { var b = binnen(kand[i]); if (b) return b; } }
+    return kopVoor(lijst) || null;
+  }
+  function openerDoel(r) {
+    for (var o = r.opener, n = 0; o && n < 4; o = o.opener, n++) { var y = terugvind(o, false); if (y && !(r.c && r.c.contains(y))) return y; }
+    return null;
+  }
+  function zet(x) {
+    if (!x) return;
+    if (!x.matches(FOCUSBAAR)) {
+      x.setAttribute('tabindex', '-1'); x.setAttribute('data-oc-tijdelijk', '');
+      x.addEventListener('blur', function weg() { x.removeEventListener('blur', weg); if (x.hasAttribute('data-oc-tijdelijk')) { x.removeAttribute('tabindex'); x.removeAttribute('data-oc-tijdelijk'); } });
+    }
+    try { x.focus({ preventScroll: true }); } catch (e) { return; }
+    if (toets) requestAnimationFrame(function () { var R = x.getBoundingClientRect(); if (R.bottom < 0 || R.top > innerHeight) x.scrollIntoView({ block: 'nearest' }); dek(x); });
+  }
+  function herstel(r) {
+    var dicht = r.c && !getoond(r.c), doel = null;
+    if (!dicht && tabT && Date.now() - tabT < 500) { var basis = terugvind(r, true); if (basis) doel = tabVolgende(basis, tabTerug) || basis; }
+    doel = doel || (dicht ? openerDoel(r) : null) || itemDoel(r) || (dicht ? null : terugvind(r, true)) || openerDoel(r) || kop();
+    if (doel && doel !== D.body) zet(doel);
+  }
+  function kijk() {
+    gepland = 0; if (!nu) return;
+    var a = D.activeElement, r = nu;
+    if (a && a !== D.body && a !== D.documentElement && a !== r.el) return;
+    if (a === r.el && getoond(a)) { var o = r.opener; nu = neem(a, null); nu.opener = o; return; }   // de focus staat er nog: onthoud de nieuwe plaats
+    if (a !== r.el && kan(r.el)) { nu = null; return; }   // de tool haalde de focus zelf weg (blur), het element staat er nog
+    nu = null; herstel(r);
+  }
+  function plan() { if (!gepland && nu) gepland = setTimeout(kijk, 40); }
+  D.addEventListener('focusin', function (e) {
+    var x = e.target; if (!x || !x.closest || x === D.body || x === D.documentElement) return;
+    if (nu && nu.el === x) return;
+    nu = neem(x, nu);
+    if (toets) requestAnimationFrame(function () { if (D.activeElement === x) dek(x); });
+  }, true);
+  D.addEventListener('focusout', plan, true);
+  D.addEventListener('transitionend', plan, true);
+  addEventListener('keydown', function (e) {
+    if (e.key === 'Tab') { tabT = Date.now(); tabTerug = e.shiftKey; } else tabT = 0;
+    if (!e.ctrlKey && !e.metaKey) toets = true;
+  }, true);
+  addEventListener('pointerdown', function (e) {
+    toets = false; tabT = 0;
+    var t = e.target; if (!(t && t.closest && t.closest(FOCUSBAAR + ',label'))) nu = null;   // je klikt ernaast: de focus mag weg
+  }, true);
+  /* 4. niet bedekt: een vaste of plakkende balk staat niet over het element met de focus */
+  function vastOuder(t) { for (var e = t; e && e !== D.body && e.nodeType === 1; e = e.parentElement) { var p = getComputedStyle(e).position; if (p === 'fixed' || p === 'sticky') return e; } return null; }
+  function dek(x) {
+    if (!x || !x.getBoundingClientRect || x.closest(VENSTER)) return;
+    var R = x.getBoundingClientRect(); if (!R.height || R.bottom < 0 || R.top > innerHeight) return;
+    var pts = [[R.left + R.width / 2, R.top + 2], [R.left + R.width / 2, R.bottom - 2], [R.left + 3, R.top + R.height / 2], [R.right - 3, R.top + R.height / 2]], dy = 0;
+    pts.forEach(function (p) {
+      var px = Math.max(0, Math.min(innerWidth - 1, p[0])), py = p[1]; if (py < 0 || py >= innerHeight) return;
+      var t = D.elementFromPoint(px, py); if (!t || x.contains(t) || t.contains(x)) return;
+      var v = vastOuder(t); if (!v || v.contains(x)) return;
+      var B = v.getBoundingClientRect(); if (B.height > innerHeight * 0.7) return;
+      if (B.top + B.height / 2 < innerHeight / 2) dy = Math.min(dy, R.top - B.bottom - 8); else dy = Math.max(dy, R.bottom - B.top + 8);
+    });
+    if (!dy) return;
+    var y0 = scrollY; scrollBy(0, dy);
+    if (scrollY === y0) for (var e = x.parentElement; e && e !== D.body; e = e.parentElement) { var o = getComputedStyle(e).overflowY; if (/auto|scroll/.test(o) && e.scrollHeight > e.clientHeight) { e.scrollTop += dy; break; } }
+  }
+  function plakLos() {   // laag venster: wat bovenaan vastplakt, schuift gewoon mee
+    if (D.getElementById('oc-toegang-laag')) return;
+    var sels = [];
+    function loop(rs) { for (var i = 0; i < rs.length; i++) { var r = rs[i]; try { if (r.cssRules && !r.selectorText) loop(r.cssRules); else if (r.style && /sticky/.test(r.style.position) && r.selectorText) sels.push(r.selectorText); } catch (e) {} } }
+    for (var i = 0; i < D.styleSheets.length; i++) { try { loop(D.styleSheets[i].cssRules); } catch (e) {} }
+    if (!sels.length) return;
+    var s = D.createElement('style'); s.id = 'oc-toegang-laag';
+    s.textContent = '@media (max-height:480px){' + sels.join(',') + '{position:relative!important;inset:auto!important}}';   // relative: wat erin absoluut staat, blijft op zijn plaats
+    D.head.appendChild(s);
+  }
+  /* 2. één gedeelde live-regio */
+  var regio = null, meldT = null, gemeld = 0;
+  function maakRegio() {
+    if (regio && regio.isConnected) return regio;
+    regio = D.getElementById('oc-meld');
+    if (!regio) {
+      regio = D.createElement('div'); regio.id = 'oc-meld'; regio.className = 'oc-sr';
+      regio.setAttribute('role', 'status'); regio.setAttribute('aria-live', 'polite'); regio.setAttribute('aria-atomic', 'true');
+      regio.style.cssText = 'position:absolute!important;width:1px;height:1px;margin:-1px;padding:0;border:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap';
+      D.body.appendChild(regio);
+    }
+    return regio;
+  }
+  window.ocMeld = function (t) {
+    if (!D.body) return; var g = maakRegio(); clearTimeout(meldT); g.textContent = ''; gemeld = Date.now();
+    meldT = setTimeout(function () { g.textContent = String(t || '').trim(); }, 80);
+  };
+  /* 2b. wat je toevoegt, verwijdert of van stand verandert, wordt gemeld, tenzij de tool het zelf al meldde
+     (een melding onderaan of een eigen live-regio). Een tool kan ook zelf ocMeld(tekst) gebruiken. */
+  var BIJ = /^\s*(\+|voeg\b|toevoegen\b|nieuwe?\b|zet .* erbij)/i, WEG = /^\s*(verwijder|wis (?!voorbeeld|alles)|haal .* weg|schrap)/i;
+  function dataSleutel(x) { var d = ''; for (var i = 0; i < x.attributes.length; i++) { var a = x.attributes[i]; if (/^data-/.test(a.name) && !/^data-oc-/.test(a.name)) d += '|' + a.name + '=' + a.value; } return d ? x.tagName + d : ''; }
+  function naam(x) { return String((x.getAttribute && x.getAttribute('aria-label')) || x.textContent || x.value || '').replace(/\s+/g, ' ').trim(); }
+  function itemTekst(e) {
+    var v = [].map.call(e.querySelectorAll('input:not([type=checkbox]):not([type=radio]):not([type=hidden]),textarea'), function (i) { return i.value.trim(); }).filter(Boolean)[0];
+    var regels = String(e.innerText || e.textContent || '').split('\n').map(function (s) { return s.replace(/\s+/g, ' ').trim(); }).filter(function (s) { return s.length > 2 && !/^[\d.,:%\s]+$/.test(s); });
+    return (v || regels[0] || '').slice(0, 60).trim();
+  }
+  function items() {
+    var m = {};
+    [].forEach.call((D.querySelector('main') || D.body).querySelectorAll(ITEM), function (e) {
+      if (e.closest(VENSTER) || e.closest('[aria-live],[role=status]') || !getoond(e)) return;
+      var k = itemTekst(e); if (k) m[k] = (m[k] || 0) + 1;
+    });
+    return m;
+  }
+  function levend() { return [].map.call(D.querySelectorAll('[aria-live],[role=status],[role=alert]'), function (e) { return e.id === 'oc-meld' ? '' : e.textContent; }).join('|'); }
+  function bijVeld(x) {   // de tekst die je net typte in het veld bij de knop
+    for (var c = x.parentElement, n = 0; c && c !== D.body && n < 5; c = c.parentElement, n++) {
+      var i = [].filter.call(c.querySelectorAll('input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=range]),textarea'), function (y) { return y.value.trim() && getoond(y); })[0];
+      if (i) return i.value.trim().slice(0, 60);
+    }
+    return '';
+  }
+  var meting = null;
+  function meet(x, soort, tekst) { meting = { x: x, soort: soort, n: naam(x), tekst: tekst || '', items: soort === 'stand' ? null : items(), live: levend(), t: Date.now() }; setTimeout(gemeten, 450); }
+  function gemeten() {
+    var m = meting; meting = null; if (!m || levend() !== m.live || gemeld >= m.t) return;   // de tool meldde het zelf al
+    if (m.soort === 'stand') {
+      var a = D.activeElement; if (!a || a === D.body) return;
+      if (a !== m.x && !(m.ds && dataSleutel(a) === m.ds) && !(a.id && a.id === m.x.id)) return;   // dezelfde knop, ook na opnieuw tekenen
+      var n2 = naam(a);
+      if (n2 && n2 !== m.n && !/^(true|false|mixed)$/.test(a.getAttribute('aria-pressed') || a.getAttribute('aria-checked') || a.getAttribute('aria-expanded') || a.getAttribute('aria-selected') || '')) window.ocMeld(n2);
+      return;
+    }
+    var nu2 = items(), bij = [], weg = [];
+    Object.keys(nu2).forEach(function (k) { for (var i = m.items[k] || 0; i < nu2[k]; i++) bij.push(k); });
+    Object.keys(m.items).forEach(function (k) { for (var i = nu2[k] || 0; i < m.items[k]; i++) weg.push(k); });
+    if (m.soort === 'bij' && bij.length && bij.length > weg.length) window.ocMeld((m.tekst || bij[0]) + ' toegevoegd.');
+    else if (m.soort === 'weg' && weg.length > bij.length) window.ocMeld((m.n.replace(WEG, '').replace(/^\s*[:·-]?\s*/, '') || weg[0]) + ' verwijderd.');
+  }
+  D.addEventListener('click', function (e) {
+    var x = e.target && e.target.closest && e.target.closest('button,[role=button],[role=menuitem],[role=radio],[role=switch]'); if (!x || x.closest(VENSTER + ',[role=status],[aria-live]')) return;
+    var n = naam(x);
+    if (BIJ.test(n)) meet(x, 'bij', bijVeld(x));
+    else if (WEG.test(n)) meet(x, 'weg');
+    else { meet(x, 'stand'); meting.ds = dataSleutel(x); }
+  }, true);
+  D.addEventListener('keydown', function (e) {
+    var x = e.target; if (e.key !== 'Enter' || e.isComposing || !x || x.tagName !== 'INPUT' || !typt(x) || !x.value.trim()) return;
+    if (/toevoeg|nieuw|voeg|add|bij/i.test([x.id, x.className, x.getAttribute('aria-label'), x.placeholder].join(' ')) || [].some.call((x.closest('form,[class*=add],[class*=row]') || x.parentElement).querySelectorAll('button'), function (b) { return BIJ.test(naam(b)); })) meet(x, 'bij', x.value.trim());
+  }, true);
+  /* 3. een melding met Ongedaan wacht zolang je erop staat */
+  var los = new WeakMap();
+  function houdt(el) { try { return el.matches(':hover') || el.contains(D.activeElement); } catch (e) { return false; } }
+  window.ocWacht = function (el) {
+    if (!el || !el.isConnected) return 0;
+    if (houdt(el)) { los.set(el, Date.now()); return 500; }
+    var t = los.get(el); if (t && Date.now() - t < 2000) return 2000 - (Date.now() - t);
+    return 0;
+  };
+  /* 5. een fout bij een veld, zoals in het Takenbord: aria-invalid, de uitleg vlak onder het veld (aria-describedby),
+        de focus in het veld. Typ je iets, dan verdwijnt de melding. ocVeldFout(veld, '') wist ze. */
+  window.ocVeldFout = function (veld, tekst) {
+    if (!veld) return;
+    if (!D.getElementById('oc-veldfout-stijl')) { var s = D.createElement('style'); s.id = 'oc-veldfout-stijl'; s.textContent = '.oc-veldfout{margin:0.375rem 0 0;font-size:0.8125rem;font-weight:600;line-height:1.4;color:#b91c1c}.oc-veldfout[hidden]{display:none}input[aria-invalid="true"],textarea[aria-invalid="true"],select[aria-invalid="true"]{border-color:#b91c1c!important}'; D.head.appendChild(s); }
+    if (!veld.id) veld.id = 'oc-veld-' + Math.random().toString(36).slice(2, 8);
+    var id = veld.id + '-fout', p = D.getElementById(id), d = (veld.getAttribute('aria-describedby') || '').split(/\s+/).filter(function (x) { return x && x !== id; });
+    if (!tekst) { if (p) p.hidden = true; if (veld.hasAttribute('data-oc-fout')) { veld.removeAttribute('aria-invalid'); veld.removeAttribute('data-oc-fout'); d.length ? veld.setAttribute('aria-describedby', d.join(' ')) : veld.removeAttribute('aria-describedby'); } return; }
+    if (!p) { p = D.createElement('p'); p.id = id; p.className = 'oc-veldfout'; (veld.closest('form') || veld.parentElement).insertAdjacentElement('afterend', p); }
+    p.textContent = tekst; p.hidden = false;
+    veld.setAttribute('aria-invalid', 'true'); veld.setAttribute('data-oc-fout', ''); veld.setAttribute('aria-describedby', d.concat(id).join(' '));
+    if (D.activeElement === veld) window.ocMeld(tekst); else veld.focus();
+  };
+  D.addEventListener('input', function (e) { var v = e.target; if (v && v.hasAttribute && v.hasAttribute('data-oc-fout') && String(v.value || '').trim()) window.ocVeldFout(v, ''); }, true);
+  function start() {
+    maakRegio(); plakLos();
+    try { new MutationObserver(plan).observe(D.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden', 'class', 'style', 'disabled', 'inert', 'open'] }); } catch (e) {}
+  }
+  D.readyState === 'loading' ? D.addEventListener('DOMContentLoaded', start) : start();
+}());
+/* oc-toegang v1 einde */
+</script>
 </head>
 <body>
     <header class="header oc-head">
@@ -964,7 +1229,7 @@ let toastT = null;
 function toast(msg) {
   $('toast-text').textContent = msg;
   $('toast').classList.add('show');
-  clearTimeout(toastT); toastT = setTimeout(() => $('toast').classList.remove('show'), 2800);
+  clearTimeout(toastT); toastT = setTimeout(function ocT() { const w = window.ocWacht ? ocWacht($('toast')) : 0; if (w) { toastT = setTimeout(ocT, w); return; } $('toast').classList.remove('show'); }, 2800);
 }
 
 /* ---------- Menu ⋮ ---------- */
@@ -1217,8 +1482,8 @@ window.ijsbreker = { controle, opdracht, ALLE, ONDERWERPEN, MOMENTEN, VORMEN, ka
       var s = document.createElement('style'); s.id = 'oc-sync-stijl';
       s.textContent = 'input[data-oc-titel]{flex:0 1 auto!important;max-width:100%;min-width:5.5em;box-sizing:border-box;text-overflow:ellipsis;cursor:text;border-radius:6px 6px 0 0;padding-right:26px!important;'
         + 'border-bottom:1.5px dashed transparent!important;background-repeat:no-repeat!important;background-position:right 4px center!important;background-size:15px 15px!important;'
-        + 'background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%2394a3b8%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M12 20h9%27/%3E%3Cpath d=%27M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z%27/%3E%3C/svg%3E")!important}'
-        + 'input[data-oc-titel]:hover{border-bottom-color:#cbd5e1!important}'
+        + 'background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%237e8ea4%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M12 20h9%27/%3E%3Cpath d=%27M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z%27/%3E%3C/svg%3E")!important}'
+        + 'input[data-oc-titel]:hover{border-bottom-color:#7e8ea4!important}'
         + 'input[data-oc-titel]:focus{border-bottom:1.5px solid #047857!important;background-image:none!important}'
         + 'input[data-oc-titel]::placeholder{color:#64748b;opacity:1}'
         + 'input[data-oc-titel]+*{margin-left:auto}';
