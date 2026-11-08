@@ -765,19 +765,10 @@ html.in-tool, html.sheet-open { overflow:hidden; }
 @media (min-width:700px) and (hover:none) { .hs-field input { font-size:16px; } }
 /* nieuwe versie klaar */
 .update { display:flex; }
-/* Wat er nieuw is: rustig, lichtgrijs en toch leesbaar (#64748b haalt 4,5:1 op de achtergrond) */
-.nieuw-band { display:flex; align-items:flex-start; gap:0.5rem; margin:0 0 1rem; padding:0.125rem 0 0.125rem 0.25rem; font-size:0.8125rem; line-height:1.45; color:#64748b; }
-.nieuw-band[hidden] { display:none; }
-.nieuw-band p { margin:0; flex:1; min-width:0; padding-top:0.6875rem; }
-.nieuw-band b { color:#475569; font-weight:600; }
-.nieuw-x { flex:none; width:44px; height:44px; display:grid; place-items:center; border-radius:10px; color:#64748b; background:none; font-size:1.25rem; line-height:1; }
-.nieuw-x:hover { background:var(--slate-100); color:#334155; }
-.ft-nieuw { margin:0.5rem auto 0; max-width:34rem; font-size:0.75rem; line-height:1.45; color:#64748b; text-align:center; }
-.ft-nieuw summary { display:inline-block; min-height:24px; padding:0.1875rem 0.25rem; border-radius:6px; cursor:pointer; list-style:none; }
-.ft-nieuw summary::-webkit-details-marker { display:none; }
-.ft-nieuw summary:hover { color:#334155; }
-.ft-nieuw ul { list-style:none; margin:0.375rem 0 0; padding:0; text-align:left; display:grid; gap:0.25rem; }
-.ft-nieuw li b { color:#475569; font-weight:600; margin-right:0.25rem; font-variant-numeric:tabular-nums; }
+/* Wat er nieuw is: in het vakje "Nieuwe versie klaar", lichtgrijs en toch leesbaar (#64748b haalt 4,5:1 op wit) */
+.upd-nieuw { display:block; margin-top:0.25rem; font-size:0.8125rem; line-height:1.45; color:#64748b; }
+.upd-nieuw[hidden] { display:none; }
+.upd-nieuw b { color:#475569; font-weight:600; }
 .update[hidden] { display:none; }
 /* eerste bezoek: niets tonen dat daarna verspringt, tot de lijst er is (de kop staat er meteen) */
 body:not(.ready) .main, body:not(.ready) .footer { visibility:hidden; }
@@ -1738,7 +1729,7 @@ html.oc-stil .n-puls, html.oc-stil .n-halo, html.oc-stil .n-far circle { animati
 
   <main class="main">
     <div class="install update" id="update" hidden role="status">
-      <p><strong>Nieuwe versie klaar.</strong> Vernieuw om ze te gebruiken.</p>
+      <p><strong>Nieuwe versie klaar.</strong> Vernieuw om ze te gebruiken.<span class="upd-nieuw" id="upd-nieuw" hidden></span></p>
       <button type="button" class="btn" id="update-btn">Vernieuwen</button>
     </div>
     <div class="install" id="install">
@@ -1746,7 +1737,6 @@ html.oc-stil .n-puls, html.oc-stil .n-halo, html.oc-stil .n-far circle { animati
       <button class="btn" id="install-btn" hidden>Installeer</button>
       <button class="dismiss" id="install-x" aria-label="Verberg">&times;</button>
     </div>
-    <div class="nieuw-band" id="nieuw-band" hidden role="status"><p id="nieuw-band-t"></p><button type="button" class="nieuw-x" id="nieuw-x" aria-label="Verberg wat er nieuw is">&times;</button></div>
 
     <!-- Eerste bezoek: in één zin wat dit is. Weg zodra je ze sluit of iets bewaard hebt. -->
     <section class="welkom" id="welkom" hidden aria-labelledby="wk-t">
@@ -1869,8 +1859,7 @@ html.oc-stil .n-puls, html.oc-stil .n-halo, html.oc-stil .n-far circle { animati
         <a class="ft-link" href="https://www.linkedin.com/in/bartel-volckaert-8a96842/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Maker</a>
         <button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (34 seconden)" title="Bekijk de film (34 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg></button>
       </nav>
-      <p class="ft-meta"><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v15.28</span></p>
-      <details class="ft-nieuw" id="ft-nieuw"><summary id="nieuw-kort"></summary><ul id="nieuw-lijst"></ul></details>
+      <p class="ft-meta"><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v15.29</span></p>
     </div>
   </footer>
   <dialog class="film" id="film" aria-labelledby="film-h">
@@ -2963,36 +2952,6 @@ function setStatus(cached, total) {
   $('status').classList.toggle('ok', ok);
   $('status-text').textContent = ok ? 'Werkt ook offline' : (cached > 0 ? `Offline: ${cached} van ${total} tools klaar` : 'Alleen online');
 }
-/* Wat er nieuw is. Bij elke nieuwe versie komt er bovenaan een regel bij (zelfde nummer als VERSION in /sw.js).
-   Na een nieuwe versie staat de regel één keer bovenaan het startscherm; onderaan bij het versienummer staat hij altijd, met de vorige eronder. */
-const NIEUW = [
-  { v:'15.28', t:'Takenbord, Risicomatrix en Projectopdracht: een compacte kop en één projectkiezer, zodat je werk meteen in beeld staat. De welkomstkaart is kleiner, en bij Onlangs zie je de naam als je erover gaat.' },
-  { v:'15.27', t:'Op het startscherm is Wissen nu een vuilbakje, zoals in de tools. Zo past alles op één regel.' },
-  { v:'15.26', t:'Na een nieuwe versie zie je hier kort wat er veranderde. Onderaan staan ook de vorige versies.' },
-  { v:'15.25', t:'Weerstand onthoudt een datum als tekst, zoals "eind volgende maand". Communicatieplan loopt niet meer vast. Op het startscherm staan de kop en de knoppen op één lijn.' },
-  { v:'15.24', t:'Nieuwe tool: SWOT-analyse. Project Radar toont signalen uit 16 tools.' },
-  { v:'15.23', t:'Een pdf of afbeelding toont links onderaan het icoon en de baseline van de tool.' },
-  { v:'15.22', t:'Agenda: Stickertjes in plaats van Beamer. Onlangs toont vijf tools.' },
-  { v:'15.21', t:'RACI-matrix: kies een letter in één tik. Op de gsm krijgt elke taak een kaart.' },
-  { v:'15.20', t:'RACI-matrix: wie een overgenomen taak trekt, krijgt meteen een R.' },
-  { v:'15.19', t:'Agenda: duidelijke velden, en materiaal kies je met een tik.' },
-  { v:'15.18', t:'Toegankelijker: de focus valt nooit weg, velden hebben een duidelijke rand, en alles werkt op een smal scherm.' },
-  { v:'15.17', t:'Geen stil verlies van gegevens meer: wat niet te lezen is, krijgt een kopie apart.' }
-];
-(() => {
-  const [nu, ...vorig] = NIEUW; if (!nu) return;
-  $('nieuw-kort').textContent = `Nieuw in v${nu.v}: ${nu.t}`;
-  $('nieuw-lijst').innerHTML = vorig.slice(0, 9).map(x => `<li><b>v${esc(x.v)}</b>${esc(x.t)}</li>`).join('');
-  if (!vorig.length) $('ft-nieuw').querySelector('summary').style.cursor = 'default';
-  const gezien = store.get('nieuw-gezien', null);
-  store.set('nieuw-gezien', nu.v);   // één keer tonen: bij het volgende bezoek staat het alleen nog onderaan
-  if (gezien && gezien !== nu.v) { $('nieuw-band-t').innerHTML = `<b>Nieuw in v${esc(nu.v)}.</b> ${esc(nu.t)}`; $('nieuw-band').hidden = false; }
-  $('nieuw-x').addEventListener('click', () => {
-    $('nieuw-band').hidden = true;
-    const h = [...document.querySelectorAll('.main h2')].find(x => x.offsetParent); if (h) { if (!h.hasAttribute('tabindex')) h.setAttribute('tabindex', '-1'); h.focus(); }
-  });
-})();
-
 /* Nieuwe versie: nooit stil wisselen terwijl je werkt. Op het startscherm verschijnt een rustige melding met Vernieuwen. */
 let updateReady = false, wantReload = false;
 // 'oc-app-v15.16' wordt v15.16; een oude vorm zonder punt ('oc-app-v107') wordt v10.7
@@ -3000,7 +2959,22 @@ function showVersion(v) {
   const m = /^oc-app-v(\d+)\.(\d+)$/.exec(String(v || '')) || /^oc-app-v(\d+)(\d)$/.exec(String(v || '')), el = document.querySelector('.app-version');
   if (m && el) el.textContent = `v${m[1]}.${m[2]}`;
 }
-function offerUpdate() { updateReady = true; syncUpdate(); }
+function offerUpdate() { updateReady = true; syncUpdate(); toonNieuw(); }
+/* Wat er nieuw is: staat in /nieuw.json (de nieuwste regel bovenaan, zelfde nummer als VERSION in /sw.js).
+   Dat bestand valt buiten de service worker, dus deze (oude) versie leest altijd de lijst van de nieuwe.
+   Het verschijnt alleen in het vakje "Nieuwe versie klaar"; na het vernieuwen is het weg. Lukt het lezen niet, dan blijft het vakje zoals het was. */
+const versieNr = s => { const m = /(\d+)\.(\d+)/.exec(String(s || '')); return m ? +m[1] * 1000 + +m[2] : 0; };
+async function toonNieuw() {
+  const el = $('upd-nieuw'); if (!el || el.dataset.klaar) return;
+  try {
+    const r = await fetch('/nieuw.json', { cache:'no-store' }); if (!r.ok) return;
+    const lijst = await r.json(), nu = versieNr((document.querySelector('.app-version') || {}).textContent);
+    const nieuw = (Array.isArray(lijst) ? lijst : []).filter(x => x && typeof x.v === 'string' && typeof x.t === 'string' && versieNr(x.v) > nu).slice(0, 2);
+    if (!nieuw.length) return;
+    el.innerHTML = nieuw.map(x => `<b>Nieuw in v${esc(x.v)}:</b> ${esc(x.t)}`).join('<br>');
+    el.hidden = false; el.dataset.klaar = '1';
+  } catch {}
+}
 function syncUpdate() { $('update').hidden = !updateReady || !!current; }
 $('update-btn').addEventListener('click', async () => {
   const run = [...busy.keys()].map(id => byId[id] && byId[id].title).filter(Boolean);
