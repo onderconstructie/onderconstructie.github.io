@@ -1943,7 +1943,7 @@ html.oc-stil .n-puls, html.oc-stil .n-halo, html.oc-stil .n-far circle { animati
         <a class="ft-link" href="https://www.linkedin.com/in/bartel-volckaert-8a96842/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Maker</a>
         <button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (34 seconden)" title="Bekijk de film (34 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg></button>
       </nav>
-      <p class="ft-meta"><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v15.40</span></p>
+      <p class="ft-meta"><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v15.41</span></p>
     </div>
   </footer>
   <dialog class="film" id="film" aria-labelledby="film-h">
@@ -2527,6 +2527,12 @@ let tab = 'start';
 $('tabbar').innerHTML = TABS.map(t => `<button type="button" class="tab" data-tab="${t.id}" aria-current="false"><span class="tab-ic"><svg viewBox="0 0 24 24" aria-hidden="true">${TAB_IC[t.id]}</svg></span><span class="tab-lbl">${t.label}</span></button>`).join('');
 function setTab(id, keep) {
   if (!TABS.some(t => t.id === id)) id = 'start';
+  // Wie naar een andere tab gaat, ziet die altijd op dezelfde manier: alle groepen dicht, een rustig overzicht.
+  // Eén tik op de kop klapt dan meteen alles open. Terug uit een tool (keep) laat alles zoals het was.
+  if (id !== tab && !keep) {
+    if (TAB_SUB[id]) { const weg = TAB_SUB[id].map(m => 'sub-' + m.id); store.set('sub-open', store.get('sub-open', []).filter(x => !weg.includes(x))); }
+    if (id === 'projecten') { GROUPS.forEach(g => { if (tabOf(g.id) === 'projecten') setCollapsed(g.id, true); }); saveCollapsed(); }
+  }
   tab = id; $('home').dataset.tab = id;
   $('tabbar').querySelectorAll('.tab').forEach(b => b.setAttribute('aria-current', String(b.dataset.tab === id)));
   const g = ['vergaderen', 'zakmes', 'reset'].includes(id) ? GROUPS.find(x => x.id === id) : null;
