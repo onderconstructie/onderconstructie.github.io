@@ -1033,7 +1033,7 @@ details.explain.oc-u .oc-u-noot a, details.explain.oc-u .oc-u-stap-uitleg a, det
         <li><b>Deel de nota.</b> Download ze als PDF of afbeelding, of kopieer ze als tekst voor een mail. Een PDF of een gekopieerde tekst telt als nota: de volgende nota toont bij Besluiten alleen wat erna beslist werd.</li>
       </ul>
       <p>Tip: stel een vraag waarop de stuurgroep ja of nee kan zeggen. Die krijgt sneller een antwoord dan een open vraag.</p>
-      <p>De inhoud komt uit de <a href="/opdracht/">Projectopdracht</a>, de <a href="/tijdlijn/">Tijdlijn</a>, <a href="/project-radar/">Project Radar</a>, het <a href="/meetplan/">Meetplan</a>, de <a href="/risico/">Risicomatrix</a>, het <a href="/beslissingen/">Beslissingslog</a>, het <a href="/kanban/">Takenbord</a>, de <a href="/raci/">RACI-matrix</a> en het <a href="/leerpunten/">Leerpuntenlog</a>. Pas je daar iets aan, dan toont het dossier het meteen.</p>
+      <p>De inhoud komt uit de <a href="/opdracht/">Projectopdracht</a>, de <a href="/tijdlijn/">Tijdlijn</a>, <a href="/project-radar/">Project Radar</a>, het <a href="/meetplan/">Meetplan</a>, de <a href="/risico/">Risicomatrix</a>, het <a href="/beslissingen/">Beslissingslog</a>, het <a href="/kanban/">Takenbord</a>, de <a href="/raci/">RACI-matrix</a>, het <a href="/leerpunten/">Leerpuntenlog</a> en de <a href="/swot/">SWOT-analyse</a>. Pas je daar iets aan, dan toont het dossier het meteen.</p>
     </div>
   </details>
 <div class="oc-restart-row" id="oc-restart-row" hidden><button type="button" class="oc-restart" id="oc-restart-btn">Opnieuw beginnen</button></div>
@@ -1519,6 +1519,7 @@ const TOOLS = [
   { id:'kanban',    naam:'Takenbord',        pad:'../kanban/',            key:'sprintflow_kanban_v5', geenVan:true },
   { id:'raci',      naam:'RACI-matrix',      pad:'../raci/',              key:'raci.v1' },
   { id:'leerpunten', naam:'Leerpuntenlog',   pad:'../leerpunten/',        key:'leerpunten.v1' },
+  { id:'swot',      naam:'SWOT-analyse',     pad:'../swot/',              key:'swot.v1' },
   { id:'gap',       naam:'Gap-analyse',      pad:'../gap/',               key:'gap.v1' },
   { id:'prio',      naam:'Prioriteren',      pad:'../prioriteit/',        key:'prioriteit.v1' },
   { id:'betrokken', naam:'Betrokkenenradar', pad:'../stakeholders/',      key:'stakeholders.v1' },
@@ -1755,6 +1756,23 @@ function lpLees(d) {
   });
 }
 
+/* SWOT-analyse: swot.v1 = { lists:[{ id, name, items:[{ id, vak, text, groot }], links:[{ i, e }], acties:[{ kant, e, text, who, when }] }], current }.
+   vak: s (sterkte), w (zwakte), o (kans), t (bedreiging). Een actie hoort bij een kans of bedreiging (e) en een kant (s of w):
+   samen geven ze de strategie (SO, WO, ST of WT). Belangrijke punten (groot) eerst. */
+const SW_VAK = [['s', 'Sterktes'], ['w', 'Zwaktes'], ['o', 'Kansen'], ['t', 'Bedreigingen']], SW_STRAT = ['so', 'wo', 'st', 'wt'];
+function swNorm(l) {
+  const its = arr(l.items).filter(obj).map(x => ({ id:str(x.id, 40), vak:['s', 'w', 'o', 't'].includes(x.vak) ? x.vak : '', text:str(x.text, 140).replace(/\s+/g, ' ').trim(), groot:x.groot === true }))
+    .filter(x => x.vak && x.text);
+  const by = id => its.find(x => x.id && x.id === id), vakken = {}, strat = { so:[], wo:[], st:[], wt:[] };
+  SW_VAK.forEach(([v]) => { vakken[v] = its.filter(x => x.vak === v).sort((a, b) => b.groot - a.groot); });
+  arr(l.acties).filter(obj).forEach(a => {
+    const e = by(str(a.e, 40)), text = str(a.text, 200).replace(/\s+/g, ' ').trim();
+    if (!e || !text || (a.kant !== 's' && a.kant !== 'w') || (e.vak !== 'o' && e.vak !== 't')) return;
+    strat[a.kant + e.vak].push({ text, bij:e.text, who:str(a.who, 80).trim(), when:okDate(a.when) ? a.when : '' });
+  });
+  return { vakken, strat, n:its.length, acties:SW_STRAT.reduce((s, k) => s + strat[k].length, 0) };
+}
+
 /* Gap-analyse en Prioriteren: zelfde getallen en kwadranten als die tools. */
 function gapNorm(g) {
   const a = obj(g.asis) ? g.asis : {}, b = obj(g.tobe) ? g.tobe : {};
@@ -1823,6 +1841,7 @@ const LEES = {
     return { id:itemId(m, i), name:str(m.name, 200), voorbeeld:m.voorbeeld === true, data:{ roles, tasks }, inhoud:tasks.length > 0 };
   }),
   leerpunten: lpLees,
+  swot: d => arr(d && d.lists).filter(obj).map((l, i) => { const n = swNorm(l); return { id:itemId(l, i), name:str(l.name, 200), voorbeeld:l.voorbeeld === true, data:n, inhoud:n.n > 0 }; }),
   gap: d => arr(d && d.analyses).filter(obj).map((a, i) => {
     const gaps = arr(a.gaps).filter(obj).map(gapNorm).filter(g => g.theme);
     return { id:itemId(a, i), name:str(a.name, 200), voorbeeld:a.voorbeeld === true, data:{ gaps }, inhoud:gaps.length > 0 };
@@ -2001,6 +2020,14 @@ function VOORBEELD() {
       { id:'l2', text:'Stuur elke maand een korte stand van zaken naar de stuurgroep', soort:'goed', thema:'communicatie', project:N, date:d(-30), created:2 },
       { id:'l3', text:'Betrek de dienst ICT vóór de aanbesteding', soort:'anders', thema:'betrokkenen', project:N, date:d(-20), created:4 },
       { id:'l4', text:'Leg een testomgeving vast in het contract met de leverancier', soort:'anders', thema:'leverancier', project:N, date:d(-5), created:5 } ] },
+    'swot.v1': { lists:[{ id:'vb-sw', name:N, items:[
+      { id:'s1', vak:'s', text:'Team kent de premieregels door en door', groot:true }, { id:'s2', vak:'s', text:'We bouwden al eerder een digitaal loket' },
+      { id:'w1', vak:'w', text:'Dossierbeheer draait op een oud systeem', groot:true }, { id:'w2', vak:'w', text:'Weinig kennis van toegankelijk webdesign' },
+      { id:'o1', vak:'o', text:'Meer mensen renoveren door de renovatieplicht', groot:true }, { id:'o2', vak:'o', text:'Europese middelen voor een digitale overheid' },
+      { id:'t1', vak:'t', text:'De premieregels veranderen op 1 januari', groot:true }, { id:'t2', vak:'t', text:'Piek in aanvragen na de lancering' } ],
+      links:[{ i:'s1', e:'o1' }, { i:'s1', e:'t1' }, { i:'w1', e:'t1' }, { i:'w1', e:'t2' }],
+      acties:[{ kant:'s', e:'o1', text:'Toon in het loket meteen welke premie past' }, { kant:'s', e:'t1', text:'Laat het team de nieuwe regels nu al vertalen naar het loket', who:'Sara' },
+        { kant:'w', e:'t1', text:'Vraag een offerte om het dossierbeheer te vernieuwen', who:'Dienst ICT', when:d(30) }] }], current:'vb-sw' },
     'gap.v1': { analyses:[{ id:'vb-gp', name:N, question:'', gaps:[
       { id:'g1', theme:'Behandeltijd van een aanvraag', asis:{ text:'Een aanvraag wacht gemiddeld 21 werkdagen op een beslissing.', indicator:'Behandeltijd', value:'21', unit:'werkdagen' },
         tobe:{ text:'Een volledige aanvraag krijgt binnen 10 werkdagen een beslissing.', value:'10', by:d(395) }, impact:4, feas:3,
@@ -2037,6 +2064,7 @@ const SECS = [
   { id:'werk',      titel:'Werk',                      tools:['kanban'] },
   { id:'rollen',    titel:'Wie beslist',               tools:['raci'] },
   { id:'leerpunten', titel:'Leerpunten',               tools:['leerpunten'] },
+  { id:'swot',      titel:'SWOT',                      tools:['swot'], opt:true },
   { id:'gap',       titel:'Grootste verschil',         tools:['gap'], opt:true },
   { id:'prio',      titel:'Snelle winsten',            tools:['prio'], opt:true },
   { id:'betrokken', titel:'Wie vraagt extra aandacht', tools:['betrokken'], opt:true },
@@ -2302,6 +2330,13 @@ const INHOUD = {
     const kol = (lijst, titel, teken, cls) => lijst.length ? `<div><div class="sub-t">${titel}</div>${lijstHTML(lijst.slice(0, 6).map(x => esc(x.text) + (x.thema ? `<small>${esc(x.thema)}</small>` : '')), teken, cls)}${meerTekst(lijst.length - 6, ['leerpunt', 'leerpunten'], 'het Leerpuntenlog')}</div>` : '';
     return `<div class="${l.goed.length && l.anders.length ? 'twee' : ''}">${kol(l.goed, 'Werkte goed', '✓', 'groen')}${kol(l.anders, 'Volgende keer anders', '→')}</div>`;
   },
+  swot(ex) {
+    const w = M.data('swot'); if (!w) return '';
+    const vak = ([v, titel]) => { const l = w.vakken[v]; return `<div><div class="sub-t">${titel}</div>${l.length ? lijstHTML(l.slice(0, 5).map(x => x.groot ? `<b style="font-weight:600;color:#1e293b">${esc(x.text)}</b>` : esc(x.text)), '•', v === 's' || v === 'o' ? 'groen' : '') + meerTekst(l.length - 5, ['punt', 'punten'], 'de SWOT-analyse') : '<p class="meer-tekst">Nog leeg.</p>'}</div>`; };
+    const acts = SW_STRAT.flatMap(k => w.strat[k].map(a => esc(a.text) + `<small>${k.toUpperCase()} · bij ${esc(kort(a.bij, 60))}${a.who ? ' · ' + esc(a.who) : ''}${a.when ? ' · tegen ' + esc(fmtLang(a.when)) : ''}</small>`));
+    return `<div class="twee">${vak(SW_VAK[0])}${vak(SW_VAK[1])}</div><div class="twee" style="margin-top:0.75rem">${vak(SW_VAK[2])}${vak(SW_VAK[3])}</div>`
+      + `<div class="sub-t" style="margin-top:0.875rem">Gekozen strategieën</div>${acts.length ? lijstHTML(acts.slice(0, 8), '→', 'groen') + meerTekst(acts.length - 8, ['actie', 'acties'], 'de SWOT-analyse') : '<p class="meer-tekst">Nog geen strategie met een actie.</p>'}`;
+  },
   gap(ex) {
     const g = M.data('gap'); if (!g) return '';
     const x = gapTop(g), lijn = gapLijn(x);
@@ -2347,6 +2382,7 @@ const TEASER = {
   werk: () => meer(M.data('kanban').cards.length, 'taak', 'taken'),
   rollen: () => meer(M.data('raci').tasks.length, 'taak', 'taken') + ' met wie beslist en wie uitvoert',
   leerpunten: () => { const l = M.data('leerpunten'); return meer(l.goed.length + l.anders.length, 'leerpunt', 'leerpunten') + (l.anders.length ? `, ${l.anders.length} volgende keer anders` : ''); },
+  swot: () => { const w = M.data('swot'); return meer(w.n, 'punt', 'punten') + ', ' + meer(w.acties, 'actie', 'acties'); },
   gap: () => { const x = gapTop(M.data('gap')); return x ? x.theme : ''; },
   prio: () => { const n = M.data('prio').items.filter(i => !i.done && !i.nieuw && i.impact >= 3 && i.effort <= 2).length; return n ? meer(n, 'snelle winst', 'snelle winsten') : 'Nog geen snelle winsten'; },
   betrokken: () => meer(M.data('betrokken').items.length, 'betrokkene', 'betrokkenen'),
@@ -2428,6 +2464,7 @@ function samenvat(id, x) {
   return ({ opdracht:'een opdracht', tijdlijn:meer(v.items ? v.items.length : 0, 'mijlpaal', 'mijlpalen'), radar:'een stand van zaken', meetplan:meer(v.doelen ? v.doelen.length : 0, 'doel', 'doelen'), risico:meer((v.items ? v.items.length : 0) + arr(v.teSchatten).length, 'risico', "risico's"),
     besluit:meer(v.items ? v.items.length : 0, 'beslissing', 'beslissingen'), kanban:meer(v.cards ? v.cards.length : 0, 'taak', 'taken'), raci:meer(v.tasks ? v.tasks.length : 0, 'taak', 'taken'),
     leerpunten:meer((v.goed ? v.goed.length : 0) + (v.anders ? v.anders.length : 0), 'leerpunt', 'leerpunten'),
+    swot:meer(v.n || 0, 'punt', 'punten'),
     gap:meer(v.gaps ? v.gaps.length : 0, 'thema', "thema's"), prio:meer(v.items ? v.items.length : 0, 'item', 'items'), betrokken:meer(v.items ? v.items.length : 0, 'betrokkene', 'betrokkenen'), realisme:'een schatting' })[id] || '';
 }
 function renderVoorstel() {
@@ -2750,6 +2787,9 @@ function alsTekst() {
     blok('Wie beslist', r.tasks.slice(0, 8).map(t => `- ${t.name}: beslist ${nm(t, v => v === 'A' || v === 'AR')}, voert uit ${nm(t, v => v === 'R' || v === 'AR')}`)); }
   if (aan('leerpunten')) { const l = M.data('leerpunten'), r = x => `- ${x.text}${x.thema ? ` (${x.thema.toLowerCase()})` : ''}`;
     blok('Leerpunten', [l.goed.length && 'Werkte goed:', ...l.goed.map(r), l.anders.length && 'Volgende keer anders:', ...l.anders.map(r)]); }
+  if (aan('swot')) { const w = M.data('swot');
+    blok('SWOT', [...SW_VAK.map(([v, t]) => `${t}: ${w.vakken[v].length ? w.vakken[v].map(x => x.text).join('; ') : 'nog leeg'}`),
+      w.acties && 'Gekozen strategieën:', ...SW_STRAT.flatMap(k => w.strat[k].map(a => `- ${k.toUpperCase()}: ${a.text} (bij ${a.bij}${a.who ? ', ' + a.who : ''}${a.when ? ', tegen ' + fmtLang(a.when) : ''})`))]); }
   if (aan('gap')) { const x = gapTop(M.data('gap')); blok('Grootste verschil', [x.theme, x.asis.text && 'Nu: ' + x.asis.text, x.tobe.text && 'Waar we heen willen: ' + x.tobe.text, gapLijn(x)]); }
   if (aan('prio')) blok('Snelle winsten', M.data('prio').items.filter(i => !i.done && !i.nieuw && i.impact >= 3 && i.effort <= 2).slice(0, 5).map(i => '- ' + i.name));
   if (aan('betrokken')) blok('Wie vraagt extra aandacht', M.data('betrokken').items.filter(x => !x.todo).sort((a, c) => (c.c * (11 - c.w)) - (a.c * (11 - a.w))).slice(0, 3).map(x => `- ${x.name} (${BR_KWADRANT(x.c, x.w).toLowerCase()})${x.next ? ': ' + x.next : ''}`));
