@@ -1462,6 +1462,10 @@ body.searching #home #tabgroup { display:none !important; }
 .wz-punten li > svg { width:36px; height:36px; padding:8px; border-radius:12px; background:#ecfdf5; color:#0c8660; }
 .wz-punten b { color:var(--slate-800); font-weight:700; }
 .wz-punten a { padding:12px 0; margin:-12px 0; font-weight:600; color:#047857; text-decoration:underline; text-decoration-color:#a7f3d0; text-underline-offset:3px; white-space:nowrap; }
+.wz-plan[hidden] { display:none; }
+.wz-plan li.groep { min-height:30px; font-size:0.9375rem; }
+.wz-plan li.groep .wz-plan-n { width:10px; height:10px; margin:0 9px; background:#ecfdf5; }
+.wz-plan li.groep + li.groep::before { left:13px; top:-10px; height:20px; }
 .wz-plan { list-style:none; margin:1rem 0 0; padding:0; display:grid; gap:0; text-align:left; }
 .wz-plan li { position:relative; display:grid; grid-template-columns:28px minmax(0,1fr); gap:0.75rem; align-items:center; min-height:40px; font-size:0.9375rem; color:var(--slate-600); }
 .wz-plan li + li::before { content:""; position:absolute; left:13px; top:-12px; height:24px; width:2px; background:#d1fae5; }
@@ -2014,7 +2018,7 @@ html.oc-stil .n-puls, html.oc-stil .n-halo, html.oc-stil .n-far circle { animati
         <a class="ft-link" href="https://www.linkedin.com/in/bartel-volckaert-8a96842/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Maker</a>
         <button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (34 seconden)" title="Bekijk de film (34 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg></button>
       </nav>
-      <p class="ft-meta"><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v15.50</span></p>
+      <p class="ft-meta"><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v15.51</span></p>
     </div>
   </footer>
   <dialog class="film" id="film" aria-labelledby="film-h">
@@ -4597,7 +4601,10 @@ function wzKlaar() {
     $('wz-plan').hidden = !toon.length;
     $('wz-klaar').innerHTML = 'Begin' + PIJL_CTA;
   } else {
-    $('wz-plan').hidden = true;
+    // Vergaderen of Reset: geen stappenplan, wel de groepen die je er vindt (nooit iets van een vorige keuze)
+    const subs = TAB_SUB[st.group] || [];
+    $('wz-plan').innerHTML = subs.map(m => `<li class="groep"><span class="wz-plan-n" aria-hidden="true"></span><span>${esc(m.label)}</span></li>`).join('');
+    $('wz-plan').hidden = !subs.length;
     const g = GROUPS.find(x => x.id === st.group);
     $('wz-klaar-p').textContent = st.sub + '.';
     $('wz-klaar').innerHTML = `Open ${esc(g ? g.label : '')}${PIJL_CTA}`;
