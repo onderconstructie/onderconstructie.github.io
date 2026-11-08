@@ -132,7 +132,11 @@ button { background:none; border:0; cursor:pointer; }
 .as-kol span, .as-rij { font-size:0.75rem; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; color:var(--slate-500); }
 .as-kol span { text-align:center; }
 .as-rij { display:flex; align-items:center; gap:0.625rem; margin:0.75rem 0 0.5rem; }
-.as-rij::after { content:''; flex:1; height:1px; background:var(--slate-200); }
+.as-rij::after { content:''; flex:1; height:1px; background:var(--slate-200); order:1; }
+/* Rustige link naar de PESTLE-analyse, op de regel Extern */
+.as-rij .as-link { order:2; display:inline-flex; align-items:center; min-height:44px; margin:-0.75rem 0; padding:0 0.25rem; border-radius:6px; font-size:0.8125rem; font-weight:600; letter-spacing:0; text-transform:none; color:var(--accent-dark); text-decoration:underline; text-decoration-color:#a7f3d0; text-underline-offset:3px; white-space:nowrap; }
+.as-rij .as-link:hover { text-decoration-color:currentColor; }
+@media (max-width:420px) { .as-rij:has(.as-link) { flex-wrap:wrap; } .as-rij:has(.as-link)::after { display:none; } .as-rij .as-link { flex-basis:100%; margin:-0.5rem 0 -0.625rem; } }
 .as-rij small { font-size:0.8125rem; font-weight:500; letter-spacing:0; text-transform:none; color:var(--slate-500); }
 .rij2 { display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); gap:0.75rem; }
 .vak { position:relative; min-width:0; display:flex; flex-direction:column; background:var(--wit); border:1px solid var(--slate-200); border-top:3px solid var(--slate-400); border-radius:14px; transition:background 0.15s, box-shadow 0.15s; }
@@ -1296,7 +1300,7 @@ window.ocProjectkiezer = function (plek, o) {
     <div class="paneel" id="p-vakken" role="tabpanel" aria-labelledby="tab-vakken" tabindex="-1"></div>
     <div class="paneel" id="p-koppel" role="tabpanel" aria-labelledby="tab-koppel" tabindex="-1" hidden></div>
     <div class="paneel" id="p-strat" role="tabpanel" aria-labelledby="tab-strat" tabindex="-1" hidden></div>
-    <div class="imp-row"><button type="button" class="oc-import" data-oc-types="risico,leerpunt" id="oc-imp" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v11M7.5 9.5L12 14l4.5-4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>Overnemen uit andere tools</button></div>
+    <div class="imp-row"><button type="button" class="oc-import" data-oc-types="risico,leerpunt,omgevingsfactor" id="oc-imp" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v11M7.5 9.5L12 14l4.5-4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>Overnemen uit andere tools</button></div>
   </section>
   <div class="export-row" id="export-row" hidden>
     <button type="button" class="exp-btn" id="copy-txt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Kopieer als tekst</button>
@@ -1319,7 +1323,7 @@ window.ocProjectkiezer = function (plek, o) {
         <li><b>Lees wat opvalt, en geef door.</b> Bovenaan staat telkens wat het meest aandacht vraagt. Je bedreigingen gaan naar de Risicomatrix, je acties naar het Takenbord, de Agenda en de RACI-matrix. Het Projectdossier toont je SWOT.</li>
       </ul>
       <p>Tip: sleep een punt naar een ander vak. Op een gsm of tablet houd je het eerst even vast. Met het toetsenbord kies je "Verplaats naar" in het menu bij het punt.</p>
-      <p>Neem risico's over uit de <a href="../risico/">Risicomatrix</a> en lessen uit het <a href="../leerpunten/">Leerpuntenlog</a>. Zet je acties in het <a href="../kanban/">Takenbord</a>, en toon je SWOT in het <a href="../dossier/">Projectdossier</a>.</p>
+      <p>Neem risico's over uit de <a href="../risico/">Risicomatrix</a>, kansen en bedreigingen uit de <a href="../pestle/">PESTLE-analyse</a> en lessen uit het <a href="../leerpunten/">Leerpuntenlog</a>. Zet je acties in het <a href="../kanban/">Takenbord</a>, en toon je SWOT in het <a href="../dossier/">Projectdossier</a>.</p>
     </div>
   </details>
 </main>
@@ -1357,6 +1361,7 @@ function ocPickProject(st, arr, cur = 'current') { const p = ocProject(''); if (
      'mijlpaal'    mijlpaal met datum (Tijdlijn, Projectopdracht)  { text, when, note? }   note = gepland, gehaald of verschoven
      'agendapunt'  punt op een agenda (Agenda)                     { text, who?, when?, note? }   when = startuur (UU:MM), note = doel en materiaal
      'leerpunt'    les voor een volgend project (Leerpuntenlog)    { text, note? }
+     'omgevingsfactor' wat er rond het project gebeurt (PESTLE-analyse) { text, note }   note = "Kans · Politiek · grote impact" (Kans, Bedreiging, Kans en bedreiging of Nog niet zeker)
                    Andere tools kiezen zelf welke soorten ze tonen (types in pick/count/sources) en slaan onbekende soorten dus over.
    'when' is bij voorkeur een datum als JJJJ-MM-DD; in "Overnemen uit…" staat die als 15 februari 2027.
 
@@ -1376,10 +1381,11 @@ function ocPickProject(st, arr, cur = 'current') { const p = ocProject(''); if (
    ?van=<tool> vinkt alleen die bron aan, en daarin de lijst van het actieve project als die er is (ook onder een vorige naam,
    of een lijst die met de projectnaam begint). &lijst=<naam> vinkt precies die lijst aan. Anders: de lijst die het laatst veranderde.
    Dezelfde tekst als taak en als actie is één item: de rijkste versie (met wie en wanneer) blijft.
+   Zo ook dezelfde tekst als omgevingsfactor en als risico (de PESTLE legt een grote bedreiging als allebei klaar).
 */
 const ocShare = (() => {
   const PREFIX = 'oc.share.';
-  const LABEL = { betrokkene:'betrokkenen', taak:'taken', actie:'acties', risico:"risico's", besluit:'besluiten', doel:'doelen', mijlpaal:'mijlpalen', agendapunt:'agendapunten', leerpunt:'leerpunten' };
+  const LABEL = { betrokkene:'betrokkenen', taak:'taken', actie:'acties', risico:"risico's", besluit:'besluiten', doel:'doelen', mijlpaal:'mijlpalen', agendapunt:'agendapunten', leerpunt:'leerpunten', omgevingsfactor:'omgevingsfactoren' };
   const esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
   // Een datum als JJJJ-MM-DD tonen we zoals in de tools: 15 februari 2027. Andere tekst blijft zoals ze is.
   const datum = v => { const s = String(v || '').trim(), d = /^\d{4}-\d{2}-\d{2}$/.test(s) ? new Date(s + 'T12:00:00') : null;
@@ -1428,7 +1434,7 @@ const ocShare = (() => {
     // Mist de gekozen versie een wie of wanneer die een andere bron wel heeft, dan vullen we aan.
     const score = (s, it) => [s.id === voorkeur ? 1 : 0, (it.note ? 2 : 0) + (it.who ? 1 : 0) + (it.when ? 1 : 0), s.items.length, s.updated || 0];
     const beter = (a, b) => { for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] > b[i]; return false; };
-    const best = new Map(), sl = it => (it.type === 'actie' ? 'taak' : it.type) + '|' + norm(it.text);   // een taak en een actie met dezelfde tekst zijn één item
+    const best = new Map(), sl = it => (it.type === 'actie' ? 'taak' : it.type === 'omgevingsfactor' ? 'risico' : it.type) + '|' + norm(it.text);   // een taak en een actie (of een omgevingsfactor en een risico) met dezelfde tekst zijn één item
     out.forEach(s => s.items.forEach(it => { const k = sl(it), sc = score(s, it), e = best.get(k); if (!e || beter(sc, e.sc)) best.set(k, { it, sc }); }));
     out.forEach(s => s.items.forEach(it => { const e = best.get(sl(it)).it; if (e !== it) { if (!e.who && it.who) e.who = it.who; if (!e.when && it.when) e.when = it.when; } }));
     return out.map(s => ({ ...s, items: s.items.filter(it => best.get(sl(it)).it === it) }))
@@ -1767,7 +1773,7 @@ const ocExport = (() => {
    Een actie hoort bij een extern punt (e) en een kant (s of w). De strategie volgt uit waar het punt staat:
    SO = sterkte en kans, WO = zwakte en kans, ST = sterkte en bedreiging, WT = zwakte en bedreiging. */
 const OC_ID = 'swot', OC_TOOL = 'SWOT-analyse';
-const TYPES = ['risico', 'leerpunt'];
+const TYPES = ['risico', 'leerpunt', 'omgevingsfactor'];
 let ocSaves = 0, ocPubT = null;
 // Wordt bij elke bewaring aangeroepen: telt (voor 'Ongedaan') en legt na een korte pauze klaar voor andere tools.
 function ocAfterSave() { ocSaves++; clearTimeout(ocPubT); ocPubT = setTimeout(() => { try { ocPublish(); } catch {} ocRefreshImports(); }, 300); }
@@ -2005,28 +2011,77 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) ocRe
 
 /* ---------- Overnemen: risico's als bedreiging, leerpunten als sterkte of zwakte ----------
    "Werkte goed" wordt een sterkte, "Volgende keer anders" een zwakte. Dat is een voorstel: je verplaatst of herschrijft het daarna. */
-const vakVoor = p => p.type === 'risico' ? 't' : /^\s*werkte goed/i.test(String(p.note || '')) ? 's' : 'w';
+/* Een omgevingsfactor uit de PESTLE-analyse: de notitie begint met de soort ("Kans · Politiek · grote impact").
+   Kans wordt een Kans, Bedreiging een Bedreiging. Bij "Kans en bedreiging" of "Nog niet zeker" geeft vakVoor niets: dan kies je zelf.
+   Grote impact wordt belangrijk. */
+const pestleVak = p => { const s = String(p.note || '').split('·')[0].trim().toLowerCase(); return s === 'kans' ? 'o' : s === 'bedreiging' ? 't' : null; };
+const vakVoor = p => p.type === 'omgevingsfactor' ? pestleVak(p) : p.type === 'risico' ? 't' : /^\s*werkte goed/i.test(String(p.note || '')) ? 's' : 'w';
+const grootVoor = p => p.type === 'omgevingsfactor' && /·\s*grote impact\s*$/i.test(String(p.note || ''));
+/* Kans of bedreiging? Een klein venster voor de factoren uit de PESTLE die allebei zijn, of nog niet zeker.
+   Geeft een Map (factor → 'o' of 't'). Wat je niet kiest, of Annuleer: niet overnemen. Escape sluit, de focus blijft in het venster. */
+function kiesKant(lijst) {
+  return new Promise(resolve => {
+    try { if (typeof ocStyle === 'function') ocStyle(); } catch {}
+    if (!document.getElementById('kk-stijl')) { const s = document.createElement('style'); s.id = 'kk-stijl';
+      s.textContent = '.kk{max-width:460px;max-height:min(88vh,680px);display:flex;flex-direction:column}.kk-l{overflow:auto;margin:.75rem 0 0}'
+        + '.kk-f{border:0;border-top:1px solid #e2e8f0;padding:.625rem 0 .25rem;margin:0;min-width:0}.kk-f legend{float:left;width:100%;padding:0;font-size:.9375rem;font-weight:600;color:#1e293b;line-height:1.4;overflow-wrap:anywhere}'
+        + '.kk-f legend small{display:block;font-size:.8125rem;font-weight:500;color:#64748b}.kk-f legend+label{clear:left}'
+        + '.kk-f label{display:inline-flex;align-items:center;gap:.5rem;min-height:44px;margin-right:1.25rem;font-size:.9375rem;color:#334155;cursor:pointer}'
+        + '.kk-f input{width:18px;height:18px;margin:0;accent-color:#047857}.kk .kk-n{font-size:.8125rem;color:#64748b;margin-top:.5rem}'
+        + '.kk .ocw-ja{background:#047857;color:#fff}.kk .ocw-ja:hover{background:#065f46}.kk :focus-visible{outline:2px solid #047857;outline-offset:2px}';
+      document.head.appendChild(s); }
+    const terug = document.activeElement, back = document.createElement('div'), een = lijst.length === 1;
+    back.className = 'ocw-back';
+    back.innerHTML = `<div class="ocw kk" role="dialog" aria-modal="true" aria-labelledby="kk-t" aria-describedby="kk-u"><b id="kk-t">Kans of bedreiging?</b>
+      <p id="kk-u">${een ? 'Bij deze factor' : 'Bij deze factoren'} uit de PESTLE-analyse koos je allebei, of nog niets. Waar zet je ${een ? 'hem' : 'ze'} in je SWOT?</p>
+      <div class="kk-l">${lijst.map((p, i) => `<fieldset class="kk-f"><legend>${esc(p.text)}<small>${esc(String(p.note || '').split('·')[0].trim())}</small></legend><label><input type="radio" name="kk-${i}" value="o">Kans</label><label><input type="radio" name="kk-${i}" value="t">Bedreiging</label></fieldset>`).join('')}</div>
+      <p class="kk-n">Wat je niet kiest, neem je niet over.</p>
+      <div class="ocw-row"><button type="button" class="ocw-no">Annuleer</button><button type="button" class="ocw-ja">Zet in je SWOT</button></div></div>`;
+    document.body.appendChild(back);
+    const ja = back.querySelector('.ocw-ja');
+    function sluit(ok) {
+      document.removeEventListener('keydown', toets, true);
+      const m = new Map(); if (ok) lijst.forEach((p, i) => { const r = back.querySelector(`input[name="kk-${i}"]:checked`); if (r) m.set(p, r.value); });
+      back.remove(); try { if (terug && terug.isConnected) terug.focus({ preventScroll:true }); } catch {} resolve(m);
+    }
+    function toets(e) {
+      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); sluit(false); return; }
+      if (e.key !== 'Tab') return;
+      const eerste = back.querySelector('.kk-f'), a = document.activeElement;
+      if (!e.shiftKey && a === ja) { e.preventDefault(); (eerste.querySelector('input:checked') || eerste.querySelector('input')).focus(); }
+      else if (e.shiftKey && eerste.contains(a)) { e.preventDefault(); ja.focus(); }
+    }
+    document.addEventListener('keydown', toets, true);
+    back.querySelector('.ocw-no').addEventListener('click', () => sluit(false));
+    ja.addEventListener('click', () => sluit(true));
+    back.querySelector('input').focus();
+  });
+}
 document.addEventListener('click', e => { if (e.target.closest('#oc-imp')) ocOvernemen(); });
 async function ocOvernemen() {
   const picked = await ocShare.pick({ types:TYPES, self:OC_ID, title:'Overnemen in je SWOT',
-    intro:"Een risico komt bij Bedreigingen. Een leerpunt dat goed werkte, komt bij Sterktes. Een leerpunt voor de volgende keer komt bij Zwaktes. Verplaatsen kan daarna nog.", have:ocAl() });
+    intro:"Een risico komt bij Bedreigingen. Een factor uit de PESTLE-analyse komt bij Kansen of Bedreigingen. Een leerpunt dat goed werkte, komt bij Sterktes. Een leerpunt voor de volgende keer komt bij Zwaktes. Verplaatsen kan daarna nog.", have:ocAl() });
   if (!picked.length) return;
+  // Een factor uit de PESTLE die allebei is, of nog niet zeker: eerst kiezen, Kans of Bedreiging
+  const twijfel = picked.filter(p => p.type === 'omgevingsfactor' && !vakVoor(p) && String(p.text || '').trim() && !cur().items.some(i => ocNorm(i.text) === ocNorm(p.text)));
+  const keuze = twijfel.length ? await kiesKant(twijfel) : new Map();
   const l = cur(), have = new Set(l.items.map(i => ocNorm(i.text))), restore = snapshot();
   let al = 0; try { al = ocShare.sources(TYPES, OC_ID).reduce((n, s) => n + s.items.filter(it => have.has(ocNorm(it.text))).length, 0); } catch {}
-  const tel = { s:0, w:0, t:0 }; let n = 0, vol = 0;
+  const tel = { s:0, w:0, o:0, t:0 }; let n = 0, vol = 0, open = 0;
   picked.forEach(p => {
-    const text = String(p.text || '').replace(/\s+/g, ' ').trim().slice(0, MAXT), k = ocNorm(text), v = vakVoor(p);
+    const text = String(p.text || '').replace(/\s+/g, ' ').trim().slice(0, MAXT), k = ocNorm(text), v = vakVoor(p) || keuze.get(p);
     if (!text || have.has(k)) return;
+    if (!v) { open++; return; }   // kans of bedreiging niet gekozen
     if (items(l, v).length >= MAXV) { vol++; return; }
     have.add(k);
-    const it = normItem({ id:uid(), vak:v, text, created:Date.now() + n, bron:String(p.source || '').slice(0, 60) || undefined });
+    const it = normItem({ id:uid(), vak:v, text, groot:grootVoor(p) || undefined, created:Date.now() + n, bron:String(p.source || '').slice(0, 60) || undefined });
     if (typeof p.bronId === 'string' && p.bronId) it.van = p.bronId.slice(0, 40);   // herkomst
     l.items.push(it); tel[v]++; n++;
   });
   editId = null; if (n) state.stap = 'vakken'; save(); render();
   if (n) { const nieuw = l.items.slice(-n); nieuw.forEach(it => flash(itemEl(it.id))); }
-  const waar = [tel.t && meer(tel.t, 'bedreiging', 'bedreigingen'), tel.s && meer(tel.s, 'sterkte', 'sterktes'), tel.w && meer(tel.w, 'zwakte', 'zwaktes')].filter(Boolean);
-  toast((n ? `Overgenomen: ${lijstZin(waar)}. Pas aan waar nodig.` : 'Niets nieuws overgenomen.') + (al ? ` ${al} ${al === 1 ? 'stond' : 'stonden'} er al.` : '') + (vol ? ` ${vol} niet: het vak is vol.` : ''), n ? restore : undefined);
+  const waar = [tel.o && meer(tel.o, 'kans', 'kansen'), tel.t && meer(tel.t, 'bedreiging', 'bedreigingen'), tel.s && meer(tel.s, 'sterkte', 'sterktes'), tel.w && meer(tel.w, 'zwakte', 'zwaktes')].filter(Boolean);
+  toast((n ? `Overgenomen: ${lijstZin(waar)}. Pas aan waar nodig.` : 'Niets nieuws overgenomen.') + (al ? ` ${al} ${al === 1 ? 'stond' : 'stonden'} er al.` : '') + (vol ? ` ${vol} niet: het vak is vol.` : '') + (open ? ` ${open} niet: je koos geen vak.` : ''), n ? restore : undefined);
 }
 /* Een andere tool opende de SWOT met ?van=<tool>: meteen kiezen wat je overneemt, zoals in de andere tools. */
 function ocOpenOvernemen() {
@@ -2101,7 +2156,7 @@ function vakHTML(l, v) {
 function vakkenHTML(l) {
   return `<div class="as-kol" aria-hidden="true"><span>Helpt</span><span>Hindert</span></div>
     <p class="as-rij">Intern <small>je project zelf</small></p><div class="rij2">${vakHTML(l, 's')}${vakHTML(l, 'w')}</div>
-    <p class="as-rij">Extern <small>wat er rond je project gebeurt</small></p><div class="rij2">${vakHTML(l, 'o')}${vakHTML(l, 't')}</div>`;
+    <p class="as-rij">Extern <small>wat er rond je project gebeurt</small><a class="as-link" href="../pestle/">Kijk rond met een PESTLE-analyse</a></p><div class="rij2">${vakHTML(l, 'o')}${vakHTML(l, 't')}</div>`;
 }
 
 /* Koppelen: per kans en per bedreiging de sterktes en zwaktes aantikken */
@@ -2946,8 +3001,8 @@ window.ocBestand = (function () {
   }());
   /* oc-overnemen: de knop "Overnemen uit…" valt op als knop en zegt wat er klaarligt ("5 taken uit Retro en Risicomatrix"). */
   (function () {
-    var VEEL = { taak: 'taken', actie: 'acties', risico: "risico's", betrokkene: 'betrokkenen', besluit: 'besluiten', doel: 'doelen', mijlpaal: 'mijlpalen', agendapunt: 'agendapunten', leerpunt: 'leerpunten' };
-    var EEN = { taak: 'taak', actie: 'actie', risico: 'risico', betrokkene: 'betrokkene', besluit: 'besluit', doel: 'doel', mijlpaal: 'mijlpaal', agendapunt: 'agendapunt', leerpunt: 'leerpunt' };
+    var VEEL = { taak: 'taken', actie: 'acties', risico: "risico's", betrokkene: 'betrokkenen', besluit: 'besluiten', doel: 'doelen', mijlpaal: 'mijlpalen', agendapunt: 'agendapunten', leerpunt: 'leerpunten', omgevingsfactor: 'omgevingsfactoren' };
+    var EEN = { taak: 'taak', actie: 'actie', risico: 'risico', betrokkene: 'betrokkene', besluit: 'besluit', doel: 'doel', mijlpaal: 'mijlpaal', agendapunt: 'agendapunt', leerpunt: 'leerpunt', omgevingsfactor: 'omgevingsfactor' };
     var zelf = '';
     try { var mt = document.querySelector('meta[name="oc:opslag"]'), mz = mt && /oc\.share\.([\w-]+)/.exec(mt.content); zelf = mz ? mz[1] : ''; } catch (e) {}
     function esc(v) { return String(v).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
@@ -2970,7 +3025,7 @@ window.ocBestand = (function () {
       });
       var best = {};
       lijsten.forEach(function (l) { l.items.forEach(function (it) {
-        var s = it.type + '|' + norm(it.text), sc = [(it.note ? 2 : 0) + (it.who ? 1 : 0) + (it.when ? 1 : 0), l.items.length, l.t], e = best[s];
+        var s = (it.type === 'omgevingsfactor' ? 'risico' : it.type) + '|' + norm(it.text), sc = [(it.note ? 2 : 0) + (it.who ? 1 : 0) + (it.when ? 1 : 0), l.items.length, l.t], e = best[s];
         var beter = !e; for (var i = 0; !beter && e && i < 3; i++) { if (sc[i] !== e.sc[i]) { beter = sc[i] > e.sc[i]; break; } }
         if (beter) best[s] = { sc: sc, l: l, type: it.type, tekst: it.text };
       }); });

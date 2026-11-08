@@ -1162,6 +1162,7 @@ function ocPickProject(st, arr, cur = 'current') { const p = ocProject(''); if (
      'mijlpaal'    mijlpaal met datum (Tijdlijn, Projectopdracht)  { text, when, note? }   note = gepland, gehaald of verschoven
      'agendapunt'  punt op een agenda (Agenda)                     { text, who?, when?, note? }   when = startuur (UU:MM), note = doel en materiaal
      'leerpunt'    les voor een volgend project (Leerpuntenlog)    { text, note? }
+     'omgevingsfactor' wat er rond het project gebeurt (PESTLE-analyse) { text, note }   note = "Kans · Politiek · grote impact" (Kans, Bedreiging, Kans en bedreiging of Nog niet zeker)
                    Andere tools kiezen zelf welke soorten ze tonen (types in pick/count/sources) en slaan onbekende soorten dus over.
    'when' is bij voorkeur een datum als JJJJ-MM-DD; in "Overnemen uit…" staat die als 15 februari 2027.
 
@@ -1181,10 +1182,11 @@ function ocPickProject(st, arr, cur = 'current') { const p = ocProject(''); if (
    ?van=<tool> vinkt alleen die bron aan, en daarin de lijst van het actieve project als die er is (ook onder een vorige naam,
    of een lijst die met de projectnaam begint). &lijst=<naam> vinkt precies die lijst aan. Anders: de lijst die het laatst veranderde.
    Dezelfde tekst als taak en als actie is één item: de rijkste versie (met wie en wanneer) blijft.
+   Zo ook dezelfde tekst als omgevingsfactor en als risico (de PESTLE legt een grote bedreiging als allebei klaar).
 */
 const ocShare = (() => {
   const PREFIX = 'oc.share.';
-  const LABEL = { betrokkene:'betrokkenen', taak:'taken', actie:'acties', risico:"risico's", besluit:'besluiten', doel:'doelen', mijlpaal:'mijlpalen', agendapunt:'agendapunten', leerpunt:'leerpunten' };
+  const LABEL = { betrokkene:'betrokkenen', taak:'taken', actie:'acties', risico:"risico's", besluit:'besluiten', doel:'doelen', mijlpaal:'mijlpalen', agendapunt:'agendapunten', leerpunt:'leerpunten', omgevingsfactor:'omgevingsfactoren' };
   const esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
   // Een datum als JJJJ-MM-DD tonen we zoals in de tools: 15 februari 2027. Andere tekst blijft zoals ze is.
   const datum = v => { const s = String(v || '').trim(), d = /^\d{4}-\d{2}-\d{2}$/.test(s) ? new Date(s + 'T12:00:00') : null;
@@ -1233,7 +1235,7 @@ const ocShare = (() => {
     // Mist de gekozen versie een wie of wanneer die een andere bron wel heeft, dan vullen we aan.
     const score = (s, it) => [s.id === voorkeur ? 1 : 0, (it.note ? 2 : 0) + (it.who ? 1 : 0) + (it.when ? 1 : 0), s.items.length, s.updated || 0];
     const beter = (a, b) => { for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] > b[i]; return false; };
-    const best = new Map(), sl = it => (it.type === 'actie' ? 'taak' : it.type) + '|' + norm(it.text);   // een taak en een actie met dezelfde tekst zijn één item
+    const best = new Map(), sl = it => (it.type === 'actie' ? 'taak' : it.type === 'omgevingsfactor' ? 'risico' : it.type) + '|' + norm(it.text);   // een taak en een actie (of een omgevingsfactor en een risico) met dezelfde tekst zijn één item
     out.forEach(s => s.items.forEach(it => { const k = sl(it), sc = score(s, it), e = best.get(k); if (!e || beter(sc, e.sc)) best.set(k, { it, sc }); }));
     out.forEach(s => s.items.forEach(it => { const e = best.get(sl(it)).it; if (e !== it) { if (!e.who && it.who) e.who = it.who; if (!e.when && it.when) e.when = it.when; } }));
     return out.map(s => ({ ...s, items: s.items.filter(it => best.get(sl(it)).it === it) }))
@@ -2714,8 +2716,8 @@ window.ocBestand = (function () {
   }());
   /* oc-overnemen: de knop "Overnemen uit…" valt op als knop en zegt wat er klaarligt ("5 taken uit Retro en Risicomatrix"). */
   (function () {
-    var VEEL = { taak: 'taken', actie: 'acties', risico: "risico's", betrokkene: 'betrokkenen', besluit: 'besluiten', doel: 'doelen', mijlpaal: 'mijlpalen', agendapunt: 'agendapunten', leerpunt: 'leerpunten' };
-    var EEN = { taak: 'taak', actie: 'actie', risico: 'risico', betrokkene: 'betrokkene', besluit: 'besluit', doel: 'doel', mijlpaal: 'mijlpaal', agendapunt: 'agendapunt', leerpunt: 'leerpunt' };
+    var VEEL = { taak: 'taken', actie: 'acties', risico: "risico's", betrokkene: 'betrokkenen', besluit: 'besluiten', doel: 'doelen', mijlpaal: 'mijlpalen', agendapunt: 'agendapunten', leerpunt: 'leerpunten', omgevingsfactor: 'omgevingsfactoren' };
+    var EEN = { taak: 'taak', actie: 'actie', risico: 'risico', betrokkene: 'betrokkene', besluit: 'besluit', doel: 'doel', mijlpaal: 'mijlpaal', agendapunt: 'agendapunt', leerpunt: 'leerpunt', omgevingsfactor: 'omgevingsfactor' };
     var zelf = '';
     try { var mt = document.querySelector('meta[name="oc:opslag"]'), mz = mt && /oc\.share\.([\w-]+)/.exec(mt.content); zelf = mz ? mz[1] : ''; } catch (e) {}
     function esc(v) { return String(v).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
@@ -2738,7 +2740,7 @@ window.ocBestand = (function () {
       });
       var best = {};
       lijsten.forEach(function (l) { l.items.forEach(function (it) {
-        var s = it.type + '|' + norm(it.text), sc = [(it.note ? 2 : 0) + (it.who ? 1 : 0) + (it.when ? 1 : 0), l.items.length, l.t], e = best[s];
+        var s = (it.type === 'omgevingsfactor' ? 'risico' : it.type) + '|' + norm(it.text), sc = [(it.note ? 2 : 0) + (it.who ? 1 : 0) + (it.when ? 1 : 0), l.items.length, l.t], e = best[s];
         var beter = !e; for (var i = 0; !beter && e && i < 3; i++) { if (sc[i] !== e.sc[i]) { beter = sc[i] > e.sc[i]; break; } }
         if (beter) best[s] = { sc: sc, l: l, type: it.type, tekst: it.text };
       }); });
