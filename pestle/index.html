@@ -131,7 +131,7 @@ button { background:none; border:0; cursor:pointer; }
 .f.flash { animation:flash 1.4s ease; }
 @keyframes flash { 0% { background:var(--accent-50); } 100% { background:transparent; } }
 .f-top { display:grid; grid-template-columns:minmax(0, 1fr) 44px; align-items:start; }
-.f-t { display:block; width:100%; min-height:44px; padding:0.625rem 0.375rem 0.25rem; text-align:left; font-size:0.9375rem; line-height:1.4; color:var(--slate-800); overflow-wrap:anywhere; cursor:pointer; border-radius:8px; }
+.f-t { display:block; width:100%; min-height:44px; padding:0.625rem 0.375rem 0.25rem; text-align:left; font-size:0.9375rem; line-height:1.4; color:var(--slate-800); overflow-wrap:break-word; cursor:pointer; border-radius:8px; }
 .f.groot .f-t { font-weight:600; }
 .it-meer { width:44px; height:44px; display:grid; place-items:center; border-radius:10px; color:var(--slate-500); }
 .it-meer:hover, .it-meer[aria-expanded="true"] { background:var(--slate-100); color:var(--slate-800); }
@@ -269,7 +269,7 @@ button { background:none; border:0; cursor:pointer; }
 .vb-btns { display:flex; flex-wrap:wrap; gap:0.375rem; }
 .vb-btn { min-height:44px; padding:0.375rem 0.625rem; border-radius:10px; font-size:0.875rem; font-weight:600; background:#fff; border:1px solid #e2e8f0; }
 .vb-wis { color:#b91c1c; border-color:#fecaca; }
-.vb-eigen { color:#047857; border-color:#a7f3d0; }
+.vb-eigen { color:#047857; border-color:#a7f3d0; background:#ecfdf5; }
 
 /* Delen: kopie links, downloads rechts */
 .export-row { display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:1rem; }
@@ -318,10 +318,10 @@ input::placeholder, textarea::placeholder { color:#64748b; opacity:1; }
 /* Eenheid: startscherm zonder gegevens (Begin als hoofdknop, Voorbeeld bekijken rustig, Open bestand als link) */
 .oc-start-btns { display:flex; gap:0.5rem; justify-content:center; flex-wrap:wrap; margin-top:0.875rem; }
 .oc-start-btns .oc-begin, .oc-start-btns .oc-vb { display:inline-flex; align-items:center; justify-content:center; min-height:44px; padding:0.5rem 1rem; border:0; border-radius:10px; font:inherit; font-weight:600; font-size:0.9375rem; line-height:1.3; cursor:pointer; text-align:center; }
-.oc-start-btns .oc-begin { background:#047857; color:#fff; }
-.oc-start-btns .oc-begin:hover { background:#065f46; }
-.oc-start-btns .oc-vb { background:#fff; color:#334155; border:1px solid #e2e8f0; }
-.oc-start-btns .oc-vb:hover { background:#f1f5f9; }
+.oc-start-btns .oc-begin { background:#0c8660; color:#fff; }
+.oc-start-btns .oc-begin:hover { background:#047857; }
+.oc-start-btns .oc-vb { background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; }
+.oc-start-btns .oc-vb:hover { background:#d1fae5; }
 .oc-start-btns [hidden] { display:none !important; }
 .oc-open-row { display:flex; justify-content:center; margin:0.5rem 0 0; }
 .oc-open-row .oc-open-link { display:inline-flex; align-items:center; gap:0.5rem; min-height:44px; padding:0.5rem 1rem; border:0; background:none; border-radius:10px; font:inherit; font-size:0.875rem; font-weight:600; color:#047857; cursor:pointer; text-decoration:none; }
@@ -878,37 +878,53 @@ details.explain.oc-u .oc-u-noot a, details.explain.oc-u .oc-u-stap-uitleg a, det
    Gebruik: zet data-oc-kop en data-stand="compact" op de <header> van de tool. Zet er na de ondertitel twee plekken in:
      <div class="oc-kop-project" id="ocKiezer"></div>   de projectkiezer (blok oc-projectkiezer), mag ontbreken
      <div class="oc-kop-acties"> het ⋮-menu van de tool (.ocm-wrap of .menu-wrap) </div>
-   Groot: zolang de lege staat (.oc-start) in beeld is: icoon, titel en vraag in het midden, het menu rechtsboven.
+   Groot: zolang de lege staat (.oc-start) in beeld is: icoon, titel en vraag in het midden.
    Compact: zodra er inhoud is: één regel met terug, icoon, titel, project en menu. Op een gsm staat het project op een tweede regel.
+   De terugknop (linksboven, een pijltje van 44 px) en de knoppen rechts (.oc-kop-acties) staan in beide standen op exact dezelfde plek:
+   wisselt de stand, dan verspringen ze niet. De knoppen rechts liggen altijd los (absoluut) rechtsboven; de terugknop ligt in groot los
+   en staat in compact vooraan in de regel, op dezelfde plek. In compact houdt de kop plaats vrij voor de knoppen rechts (--oc-acties-b,
+   de breedte die het blok meet), zodat een lange titel of de kiezer ze nooit naar een tweede regel duwt.
+   Hun plek hangt aan de padding van de compacte kop: wijzig je die, wijzig dan ook top, left en right van groot en van .oc-kop-acties.
    De stand ligt vast vóór de eerste paint: zie ocKop.vooraf in het JS-deel.
    De kop plakt niet: zo bedekt hij nooit de focus (2.4.11), ook niet op 400% zoom.
    Zelf kiezen kan met ocKop.groot(true | false); ocKop.groot(null) laat het weer aan de lege staat over. */
 header[data-oc-kop] { position:relative; z-index:30; }
 /* een open menu in de kop ligt boven een plakkende werkbalk van de tool */
 header[data-oc-kop]:focus-within, header[data-oc-kop]:has([aria-expanded="true"]) { z-index:200; }
-header[data-oc-kop] .oc-kop-acties { position:absolute; top:0.5rem; right:0.75rem; display:flex; align-items:center; gap:0.25rem; z-index:20; }
+header[data-oc-kop] .oc-kop-acties { position:absolute; top:0.625rem; right:0.75rem; display:flex; align-items:center; min-height:44px; gap:0.25rem; z-index:20; }
 header[data-oc-kop] .oc-kop-acties:empty { display:none; }
 header[data-oc-kop] .oc-kop-project { display:flex; justify-content:center; margin:0.875rem auto 0; max-width:100%; }
 header[data-oc-kop] .oc-kop-project:empty { display:none; }
+/* lange namen breken alleen op een woordgrens (Gedrags-verandering), nooit midden in een woorddeel: het blok zet zachte
+   afbreekstreepjes op de grenzen (zoals afbreek() in de app). Geen afbreken op lettergrepen (hyphens:auto zou Visgraat-dia-gram geven);
+   een woord dat toch niet past, breekt als laatste redmiddel (break-word, nooit anywhere of break-all). */
+header[data-oc-kop] h1 { -webkit-hyphens:manual; hyphens:manual; overflow-wrap:break-word; word-break:normal; }
 header[data-oc-kop] h1:focus { outline:none; }
 header[data-oc-kop] h1:focus-visible { outline:2px solid #047857; outline-offset:4px; border-radius:4px; }
-header[data-oc-kop][data-stand="groot"] .back-link { z-index:1; }
+/* de terugknop: overal dezelfde vorm (de naam blijft in aria-label en verschijnt als tip bij de muis) */
+header[data-oc-kop] .back-link { display:inline-flex; align-items:center; justify-content:center; box-sizing:border-box; width:44px !important; min-width:44px !important; max-width:44px !important; height:44px !important; min-height:44px !important; margin:0 !important; padding:0 !important; gap:0 !important; font-size:0 !important; line-height:0 !important; }
+header[data-oc-kop] .back-link span { display:none !important; }
+header[data-oc-kop] .back-link svg { width:20px !important; height:20px !important; flex:none; margin:0 !important; }
+header[data-oc-kop][data-stand="groot"] .back-link { position:absolute !important; top:0.625rem !important; left:0.5rem !important; right:auto !important; bottom:auto !important; transform:none !important; z-index:21; }
 header[data-oc-kop][data-stand="compact"] { display:flex !important; flex-direction:row !important; flex-wrap:wrap; justify-content:flex-start !important; align-items:center !important; column-gap:0.625rem; row-gap:0.375rem; text-align:left !important; padding:0.625rem 0.75rem 0.625rem 1rem !important; min-height:64px; }
-header[data-oc-kop][data-stand="compact"] .back-link { position:static !important; display:inline-flex; justify-content:center; width:44px; min-width:44px; height:44px; margin:0 -0.25rem 0 -0.5rem !important; padding:0 !important; gap:0 !important; font-size:0 !important; }
-header[data-oc-kop][data-stand="compact"] .back-link span { display:none; }
-header[data-oc-kop][data-stand="compact"] .back-link svg { width:20px !important; height:20px !important; }
+header[data-oc-kop][data-stand="compact"] .back-link { position:static !important; transform:none !important; margin:0 -0.25rem 0 -0.5rem !important; align-self:flex-start; }
 header[data-oc-kop][data-stand="compact"] .logo, header[data-oc-kop][data-stand="compact"] .oc-logo,
 header[data-oc-kop][data-stand="compact"] .logo svg, header[data-oc-kop][data-stand="compact"] .oc-logo svg { width:36px !important; height:36px !important; margin:0 !important; flex:none; }
 header[data-oc-kop][data-stand="compact"] h1 { flex:0 1 auto; width:auto !important; max-width:none !important; font-size:1.1875rem !important; line-height:1.25 !important; margin:0 !important; letter-spacing:-0.02em; white-space:nowrap; min-width:0; overflow:hidden; text-overflow:ellipsis; }
 header[data-oc-kop][data-stand="compact"] .subtitle { position:absolute !important; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; margin:0 !important; }
 header[data-oc-kop][data-stand="compact"] .oc-kop-project { margin:0; min-width:0; flex:0 1 auto; justify-content:flex-start; align-items:center; }
 header[data-oc-kop][data-stand="compact"] .oc-kop-project::before { content:""; flex:none; width:1.5px; height:22px; margin:0 0.625rem 0 0.125rem; background:#cbd5e1; transform:rotate(18deg); border-radius:1px; }
-header[data-oc-kop][data-stand="compact"] .oc-kop-acties { position:static; margin-left:auto; order:5; }
+header[data-oc-kop][data-stand="compact"] { padding-right:calc(1.25rem + var(--oc-acties-b, 44px)) !important; }
+/* de eerste regel is altijd 44 px hoog (zoals de knoppen), ook zonder terugknop (in de app): zo valt de tweede regel nooit onder de knoppen rechts */
+header[data-oc-kop][data-stand="compact"]::before { content:""; order:-1; flex:none; width:0; height:44px; margin-right:-0.625rem; }
 @media (max-width:599px) {
   header[data-oc-kop][data-stand="compact"] { padding:0.5rem 0.5rem 0.75rem 1rem !important; }
+  /* op een gsm staat het project op een tweede regel, over de volle breedte: alleen de titel houdt plaats vrij voor de knoppen rechts */
+  header[data-oc-kop][data-stand="compact"] h1 { flex:1 1 0; margin-right:calc(var(--oc-acties-b, 44px) + 0.5rem) !important; }
   header[data-oc-kop][data-stand="compact"] .oc-kop-project { order:10; flex:1 1 100%; }
   header[data-oc-kop][data-stand="compact"] .oc-kop-project::before { display:none; }
-  header[data-oc-kop][data-stand="groot"] .oc-kop-acties { top:0.25rem; right:0.25rem; }
+  header[data-oc-kop] .oc-kop-acties { top:0.5rem; right:0.5rem; }
+  header[data-oc-kop][data-stand="groot"] .back-link { top:0.5rem !important; }
 }
 @media print { header[data-oc-kop] .oc-kop-acties, header[data-oc-kop] .oc-kop-project { display:none !important; } }
 /* oc-kop v1 einde */
@@ -938,10 +954,52 @@ header[data-oc-kop][data-stand="compact"] .oc-kop-acties { position:static; marg
     if (kop.getAttribute('data-stand') !== s) kop.setAttribute('data-stand', s);
   }
   function later() { if (gepland) return; gepland = true; requestAnimationFrame(function () { gepland = false; zet(); }); }
+  /* de breedte van de knoppen rechts: in compact houdt de kop zoveel plaats vrij (0 als er geen knoppen zijn) */
+  function meetActies() {
+    var a = kop && kop.querySelector('.oc-kop-acties'); if (!a) return;
+    var w = a.getClientRects().length ? Math.ceil(a.getBoundingClientRect().width) : 0;
+    if (kop.style.getPropertyValue('--oc-acties-b') !== w + 'px') kop.style.setProperty('--oc-acties-b', w + 'px');
+  }
   function start() {
+    kop = kop || document.querySelector('header[data-oc-kop]'); try { breekTitel(); } catch (e) {} try { terugSpan(); } catch (e) {}
+    try { meetActies(); var a = kop && kop.querySelector('.oc-kop-acties'); if (a && window.ResizeObserver) new ResizeObserver(meetActies).observe(a); } catch (e) {}
     later();   // pas na de eigen start van de tool (ook als die op DOMContentLoaded wacht), vóór de volgende paint
     try { new MutationObserver(later).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['hidden', 'class', 'style'] }); } catch (e) {}
     addEventListener('resize', later);
+  }
+  /* afbreek: dezelfde woorddelen als de app (const DELEN en STAM in app/index.html). Een zacht afbreekstreepje is onzichtbaar
+     tot de regel echt te kort is. Alleen in tekst van de H1, één keer. */
+  var DELEN = ['verandering', 'meditatie', 'opdracht', 'notities', 'planning', 'kaartjes', 'klimaat', 'profiel', 'diagram', 'dossier', 'paradox', 'analyse', 'teller', 'matrix', 'punten', 'tabel', 'radar', 'score', 'meter', 'kaart', 'schap', 'licht', 'dagen', 'graat', 'stand', 'boek', 'bord', 'lijn', 'kast', 'kost', 'plan', 'wolk', 'log'];
+  var STAM = { communicatie: 7, betrokkenen: 6, afstemmings: 6, informatie: 7, prioriteren: 6 };
+  function afbreek(t) {
+    return String(t).split(/(\s+|-)/).map(function (w) {
+      var x = w, staart = '';
+      for (var i = 0; i < 4; i++) {
+        var d = DELEN.filter(function (d) { return x.length - d.length >= 3 && x.toLowerCase().slice(-d.length) === d; })[0];
+        if (!d) break;
+        staart = '\u00AD' + x.slice(-d.length) + staart; x = x.slice(0, -d.length);
+      }
+      var k = STAM[x.toLowerCase()]; if (k) x = x.slice(0, k) + '\u00AD' + x.slice(k);
+      return x + staart;
+    }).join('');
+  }
+  function breekTitel() {
+    var h = kop && kop.querySelector('h1'); if (!h || h.__ocAfbreek) return; h.__ocAfbreek = true;
+    var w = document.createTreeWalker(h, NodeFilter.SHOW_TEXT), n, L = [];
+    while ((n = w.nextNode())) if (n.nodeValue.indexOf('\u00AD') < 0) L.push(n);
+    L.forEach(function (n) { var v = afbreek(n.nodeValue); if (v !== n.nodeValue) n.nodeValue = v; });
+  }
+  /* de naam in de terugknop: losse tekst gaat in een <span> (die is verborgen; de naam staat in aria-label). Zo heeft de link zelf
+     geen tekst van 0 px (de sitetest telt die als te klein), en oc-terug vindt de naam nog in de span. */
+  function terugSpan() {
+    [].forEach.call(document.querySelectorAll('header[data-oc-kop] a.back-link'), function (a) {
+      [].slice.call(a.childNodes).forEach(function (n) {
+        if (n.nodeType !== 3 || !n.nodeValue.trim()) return;
+        var sp = a.querySelector('span');
+        if (sp) { n.nodeValue = ''; return; }   // er is al een naam in een span
+        sp = document.createElement('span'); sp.textContent = n.nodeValue.trim(); a.replaceChild(sp, n);
+      });
+    });
   }
   function lees(k) { try { var r = localStorage.getItem(k); return r == null ? undefined : JSON.parse(r); } catch (e) { return null; } }
   function zacht(s) { return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ''); }
@@ -978,12 +1036,18 @@ header[data-oc-kop][data-stand="compact"] .oc-kop-acties { position:static; marg
     groot: function (b) { vast = b == null ? null : !!b; zet(); },
     zet: zet,
     niets: niets,
+    afbreek: afbreek,
     vooraf: function (o) {
       var s = document.currentScript, k = (s && s.closest && s.closest('header[data-oc-kop]')) || document.querySelector('header[data-oc-kop]');
       if (!k || !o) return;
       try { k.setAttribute('data-stand', voorspel(o) ? 'groot' : 'compact'); } catch (e) {}
     }
   };
+  /* de terugknop is een pijltje: bij de muis toont een tip waar hij naartoe gaat (de naam staat in aria-label, die oc-terug kan wijzigen) */
+  document.addEventListener('pointerover', function (e) {
+    var a = e.target && e.target.closest && e.target.closest('header[data-oc-kop] a.back-link'); if (!a) return;
+    var n = a.getAttribute('aria-label') || (a.textContent || '').trim(); if (n && a.title !== n) a.title = n;
+  }, true);
   /* de kop van de inhoud is de titel: krijgt de kop zelf de focus, dan gaat ze naar de H1 */
   document.addEventListener('focusin', function (e) {
     var k = e.target; if (!k || !k.matches || !k.matches('header[data-oc-kop]')) return;
@@ -1049,6 +1113,7 @@ header[data-oc-kop][data-stand="compact"] .oc-kop-acties { position:static; marg
      actief: () => id,
      kies: id => {...},                                // wissel; de tool tekent en bewaart zelf
      nieuw: () => {...},                               // maak een nieuw project en maak het actief; daarna vraagt de kiezer meteen de naam
+                                                       // (geeft nieuw false terug, dan vraagt de tool zelf de naam, bv. in een venster)
      hernoem: naam => {...},                           // de nieuwe naam van het actieve project (nooit leeg)
      verwijder: () => {...},                           // de tool verwijdert het actieve project, met een melding en Ongedaan
      magWeg: () => true,                               // standaard: alleen als er meer dan één is
@@ -1129,7 +1194,7 @@ window.ocProjectkiezer = function (plek, o) {
     var b = e.target.closest('[data-pk]'); if (!b) return;
     var wat = b.getAttribute('data-pk');
     if (wat === 'kies') { var nid = b.getAttribute('data-id'); sluit(true); if (nid !== o.actief()) o.kies(nid); teken(); knop.focus(); }
-    else if (wat === 'nieuw') { sluit(false); o.nieuw(); teken(); hernoem({ nieuw: true }); }
+    else if (wat === 'nieuw') { sluit(false); var zelf = o.nieuw() === false; teken(); if (!zelf) hernoem({ nieuw: true }); }
     else if (wat === 'hernoem') { sluit(false); hernoem(); }
     else if (wat === 'weg') { sluit(false); o.verwijder(); teken(); knop.focus(); }
   });
@@ -1227,6 +1292,7 @@ window.ocProjectkiezer = function (plek, o) {
       <button type="button" class="stap" role="tab" id="tab-overzicht" data-stap="overzicht" aria-controls="p-overzicht" aria-selected="false" tabindex="-1"><span class="nr" aria-hidden="true">2</span><span>Overzicht<span class="stap-u">Wat telt het meest?</span></span></button>
     </div>
 
+    <div class="fg-plek" id="fig" hidden></div>
     <section class="inz" id="inz" aria-labelledby="inz-t" hidden><h2 class="inz-t" id="inz-t">Wat valt op</h2><ul id="inz-l"></ul></section>
 
     <div class="paneel" id="p-domeinen" role="tabpanel" aria-labelledby="tab-domeinen" tabindex="-1"></div>
@@ -1748,6 +1814,10 @@ const DOM = {
 const soort = it => it.kans && it.bedr ? 'beide' : it.kans ? 'kans' : it.bedr ? 'bedr' : 'open';
 const SOORT = { kans:'Kans', bedr:'Bedreiging', beide:'Kans en bedreiging', open:'Nog niet zeker' };
 const impact = it => it.groot ? 'grote impact' : 'kleine impact';
+/* Nummers per domein: P1, E2, S1, T3, L1, M1, in de volgorde van het domein. Milieu krijgt M: twee keer E zou dubbelzinnig zijn.
+   Hetzelfde nummer in de figuur, de lijst, de tabel, de export en de tekst. */
+const NRL = { p:'P', e:'E', s:'S', t:'T', l:'L', m:'M' };
+const nr = (l, it) => it ? NRL[it.dom] + (items(l, it.dom).indexOf(it) + 1) : '';
 
 const ICON = {
   dots:'<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>',
@@ -1925,7 +1995,7 @@ function itemHTML(it) {
   if (editId === it.id) return `<li class="f" data-id="${escA(it.id)}"><div class="f-edit"><input class="field" data-edit="${escA(it.id)}" value="${escA(it.text)}" maxlength="${MAXT}" aria-label="Tekst van de factor" enterkeyhint="done" autocomplete="off"><p class="err" id="ee-${escA(it.id)}" hidden></p></div></li>`;
   const gid = 'fk-' + it.id, kort50 = kort(it.text, 50);
   return `<li class="f${s === 'open' ? ' open' : ''}${it.groot ? ' groot' : ''}" data-id="${escA(it.id)}">`
-    + `<div class="f-top"><button type="button" class="f-t" data-act="bewerk" aria-label="${escA(it.text + '. ' + SOORT[s] + ', ' + impact(it) + '. Bewerk')}">${esc(it.text)}</button>`
+    + `<div class="f-top"><button type="button" class="f-t" data-act="bewerk" aria-label="${escA(nr(cur(), it) + ': ' + it.text + '. ' + SOORT[s] + ', ' + impact(it) + '. Bewerk')}"><span class="fg-nr" aria-hidden="true">${nr(cur(), it)}</span>${esc(it.text)}</button>`
     + `<button type="button" class="it-meer" data-act="menu" aria-haspopup="true" aria-expanded="false" aria-label="${escA('Meer voor ' + kort50)}" title="Bewerk, verplaats of verwijder">${ICON.dots}</button></div>`
     + `<div class="f-keus" role="group" aria-label="${escA('Wat betekent ' + q(it.text) + ' voor je project?')}" id="${escA(gid)}">`
     + `<button type="button" class="ch k" data-zet="kans" aria-pressed="${!!it.kans}"><span>${it.kans ? ICON.vink : ''}Kans</span></button>`
@@ -1945,7 +2015,7 @@ function domeinenHTML(l) { return `<div class="dom-grid">${DOMS.map(d => domHTML
 /* Overzicht: per domein de kansen tegenover de bedreigingen. Grote impact eerst en in het vet. Elke factor brengt je terug naar de factor. */
 function ovF(it, kant) {
   const ook = it.kans && it.bedr ? (kant === 'k' ? 'ook bedreiging' : 'ook kans') : '';
-  return `<li><button type="button" class="ov-f${it.groot ? ' groot' : ''}" data-naar="${escA(it.id)}" aria-label="${escA(it.text + (ook ? ', ' + ook : '') + ', ' + impact(it) + '. Pas aan')}"><span class="stip" aria-hidden="true"></span><span>${esc(it.text)}${ook ? `<small>${ook}</small>` : ''}</span></button></li>`;
+  return `<li><button type="button" class="ov-f${it.groot ? ' groot' : ''}" data-naar="${escA(it.id)}" aria-label="${escA(nr(cur(), it) + ': ' + it.text + (ook ? ', ' + ook : '') + ', ' + impact(it) + '. Pas aan')}"><span class="stip" aria-hidden="true"></span><span class="fg-nr" aria-hidden="true">${nr(cur(), it)}</span><span>${esc(it.text)}${ook ? `<small>${ook}</small>` : ''}</span></button></li>`;
 }
 function overzichtHTML(l) {
   if (!l.items.length) return `<div class="empty"><strong>Nog niets om te tonen</strong>Verken eerst de zes domeinen rond je project.<br><button type="button" class="link-btn" data-inz="stap" data-arg="domeinen">Naar Verkennen</button></div>`;
@@ -1953,12 +2023,45 @@ function overzichtHTML(l) {
   const rij = d => { const its = items(l, d), O = its.filter(isOpen);
     return `<section class="ov-rij" aria-labelledby="ovd-${d}"><h3 class="ov-dom" id="ovd-${d}"><span class="dom-l" aria-hidden="true">${DOM[d].l}</span><span>${DOM[d].naam}</span></h3>`
       + (its.length ? cel(its.filter(isKans), 'k', 'Kansen') + cel(its.filter(isBedr), 'b', 'Bedreigingen')
-        + (O.length ? `<p class="ov-open"><b>Nog niet zeker:</b> ${O.map(i => `<button type="button" class="ov-f" data-naar="${escA(i.id)}" aria-label="${escA(i.text + ', nog niet zeker. Deel in')}">${esc(i.text)}</button>`).join('')}</p>` : '')
+        + (O.length ? `<p class="ov-open"><b>Nog niet zeker:</b> ${O.map(i => `<button type="button" class="ov-f" data-naar="${escA(i.id)}" aria-label="${escA(nr(l, i) + ': ' + i.text + ', nog niet zeker. Deel in')}"><span class="fg-nr" aria-hidden="true">${nr(l, i)}</span>${esc(i.text)}</button>`).join('')}</p>` : '')
         : `<div class="ov-cel k"><p class="ov-leeg">Nog niets bekeken. <button type="button" class="link-btn" data-inz="vul" data-arg="${d}">Vul aan</button></p></div><div class="ov-cel b"></div>`) + '</section>'; };
   return `<p class="uitleg">Per domein je kansen tegenover je bedreigingen. Wat een grote impact heeft, staat eerst en in het vet. Tik op een factor om hem aan te passen.</p>
     <div class="ov"><div class="ov-kop" aria-hidden="true"><span>Domein</span><span class="k">Kansen</span><span class="b">Bedreigingen</span></div>${DOMS.map(rij).join('')}</div>
     <p class="ov-noot"><span><i style="background:#10b981" aria-hidden="true"></i>kans met grote impact</span><span><i style="background:#334155" aria-hidden="true"></i>bedreiging met grote impact</span><span><i style="border:1.5px solid #94a3b8" aria-hidden="true"></i>kleine impact</span></p>`;
 }
+
+/* ---------- De figuur: wat telt het meest ----------
+   Een kleine matrix: kans of bedreiging (kolommen) tegenover grote of kleine impact (rijen). Elke factor is een genummerde stip.
+   Rond = kans, vierkant = bedreiging, groot en gevuld = grote impact. Zo zit niets alleen in de kleur.
+   Voor een schermlezer: een figuur met een kop, per vak een kop en een lijst van knoppen met de volle tekst. */
+const FG_VAK = { kg:['Grijp ze', 'kansen met grote impact'], bg:['Volg ze op', 'bedreigingen met grote impact'], kk:['Mooi meegenomen', 'kansen met kleine impact'], bk:['Houd ze in het oog', 'bedreigingen met kleine impact'] };
+function figPestle(l) {
+  const op = a => DOMS.flatMap(d => a.filter(i => i.dom === d));   // in de volgorde P, E, S, T, L, M
+  const dot = (it, kant) => { const c = nr(l, it), ook = it.kans && it.bedr ? (kant === 'k' ? ', ook bedreiging' : ', ook kans') : '';
+    const wat = kant === 'o' ? 'nog niet zeker' : `${kant === 'k' ? 'kans' : 'bedreiging'} met ${impact(it)}${ook}`;
+    return `<li><button type="button" class="fg-dot ${kant}${it.groot && kant !== 'o' ? ' groot' : ''}" data-fig="${escA(it.id + '|' + kant)}" title="${escA(it.text)}" aria-label="${escA(c + ': ' + it.text + ', ' + DOM[it.dom].naam + ', ' + wat + '. Toon in de tabel')}"><span>${c}</span></button></li>`; };
+  const cel = (k, its) => { const kant = k[0], [kop, sr] = FG_VAK[k];
+    return `<section class="fg-q ${kant === 'k' ? 'helpt' : 'hindert'}${k[1] === 'k' ? ' klein' : ''}" aria-labelledby="fq-${k}"><h3 class="fg-qk" id="fq-${k}"><span class="fg-qn">${kop}<span class="sr">: ${sr}, ${meer(its.length, 'factor', 'factoren')}</span></span><span class="fg-tel" aria-hidden="true">${its.length}</span></h3>`
+      + (its.length ? `<ol class="fg-dots">${op(its).map(i => dot(i, kant)).join('')}</ol>` : '<p class="fg-leeg">Geen</p>') + '</section>'; };
+  const K = l.items.filter(isKans), B = l.items.filter(isBedr), O = l.items.filter(isOpen);
+  return `<figure class="fg fg-pe" aria-labelledby="fg-t"><figcaption class="fg-kop"><h2 class="fg-titel" id="fg-t">Wat telt het meest</h2><p class="fg-hulp">Tik op een stip om de factor in de tabel te zien.</p></figcaption>
+    <div class="fg-raam"><span aria-hidden="true"></span><span class="fg-as" aria-hidden="true"><i class="fg-vorm"></i>Kans</span><span class="fg-as" aria-hidden="true"><i class="fg-vorm b"></i>Bedreiging</span>
+    <span class="fg-as r" aria-hidden="true">Grote impact</span>${cel('kg', K.filter(i => i.groot))}${cel('bg', B.filter(i => i.groot))}
+    <span class="fg-as r" aria-hidden="true">Kleine impact</span>${cel('kk', K.filter(i => !i.groot))}${cel('bk', B.filter(i => !i.groot))}</div>
+    ${O.length ? `<section class="fg-open" aria-labelledby="fq-o"><h3 class="fg-qk" id="fq-o"><span class="fg-qn">Nog niet zeker<span class="sr">, ${meer(O.length, 'factor', 'factoren')}</span></span></h3><ol class="fg-dots">${op(O).map(i => dot(i, 'o')).join('')}</ol></section>` : ''}
+    <p class="fg-noot" aria-hidden="true"><span><i class="fg-vorm"></i>rond: kans</span><span><i class="fg-vorm b"></i>vierkant: bedreiging</span><span><i class="fg-vorm g"></i>groot en vol: grote impact</span></p></figure>`;
+}
+function renderFig() {
+  const l = cur(), f = $('fig'), html = stap() === 'overzicht' && l.items.length ? figPestle(l) : '';
+  f.hidden = !html; f.innerHTML = html;
+}
+// Een tik op een stip: naar de factor in de tabel eronder, kort opgelicht. De focus gaat mee.
+document.addEventListener('click', e => {
+  const b = e.target.closest('#fig [data-fig]'); if (!b) return;
+  const [id, kant] = b.dataset.fig.split('|'), q = `[data-naar="${CSS.escape(id)}"]`;
+  const x = document.querySelector(kant === 'o' ? `#p-overzicht .ov-open ${q}` : `#p-overzicht .ov-cel.${kant === 'b' ? 'b' : 'k'} ${q}`); if (!x) return;
+  inBeeld(x); flash(x); x.focus({ preventScroll:true });
+});
 
 /* Opnieuw tekenen, zonder wat je aan het typen was te verliezen */
 function renderPaneel() {
@@ -1975,7 +2078,7 @@ function render() {
   const l = cur();
   $('vb-bar').hidden = !l.voorbeeld;
   $('export-row').hidden = !l.items.length;
-  renderCount(); renderStappen(); renderStart(); renderInz(); renderPaneel(); renderTabs(); doorToon();
+  renderCount(); renderStappen(); renderStart(); renderFig(); renderInz(); renderPaneel(); renderTabs(); doorToon();
 }
 // De pagina blijft op dezelfde plek staan als iets erboven groter of kleiner wordt (bv. de inzichten na een tik)
 function houdPlek(sel, fn) {
@@ -2220,7 +2323,7 @@ function buildExport(l) {
   const open = l.items.some(isOpen), kol = open ? '150px 1fr 1fr 0.75fr' : '170px 1fr 1fr';
   // een rand bovenaan, geen inset-schaduw: die tekent de afbeelding als een vol vlak
   const kop = (t, rand) => `<div style="padding:8px 12px;font-size:12px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:${C.muted};border-top:3px solid ${rand || 'transparent'};">${t}</div>`;
-  const punt = (it, kleur, ook) => `<div style="display:flex;gap:9px;padding:3px 0;font-size:13.5px;line-height:1.4;color:${C.text};${it.groot ? 'font-weight:600;' : ''}"><span style="flex:none;width:8px;height:8px;margin-top:6px;border-radius:50%;box-sizing:border-box;${it.groot ? `background:${kleur}` : 'border:1.5px solid #94a3b8'}"></span><span style="word-break:break-word">${esc(it.text)}${ook ? ` <span style="font-size:11.5px;font-weight:600;color:${C.muted}">(${ook})</span>` : ''}</span></div>`;
+  const punt = (it, kleur, ook) => `<div style="display:flex;gap:9px;padding:3px 0;font-size:13.5px;line-height:1.4;color:${C.text};${it.groot ? 'font-weight:600;' : ''}"><span style="flex:none;width:8px;height:8px;margin-top:6px;border-radius:50%;box-sizing:border-box;${it.groot ? `background:${kleur}` : 'border:1.5px solid #94a3b8'}"></span><span style="flex:none;align-self:flex-start;min-width:24px;padding:0 4px;border:1px solid #cbd5e1;border-radius:5px;background:#f1f5f9;color:#334155;font-size:11.5px;font-weight:700;line-height:18px;text-align:center">${nr(l, it)}</span><span style="word-break:break-word">${esc(it.text)}${ook ? ` <span style="font-size:11.5px;font-weight:600;color:${C.muted}">(${ook})</span>` : ''}</span></div>`;
   const cel = (its, kleur, kant) => `<div style="padding:8px 12px;border-left:1px solid #f1f5f9">${its.length ? opImpact(its).map(i => punt(i, kleur, i.kans && i.bedr ? (kant === 'k' ? 'ook bedreiging' : 'ook kans') : '')).join('') : `<div style="font-size:12.5px;color:${C.muted};padding:3px 0">Geen</div>`}</div>`;
   const rij = d => { const its = items(l, d);
     return `<div data-oc-keep style="display:grid;grid-template-columns:${kol};border-top:1px solid ${C.line}">
@@ -2228,7 +2331,21 @@ function buildExport(l) {
       ${its.length ? cel(its.filter(isKans), '#10b981', 'k') + cel(its.filter(isBedr), '#334155', 'b') : `<div style="padding:10px 12px;font-size:12.5px;color:${C.muted};grid-column:span ${open ? 3 : 2}">Nog niets bekeken</div>`}
       ${its.length && open ? `<div style="padding:8px 12px;border-left:1px solid #f1f5f9">${its.filter(isOpen).map(i => punt(i, '#94a3b8', '')).join('') || `<div style="font-size:12.5px;color:${C.muted};padding:3px 0">Geen</div>`}</div>` : ''}
     </div>`; };
-  node.innerHTML = `<div style="border:1px solid ${C.line};border-radius:12px;overflow:hidden"><div data-oc-keep style="display:grid;grid-template-columns:${kol};background:#f8fafc">${kop('Domein')}${kop('Kansen', '#10b981')}${kop('Bedreigingen', '#64748b')}${open ? kop('Nog niet zeker') : ''}</div>${DOMS.map(rij).join('')}</div>
+  // de figuur: kans of bedreiging tegenover de impact, met genummerde stippen (rond = kans, vierkant = bedreiging, groot en vol = grote impact)
+  const op = a => DOMS.flatMap(d => a.filter(i => i.dom === d));
+  const stip = (it, kant) => { const g = it.groot && kant !== 'o', z = g ? 34 : 26, kl = kant === 'k' ? (g ? '#047857' : '#10b981') : kant === 'b' ? (g ? '#475569' : '#64748b') : '#64748b';
+    return `<span style="display:inline-block;box-sizing:border-box;min-width:${z}px;height:${z}px;padding:0 4px;margin:0 6px 6px 0;border:2px ${kant === 'o' ? 'dashed' : 'solid'} ${kl};border-radius:${kant === 'b' ? '5px' : '999px'};background:${g ? kl : '#fff'};color:${g ? '#fff' : C.text};font-size:${g ? 12.5 : 11}px;font-weight:700;line-height:${z - 4}px;text-align:center;vertical-align:top">${nr(l, it)}</span>`; };
+  const vak = (kant, groot, kop, its) => `<div style="flex:1 1 0;min-width:0;border:1px solid #cbd5e1;border-top:${groot ? 4 : 1}px solid ${kant === 'k' ? '#10b981' : '#64748b'};border-radius:12px;padding:9px 12px 4px;background:${kant === 'k' ? '#fff' : '#f1f5f9'}">
+    <div style="display:flex;gap:8px;font-size:14px;font-weight:700;color:${C.text};margin-bottom:7px">${kop}<span style="margin-left:auto;font-size:13px;color:${C.soft}">${its.length}</span></div>${its.length ? op(its).map(i => stip(i, kant)).join('') : `<div style="font-size:12.5px;color:${C.soft};padding-bottom:6px">Geen</div>`}</div>`;
+  const as = t => `<span style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:${C.soft}">${t}</span>`;
+  const K = l.items.filter(isKans), B = l.items.filter(isBedr), O = l.items.filter(isOpen);
+  const fig = `<div data-oc-keep style="margin-bottom:22px"><div style="font-size:16px;font-weight:700;color:${C.text};margin-bottom:8px">Wat telt het meest</div>
+    <div style="display:flex;gap:10px;margin-bottom:6px"><div style="flex:none;width:118px"></div><div style="flex:1 1 0;text-align:center">${as('Kans')}</div><div style="flex:1 1 0;text-align:center">${as('Bedreiging')}</div></div>
+    <div style="display:flex;gap:10px;margin-bottom:10px"><div style="flex:none;width:118px;padding-top:10px">${as('Grote impact')}</div>${vak('k', true, 'Grijp ze', K.filter(i => i.groot))}${vak('b', true, 'Volg ze op', B.filter(i => i.groot))}</div>
+    <div style="display:flex;gap:10px"><div style="flex:none;width:118px;padding-top:10px">${as('Kleine impact')}</div>${vak('k', false, 'Mooi meegenomen', K.filter(i => !i.groot))}${vak('b', false, 'Houd ze in het oog', B.filter(i => !i.groot))}</div>
+    ${O.length ? `<div style="display:flex;gap:10px;margin-top:10px;align-items:center"><div style="flex:none;width:118px">${as('Nog niet zeker')}</div><div style="padding-top:6px">${op(O).map(i => stip(i, 'o')).join('')}</div></div>` : ''}
+    <div style="font-size:12px;color:${C.muted};margin-top:6px">Rond: kans. Vierkant: bedreiging. Groot en vol: grote impact. De nummers staan ook in de tabel hieronder.</div></div>`;
+  node.innerHTML = fig + `<div style="border:1px solid ${C.line};border-radius:12px;overflow:hidden"><div data-oc-keep style="display:grid;grid-template-columns:${kol};background:#f8fafc">${kop('Domein')}${kop('Kansen', '#10b981')}${kop('Bedreigingen', '#64748b')}${open ? kop('Nog niet zeker') : ''}</div>${DOMS.map(rij).join('')}</div>
     <div style="font-size:12px;color:${C.muted};margin-top:8px">Vet, met een volle stip: grote impact op het project. Een open stip: kleine impact.</div>`;
   const n = l.items.length, sub = ['PESTLE-analyse', meer(n, 'factor', 'factoren'), meer(l.items.filter(isKans).length, 'kans', 'kansen'), meer(l.items.filter(isBedr).length, 'bedreiging', 'bedreigingen'), `${l.items.filter(i => i.groot).length} met grote impact`].join(' · ') + (l.voorbeeld ? ' (voorbeeld)' : '');
   return { node, title:l.name || 'PESTLE-analyse', subtitle:sub };
@@ -2236,12 +2353,12 @@ function buildExport(l) {
 function alsTekst(l) {
   const L = [`PESTLE-analyse: ${l.name || 'Naamloos'}`, `Stand op ${fmtLang(today())}`];
   DOMS.forEach(d => { const its = opImpact(items(l, d));
-    L.push('', `${DOM[d].naam} (${DOM[d].l})`, ...(its.length ? its.map(i => `- ${i.text} (${SOORT[soort(i)].toLowerCase()}, ${impact(i)})`) : ['- nog niets bekeken'])); });
+    L.push('', `${DOM[d].naam} (${DOM[d].l})`, ...(its.length ? its.map(i => `${nr(l, i)}. ${i.text} (${SOORT[soort(i)].toLowerCase()}, ${impact(i)})`) : ['- nog niets bekeken'])); });
   const BG = l.items.filter(i => i.bedr && i.groot), KG = l.items.filter(i => i.kans && i.groot);
   if (BG.length || KG.length) {
     L.push('', 'Wat het meest telt');
-    if (KG.length) L.push(`- Kansen met grote impact: ${lijstZin(KG.map(i => q(i.text)))}`);
-    if (BG.length) L.push(`- Bedreigingen met grote impact: ${lijstZin(BG.map(i => q(i.text)))}`);
+    if (KG.length) L.push(`- Kansen met grote impact: ${lijstZin(KG.map(i => nr(l, i) + ' ' + q(i.text)))}`);
+    if (BG.length) L.push(`- Bedreigingen met grote impact: ${lijstZin(BG.map(i => nr(l, i) + ' ' + q(i.text)))}`);
   }
   return L.join('\n').trim() + '\n';
 }
@@ -2714,6 +2831,56 @@ document.addEventListener('click', e => {
   if (el.select && /^(INPUT|TEXTAREA)$/.test(el.tagName) && el.value.trim() && /^((mijn|nieuwe?) )?(project|analyse|lijst|keuze|kaart|ideeënkaart|doelgroep|matrix|plan|groep|team|tabel|informatietabel|log|retro|sprint|scan|proces)( \d+)?$|^naamloos$|^hele organisatie$/i.test(el.value.trim())) el.select();
 });
 </script>
+<style id="oc-figuur">
+/* ---------- Figuur: wat telt het meest, kans of bedreiging tegenover impact (pas-pestle.py) ---------- */
+.fg-plek { margin:0 1.125rem 1rem; }
+.fg { margin:0; }
+.fg-kop { display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:0.125rem 1rem; margin-bottom:0.5rem; }
+.fg-titel { font-size:0.75rem; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; color:#475569; }
+.fg-hulp { font-size:0.8125rem; color:#475569; }
+.fg-raam { display:grid; grid-template-columns:1.375rem minmax(0, 1fr) minmax(0, 1fr); gap:0.5rem; }
+.fg-as { display:flex; align-items:center; justify-content:center; gap:0.375rem; font-size:0.75rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:#475569; }
+.fg-as.r { writing-mode:vertical-rl; transform:rotate(180deg); align-self:center; justify-self:center; white-space:nowrap; }
+.fg-q { min-width:0; padding:0.625rem 0.625rem 0.625rem; background:#fff; border:1px solid #cbd5e1; border-top:4px solid #10b981; border-radius:14px; }
+.fg-q.hindert { background:#f1f5f9; border-top-color:#64748b; }
+.fg-q.klein { border-top-width:1px; }
+.fg-pe .fg-q { min-height:7.5rem; }   /* hoog genoeg voor de staande as (Grote impact, Kleine impact) */
+.fg-qk { display:flex; align-items:baseline; gap:0.5rem; margin:0 0 0.5rem; font-size:inherit; font-weight:inherit; }
+.fg-qn { min-width:0; font-size:0.9375rem; font-weight:700; line-height:1.2; color:#1e293b; hyphens:auto; -webkit-hyphens:auto; overflow-wrap:break-word; }
+.fg-qn small { display:block; font-size:0.75rem; font-weight:500; color:#475569; }
+.fg-tel { margin-left:auto; font-size:0.8125rem; font-weight:600; color:#475569; font-variant-numeric:tabular-nums; }
+.fg-dots { list-style:none; margin:-0.25rem; padding:0; display:flex; flex-wrap:wrap; }
+/* de knop is 44 px groot (tikdoel); de zichtbare stip erin is kleiner of groter naargelang de impact */
+.fg-dot { display:grid; place-items:center; min-width:2.75rem; height:2.75rem; padding:0; border-radius:10px; background:transparent; cursor:pointer; }
+.fg-dot span { display:grid; place-items:center; box-sizing:border-box; min-width:1.75rem; height:1.75rem; padding:0 0.25rem; border:2px solid #10b981; border-radius:999px; background:#fff; color:#1e293b; font-size:0.6875rem; font-weight:700; line-height:1; font-variant-numeric:tabular-nums; }
+.fg-dot.b span { border-color:#64748b; border-radius:5px; }
+.fg-dot.groot span { min-width:2.375rem; height:2.375rem; font-size:0.8125rem; background:#047857; border-color:#047857; color:#fff; }
+.fg-dot.b.groot span { background:#475569; border-color:#475569; }
+.fg-dot.o span { border:2px dashed #64748b; }
+.fg-dot:focus-visible { outline:2px solid #059669; outline-offset:-1px; }
+@media (hover:hover) { .fg-dot:hover span { box-shadow:0 0 0 2px #cbd5e1; } }
+.fg-leeg { font-size:0.8125rem; color:#475569; }
+.fg-open { display:flex; align-items:center; flex-wrap:wrap; gap:0.375rem 0.75rem; margin:0.5rem 0 0 1.875rem; padding:0.5rem 0.625rem; border:1px dashed #cbd5e1; border-radius:12px; }
+.fg-open .fg-qk { margin:0; }
+.fg-open .fg-qn { font-size:0.8125rem; }
+.fg-vorm { display:inline-block; flex:none; width:0.75rem; height:0.75rem; border:2px solid #10b981; border-radius:999px; }
+.fg-vorm.b { border-color:#64748b; border-radius:3px; }
+.fg-vorm.g { width:1rem; height:1rem; background:#047857; border-color:#047857; }
+.fg-noot { display:flex; flex-wrap:wrap; gap:0.25rem 1rem; margin-top:0.5rem; font-size:0.8125rem; color:#475569; }
+.fg-noot span { display:inline-flex; align-items:center; gap:0.375rem; }
+/* het nummer bij elke factor in de lijst en de tabel */
+.fg-nr { display:inline-block; min-width:1.75rem; margin-right:0.375rem; padding:0 0.3125rem; border:1px solid #cbd5e1; border-radius:6px; background:#f1f5f9; color:#334155; font-size:0.75rem; font-weight:700; line-height:1.25rem; text-align:center; font-variant-numeric:tabular-nums; vertical-align:1px; }
+.ov-f .fg-nr { flex:none; margin:0.0625rem 0 0; }
+.ov-f.flash { animation:flash 1.4s ease; }
+@media (max-width:640px) { .fg-plek { margin-left:0.75rem; margin-right:0.75rem; } }
+@media (max-width:400px) { .fg-tel { display:none; } }   /* smal: het aantal staat al in de lijst, de naam krijgt de ruimte */
+@media (max-width:560px) {
+  .fg-raam { grid-template-columns:1.125rem minmax(0, 1fr) minmax(0, 1fr); gap:0.375rem; }
+  .fg-q { padding:0.5rem 0.4375rem; border-radius:12px; }
+  .fg-qn { font-size:0.8125rem; }
+  .fg-open { margin-left:1.5rem; }
+}
+</style>
 <style>
 .oc-tb { margin:1rem 0 0; display:flex; flex-wrap:wrap; align-items:center; gap:0.5rem 0.75rem; }
 .oc-tb[hidden] { display:none; }
