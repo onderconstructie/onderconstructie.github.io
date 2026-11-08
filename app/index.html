@@ -1235,6 +1235,28 @@ body.view-fase .pm-ond, body:not(.view-fase) .pm-fase { display:none; }
 .cy-chip { min-height:48px; min-width:0; line-height:1.2; text-align:left; }
 .cy-chip:focus-visible { box-shadow:0 0 0 4px var(--ring-halo); }
 @media (hover:hover) { .cy-chip:hover { border-color:var(--mint-3); color:var(--accent-dark); } }
+/* De welkomstkaart compacter op een gsm, en één rustige regel voor wie al bezig is (een projectnaam of een tool gebruikt) */
+@media (max-width:640px) {
+  .welkom { padding:1rem 3rem 0.875rem 1rem; margin-bottom:1rem; }
+  .wk-t { font-size:1.1875rem; }
+  .wk-s { font-size:0.875rem; margin-top:0.25rem; }
+  .wk-acties { margin-top:0.25rem; }
+}
+.welkom.wk-kort { display:flex; flex-wrap:wrap; align-items:center; gap:0 0.75rem; padding:0.375rem 3rem 0.375rem 1rem; margin-bottom:1rem; border-radius:16px; background:#f3fcf8; box-shadow:none; }
+.welkom.wk-kort[hidden] { display:none; }
+.welkom.wk-kort .wk-net, .welkom.wk-kort .wk-s { display:none; }
+.welkom.wk-kort .wk-t { font-size:0.9375rem; max-width:none; letter-spacing:-0.01em; }
+.welkom.wk-kort .wk-acties { margin:0; }
+.welkom.wk-kort .wk-x { top:50%; translate:0 -50%; right:0.125rem; }
+/* Onlangs blijft alleen iconen; de naam verschijnt bij aanwijzen en bij focus met het toetsenbord (Escape verbergt hem).
+   Aan de randen staat de tooltip binnen de rij, zodat hij nooit buiten het scherm valt. */
+.rc-ic[data-tip]::after { content:attr(data-tip); position:absolute; left:50%; top:calc(100% + 6px); translate:-50% 0; z-index:30; padding:0.3125rem 0.625rem; border-radius:8px; background:#1e293b; color:#ffffff; font-size:0.8125rem; font-weight:600; line-height:1.3; white-space:nowrap; pointer-events:none; opacity:0; visibility:hidden; transition:opacity .12s ease; }
+@media (hover:hover) { .rc-ic[data-tip]:hover::after { opacity:1; visibility:visible; } }
+.rc-ic[data-tip]:focus-visible::after { opacity:1; visibility:visible; }
+.rc-ic.tip-weg::after { opacity:0 !important; visibility:hidden !important; }
+.cont .rc-ic:first-child[data-tip]::after { left:0; translate:0 0; }
+.cont .rc-ic:nth-last-child(-n+2):not(:first-child)[data-tip]::after { left:auto; right:0; translate:0 0; }
+@media (prefers-reduced-motion: reduce) { .rc-ic[data-tip]::after { transition:none; } }
 @media (prefers-reduced-motion: reduce) {
   .cy-sweep, .cy-st, .vs-opt { transition:none; }
   .cy-st:active { transform:none; }
@@ -1847,7 +1869,7 @@ html.oc-stil .n-puls, html.oc-stil .n-halo, html.oc-stil .n-far circle { animati
         <a class="ft-link" href="https://www.linkedin.com/in/bartel-volckaert-8a96842/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Maker</a>
         <button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (34 seconden)" title="Bekijk de film (34 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg></button>
       </nav>
-      <p class="ft-meta"><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v15.27</span></p>
+      <p class="ft-meta"><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v15.28</span></p>
       <details class="ft-nieuw" id="ft-nieuw"><summary id="nieuw-kort"></summary><ul id="nieuw-lijst"></ul></details>
     </div>
   </footer>
@@ -2610,7 +2632,7 @@ function renderRecent() {
   // Onlangs: alleen het icoon van de laatste vijf tools (de naam bij hover en voor schermlezers)
   const rest = items.filter(x => !hero || x.t.id !== hero.t.id).slice(0, 5);
   $('recent-row').hidden = !rest.length;
-  $('cont').innerHTML = rest.map(({ t, at }) => `<button class="rc-ic" data-id="${esc(t.id)}" title="${esc(t.title)}${at ? ' · ' + ago(at) : ''}" aria-label="${esc(t.title)}${at ? ', ' + ago(at) : ''}"><span class="icon">${iconHTML(t.icon)}</span><span class="live-dot" aria-hidden="true"></span></button>`).join('');
+  $('cont').innerHTML = rest.map(({ t, at }) => `<button class="rc-ic" data-id="${esc(t.id)}" data-tip="${esc(t.title)}${at ? ' · ' + ago(at) : ''}" aria-label="${esc(t.title)}${at ? ', ' + ago(at) : ''}"><span class="icon">${iconHTML(t.icon)}</span><span class="live-dot" aria-hidden="true"></span></button>`).join('');
   renderFavs();
   if (!projEdit) renderProject();
   renderMyProjects();
@@ -2944,6 +2966,7 @@ function setStatus(cached, total) {
 /* Wat er nieuw is. Bij elke nieuwe versie komt er bovenaan een regel bij (zelfde nummer als VERSION in /sw.js).
    Na een nieuwe versie staat de regel één keer bovenaan het startscherm; onderaan bij het versienummer staat hij altijd, met de vorige eronder. */
 const NIEUW = [
+  { v:'15.28', t:'Takenbord, Risicomatrix en Projectopdracht: een compacte kop en één projectkiezer, zodat je werk meteen in beeld staat. De welkomstkaart is kleiner, en bij Onlangs zie je de naam als je erover gaat.' },
   { v:'15.27', t:'Op het startscherm is Wissen nu een vuilbakje, zoals in de tools. Zo past alles op één regel.' },
   { v:'15.26', t:'Na een nieuwe versie zie je hier kort wat er veranderde. Onderaan staan ook de vorige versies.' },
   { v:'15.25', t:'Weerstand onthoudt een datum als tekst, zoals "eind volgende maand". Communicatieplan loopt niet meer vast. Op het startscherm staan de kop en de knoppen op één lijn.' },
@@ -4134,8 +4157,13 @@ function syncWelkom() {
   let toon = false;
   try { toon = !store.get('welkom-weg', false) && !exitEntries().some(e => e.t.id !== '__app'); } catch {}
   $('welkom').hidden = !toon;
+  // al bezig (een projectnaam of een tool gebruikt): alleen de kern op één regel, zodat je werk bovenaan staat
+  let bezig = false; try { bezig = !!(JSON.parse(localStorage.getItem('oc.project') || 'null') || {}).name || Object.keys(store.get('usage', {})).length > 0; } catch {}
+  $('welkom').classList.toggle('wk-kort', toon && bezig);
   if (typeof syncInstallUI === 'function') syncInstallUI();
 }
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && e.target.closest && e.target.closest('.rc-ic')) e.target.closest('.rc-ic').classList.add('tip-weg'); });
+['focusout', 'mouseout'].forEach(ev => document.addEventListener(ev, e => { const b = e.target.closest && e.target.closest('.rc-ic'); if (b) b.classList.remove('tip-weg'); }));
 $('wk-x').addEventListener('click', () => {
   store.set('welkom-weg', true); $('welkom').hidden = true;
   // de gewone installeerbalk mag nu wel, als installeren kan en je hem niet eerder wegklikte
