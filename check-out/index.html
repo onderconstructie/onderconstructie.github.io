@@ -66,7 +66,7 @@ header.header h1 + p, header.header h1 + p.subtitle, .oc-head h1 + p, .oc-head h
 .top { display:flex; align-items:flex-start; gap:0.5rem; }
 .name-wrap { flex:1 1 auto; min-width:0; padding:0 0 0 0.25rem; }
 .sessie-naam { width:100%; min-height:44px; font-size:1.25rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.02em; border:0; background:none; outline:none; padding:0.125rem 0; border-bottom:1.5px solid transparent; }
-.sessie-meta { font-size:0.8125rem; color:var(--slate-500); font-variant-numeric:tabular-nums; margin-top:-0.125rem; }
+.sessie-meta { padding:0.75rem 0 0; font-size:0.8125rem; color:var(--slate-500); font-variant-numeric:tabular-nums; margin-top:-0.125rem; }
 
 /* Menu ⋮ */
 .icon-btn { width:44px; height:44px; display:flex; align-items:center; justify-content:center; border-radius:10px; color:var(--slate-500); flex-shrink:0; }
@@ -137,8 +137,8 @@ input::placeholder, textarea::placeholder { color:#64748b; opacity:1; }
 /* Knoppen */
 .btn { display:inline-flex; align-items:center; justify-content:center; gap:0.5rem; min-height:44px; padding:0 1.125rem; border-radius:12px; font-size:0.9375rem; font-weight:600; white-space:nowrap; transition:background 0.15s; }
 .btn svg { width:18px; height:18px; flex:none; }
-.btn-primary { background:var(--accent-dark); color:#fff; }
-.btn-primary:hover { background:var(--accent-hover); }
+.btn-primary { background:#0c8660; color:#fff; }
+.btn-primary:hover { background:#047857; }
 .btn-groot { min-height:52px; padding:0 1.5rem; font-size:1.0625rem; min-width:15rem; }
 .btn-soft { background:var(--slate-100); color:var(--slate-700); }
 .btn-soft:hover { background:var(--slate-200); }
@@ -160,7 +160,7 @@ kbd { font:inherit; font-size:0.75rem; font-weight:600; padding:0 0.375rem; bord
 .ov-lijst { list-style:none; margin:0.5rem 0 0 2.75rem; display:flex; flex-direction:column; }
 .ov-lijst li { display:flex; align-items:baseline; gap:0.5rem; padding:0.5rem 0; border-top:1px solid var(--slate-100); font-size:0.9375rem; line-height:1.45; color:var(--slate-800); }
 .ov-lijst li:first-child { border-top:0; }
-.ov-t { flex:1; min-width:0; overflow-wrap:anywhere; white-space:pre-line; }
+.ov-t { flex:1; min-width:0; overflow-wrap:break-word; white-space:pre-line; }
 .ov-wie { flex:none; max-width:40%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:0.8125rem; color:var(--slate-500); }
 .ov-niets { margin:0.375rem 0 0 2.75rem; font-size:0.875rem; color:var(--slate-500); }
 /* Vragen afvinken als besproken */
@@ -360,6 +360,11 @@ details.explain.oc-u .oc-u-noot a, details.explain.oc-u .oc-u-stap-uitleg a, det
 }
 @media print { details.explain { display:none; } }
 /* oc-uitleg v1 einde */
+
+/* golf 5: het ⋮-menu staat in de kop (oc-kop-acties), altijd op dezelfde plek; het menu blijft binnen het scherm, ook op 320 px */
+header[data-oc-kop] .oc-kop-acties .menu-wrap { position:relative; inset:auto; transform:none; margin:0; }
+header[data-oc-kop] .oc-kop-acties .menu { max-width:calc(100vw - 1rem); text-align:left; }
+header[data-oc-kop] .oc-kop-acties .menu button { white-space:normal; }
 </style>
 <script>
 /* oc-opslag v1 begin */
@@ -460,7 +465,7 @@ details.explain.oc-u .oc-u-noot a, details.explain.oc-u .oc-u-stap-uitleg a, det
       + '.oc-op svg{flex:none;width:20px;height:20px;color:#64748b}.oc-op.vol svg,.oc-op.fout svg{color:#b45309}'
       + '.oc-op-t{flex:1 1 14rem;min-width:0;margin:0}'
       + '.oc-op button{flex:none;min-height:44px;margin:0;border:0;border-radius:10px;font:inherit;font-weight:600;cursor:pointer}'
-      + '.oc-op .oc-op-k{padding:0 .875rem;background:#047857;color:#fff}.oc-op .oc-op-k:hover{background:#065f46}'
+      + '.oc-op .oc-op-k{padding:0 .875rem;background:#0c8660;color:#fff}.oc-op .oc-op-k:hover{background:#047857}'
       + '.oc-op .oc-op-x{width:44px;padding:0;background:transparent;color:#64748b;font-size:1.375rem;font-weight:400;line-height:1}.oc-op .oc-op-x:hover{background:#f1f5f9;color:#334155}'
       + '.oc-op button:focus-visible{outline:2px solid #047857;outline-offset:2px}'
       + '@media print{.oc-op-plek{display:none!important}}';
@@ -793,9 +798,382 @@ details.explain.oc-u .oc-u-noot a, details.explain.oc-u .oc-u-stap-uitleg a, det
 }());
 /* oc-toegang v1 einde */
 </script>
+<style>
+/* oc-kop v1 begin */
+/* Toolkop in twee standen (gedeeld blok, één bron: scratchpad/oc-kop.html).
+   Gebruik: zet data-oc-kop en data-stand="compact" op de <header> van de tool. Zet er na de ondertitel twee plekken in:
+     <div class="oc-kop-project" id="ocKiezer"></div>   de projectkiezer (blok oc-projectkiezer), mag ontbreken
+     <div class="oc-kop-acties"> het ⋮-menu van de tool (.ocm-wrap of .menu-wrap) </div>
+   Groot: zolang de lege staat (.oc-start) in beeld is: icoon, titel en vraag in het midden.
+   Compact: zodra er inhoud is: één regel met terug, icoon, titel, project en menu. Op een gsm staat het project op een tweede regel.
+   De terugknop (linksboven, een pijltje van 44 px) en de knoppen rechts (.oc-kop-acties) staan in beide standen op exact dezelfde plek:
+   wisselt de stand, dan verspringen ze niet. De knoppen rechts liggen altijd los (absoluut) rechtsboven; de terugknop ligt in groot los
+   en staat in compact vooraan in de regel, op dezelfde plek. In compact houdt de kop plaats vrij voor de knoppen rechts (--oc-acties-b,
+   de breedte die het blok meet), zodat een lange titel of de kiezer ze nooit naar een tweede regel duwt.
+   Hun plek hangt aan de padding van de compacte kop: wijzig je die, wijzig dan ook top, left en right van groot en van .oc-kop-acties.
+   De stand ligt vast vóór de eerste paint: zie ocKop.vooraf in het JS-deel.
+   De kop plakt niet: zo bedekt hij nooit de focus (2.4.11), ook niet op 400% zoom.
+   Zelf kiezen kan met ocKop.groot(true | false); ocKop.groot(null) laat het weer aan de lege staat over. */
+header[data-oc-kop] { position:relative; z-index:30; }
+/* een open menu in de kop ligt boven een plakkende werkbalk van de tool */
+header[data-oc-kop]:focus-within, header[data-oc-kop]:has([aria-expanded="true"]) { z-index:200; }
+header[data-oc-kop] .oc-kop-acties { position:absolute; top:0.625rem; right:0.75rem; display:flex; align-items:center; min-height:44px; gap:0.25rem; z-index:20; }
+header[data-oc-kop] .oc-kop-acties:empty { display:none; }
+header[data-oc-kop] .oc-kop-project { display:flex; justify-content:center; margin:0.875rem auto 0; max-width:100%; }
+header[data-oc-kop] .oc-kop-project:empty { display:none; }
+/* lange namen breken alleen op een woordgrens (Gedrags-verandering), nooit midden in een woorddeel: het blok zet zachte
+   afbreekstreepjes op de grenzen (zoals afbreek() in de app). Geen afbreken op lettergrepen (hyphens:auto zou Visgraat-dia-gram geven);
+   een woord dat toch niet past, breekt als laatste redmiddel (break-word, nooit anywhere of break-all). */
+header[data-oc-kop] h1 { -webkit-hyphens:manual; hyphens:manual; overflow-wrap:break-word; word-break:normal; }
+header[data-oc-kop] h1:focus { outline:none; }
+header[data-oc-kop] h1:focus-visible { outline:2px solid #047857; outline-offset:4px; border-radius:4px; }
+/* de terugknop: overal dezelfde vorm (de naam blijft in aria-label en verschijnt als tip bij de muis) */
+header[data-oc-kop] .back-link { display:inline-flex; align-items:center; justify-content:center; box-sizing:border-box; width:44px !important; min-width:44px !important; max-width:44px !important; height:44px !important; min-height:44px !important; margin:0 !important; padding:0 !important; gap:0 !important; font-size:0 !important; line-height:0 !important; }
+header[data-oc-kop] .back-link span { display:none !important; }
+header[data-oc-kop] .back-link svg { width:20px !important; height:20px !important; flex:none; margin:0 !important; }
+header[data-oc-kop][data-stand="groot"] .back-link { position:absolute !important; top:0.625rem !important; left:0.5rem !important; right:auto !important; bottom:auto !important; transform:none !important; z-index:21; }
+header[data-oc-kop][data-stand="compact"] { display:flex !important; flex-direction:row !important; flex-wrap:wrap; justify-content:flex-start !important; align-items:center !important; column-gap:0.625rem; row-gap:0.375rem; text-align:left !important; padding:0.625rem 0.75rem 0.625rem 1rem !important; min-height:64px; }
+header[data-oc-kop][data-stand="compact"] .back-link { position:static !important; transform:none !important; margin:0 -0.25rem 0 -0.5rem !important; align-self:flex-start; }
+header[data-oc-kop][data-stand="compact"] .logo, header[data-oc-kop][data-stand="compact"] .oc-logo,
+header[data-oc-kop][data-stand="compact"] .logo svg, header[data-oc-kop][data-stand="compact"] .oc-logo svg { width:36px !important; height:36px !important; margin:0 !important; flex:none; }
+header[data-oc-kop][data-stand="compact"] h1 { flex:0 1 auto; width:auto !important; max-width:none !important; font-size:1.1875rem !important; line-height:1.25 !important; margin:0 !important; letter-spacing:-0.02em; white-space:nowrap; min-width:0; overflow:hidden; text-overflow:ellipsis; }
+header[data-oc-kop][data-stand="compact"] .subtitle { position:absolute !important; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; margin:0 !important; }
+header[data-oc-kop][data-stand="compact"] .oc-kop-project { margin:0; min-width:0; flex:0 1 auto; justify-content:flex-start; align-items:center; }
+header[data-oc-kop][data-stand="compact"] .oc-kop-project::before { content:""; flex:none; width:1.5px; height:22px; margin:0 0.625rem 0 0.125rem; background:#cbd5e1; transform:rotate(18deg); border-radius:1px; }
+header[data-oc-kop][data-stand="compact"] { padding-right:calc(1.25rem + var(--oc-acties-b, 44px)) !important; }
+/* de eerste regel is altijd 44 px hoog (zoals de knoppen), ook zonder terugknop (in de app): zo valt de tweede regel nooit onder de knoppen rechts */
+header[data-oc-kop][data-stand="compact"]::before { content:""; order:-1; flex:none; width:0; height:44px; margin-right:-0.625rem; }
+@media (max-width:599px) {
+  header[data-oc-kop][data-stand="compact"] { padding:0.5rem 0.5rem 0.75rem 1rem !important; }
+  /* op een gsm staat het project op een tweede regel, over de volle breedte: alleen de titel houdt plaats vrij voor de knoppen rechts */
+  header[data-oc-kop][data-stand="compact"] h1 { flex:1 1 0; margin-right:calc(var(--oc-acties-b, 44px) + 0.5rem) !important; }
+  header[data-oc-kop][data-stand="compact"] .oc-kop-project { order:10; flex:1 1 100%; }
+  header[data-oc-kop][data-stand="compact"] .oc-kop-project::before { display:none; }
+  header[data-oc-kop] .oc-kop-acties { top:0.5rem; right:0.5rem; }
+  header[data-oc-kop][data-stand="groot"] .back-link { top:0.5rem !important; }
+}
+@media print { header[data-oc-kop] .oc-kop-acties, header[data-oc-kop] .oc-kop-project { display:none !important; } }
+/* oc-kop v1 einde */
+</style>
+<script>
+/* oc-kop v1 begin */
+/* Toolkop: groot zolang de tool leeg is (een .oc-start in beeld), anders compact. Zie de uitleg in het CSS-deel.
+   ocKop.vooraf(o): de stand vóór de eerste paint, zodat de kop niet verspringt. Zet een klein script als eerste kind in de header, bv.
+     ocKop.vooraf({ sleutel: 'risico.v1', lijst: 'projects', leeg: (u, d) => !u.voorbeeld && !u.items.length });
+     sleutel   de sleutel van de tool in localStorage (een oude naam uit oc:opslag-oud telt mee: dan blijft de kop compact)
+     lijst     de eigenschap met de projecten of lijsten (zonder lijst krijgt leeg(d, d) de hele toestand)
+     huidig    de eigenschap met het open project (standaard 'current')
+     van(u)    het project van een lijst, zoals in ocProjectNieuw (standaard u.name)
+     leeg(u, d)  true als de tool met dat project de lege staat toont
+   ocKop.niets(x, negeer) helpt daarbij: true als er nergens tekst of een vinkje in x staat (getallen tellen niet; negeer: namen van velden).
+   Het blok kiest het project zoals de tool: dat van de app (oc.project, ook onder een vorige naam), anders het open project.
+   Kiest de app een project dat de tool nog niet kent, dan begint de tool leeg: groot. Niets bewaard: groot. Bij twijfel: compact.
+   Na het laden kijkt het blok of er echt een .oc-start in beeld is, en volgt het de tool.
+   Na Wis voorbeeld, wissen of Ongedaan zet het blok toegang de focus op de kop: die gaat hier naar de titel (H1). */
+(function () {
+  if (window.ocKop) return;
+  var vast = null, kop = null, gepland = false;
+  function leeg() { return [].some.call(document.querySelectorAll('.oc-start'), function (e) { return !e.closest('[hidden]') && e.getClientRects().length > 0; }); }
+  function zet() {
+    kop = kop || document.querySelector('header[data-oc-kop]'); if (!kop) return;
+    var s = (vast != null ? vast : leeg()) ? 'groot' : 'compact';
+    if (kop.getAttribute('data-stand') !== s) kop.setAttribute('data-stand', s);
+  }
+  function later() { if (gepland) return; gepland = true; requestAnimationFrame(function () { gepland = false; zet(); }); }
+  /* de breedte van de knoppen rechts: in compact houdt de kop zoveel plaats vrij (0 als er geen knoppen zijn) */
+  function meetActies() {
+    var a = kop && kop.querySelector('.oc-kop-acties'); if (!a) return;
+    var w = a.getClientRects().length ? Math.ceil(a.getBoundingClientRect().width) : 0;
+    if (kop.style.getPropertyValue('--oc-acties-b') !== w + 'px') kop.style.setProperty('--oc-acties-b', w + 'px');
+  }
+  function start() {
+    kop = kop || document.querySelector('header[data-oc-kop]'); try { breekTitel(); } catch (e) {} try { terugSpan(); } catch (e) {}
+    try { meetActies(); var a = kop && kop.querySelector('.oc-kop-acties'); if (a && window.ResizeObserver) new ResizeObserver(meetActies).observe(a); } catch (e) {}
+    later();   // pas na de eigen start van de tool (ook als die op DOMContentLoaded wacht), vóór de volgende paint
+    try { new MutationObserver(later).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['hidden', 'class', 'style'] }); } catch (e) {}
+    addEventListener('resize', later);
+  }
+  /* afbreek: dezelfde woorddelen als de app (const DELEN en STAM in app/index.html). Een zacht afbreekstreepje is onzichtbaar
+     tot de regel echt te kort is. Alleen in tekst van de H1, één keer. */
+  var DELEN = ['verandering', 'meditatie', 'opdracht', 'notities', 'planning', 'kaartjes', 'klimaat', 'profiel', 'diagram', 'dossier', 'paradox', 'analyse', 'teller', 'matrix', 'punten', 'tabel', 'radar', 'score', 'meter', 'kaart', 'schap', 'licht', 'dagen', 'graat', 'stand', 'boek', 'bord', 'lijn', 'kast', 'kost', 'plan', 'wolk', 'log'];
+  var STAM = { communicatie: 7, betrokkenen: 6, afstemmings: 6, informatie: 7, prioriteren: 6 };
+  function afbreek(t) {
+    return String(t).split(/(\s+|-)/).map(function (w) {
+      var x = w, staart = '';
+      for (var i = 0; i < 4; i++) {
+        var d = DELEN.filter(function (d) { return x.length - d.length >= 3 && x.toLowerCase().slice(-d.length) === d; })[0];
+        if (!d) break;
+        staart = '\u00AD' + x.slice(-d.length) + staart; x = x.slice(0, -d.length);
+      }
+      var k = STAM[x.toLowerCase()]; if (k) x = x.slice(0, k) + '\u00AD' + x.slice(k);
+      return x + staart;
+    }).join('');
+  }
+  function breekTitel() {
+    var h = kop && kop.querySelector('h1'); if (!h || h.__ocAfbreek) return; h.__ocAfbreek = true;
+    var w = document.createTreeWalker(h, NodeFilter.SHOW_TEXT), n, L = [];
+    while ((n = w.nextNode())) if (n.nodeValue.indexOf('\u00AD') < 0) L.push(n);
+    L.forEach(function (n) { var v = afbreek(n.nodeValue); if (v !== n.nodeValue) n.nodeValue = v; });
+  }
+  /* de naam in de terugknop: losse tekst gaat in een <span> (die is verborgen; de naam staat in aria-label). Zo heeft de link zelf
+     geen tekst van 0 px (de sitetest telt die als te klein), en oc-terug vindt de naam nog in de span. */
+  function terugSpan() {
+    [].forEach.call(document.querySelectorAll('header[data-oc-kop] a.back-link'), function (a) {
+      [].slice.call(a.childNodes).forEach(function (n) {
+        if (n.nodeType !== 3 || !n.nodeValue.trim()) return;
+        var sp = a.querySelector('span');
+        if (sp) { n.nodeValue = ''; return; }   // er is al een naam in een span
+        sp = document.createElement('span'); sp.textContent = n.nodeValue.trim(); a.replaceChild(sp, n);
+      });
+    });
+  }
+  function lees(k) { try { var r = localStorage.getItem(k); return r == null ? undefined : JSON.parse(r); } catch (e) { return null; } }
+  function zacht(s) { return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ''); }
+  function voorspel(o) {
+    var d = lees(o.sleutel);
+    if (d === null) return false;   // onleesbaar: de tool beslist zelf
+    if (d === undefined) {   // niets bewaard, tenzij nog onder een oude naam
+      var m = document.querySelector('meta[name="oc:opslag-oud"]'), oud = m ? String(m.content || '').split(',') : [];
+      for (var i = 0; i < oud.length; i++) { var p = oud[i].split('>'); if (p.length === 2 && p[1].trim() === o.sleutel && lees(p[0].trim()) !== undefined) return false; }
+      return true;
+    }
+    if (!o.lijst) return !!o.leeg(d, d);
+    var L = (d && Array.isArray(d[o.lijst]) ? d[o.lijst] : []).filter(function (u) { return u && typeof u === 'object'; });
+    if (!L.length) return true;
+    var app = lees('oc.project'), naam = app && typeof app.name === 'string' ? app.name.trim() : '', u = null;
+    var van = function (x) { try { return String((o.van ? o.van(x) : x.name) || ''); } catch (e) { return ''; } };
+    if (naam) {
+      var vorig = Array.isArray(app.oud) ? app.oud : [];
+      u = L.filter(function (x) { return van(x) === naam; })[0] || L.filter(function (x) { return vorig.indexOf(van(x)) >= 0; })[0] || null;
+      var std = window.ocStandaardNaam ? ocStandaardNaam(naam) : /^((mijn|nieuwe?) )?project( \d+)?$|^naamloos$/i.test(naam);
+      if (!u && !std && String(d.ocSince || '') !== String(app.since || naam) && !L.some(function (x) { return !x.voorbeeld && zacht(van(x)) === zacht(naam); })) return true;   // de tool begint een nieuw, leeg project
+    }
+    u = u || L.filter(function (x) { return x.id === d[o.huidig || 'current']; })[0] || L[0];
+    return !!o.leeg(u, d);
+  }
+  function niets(x, negeer) {
+    if (typeof x === 'string') return !x.trim();
+    if (x === true) return false;
+    if (Array.isArray(x)) return x.every(function (y) { return niets(y, negeer); });
+    if (x && typeof x === 'object') return Object.keys(x).every(function (k) { return (negeer || []).indexOf(k) >= 0 || niets(x[k], negeer); });
+    return true;
+  }
+  window.ocKop = {
+    groot: function (b) { vast = b == null ? null : !!b; zet(); },
+    zet: zet,
+    niets: niets,
+    afbreek: afbreek,
+    vooraf: function (o) {
+      var s = document.currentScript, k = (s && s.closest && s.closest('header[data-oc-kop]')) || document.querySelector('header[data-oc-kop]');
+      if (!k || !o) return;
+      try { k.setAttribute('data-stand', voorspel(o) ? 'groot' : 'compact'); } catch (e) {}
+    }
+  };
+  /* de terugknop is een pijltje: bij de muis toont een tip waar hij naartoe gaat (de naam staat in aria-label, die oc-terug kan wijzigen) */
+  document.addEventListener('pointerover', function (e) {
+    var a = e.target && e.target.closest && e.target.closest('header[data-oc-kop] a.back-link'); if (!a) return;
+    var n = a.getAttribute('aria-label') || (a.textContent || '').trim(); if (n && a.title !== n) a.title = n;
+  }, true);
+  /* de kop van de inhoud is de titel: krijgt de kop zelf de focus, dan gaat ze naar de H1 */
+  document.addEventListener('focusin', function (e) {
+    var k = e.target; if (!k || !k.matches || !k.matches('header[data-oc-kop]')) return;
+    var h = k.querySelector('h1'); if (!h || !h.getClientRects().length) return;
+    if (!h.hasAttribute('tabindex')) { h.setAttribute('tabindex', '-1'); h.addEventListener('blur', function weg() { h.removeEventListener('blur', weg); h.removeAttribute('tabindex'); }); }
+    try { h.focus({ preventScroll: true }); } catch (x) {}
+  }, true);
+  document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', start) : start();
+})();
+/* oc-kop v1 einde */
+</script>
+<style>
+/* oc-projectkiezer v1 begin */
+/* Eén projectkiezer voor alle tools (gedeeld blok, één bron: scratchpad/oc-projectkiezer.html). Uitleg en gebruik: zie het JS-deel. */
+.oc-pk { position:relative; display:inline-flex; align-items:center; min-width:0; max-width:100%; font-family:inherit; }
+.oc-pk-knop { display:inline-flex; align-items:center; gap:0.5rem; min-height:44px; max-width:100%; min-width:0; padding:0 0.625rem 0 0.75rem; border:1px solid #e2e8f0; border-radius:12px; background:#ffffff; color:#1e293b; font:inherit; font-size:0.9375rem; font-weight:600; line-height:1.2; cursor:pointer; text-align:left; -webkit-tap-highlight-color:transparent; }
+.oc-pk-knop[hidden] { display:none; }
+@media (hover:hover) { .oc-pk-knop:hover { border-color:#a7f3d0; background:#f8fffc; } }
+.oc-pk-knop[aria-expanded="true"] { border-color:#a7f3d0; background:#ecfdf5; }
+.oc-pk-knop:focus-visible, .oc-pk-item:focus-visible { outline:2px solid #047857; outline-offset:2px; }
+.oc-pk-ico { width:18px; height:18px; flex:none; color:#64748b; }
+.oc-pk-naam { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.oc-pk-vb { flex:none; font-size:0.75rem; font-weight:600; color:#92400e; background:#fef3c7; border-radius:999px; padding:0.125rem 0.5rem; }
+.oc-pk-tel { flex:none; min-width:22px; height:22px; padding:0 0.375rem; border-radius:999px; background:#f1f5f9; color:#475569; font-size:0.75rem; font-weight:700; display:inline-grid; place-items:center; }
+.oc-pk-pijl { width:16px; height:16px; flex:none; color:#64748b; transition:transform .15s ease; }
+.oc-pk-knop[aria-expanded="true"] .oc-pk-pijl { transform:rotate(180deg); }
+.oc-pk-menu { position:absolute; left:0; top:calc(100% + 6px); z-index:160; width:max-content; min-width:260px; max-width:min(360px, calc(100vw - 2rem)); max-height:min(70vh, 480px); overflow:auto; overscroll-behavior:contain; background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; box-shadow:0 14px 36px rgba(15,23,42,0.16); padding:0.375rem; text-align:left; }
+.oc-pk-menu[hidden] { display:none; }
+.oc-pk-h { margin:0; padding:0.5rem 0.75rem 0.375rem; font-size:0.75rem; font-weight:600; color:#64748b; letter-spacing:0.02em; }
+.oc-pk-item { display:flex; align-items:center; gap:0.625rem; width:100%; min-height:44px; padding:0.375rem 0.75rem; border:0; border-radius:10px; background:none; color:#1e293b; font:inherit; font-size:0.9375rem; text-align:left; cursor:pointer; }
+@media (hover:hover) { .oc-pk-item:hover { background:#f1f5f9; } }
+.oc-pk-item svg { width:18px; height:18px; flex:none; color:#64748b; }
+.oc-pk-item .oc-pk-i-naam { flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.oc-pk-item .oc-pk-i-info { flex:none; font-size:0.8125rem; color:#64748b; }
+.oc-pk-item[aria-checked="true"] { background:#ecfdf5; color:#065f46; font-weight:600; }
+.oc-pk-item[aria-checked="true"] .oc-pk-v { color:#047857; }
+.oc-pk-item[aria-checked="false"] .oc-pk-v { visibility:hidden; }
+.oc-pk-item.oc-pk-weg { color:#b91c1c; }
+.oc-pk-item.oc-pk-weg svg { color:#b91c1c; }
+@media (hover:hover) { .oc-pk-item.oc-pk-weg:hover { background:#fef2f2; } }
+.oc-pk-sep { height:1px; background:#e2e8f0; margin:0.375rem 0.25rem; }
+.oc-pk-noot { margin:0; padding:0.25rem 0.75rem 0.5rem; font-size:0.8125rem; color:#64748b; line-height:1.4; }
+.oc-pk-veld { min-height:44px; width:min(22rem, 100%); max-width:100%; padding:0 0.75rem; border:1px solid #7e8ea4; border-radius:12px; background:#ffffff; color:#1e293b; font:inherit; font-size:0.9375rem; font-weight:600; }   /* veldrand 3:1 */
+.oc-pk-veld:focus { outline:2px solid #047857; outline-offset:2px; border-color:#059669; }
+.oc-pk-veld[aria-invalid="true"] { border-color:#b91c1c; }
+.oc-pk-fout { position:absolute; left:0; top:calc(100% + 4px); z-index:5; margin:0; padding:0.25rem 0.5rem; border-radius:8px; background:#fef2f2; color:#b91c1c; font-size:0.8125rem; font-weight:600; white-space:nowrap; }
+.oc-pk-fout[hidden] { display:none; }
+@media (max-width:599px) { .oc-pk, .oc-pk-knop { max-width:100%; } .oc-pk-menu { min-width:min(300px, calc(100vw - 2rem)); } }
+@media (prefers-reduced-motion:reduce) { .oc-pk-pijl { transition:none; } }
+@media print { .oc-pk { display:none !important; } }
+/* oc-projectkiezer v1 einde */
+</style>
+<script>
+/* oc-projectkiezer v1 begin */
+/* Eén projectkiezer voor alle tools (gedeeld blok, één bron: scratchpad/oc-projectkiezer.html).
+   Toont de naam van het actieve project (of de actieve lijst) met een menu: wisselen, nieuw, hernoemen en verwijderen.
+   Het aantal staat erbij zodra er meer dan één is. Een voorbeeld krijgt het label "voorbeeld".
+   Gebruik: const pk = ocProjectkiezer('#ocKiezer', {
+     woord: 'project', meervoud: 'projecten',          // in de knoppen: "Nieuw project", "Hernoem dit project", ...
+     lidwoord: 'het',                                  // 'de' voor een de-woord: "Nieuwe lijst", "Geef de lijst een naam" (standaard 'het')
+     deze: 'dit project',                              // standaard 'dit' of 'deze' + woord, volgens het lidwoord
+     lijst: () => [{ id, naam, voorbeeld, info, voor }],  // info: korte tekst rechts (bv. "6 taken"); voor: html vooraan (bv. ocKoppel.icoon)
+     actief: () => id,
+     kies: id => {...},                                // wissel; de tool tekent en bewaart zelf
+     nieuw: () => {...},                               // maak een nieuw project en maak het actief; daarna vraagt de kiezer meteen de naam
+                                                       // (geeft nieuw false terug, dan vraagt de tool zelf de naam, bv. in een venster)
+     hernoem: naam => {...},                           // de nieuwe naam van het actieve project (nooit leeg)
+     verwijder: () => {...},                           // de tool verwijdert het actieve project, met een melding en Ongedaan
+     magWeg: () => true,                               // standaard: alleen als er meer dan één is
+     projectnaam: true                                 // een nieuwe naam reist mee naar de app zodra ze vastligt (via oc-sync, niet tijdens het typen)
+   });
+   pk.teken() na elke wijziging in de tool. pk.hernoem({ na }) start het hernoemen (na: wat er na Enter gebeurt). pk.tabs() geeft [element, id] voor ocKoppel.
+   Toetsenbord: Enter of pijl omlaag opent, pijltjes, Home en End kiezen, Escape sluit en zet de focus terug op de knop. */
+window.ocProjectkiezer = function (plek, o) {
+  if (typeof plek === 'string') plek = document.querySelector(plek);
+  if (!plek) return null;
+  o = o || {};
+  var W = o.woord || 'project', M = o.meervoud || 'projecten', HET = o.lidwoord === 'de' ? 'de' : 'het', id = 'ocpk' + Math.random().toString(36).slice(2, 7);
+  var DEZE = o.deze || ((HET === 'de' ? 'deze ' : 'dit ') + W), NIEUW = (HET === 'de' ? 'Nieuwe ' : 'Nieuw ') + W;
+  var hoofd = function (s) { return s.charAt(0).toUpperCase() + s.slice(1); };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  var SVG = function (d) { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + '</svg>'; };
+  var I = {
+    map: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+    pijl: '<path d="M6 9l6 6 6-6"/>', v: '<path d="M5 12.5l4.5 4.5L19 7.5"/>', plus: '<path d="M12 5v14M5 12h14"/>',
+    pen: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>', weg: '<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/>'
+  };
+  plek.classList.add('oc-pk');
+  plek.innerHTML = '<button type="button" class="oc-pk-knop" id="' + id + '-k" aria-haspopup="menu" aria-expanded="false" aria-controls="' + id + '-m"></button>'
+    + '<div class="oc-pk-menu" id="' + id + '-m" role="menu" aria-label="' + esc(hoofd(M)) + '" hidden></div>';
+  var knop = plek.querySelector('.oc-pk-knop'), menu = plek.querySelector('.oc-pk-menu'), veld = null, fout = null, bewerk = null;
+  var lijst = function () { try { return (o.lijst() || []).filter(Boolean); } catch (e) { return []; } };
+  var actief = function (L) { var a = o.actief(); return L.find(function (x) { return x.id === a; }) || L[0] || { id: '', naam: '' }; };
+  var magWeg = function (L) { return typeof o.verwijder === 'function' && (o.magWeg ? !!o.magWeg() : L.length > 1); };
+  var naamVan = function (x) { return String(x.naam || '').trim() || 'Naamloos'; };
+  function tekenKnop(L, c) {
+    knop.innerHTML = SVG(I.map).replace('<svg ', '<svg class="oc-pk-ico" ')
+      + '<span class="oc-pk-naam">' + (c.voor || '') + esc(naamVan(c)) + '</span>'
+      + (c.voorbeeld ? '<span class="oc-pk-vb">voorbeeld</span>' : '')
+      + (L.length > 1 ? '<span class="oc-pk-tel">' + L.length + '</span>' : '')
+      + SVG(I.pijl).replace('<svg ', '<svg class="oc-pk-pijl" ');
+    knop.setAttribute('aria-label', hoofd(W) + ': ' + naamVan(c) + (c.voorbeeld ? ' voorbeeld' : '') + (L.length > 1 ? ', ' + L.length + ' ' + M : '') + '. Wissel, hernoem of maak een ' + NIEUW.toLowerCase());
+    knop.title = naamVan(c);
+  }
+  function tekenMenu(L, c) {
+    var weg = magWeg(L);
+    menu.innerHTML = '<div role="group" aria-label="' + esc(hoofd(M)) + '"><p class="oc-pk-h" aria-hidden="true">' + esc(hoofd(M)) + (L.length > 1 ? ' (' + L.length + ')' : '') + '</p>'
+      + L.map(function (x) {
+        return '<button type="button" class="oc-pk-item" role="menuitemradio" aria-checked="' + (x.id === c.id) + '" data-pk="kies" data-id="' + esc(x.id) + '" tabindex="-1">'
+          + SVG(I.v).replace('<svg ', '<svg class="oc-pk-v" ') + '<span class="oc-pk-i-naam">' + (x.voor || '') + esc(naamVan(x)) + '</span>'
+          + (x.voorbeeld ? '<span class="oc-pk-vb">voorbeeld</span>' : '') + (x.info ? '<span class="oc-pk-i-info">' + esc(x.info) + '</span>' : '') + '</button>';
+      }).join('') + '</div>'
+      + '<div class="oc-pk-sep" role="separator"></div>'
+      + '<button type="button" class="oc-pk-item" role="menuitem" data-pk="nieuw" tabindex="-1">' + SVG(I.plus) + esc(NIEUW) + '</button>'
+      + '<button type="button" class="oc-pk-item" role="menuitem" data-pk="hernoem" tabindex="-1">' + SVG(I.pen) + 'Hernoem ' + esc(DEZE) + '</button>'
+      + (weg ? '<button type="button" class="oc-pk-item oc-pk-weg" role="menuitem" data-pk="weg" tabindex="-1">' + SVG(I.weg) + 'Verwijder ' + esc(DEZE) + '</button>' : '');
+  }
+  function teken() {
+    if (bewerk) return;   // niet onder de vingers van wie typt
+    var L = lijst(), c = actief(L), f = document.activeElement, opnieuw = !menu.hidden && menu.contains(f) ? f.getAttribute('data-id') || f.getAttribute('data-pk') : null;
+    tekenKnop(L, c); tekenMenu(L, c);
+    if (opnieuw) { var t = menu.querySelector('[data-id="' + CSS.escape(opnieuw) + '"]') || menu.querySelector('[data-pk="' + CSS.escape(opnieuw) + '"]'); if (t) t.focus(); }
+  }
+  var items = function () { return [].slice.call(menu.querySelectorAll('.oc-pk-item')); };
+  function openMenu(waar) {
+    teken(); menu.hidden = false; knop.setAttribute('aria-expanded', 'true');
+    var L = items(), t = waar === 'laatste' ? L[L.length - 1] : (menu.querySelector('[aria-checked="true"]') || L[0]);
+    if (t) t.focus();
+  }
+  function sluit(terug) { if (menu.hidden) return; menu.hidden = true; knop.setAttribute('aria-expanded', 'false'); if (terug) knop.focus(); }
+  knop.addEventListener('click', function () { menu.hidden ? openMenu() : sluit(true); });
+  knop.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); openMenu(e.key === 'ArrowUp' ? 'laatste' : ''); }
+  });
+  menu.addEventListener('keydown', function (e) {
+    var L = items(), i = L.indexOf(document.activeElement);
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); L[(i + (e.key === 'ArrowDown' ? 1 : -1) + L.length) % L.length].focus(); }
+    else if (e.key === 'Home' || e.key === 'End') { e.preventDefault(); L[e.key === 'Home' ? 0 : L.length - 1].focus(); }
+    else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); sluit(true); }
+    else if (e.key === 'Tab') sluit(false);
+  });
+  document.addEventListener('pointerdown', function (e) { if (!plek.contains(e.target)) sluit(false); }, true);
+  menu.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-pk]'); if (!b) return;
+    var wat = b.getAttribute('data-pk');
+    if (wat === 'kies') { var nid = b.getAttribute('data-id'); sluit(true); if (nid !== o.actief()) o.kies(nid); teken(); knop.focus(); }
+    else if (wat === 'nieuw') { sluit(false); var zelf = o.nieuw() === false; teken(); if (!zelf) hernoem({ nieuw: true }); }
+    else if (wat === 'hernoem') { sluit(false); hernoem(); }
+    else if (wat === 'weg') { sluit(false); o.verwijder(); teken(); knop.focus(); }
+  });
+  /* Hernoemen gebeurt in de knop zelf: een veld met de naam. Enter bewaart, Escape laat de naam zoals hij was. Leeg kan niet. */
+  function hernoem(opt) {
+    opt = opt || {};
+    var L = lijst(), c = actief(L), oud = naamVan(c);
+    bewerk = { oud: oud, ruw: c.naam || '', na: opt.na, vb: !!c.voorbeeld };
+    veld = document.createElement('input'); veld.type = 'text'; veld.className = 'oc-pk-veld'; veld.maxLength = 80; veld.autocomplete = 'off'; veld.spellcheck = false;
+    veld.setAttribute('enterkeyhint', 'done'); veld.setAttribute('aria-label', 'Naam van ' + HET + ' ' + W); veld.setAttribute('aria-describedby', id + '-f');
+    veld.value = c.naam || '';
+    fout = document.createElement('p'); fout.className = 'oc-pk-fout'; fout.id = id + '-f'; fout.hidden = true; fout.textContent = 'Geef ' + HET + ' ' + W + ' een naam.';
+    knop.hidden = true; plek.appendChild(veld); plek.appendChild(fout);
+    veld.focus(); veld.select();
+    veld.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); klaar(true, true); }
+      else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); klaar(false, true); }
+    });
+    veld.addEventListener('input', function () { if (veld.value.trim()) { veld.removeAttribute('aria-invalid'); fout.hidden = true; } });
+    veld.addEventListener('blur', function () { if (bewerk) klaar(!!veld.value.trim(), false); });
+  }
+  function klaar(bewaar, focus) {
+    if (!bewerk) return;
+    var v = veld.value.trim().slice(0, 80), b = bewerk;
+    if (bewaar && !v) { veld.setAttribute('aria-invalid', 'true'); fout.hidden = false; if (window.ocMeld) try { ocMeld(fout.textContent); } catch (e) {} veld.focus(); return; }
+    bewerk = null;
+    if (bewaar && v !== b.oud) {
+      o.hernoem(v);
+      // oc-sync: pas nu de naam vastligt, reist ze mee naar de app (niet tijdens het typen, en niet na Escape).
+      // Het veld meldt zich met de oude naam (focusin) en daarna met de nieuwe (change), zoals een gewoon naamveld.
+      if (o.projectnaam && !b.vb) try {
+        veld.value = b.ruw; veld.setAttribute('data-oc-projectnaam', '');
+        veld.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+        veld.value = v; veld.dispatchEvent(new Event('change', { bubbles: true }));
+      } catch (e) {}
+    }
+    var v0 = veld; veld = null; fout.remove(); fout = null;
+    knop.hidden = false; teken();
+    if (focus && bewaar && b.na) b.na(); else if (focus) knop.focus();
+    v0.remove();
+  }
+  var api = {
+    teken: teken, sluit: sluit, hernoem: hernoem, knop: knop,
+    tabs: function () { var a = o.actief(); return [].slice.call(menu.querySelectorAll('.oc-pk-item[data-id] .oc-pk-i-naam')).map(function (el) { return [el, el.closest('[data-id]').getAttribute('data-id')]; }).concat([[knop.querySelector('.oc-pk-naam'), a]]); }
+  };
+  teken();
+  return api;
+};
+/* oc-projectkiezer v1 einde */
+</script>
 </head>
 <body>
-    <header class="header oc-head">
+    <header class="header oc-head" data-oc-kop data-stand="compact"><script>ocKop.groot(false);</script>
         <a href="/projectmanagement/#vergaderen" class="back-link" aria-label="Terug naar Vergaderen">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
             Vergaderen
@@ -805,18 +1183,8 @@ details.explain.oc-u .oc-u-noot a, details.explain.oc-u .oc-u-stap-uitleg a, det
         </div>
         <h1 class="title">Check-out</h1>
         <p class="subtitle">Sluit je sessie af in één minuut</p>
-    </header>
-
-    <main class="main">
-        <nav class="lists" id="lists" aria-label="Check-outs"></nav>
-
-        <section class="card" aria-label="Check-out">
-            <div class="top">
-                <div class="name-wrap">
-                    <input class="sessie-naam" id="sessie-naam" data-oc-titel placeholder="Naam van de sessie" aria-label="Naam van de sessie" maxlength="60" spellcheck="false" autocomplete="off" enterkeyhint="done">
-                    <div class="sessie-meta" id="sessie-meta"></div>
-                </div>
-                <div class="menu-wrap">
+        <div class="oc-kop-project" id="ocKiezer"></div>
+        <div class="oc-kop-acties"><div class="menu-wrap">
                     <button class="icon-btn" id="menu-btn" type="button" aria-label="Meer acties" aria-haspopup="true" aria-expanded="false" aria-controls="menu"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg></button>
                     <div class="menu" id="menu" role="menu" aria-label="Meer acties">
                         <button type="button" data-bestand="bewaar" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M12 11v6M9 14l3 3 3-3"/></svg><span class="ocb-t">Bewaar als bestand<small>Al je check-outs, voor een ander toestel of om door te geven</small></span></button>
@@ -831,7 +1199,16 @@ details.explain.oc-u .oc-u-noot a, details.explain.oc-u .oc-u-stap-uitleg a, det
                         <div class="sep" role="separator"></div>
                         <button type="button" data-act="wipe" class="danger" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>Alles wissen</button>
                     </div>
+                </div></div>
+    </header>
+
+    <main class="main">
+        <section class="card" aria-label="Check-out">
+            <div class="top">
+                <div class="name-wrap">
+                    <div class="sessie-meta" id="sessie-meta"></div>
                 </div>
+                
             </div>
 
             <div class="wissel" id="wissel" role="tablist" aria-label="Weergave">
@@ -1214,7 +1591,6 @@ const naamVan = (a, i) => a.naam || 'Deelnemer ' + (i + 1);
 function render() {
   const s = cur();
   renderSessies();
-  if (document.activeElement !== $('sessie-naam')) $('sessie-naam').value = s.naam;
   const n = s.antwoorden.length;
   $('sessie-meta').textContent = langDatum(s.datum) + ' · ' + meervoud(n, 'antwoord', 'antwoorden');
   $('tel').textContent = n ? String(n) : '';
@@ -1228,10 +1604,7 @@ function render() {
   $('oc-restart-row').hidden = !heeftWerk();
 }
 function renderSessies() {
-  $('lists').innerHTML = st.sessies.map(s => {
-    const met = s.naam.includes(kortDatum(s.datum)), n = s.antwoorden.length;
-    return `<button type="button" class="tab${s.id === st.huidig ? ' active' : ''}" data-sessie="${escA(s.id)}"${s.id === st.huidig ? ' aria-current="true"' : ''} title="${escA(langDatum(s.datum) + ', ' + meervoud(n, 'antwoord', 'antwoorden'))}"><span class="t">${esc(s.naam)}</span>${met ? '' : `<span class="n">${esc(dagMaand(s.datum))}</span>`}</button>`;
-  }).join('') + '<button type="button" class="tab add" id="nieuw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Nieuwe check-out</button>';
+  if (window.ocPk) ocPk.teken();
 }
 /* De velden tonen het concept van de sessie (wat iemand aan het typen is) */
 function vulVelden() {
@@ -1387,20 +1760,15 @@ function verwijderDeelnemer(id) {
 }
 
 /* ---------- Sessies ---------- */
-$('lists').addEventListener('click', e => {
-  if (e.target.closest('#nieuw')) { nieuweCheckout(); return; }
-  const b = e.target.closest('[data-sessie]'); if (!b || b.dataset.sessie === st.huidig) return;
-  nuBewaren(); st.huidig = b.dataset.sessie; stopMinuut(); status('', false); save(); render();
-  const nb = $('lists').querySelector(`[data-sessie="${CSS.escape(st.huidig)}"]`); nb && nb.focus({ preventScroll:true });
-});
+function kiesSessie(id) {
+  if (id === st.huidig) return;
+  nuBewaren(); st.huidig = id; stopMinuut(); status('', false); save(); render();
+}
 function nieuweCheckout() {
   nuBewaren();
   const s = nieuweSessie(); st.sessies.push(s); st.huidig = s.id; st.view = 'vul';
   if (st.sessies.length > 100) st.sessies.shift();
   stopMinuut(); status('', false); save(); render();
-  requestAnimationFrame(() => { const a = $('lists').querySelector('.tab.active'); a && a.scrollIntoView({ inline:'nearest', block:'nearest' }); });
-  if (kort()) $('nieuw').focus({ preventScroll:true }); else { $('sessie-naam').focus(); $('sessie-naam').select(); }
-  toast('Nieuwe check-out. Geef hem gerust een naam.');
 }
 function verwijderSessie() {
   nuBewaren();
@@ -1412,13 +1780,8 @@ function verwijderSessie() {
   $('menu-btn').focus({ preventScroll:true });
   toast(s.naam + ' verwijderd', ocUndoable(() => herstel(copy)));
 }
-$('sessie-naam').addEventListener('input', () => { cur().naam = $('sessie-naam').value.replace(/\s+/g, ' ').slice(0, 60); saveLater(); renderSessies(); $('oc-restart-row').hidden = !heeftWerk(); });
-$('sessie-naam').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('sessie-naam').blur(); } });
-$('sessie-naam').addEventListener('blur', () => {
-  const s = cur(), leegNaam = !s.naam.trim();
-  s.naam = s.naam.trim() || standaardNaam(s.datum); clearTimeout(saveT); saveT = null; save();
-  if (leegNaam) render(); else $('sessie-naam').value = s.naam;   // geen volledige hertekening: een tik op een sessie mag niet verloren gaan
-});
+// De naam van een check-out hernoem je in de kiezer (nooit leeg)
+function hernoemSessie(n) { const s = cur(); s.naam = n.replace(/\s+/g, ' ').trim().slice(0, 60) || standaardNaam(s.datum); clearTimeout(saveT); saveT = null; save(); render(); }
 
 /* ---------- Kopieer als tekst (voor het verslag) ---------- */
 function titelVan(s) { return s.naam === standaardNaam(s.datum) ? 'Check-out' : 'Check-out: ' + s.naam; }
@@ -1555,6 +1918,18 @@ document.addEventListener('click', e => { if (e.target.closest('[data-act="wipe"
 /* Een ander tabblad wijzigde de check-outs: opnieuw inlezen */
 addEventListener('storage', e => { if (e.key === KEY) { st = load(); render(); } });
 
+/* Eén kiezer (blok oc-projectkiezer): wisselen, nieuwe check-out, hernoemen en verwijderen met Ongedaan. */
+window.ocPk = ocProjectkiezer('#ocKiezer', {
+  woord: 'check-out', meervoud: 'check-outs', lidwoord: 'de', projectnaam: false,
+  // info: de datum alleen als ze niet al in de naam staat (zoals de tabs vroeger), en het aantal antwoorden
+  lijst: () => st.sessies.map(s => ({ id: s.id, naam: s.naam, info: (s.naam.includes(kortDatum(s.datum)) ? '' : dagMaand(s.datum) + ' · ') + meervoud(s.antwoorden.length, 'antwoord', 'antwoorden') })),
+  actief: () => cur().id,
+  kies: id => kiesSessie(id),
+  nieuw: () => nieuweCheckout(),
+  hernoem: n => hernoemSessie(n),
+  verwijder: () => verwijderSessie(),
+  magWeg: () => true   // zoals vroeger in het menu: ook de laatste mag weg, dan begint een nieuwe, lege check-out
+});
 render();
 tekenMinuut(DUUR);
 /* Voor tests: window.checkout */
