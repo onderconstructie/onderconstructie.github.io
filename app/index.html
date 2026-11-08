@@ -1390,6 +1390,17 @@ body.searching #home #tabgroup { display:none !important; }
   .at-x { order:2; margin-left:auto; }
   .at-x .at-x-terug { display:none; } .at-x .at-x-dicht { display:block; }
 }
+/* Pillen: kies een onderdeel. Gekozen = de hoofdkleur, de rest rustig. Op de gsm schuif je ze opzij. */
+.at-pillen { flex:none; display:flex; gap:0.5rem; overflow-x:auto; scrollbar-width:none; padding:0.625rem max(1rem, var(--right)) 0.625rem max(1rem, var(--left)); border-bottom:1px solid var(--slate-200); background:var(--wit); }
+.at-pillen::-webkit-scrollbar { display:none; }
+.at-pil { flex:none; display:inline-flex; align-items:center; gap:0.4375rem; min-height:44px; padding:0 0.9375rem; border-radius:999px; background:var(--wit); color:var(--slate-600); box-shadow:inset 0 0 0 1px var(--slate-200); font:inherit; font-size:0.9375rem; font-weight:600; white-space:nowrap; cursor:pointer; }
+.at-pil .at-pil-n { font-size:0.8125rem; font-weight:600; color:var(--slate-500); font-variant-numeric:tabular-nums; }
+@media (hover:hover) { .at-pil:hover { color:#047857; background:#ecfdf5; box-shadow:inset 0 0 0 1px #a7f3d0; } }
+.at-pil[aria-pressed="true"] { background:#0c8660; color:#ffffff; box-shadow:none; }
+.at-pil[aria-pressed="true"] .at-pil-n { color:#d1fae5; }
+@media (hover:hover) { .at-pil[aria-pressed="true"]:hover { background:#047857; color:#ffffff; } }
+.at-pil:focus-visible { outline:2px solid #047857; outline-offset:2px; }
+@media (min-width:640px) { .at-pillen { padding:0.75rem 1.5rem; flex-wrap:wrap; } }
 .at-lijst { flex:1; min-height:0; overflow:auto; overscroll-behavior:contain; scroll-padding-top:2.25rem; padding-bottom:calc(1rem + var(--bottom)); }
 .at-lijst:focus { outline:none; }
 .at-letter { position:sticky; top:0; z-index:1; padding:0.3125rem max(1.25rem, var(--left)); font-size:0.8125rem; font-weight:700; line-height:1.4; color:#047857; background:rgba(248,250,252,0.96); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px); border-bottom:1px solid var(--slate-100); }
@@ -1990,7 +2001,7 @@ html.oc-stil .n-puls, html.oc-stil .n-halo, html.oc-stil .n-far circle { animati
         <a class="ft-link" href="https://www.linkedin.com/in/bartel-volckaert-8a96842/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Maker</a>
         <button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (34 seconden)" title="Bekijk de film (34 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg></button>
       </nav>
-      <p class="ft-meta"><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v15.47</span></p>
+      <p class="ft-meta"><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v15.48</span></p>
     </div>
   </footer>
   <dialog class="film" id="film" aria-labelledby="film-h">
@@ -2133,6 +2144,7 @@ html.oc-stil .n-puls, html.oc-stil .n-halo, html.oc-stil .n-far circle { animati
     <button type="button" class="at-x" id="at-x" aria-label="Terug"><svg class="at-x-terug" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><svg class="at-x-dicht" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
     <div class="at-titel"><h2 id="at-h" tabindex="-1">Alle tools</h2><p class="at-n" id="at-n"></p></div>
   </div>
+  <div class="at-pillen" id="at-pillen" role="group" aria-label="Toon tools uit"></div>
   <div class="at-lijst" id="at-lijst"></div>
 </dialog>
 <dialog class="wiz" id="wiz" aria-labelledby="wz-h1">
@@ -3139,12 +3151,22 @@ const atOnderdelen = t => [...new Set([tabOf(t.g), ...(ALSO_IN[t.id] || []).map(
 const atFasen = t => PHASES.filter(p => (t.pdca || []).includes(p.id)).map((p, i) => i ? p.name.toLowerCase() : p.name).join(', ');
 const atInPlan = t => (t.traject || []).some(x => TRAJECTEN.some(tr => tr.id === x.naam)) || Object.values(STAP_EXTRA).some(a => a.some(x => x.id === t.id));
 function atLetter(t) { const c = fold(t.title).charAt(0).toUpperCase(); return /[A-Z]/.test(c) ? c : '#'; }
+// Pillen per onderdeel. Een tool die in twee onderdelen staat (bv. het Schetsboek), staat bij allebei.
+let atCat = 'alle';
+const atTabsVan = t => new Set([tabOf(t.g), ...(ALSO_IN[t.id] || []).map(tabOf)]);
+const AT_CATS = () => [{ id:'alle', label:'Alle' }, ...TABS.filter(x => x.id !== 'start')];
+function renderPillen() {
+  $('at-pillen').innerHTML = AT_CATS().map(c => { const n = c.id === 'alle' ? TOOLS.length : TOOLS.filter(t => atTabsVan(t).has(c.id)).length;
+    return n ? `<button type="button" class="at-pil" data-cat="${c.id}" aria-pressed="${atCat === c.id}">${esc(c.label)}<span class="at-pil-n">${n}</span></button>` : ''; }).join('');
+}
 function renderAlle() {
-  const usage = store.get('usage', {}), list = [...TOOLS].sort((a, b) => a.title.localeCompare(b.title, 'nl', { sensitivity:'base' }));
+  renderPillen();
+  const usage = store.get('usage', {}), list = TOOLS.filter(t => atCat === 'alle' || atTabsVan(t).has(atCat)).sort((a, b) => a.title.localeCompare(b.title, 'nl', { sensitivity:'base' }));
+  const catNaam = atCat === 'alle' ? '' : ` in ${(TABS.find(x => x.id === atCat) || {}).label || ''}`;
   const groups = [];
   list.forEach(t => { const L = atLetter(t), g = groups[groups.length - 1]; if (g && g.L === L) g.ts.push(t); else groups.push({ L, ts:[t] }); });
   const ooit = list.some(t => usage[t.id]), sep = '<span aria-hidden="true"> · </span>';
-  $('at-n').innerHTML = `${list.length} tools, van A tot Z${ooit ? '<span class="at-leg"><span class="at-dot" aria-hidden="true"></span>al gebruikt</span>' : ''}`;
+  $('at-n').innerHTML = `${list.length} tools${catNaam}, van A tot Z${ooit ? '<span class="at-leg"><span class="at-dot" aria-hidden="true"></span>al gebruikt</span>' : ''}`;
   $('at-lijst').innerHTML = groups.map(g => { const lid = 'at-l-' + (g.L === '#' ? 'x' : g.L);
     return `<section class="at-l" aria-labelledby="${lid}"><h3 class="at-letter" id="${lid}">${g.L}</h3><ul class="at-ul">${g.ts.map(t => {
       const meta = [esc(atOnderdelen(t).join(', ')), esc(atFasen(t)), atInPlan(t) ? 'Stappenplan' : ''].filter(Boolean).join(sep);
@@ -3154,7 +3176,7 @@ function renderAlle() {
 }
 function openAlle(fromHistory, naarId) {
   const d = $('at'); if (!atKan() || d.open || !TOOLS.length) return;
-  if (!fromHistory) { atOpener = document.activeElement; atTerug = null; history.pushState({ alle:1 }, ''); }
+  if (!fromHistory) { atOpener = document.activeElement; atTerug = null; atCat = 'alle'; history.pushState({ alle:1 }, ''); }   // vers geopend: weer alle tools
   renderAlle();
   const breed = matchMedia('(min-width:640px)').matches;
   $('at-x').setAttribute('aria-label', breed ? 'Sluit' : 'Terug'); $('at-x').title = breed ? 'Sluit (Esc)' : 'Terug';
@@ -3177,6 +3199,8 @@ document.addEventListener('click', e => { if (e.target.closest('[data-alle-open]
 $('at-x').addEventListener('click', () => closeAlle());
 $('at').addEventListener('click', e => {
   if (e.target === $('at')) { closeAlle(); return; }   // een tik naast het venster
+  const p = e.target.closest('.at-pil');
+  if (p) { atCat = p.dataset.cat; renderAlle(); $('at-lijst').scrollTop = 0; const q = $('at-pillen').querySelector(`[data-cat="${atCat}"]`); if (q) q.focus(); return; }
   const r = e.target.closest('.at-row'); if (!r) return;
   // eerst het venster dicht, daarna opent de algemene afhandeling ([data-id]) de tool zoals overal
   // zoals elke gewone lijst: zonder stappenplanbalk (die hoort bij een tool die je via een stappenplan opende)
@@ -3187,8 +3211,13 @@ let atTyp = '', atTypT = 0;
 $('at').addEventListener('keydown', e => {
   const rows = [...$('at').querySelectorAll('.at-row')], i = rows.indexOf(document.activeElement);
   if (e.key === 'Tab') {
-    const f = [$('at-x'), ...rows]; if (e.shiftKey ? document.activeElement === f[0] || document.activeElement === $('at-h') : document.activeElement === f[f.length - 1]) { e.preventDefault(); f[e.shiftKey ? f.length - 1 : 0].focus(); }
+    const f = [$('at-x'), ...$('at').querySelectorAll('.at-pil'), ...rows]; if (e.shiftKey ? document.activeElement === f[0] || document.activeElement === $('at-h') : document.activeElement === f[f.length - 1]) { e.preventDefault(); f[e.shiftKey ? f.length - 1 : 0].focus(); }
     return;
+  }
+  const pil = document.activeElement && document.activeElement.closest && document.activeElement.closest('.at-pil');
+  if (pil && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {   // pijltjes links en rechts door de pillen
+    e.preventDefault(); const ps = [...$('at').querySelectorAll('.at-pil')], k = ps.indexOf(pil) + (e.key === 'ArrowRight' ? 1 : -1);
+    if (ps[k]) ps[k].focus(); return;
   }
   if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key) && !e.altKey) {
     e.preventDefault();
