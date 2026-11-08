@@ -1253,7 +1253,7 @@ function ocUndoable(restore) {
      ocExport.png(bouwFn, 'bestandsnaam', { landscape:true })
      ocExport.pdf(bouwFn, 'bestandsnaam', { landscape:true })
    bouwFn() geeft { node, title, subtitle } terug: een DOM-knoop met inline styles, zonder knoppen of invoervelden.
-   Die komt buiten beeld op een witte pagina met kop (titel, ondertitel, datum) en voet.
+   Die komt buiten beeld op een witte pagina met kop (titel, ondertitel, datum) en voet (icoon en baseline van de tool, adres van de site).
    Zet data-oc-keep op blokken die in een PDF niet over twee pagina's gesplitst mogen worden
    (een beslissing, een kaartje, een rij); ze schuiven dan door naar de volgende pagina.
    Een browser tekent geen canvas boven een maximale grootte (Chrome: 65.535 px hoog of breed; iPad en iPhone:
@@ -1284,7 +1284,22 @@ const ocExport = (() => {
     return loaded[url];
   }
   const today = () => new Date().toLocaleDateString('nl-BE', { day: 'numeric', month: 'long', year: 'numeric' });
-  function page(content, { title, subtitle, width }) {
+  // Het icoon van de tool (de favicon, een SVG) als gewone afbeelding: zo tekent elke browser het in de voet.
+  let icoP = null;
+  function voetIcoon() {
+    if (!icoP) icoP = new Promise(ok => {
+      const l = document.querySelector('link[rel="icon"]'); if (!l || !l.href) { ok(''); return; }
+      let src = l.href;
+      try { if (/^data:image\/svg\+xml,/.test(src)) { let s = decodeURIComponent(src.slice(src.indexOf(',') + 1));
+        if (!/<svg[^>]*\swidth=/.test(s)) s = s.replace('<svg', '<svg width="72" height="72"'); src = 'data:image/svg+xml,' + encodeURIComponent(s); } } catch (e) {}
+      const i = new Image();
+      i.onload = () => { try { const c = document.createElement('canvas'); c.width = c.height = 72; c.getContext('2d').drawImage(i, 0, 0, 72, 72); ok(c.toDataURL('image/png')); } catch (e) { ok(''); } };
+      i.onerror = () => ok('');
+      i.src = src;
+    });
+    return icoP;
+  }
+  function page(content, { title, subtitle, width, icoon }) {
     const wrap = document.createElement('div');
     wrap.style.cssText = `position:fixed;left:-20000px;top:0;width:${width}px;background:#fff;padding:36px 40px 28px;
       font-family:'DM Sans',system-ui,-apple-system,sans-serif;color:#1e293b;-webkit-font-smoothing:antialiased;box-sizing:border-box;`;
@@ -1296,8 +1311,15 @@ const ocExport = (() => {
     head.children[0].children[0].textContent = title || '';
     head.children[0].children[1].textContent = subtitle || '';
     const foot = document.createElement('div');
-    foot.style.cssText = 'margin-top:22px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;display:flex;justify-content:space-between;';
-    foot.innerHTML = '<span>Onder Constructie</span><span>onderconstructie.github.io</span>';
+    foot.style.cssText = 'margin-top:22px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;display:flex;justify-content:space-between;align-items:center;gap:16px;';
+    // Links het icoon van de tool met haar baseline (de zin onderaan de tool), rechts het adres van de site.
+    const q = document.querySelector('footer .quote');
+    const links = document.createElement('span');
+    links.style.cssText = 'display:flex;align-items:center;gap:8px;min-width:0;color:#64748b;';
+    if (icoon) { const im = new Image(); im.alt = ''; im.src = icoon; im.style.cssText = 'width:18px;height:18px;flex:none;'; links.appendChild(im); }
+    const bl = document.createElement('span'); bl.textContent = (q && q.textContent.trim()) || 'Onder Constructie'; links.appendChild(bl);
+    const rechts = document.createElement('span'); rechts.style.cssText = 'white-space:nowrap;flex:none;'; rechts.textContent = 'onderconstructie.github.io';
+    foot.append(links, rechts);
     wrap.append(head, content, foot);
     document.body.appendChild(wrap);
     return wrap;
@@ -1319,9 +1341,10 @@ const ocExport = (() => {
   // Zet de exportpagina buiten beeld, wacht op de lettertypes en geeft ze aan fn; ruimt daarna op.
   async function withPage(build, width, fn) {
     const built = build();
-    const node = page(built.node, { title: built.title, subtitle: built.subtitle, width });
+    const node = page(built.node, { title: built.title, subtitle: built.subtitle, width, icoon: await voetIcoon() });
     try {
       if (document.fonts && document.fonts.ready) await document.fonts.ready;
+      await Promise.all([...node.querySelectorAll('img')].map(i => i.decode ? i.decode().catch(() => {}) : null));   // het icoon in de voet
       return await fn(node);
     } finally { node.remove(); }
   }

@@ -1517,10 +1517,22 @@ async function exportCanvas() {
   bar(472, 'Werkelijk', T.ms, over > 60000 ? '#f59e0b' : '#10b981', clock(T.ms));
   // voet
   c.fillStyle = '#e2e8f0'; c.fillRect(56, H - 48, W - 112, 1);
-  c.fillStyle = '#94a3b8'; c.font = `400 13px ${F}`; c.fillText('Onder Constructie', 56, H - 22); right('onderconstructie.github.io', W - 56, H - 22);
+  c.font = `400 13px ${F}`; voetLinks(c, 56, H - 22); c.fillStyle = '#94a3b8'; right('onderconstructie.github.io', W - 56, H - 22);
   return cv;
 }
 function roundRect(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
+/* Voet van de afbeelding en de PDF: links het icoon van de tool met haar baseline, rechts het adres van de site.
+   Het icoon wordt vooraf geladen. Kan een browser het niet veilig tekenen, dan staat alleen de baseline er. */
+const VOET_BL = (() => { const q = document.querySelector('footer .quote'); return (q && q.textContent.trim()) || 'Onder Constructie'; })();
+const VOET_ICO = (() => { const l = document.querySelector('link[rel="icon"]'); if (!l || !l.href) return null; const i = new Image(); let src = l.href;
+  try { if (/^data:image\/svg\+xml,/.test(src)) { let s = decodeURIComponent(src.slice(src.indexOf(',') + 1)); if (!/<svg[^>]*\swidth=/.test(s)) s = s.replace('<svg', '<svg width="72" height="72"'); src = 'data:image/svg+xml,' + encodeURIComponent(s); } } catch (e) {}
+  i.onload = () => { try { const t = document.createElement('canvas'); t.width = t.height = 4; const x = t.getContext('2d'); x.drawImage(i, 0, 0, 4, 4); x.getImageData(0, 0, 1, 1); i.dataset.ok = '1'; } catch (e) {} };
+  i.src = src; return i; })();
+function voetLinks(c, x, y) {
+  let tx = x;
+  if (VOET_ICO && VOET_ICO.dataset.ok) { c.drawImage(VOET_ICO, x, y - 14, 18, 18); tx = x + 26; }
+  c.fillStyle = '#64748b'; c.fillText(VOET_BL, tx, y);
+}
 function saveBlob(blob, name) {
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
