@@ -1104,6 +1104,8 @@ body.searching .proj-top { display:none !important; }
 .rc-ic .icon { width:36px; height:36px; } .rc-ic .icon svg, .rc-ic .icon img { width:32px; height:32px; }
 @media (hover:hover) { .rc-ic:hover { background:#e7f8f0; } }
 .rc-ic .live-dot { top:3px; right:3px; }
+/* Vijf icoontjes passen ook op een smal scherm: iets kleiner, nooit onder 44 px */
+@media (max-width:360px) { .recent-row { gap:0.5rem; } .recent-row .cont { gap:0; } .rc-ic { width:44px; height:44px; } }
 .live-dot { display:none; position:absolute; top:4px; right:4px; width:8px; height:8px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 2px var(--wit); }
 .is-live .live-dot, .rc-ic.is-live .live-dot, .fav-tile.is-live .live-dot { display:block; }
 /* Je favorieten: tegels zoals op een gsm-scherm */
@@ -2583,8 +2585,8 @@ function renderRecent() {
   const hero = pickResume(items);
   resumePath = hero && hero.path ? hero.path.id : null;
   $('resume').innerHTML = hero ? resumeHTML(hero) : '';
-  // Onlangs: alleen het icoon van de laatste drie tools (de naam bij hover en voor schermlezers)
-  const rest = items.filter(x => !hero || x.t.id !== hero.t.id).slice(0, 3);
+  // Onlangs: alleen het icoon van de laatste vijf tools (de naam bij hover en voor schermlezers)
+  const rest = items.filter(x => !hero || x.t.id !== hero.t.id).slice(0, 5);
   $('recent-row').hidden = !rest.length;
   $('cont').innerHTML = rest.map(({ t, at }) => `<button class="rc-ic" data-id="${esc(t.id)}" title="${esc(t.title)}${at ? ' · ' + ago(at) : ''}" aria-label="${esc(t.title)}${at ? ', ' + ago(at) : ''}"><span class="icon">${iconHTML(t.icon)}</span><span class="live-dot" aria-hidden="true"></span></button>`).join('');
   renderFavs();
