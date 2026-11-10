@@ -206,11 +206,40 @@ body { overflow-wrap:break-word; }
 .ns-add .ns-done { margin-left:auto; background:#0c8660; border-color:var(--accent-dark); color:var(--wit); padding:0 1.25rem; }
 .ns-add .ns-done:hover { background:#047857; border-color:var(--accent-hover); }
 .empty-draw { padding:2rem 1.25rem 2.25rem; text-align:center; color:var(--slate-500); font-size:0.9375rem; }
-.hints { list-style:none; padding:0 1.125rem 1rem; display:grid; gap:0.375rem; }
-.hints li { display:flex; gap:0.5rem; font-size:0.8125rem; color:#92400e; background:var(--oranje-50); border:1px solid #fde68a; border-radius:10px; padding:0.4375rem 0.625rem; }
-.hints li.ok { color:#065f46; background:var(--accent-50); border-color:#a7f3d0; }
-.hints li svg { width:16px; height:16px; flex-shrink:0; margin-top:1px; }
-.hints a, .hints button.lnk { color:inherit; font-weight:700; text-decoration:underline; background:none; border:0; padding:0; cursor:pointer; font:inherit; }
+/* Procescheck: rustig, zoals de inzichten in de SWOT. Hooguit drie tips; Toon laat de stap oplichten. */
+.pc { margin:0 1.125rem 1rem; padding:0.25rem 0.875rem 0.25rem; border:1px solid var(--slate-200); border-radius:12px; background:var(--slate-50); }
+.pc:empty { display:none; }
+.pc-kop { display:flex; align-items:baseline; flex-wrap:wrap; gap:0.25rem 0.75rem; padding-top:0.5rem; }
+.pc-t { font-size:0.75rem; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; color:var(--slate-600); outline:none; }
+.pc-n { font-size:0.8125rem; color:var(--slate-600); }
+.pc-l { list-style:none; }
+.pc-i { display:grid; grid-template-columns:18px minmax(0, 1fr) auto; gap:0.25rem 0.625rem; align-items:center; padding:0.5rem 0; }
+.pc-i + .pc-i { border-top:1px solid var(--slate-200); }
+.pc-i > svg { width:18px; height:18px; align-self:start; margin-top:0.1875rem; color:var(--slate-500); }
+.pc-i.ok > svg { color:var(--accent-dark); }
+.pc-x { font-size:0.875rem; line-height:1.45; color:var(--slate-700); overflow-wrap:anywhere; }
+.pc-i.ok .pc-x { color:#065f46; }
+.pc-acts { display:flex; gap:0.375rem; flex-wrap:wrap; justify-content:flex-end; }
+.pc-btn { display:inline-flex; align-items:center; min-height:44px; padding:0 0.75rem; border-radius:10px; font-size:0.875rem; font-weight:600; color:#047857; background:#ecfdf5; border:1px solid #a7f3d0; white-space:nowrap; }
+.pc-btn:hover { background:#d1fae5; }
+.pc-btn.rustig { color:var(--slate-600); background:var(--wit); border-color:var(--slate-200); }
+.pc-btn.rustig:hover { background:var(--slate-100); }
+@media (max-width:640px) {
+  .pc { margin-left:0.75rem; margin-right:0.75rem; }
+  .pc-i { grid-template-columns:18px minmax(0, 1fr); }
+  .pc-acts { grid-column:2; justify-content:flex-start; }
+}
+/* oplichten na Toon: een groene rand die twee keer zacht pulseert (zonder beweging: blijft even staan) */
+.canvas .licht { pointer-events:none; animation:pcLicht 1.1s ease-in-out 2; }
+@keyframes pcLicht { 50% { opacity:0.25; } }
+@media (prefers-reduced-motion:reduce) { .canvas .licht { animation:none; } }
+/* melding na Open BPMN: rustig, tot je ze sluit */
+.bpmn-meld { display:flex; flex-wrap:wrap; align-items:center; gap:0.5rem 0.75rem; margin:0 0 1rem; padding:0.5rem 0.5rem 0.5rem 0.875rem; background:#ecfdf5; border:1px solid #a7f3d0; border-radius:12px; font-size:0.875rem; line-height:1.45; color:#065f46; outline:none; }
+.bpmn-meld > svg { width:18px; height:18px; flex-shrink:0; align-self:flex-start; margin-top:0.1875rem; color:#047857; }
+.bpmn-meld p { flex:1 1 14rem; min-width:0; overflow-wrap:anywhere; }
+.bpmn-meld p b { color:#064e3b; }
+.bpmn-meld button { min-height:44px; padding:0 0.875rem; border-radius:10px; font-size:0.875rem; font-weight:600; color:#047857; background:var(--wit); border:1px solid #a7f3d0; }
+.bpmn-meld button:hover { background:#d1fae5; }
 
 .vb-bar { display:flex; flex-wrap:wrap; align-items:center; gap:0.5rem 0.75rem; margin:0 1rem 0.75rem; padding:0.5rem 0.5rem 0.5rem 0.75rem; background:#fffbeb; border:1px solid #fde68a; border-radius:12px; font-size:0.875rem; line-height:1.4; color:#78350f; }
 .vb-bar svg { width:18px; height:18px; flex-shrink:0; color:#b45309; }
@@ -1233,6 +1262,9 @@ window.ocProjectkiezer = function (plek, o) {
               <button data-act="mermaid" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg>Kopieer als diagramcode</button>
               <p class="oc-note" role="none">Een afbeelding, PDF of SVG kan je niet terug openen.</p>
               <div class="sep"></div>
+              <button data-act="bpmn" class="oc-bm" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="9" width="6" height="6" rx="3"/><rect x="10.5" y="8.5" width="7" height="7" rx="1.6"/><path d="M8.5 12h2M17.5 12h2"/><path d="M19.5 9.5 22 12l-2.5 2.5"/></svg><span class="oc-bm-t"><span>Bewaar als BPMN</span><small>Opent getekend in elk BPMN-programma</small></span></button>
+              <button data-act="bpmn-open" class="oc-bm" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M8 13h4M10 11l2 2-2 2"/><rect x="13.5" y="11" width="4" height="4" rx="1"/></svg><span class="oc-bm-t"><span>Open BPMN</span><small>Een proces uit een ander programma</small></span></button>
+              <div class="sep"></div>
               <button data-act="dup" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M4 16V5a1 1 0 0 1 1-1h11"/></svg>Dupliceer (bv. voor straks)</button>
               <div class="sep"></div>
               <button data-act="wipe" class="danger" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>Alles wissen</button>
@@ -1256,6 +1288,9 @@ window.ocProjectkiezer = function (plek, o) {
       </ul>
       <p><b>Rollen</b> zijn optioneel. Geef je ze op, dan krijgt elke rol een eigen baan en zie je meteen waar het werk van hand wisselt. Elke overdracht is een plek waar het kan haperen.</p>
       <p>Tip voor een verandering: maak de stroom van vandaag, kies "Dupliceer" in het menu, en pas de kopie aan naar hoe het straks moet lopen. Zo zie je in de <a href="/gap/">Gap-analyse</a> precies wat er verandert.</p>
+      <p>Onder de tekening staat de <b>procescheck</b>: hooguit drie tips, bv. een keuze met maar één uitweg of een stap zonder werkwoord. Tik op Toon en de stap licht op. Een tip volgen hoeft niet.</p>
+      <p><b>BPMN</b> is de wereldwijde standaard om processen te tekenen. Kies in het menu "Bewaar als BPMN" en je stroom opent in elk BPMN-programma, met rollen en pijlen. Met "Open BPMN" haal je een proces van daar binnen; wat de Stroom niet kent, wordt een gewone stap.</p>
+      <p>Begin je in het <a href="/schildpad/">Schildpaddiagram</a>? Daar zet "Teken het verloop in de Stroom" de start, het einde en de rollen al klaar.</p>
       <p>De stappen en rollen liggen klaar voor andere tools, bijvoorbeeld om in de <a href="/raci/">RACI-matrix</a> te bepalen wie wat doet.</p>
     </div>
   </details>
@@ -1678,7 +1713,11 @@ function valid(s) {
     lanes: (Array.isArray(f.lanes) ? f.lanes : []).filter(l => l && /^[\w-]+$/.test(l.id)).map(l => ({ id:l.id, name:String(l.name || '').slice(0, 300), ...vanVan(l) })),
     nodes: f.nodes.filter(n => n && /^[\w-]+$/.test(n.id) && TYPES[n.type]).map(n => ({ id:n.id, type:n.type, text:String(n.text || '').slice(0, 300),
       lane: /^[\w-]+$/.test(n.lane || '') ? n.lane : null, to: typeof n.to === 'string' ? n.to : 'auto', no: typeof n.no === 'string' ? n.no : (n.type === 'keuze' ? 'none' : undefined),
-      yesLabel: String(n.yesLabel ?? 'ja').slice(0, 20), noLabel: String(n.noLabel ?? 'nee').slice(0, 20), ...vanVan(n) }))
+      yesLabel: String(n.yesLabel ?? 'ja').slice(0, 20), noLabel: String(n.noLabel ?? 'nee').slice(0, 20), ...vanVan(n) })),
+    // het bijhorende proces in het Schildpaddiagram, het project toen, en de tips die je negeerde (procescheck)
+    ...(typeof f.schildpad === 'string' && /^[\w-]{1,40}$/.test(f.schildpad) ? { schildpad:f.schildpad } : {}),
+    ...(typeof f.proj === 'string' && f.proj ? { proj:f.proj.slice(0, 80) } : {}),
+    ...(Array.isArray(f.stil) ? { stil:f.stil.filter(k => typeof k === 'string' && /^[\w:-]{1,60}$/.test(k)).slice(-100) } : {})
   }));
   // Vanaf nu opent Stroom eerst op de stroom zelf, ook voor wie eerder de lijst open had.
   if (s.viewV !== 2) { s.view = 'draw'; s.viewV = 2; }
@@ -1688,7 +1727,7 @@ function load() { const d = ocLees(KEY);   // onleesbaar: de opslaglaag zet de r
   try { if (d && Array.isArray(d.flows)) return valid(d); } catch {}
   ocKapot(KEY);   // de tool kan niet gebruiken wat er staat: een kopie apart (niets als er niets staat)
   return fresh(); }
-let state = load(), saves = 0, editId = null, newLaneId = null;   // editId: de stap die open staat in het bewerkpaneel
+let state = load(), saves = 0, editId = null, newLaneId = null, licht = null;   // licht: de stap of rol die oplicht na Toon in de procescheck   // editId: de stap die open staat in het bewerkpaneel
 function save() {
   ocSchrijf(KEY, JSON.stringify(state));   // mislukt het, dan meldt de opslaglaag het (met Bewaar als bestand)
   saves++; clearTimeout(save.t); save.t = setTimeout(publish, 300);
@@ -1803,6 +1842,7 @@ function svgOf(f, { forExport = false, interactive = false, sel = null } = {}) {
     const x = PAD + i * LW;
     parts.push(`<rect x="${x}" y="${PAD - 6}" width="${LW}" height="${L.height - PAD}" fill="${i % 2 ? '#ffffff' : '#f8fafc'}" stroke="#e2e8f0"/>`);
     parts.push(`<text x="${x + LW / 2}" y="${PAD + 16}" text-anchor="middle" font-size="13" font-weight="700" fill="#334155">${l.name && kortOp(l.name, 25) !== l.name ? `<title>${esc(l.name)}</title>` : ''}${esc(kortOp(l.name || 'Rol ' + (i + 1), 25))}</text>`);
+    if (interactive && licht && l.id === licht) parts.push(`<rect class="licht" x="${x + 2}" y="${PAD - 4}" width="${LW - 4}" height="${L.height - PAD - 4}" rx="6" fill="#10b981" fill-opacity="0.12" stroke="#10b981" stroke-width="3"/>`);
   });
   // pijlen (labels pas na alle lijnen, zodat geen lijn over een label loopt)
   const labels = [];
@@ -1829,6 +1869,9 @@ function svgOf(f, { forExport = false, interactive = false, sel = null } = {}) {
     const { n, cx, y, w, h, lines } = p, x = cx - w / 2;
     if (interactive) {
       parts.push(`<g class="nd${n.id === sel ? ' on' : ''}" data-node="${n.id}" tabindex="0" role="button" aria-label="${esc(`Bewerk stap ${p.i + 1}: ${n.text || TYPES[n.type]}`)}">`);
+      if (licht && n.id === licht) parts.push(n.type === 'keuze'
+        ? `<path class="licht" d="M${cx} ${y - 10}L${cx + w / 2 + 15} ${y + h / 2}L${cx} ${y + h + 10}L${cx - w / 2 - 15} ${y + h / 2}Z" fill="#d1fae5" stroke="#10b981" stroke-width="3" stroke-linejoin="round"/>`
+        : `<rect class="licht" x="${x - 8}" y="${y - 8}" width="${w + 16}" height="${h + 16}" rx="${n.type === 'stap' ? 16 : (h + 16) / 2}" fill="#d1fae5" stroke="#10b981" stroke-width="3"/>`);
       if (n.id === sel) parts.push(n.type === 'keuze'
         ? `<path d="M${cx} ${y - 7}L${cx + w / 2 + 11} ${y + h / 2}L${cx} ${y + h + 7}L${cx - w / 2 - 11} ${y + h / 2}Z" fill="none" stroke="#10b981" stroke-width="3" stroke-linejoin="round"/>`
         : `<rect x="${x - 5}" y="${y - 5}" width="${w + 10}" height="${h + 10}" rx="${n.type === 'stap' ? 14 : (h + 10) / 2}" fill="none" stroke="#10b981" stroke-width="3"/>`);
@@ -1846,32 +1889,57 @@ function svgOf(f, { forExport = false, interactive = false, sel = null } = {}) {
   return { svg: parts.join(''), L };
 }
 
-/* Controle: wat ontbreekt er nog? */
+/* Procescheck: vaste regels, het belangrijkste eerst (zoals de inzichten in de SWOT). Geen gok: bij twijfel geen tip.
+   Hooguit drie tips tegelijk, nooit verplicht. "Toon" laat de stap of de rol oplichten; een stijltip kan je negeren. */
+// Een stap zonder werkwoord: kort (1 tot 3 woorden), geen enkel woord eindigt op een klinker + n (registreren, gaan, doen, zien),
+// en het eerste of laatste woord eindigt zoals een zelfstandig naamwoord (registratie, betaling, controle). Anders: geen tip.
+const ZN_EIND = /(ing|ie|le|heid|nis|schap|ment|age|ake|uur|teit|iek|ief)$/;
+function zonderWerkwoord(t) {
+  const w = String(t || '').toLowerCase().replace(/[^\p{L}\s]/gu, ' ').split(/\s+/).filter(Boolean);
+  if (!w.length || w.length > 3 || w.some(x => /[aeiouy]n$/.test(x))) return false;
+  return ZN_EIND.test(w[0]) || ZN_EIND.test(w[w.length - 1]);
+}
 function hints(f) {
   const out = [], inc = new Map(f.nodes.map(n => [n.id, 0]));
   edges(f).forEach(e => inc.set(e.to.id, inc.get(e.to.id) + 1));
-  const name = n => `${f.nodes.indexOf(n) + 1}${n.text ? ' (' + n.text.slice(0, 30) + ')' : ''}`;
+  const name = n => `${f.nodes.indexOf(n) + 1}${n.text ? ' (' + kortOp(n.text, 32) + ')' : ''}`;
+  const tip = (prio, key, text, x = {}) => out.push({ prio, key, text, ...x });
+  if (f.nodes.length && !f.nodes.some(n => n.type === 'start')) tip(1, 'start', 'Er is geen start. Zet bovenaan een start, zodat duidelijk is waar het proces begint.');
+  if (f.nodes.length && !f.nodes.some(n => n.type === 'einde')) tip(1, 'einde', 'Er is geen einde. Sluit af, zodat duidelijk is waar het proces stopt.');
   f.nodes.forEach((n, i) => {
-    if (!n.text.trim() && n.type !== 'start' && n.type !== 'einde' && n.id !== editId) out.push({ text:`Stap ${name(n)} heeft nog geen tekst.`, id:n.id });
-    if (n.type === 'keuze' && !target(f, n, 'to')) out.push({ text:`Keuze ${name(n)}: kies waar "${n.yesLabel || 'ja'}" naartoe gaat.`, id:n.id });
-    if (n.type === 'keuze' && (!n.no || n.no === 'none')) out.push({ text:`Keuze ${name(n)}: kies waar "${n.noLabel || 'nee'}" naartoe gaat.`, id:n.id });
-    if (i > 0 && n.type !== 'start' && !inc.get(n.id)) out.push({ text:`Stap ${name(n)} is van nergens bereikbaar: geen enkele pijl komt er toe.`, id:n.id });
-    if (f.lanes.length && !f.lanes.some(l => l.id === n.lane)) out.push({ text:`Stap ${name(n)} heeft nog geen rol.`, id:n.id });
-    if ((n.type === 'stap' || n.type === 'start') && !target(f, n, 'to')) out.push({ text:`Stap ${name(n)} loopt dood: kies bij "daarna" waar het verder gaat, of maak er een einde van.`, id:n.id });
-    if (n.text.length > 60) out.push({ text:`Stap ${name(n)} is lang. Houd het bij een werkwoord en een voorwerp; uitleg past beter in een notitie.`, id:n.id });
+    const k = s => s + ':' + n.id, tx = n.text.trim();
+    if ((n.type === 'stap' || n.type === 'start') && !target(f, n, 'to')) tip(2, k('dood'), `Stap ${name(n)} loopt dood: kies bij "daarna" waar het verder gaat, of maak er een einde van.`, { id:n.id });
+    if (n.type === 'keuze') {
+      const a = target(f, n, 'to'), b = target(f, n, 'no');
+      if (!a && !b) tip(2, k('uitweg'), `Keuze ${name(n)} heeft nog geen uitweg. Kies waar "${n.yesLabel || 'ja'}" en "${n.noLabel || 'nee'}" naartoe gaan.`, { id:n.id });
+      else if (!a || !b) tip(2, k('uitweg'), `Keuze ${name(n)} heeft maar één uitweg. Kies waar "${!a ? n.yesLabel || 'ja' : n.noLabel || 'nee'}" naartoe gaat, of maak er een gewone stap van.`, { id:n.id });
+      else if (a === b) tip(3, k('uitweg'), `Bij keuze ${name(n)} gaan beide uitwegen naar dezelfde stap. Is het wel een keuze?`, { id:n.id, stil:true });
+    }
+    if (i > 0 && n.type !== 'start' && !inc.get(n.id)) tip(3, k('bereik'), `Stap ${name(n)} is van nergens bereikbaar: geen enkele pijl komt er toe.`, { id:n.id });
+    if (!tx && n.type !== 'start' && n.type !== 'einde' && n.id !== editId) tip(4, k('leeg'), `Stap ${name(n)} heeft nog geen tekst.`, { id:n.id });
+    if (f.lanes.length && !f.lanes.some(l => l.id === n.lane)) tip(5, k('rol'), `Stap ${name(n)} heeft nog geen rol.`, { id:n.id });
+    if (n.type === 'keuze' && tx && !/\?\s*$/.test(tx)) tip(7, k('vraag'), `Keuze ${name(n)} is geen vraag. Schrijf ze als vraag met een vraagteken, bv. "Dossier volledig?". Dan lezen de uitwegen vanzelf.`, { id:n.id, stil:true });
+    if (n.type === 'stap' && zonderWerkwoord(tx)) tip(8, k('werkwoord'), `Stap ${name(n)} zegt niet wat er gebeurt. Zet er een werkwoord achteraan, bv. "Aanvraag controleren".`, { id:n.id, stil:true });
+    if (n.text.length > 60) tip(9, k('lang'), `Stap ${name(n)} is lang. Hou het bij een voorwerp en een werkwoord; uitleg past beter in een notitie.`, { id:n.id, stil:true });
   });
-  if (f.nodes.length && !f.nodes.some(n => n.type === 'einde')) out.push({ text:'Er is geen einde. Sluit af, zodat duidelijk is waar het proces stopt.' });
+  f.lanes.forEach(l => { if (!f.nodes.some(n => n.lane === l.id)) tip(6, 'baan:' + l.id, `De rol ${l.name.trim() ? kortOp(l.name, 40) : 'zonder naam'} heeft nog geen stap. Geef ze een stap, of haal de rol weg.`, { lane:l.id }); });
+  const stil = new Set(f.stil || []);
+  const list = out.filter(x => !(x.stil && stil.has(x.key))).sort((a, b) => a.prio - b.prio);
   const handoffs = edges(f).filter(e => f.lanes.length && e.from.lane && e.to.lane && e.from.lane !== e.to.lane).length;
-  return { list: out, handoffs };
+  return { list, handoffs };
 }
 
 /* Weergave */
+const PC_MAX = 3;
 function hintsHTML(f) {
-  const h = hints(f);
-  return `${h.list.slice(0, 6).map(x => `<li>${ICON.info}<span>${esc(x.text)}${x.id ? ` <button type="button" class="lnk" data-act="goto" data-id="${x.id}">Toon</button>` : ''}</span></li>`).join('')}
-          ${h.list.length > 6 ? `<li><span>En nog ${h.list.length - 6} punten.</span></li>` : ''}
-          ${!h.list.length && f.nodes.length > 2 && !f.nodes.some(n => !n.text.trim() && n.type !== 'start' && n.type !== 'einde') ? `<li class="ok"><span>De stroom is sluitend${f.lanes.length && h.handoffs < 4 ? `, met ${h.handoffs} ${h.handoffs === 1 ? 'overdracht' : 'overdrachten'} tussen rollen` : ''}.</span></li>` : ''}
-          ${h.handoffs >= 4 ? `<li><span>${h.handoffs} overdrachten tussen rollen. Elke overdracht is een plek waar werk kan blijven liggen: kunnen er minder?</span></li>` : ''}`;
+  const h = hints(f), toon = h.list.slice(0, PC_MAX), rest = h.list.length - toon.length;
+  const sluit = !h.list.length && f.nodes.length > 2 && !f.nodes.some(n => !n.text.trim() && n.type !== 'start' && n.type !== 'einde');
+  const li = x => `<li class="pc-i">${ICON.info}<p class="pc-x">${esc(x.text)}</p><div class="pc-acts">${x.id || x.lane ? `<button type="button" class="pc-btn" data-act="licht" ${x.id ? `data-id="${x.id}"` : `data-lane="${x.lane}"`} aria-label="${esc('Toon ' + (x.id ? 'stap ' + (f.nodes.findIndex(n => n.id === x.id) + 1) : 'de rol') + ' in de stroom')}">Toon</button>` : ''}${x.stil ? `<button type="button" class="pc-btn rustig" data-act="negeer" data-key="${esc(x.key)}">Negeer</button>` : ''}</div></li>`;
+  const ok = sluit ? `<li class="pc-i ok">${ICON.info}<p class="pc-x">De stroom is sluitend${f.lanes.length && h.handoffs < 4 ? `, met ${h.handoffs} ${h.handoffs === 1 ? 'overdracht' : 'overdrachten'} tussen rollen` : ''}.</p></li>` : '';
+  const ov = h.handoffs >= 4 && toon.length < PC_MAX ? `<li class="pc-i">${ICON.info}<p class="pc-x">${h.handoffs} overdrachten tussen rollen. Elke overdracht is een plek waar werk kan blijven liggen: kunnen er minder?</p></li>` : '';
+  if (!toon.length && !ok && !ov) return '';
+  return `<div class="pc-kop"><h3 class="pc-t" id="pc-t" tabindex="-1">Procescheck</h3>${rest > 0 ? `<span class="pc-n">nog ${rest} ${rest === 1 ? 'tip' : 'tips'} na deze</span>` : ''}</div>
+    <ul class="pc-l" aria-labelledby="pc-t">${toon.map(li).join('')}${ok}${ov}</ul>`;
 }
 // Passend: zo breed als de kaart, maar op een breed scherm nooit kleiner dan 85%, zodat de tekst leesbaar blijft.
 const fitNow = () => state.fit == null ? window.innerWidth >= 700 : state.fit;
@@ -1954,7 +2022,7 @@ function render() {
   $('app').innerHTML = `
         ${f.voorbeeld ? `<div class="vb-bar vb-los"><div class="vb-text">${ICON.info}<span>Dit is een voorbeeld om de tool te verkennen. Het telt niet mee in andere tools.</span></div>
           <div class="vb-btns"><button type="button" class="vb-btn vb-wis" data-act="vb-wis">Wis voorbeeld</button><button type="button" class="vb-btn vb-eigen" data-act="vb-eigen">Maak er mijn eigen van</button></div></div>` : ''}
-    <div class="views" role="tablist" aria-label="Weergave">
+    ${bpmnMeldHTML(f)}<div class="views" role="tablist" aria-label="Weergave">
       <button role="tab" data-view="draw" aria-selected="${view === 'draw'}">Stroom</button>
       <button role="tab" data-view="edit" aria-selected="${view === 'edit'}">Lijst</button>
     </div>
@@ -1968,7 +2036,7 @@ function render() {
           <button type="button" data-act="add" data-type="keuze"><span class="shape d"></span>Keuze</button>
           <button type="button" data-act="add" data-type="einde"><span class="shape p"></span>Einde</button>
         </div>
-        <ul class="hints" id="hints">${hintsHTML(f)}</ul>
+        <div class="pc" id="hints">${hintsHTML(f)}</div>
       </section>
       <section class="card list-card" ${view === 'edit' ? '' : 'hidden'}>
         <div class="sub-h"><b><span class="stepno" aria-hidden="true">1</span>Rollen</b><button type="button" class="oc-import" data-oc-types="betrokkene" data-act="imp-lanes" hidden>${ICON.imp}Overnemen uit…</button></div>
@@ -2012,6 +2080,16 @@ function openNode(id, { focus = false } = {}) {
     if (r.bottom > room || r.top < 64) window.scrollBy({ top: r.top - Math.max(64, (room - r.height) / 2), behavior:'smooth' });
   }
   if (focus || matchMedia('(pointer:fine)').matches) { const t = sh && sh.querySelector('[data-f="text"]'); t && t.focus({ preventScroll:true }); }
+}
+// Toon (procescheck): de stap of rol licht even op in de tekening. De focus gaat naar de stap: Enter bewerkt ze.
+function toonLicht(id, isStap) {
+  if (state.view !== 'draw') { state.view = 'draw'; saveUi(); render(); }
+  licht = id; renderDrawingOnly();
+  const g = isStap ? document.querySelector(`#canvas [data-node="${id}"]`) : document.querySelector('#canvas .licht');
+  if (g) g.scrollIntoView({ block:'center', inline:'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  if (g && isStap) g.focus({ preventScroll:true });
+  clearTimeout(toonLicht.t);
+  toonLicht.t = setTimeout(() => { licht = null; document.querySelectorAll('#canvas .licht').forEach(x => x.remove()); }, 2600);
 }
 function closeNode() { const id = editId; editId = null; newLaneId = null; render(); const g = id && document.querySelector(`#canvas [data-node="${id}"]`); g && g.focus({ preventScroll:true }); }
 document.addEventListener('click', e => {
@@ -2057,7 +2135,7 @@ function refreshImports() { document.querySelectorAll('[data-oc-types]').forEach
 
 /* Voorbeeld */
 function example() {
-  const ex = state.flows.find(f => f.voorbeeld);
+  const ex = state.flows.find(f => f.voorbeeld && !f.schildpad);   // niet het voorbeeld dat uit het Schildpaddiagram kwam
   if (ex) { state.current = ex.id; save(); render(); return; }
   const L = { b:uid(), l:uid(), d:uid() }, N = Array.from({ length:9 }, uid);
   const mk = (i, type, text, lane, extra = {}) => ({ id:N[i], type, text, lane:L[lane], to:'auto', no: type === 'keuze' ? 'none' : undefined, yesLabel:'ja', noLabel:'nee', ...extra });
@@ -2126,6 +2204,8 @@ document.addEventListener('click', async e => {
     case 'vb-eigen': f.voorbeeld = false; save(); render(); toast('Het voorbeeld is nu van jou'); return;
     case 'fit': if (zoomZ != null) { state.fit = !zoomFit; zoomZ = null; } else state.fit = !fitNow(); saveUi(); render(); return;
     case 'goto': openNode(id, { focus:true }); return;
+    case 'licht': toonLicht(id || t.dataset.lane, !!id); return;
+    case 'negeer': { const k = t.dataset.key; if (!k) return; const undo = snapshot(); f.stil = (f.stil || []).filter(x => x !== k).concat(k).slice(-100); save(); renderDrawingOnly(); toast('Tip genegeerd', undo); const pt = $('pc-t'); pt && pt.focus({ preventScroll:true }); return; }
     case 'imp-lanes': {
       const al = ocAlBanen(f), alTel = ocAlTel(['betrokkene'], al);
       const picked = await ocShare.pick({ types:['betrokkene'], self:OC_ID, title:'Rollen overnemen', intro:'Kies rollen of betrokkenen. Elk wordt een baan in de tekening.', have:al });
@@ -2278,8 +2358,10 @@ document.addEventListener('click', async e => {
   const b = e.target.closest('#menu [data-act], [data-export]'); if (!b) return;
   if ($('menu')) $('menu').classList.remove('open');
   const f = cur(), act = b.dataset.export || b.dataset.act;
+  if (act === 'bpmn-open') { bpmnIn.click(); return; }
   if (!f && act !== 'wipe') { toast('Begin eerst met een stroom.'); return; }
   const base = fileBase(f);
+  if (act === 'bpmn') { bewaarBpmn(f); const mb = $('menu-btn'); mb && mb.focus(); return; }
   if (act === 'png' || act === 'pdf') {
     const w = layout(f).width;
     toast('Bezig met downloaden…');
@@ -2291,7 +2373,7 @@ document.addEventListener('click', async e => {
     try { await navigator.clipboard.writeText(act === 'copy' ? asText(f) : asMermaid(f)); toast(act === 'copy' ? 'Gekopieerd als tekst' : 'Diagramcode gekopieerd'); } catch { toast('Kopiëren lukte niet'); }
   } else if (act === 'dup') {
     const c = JSON.parse(JSON.stringify(f)), map = {};
-    c.id = uid(); c.voorbeeld = false; c.name = (f.name || 'Stroom') + ' (straks)';
+    c.id = uid(); c.voorbeeld = false; c.name = (f.name || 'Stroom') + ' (straks)'; delete c.schildpad;
     c.lanes.forEach(l => { const o = l.id; l.id = uid(); map[o] = l.id; });
     c.nodes.forEach(n => { const o = n.id; n.id = uid(); map[o] = n.id; });
     c.nodes.forEach(n => { if (map[n.lane]) n.lane = map[n.lane]; if (map[n.to]) n.to = map[n.to]; if (map[n.no]) n.no = map[n.no]; });
@@ -2306,6 +2388,364 @@ document.addEventListener('click', async e => {
 });
 $('oc-restart').addEventListener('click', () => { const b = document.querySelector('#menu [data-act="wipe"]'); if (b) b.click(); });
 
+/* ---------- BPMN: bewaren en openen ----------
+   BPMN is de wereldwijde standaard om processen te tekenen. "Bewaar als BPMN" schrijft een echt BPMN 2.0-bestand mét tekening:
+   dezelfde volgorde, rollen en sprongen als de Stroom, maar liggend (rollen als banen van links naar rechts, zoals gewoon is in BPMN),
+   zodat het in elk BPMN-programma netjes getekend opent. "Open BPMN" leest een bestand van elders in de eenvoudige vorm van de Stroom:
+   wat de Stroom niet kent, wordt vereenvoudigd, en één rustige melding zegt wat. Veilig: XML via DOMParser, nooit als HTML. */
+const BPMN = { m:'http://www.omg.org/spec/BPMN/20100524/MODEL', di:'http://www.omg.org/spec/BPMN/20100524/DI', dc:'http://www.omg.org/spec/DD/20100524/DC', wij:'Onder Constructie Stroom' };
+const xa = v => String(v == null ? '' : v).replace(/[\x00-\x08\x0B\x0C\x0E-\x1F￾￿]/g, '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&apos;' }[c]));
+function projectNaam() { try { const p = JSON.parse(localStorage.getItem('oc.project')); return p && typeof p.name === 'string' ? ocNaam(p.name).slice(0, 80) : ''; } catch { return ''; } }
+// Het bijhorende proces in het Schildpaddiagram: het gekoppelde, anders een proces met dezelfde naam (alleen lezen).
+function schildpadProcs() { try { const d = JSON.parse(localStorage.getItem('schildpad.v1') || 'null'); return d && Array.isArray(d.procs) ? d.procs.filter(p => p && typeof p === 'object') : []; } catch { return []; } }
+function schildpadVan(f) {
+  const ps = schildpadProcs();
+  return (f.schildpad && ps.find(p => p.id === f.schildpad)) || ps.find(p => !p.voorbeeld === !f.voorbeeld && ocSleutel(p.naam) && ocSleutel(p.naam) === ocSleutel(f.name)) || null;
+}
+const spItems = (p, k) => (p && p.vak && Array.isArray(p.vak[k]) ? p.vak[k] : []).map(i => ocNaam(i && i.text).slice(0, 200)).filter(Boolean);
+
+function bpmnXml(f) {
+  const L = layout(f), lanes = f.lanes, nL = Math.max(1, lanes.length), n = f.nodes.length;
+  const COL = 180, LH = 140, PX = 20, PL = 30, LL = lanes.length ? 30 : 0, CH2 = 14, DW = 120;
+  const proc = schildpadVan(f), invoer = spItems(proc, 'in'), uitvoer = spItems(proc, 'uit');
+  const ni = Math.min(4, invoer.length), nu = Math.min(4, uitvoer.length), DATA = ni || nu ? 110 : 0;
+  const PY = 20 + DATA, X0 = PX + PL + LL, band = L.side.length ? 18 + L.side.length * CH2 : 0, rowsH = nL * LH;
+  const poolW = Math.max(PL + LL + Math.max(1, n) * COL + 20, PL + LL + (ni + nu) * DW + 80), poolH = rowsH + band;
+  const maat = t => t === 'stap' ? [130, 64] : t === 'keuze' ? [50, 50] : [36, 36];
+  const P = new Map();
+  L.pos.forEach(p => { const [w, h] = maat(p.n.type); P.set(p.n.id, { n:p.n, i:p.i, cx: X0 + COL / 2 + p.i * COL, cy: PY + p.li * LH + LH / 2, w, h }); });
+  // Poorten onderaan: elke sprong vertrekt en komt aan op een eigen plek, zoals rechts in de Stroom
+  const dx = new Map(), ports = new Map();
+  L.side.forEach(e => [[e.from, e.to, 'a'], [e.to, e.from, 'b']].forEach(([me, other, end]) => { if (!ports.has(me.id)) ports.set(me.id, []); ports.get(me.id).push({ e, end, links: P.get(other.id).i < P.get(me.id).i }); }));
+  ports.forEach((list, k) => {
+    const p = P.get(k), max = p.n.type === 'stap' ? 50 : p.n.type === 'keuze' ? 14 : 10, step = Math.min(14, list.length > 1 ? 2 * max / (list.length - 1) : 0);
+    list.sort((x, y) => x.links === y.links ? (x.links ? x.e.ch - y.e.ch : y.e.ch - x.e.ch) : (x.links ? -1 : 1));
+    list.forEach((q, j) => { const d = (j - (list.length - 1) / 2) * step, o = dx.get(q.e) || {}; o[q.end] = d; dx.set(q.e, o); });
+  });
+  const onder = (p, d) => p.n.type === 'keuze' ? p.cy + p.h / 2 - Math.abs(d) : p.n.type === 'stap' ? p.cy + p.h / 2 : p.cy + Math.sqrt(Math.max(0, 324 - d * d));
+  const r = v => Math.round(v);
+  const flows = L.E.map((e, k) => {
+    const a = P.get(e.from.id), b = P.get(e.to.id); let pts, lab;
+    if (e.down) {
+      const x1 = a.cx + a.w / 2, x2 = b.cx - b.w / 2, mx = (x1 + x2) / 2;
+      pts = Math.abs(a.cy - b.cy) < 1 ? [[x1, a.cy], [x2, b.cy]] : [[x1, a.cy], [mx, a.cy], [mx, b.cy], [x2, b.cy]];
+      lab = [x1 + 4, a.cy - 20];
+    } else {
+      const d = dx.get(e) || {}, da = d.a || 0, db = d.b || 0, ty = PY + rowsH + 10 + e.ch * CH2;
+      pts = [[a.cx + da, onder(a, da)], [a.cx + da, ty], [b.cx + db, ty], [b.cx + db, onder(b, db)]];
+      lab = [a.cx + da + 5, onder(a, da) + 3];
+    }
+    return { id:'Pijl_' + (k + 1), e, pts, lab };
+  });
+  const uit = id => flows.filter(x => x.e.from.id === id), in_ = id => flows.filter(x => x.e.to.id === id);
+  const TAG = { start:'startEvent', stap:'task', keuze:'exclusiveGateway', einde:'endEvent' };
+  const nid = x => 'Stap_' + x.id, lid = l => 'Baan_' + l.id;
+  // Invoer en uitvoer van het Schildpaddiagram: gegevens bij de eerste en de laatste stap
+  const stappen = f.nodes.filter(x => x.type === 'stap'), t1 = stappen[0], tN = stappen[stappen.length - 1];
+  const data = [...invoer.slice(0, ni).map((t, k) => ({ id:'Invoer_' + (k + 1), t, in:true, x: X0 + 20 + k * DW })),
+    ...uitvoer.slice(0, nu).map((t, k) => ({ id:'Uitvoer_' + (k + 1), t, in:false, x: PX + poolW - 70 - (nu - 1 - k) * DW }))];
+  const plek = proc ? `"${ocNaam(proc.naam) || 'Nieuw proces'}"` : '';
+  const proj = f.voorbeeld ? '' : projectNaam(), d = new Date();
+  const doc = [proj && 'Project: ' + proj, `Getekend in de Stroom van Onder Constructie op ${d.toLocaleDateString('nl-BE', { day:'numeric', month:'long', year:'numeric' })}.`,
+    proc && (invoer.length || uitvoer.length) ? `Invoer en uitvoer komen uit het Schildpaddiagram ${plek}.` : '',
+    invoer.length > ni ? 'Meer invoer: ' + invoer.slice(ni).join('; ') + '.' : '', uitvoer.length > nu ? 'Meer uitvoer: ' + uitvoer.slice(nu).join('; ') + '.' : ''].filter(Boolean).join('\n');
+  const X = [];
+  X.push('<?xml version="1.0" encoding="UTF-8"?>');
+  X.push(`<bpmn:definitions xmlns:bpmn="${BPMN.m}" xmlns:bpmndi="${BPMN.di}" xmlns:dc="${BPMN.dc}" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Stroom_${xa(f.id)}" name="${xa(f.name || 'Stroom')}" targetNamespace="https://onderconstructie.github.io/stroom/" exporter="${BPMN.wij}" exporterVersion="1">`);
+  X.push(`  <bpmn:collaboration id="Samenwerking"><bpmn:participant id="Pool" name="${xa(f.name || 'Stroom')}" processRef="Proces" /></bpmn:collaboration>`);
+  X.push(`  <bpmn:process id="Proces" name="${xa(f.name || 'Stroom')}" isExecutable="false">`);
+  X.push(`    <bpmn:documentation>${xa(doc)}</bpmn:documentation>`);
+  if (lanes.length) {
+    X.push('    <bpmn:laneSet id="Banen">');
+    lanes.forEach((l, i) => { const refs = f.nodes.filter(x => x.lane === l.id); X.push(`      <bpmn:lane id="${lid(l)}"${l.name.trim() ? ` name="${xa(l.name)}"` : ''}>${refs.map(x => `<bpmn:flowNodeRef>${nid(x)}</bpmn:flowNodeRef>`).join('')}</bpmn:lane>`); });
+    X.push('    </bpmn:laneSet>');
+  }
+  f.nodes.forEach(x => {
+    const tag = TAG[x.type], inner = [...in_(x.id).map(q => `<bpmn:incoming>${q.id}</bpmn:incoming>`), ...uit(x.id).map(q => `<bpmn:outgoing>${q.id}</bpmn:outgoing>`)];
+    if (x === t1 && ni || x === tN && nu) inner.push(`<bpmn:property id="Eigen_${xa(x.id)}" name="__targetRef_placeholder" />`);
+    if (x === t1) data.filter(o => o.in).forEach(o => inner.push(`<bpmn:dataInputAssociation id="Naar_${o.id}"><bpmn:sourceRef>${o.id}</bpmn:sourceRef><bpmn:targetRef>Eigen_${xa(x.id)}</bpmn:targetRef></bpmn:dataInputAssociation>`));
+    if (x === tN) data.filter(o => !o.in).forEach(o => inner.push(`<bpmn:dataOutputAssociation id="Van_${o.id}"><bpmn:targetRef>${o.id}</bpmn:targetRef></bpmn:dataOutputAssociation>`));
+    X.push(`    <bpmn:${tag} id="${nid(x)}"${x.text.trim() ? ` name="${xa(x.text)}"` : ''}>${inner.join('')}</bpmn:${tag}>`);
+  });
+  flows.forEach(q => {
+    const twee = q.e.from.type === 'keuze' && uit(q.e.from.id).length === 2;
+    const cond = twee && q.e.label ? `<bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${xa(q.e.label)}</bpmn:conditionExpression>` : '';
+    X.push(`    <bpmn:sequenceFlow id="${q.id}"${q.e.label ? ` name="${xa(q.e.label)}"` : ''} sourceRef="${nid(q.e.from)}" targetRef="${nid(q.e.to)}"${cond ? `>${cond}</bpmn:sequenceFlow>` : ' />'}`);
+  });
+  data.forEach(o => {
+    X.push(`    <bpmn:dataObject id="Gegeven_${o.id}" />`);
+    X.push(`    <bpmn:dataObjectReference id="${o.id}" name="${xa(o.t)}" dataObjectRef="Gegeven_${o.id}"><bpmn:documentation>${xa(`${o.in ? 'Invoer' : 'Uitvoer'} uit het Schildpaddiagram ${plek}.`)}</bpmn:documentation></bpmn:dataObjectReference>`);
+  });
+  X.push('  </bpmn:process>');
+  // De tekening
+  const B = (x, y, w, h) => `<dc:Bounds x="${r(x)}" y="${r(y)}" width="${r(w)}" height="${r(h)}" />`;
+  const lijnen = (t, per) => Math.min(4, Math.max(1, Math.ceil(String(t || '').length / per)));
+  X.push('  <bpmndi:BPMNDiagram id="Tekening"><bpmndi:BPMNPlane id="Vlak" bpmnElement="Samenwerking">');
+  X.push(`    <bpmndi:BPMNShape id="Pool_di" bpmnElement="Pool" isHorizontal="true">${B(PX, PY, poolW, poolH)}</bpmndi:BPMNShape>`);
+  lanes.forEach((l, i) => X.push(`    <bpmndi:BPMNShape id="${lid(l)}_di" bpmnElement="${lid(l)}" isHorizontal="true">${B(PX + PL, PY + i * LH, poolW - PL, LH + (i === lanes.length - 1 ? band : 0))}</bpmndi:BPMNShape>`));
+  P.forEach(p => {
+    const { n:x, cx, cy, w, h } = p; let lab = '';
+    if (x.type !== 'stap' && x.text.trim()) {
+      const lh = lijnen(x.text, x.type === 'keuze' ? 20 : 16) * 14;
+      // een gebeurtenis met een sprong onderaan krijgt haar naam erboven, zodat geen pijl door de tekst loopt
+      const boven = x.type === 'keuze' || ports.has(x.id);
+      lab = `<bpmndi:BPMNLabel>${boven ? B(cx - (x.type === 'keuze' ? 70 : 55), cy - h / 2 - 4 - lh, x.type === 'keuze' ? 140 : 110, lh) : B(cx - 55, cy + h / 2 + 4, 110, lh)}</bpmndi:BPMNLabel>`;
+    }
+    X.push(`    <bpmndi:BPMNShape id="${nid(x)}_di" bpmnElement="${nid(x)}"${x.type === 'keuze' ? ' isMarkerVisible="true"' : ''}>${B(cx - w / 2, cy - h / 2, w, h)}${lab}</bpmndi:BPMNShape>`);
+  });
+  flows.forEach(q => X.push(`    <bpmndi:BPMNEdge id="${q.id}_di" bpmnElement="${q.id}">${q.pts.map(([x, y]) => `<di:waypoint x="${r(x)}" y="${r(y)}" />`).join('')}${q.e.label ? `<bpmndi:BPMNLabel>${B(q.lab[0], q.lab[1], q.e.label.length * 7 + 10, 14)}</bpmndi:BPMNLabel>` : ''}</bpmndi:BPMNEdge>`));
+  data.forEach(o => {
+    const lh = Math.min(2, lijnen(o.t, 16)) * 14;   // de naam boven het document, de lijn vertrekt onderaan
+    X.push(`    <bpmndi:BPMNShape id="${o.id}_di" bpmnElement="${o.id}">${B(o.x, 48, 36, 50)}<bpmndi:BPMNLabel>${B(o.x - 37, 44 - lh, 110, lh)}</bpmndi:BPMNLabel></bpmndi:BPMNShape>`);
+    const t = P.get((o.in ? t1 : tN).id), a = [o.x + 18, 98], b = [t.cx + (o.in ? -20 : 20), t.cy - t.h / 2];
+    X.push(`    <bpmndi:BPMNEdge id="${o.in ? 'Naar_' : 'Van_'}${o.id}_di" bpmnElement="${o.in ? 'Naar_' : 'Van_'}${o.id}">${(o.in ? [a, b] : [b, a]).map(([x, y]) => `<di:waypoint x="${r(x)}" y="${r(y)}" />`).join('')}</bpmndi:BPMNEdge>`);
+  });
+  X.push('  </bpmndi:BPMNPlane></bpmndi:BPMNDiagram>');
+  X.push('</bpmn:definitions>');
+  return X.join('\n');
+}
+
+/* Open BPMN: een bestand van elders wordt een stroom. Geeft { flow, meld } terug, of gooit een fout met een vriendelijke tekst. */
+const BPMN_TAAK = new Set(['task', 'userTask', 'serviceTask', 'manualTask', 'scriptTask', 'sendTask', 'receiveTask', 'businessRuleTask', 'callActivity']);
+const BPMN_DEEL = new Set(['subProcess', 'transaction', 'adHocSubProcess']);
+const BPMN_POORT = new Set(['exclusiveGateway', 'inclusiveGateway', 'parallelGateway', 'complexGateway', 'eventBasedGateway']);
+const BPMN_GEB = new Set(['startEvent', 'endEvent', 'intermediateCatchEvent', 'intermediateThrowEvent', 'boundaryEvent']);
+// soort gebeurtenis: [enkelvoud, meervoud, tekst bij wachten/ontvangen, tekst bij sturen]
+const BPMN_SOORT = { timer:['timer', 'timers', 'Wachten', 'Wachten'], message:['bericht', 'berichten', 'Bericht ontvangen', 'Bericht sturen'],
+  signal:['signaal', 'signalen', 'Signaal ontvangen', 'Signaal geven'], conditional:['voorwaarde', 'voorwaarden', 'Wachten tot', 'Wachten tot'],
+  escalation:['escalatie', 'escalaties', 'Escalatie', 'Escaleren'], error:['fout', 'fouten', 'Fout', 'Fout melden'], compensate:['herstelactie', 'herstelacties', 'Herstellen', 'Herstellen'],
+  link:['verwijzing', 'verwijzingen', 'Verder vanaf', 'Ga verder bij'], cancel:['annulering', 'annuleringen', 'Annuleren', 'Annuleren'], terminate:['volledige stop', 'volledige stops', 'Stop', 'Stop alles'] };
+class BpmnFout extends Error {}
+function leesBpmn(tekst, bestandsnaam) {
+  if (typeof tekst !== 'string' || !tekst.trim()) throw new BpmnFout('Dit bestand is leeg.');
+  if (tekst.length > 5e6) throw new BpmnFout('Dit bestand is te groot om te openen (meer dan 5 MB).');
+  if (/<!ENTITY/i.test(tekst)) throw new BpmnFout('Dit bestand bevat iets dat de Stroom om veiligheidsredenen niet opent.');
+  const doc = new DOMParser().parseFromString(tekst, 'application/xml');
+  if (doc.getElementsByTagName('parsererror').length) throw new BpmnFout('Dit bestand is beschadigd of geen BPMN-bestand.');
+  const defs = doc.documentElement;
+  if (!defs || defs.namespaceURI !== BPMN.m || defs.localName !== 'definitions') throw new BpmnFout('Dit is geen BPMN-bestand. Kies een bestand dat eindigt op .bpmn.');
+  const wij = defs.getAttribute('exporter') === BPMN.wij;
+  const kids = (el, ns = BPMN.m) => [...el.children].filter(c => c.namespaceURI === ns);
+  const naam = el => ocNaam(el && el.getAttribute('name')).slice(0, 300);
+  // De tekening (als die er is): plaats van elk element
+  const di = new Map(); let staand = false;
+  [...doc.getElementsByTagNameNS(BPMN.di, 'BPMNShape')].forEach(s => {
+    const b = [...s.children].find(c => c.namespaceURI === BPMN.dc && c.localName === 'Bounds'); if (!b) return;
+    const v = k => parseFloat(b.getAttribute(k)) || 0, r = { x:v('x'), y:v('y'), w:v('width'), h:v('height') };
+    r.cx = r.x + r.w / 2; r.cy = r.y + r.h / 2; di.set(s.getAttribute('bpmnElement'), r);
+    if (s.getAttribute('isHorizontal') === 'false') staand = true;
+  });
+  const tel = {}, plus = (k, v = 1) => { tel[k] = (tel[k] || 0) + v; };
+  // Pools: deelnemers met een proces; zonder samenwerking elk proces apart
+  const procs = kids(defs).filter(e => e.localName === 'process'), byId = new Map(procs.map(p => [p.getAttribute('id'), p]));
+  const collab = kids(defs).filter(e => e.localName === 'collaboration');
+  let pools = [];
+  collab.forEach(c => kids(c).filter(e => e.localName === 'participant').forEach(pt => { const pr = byId.get(pt.getAttribute('processRef')); if (pr && !pools.some(x => x.proc === pr)) pools.push({ naam: naam(pt) || naam(pr), proc: pr, id: pt.getAttribute('id') }); }));
+  procs.forEach(pr => { if (!pools.some(x => x.proc === pr)) pools.push({ naam: naam(pr), proc: pr, id: pr.getAttribute('id') }); });
+  collab.forEach(c => plus('bericht-pools', kids(c).filter(e => e.localName === 'messageFlow').length));
+  // Alleen de rechtstreekse inhoud van een proces (wat in een deelproces zit, blijft daarbinnen)
+  const isKnoop = e => BPMN_TAAK.has(e.localName) || BPMN_DEEL.has(e.localName) || BPMN_POORT.has(e.localName) || BPMN_GEB.has(e.localName);
+  pools = pools.filter(pl => kids(pl.proc).some(isKnoop));
+  if (!pools.length) throw new BpmnFout('In dit bestand staat geen proces met stappen.');
+  if (pools.length > 1) { const ps = pools.map(p => di.get(p.id)).filter(Boolean); if (ps.length === pools.length) pools.sort((a, b) => di.get(a.id).y - di.get(b.id).y || di.get(a.id).x - di.get(b.id).x); }
+  const knopen = [], K = new Map(), banen = [];
+  pools.forEach((pl, pi) => {
+    // Rollen: de onderste banen (een baan in een baan telt als één rol), in de volgorde van de tekening
+    const blad = [], loop = (set, voor) => kids(set).filter(e => e.localName === 'lane').forEach(l => {
+      const sub = kids(l).find(e => e.localName === 'childLaneSet'), nm = naam(l);
+      if (sub && kids(sub).some(e => e.localName === 'lane')) loop(sub, nm || voor); else blad.push({ el:l, naam: nm || voor || '' });
+    });
+    kids(pl.proc).filter(e => e.localName === 'laneSet').forEach(s => loop(s, ''));
+    const dl = blad.map(b => di.get(b.el.getAttribute('id')));
+    if (dl.every(Boolean)) blad.sort((a, b) => { const p = di.get(a.el.getAttribute('id')), q = di.get(b.el.getAttribute('id')); return staand ? p.x - q.x || p.y - q.y : p.y - q.y || p.x - q.x; });
+    const meer = pools.length > 1, eigen = blad.map(b => { const ln = { id:uid(), name: (meer ? [pl.naam, b.naam].filter(Boolean).join(' · ') : b.naam).slice(0, 300) }; banen.push(ln); return ln; });
+    let poolBaan = null;
+    if (meer && !blad.length) { poolBaan = { id:uid(), name: pl.naam || 'Pool ' + (pi + 1) }; banen.push(poolBaan); }
+    const baanVan = new Map();
+    blad.forEach((b, i) => kids(b.el).filter(e => e.localName === 'flowNodeRef').forEach(r => baanVan.set(ocNaam(r.textContent), eigen[i].id)));
+    kids(pl.proc).forEach(e => {
+      const t = e.localName, id = e.getAttribute('id'); if (!id || !isKnoop(e) || K.has(id)) return;
+      const defsE = kids(e).filter(c => /EventDefinition$/.test(c.localName)).map(c => c.localName.replace(/EventDefinition$/, ''));
+      const soort = defsE.length === 1 && BPMN_SOORT[defsE[0]] ? defsE[0] : defsE.length ? 'meer' : '';
+      const k = { id, el:e, tag:t, pool:pi, naam:naam(e), lane: baanVan.get(id) || (poolBaan && poolBaan.id) || null, outs:[], ins:0, def:e.getAttribute('default') || '', plek: di.get(id) };
+      if (BPMN_TAAK.has(t)) { k.kind = 'stap'; k.text = k.naam; }
+      else if (BPMN_DEEL.has(t)) { k.kind = 'stap'; k.text = k.naam || 'Deelproces'; plus('deel'); }
+      else if (BPMN_POORT.has(t)) { k.kind = 'poort'; k.text = k.naam; }
+      else if (t === 'startEvent') { k.kind = 'start'; k.text = k.naam; if (soort) plus('rand'); }
+      else if (t === 'endEvent') { k.kind = 'einde'; k.text = k.naam; if (soort) plus('rand'); }
+      else {
+        const s = BPMN_SOORT[soort], gooi = t === 'intermediateThrowEvent';
+        const voor = s ? s[gooi ? 3 : 2] : soort === 'meer' ? 'Gebeurtenis' : '';
+        k.kind = 'stap'; k.text = voor ? (k.naam ? `${voor}: ${k.naam}` : voor) : k.naam;
+        if (t === 'boundaryEvent') { const aan = pl.proc.querySelector(`[id="${CSS.escape(e.getAttribute('attachedToRef') || '')}"]`); k.text = `${k.text || 'Als er iets gebeurt'} (bij ${naam(aan) || 'een stap'})`.slice(0, 300); plus('grens'); }
+        else if (s || soort === 'meer') plus('soort:' + (s ? soort : 'meer'));
+      }
+      k.text = String(k.text || '').slice(0, 300);
+      knopen.push(k); K.set(id, k);
+    });
+    kids(pl.proc).filter(e => e.localName === 'sequenceFlow').forEach(sf => {
+      const a = K.get(sf.getAttribute('sourceRef')), b = K.get(sf.getAttribute('targetRef')); if (!a || !b) return;
+      a.outs.push({ to:b, naam: naam(sf).slice(0, 60), id: sf.getAttribute('id') || '', cond: kids(sf).some(c => c.localName === 'conditionExpression') });
+    });
+    if (!wij) plus('weg', kids(pl.proc).filter(e => /^(dataObjectReference|dataStoreReference|textAnnotation|group)$/.test(e.localName)).length);
+  });
+  if (knopen.length > 200) throw new BpmnFout('Dit proces is te groot voor de Stroom (meer dan 200 stappen).');
+  let alle = knopen.slice();
+  const weg = k => { alle = alle.filter(x => x !== k); };
+  if (!wij) {
+    // 1. Meer dan één pijl uit een stap of start: daar splitst het proces. Een poort ertussen maakt dat zichtbaar.
+    alle.slice().forEach(k => {
+      if (k.kind === 'poort' || k.kind === 'einde' || k.outs.length < 2) return;
+      const p = { id:k.id + '~', kind:'poort', tag: k.outs.every(o => o.cond || o.naam) ? 'exclusiveGateway' : 'parallelGateway', text:'', naam:'', lane:k.lane, pool:k.pool, outs:k.outs, def:k.def, plek: k.plek && { ...k.plek, cx:k.plek.cx + 0.5, cy:k.plek.cy } };
+      k.outs = [{ to:p, naam:'' }]; alle.splice(alle.indexOf(k) + 1, 0, p);
+    });
+    const telIn = () => { alle.forEach(k => k.ins = 0); alle.forEach(k => k.outs.forEach(o => o.to.ins++)); };
+    const bereik = (van, stop) => { const d = new Map([[van, 0]]), q = [van]; while (q.length) { const x = q.shift(); if (x === stop) continue; x.outs.forEach(o => { if (!d.has(o.to)) { d.set(o.to, d.get(x) + 1); q.push(o.to); } }); } return d; };
+    // 2. Parallel: de sporen komen na elkaar, tot waar ze weer samenkomen. Geen samenkomst: een keuze met "tegelijk".
+    telIn();
+    alle.filter(k => k.kind === 'poort' && k.tag === 'parallelGateway' && k.outs.length > 1).forEach(p => {
+      const sporen = p.outs.map(o => bereik(o.to, p));
+      const kand = [...sporen[0].keys()].filter(j => j !== p && j.ins > 1 && sporen.every(s => s.has(j)));
+      if (!kand.length) { p.parallel = true; return; }
+      const J = kand.sort((a, b) => sporen.reduce((s, m) => s + m.get(a), 0) - sporen.reduce((s, m) => s + m.get(b), 0))[0];
+      const echte = p.outs.filter(o => o.to !== J), voor = echte.map(o => bereik(o.to, J));   // een spoor dat meteen samenkomt, telt niet
+      echte.forEach((o, i) => { if (i === echte.length - 1) return;
+        voor[i].forEach((_, u) => { if (u === J || voor.some((v, j) => j !== i && v.has(u))) return; u.outs.forEach(x => { if (x.to === J) x.to = echte[i + 1].to; }); }); });
+      p.outs = [echte[0] || p.outs[0]]; p.doorgang = true; plus('parallel');
+    });
+    // 3. Een poort met één uitgang (samenkomen, of zonder naam): weg, de pijlen gaan rechtstreeks verder
+    telIn();
+    for (let ronde = 0; ronde < 400; ronde++) {
+      const g = alle.find(k => k.kind === 'poort' && k.outs.length === 1 && k.outs[0].to !== k && (k.doorgang || !k.text || k.ins > 1 || k.tag === 'parallelGateway')); if (!g) break;
+      const o = g.outs[0];
+      alle.forEach(k => k.outs.forEach(x => { if (x.to === g) { x.to = o.to; if (!x.naam) x.naam = o.naam; } }));
+      weg(g); telIn();
+    }
+    // 4. Een poort zonder uitgang wordt een einde
+    alle.forEach(k => { if (k.kind === 'poort' && !k.outs.length) { k.kind = 'einde'; k.text = k.text || 'Einde'; } });
+  }
+  // 5. Poorten worden keuzes. Meer dan twee uitwegen: een reeks keuzes, zodat elke weg blijft.
+  alle.slice().forEach(k => {
+    if (k.kind !== 'poort') return;
+    k.kind = 'keuze';
+    if (wij) return;
+    if (k.tag === 'inclusiveGateway' || k.tag === 'complexGateway' || k.tag === 'eventBasedGateway') plus('enof');
+    if (k.parallel) plus('tegelijk');
+    const vraag = /\?\s*$/.test(k.text), ja = /^(ja|yes|j|y|oui|waar|true|ok|akkoord|goed)\b/i, nee = /^(nee|neen|no|n|non|niet|false|onwaar|anders|fout)\b/i;
+    let outs = k.outs.slice();
+    // Welke weg is "ja"? Een naam die ja zegt; de standaardweg is "nee"; anders de volgorde in het bestand.
+    outs.sort((a, b) => (ja.test(b.naam) - ja.test(a.naam)) || (nee.test(a.naam) - nee.test(b.naam)) || ((a.id && a.id === k.def) - (b.id && b.id === k.def)));
+    const lab = (o, i) => (o.naam || (k.parallel ? 'tegelijk' : vraag ? (i ? 'nee' : 'ja') : 'weg ' + (i + 1))).slice(0, 20);
+    k.ja = lab(outs[0], 0); k.nee = outs[1] ? lab(outs[1], 1) : 'nee';
+    k.outs = outs;
+    if (outs.length > 2) {
+      // k: eerste weg of anders → z1: tweede weg of anders → … → laatste keuze: de laatste twee wegen
+      plus('reeks');
+      let vorige = k;
+      for (let i = 1; i < outs.length - 1; i++) {
+        const z = { id:k.id + '~' + i, kind:'keuze', text:k.text, lane:k.lane, pool:k.pool, plek: k.plek && { ...k.plek, cx:k.plek.cx + i * 0.01, cy:k.plek.cy }, ja: lab(outs[i], i), nee: lab(outs[i + 1], i + 1), outs:[outs[i], outs[i + 1]] };
+        vorige.outs = [outs[i - 1], { to:z, naam:'' }]; vorige.nee = 'anders';
+        alle.splice(alle.indexOf(vorige) + 1, 0, z); vorige = z;
+      }
+    }
+  });
+  alle.forEach(k => { if (k.kind !== 'keuze' && k.outs.length > 1) k.outs = k.outs.slice(0, 1); });   // vangnet
+  if (!wij) plus('naam-weg', alle.filter(k => k.kind !== 'keuze').reduce((s, k) => s + k.outs.filter(o => o.naam).length, 0));
+  // Volgorde: zoals getekend (pool, dan van links naar rechts), anders zoals het proces loopt
+  if (alle.every(k => k.plek)) {
+    const as = staand ? ['cy', 'cx'] : ['cx', 'cy'];
+    alle.sort((a, b) => a.pool - b.pool || a.plek[as[0]] - b.plek[as[0]] || a.plek[as[1]] - b.plek[as[1]]);
+  } else {
+    const gezien = new Set(), uitk = [];
+    const dfs = k => { const st = [k]; while (st.length) { const x = st.pop(); if (gezien.has(x) || !alle.includes(x)) continue; gezien.add(x); uitk.push(x); x.outs.slice().reverse().forEach(o => st.push(o.to)); } };
+    alle.filter(k => k.kind === 'start').forEach(dfs); alle.forEach(dfs);
+    alle = uitk;
+  }
+  // Naar de Stroom
+  const ids = new Map(alle.map(k => [k, uid()]));
+  const naar = (k, o, i) => !o || !ids.has(o.to) ? null : alle[i + 1] === o.to ? 'auto' : ids.get(o.to);
+  const nodes = alle.map((k, i) => {
+    const type = k.kind === 'poort' ? 'keuze' : k.kind, x = { id:ids.get(k), type, text:k.text || '', lane:k.lane, to:'auto', no: type === 'keuze' ? 'none' : undefined, yesLabel:'ja', noLabel:'nee' };
+    if (type === 'keuze') {
+      let [a, b] = k.outs;
+      if (wij && a && !b && / \/ /.test(a.naam || '')) { const [j, n] = a.naam.split(' / '); x.yesLabel = j.slice(0, 20); x.noLabel = n.slice(0, 20); b = a; }
+      else if (wij) { x.yesLabel = (a && a.naam || 'ja').slice(0, 20); x.noLabel = (b && b.naam || 'nee').slice(0, 20); }
+      else { x.yesLabel = k.ja || 'ja'; x.noLabel = k.nee || 'nee'; }
+      x.to = naar(k, a, i) || 'none'; x.no = b && ids.has(b.to) ? ids.get(b.to) : 'none';
+    } else if (type !== 'einde') x.to = naar(k, k.outs[0], i) || (i === alle.length - 1 ? 'auto' : 'none');
+    return x;
+  });
+  const gebruikt = banen.filter(l => l.name || nodes.some(x => x.lane === l.id));
+  const naamDef = ocNaam(defs.getAttribute('name'));
+  const titel = (pools.length === 1 && (pools[0].naam || naam(pools[0].proc))) || naamDef || ocNaam(String(bestandsnaam || '').replace(/\.(bpmn|xml)$/i, '').replace(/[-_]+/g, ' ')) || 'Proces uit BPMN';
+  // De melding: wat er vereenvoudigd is, in gewone woorden
+  const m = [], een = (n, a, b) => `${n} ${n === 1 ? a : b}`;
+  if (pools.length > 1) m.push(`${pools.length} pools werden samengevoegd: elke pool is nu een rol.`);
+  const soorten = Object.keys(BPMN_SOORT).filter(s => tel['soort:' + s]).map(s => een(tel['soort:' + s], BPMN_SOORT[s][0], BPMN_SOORT[s][1]));
+  if (tel['soort:meer']) soorten.push(een(tel['soort:meer'], 'andere gebeurtenis', 'andere gebeurtenissen'));
+  if (soorten.length) { const tot = Object.keys(tel).filter(k => k.startsWith('soort:')).reduce((s, k) => s + tel[k], 0); m.push(`${soorten.length > 1 ? soorten.slice(0, -1).join(', ') + ' en ' + soorten[soorten.length - 1] : soorten[0]} ${tot === 1 ? 'werd een gewone stap' : 'werden gewone stappen'}.`); }
+  if (tel.grens) m.push(`${een(tel.grens, 'gebeurtenis aan de rand van een taak werd een losse stap', 'gebeurtenissen aan de rand van een taak werden losse stappen')}: verbind ze zelf.`);
+  if (tel.rand) m.push(`${een(tel.rand, 'start of einde werd', 'starts of eindes werden')} gewoon: de soort (bv. timer of bericht) viel weg.`);
+  if (tel.deel) m.push(`${een(tel.deel, 'deelproces werd', 'deelprocessen werden')} één stap.`);
+  if (tel.parallel) m.push(`Sporen die tegelijk liepen, staan nu na elkaar (${een(tel.parallel, 'keer', 'keer')}).`);
+  if (tel.tegelijk) m.push(`${een(tel.tegelijk, 'splitsing zonder samenkomst werd een keuze', 'splitsingen zonder samenkomst werden keuzes')} met "tegelijk".`);
+  if (tel.enof) m.push(`${een(tel.enof, 'en/of-keuze werd een gewone keuze', 'en/of-keuzes werden gewone keuzes')}.`);
+  if (tel.reeks) m.push(`${een(tel.reeks, 'keuze met meer dan twee uitwegen werd', 'keuzes met meer dan twee uitwegen werden')} een reeks keuzes.`);
+  if (tel['bericht-pools']) m.push(`${een(tel['bericht-pools'], 'bericht tussen pools viel', 'berichten tussen pools vielen')} weg.`);
+  if (tel['naam-weg']) m.push(`${een(tel['naam-weg'], 'naam bij een pijl viel', 'namen bij pijlen vielen')} weg.`);
+  if (tel.weg) m.push(`${een(tel.weg, 'notitie of gegeven viel', 'notities of gegevens vielen')} weg.`);
+  return { flow: { id:uid(), name:titel.slice(0, 80), lanes:gebruikt, nodes }, meld:m };
+}
+
+/* Bediening: de keuzes in het menu ⋮ en een eigen bestandskiezer voor .bpmn */
+let bpmnMeld = null;   // { id, tekst }: de melding na Open BPMN, tot je ze sluit of een andere stroom kiest
+const bpmnIn = Object.assign(document.createElement('input'), { type:'file', accept:'.bpmn,.xml,application/xml,text/xml', hidden:true, tabIndex:-1 });
+bpmnIn.setAttribute('aria-hidden', 'true'); document.body.appendChild(bpmnIn);
+function bewaarBpmn(f) {
+  save2(new Blob([bpmnXml(f)], { type:'application/xml' }), fileBase(f) + '.bpmn');
+  const p = schildpadVan(f), mee = p && (spItems(p, 'in').length || spItems(p, 'uit').length);
+  toast(mee ? 'BPMN gedownload, met de invoer en uitvoer uit het Schildpaddiagram' : 'BPMN gedownload. Het opent in elk BPMN-programma.');
+}
+bpmnIn.addEventListener('change', async () => {
+  const file = bpmnIn.files && bpmnIn.files[0]; bpmnIn.value = ''; if (!file) return;
+  let r;
+  try { if (file.size > 5e6) throw new BpmnFout('Dit bestand is te groot om te openen (meer dan 5 MB).'); r = leesBpmn(await file.text(), file.name); }
+  catch (err) { toast(err instanceof BpmnFout ? err.message : 'Dit bestand kan de Stroom niet openen. Is het een BPMN-bestand?'); const mb = $('menu-btn'); mb && mb.focus(); return; }
+  const f = r.flow, al = new Set(state.flows.map(x => ocSleutel(x.name)));
+  for (let i = 2; al.has(ocSleutel(f.name)) && i < 99; i++) f.name = `${r.flow.name.replace(/ \(\d+\)$/, '')} (${i})`.slice(0, 80);
+  state.flows.push(valid({ flows:[f] }).flows[0]); state.current = f.id; editId = null; zoomZ = null; state.view = 'draw';
+  const ns = f.nodes.filter(x => x.type === 'stap').length, nk = f.nodes.filter(x => x.type === 'keuze').length;
+  bpmnMeld = { id:f.id, kop:`Geopend uit BPMN: ${ns} ${ns === 1 ? 'stap' : 'stappen'}${nk ? `, ${nk} ${nk === 1 ? 'keuze' : 'keuzes'}` : ''}${f.lanes.length ? `, ${f.lanes.length} ${f.lanes.length === 1 ? 'rol' : 'rollen'}` : ''}.`, tekst: r.meld.length ? 'Vereenvoudigd: ' + r.meld.join(' ') : 'Alles kwam mee.' };
+  save(); render();
+  const m = $('bpmn-meld'); if (m) m.focus({ preventScroll:false });
+});
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-act="bpmn-ok"]'); if (!b) return;
+  bpmnMeld = null; render(); const k = document.querySelector('.draw-head .card-title'); if (k) { k.tabIndex = -1; k.focus(); }
+});
+const bpmnMeldHTML = f => bpmnMeld && bpmnMeld.id === f.id ? `<div class="bpmn-meld" id="bpmn-meld" role="status" tabindex="-1">${ICON.info}<p><b>${esc(bpmnMeld.kop)}</b> ${esc(bpmnMeld.tekst)}</p><button type="button" data-act="bpmn-ok">Begrepen</button></div>` : '';
+
+/* Vanuit het Schildpaddiagram (?van=schildpad&proces=<id>): het verloop van dat proces, half ingevuld.
+   Start = waar het begint (of de eerste invoer), einde = waar het stopt (of de eerste uitvoer), een baan per rol uit "Met wie?",
+   en twee lege stappen. Bestaat die stroom al (gekoppeld, of dezelfde naam in hetzelfde project), dan opent die: nooit dubbel. */
+function vanSchildpad() {
+  let pid = '';
+  try { const u = new URL(location.href); if (u.searchParams.get('van') !== 'schildpad' || !u.searchParams.has('proces')) return; pid = u.searchParams.get('proces') || '';
+    u.searchParams.delete('van'); u.searchParams.delete('proces'); history.replaceState(history.state, '', u.pathname + u.search + u.hash); } catch { return; }
+  const p = schildpadProcs().find(x => x.id === pid);
+  if (!p) { setTimeout(() => toast('Dat proces staat niet meer in het Schildpaddiagram.'), 80); return; }
+  const naam = ocNaam(p.naam).slice(0, 80) || 'Nieuw proces', proj = p.voorbeeld ? '' : projectNaam();
+  let f = state.flows.find(x => x.schildpad === p.id)
+    || state.flows.find(x => !x.schildpad && !x.voorbeeld === !p.voorbeeld && ocSleutel(x.name) === ocSleutel(naam) && (!x.proj || !proj || x.proj === proj));
+  if (f) { f.schildpad = p.id; state.current = f.id; editId = null; state.view = 'draw'; save(); render(); setTimeout(() => toast(`Het verloop van ${naam} staat open.`), 80); return; }
+  const lanes = spItems(p, 'wie').slice(0, 8).map(nm => ({ id:uid(), name:nm, van:'schildpad' })), l0 = lanes[0] ? lanes[0].id : null;
+  const begin = ocNaam(p.start) || spItems(p, 'in')[0] || 'Start', eind = ocNaam(p.einde) || spItems(p, 'uit')[0] || 'Einde';
+  f = { id:uid(), name:naam, schildpad:p.id, ...(proj ? { proj } : {}), ...(p.voorbeeld ? { voorbeeld:true } : {}), lanes,
+    nodes:[node('start', begin.slice(0, 300), l0), node('stap', '', l0), node('stap', '', l0), node('einde', eind.slice(0, 300), l0)] };
+  state.flows.push(f); state.current = f.id; state.view = 'draw'; save();
+  openNode(f.nodes[1].id, { focus:true });
+  setTimeout(() => toast('Het verloop staat klaar: start, einde en rollen uit het Schildpaddiagram. Vul de stappen in.'), 80);
+}
 
 /* ---------- Zoomen in de tekening: knijpen met twee vingers (gsm, tablet) of Ctrl + scrollwiel (computer) ----------
    Eén vinger schuift zoals altijd. Tijdens het knijpen schaalt alleen het beeld (vlot); bij het loslaten wordt de
@@ -2406,13 +2846,14 @@ window.ocPk = ocProjectkiezer('#ocKiezer', {
   woord: 'stroom', meervoud: 'stromen', lidwoord: 'de', projectnaam: false,
   lijst: () => state.flows.map(x => { const n = x.nodes.filter(k => k.type !== 'start' && k.type !== 'einde').length; return { id: x.id, naam: x.name || 'Stroom', voorbeeld: !!x.voorbeeld, info: n ? `${n} ${n === 1 ? 'stap' : 'stappen'}` : 'leeg' }; }),
   actief: () => (cur() || {}).id,
-  kies: id => { state.current = id; save(); render(); },
+  kies: id => { state.current = id; bpmnMeld = null; save(); render(); },
   nieuw: () => { const x = newFlow('Nieuwe stroom'); state.flows.push(x); state.current = x.id; save(); render(); },   // daarna vraagt de kiezer de naam
   hernoem: n => { const f = cur(); if (!f) return; f.name = n.slice(0, 80); save(); render(); },
   verwijder: () => delFlow(),
   magWeg: () => true   // zoals de vuilbak: ook de laatste stroom mag weg, dan staat de startkaart er weer
 });
 render();
+vanSchildpad();
 setTimeout(publish, 0);
 </script>
 <script>
