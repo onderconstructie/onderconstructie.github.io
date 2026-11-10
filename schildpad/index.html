@@ -272,6 +272,19 @@ textarea.grow { resize:none; overflow:hidden; min-height:44px; }
 .shell .flow { display:grid; gap:0.625rem; padding:0.625rem; border-radius:12px; background:var(--accent-50); }
 .shell .flow .field { background:var(--wit); }
 /* naar de Stroom: minder belangrijk dan het invullen, dus licht groen */
+/* Notatie: Schildpad of BPMN, twee pillen in de kop van het diagram */
+.notatie { display:inline-flex; gap:0.125rem; padding:3px; background:var(--slate-100); border-radius:999px; }
+.notatie button { min-height:44px; padding:0 0.875rem; border-radius:999px; font-size:0.875rem; font-weight:600; color:var(--slate-600); }
+.notatie button[aria-pressed="true"] { background:var(--wit); color:#047857; box-shadow:0 1px 2px rgba(15,23,42,0.1), inset 0 0 0 1px #a7f3d0; }
+.notatie button:hover:not([aria-pressed="true"]) { color:var(--slate-800); }
+.zoom-bpmn { color:#047857; background:#ecfdf5; border-color:#a7f3d0; }
+.zoom-bpmn:hover { background:#d1fae5; }
+.bpmn-vlak { padding:0 1.125rem 1.25rem; }
+.bpmn-uitleg { margin-bottom:0.75rem; }
+.bpmn-canvas { overflow:auto; }
+.bpmn-canvas svg { display:block; margin:0 auto; }
+.bpmn-naar { width:auto; margin:1rem auto 0; }
+.sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
 .naar-stroom { display:flex; align-items:center; justify-content:center; gap:0.5rem; width:100%; min-height:44px; padding:0.5rem 0.875rem; border-radius:12px; background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:0.875rem; font-weight:600; line-height:1.3; text-align:center; }
 .naar-stroom:hover { background:#d1fae5; }
 .naar-stroom svg { width:18px; height:18px; flex:none; }
@@ -1307,12 +1320,15 @@ window.ocProjectkiezer = function (plek, o) {
   <section class="card" id="dia-card" aria-labelledby="dia-title" hidden>
     <div class="card-head dia-head">
       <h2 class="card-title" id="dia-title">Het diagram</h2>
+      <div class="notatie" role="group" aria-label="Notatie van het diagram"><button type="button" data-notatie="schildpad" aria-pressed="true">Schildpad</button><button type="button" data-notatie="bpmn" aria-pressed="false">BPMN</button></div>
       <button type="button" class="zoom" data-act="png" aria-label="Download als afbeelding">Afbeelding</button>
       <button type="button" class="zoom" data-act="pdf" aria-label="Download als PDF">PDF</button>
+      <button type="button" class="zoom zoom-bpmn" data-act="bpmn" id="dia-bpmn" hidden>Bewaar als BPMN</button>
     </div>
     <p class="dia-stat" id="stat"></p>
     <div class="mini" id="mini" role="group" aria-label="Overzicht: tik op een vak om ernaar te gaan"></div>
     <div class="turtle" id="turtle"></div>
+    <div class="bpmn-vlak" id="bpmn-vlak" hidden></div>
   </section>
 
   <section class="card" id="ap-card" aria-labelledby="ap-title" hidden>
@@ -1797,7 +1813,7 @@ function valid(s) {
         return o;
       });
     });
-    return { id:id(p.id), ...(p.voorbeeld ? { voorbeeld:true } : {}), naam:str(p.naam, 100), doel:str(p.doel, 240), eigenaar:str(p.eigenaar, 80), start:str(p.start, 160), einde:str(p.einde, 160), vak };
+    return { id:id(p.id), ...(p.voorbeeld ? { voorbeeld:true } : {}), ...(p.weergave === 'bpmn' ? { weergave:'bpmn' } : {}), naam:str(p.naam, 100), doel:str(p.doel, 240), eigenaar:str(p.eigenaar, 80), start:str(p.start, 160), einde:str(p.einde, 160), vak };
   });
   return { v:1, procs, current: procs.some(p => p.id === s.current) ? s.current : (procs[0] || {}).id || null };
 }
@@ -1934,6 +1950,7 @@ function render() {
   $('dia-card').hidden = $('ap-card').hidden = !p;
   $('vb-bar').hidden = !(p && p.voorbeeld);
   if (!p) { $('start-pic').innerHTML = startPic(); $('turtle').innerHTML = ''; return; }
+  tekenNotatie(p);
   $('mini').innerHTML = miniHtml(p);
   $('turtle').innerHTML = `<svg class="legs" id="legs" aria-hidden="true"></svg>` + VK.slice(0, 2).map(k => vakHtml(p, k)).join('') + shellHtml(p) + VK.slice(2).map(k => vakHtml(p, k)).join('');
   // volgorde in de pagina: erin, proces, eruit, de rest (zo leest ook een schermlezer)
@@ -2210,22 +2227,38 @@ function naarStroom() {
   const a = document.createElement('a'); a.href = '../stroom/?van=schildpad&proces=' + encodeURIComponent(p.id); document.body.appendChild(a); a.click(); a.remove();
 }
 // Bewaarde de Stroom (ander tabblad of kader) een stroom voor dit proces, dan zegt de knop "Open".
-window.addEventListener('storage', e => { if (e.key !== 'stroom.v1') return; const s = document.querySelector('[data-act="naar-stroom"] span'); if (s) s.textContent = stroomLabel(cur()); });
-document.addEventListener('visibilitychange', () => { const s = document.querySelector('[data-act="naar-stroom"] span'); if (s && document.visibilityState === 'visible') s.textContent = stroomLabel(cur()); });
+window.addEventListener('storage', e => { if (e.key !== 'stroom.v1') return; document.querySelectorAll('[data-act="naar-stroom"] span').forEach(s => { s.textContent = stroomLabel(cur()); }); });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') document.querySelectorAll('[data-act="naar-stroom"] span').forEach(s => { s.textContent = stroomLabel(cur()); }); });
 
 /* Bewaar als BPMN: het hele proces als één taak, met wat erin gaat en wat eruit komt als gegevens. De rollen staan in de uitleg.
    Het verloop stap voor stap tekenen doe je in de Stroom; die bewaart ook als BPMN. */
-function asBpmn(p) {
-  const xa = v => String(v == null ? '' : v).replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\uFFFE\uFFFF]/g, '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&apos;' }[c]));
-  const its = k => p.vak[k].map(it => ocNaam(it.text)).filter(Boolean), r = Math.round;
+/* Het BPMN-plan van het proces: één pool, het proces als één taak tussen begin en einde, wat erin gaat en wat eruit komt
+   als gegevens, en de rollen als notitie bij de taak. Het .bpmn-bestand en de BPMN-weergave gebruiken hetzelfde plan.
+   Waarom één taak: het Schildpaddiagram toont het proces van bovenaf. De stappen zelf teken je in de Stroom (met eigen BPMN-weergave). */
+function spPlan(p) {
+  const its = k => p.vak[k].map(it => ocNaam(it.text)).filter(Boolean);
   const inv = its('in').slice(0, 6), uit = its('uit').slice(0, 6), wie = its('wie'), nm = title(p), proj = p.voorbeeld ? '' : ocProject('');
-  const PX = 20, PY = inv.length || uit.length ? 140 : 20, PH = 170, W = Math.max(640, 140 + (inv.length + uit.length) * 110), cy = PY + PH / 2;
+  const lh = t => Math.min(3, Math.max(1, Math.ceil(t.length / 16))) * 14;
+  const PX = 20, PY = inv.length || uit.length ? 140 : 20, W = Math.max(640, 140 + (inv.length + uit.length) * 110), cy = PY + 85;
   const S = { x: PX + 90, y: cy }, T = { x: PX + W / 2, y: cy, w: 180, h: 80 }, E = { x: PX + W - 70, y: cy };
   const data = [...inv.map((t, k) => ({ id:'Invoer_' + (k + 1), t, in:true, x: PX + 40 + k * 110 })), ...uit.map((t, k) => ({ id:'Uitvoer_' + (k + 1), t, in:false, x: PX + W - 76 - (uit.length - 1 - k) * 110 }))];
+  data.forEach(o => { const t = [T.x + (o.in ? -30 : 30), T.y - T.h / 2], a = [o.x + 18, 98], h2 = Math.min(28, lh(o.t)); o.lab = { x:o.x - 37, y:44 - h2, w:110, h:h2 }; o.assoc = o.in ? [a, t] : [t, a]; });
+  // de rollen: een notitie onder de taak (hooguit 6 regels)
+  let note = null;
+  if (wie.length) {
+    const kort = s => s.length > 38 ? s.slice(0, 37).trimEnd() + '…' : s, lines = ['Met wie', ...wie.slice(0, 6).map(kort), ...(wie.length > 6 ? [`en nog ${wie.length - 6}`] : [])];
+    note = { x: T.x + 24, y: cy + T.h / 2 + 26, w: Math.max(...lines.map(l => l.length)) * 6.9 + 22, h: 10 + lines.length * 16, lines, to: [T.x, cy + T.h / 2], tekst: 'Met wie: ' + wie.join('; ') };
+  }
+  const PH = Math.max(170, note ? note.y + note.h + 16 - PY : 0);
   const doc = [p.doel.trim() && 'Doel: ' + p.doel.trim(), p.eigenaar.trim() && 'Eigenaar: ' + p.eigenaar.trim(), wie.length && 'Met wie: ' + wie.join('; '),
     proj && 'Project: ' + proj, `Uit het Schildpaddiagram van Onder Constructie, ${fmtD(new Date().toISOString().slice(0, 10))}.`].filter(Boolean).join('\n');
-  const B = (x, y, w, h) => `<dc:Bounds x="${r(x)}" y="${r(y)}" width="${r(w)}" height="${r(h)}" />`;
-  const lh = t => Math.min(3, Math.max(1, Math.ceil(t.length / 16))) * 14;
+  const label = (t, x, y) => t ? { x: x - 55, y, w: 110, h: lh(t) } : null;
+  return { nm, doc, PX, PY, W, PH, cy, S, T, E, data, note, inv, sLab: label(p.start.trim(), S.x, S.y + 22), eLab: label(p.einde.trim(), E.x, E.y + 22) };
+}
+function asBpmn(p) {
+  const xa = v => String(v == null ? '' : v).replace(/[\x00-\x08\x0B\x0C\x0E-\x1F￾￿]/g, '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&apos;' }[c]));
+  const { nm, doc, PX, PY, W, PH, cy, S, T, E, data, note, inv, sLab, eLab } = spPlan(p), r = Math.round;
+  const B = (x, y, w, h) => `<dc:Bounds x="${r(x)}" y="${r(y)}" width="${r(w)}" height="${r(h)}" />`, wp = pts => pts.map(([x, y]) => `<di:waypoint x="${r(x)}" y="${r(y)}" />`).join('');
   const X = ['<?xml version="1.0" encoding="UTF-8"?>',
     `<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Schildpad_${xa(p.id)}" name="${xa(nm)}" targetNamespace="https://onderconstructie.github.io/schildpad/" exporter="Onder Constructie Schildpaddiagram" exporterVersion="1">`,
     `  <bpmn:collaboration id="Samenwerking"><bpmn:participant id="Pool" name="${xa(nm)}" processRef="Proces" /></bpmn:collaboration>`,
@@ -2237,20 +2270,121 @@ function asBpmn(p) {
     `    <bpmn:endEvent id="Einde"${p.einde.trim() ? ` name="${xa(p.einde.trim())}"` : ''}><bpmn:incoming>Pijl_2</bpmn:incoming></bpmn:endEvent>`,
     '    <bpmn:sequenceFlow id="Pijl_1" sourceRef="Begin" targetRef="Taak" />', '    <bpmn:sequenceFlow id="Pijl_2" sourceRef="Taak" targetRef="Einde" />',
     ...data.flatMap(o => [`    <bpmn:dataObject id="Gegeven_${o.id}" />`, `    <bpmn:dataObjectReference id="${o.id}" name="${xa(o.t)}" dataObjectRef="Gegeven_${o.id}"><bpmn:documentation>${o.in ? 'Wat erin gaat' : 'Wat eruit komt'}</bpmn:documentation></bpmn:dataObjectReference>`]),
+    ...(note ? [`    <bpmn:textAnnotation id="Rollen"><bpmn:text>${xa(note.tekst)}</bpmn:text></bpmn:textAnnotation>`, '    <bpmn:association id="Rollen_bij" sourceRef="Taak" targetRef="Rollen" />'] : []),
     '  </bpmn:process>',
     '  <bpmndi:BPMNDiagram id="Tekening"><bpmndi:BPMNPlane id="Vlak" bpmnElement="Samenwerking">',
     `    <bpmndi:BPMNShape id="Pool_di" bpmnElement="Pool" isHorizontal="true">${B(PX, PY, W, PH)}</bpmndi:BPMNShape>`,
-    `    <bpmndi:BPMNShape id="Begin_di" bpmnElement="Begin">${B(S.x - 18, S.y - 18, 36, 36)}${p.start.trim() ? `<bpmndi:BPMNLabel>${B(S.x - 55, S.y + 22, 110, lh(p.start.trim()))}</bpmndi:BPMNLabel>` : ''}</bpmndi:BPMNShape>`,
+    `    <bpmndi:BPMNShape id="Begin_di" bpmnElement="Begin">${B(S.x - 18, S.y - 18, 36, 36)}${sLab ? `<bpmndi:BPMNLabel>${B(sLab.x, sLab.y, sLab.w, sLab.h)}</bpmndi:BPMNLabel>` : ''}</bpmndi:BPMNShape>`,
     `    <bpmndi:BPMNShape id="Taak_di" bpmnElement="Taak">${B(T.x - T.w / 2, T.y - T.h / 2, T.w, T.h)}</bpmndi:BPMNShape>`,
-    `    <bpmndi:BPMNShape id="Einde_di" bpmnElement="Einde">${B(E.x - 18, E.y - 18, 36, 36)}${p.einde.trim() ? `<bpmndi:BPMNLabel>${B(E.x - 55, E.y + 22, 110, lh(p.einde.trim()))}</bpmndi:BPMNLabel>` : ''}</bpmndi:BPMNShape>`,
-    `    <bpmndi:BPMNEdge id="Pijl_1_di" bpmnElement="Pijl_1"><di:waypoint x="${r(S.x + 18)}" y="${r(cy)}" /><di:waypoint x="${r(T.x - T.w / 2)}" y="${r(cy)}" /></bpmndi:BPMNEdge>`,
-    `    <bpmndi:BPMNEdge id="Pijl_2_di" bpmnElement="Pijl_2"><di:waypoint x="${r(T.x + T.w / 2)}" y="${r(cy)}" /><di:waypoint x="${r(E.x - 18)}" y="${r(cy)}" /></bpmndi:BPMNEdge>`,
-    ...data.flatMap(o => { const t = [T.x + (o.in ? -30 : 30), T.y - T.h / 2], a = [o.x + 18, 98], h2 = Math.min(28, lh(o.t));
-      return [`    <bpmndi:BPMNShape id="${o.id}_di" bpmnElement="${o.id}">${B(o.x, 48, 36, 50)}<bpmndi:BPMNLabel>${B(o.x - 37, 44 - h2, 110, h2)}</bpmndi:BPMNLabel></bpmndi:BPMNShape>`,
-        `    <bpmndi:BPMNEdge id="${o.in ? 'Naar_' : 'Van_'}${o.id}_di" bpmnElement="${o.in ? 'Naar_' : 'Van_'}${o.id}">${(o.in ? [a, t] : [t, a]).map(([x, y]) => `<di:waypoint x="${r(x)}" y="${r(y)}" />`).join('')}</bpmndi:BPMNEdge>`]; }),
+    `    <bpmndi:BPMNShape id="Einde_di" bpmnElement="Einde">${B(E.x - 18, E.y - 18, 36, 36)}${eLab ? `<bpmndi:BPMNLabel>${B(eLab.x, eLab.y, eLab.w, eLab.h)}</bpmndi:BPMNLabel>` : ''}</bpmndi:BPMNShape>`,
+    `    <bpmndi:BPMNEdge id="Pijl_1_di" bpmnElement="Pijl_1">${wp([[S.x + 18, cy], [T.x - T.w / 2, cy]])}</bpmndi:BPMNEdge>`,
+    `    <bpmndi:BPMNEdge id="Pijl_2_di" bpmnElement="Pijl_2">${wp([[T.x + T.w / 2, cy], [E.x - 18, cy]])}</bpmndi:BPMNEdge>`,
+    ...data.flatMap(o => [`    <bpmndi:BPMNShape id="${o.id}_di" bpmnElement="${o.id}">${B(o.x, 48, 36, 50)}<bpmndi:BPMNLabel>${B(o.lab.x, o.lab.y, o.lab.w, o.lab.h)}</bpmndi:BPMNLabel></bpmndi:BPMNShape>`,
+      `    <bpmndi:BPMNEdge id="${o.in ? 'Naar_' : 'Van_'}${o.id}_di" bpmnElement="${o.in ? 'Naar_' : 'Van_'}${o.id}">${wp(o.assoc)}</bpmndi:BPMNEdge>`]),
+    ...(note ? [`    <bpmndi:BPMNShape id="Rollen_di" bpmnElement="Rollen">${B(note.x, note.y, note.w, note.h)}</bpmndi:BPMNShape>`, `    <bpmndi:BPMNEdge id="Rollen_bij_di" bpmnElement="Rollen_bij">${wp([note.to, [note.x, note.y + note.h / 2]])}</bpmndi:BPMNEdge>`] : []),
     '  </bpmndi:BPMNPlane></bpmndi:BPMNDiagram>', '</bpmn:definitions>'];
   return X.join('\n');
 }
+/* BPMN-weergave: tekent een BPMN-plan als SVG, in de stijl van de familie (rustig grijs, wit, groen voor start en einde).
+   Zelfde bron in Stroom en Schildpaddiagram (scratchpad/onderzoek/bpmn/werk/bpmn-teken.js). Geen bibliotheek.
+   G = { W, H, titel, pool:{x,y,w,h,band}, lanes:[{x,y,w,h,band,naam}], nodes:[{id,type,cx,cy,w,h,text,lab:{x,y,w,h}}],
+         flows:[{pts,label,lab:[x,y]}], data:[{x,y,t,in,lab:{x,y,w,h},assoc}], notes:[{x,y,w,h,lines,to}] }
+   type: start | stap | keuze | einde.  o.licht: id van een knoop die even oplicht. */
+function bpmnSvg(G, o = {}) {
+  const e = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+  const r = v => Math.round(v * 10) / 10, LIJN = '#334155', ZACHT = '#64748b';
+  const breek = (t, max, n) => {
+    const out = []; let regel = '';
+    String(t || '').trim().split(/\s+/).filter(Boolean).forEach(w => {
+      while (w.length > max) { if (regel) { out.push(regel); regel = ''; } out.push(w.slice(0, max - 1) + '-'); w = w.slice(max - 1); }
+      if ((regel + ' ' + w).trim().length > max) { out.push(regel); regel = w; } else regel = (regel + ' ' + w).trim();
+    });
+    if (regel) out.push(regel);
+    if (out.length > n) { out.length = n; out[n - 1] = out[n - 1].replace(/.{0,1}$/, '…'); }
+    return out;
+  };
+  const tekst = (lines, cx, cy, fs, kleur, gewicht = 500) => lines.length ? `<text text-anchor="middle" font-size="${fs}" font-weight="${gewicht}" fill="${kleur}">${lines.map((l, i) => `<tspan x="${r(cx)}" y="${r(cy - (lines.length - 1) * fs * 0.6 + i * fs * 1.2 + fs * 0.35)}">${e(l)}</tspan>`).join('')}</text>` : '';
+  const staand = (t, x, y, fs, kleur, max) => `<text transform="translate(${r(x)} ${r(y)}) rotate(-90)" text-anchor="middle" font-size="${fs}" font-weight="600" fill="${kleur}">${e(t.length > max ? t.slice(0, max - 1) + '…' : t)}</text>`;
+  const P = [`<svg xmlns="http://www.w3.org/2000/svg" class="bpmn" viewBox="0 0 ${r(G.W)} ${r(G.H)}" width="${r(G.W)}" height="${r(G.H)}" font-family="'DM Sans', system-ui, sans-serif" aria-hidden="true" focusable="false">`,
+    `<defs><marker id="bp-pijl" viewBox="0 0 10 10" refX="9.5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="${LIJN}"/></marker>`
+    + `<marker id="bp-open" viewBox="0 0 10 10" refX="9.5" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1L9.5 5L1 9" fill="none" stroke="${ZACHT}" stroke-width="1.4"/></marker></defs>`,
+    `<rect width="${r(G.W)}" height="${r(G.H)}" fill="#ffffff"/>`];
+  // pool en banen
+  const p = G.pool;
+  P.push(`<rect x="${p.x}" y="${p.y}" width="${p.w}" height="${p.h}" fill="#ffffff" stroke="${LIJN}" stroke-width="1.5"/>`);
+  G.lanes.forEach((l, i) => P.push(`<rect x="${l.x}" y="${l.y}" width="${l.w}" height="${l.h}" fill="${i % 2 ? '#ffffff' : '#f8fafc'}" stroke="${LIJN}" stroke-width="1"/>`,
+    `<path d="M${l.x + l.band} ${l.y}V${l.y + l.h}" stroke="#cbd5e1"/>`, staand(l.naam, l.x + l.band / 2, l.y + l.h / 2, 12.5, LIJN, Math.max(6, Math.floor(l.h / 7.5)))));
+  P.push(`<path d="M${p.x + p.band} ${p.y}V${p.y + p.h}" stroke="${LIJN}" stroke-width="1.5"/>`, staand(G.titel, p.x + p.band / 2, p.y + p.h / 2, 13.5, '#1e293b', Math.max(6, Math.floor(p.h / 8))));
+  // pijlen, gegevens en notities (onder de knopen); labels pas na alle lijnen
+  const labels = [];
+  G.flows.forEach(f => {
+    P.push(`<path d="${f.pts.map(([x, y], i) => (i ? 'L' : 'M') + r(x) + ' ' + r(y)).join('')}" fill="none" stroke="${LIJN}" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#bp-pijl)"/>`);
+    if (f.label) { const w = f.label.length * 6.6 + 8; labels.push(`<rect x="${r(f.lab[0] - 3)}" y="${r(f.lab[1])}" width="${r(w)}" height="15" rx="3" fill="#ffffff" fill-opacity="0.9"/><text x="${r(f.lab[0])}" y="${r(f.lab[1] + 11.5)}" font-size="12" font-weight="600" fill="${ZACHT}">${e(f.label)}</text>`); }
+  });
+  G.data.forEach(d => { if (d.assoc) P.push(`<path d="M${r(d.assoc[0][0])} ${r(d.assoc[0][1])}L${r(d.assoc[1][0])} ${r(d.assoc[1][1])}" fill="none" stroke="${ZACHT}" stroke-width="1.3" stroke-dasharray="2 4" stroke-linecap="round" marker-end="url(#bp-open)"/>`); });
+  (G.notes || []).forEach(n => P.push(`<path d="M${r(n.to[0])} ${r(n.to[1])}L${r(n.x)} ${r(n.y + n.h / 2)}" stroke="${ZACHT}" stroke-width="1.3" stroke-dasharray="2 4"/>`,
+    `<path d="M${n.x + 10} ${n.y}H${n.x}V${n.y + n.h}H${n.x + 10}" fill="none" stroke="${LIJN}" stroke-width="1.3"/>`,
+    `<text font-size="12.5" fill="${LIJN}">${n.lines.map((l, i) => `<tspan x="${n.x + 8}" y="${n.y + 17 + i * 16}"${i ? '' : ' font-weight="600"'}>${e(l)}</tspan>`).join('')}</text>`));
+  P.push(...labels);
+  // knopen
+  G.nodes.forEach(n => {
+    const { cx, cy, w, h } = n;
+    P.push(`<g data-bnode="${e(n.id)}">`);
+    if (o.licht && n.id === o.licht) P.push(`<rect class="licht" x="${r(cx - w / 2 - 9)}" y="${r(cy - h / 2 - 9)}" width="${r(w + 18)}" height="${r(h + 18)}" rx="${n.type === 'stap' ? 16 : r(h / 2 + 9)}" fill="#d1fae5" stroke="#10b981" stroke-width="3"/>`);
+    if (n.type === 'stap') {
+      P.push(`<rect x="${r(cx - w / 2)}" y="${r(cy - h / 2)}" width="${w}" height="${h}" rx="10" fill="#ffffff" stroke="${LIJN}" stroke-width="1.5"/>`);
+      P.push(n.text.trim() ? tekst(breek(n.text, w > 150 ? 24 : 18, 4), cx, cy, 12.5, '#1e293b') : tekst(['…'], cx, cy, 13, '#94a3b8'));
+    } else if (n.type === 'keuze') {
+      const s = w / 2;
+      P.push(`<path d="M${cx} ${cy - s}L${cx + s} ${cy}L${cx} ${cy + s}L${cx - s} ${cy}Z" fill="#ffffff" stroke="${LIJN}" stroke-width="1.5" stroke-linejoin="round"/>`,
+        `<path d="M${cx - 8} ${cy - 8}L${cx + 8} ${cy + 8}M${cx + 8} ${cy - 8}L${cx - 8} ${cy + 8}" stroke="${LIJN}" stroke-width="3" stroke-linecap="round"/>`);
+    } else P.push(`<circle cx="${cx}" cy="${cy}" r="${w / 2 - (n.type === 'einde' ? 1.5 : 0)}" fill="#ecfdf5" stroke="${n.type === 'einde' ? '#047857' : '#059669'}" stroke-width="${n.type === 'einde' ? 4 : 1.6}"/>`);
+    if (n.type !== 'stap' && n.text.trim() && n.lab) { const per = Math.max(10, Math.floor(n.lab.w / 6.4)), ls = breek(n.text, per, Math.max(1, Math.round(n.lab.h / 14)));
+      P.push(tekst(ls, n.lab.x + n.lab.w / 2, n.lab.y + n.lab.h / 2, 11.5, LIJN)); }
+    P.push('</g>');
+  });
+  G.data.forEach(d => {
+    P.push(`<path d="M${d.x} ${d.y}H${d.x + 26}L${d.x + 36} ${d.y + 10}V${d.y + 50}H${d.x}Z" fill="#ffffff" stroke="${LIJN}" stroke-width="1.4" stroke-linejoin="round"/><path d="M${d.x + 26} ${d.y}V${d.y + 10}H${d.x + 36}" fill="none" stroke="${LIJN}" stroke-width="1.4" stroke-linejoin="round"/>`);
+    P.push(tekst(breek(d.t, 17, 2), d.lab.x + d.lab.w / 2, d.lab.y + d.lab.h / 2, 11.5, LIJN));
+  });
+  P.push('</svg>');
+  return P.join('');
+}
+
+// Van het plan naar het beeld (dezelfde coördinaten als in het .bpmn-bestand)
+function spBeeld(p) {
+  const g = spPlan(p);
+  return { W: g.PX + g.W + 20, H: g.PY + g.PH + 20, titel: g.nm, pool: { x:g.PX, y:g.PY, w:g.W, h:g.PH, band:30 }, lanes: [],
+    nodes: [{ id:'Begin', type:'start', cx:g.S.x, cy:g.cy, w:36, h:36, text:p.start, lab:g.sLab }, { id:'Taak', type:'stap', cx:g.T.x, cy:g.cy, w:g.T.w, h:g.T.h, text:g.nm },
+      { id:'Einde', type:'einde', cx:g.E.x, cy:g.cy, w:36, h:36, text:p.einde, lab:g.eLab }],
+    flows: [{ pts:[[g.S.x + 18, g.cy], [g.T.x - g.T.w / 2, g.cy]] }, { pts:[[g.T.x + g.T.w / 2, g.cy], [g.E.x - 18, g.cy]] }],
+    data: g.data.map(o => ({ x:o.x, y:48, t:o.t, in:o.in, lab:o.lab, assoc:o.assoc })), notes: g.note ? [g.note] : [] };
+}
+// Tekstalternatief voor de BPMN-tekening
+function spAlt(p) {
+  const its = k => p.vak[k].map(it => ocNaam(it.text)).filter(Boolean), li = t => `<li>${esc(t)}</li>`, lijst = (kop, a) => a.length ? `<p>${esc(kop)}</p><ul>${a.map(li).join('')}</ul>` : '';
+  return `<div class="sr-only" id="bpmn-alt"><p>BPMN-tekening van ${esc(title(p))}: één taak, van ${esc(p.start.trim() || 'start')} tot ${esc(p.einde.trim() || 'einde')}.</p>${lijst('Wat erin gaat', its('in'))}${lijst('Wat eruit komt', its('uit'))}${lijst('Met wie', its('wie'))}</div>`;
+}
+const isBpmn = p => !!p && p.weergave === 'bpmn';
+
+// De BPMN-weergave: alleen lezen, live. Het schildpaddiagram blijft eronder bestaan (verborgen), zodat focus en invoer niet verspringen.
+function tekenNotatie(p) {
+  const bp = isBpmn(p);
+  document.querySelectorAll('[data-notatie]').forEach(b => b.setAttribute('aria-pressed', String((b.dataset.notatie === 'bpmn') === bp)));
+  $('turtle').hidden = $('mini').hidden = bp; $('dia-bpmn').hidden = !bp; $('bpmn-vlak').hidden = !bp;
+  if (!bp) { $('bpmn-vlak').innerHTML = ''; return; }
+  $('bpmn-vlak').innerHTML = `<p class="hint bpmn-uitleg">Zo ziet dit proces eruit in BPMN, de standaard om processen te tekenen: één taak, met wat erin gaat en wat eruit komt. Alleen lezen. De stappen teken je in de Stroom.</p>
+    <div class="bpmn-canvas" id="bpmn-canvas">${bpmnSvg(spBeeld(p))}</div>${spAlt(p)}
+    <button type="button" class="naar-stroom bpmn-naar" data-act="naar-stroom" data-f="naar-stroom-2">${ICON.stroom}<span>${stroomLabel(p)}</span></button>`;
+  const s = $('bpmn-canvas').querySelector('svg'); s.style.width = '100%'; s.style.maxWidth = s.getAttribute('width') + 'px'; s.style.height = 'auto';
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-notatie]'); if (!b) return;
+  const p = cur(); if (!p) return;
+  const nw = b.dataset.notatie === 'bpmn'; if (nw === isBpmn(p)) return;
+  if (nw) p.weergave = 'bpmn'; else delete p.weergave;
+  ocSchrijf(KEY, JSON.stringify(state)); editing = null; render(); b.focus();   // een keuze van weergave telt niet als wijziging
+});
 
 /* ---------- Voorbeeld ---------- */
 function example() {
@@ -2412,6 +2546,12 @@ function svgFull(p, cap = Infinity) {
 }
 function buildExport(fit) {
   const p = cur(), fl = flagged(p), node = document.createElement('div');
+  if (isBpmn(p)) {   // de BPMN-weergave: alleen de tekening
+    node.innerHTML = `<div style="display:flex;justify-content:center">${bpmnSvg(spBeeld(p))}</div>`;
+    const s = node.querySelector('svg'); s.style.maxWidth = '100%'; s.style.height = 'auto';
+    const proj = p.voorbeeld ? '' : ocProject('');
+    return { node, title:'Schildpaddiagram in BPMN', subtitle: proj && proj !== title(p) ? `${proj} · ${title(p)}` : title(p) };
+  }
   const legend = `<div style="display:flex;gap:18px;justify-content:center;margin-top:8px;font-size:12px;color:#475569">${STS.map(s => `<span style="display:inline-flex;align-items:center;gap:6px"><svg width="16" height="16" viewBox="-8 -8 16 16"><circle r="7.5" fill="${SCOL[s]}"/>${GLYPH[s]}</svg>${ST[s].l}</span>`).join('')}<span style="display:inline-flex;align-items:center;gap:6px"><svg width="16" height="16" viewBox="-8 -8 16 16"><circle r="6.5" fill="#fff" stroke="#cbd5e1" stroke-width="1.5"/></svg>Nog niet beoordeeld</span></div>`;
   const tag = st => `<span style="display:inline-block;font-size:11.5px;font-weight:700;border-radius:999px;padding:1px 8px;${st === 'prob' ? 'color:#b91c1c;background:#fef2f2;border:1px solid #fecaca' : 'color:#92400e;background:#fffbeb;border:1px solid #fde68a'}">${ST[st].l}</span>`;
   // PDF: het hele diagram op de eerste bladzijde. Te veel items om leesbaar te blijven? Dan per vak de eerste items
@@ -2482,13 +2622,14 @@ document.addEventListener('click', async e => {
   if (act === 'delproc') { delProc(); return; }
   if (act === 'copy') { toast((await copyText(asText())) ? 'Gekopieerd als tekst' : 'Kopiëren lukt hier niet'); return; }
   if (act === 'bpmn') {
+    const inKop = b.id === 'dia-bpmn';
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([asBpmn(p)], { type:'application/xml' })); a.download = fileBase() + '.bpmn';
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-    $('menu-btn').focus(); toast('BPMN gedownload. Het opent in elk BPMN-programma.'); return;
+    (inKop ? b : $('menu-btn')).focus(); toast('BPMN gedownload. Het opent in elk BPMN-programma.'); return;
   }
   if (act === 'png' || act === 'pdf') {
     toast('Bezig…');
-    try { await (act === 'png' ? ocExport.png(buildExport, fileBase(), { landscape:true }) : ocExport.pdf(() => buildExport(true), fileBase(), { landscape:true })); toast(act === 'png' ? 'Afbeelding gedownload' : 'PDF gedownload'); }
+    try { await (act === 'png' ? ocExport.png(buildExport, fileBase() + (isBpmn(p) ? '-bpmn' : ''), { landscape:true }) : ocExport.pdf(() => buildExport(true), fileBase() + (isBpmn(p) ? '-bpmn' : ''), { landscape:true })); toast(act === 'png' ? 'Afbeelding gedownload' : 'PDF gedownload'); }
     catch { toast('Downloaden lukt nu niet: geen verbinding?'); }
     return;
   }

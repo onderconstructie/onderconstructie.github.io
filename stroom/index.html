@@ -206,6 +206,16 @@ body { overflow-wrap:break-word; }
 .ns-add .ns-done { margin-left:auto; background:#0c8660; border-color:var(--accent-dark); color:var(--wit); padding:0 1.25rem; }
 .ns-add .ns-done:hover { background:#047857; border-color:var(--accent-hover); }
 .empty-draw { padding:2rem 1.25rem 2.25rem; text-align:center; color:var(--slate-500); font-size:0.9375rem; }
+/* Notatie: Stroom of BPMN, twee pillen bovenaan de tekening */
+.notatie { display:inline-flex; gap:0.125rem; padding:3px; background:var(--slate-100); border-radius:999px; }
+.notatie button { min-height:44px; padding:0 0.875rem; border-radius:999px; font-size:0.875rem; font-weight:600; color:var(--slate-600); }
+.notatie button[aria-pressed="true"] { background:var(--wit); color:#047857; box-shadow:0 1px 2px rgba(15,23,42,0.1), inset 0 0 0 1px #a7f3d0; }
+.notatie button:hover:not([aria-pressed="true"]) { color:var(--slate-800); }
+/* BPMN ligt breed: op een groot scherm krijgt de tekening de volle breedte, de lijst staat eronder */
+@media (min-width:1000px) { .layout.layout-bpmn { grid-template-columns:minmax(0,1fr); } .layout.layout-bpmn .draw-card { position:static; } }
+.zoom-bpmn { color:#047857; background:#ecfdf5; border-color:#a7f3d0; }
+.zoom-bpmn:hover { background:#d1fae5; }
+.sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
 /* Procescheck: rustig, zoals de inzichten in de SWOT. Hooguit drie tips; Toon laat de stap oplichten. */
 .pc { margin:0 1.125rem 1rem; padding:0.25rem 0.875rem 0.25rem; border:1px solid var(--slate-200); border-radius:12px; background:var(--slate-50); }
 .pc:empty { display:none; }
@@ -1717,6 +1727,7 @@ function valid(s) {
     // het bijhorende proces in het Schildpaddiagram, het project toen, en de tips die je negeerde (procescheck)
     ...(typeof f.schildpad === 'string' && /^[\w-]{1,40}$/.test(f.schildpad) ? { schildpad:f.schildpad } : {}),
     ...(typeof f.proj === 'string' && f.proj ? { proj:f.proj.slice(0, 80) } : {}),
+    ...(f.weergave === 'bpmn' ? { weergave:'bpmn' } : {}),   // de gekozen notatie: Stroom (standaard) of BPMN
     ...(Array.isArray(f.stil) ? { stil:f.stil.filter(k => typeof k === 'string' && /^[\w:-]{1,60}$/.test(k)).slice(-100) } : {})
   }));
   // Vanaf nu opent Stroom eerst op de stroom zelf, ook voor wie eerder de lijst open had.
@@ -1942,7 +1953,7 @@ function hintsHTML(f) {
     <ul class="pc-l" aria-labelledby="pc-t">${toon.map(li).join('')}${ok}${ov}</ul>`;
 }
 // Passend: zo breed als de kaart, maar op een breed scherm nooit kleiner dan 85%, zodat de tekst leesbaar blijft.
-const fitNow = () => state.fit == null ? window.innerWidth >= 700 : state.fit;
+const fitNow = bp => state.fit == null ? (bp || window.innerWidth >= 700) : state.fit;
 let zoomZ = null, zoomFit = false;   // na knijpen of Ctrl + scrollwiel: de gekozen grootte
 function sizeSvg(el) {
   if (zoomZ != null && el.parentElement) {
@@ -1952,11 +1963,11 @@ function sizeSvg(el) {
     const b = document.querySelector('.draw-head [data-act="fit"]'); if (b) b.textContent = zoomFit ? 'Leesbaar' : 'Hele stroom';
     return;
   }
-  const w = +el.getAttribute('width'), fit = fitNow();
+  const bp = el.classList.contains('bpmn'), w = +el.getAttribute('width'), fit = fitNow(bp);
   el.style.height = 'auto';
   el.style.width = fit ? '100%' : w + 'px';
   el.style.maxWidth = fit ? w + 'px' : 'none';
-  el.style.minWidth = fit && window.innerWidth >= 700 ? Math.round(w * 0.85) + 'px' : '0';
+  el.style.minWidth = fit && !bp && window.innerWidth >= 700 ? Math.round(w * 0.85) + 'px' : '0';
 }
 function render() {
   const f = cur();
@@ -2016,7 +2027,7 @@ function render() {
         <button type="button" data-act="add-after" data-type="keuze" data-id="${en.id}"><span class="shape d"></span>Keuze erna</button>` : `<button type="button" data-act="add-after" data-type="stap" data-id="${en.id}"><span class="shape"></span>Stap ervoor</button>`}
         <button type="button" class="ns-done" data-act="ns-close">Klaar</button></div>
     </div>` : '';
-  const { svg } = f.nodes.length ? svgOf(f, { interactive:true, sel:editId }) : { svg:'' };
+  const svg = f.nodes.length ? tekening(f, { interactive:true, sel:editId }) : '', bp = isBpmn(f);
   const h = hints(f);
   const view = state.view;
   $('app').innerHTML = `
@@ -2026,11 +2037,11 @@ function render() {
       <button role="tab" data-view="draw" aria-selected="${view === 'draw'}">Stroom</button>
       <button role="tab" data-view="edit" aria-selected="${view === 'edit'}">Lijst</button>
     </div>
-    <div class="layout">
+    <div class="layout${bp ? ' layout-bpmn' : ''}">
       <section class="card draw-card" ${view === 'draw' ? '' : 'hidden'}>
-        <div class="draw-head"><h2 class="card-title">Stroom</h2>${svg ? `<button type="button" class="zoom" data-act="fit">${fitNow() ? 'Leesbaar' : 'Hele stroom'}</button>
-          <button type="button" class="zoom" data-export="png" aria-label="Download als afbeelding">Afbeelding</button><button type="button" class="zoom" data-export="pdf" aria-label="Download als PDF">PDF</button>` : ''}</div>
-        ${svg ? `<p class="edit-hint"><span class="t">Tik</span><span class="k">Klik</span> op een stap om ze te bewerken.</p><div class="canvas" id="canvas">${svg}</div><p class="pinch-hint">Knijp met twee vingers om in of uit te zoomen.</p>` : '<p class="empty-draw">Voeg een stap toe; de stroom verschijnt hier.</p>'}
+        <div class="draw-head"><h2 class="card-title">Stroom</h2><div class="notatie" role="group" aria-label="Notatie van de tekening"><button type="button" data-act="notatie" data-n="stroom" aria-pressed="${!bp}">Stroom</button><button type="button" data-act="notatie" data-n="bpmn" aria-pressed="${bp}">BPMN</button></div>${svg ? `<button type="button" class="zoom" data-act="fit">${fitNow(bp) ? 'Leesbaar' : 'Hele stroom'}</button>
+          <button type="button" class="zoom" data-export="png" aria-label="Download als afbeelding">Afbeelding</button><button type="button" class="zoom" data-export="pdf" aria-label="Download als PDF">PDF</button>${bp ? '<button type="button" class="zoom zoom-bpmn" data-export="bpmn">Bewaar als BPMN</button>' : ''}` : ''}</div>
+        ${svg ? `<p class="edit-hint">${bp ? 'Zo ziet je stroom eruit in BPMN, de standaard om processen te tekenen. Alleen lezen: wat je aanpast, verschijnt hier meteen.' : '<span class="t">Tik</span><span class="k">Klik</span> op een stap om ze te bewerken.'}</p><div class="canvas${bp ? ' canvas-bpmn' : ''}" id="canvas">${svg}</div>${bp ? bpmnAlt(f) : ''}<p class="pinch-hint">Knijp met twee vingers om in of uit te zoomen.</p>` : '<p class="empty-draw">Voeg een stap toe; de stroom verschijnt hier.</p>'}
         <div class="adders draw-adders">
           <button type="button" data-act="add" data-type="stap"><span class="shape"></span>Stap</button>
           <button type="button" data-act="add" data-type="keuze"><span class="shape d"></span>Keuze</button>
@@ -2085,9 +2096,9 @@ function openNode(id, { focus = false } = {}) {
 function toonLicht(id, isStap) {
   if (state.view !== 'draw') { state.view = 'draw'; saveUi(); render(); }
   licht = id; renderDrawingOnly();
-  const g = isStap ? document.querySelector(`#canvas [data-node="${id}"]`) : document.querySelector('#canvas .licht');
+  const g = isStap ? document.querySelector(`#canvas [data-node="${id}"], #canvas [data-bnode="${id}"]`) : document.querySelector('#canvas .licht');
   if (g) g.scrollIntoView({ block:'center', inline:'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
-  if (g && isStap) g.focus({ preventScroll:true });
+  if (g && isStap && g.dataset.node) g.focus({ preventScroll:true });
   clearTimeout(toonLicht.t);
   toonLicht.t = setTimeout(() => { licht = null; document.querySelectorAll('#canvas .licht').forEach(x => x.remove()); }, 2600);
 }
@@ -2111,8 +2122,9 @@ function renderDrawingOnly() {
   const f = cur(); if (!f) return;
   const c = $('canvas');
   if (!c || !f.nodes.length) { render(); return; }
-  c.innerHTML = svgOf(f, { interactive:true, sel:editId }).svg;
+  c.innerHTML = tekening(f, { interactive:true, sel:editId });
   sizeSvg(c.querySelector('svg'));
+  const alt = $('bpmn-alt'); if (alt && isBpmn(f)) alt.outerHTML = bpmnAlt(f);
   const hl = $('hints'); if (hl) hl.innerHTML = hintsHTML(f);
 }
 
@@ -2202,7 +2214,8 @@ document.addEventListener('click', async e => {
     case 'del-flow': delFlow(); return;
     case 'vb-wis': { const undo = snapshot(); state.flows = state.flows.filter(x => !x.voorbeeld); state.current = (state.flows[0] || {}).id || null; save(); render(); toast('Voorbeeld gewist', undo); return; }
     case 'vb-eigen': f.voorbeeld = false; save(); render(); toast('Het voorbeeld is nu van jou'); return;
-    case 'fit': if (zoomZ != null) { state.fit = !zoomFit; zoomZ = null; } else state.fit = !fitNow(); saveUi(); render(); return;
+    case 'fit': if (zoomZ != null) { state.fit = !zoomFit; zoomZ = null; } else state.fit = !fitNow(isBpmn(f)); saveUi(); render(); return;
+    case 'notatie': { const nw = t.dataset.n === 'bpmn'; if (nw === isBpmn(f)) return; if (nw) f.weergave = 'bpmn'; else delete f.weergave; zoomZ = null; editId = null; saveUi(); render(); return; }
     case 'goto': openNode(id, { focus:true }); return;
     case 'licht': toonLicht(id || t.dataset.lane, !!id); return;
     case 'negeer': { const k = t.dataset.key; if (!k) return; const undo = snapshot(); f.stil = (f.stil || []).filter(x => x !== k).concat(k).slice(-100); save(); renderDrawingOnly(); toast('Tip genegeerd', undo); const pt = $('pc-t'); pt && pt.focus({ preventScroll:true }); return; }
@@ -2337,7 +2350,7 @@ function asMermaid(f) {
   return out.join('\n');
 }
 function buildExport() {
-  const f = cur(), { svg, L } = svgOf(f, { forExport:true });
+  const f = cur(), svg = tekening(f, { forExport:true });
   const node = document.createElement('div');
   node.innerHTML = `<div style="display:flex;justify-content:center">${svg}</div>`;
   const s = node.querySelector('svg'); s.style.maxWidth = '100%'; s.style.height = 'auto';
@@ -2361,14 +2374,14 @@ document.addEventListener('click', async e => {
   if (act === 'bpmn-open') { bpmnIn.click(); return; }
   if (!f && act !== 'wipe') { toast('Begin eerst met een stroom.'); return; }
   const base = fileBase(f);
-  if (act === 'bpmn') { bewaarBpmn(f); const mb = $('menu-btn'); mb && mb.focus(); return; }
+  if (act === 'bpmn') { bewaarBpmn(f); const mb = !b.dataset.export && $('menu-btn'); mb && mb.focus(); return; }
   if (act === 'png' || act === 'pdf') {
-    const w = layout(f).width;
+    const w = isBpmn(f) ? bpmnBeeld(f).W : layout(f).width;
     toast('Bezig met downloaden…');
     try { const o = { width: Math.min(2200, Math.max(800, w + 80)), landscape: w > 640 }; await (act === 'png' ? ocExport.png(buildExport, base, o) : ocExport.pdf(buildExport, base, o)); toast(act === 'png' ? 'Afbeelding gedownload' : 'PDF gedownload'); }
     catch { toast('Downloaden lukte niet. Ben je online?'); }
   } else if (act === 'svg') {
-    save2(new Blob(['<?xml version="1.0" encoding="UTF-8"?>\n' + svgOf(f).svg], { type:'image/svg+xml' }), base + '.svg'); toast('SVG gedownload');
+    save2(new Blob(['<?xml version="1.0" encoding="UTF-8"?>\n' + tekening(f).replace(' aria-hidden="true" focusable="false"', '')], { type:'image/svg+xml' }), base + (isBpmn(f) ? '-bpmn' : '') + '.svg'); toast('SVG gedownload');
   } else if (act === 'copy' || act === 'mermaid') {
     try { await navigator.clipboard.writeText(act === 'copy' ? asText(f) : asMermaid(f)); toast(act === 'copy' ? 'Gekopieerd als tekst' : 'Diagramcode gekopieerd'); } catch { toast('Kopiëren lukte niet'); }
   } else if (act === 'dup') {
@@ -2404,7 +2417,95 @@ function schildpadVan(f) {
 }
 const spItems = (p, k) => (p && p.vak && Array.isArray(p.vak[k]) ? p.vak[k] : []).map(i => ocNaam(i && i.text).slice(0, 200)).filter(Boolean);
 
-function bpmnXml(f) {
+/* BPMN-weergave: tekent een BPMN-plan als SVG, in de stijl van de familie (rustig grijs, wit, groen voor start en einde).
+   Zelfde bron in Stroom en Schildpaddiagram (scratchpad/onderzoek/bpmn/werk/bpmn-teken.js). Geen bibliotheek.
+   G = { W, H, titel, pool:{x,y,w,h,band}, lanes:[{x,y,w,h,band,naam}], nodes:[{id,type,cx,cy,w,h,text,lab:{x,y,w,h}}],
+         flows:[{pts,label,lab:[x,y]}], data:[{x,y,t,in,lab:{x,y,w,h},assoc}], notes:[{x,y,w,h,lines,to}] }
+   type: start | stap | keuze | einde.  o.licht: id van een knoop die even oplicht. */
+function bpmnSvg(G, o = {}) {
+  const e = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+  const r = v => Math.round(v * 10) / 10, LIJN = '#334155', ZACHT = '#64748b';
+  const breek = (t, max, n) => {
+    const out = []; let regel = '';
+    String(t || '').trim().split(/\s+/).filter(Boolean).forEach(w => {
+      while (w.length > max) { if (regel) { out.push(regel); regel = ''; } out.push(w.slice(0, max - 1) + '-'); w = w.slice(max - 1); }
+      if ((regel + ' ' + w).trim().length > max) { out.push(regel); regel = w; } else regel = (regel + ' ' + w).trim();
+    });
+    if (regel) out.push(regel);
+    if (out.length > n) { out.length = n; out[n - 1] = out[n - 1].replace(/.{0,1}$/, '…'); }
+    return out;
+  };
+  const tekst = (lines, cx, cy, fs, kleur, gewicht = 500) => lines.length ? `<text text-anchor="middle" font-size="${fs}" font-weight="${gewicht}" fill="${kleur}">${lines.map((l, i) => `<tspan x="${r(cx)}" y="${r(cy - (lines.length - 1) * fs * 0.6 + i * fs * 1.2 + fs * 0.35)}">${e(l)}</tspan>`).join('')}</text>` : '';
+  const staand = (t, x, y, fs, kleur, max) => `<text transform="translate(${r(x)} ${r(y)}) rotate(-90)" text-anchor="middle" font-size="${fs}" font-weight="600" fill="${kleur}">${e(t.length > max ? t.slice(0, max - 1) + '…' : t)}</text>`;
+  const P = [`<svg xmlns="http://www.w3.org/2000/svg" class="bpmn" viewBox="0 0 ${r(G.W)} ${r(G.H)}" width="${r(G.W)}" height="${r(G.H)}" font-family="'DM Sans', system-ui, sans-serif" aria-hidden="true" focusable="false">`,
+    `<defs><marker id="bp-pijl" viewBox="0 0 10 10" refX="9.5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="${LIJN}"/></marker>`
+    + `<marker id="bp-open" viewBox="0 0 10 10" refX="9.5" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1L9.5 5L1 9" fill="none" stroke="${ZACHT}" stroke-width="1.4"/></marker></defs>`,
+    `<rect width="${r(G.W)}" height="${r(G.H)}" fill="#ffffff"/>`];
+  // pool en banen
+  const p = G.pool;
+  P.push(`<rect x="${p.x}" y="${p.y}" width="${p.w}" height="${p.h}" fill="#ffffff" stroke="${LIJN}" stroke-width="1.5"/>`);
+  G.lanes.forEach((l, i) => P.push(`<rect x="${l.x}" y="${l.y}" width="${l.w}" height="${l.h}" fill="${i % 2 ? '#ffffff' : '#f8fafc'}" stroke="${LIJN}" stroke-width="1"/>`,
+    `<path d="M${l.x + l.band} ${l.y}V${l.y + l.h}" stroke="#cbd5e1"/>`, staand(l.naam, l.x + l.band / 2, l.y + l.h / 2, 12.5, LIJN, Math.max(6, Math.floor(l.h / 7.5)))));
+  P.push(`<path d="M${p.x + p.band} ${p.y}V${p.y + p.h}" stroke="${LIJN}" stroke-width="1.5"/>`, staand(G.titel, p.x + p.band / 2, p.y + p.h / 2, 13.5, '#1e293b', Math.max(6, Math.floor(p.h / 8))));
+  // pijlen, gegevens en notities (onder de knopen); labels pas na alle lijnen
+  const labels = [];
+  G.flows.forEach(f => {
+    P.push(`<path d="${f.pts.map(([x, y], i) => (i ? 'L' : 'M') + r(x) + ' ' + r(y)).join('')}" fill="none" stroke="${LIJN}" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#bp-pijl)"/>`);
+    if (f.label) { const w = f.label.length * 6.6 + 8; labels.push(`<rect x="${r(f.lab[0] - 3)}" y="${r(f.lab[1])}" width="${r(w)}" height="15" rx="3" fill="#ffffff" fill-opacity="0.9"/><text x="${r(f.lab[0])}" y="${r(f.lab[1] + 11.5)}" font-size="12" font-weight="600" fill="${ZACHT}">${e(f.label)}</text>`); }
+  });
+  G.data.forEach(d => { if (d.assoc) P.push(`<path d="M${r(d.assoc[0][0])} ${r(d.assoc[0][1])}L${r(d.assoc[1][0])} ${r(d.assoc[1][1])}" fill="none" stroke="${ZACHT}" stroke-width="1.3" stroke-dasharray="2 4" stroke-linecap="round" marker-end="url(#bp-open)"/>`); });
+  (G.notes || []).forEach(n => P.push(`<path d="M${r(n.to[0])} ${r(n.to[1])}L${r(n.x)} ${r(n.y + n.h / 2)}" stroke="${ZACHT}" stroke-width="1.3" stroke-dasharray="2 4"/>`,
+    `<path d="M${n.x + 10} ${n.y}H${n.x}V${n.y + n.h}H${n.x + 10}" fill="none" stroke="${LIJN}" stroke-width="1.3"/>`,
+    `<text font-size="12.5" fill="${LIJN}">${n.lines.map((l, i) => `<tspan x="${n.x + 8}" y="${n.y + 17 + i * 16}"${i ? '' : ' font-weight="600"'}>${e(l)}</tspan>`).join('')}</text>`));
+  P.push(...labels);
+  // knopen
+  G.nodes.forEach(n => {
+    const { cx, cy, w, h } = n;
+    P.push(`<g data-bnode="${e(n.id)}">`);
+    if (o.licht && n.id === o.licht) P.push(`<rect class="licht" x="${r(cx - w / 2 - 9)}" y="${r(cy - h / 2 - 9)}" width="${r(w + 18)}" height="${r(h + 18)}" rx="${n.type === 'stap' ? 16 : r(h / 2 + 9)}" fill="#d1fae5" stroke="#10b981" stroke-width="3"/>`);
+    if (n.type === 'stap') {
+      P.push(`<rect x="${r(cx - w / 2)}" y="${r(cy - h / 2)}" width="${w}" height="${h}" rx="10" fill="#ffffff" stroke="${LIJN}" stroke-width="1.5"/>`);
+      P.push(n.text.trim() ? tekst(breek(n.text, w > 150 ? 24 : 18, 4), cx, cy, 12.5, '#1e293b') : tekst(['…'], cx, cy, 13, '#94a3b8'));
+    } else if (n.type === 'keuze') {
+      const s = w / 2;
+      P.push(`<path d="M${cx} ${cy - s}L${cx + s} ${cy}L${cx} ${cy + s}L${cx - s} ${cy}Z" fill="#ffffff" stroke="${LIJN}" stroke-width="1.5" stroke-linejoin="round"/>`,
+        `<path d="M${cx - 8} ${cy - 8}L${cx + 8} ${cy + 8}M${cx + 8} ${cy - 8}L${cx - 8} ${cy + 8}" stroke="${LIJN}" stroke-width="3" stroke-linecap="round"/>`);
+    } else P.push(`<circle cx="${cx}" cy="${cy}" r="${w / 2 - (n.type === 'einde' ? 1.5 : 0)}" fill="#ecfdf5" stroke="${n.type === 'einde' ? '#047857' : '#059669'}" stroke-width="${n.type === 'einde' ? 4 : 1.6}"/>`);
+    if (n.type !== 'stap' && n.text.trim() && n.lab) { const per = Math.max(10, Math.floor(n.lab.w / 6.4)), ls = breek(n.text, per, Math.max(1, Math.round(n.lab.h / 14)));
+      P.push(tekst(ls, n.lab.x + n.lab.w / 2, n.lab.y + n.lab.h / 2, 11.5, LIJN)); }
+    P.push('</g>');
+  });
+  G.data.forEach(d => {
+    P.push(`<path d="M${d.x} ${d.y}H${d.x + 26}L${d.x + 36} ${d.y + 10}V${d.y + 50}H${d.x}Z" fill="#ffffff" stroke="${LIJN}" stroke-width="1.4" stroke-linejoin="round"/><path d="M${d.x + 26} ${d.y}V${d.y + 10}H${d.x + 36}" fill="none" stroke="${LIJN}" stroke-width="1.4" stroke-linejoin="round"/>`);
+    P.push(tekst(breek(d.t, 17, 2), d.lab.x + d.lab.w / 2, d.lab.y + d.lab.h / 2, 11.5, LIJN));
+  });
+  P.push('</svg>');
+  return P.join('');
+}
+
+// Van het plan naar het beeld (dezelfde coördinaten als in het .bpmn-bestand)
+function bpmnBeeld(f) {
+  const g = bpmnPlan(f);
+  return { W: g.PX + g.poolW + 20, H: g.PY + g.poolH + 20, titel: f.name || 'Stroom',
+    pool: { x:g.PX, y:g.PY, w:g.poolW, h:g.poolH, band:g.PL },
+    lanes: g.lanes.map((l, i) => ({ x:g.PX + g.PL, y:g.PY + i * g.LH, w:g.poolW - g.PL, h:g.LH + (i === g.lanes.length - 1 ? g.band : 0), band:g.LL, naam:l.name.trim() || 'Rol ' + (i + 1) })),
+    nodes: [...g.P.values()].map(p => ({ id:p.n.id, type:p.n.type, cx:p.cx, cy:p.cy, w:p.w, h:p.h, text:p.n.text, lab:p.lab })),
+    flows: g.flows.map(q => ({ pts:q.pts, label:q.e.label, lab:q.lab })),
+    data: g.data.map(o => ({ x:o.x, y:48, t:o.t, in:o.in, lab:o.lab, assoc:o.assoc })) };
+}
+// Tekstalternatief voor de BPMN-tekening: de stappen per rol, met waar ze naartoe gaan
+function bpmnAlt(f) {
+  const nr = n => f.nodes.indexOf(n) + 1, SOORT = { start:'start', stap:'taak', keuze:'keuze', einde:'einde' };
+  const naar = n => { const u = edges(f).filter(e => e.from === n); return u.length ? ', ' + u.map(e => (e.label ? e.label + ' ' : '') + 'naar ' + nr(e.to)).join(', ') : ''; };
+  const item = n => `<li>${nr(n)}. ${esc(SOORT[n.type])}: ${esc(n.text || TYPES[n.type])}${esc(naar(n))}</li>`;
+  const groepen = f.lanes.length ? f.lanes.map(l => [l.name || 'Rol', f.nodes.filter(n => n.lane === l.id || (!f.lanes.some(x => x.id === n.lane) && l === f.lanes[0]))]) : [['Zonder rollen', f.nodes]];
+  return `<div class="sr-only" id="bpmn-alt"><p>BPMN-tekening van ${esc(f.name || 'de stroom')}, per rol:</p>${groepen.map(([nm, ns]) => `<p>${esc(nm)}</p><ul>${ns.map(item).join('')}</ul>`).join('')}</div>`;
+}
+const isBpmn = f => !!f && f.weergave === 'bpmn';
+// De tekening in de gekozen notatie
+function tekening(f, o = {}) { return isBpmn(f) ? bpmnSvg(bpmnBeeld(f), { licht: o.interactive ? licht : null }) : svgOf(f, o).svg; }
+/* Het BPMN-plan: dezelfde volgorde, rollen en sprongen als de Stroom, liggend. Het .bpmn-bestand en de BPMN-weergave gebruiken het allebei. */
+function bpmnPlan(f) {
   const L = layout(f), lanes = f.lanes, nL = Math.max(1, lanes.length), n = f.nodes.length;
   const COL = 180, LH = 140, PX = 20, PL = 30, LL = lanes.length ? 30 : 0, CH2 = 14, DW = 120;
   const proc = schildpadVan(f), invoer = spItems(proc, 'in'), uitvoer = spItems(proc, 'uit');
@@ -2449,6 +2550,23 @@ function bpmnXml(f) {
   const doc = [proj && 'Project: ' + proj, `Getekend in de Stroom van Onder Constructie op ${d.toLocaleDateString('nl-BE', { day:'numeric', month:'long', year:'numeric' })}.`,
     proc && (invoer.length || uitvoer.length) ? `Invoer en uitvoer komen uit het Schildpaddiagram ${plek}.` : '',
     invoer.length > ni ? 'Meer invoer: ' + invoer.slice(ni).join('; ') + '.' : '', uitvoer.length > nu ? 'Meer uitvoer: ' + uitvoer.slice(nu).join('; ') + '.' : ''].filter(Boolean).join('\n');
+  const lijnen = (t, per) => Math.min(4, Math.max(1, Math.ceil(String(t || '').length / per)));
+  P.forEach(p => {
+    const x = p.n; if (x.type === 'stap' || !x.text.trim()) return;
+    const lh = lijnen(x.text, x.type === 'keuze' ? 20 : 16) * 14;
+    // een gebeurtenis met een sprong onderaan krijgt haar naam erboven, zodat geen pijl door de tekst loopt
+    const boven = x.type === 'keuze' || ports.has(x.id), bw = x.type === 'keuze' ? 140 : 110;
+    p.lab = boven ? { x:p.cx - bw / 2, y:p.cy - p.h / 2 - 4 - lh, w:bw, h:lh } : { x:p.cx - 55, y:p.cy + p.h / 2 + 4, w:110, h:lh };
+  });
+  data.forEach(o => {
+    const lh = Math.min(2, lijnen(o.t, 16)) * 14, t = P.get(((o.in ? t1 : tN) || {}).id);   // de naam boven het document, de lijn vertrekt onderaan
+    o.lab = { x:o.x - 37, y:44 - lh, w:110, h:lh };
+    if (t) { const a = [o.x + 18, 98], b = [t.cx + (o.in ? -20 : 20), t.cy - t.h / 2]; o.assoc = o.in ? [a, b] : [b, a]; }
+  });
+  return { L, lanes, PX, PY, PL, LL, LH, poolW, poolH, band, P, flows, uit, in_, TAG, nid, lid, t1, tN, data, plek, doc, ni, nu, r };
+}
+function bpmnXml(f) {
+  const { lanes, PX, PY, PL, LH, poolW, poolH, band, P, flows, uit, in_, TAG, nid, lid, t1, tN, data, plek, doc, ni, nu, r } = bpmnPlan(f);
   const X = [];
   X.push('<?xml version="1.0" encoding="UTF-8"?>');
   X.push(`<bpmn:definitions xmlns:bpmn="${BPMN.m}" xmlns:bpmndi="${BPMN.di}" xmlns:dc="${BPMN.dc}" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Stroom_${xa(f.id)}" name="${xa(f.name || 'Stroom')}" targetNamespace="https://onderconstructie.github.io/stroom/" exporter="${BPMN.wij}" exporterVersion="1">`);
@@ -2479,26 +2597,17 @@ function bpmnXml(f) {
   X.push('  </bpmn:process>');
   // De tekening
   const B = (x, y, w, h) => `<dc:Bounds x="${r(x)}" y="${r(y)}" width="${r(w)}" height="${r(h)}" />`;
-  const lijnen = (t, per) => Math.min(4, Math.max(1, Math.ceil(String(t || '').length / per)));
   X.push('  <bpmndi:BPMNDiagram id="Tekening"><bpmndi:BPMNPlane id="Vlak" bpmnElement="Samenwerking">');
   X.push(`    <bpmndi:BPMNShape id="Pool_di" bpmnElement="Pool" isHorizontal="true">${B(PX, PY, poolW, poolH)}</bpmndi:BPMNShape>`);
   lanes.forEach((l, i) => X.push(`    <bpmndi:BPMNShape id="${lid(l)}_di" bpmnElement="${lid(l)}" isHorizontal="true">${B(PX + PL, PY + i * LH, poolW - PL, LH + (i === lanes.length - 1 ? band : 0))}</bpmndi:BPMNShape>`));
   P.forEach(p => {
-    const { n:x, cx, cy, w, h } = p; let lab = '';
-    if (x.type !== 'stap' && x.text.trim()) {
-      const lh = lijnen(x.text, x.type === 'keuze' ? 20 : 16) * 14;
-      // een gebeurtenis met een sprong onderaan krijgt haar naam erboven, zodat geen pijl door de tekst loopt
-      const boven = x.type === 'keuze' || ports.has(x.id);
-      lab = `<bpmndi:BPMNLabel>${boven ? B(cx - (x.type === 'keuze' ? 70 : 55), cy - h / 2 - 4 - lh, x.type === 'keuze' ? 140 : 110, lh) : B(cx - 55, cy + h / 2 + 4, 110, lh)}</bpmndi:BPMNLabel>`;
-    }
+    const { n:x, cx, cy, w, h } = p, lab = p.lab ? `<bpmndi:BPMNLabel>${B(p.lab.x, p.lab.y, p.lab.w, p.lab.h)}</bpmndi:BPMNLabel>` : '';
     X.push(`    <bpmndi:BPMNShape id="${nid(x)}_di" bpmnElement="${nid(x)}"${x.type === 'keuze' ? ' isMarkerVisible="true"' : ''}>${B(cx - w / 2, cy - h / 2, w, h)}${lab}</bpmndi:BPMNShape>`);
   });
   flows.forEach(q => X.push(`    <bpmndi:BPMNEdge id="${q.id}_di" bpmnElement="${q.id}">${q.pts.map(([x, y]) => `<di:waypoint x="${r(x)}" y="${r(y)}" />`).join('')}${q.e.label ? `<bpmndi:BPMNLabel>${B(q.lab[0], q.lab[1], q.e.label.length * 7 + 10, 14)}</bpmndi:BPMNLabel>` : ''}</bpmndi:BPMNEdge>`));
   data.forEach(o => {
-    const lh = Math.min(2, lijnen(o.t, 16)) * 14;   // de naam boven het document, de lijn vertrekt onderaan
-    X.push(`    <bpmndi:BPMNShape id="${o.id}_di" bpmnElement="${o.id}">${B(o.x, 48, 36, 50)}<bpmndi:BPMNLabel>${B(o.x - 37, 44 - lh, 110, lh)}</bpmndi:BPMNLabel></bpmndi:BPMNShape>`);
-    const t = P.get((o.in ? t1 : tN).id), a = [o.x + 18, 98], b = [t.cx + (o.in ? -20 : 20), t.cy - t.h / 2];
-    X.push(`    <bpmndi:BPMNEdge id="${o.in ? 'Naar_' : 'Van_'}${o.id}_di" bpmnElement="${o.in ? 'Naar_' : 'Van_'}${o.id}">${(o.in ? [a, b] : [b, a]).map(([x, y]) => `<di:waypoint x="${r(x)}" y="${r(y)}" />`).join('')}</bpmndi:BPMNEdge>`);
+    X.push(`    <bpmndi:BPMNShape id="${o.id}_di" bpmnElement="${o.id}">${B(o.x, 48, 36, 50)}<bpmndi:BPMNLabel>${B(o.lab.x, o.lab.y, o.lab.w, o.lab.h)}</bpmndi:BPMNLabel></bpmndi:BPMNShape>`);
+    if (o.assoc) X.push(`    <bpmndi:BPMNEdge id="${o.in ? 'Naar_' : 'Van_'}${o.id}_di" bpmnElement="${o.in ? 'Naar_' : 'Van_'}${o.id}">${o.assoc.map(([x, y]) => `<di:waypoint x="${r(x)}" y="${r(y)}" />`).join('')}</bpmndi:BPMNEdge>`);
   });
   X.push('  </bpmndi:BPMNPlane></bpmndi:BPMNDiagram>');
   X.push('</bpmn:definitions>');
