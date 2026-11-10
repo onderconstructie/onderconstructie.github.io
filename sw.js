@@ -12,7 +12,7 @@
   - Een nieuwe versie van de service worker wacht. De app toont "Nieuwe versie klaar" met Vernieuwen;
     pas dan wisselt hij. Nooit stil wisselen terwijl je werkt.
 */
-const VERSION = 'oc-app-v15.55';   // in de app getoond als v15.55
+const VERSION = 'oc-app-v15.56';   // in de app getoond als v15.56
 // Lettertypes en bibliotheken hebben vaste bestandsnamen (met versienummer): die bewaren we apart,
 // zodat een nieuwe versie van de app ze niet opnieuw moet downloaden.
 const STATIC = 'oc-static-1';
