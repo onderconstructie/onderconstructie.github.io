@@ -1156,9 +1156,74 @@ header[data-oc-kop][data-stand="compact"]::before { content:""; order:-1; flex:n
     vooraf: function (o) {
       var s = document.currentScript, k = (s && s.closest && s.closest('header[data-oc-kop]')) || document.querySelector('header[data-oc-kop]');
       if (!k || !o) return;
+      opties = o;
       try { k.setAttribute('data-stand', voorspel(o) ? 'groot' : 'compact'); } catch (e) {}
-    }
+    },
+    heeftWerk: heeftWerk,
+    wisZicht: wisZicht
   };
+  /* "Alles wissen" alleen als er iets te wissen is. Gaat het menu in .oc-kop-acties open, dan vraagt het blok ocKop.heeftWerk():
+     1. window.ocHeeftWerk() als de tool die aanbiedt (true als er eigen werk bewaard is);
+     2. anders de gegevens van ocKop.vooraf: is er een project of lijst die geen voorbeeld is en niet leeg (leeg(u, d) van de tool)?
+     3. anders true: het menu blijft zoals het was.
+     Een voorbeeld (voorbeeld: true) telt niet als eigen werk. Zonder werk staat "Alles wissen" niet in het menu, en ook de
+     scheidingslijn ervoor niet. Ongedaan staat in de melding na het wissen, niet in het menu: dat blijft werken. */
+  var opties = null;
+  function zonderVb(x) {
+    if (Array.isArray(x)) return x.filter(function (y) { return !(y && typeof y === 'object' && y.voorbeeld === true); }).map(zonderVb);
+    if (x && typeof x === 'object') { var r = {}; Object.keys(x).forEach(function (k) { if (k !== 'voorbeeld') r[k] = zonderVb(x[k]); }); return r; }
+    return x;
+  }
+  function heeftWerk() {
+    if (typeof window.ocHeeftWerk === 'function') { try { return !!window.ocHeeftWerk(); } catch (e) { return true; } }
+    var o = opties; if (!o || !o.sleutel || typeof o.leeg !== 'function') return true;
+    try {
+      var d = lees(o.sleutel);
+      if (d === null) return true;   // onleesbaar: laat wissen toe
+      if (d === undefined) return !voorspel(o);   // niets bewaard (een oude naam telt mee)
+      d = zonderVb(d);
+      if (!o.lijst) return !o.leeg(d, d);
+      return (Array.isArray(d[o.lijst]) ? d[o.lijst] : []).some(function (u) { return u && typeof u === 'object' && !o.leeg(u, d); });
+    } catch (e) { return true; }
+  }
+  function isWis(b) { for (var k in b.dataset) if (b.dataset[k] === 'wipe') return true; return false; }
+  function zichtbaar(e) { return !e.hidden && !e.hasAttribute('data-oc-weg') && getComputedStyle(e).display !== 'none'; }
+  function weg(e, w) {
+    if (w) { e.setAttribute('data-oc-weg', ''); e.hidden = true; e.style.setProperty('display', 'none', 'important'); }
+    else if (e.hasAttribute('data-oc-weg')) { e.removeAttribute('data-oc-weg'); e.hidden = false; e.style.removeProperty('display'); }
+  }
+  function wisZicht() {
+    var a = document.querySelector('header[data-oc-kop] .oc-kop-acties'); if (!a) return;
+    var W = [].filter.call(a.querySelectorAll('button'), isWis); if (!W.length) return;
+    var werk = heeftWerk();
+    W.forEach(function (b) {
+      weg(b, !werk);
+      var m = b.parentNode; [].forEach.call(m.children, function (e) { if (/(^|\s)(oc[a-z]*-)?sep(\s|$)/.test(e.className) || e.getAttribute('role') === 'separator') weg(e, false); });
+      var L = [].filter.call(m.children, zichtbaar), sep = function (e) { return /(^|\s)(oc[a-z]*-)?sep(\s|$)/.test(e.className) || e.getAttribute('role') === 'separator'; };
+      L.forEach(function (e, i) { if (sep(e) && (i === 0 || i === L.length - 1 || sep(L[i + 1]))) weg(e, true); });
+    });
+  }
+  /* voor de tool het menu opent (klik, Enter, spatie of een pijl op de knop) */
+  function menuKnop(t) { var a = t && t.closest && t.closest('header[data-oc-kop] .oc-kop-acties'); return a && t.closest('button[aria-haspopup], button[aria-expanded]') && !t.closest('[role="menu"]') ? a : null; }
+  document.addEventListener('click', function (e) { if (menuKnop(e.target)) try { wisZicht(); } catch (x) {} }, true);
+  document.addEventListener('keydown', function (e) {
+    var t = e.target;
+    if (/^(Arrow(Up|Down)|Enter| )$/.test(e.key) && menuKnop(t)) {
+      try { wisZicht(); } catch (x) {}
+      if (e.key === 'ArrowUp') setTimeout(function () {   // de tool zet de focus op het laatste item: misschien net het verborgen
+        var m = t.closest('.oc-kop-acties').querySelector('[role="menu"]'), L = m ? [].filter.call(m.querySelectorAll('[role="menuitem"]'), function (b) { return b.getClientRects().length; }) : [];
+        if (document.activeElement === t && t.getAttribute('aria-expanded') === 'true' && L.length) L[L.length - 1].focus();
+      }, 0);
+      return;
+    }
+    /* pijlen in het menu slaan een verborgen item over */
+    var m = t && t.closest && t.closest('header[data-oc-kop] .oc-kop-acties [role="menu"]');
+    if (!m || !m.querySelector('[data-oc-weg]') || !/^(Arrow(Up|Down)|Home|End)$/.test(e.key)) return;
+    var L = [].filter.call(m.querySelectorAll('[role="menuitem"]'), function (b) { return b.getClientRects().length; }); if (!L.length) return;
+    var i = L.indexOf(document.activeElement), n = L.length;
+    var j = e.key === 'Home' ? 0 : e.key === 'End' ? n - 1 : (i + (e.key === 'ArrowDown' ? 1 : -1) + n) % n;
+    e.preventDefault(); e.stopImmediatePropagation(); L[j].focus();
+  }, true);
   /* de terugknop is een pijltje: bij de muis toont een tip waar hij naartoe gaat (de naam staat in aria-label, die oc-terug kan wijzigen) */
   document.addEventListener('pointerover', function (e) {
     var a = e.target && e.target.closest && e.target.closest('header[data-oc-kop] a.back-link'); if (!a) return;
