@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Strategiekaartjes – Onder Constructie</title>
-<meta name="description" content="Trek een strategische vraag over meten, verbinden, de richting of het grotere plaatje, en bespreek ze samen. Met eigen kaarten, korte notities en een groot scherm voor de vergadering.">
+<meta name="description" content="Trek een strategische vraag over meten, verbinden, de richting, het grotere plaatje of de zwakke plek in je plan, en bespreek ze samen. Met eigen kaarten, korte notities en een groot scherm voor de vergadering.">
 <meta name="oc:groep" content="projecten">
 <meta name="oc:labels" content="vergaderen">
 <meta name="oc:kort" content="Trek een strategische vraag voor je vergadering">
@@ -78,6 +78,8 @@ header.header h1 + p, header.header h1 + p.subtitle, .oc-head h1 + p, .oc-head h
 [data-soort="verbinden"] { --t-lijn:#a7f3d0; --t-vlak:#ecfdf5; --t-tekst:#047857; }
 [data-soort="meta"] { --t-lijn:#cbd5e1; --t-vlak:#f1f5f9; --t-tekst:#475569; }
 [data-soort="richting"] { --t-lijn:#0c8660; --t-vlak:#ecfdf5; --t-tekst:#065f46; }
+[data-soort="uitdagen"] { --t-lijn:#64748b; --t-vlak:#f1f5f9; --t-tekst:#334155; }
+.soort[data-soort="uitdagen"][aria-pressed="true"] { border-color:#64748b; }
 .soort[data-soort="meta"][aria-pressed="true"] { border-color:#94a3b8; }
 
 /* De tafel: stapel en kaart */
@@ -230,11 +232,18 @@ kbd { font:inherit; font-size:0.75rem; font-weight:600; padding:0 0.375rem; bord
   .merk svg { width:70px; height:70px; }
 }
 @media (max-width:440px) {
-  /* Vier soorten passen niet op één rij: een rustig raster van twee op twee, binnen de kaart */
-  .soorten { display:grid; grid-template-columns:1fr 1fr; gap:0.375rem; width:100%; }
+  /* Vijf soorten passen niet op één rij: drie boven, twee onder, binnen de kaart */
+  .soorten { display:grid; grid-template-columns:repeat(6, 1fr); gap:0.375rem; width:100%; }
+  .soort { grid-column:span 2; min-width:0; }
+  .soort:nth-child(n+4) { grid-column:span 3; }
   .soort { justify-content:center; padding:0 0.625rem; gap:0.3125rem; font-size:0.875rem; }
   .soort > svg:first-child { display:none; }
   .acties .btn { flex:1 1 auto; padding:0 0.75rem; }
+}
+@media (max-width:360px) {
+  .soorten { gap:0.25rem; }
+  .soorten .soort { padding:0 0.25rem; gap:0.125rem; font-size:0.8125rem; }
+  .soorten .soort .vink { width:14px; height:14px; }
 }
 @media (max-width:380px) {
   .k-vraag { font-size:1.1875rem; }
@@ -1151,7 +1160,7 @@ header[data-oc-kop][data-stand="compact"]::before { content:""; order:-1; flex:n
                 <label for="thema">Welk thema?</label>
                 <input class="input" id="thema" type="text" maxlength="60" autocomplete="off" placeholder="Typ een thema" enterkeyhint="done">
             </div>
-            <p class="uitleg" id="uitleg">Trek een kaart en bespreek de vraag samen. Zo houd je de vergadering strategisch. De 14 vragen zijn klaar voor gebruik.</p>
+            <p class="uitleg" id="uitleg">Trek een kaart en bespreek de vraag samen. Zo houd je de vergadering strategisch. De 23 vragen zijn klaar voor gebruik.</p>
             <p class="sr-only" id="live" role="status" aria-live="polite"></p>
 
             <div class="controls">
@@ -1165,7 +1174,7 @@ header[data-oc-kop][data-stand="compact"]::before { content:""; order:-1; flex:n
             <details class="set" id="eigen-set">
                 <summary><span id="eigen-sum">Voeg een eigen kaart toe</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
                 <div class="set-body">
-                    <p class="set-uitleg">De 14 vaste vragen blijven altijd in de stapel. Mis je een vraag? Voeg ze toe als eigen kaart.</p>
+                    <p class="set-uitleg">De 23 vaste vragen blijven altijd in de stapel. Mis je een vraag? Voeg ze toe als eigen kaart.</p>
                     <form id="eigen-form" autocomplete="off" novalidate>
                         <span class="lbl" id="ek-lbl">Soort</span>
                         <div class="chips" id="ek-soort" role="radiogroup" aria-labelledby="ek-lbl"></div>
@@ -1195,15 +1204,16 @@ header[data-oc-kop][data-stand="compact"]::before { content:""; order:-1; flex:n
         <details class="explain" id="hoe-werkt-dit">
           <summary>Hoe werkt dit?</summary>
           <div class="inner">
-            <p>Strategiekaartjes brengen een vergadering terug naar de grote lijn. Je trekt een kaart met een vraag over meten, verbinden, de richting of het grotere plaatje, en je bespreekt ze samen. De 14 vragen zijn klaar voor gebruik.</p>
+            <p>Strategiekaartjes brengen een vergadering terug naar de grote lijn. Je trekt een kaart met een vraag over meten, verbinden, de richting of het grotere plaatje, of een vraag die je plan uitdaagt. Je bespreekt ze samen. De 23 vragen zijn klaar voor gebruik.</p>
             <ul>
               <li><b>Trek een kaart.</b> Druk op Trek een kaart. Er verschijnt een vraag. Je krijgt geen vraag twee keer, tot de hele stapel op tafel ligt.</li>
               <li><b>Bespreek de vraag samen.</b> Neem de tijd. Onder Al besproken typ je kort wat de groep zei, als je dat wil.</li>
-              <li><b>Kies de soorten.</b> Meten, Verbinden, Richting en Meta staan aan. Richting gaat over de koers: op welke ontwikkelingen speel je in, voor wie, hoe onderscheid je je en wat ga je doen? Zet je een soort uit, dan trek je alleen nog uit de andere.</li>
+              <li><b>Kies de soorten.</b> Meten, Verbinden, Richting, Meta en Uitdagen staan aan. Uitdagen zoekt de zwakke plek in je plan, zolang je nog kan bijsturen. Zet je een soort uit, dan trek je alleen nog uit de andere.</li>
               <li><b>Voeg eigen kaarten toe.</b> Kies een soort en typ je vraag. Je kaart krijgt het label eigen en gaat mee in de stapel.</li>
               <li><b>Toon op groot scherm.</b> Projecteer de kaart in de vergadering. Spatie trekt de volgende kaart, Escape sluit.</li>
             </ul>
-            <p>Tip: kopieer alles als tekst voor het verslag. Opnieuw beginnen legt alle kaarten terug in de stapel. Alles blijft op dit toestel.</p>
+            <p><b>Waarom deze vragen?</b> Ze steunen op onderzoek. Een doel in één zin en een snel teken van voortgang houden een team gericht. Mensen buiten je team brengen kennis binnen. Goede strategie begint bij het echte probleem en kiest ook wat je niet doet. En wie zich vooraf inbeeldt dat het mislukt is, ziet meer risico's.</p>
+            <p>Tip: laat iedereen eerst een minuut alleen nadenken en dan pas praten. Zo hoor je meer ideeën. Kopieer alles als tekst voor het verslag. Opnieuw beginnen legt alle kaarten terug in de stapel. Alles blijft op dit toestel.</p>
             <p>Start je overleg met de <a href="/ijsbreker/">IJsbreker</a> of een <a href="/check-in/">Check-in</a>, en noteer de afspraken in <a href="/notities/">Vergadernotities</a>.</p>
           </div>
         </details>
@@ -1275,32 +1285,42 @@ const stil = () => window.matchMedia && matchMedia('(prefers-reduced-motion: red
 const ICO = {
   meten: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><path d="M7 16v-3M12 16V9M17 16V5"/></svg>',
   verbinden: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.3 10.8l7.4-3.6M8.3 13.2l7.4 3.6"/></svg>',
+  uitdagen: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 3L5 13.5h6L10 21l8-10.5h-6z"/></svg>',
   richting: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>',
   meta: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l8.5 4.5L12 13 3.5 8.5z"/><path d="M3.5 13L12 17.5l8.5-4.5"/></svg>'
 };
 const VINK = '<svg class="vink" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 const ICO_TREK = '<rect x="4" y="6" width="11" height="15" rx="2"/><path d="M9 3h9a2 2 0 0 1 2 2v12"/>';
 const ICO_SCHUD = '<path d="M3 7h3.5c2 0 3.2 1 4.3 2.6l2.4 3.8c1.1 1.6 2.3 2.6 4.3 2.6H21"/><path d="M3 17h3.5c1.5 0 2.6-.6 3.5-1.6M14 8.6c.9-1 2-1.6 3.5-1.6H21"/><path d="M18.5 4.5L21 7l-2.5 2.5M18.5 14.5L21 17l-2.5 2.5"/>';
-const SOORTEN = [{ id:'meten', naam:'Meten' }, { id:'verbinden', naam:'Verbinden' }, { id:'richting', naam:'Richting' }, { id:'meta', naam:'Meta' }];
+const SOORTEN = [{ id:'meten', naam:'Meten' }, { id:'verbinden', naam:'Verbinden' }, { id:'richting', naam:'Richting' }, { id:'meta', naam:'Meta' }, { id:'uitdagen', naam:'Uitdagen' }];
 // Soorten die er vroeger nog niet waren: wie de tool al gebruikte, krijgt ze er gewoon bij (aan)
 const KENT_OUD = ['meten', 'verbinden', 'meta'];
 const SOORT = Object.fromEntries(SOORTEN.map(s => [s.id, s]));
 const THEMA_VOOR = 'Zullen we onderzoeken hoe het ', THEMA_NA = ' gerelateerd is aan dit werk?';
 const VAST = [
-  { id:'m1', soort:'meten', tekst:'Hoe kunnen we de doelstellingen samenvatten?' },
-  { id:'m2', soort:'meten', tekst:'Hoe meten we de voortgang van het project?' },
-  { id:'m3', soort:'meten', tekst:'Hoe weten we of dit project de juiste resultaten heeft behaald?' },
-  { id:'v1', soort:'verbinden', tekst:'Zijn er mensen uit andere entiteiten die we hiermee kunnen linken?' },
-  { id:'v2', soort:'verbinden', tekst:'Hebben we de link gemaakt met iemand die met iets gelijkaardigs bezig is?' },
-  { id:'v3', soort:'verbinden', tekst:'Is men internationaal met iets gelijkaardigs bezig?' },
-  { id:'r1', soort:'richting', tekst:'Op welke ontwikkelingen in de markt spelen we in?' },
-  { id:'r2', soort:'richting', tekst:'Op welke klanten richten we ons?' },
+  { id:'m1', soort:'meten', tekst:'Wat is ons doel, in één zin die iedereen snapt?' },
+  { id:'m2', soort:'meten', tekst:'Waaraan zien we binnen een maand dat we op koers zitten?' },
+  { id:'m3', soort:'meten', tekst:'Waaraan merken de mensen voor wie we het doen dat het werkt?' },
+  { id:'m4', soort:'meten', tekst:'Welk cijfer kan er goed uitzien, terwijl het eigenlijk slecht gaat?' },
+  { id:'v1', soort:'verbinden', tekst:'Wie buiten ons team weet hier al veel over?' },
+  { id:'v2', soort:'verbinden', tekst:'Wie is met iets gelijkaardigs bezig, en wat leren we van hen?' },
+  { id:'v3', soort:'verbinden', tekst:'Waar in het buitenland lukt dit al, en wat nemen we over?' },
+  { id:'v4', soort:'verbinden', tekst:'Wie raakt dit, maar zit vandaag niet mee aan tafel?' },
+  { id:'r5', soort:'richting', tekst:'Wat is het echte probleem dat we hier oplossen?' },
+  { id:'r1', soort:'richting', tekst:'Op welke ontwikkelingen rond ons spelen we in?' },
+  { id:'r2', soort:'richting', tekst:'Voor wie doen we dit vooral, en voor wie niet?' },
   { id:'r3', soort:'richting', tekst:'Hoe onderscheiden we ons?' },
-  { id:'r4', soort:'richting', tekst:'Welke activiteiten gaan we ontwikkelen?' },
-  { id:'x1', soort:'meta', tekst:"Komen er terugkerende thema's voort uit dit werk?" },
-  { id:'x2', soort:'meta', tekst:'Hoe zouden we dit schaalbaar maken?' },
-  { id:'x3', soort:'meta', tekst:'Wie zijn we specifiek aan het benaderen met deze aanpak?' },
-  { id:'x4', soort:'meta', tekst:THEMA_VOOR + 'thema [X]' + THEMA_NA, thema:true }
+  { id:'r4', soort:'richting', tekst:'Welke activiteiten gaan we ontwikkelen, en welke laten we vallen?' },
+  { id:'x1', soort:'meta', tekst:"Welke thema's komen telkens terug in dit werk?" },
+  { id:'x2', soort:'meta', tekst:'Wat is er nodig om dit groter te maken, of ook elders te doen?' },
+  { id:'x5', soort:'meta', tekst:'Wat werkt nu al goed, en hoe doen we daar meer van?' },
+  { id:'x6', soort:'meta', tekst:'Wat zouden we anders doen als we vandaag opnieuw begonnen?' },
+  { id:'x4', soort:'meta', tekst:THEMA_VOOR + 'thema [X]' + THEMA_NA, thema:true },
+  { id:'u1', soort:'uitdagen', tekst:'Stel: over een jaar is dit mislukt. Wat is er dan gebeurd?' },
+  { id:'u2', soort:'uitdagen', tekst:'Wat is het sterkste argument tegen ons plan?' },
+  { id:'u3', soort:'uitdagen', tekst:'Hoe lang duurden gelijkaardige projecten echt, en wat kostten ze?' },
+  { id:'u4', soort:'uitdagen', tekst:'Wanneer stoppen we, en wie beslist dat?' },
+  { id:'u5', soort:'uitdagen', tekst:'Welke aanname moet kloppen, anders lukt dit niet?' }
 ];
 const VAST_IDS = new Set(VAST.map(k => k.id));
 /* De knipoog: af en toe een droge regel onder de knop */
@@ -1391,7 +1411,7 @@ const bespKaart = b => { const k = kaart(b.k); return k && k.soort === b.soort ?
 /* ---------- Trekken ---------- */
 let trekN = 0, bezigT = null;
 function trek() {
-  if (!st.aan.length) { toast('Zet eerst een soort aan: Meten, Verbinden of Meta.'); zeg('Geen enkele soort staat aan.'); return; }
+  if (!st.aan.length) { toast('Zet eerst een soort aan.'); zeg('Geen enkele soort staat aan.'); return; }
   if (st.tafel && !rest().length) { schudOpnieuw(); return; }
   const r = rest();
   if (!r.length) {
@@ -1470,7 +1490,7 @@ function renderTafel() {
   $('paneel').hidden = !paneel;
   $('kaart').hidden = paneel;
   $('stapel').hidden = paneel;
-  if (geen) $('paneel').innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="6" width="11" height="15" rx="2" stroke-dasharray="3 3"/><path d="M9 3h9a2 2 0 0 1 2 2v12" stroke-dasharray="3 3"/></svg><b>Geen enkele soort staat aan.</b><span>Zet Meten, Verbinden of Meta aan om een kaart te trekken.</span>';
+  if (geen) $('paneel').innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="6" width="11" height="15" rx="2" stroke-dasharray="3 3"/><path d="M9 3h9a2 2 0 0 1 2 2v12" stroke-dasharray="3 3"/></svg><b>Geen enkele soort staat aan.</b><span>Zet minstens één soort aan om een kaart te trekken.</span>';
   else if (st.tafel) $('paneel').innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICO_SCHUD + '</svg><b>Alle kaarten liggen op tafel.</b><span>Opnieuw schudden? Dan begint een nieuwe ronde. Al besproken blijft staan.</span>';
 
   const voor = $('voor');
@@ -1538,7 +1558,7 @@ function renderBesproken() {
 function groei(t) { t.style.height = 'auto'; t.style.height = Math.max(44, t.scrollHeight + 2) + 'px'; }
 
 /* ---------- Bediening ---------- */
-$('trek').addEventListener('click', () => { if ($('trek').getAttribute('aria-disabled') === 'true') { toast('Zet eerst een soort aan: Meten, Verbinden of Meta.'); return; } trek(); });
+$('trek').addEventListener('click', () => { if ($('trek').getAttribute('aria-disabled') === 'true') { toast('Zet eerst een soort aan.'); return; } trek(); });
 // Ook een tik of klik op de kaart of de stapel trekt een kaart (niet op knoppen of velden in het paneel)
 $('tafel').addEventListener('click', e => {
   if (e.target.closest('#paneel, button, a, input, textarea, select, label')) return;
