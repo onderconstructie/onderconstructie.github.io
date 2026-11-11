@@ -10,8 +10,8 @@
 <meta property="og:locale" content="nl_BE">
 <meta property="og:title" content="Onder Constructie: minder gepraat, meer beslist">
 <meta property="og:description" content="Gratis tools voor projecten, verandering en vergaderen. Gemaakt met AI, gebruikt met hoofd en hart. Geen account, alles blijft op je toestel.">
-<meta property="og:url" content="https://onderconstructie.github.io/app/">
-<meta property="og:image" content="https://onderconstructie.github.io/delen.jpg">
+<meta property="og:url" content="https://onderconstructie.app/app/">
+<meta property="og:image" content="https://onderconstructie.app/delen.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Onder Constructie. Minder gepraat, meer beslist. Gemaakt met AI. Gebruikt met hoofd en hart.">
@@ -1594,6 +1594,9 @@ html.oc-stil .n-puls, html.oc-stil .n-halo, html.oc-stil .n-far circle { animati
 .verhuis-ja { background:#0c8660; color:#fff; border:1px solid #047857; }
 .verhuis-ja:hover { background:#047857; }
 .verhuis-later { background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; }
+.wz-verhuis { margin:0.75rem 0 0; font-size:0.9375rem; line-height:1.5; color:#475569; }
+.wz-verhuis[hidden] { display:none; }
+.wz-verhuis button { min-height:44px; padding:0; color:#047857; font-weight:600; text-decoration:underline; text-underline-offset:3px; }
 /* Een golf: bij het openen, bij een andere tab en als de footer in beeld komt loopt er even kleur over de paden
    en lichten de lijnen van het logo na elkaar op. Elke golf duurt korter dan vijf seconden (WCAG 2.2.2). */
 @media (prefers-reduced-motion:no-preference) {
@@ -2089,7 +2092,7 @@ html.oc-stil .n-puls, html.oc-stil .n-halo, html.oc-stil .n-far circle { animati
         <a class="ft-link" href="https://www.linkedin.com/in/bartel-volckaert-8a96842/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Maker</a>
         <button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (35 seconden)" title="Bekijk de film (35 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg></button>
       </nav>
-      <p class="ft-meta"><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v15.61</span></p>
+      <p class="ft-meta"><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v15.62</span></p>
     </div>
   </footer>
   <dialog class="film" id="film" aria-labelledby="film-h">
@@ -2250,6 +2253,7 @@ html.oc-stil .n-puls, html.oc-stil .n-halo, html.oc-stil .n-far circle { animati
         <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><path d="m9 13 2 2 4-4"/></svg><span><b>Eén keer een projectnaam.</b> Elke tool vult mee aan.</span></li>
         <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 5 6v5c0 4.5 3 8.2 7 10 4-1.8 7-5.5 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></svg><span><b>Alles blijft op dit toestel.</b> Geen account. Maak af en toe een reservekopie. <a href="/privacy/">Over je privacy</a></span></li>
       </ul>
+      <p class="wz-verhuis" id="wz-verhuis" hidden>Gebruikte je de app al op het oude adres? <button type="button" id="wz-verhuis-k">Zet je reservekopie terug</button></p>
       <button type="button" class="wz-film" id="wz-film" aria-haspopup="dialog"><span class="wz-film-b" aria-hidden="true"><img src="/video/onderconstructie.jpg" alt="" width="36" height="45" loading="lazy" decoding="async"><svg viewBox="0 0 24 24"><path d="M9 7.5v9l7.5-4.5z" fill="#fff"/></svg></span><span>Bekijk in 35 seconden wat de app doet</span></button>
     </div>
     <div class="wz-acties"><button type="button" class="wz-go" id="wz-start">Aan de slag<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>
@@ -4855,6 +4859,9 @@ function toonVerhuis() {
   $('verhuis-later').addEventListener('click', () => { try { sessionStorage.setItem('oc-verhuis-later', '1'); } catch {} d.remove(); });
 }
 setTimeout(async () => { try { if (sessionStorage.getItem('oc-verhuis-later')) return; } catch {} if (await verhuisNodig()) toonVerhuis(); }, 1500);
+// Op het nieuwe adres: wie de app vroeger gebruikte, zet in één tik zijn reservekopie terug (vanuit de wizard)
+if (location.hostname === 'onderconstructie.app' && Date.now() < Date.parse('2027-04-01')) { const v = $('wz-verhuis'); if (v) v.hidden = false; }
+$('wz-verhuis-k').addEventListener('click', () => { $('wiz').close(); openData(); $('data-restore-file').click(); });
 (() => {
   let raw = null, list = null;
   try { raw = localStorage.getItem(KEY + 'tools-cache'); list = JSON.parse(raw); } catch {}
