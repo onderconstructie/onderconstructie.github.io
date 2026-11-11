@@ -10,7 +10,7 @@
     <meta name="oc:pdca" content="plan, check">
     <meta name="oc:kort" content="Wat veroorzaakt het probleem?">
     <meta name="oc:volgorde" content="24">
-    <meta name="oc:opslag" content="visgraat.v1, visgraat.v1.kapot*, oc.share.visgraat">
+    <meta name="oc:opslag" content="visgraat.v1, visgraat.v1.kapot*, oc.share.visgraat, oc.beeld.visgraat">
 <meta name="theme-color" content="#ffffff">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40' fill='none' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='20' cy='20' r='18' fill='%23f8fafc' stroke='%23e2e8f0' stroke-width='1.5'/%3E%3Cpath d='M8.5 20H25M11.5 13l4 7m3-7 4 7m-11 7 4-7m3 7 4-7' stroke='%2364748b'/%3E%3Cpath d='M24.5 14.5c4.5 0 7.5 2.4 7.5 5.5s-3 5.5-7.5 5.5Z' fill='%2310b981'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="/fonts/fonts.css">
@@ -2038,6 +2038,14 @@ document.addEventListener('click', e => {
 });
 
 /* Klaarleggen: de gekozen oorzaken (voorbeelden niet) */
+/* Je tekening voor de Cockpit: per project de SVG (dezelfde als bij Download als SVG), onder oc.beeld.<tool>. Alleen eigen werk, geen voorbeelden. */
+function ocBeeld(lijst) {
+  try {
+    const L = lijst.filter(x => x && x.name && x.svg && x.svg.length < 400000).slice(0, 12);
+    if (L.length) localStorage.setItem('oc.beeld.' + OC_ID, JSON.stringify({ tool:OC_ID, updated:Date.now(), lists:L }));
+    else localStorage.removeItem('oc.beeld.' + OC_ID);
+  } catch (e) {}
+}
 function publish() {
   const lists = state.units.filter(u => !u.voorbeeld && u.causes.some(c => hot(c) && c.text.trim())).map(u => ({
     name: title(u).slice(0, 80),
@@ -2048,6 +2056,7 @@ function publish() {
       : { type:'taak', text: c.toets.trim() || 'Nagaan of dit klopt: ' + diepst(c), note: c.toets.trim() ? 'oorzaak: ' + diepst(c) : 'waarschijnlijke oorzaak' })
   }));
   ocShare.publish(OC_ID, OC_TOOL, lists);
+  ocBeeld(state.units.filter(u => !u.voorbeeld && u.causes.some(c => c.text.trim())).map(u => { try { return { name:title(u).slice(0, 80), svg:svgOf(u) }; } catch (e) { return null; } }));
 }
 
 /* Voorbeeld */

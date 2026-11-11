@@ -127,7 +127,8 @@ html:has(.ocw-back) { overflow:hidden; }
 /* Eenheid: vaste breedte voor de inhoud onder de kop (smal 720 px of breed 1200 px) */
 .main { max-width:720px; margin-left:auto; margin-right:auto; }
 /* ==== Cockpit ==== */
-.main { max-width:1200px; padding:1.25rem 1.5rem 2.5rem; }
+.main { max-width:none; padding:1.25rem 1.5rem 2.5rem; }   /* de Cockpit gebruikt de volle breedte van het scherm */
+.main > .explain { max-width:52rem; margin-left:auto; margin-right:auto; }
 .aanbod { display:flex; align-items:center; gap:0.875rem; max-width:52rem; margin:0 auto 1.25rem; padding:0.875rem 0.875rem 0.875rem 1rem; border-radius:16px; background:linear-gradient(120deg, #ffffff 20%, #ecfdf5); border:1px solid var(--mint); box-shadow:0 10px 24px -20px rgba(4,120,87,0.6); }
 .aanbod[hidden] { display:none; }
 .aanbod-ico { flex:none; width:40px; height:40px; border-radius:12px; background:#fff; box-shadow:inset 0 0 0 1px var(--mint); display:grid; place-items:center; color:var(--accent-dark); }
@@ -143,7 +144,7 @@ html:has(.ocw-back) { overflow:hidden; }
 .tip strong { color:var(--slate-800); }
 
 /* Het bord: kolommen naast elkaar, op een gsm onder elkaar */
-.bord { --k:3; display:grid; grid-template-columns:repeat(var(--k), minmax(250px, 1fr)) auto; gap:1rem; align-items:start; overflow-x:auto; padding:0.25rem 0.25rem 1rem; margin:0 -0.25rem; scroll-snap-type:x proximity; }
+.bord { --k:3; display:grid; grid-template-columns:var(--cols, repeat(var(--k), minmax(220px, 1fr))); gap:1rem; align-items:start; overflow-x:auto; padding:0.25rem 0.25rem 1rem; margin:0 -0.25rem; scroll-snap-type:x proximity; }
 .kol { min-width:0; display:flex; flex-direction:column; gap:0.625rem; padding:0.75rem; border-radius:18px; background:var(--slate-100); border:1px solid var(--slate-200); scroll-snap-align:start; transition:background 0.15s, box-shadow 0.15s; }
 .kol.doel { background:var(--accent-50); box-shadow:inset 0 0 0 2px var(--mint); }
 .kol-kop { display:flex; align-items:center; gap:0.25rem; min-height:44px; padding-left:0.375rem; }
@@ -359,6 +360,23 @@ html:has(.ocw-back) { overflow:hidden; }
 .aftel-d { margin:0.25rem 0 0; font-size:0.875rem; color:var(--slate-600); }
 .aftel-d::first-letter { text-transform:uppercase; }
 #f-datum { min-height:48px; }
+
+/* Nieuwe kolom: een rustig plusje rechtsboven het bord */
+.bord-balk { display:flex; justify-content:flex-end; margin:-0.25rem 0 0.375rem; }
+.kol-plus-k { display:inline-grid; place-items:center; width:44px; height:44px; padding:0; border-radius:12px; border:1px solid var(--slate-200); background:#fff; color:var(--slate-500); cursor:pointer; transition:color .15s, border-color .15s, background .15s; }
+.kol-plus-k svg { width:22px; height:22px; }
+.kol-plus-k:hover { color:var(--accent-dark); border-color:var(--mint); background:var(--accent-50); }
+.kol-plus-k:focus-visible { outline:2px solid var(--accent-dark); outline-offset:2px; }
+.kol-plus-k[hidden] { display:none; }
+@media print { .bord-balk { display:none !important; } }
+
+/* De tekening van een tool (Visgraat, Ideeënkaart, Stroom): leesbaar, met een tik groot */
+.wg-beeld-k { display:block; width:100%; padding:0.375rem; border:1px solid var(--slate-200); border-radius:12px; background:#fff; cursor:zoom-in; }
+.wg-beeld-k img { display:block; width:100%; height:auto; max-height:22rem; object-fit:contain; }
+[data-groot] .wg-beeld-k img, .blok[data-groot] .wg-beeld-k img { max-height:34rem; }
+.wg-beeld-k:hover { border-color:var(--mint); }
+.wg-beeld-k:focus-visible { outline:2px solid var(--accent-dark); outline-offset:2px; }
+.groot { background:#fff; }
 /* oc-uitleg v1 begin */
 /* "Hoe werkt dit?": één blok voor alle tools. Zonder JavaScript blijft de gewone uitklapper leesbaar.
    Het script zet .oc-u op <details class="explain"> en bouwt de inhoud om tot inleiding, stappen, tip en verwijzingen. */
@@ -1421,6 +1439,7 @@ window.ocProjectkiezer = function (plek, o) {
             <p><strong>Plak gewoon iets</strong>: een link, een video, tekst of een afbeelding. De Cockpit ziet zelf wat het is.<span class="tip-sleep"> Slepen naar een kolom kan ook.</span></p>
         </div>
 
+        <div class="bord-balk"><button type="button" class="kol-plus-k" id="kol-plus-k" aria-label="Nieuwe kolom" title="Nieuwe kolom"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="7" height="16" rx="1.5"/><path d="M17.5 8v8M13.5 12h8"/></svg></button></div>
         <div class="bord" id="bord" aria-label="Je bord"></div>
 
         <details class="explain" id="hoe-werkt-dit">
@@ -1667,7 +1686,7 @@ function wijzig(fn, melding) {
 
 /* ---------- Tools uit de app ---------- */
 let TOOLS = [];
-fetch('/tools.json').then(r => r.ok ? r.json() : []).then(d => { TOOLS = (Array.isArray(d) ? d : []).filter(t => t && t.id && t.path && t.id !== 'cockpit'); TOOLS.sort((a, b) => a.title.localeCompare(b.title, 'nl')); render(); }).catch(() => {});
+fetch('/tools.json').then(r => r.ok ? r.json() : []).then(d => { TOOLS = (Array.isArray(d) ? d : []).filter(t => t && t.id && t.path && t.id !== 'cockpit'); TOOLS.sort((a, b) => a.title.localeCompare(b.title, 'nl')); if (!autoBord()) render(); }).catch(() => {});
 const toolVan = id => TOOLS.find(t => t.id === id);
 const icoon = t => t && t.icon ? 'data:image/svg+xml,' + encodeURIComponent(t.icon) : '';
 function projectNamen() {
@@ -1739,6 +1758,9 @@ let nieuwBlok = null;
 function render() {
   const B = bord(), el = $('bord');
   el.style.setProperty('--k', B.kolommen.length);
+  // een kolom met een tekening of een groot blokje krijgt dubbele breedte, zodat je het meteen kan lezen
+  const breed = k => k.blokken.some(b => b.groot || (b.soort === 'tool' && b.widget && beeldVan(b)));
+  el.style.setProperty('--cols', B.kolommen.map(k => breed(k) ? 'minmax(360px, 2fr)' : 'minmax(200px, 1fr)').join(' '));
   const f = document.activeElement, fId = f && f.closest && f.closest('[data-id]') ? f.closest('[data-id]').dataset.id : null, fSel = f && f.dataset ? (f.dataset.blokmenu ? 'blokmenu' : f.dataset.plus != null ? 'plus' : null) : null;
   const fKol = f && f.closest && f.closest('.kol') ? f.closest('.kol').dataset.kol : null;
   el.innerHTML = B.kolommen.map((k, ki) => `<section class="kol" data-kol="${esc(k.id)}" aria-labelledby="kn-${esc(k.id)}">
@@ -1746,7 +1768,8 @@ function render() {
       ${k.blokken.map((b, bi) => blokHTML(b, ki, bi, k.blokken.length)).join('')}
       <button type="button" class="plus" data-plus="${esc(k.id)}">${SVG(I.plus)}Voeg toe</button>
     </section>`).join('')
-    + (B.kolommen.length < MAX_KOL ? `<button type="button" class="kol-plus" id="kol-plus">${SVG(I.kol)}Nieuwe kolom</button>` : '');
+    ;
+  $('kol-plus-k').hidden = B.kolommen.length >= MAX_KOL;
   $('tip').hidden = !B.kolommen.every(k => !k.blokken.length);
   if (nieuwBlok) { const n = el.querySelector(`.blok[data-id="${CSS.escape(nieuwBlok)}"]`); if (n) { n.classList.add('nieuw'); n.scrollIntoView({ block:'nearest' }); } nieuwBlok = null; }
   if (fId && fSel === 'blokmenu') { const x = el.querySelector(`[data-blokmenu="${CSS.escape(fId)}"]`); x && x.focus({ preventScroll:true }); }
@@ -1949,10 +1972,10 @@ $('bord').addEventListener('drop', async e => {
 });
 
 /* ---------- Klikken op het bord ---------- */
+$('kol-plus-k').addEventListener('click', () => nieuweKolom());
 $('bord').addEventListener('click', e => {
   const t = e.target;
   const plus = t.closest('[data-plus]'); if (plus) { laatsteKol = plus.dataset.plus; openBlad(plus.dataset.plus); return; }
-  if (t.closest('#kol-plus')) { nieuweKolom(); return; }
   const bm = t.closest('[data-blokmenu]'); if (bm) { blokMenu(bm); return; }
   const km = t.closest('[data-kolmenu]'); if (km) { kolMenu(km); return; }
   const g = t.closest('[data-groot]'); if (g) { const img = g.querySelector('img'); $('groot-img').src = img.src; $('groot-img').alt = img.alt; $('groot').showModal(); return; }
@@ -2184,7 +2207,18 @@ function geleden(t) {
   return m < 2 ? 'net bijgewerkt' : m < 60 ? 'bijgewerkt ' + m + ' min geleden' : m < 1440 ? 'bijgewerkt ' + Math.round(m / 60) + ' uur geleden' : 'bijgewerkt ' + new Date(t).toLocaleDateString('nl-BE', { day:'numeric', month:'short' });
 }
 function meerRegel(n, max, t) { return n > max ? `<p class="wg-meer">en nog ${n - max} ${t}</p>` : ''; }
+/* Tools die een beeld tekenen (Visgraatdiagram, Ideeënkaart, Stroom) leggen hun eigen tekening klaar onder oc.beeld.<tool>:
+   { updated, lists:[{ name, svg }] }. Dan toont de Cockpit die tekening, leesbaar en groter te maken, in plaats van een lijst. */
+function beeldVan(b) {
+  let d = null; try { d = JSON.parse(localStorage.getItem('oc.beeld.' + b.tool)); } catch (e) {}
+  const L = d && Array.isArray(d.lists) ? d.lists.filter(l => l && typeof l.svg === 'string' && /^\s*<svg[\s>]/.test(l.svg) && l.svg.length < 400000) : [];
+  let p = b.project; if (!p) { try { const x = JSON.parse(localStorage.getItem('oc.project')); p = x && x.name; } catch (e) {} }
+  const l = (p && L.find(x => zacht(x.name) === zacht(p))) || (!b.project && !p && L.length === 1 ? L[0] : null);
+  return l ? { svg:l.svg, naam:l.name, updated:d.updated } : null;
+}
 function widgetHTML(b) {
+  const bb = beeldVan(b);
+  if (bb) { const t = toolVan(b.tool); return `<div class="wg wg-beeld"><button type="button" class="wg-beeld-k" data-groot aria-label="${esc('Toon ' + (t ? t.title : 'de tekening') + ' groot')}"><img src="data:image/svg+xml;charset=utf-8,${encodeURIComponent(bb.svg)}" alt="${esc((t ? t.title : 'Tekening') + ': ' + bb.naam)}" loading="lazy"></button><p class="wg-wanneer">${esc(geleden(bb.updated))}</p></div>`; }
   const { lijst, updated, p } = widgetLijst(b), G = !!b.groot, MAX = G ? 12 : 4;
   if (!lijst || !lijst.items.length) return `<div class="wg wg-leeg">${p ? 'Nog niets voor ' + esc(p) + ' in deze tool.' : 'Kies een project, of open de tool om te beginnen.'}</div>`;
   const it = lijst.items, van = type => it.filter(x => x.type === type);
@@ -2233,27 +2267,70 @@ function huidigProject() { try { const x = JSON.parse(localStorage.getItem('oc.p
 function toolsMetData(p) {
   return TOOLS.filter(t => deelt(t)).filter(t => { try { const d = JSON.parse(localStorage.getItem('oc.share.' + t.id)); return d && Array.isArray(d.lists) && d.lists.some(l => l && zacht(l.name) === zacht(p) && Array.isArray(l.items) && l.items.length); } catch (e) { return false; } });
 }
+/* Welke stappenplannen ben je begonnen (de app bewaart dat in oc-app.paths-started)? Hun tools horen op je bord, ook zonder gegevens. */
+function stappenplannen() { try { const x = JSON.parse(localStorage.getItem('oc-app.paths-started')); return Array.isArray(x) ? x.filter(s => typeof s === 'string') : []; } catch (e) { return []; } }
+function stapTools() {
+  const R = stappenplannen(); if (!R.length) return [];
+  const L = [];
+  TOOLS.forEach(t => (Array.isArray(t.traject) ? t.traject : []).forEach(x => { if (x && R.includes(x.naam)) L.push({ t, r:R.indexOf(x.naam), stap:+x.stap || 99 }); }));
+  L.sort((a, b) => a.r - b.r || a.stap - b.stap);
+  return L.map(x => x.t).filter((t, i, a) => a.indexOf(t) === i);
+}
+function voorstel(p) {
+  const metData = p ? toolsMetData(p) : [], stap = stapTools();
+  const alle = stap.concat(metData.filter(t => !stap.includes(t)));
+  return { alle, metData };
+}
+/* De eerstvolgende mijlpaal met een datum voor dit project (uit Tijdlijn of Projectopdracht): wordt een aftelling bovenaan */
+function volgendeMijlpaal(p) {
+  const nu = new Date(); nu.setHours(0, 0, 0, 0); let best = null;
+  TOOLS.filter(t => deelt(t)).forEach(t => { try { const d = JSON.parse(localStorage.getItem('oc.share.' + t.id)); (d && Array.isArray(d.lists) ? d.lists : []).filter(l => l && zacht(l.name) === zacht(p) && Array.isArray(l.items)).forEach(l => l.items.forEach(it => {
+    if (!it || it.type !== 'mijlpaal' || !okDatum(String(it.when || '').slice(0, 10)) || /gehaald/i.test(it.note || '')) return;
+    const w = String(it.when).slice(0, 10), [y, m, dd] = w.split('-').map(Number); if (new Date(y, m - 1, dd) < nu) return;
+    if (!best || w < best.datum) best = { datum:w, titel:String(it.text || 'Mijlpaal').slice(0, 80) };
+  })); } catch (e) {} });
+  return best;
+}
+function maakVoorstelBord(p) {
+  const { alle, metData } = voorstel(p); if (!alle.length) return null;
+  const blok = t => okBlok({ id:nieuwId('x'), soort:'tool', tool:t.id, project:p || '', widget:metData.includes(t), kleur:'wit' });
+  const kol = FASEN.map(([f, naam]) => ({ id:nieuwId('k'), naam, blokken:alle.filter(t => ((t.pdca || [])[0] || 'do') === f).map(blok).filter(Boolean) })).filter(k => k.blokken.length);
+  const m = p && volgendeMijlpaal(p);
+  kol.unshift({ id:nieuwId('k'), naam:'Belangrijk', blokken:m ? [okBlok({ id:nieuwId('x'), soort:'aftelling', titel:m.titel, datum:m.datum, kleur:'groen' })].filter(Boolean) : [] });
+  return { b:{ id:nieuwId('b'), naam:p || 'Mijn project', kolommen:kol.slice(0, MAX_KOL) }, n:alle.length, metData:metData.length };
+}
+/* Klaar aan het einde van je stappenplan: is je Cockpit nog leeg en heb je een project of een stappenplan, dan staat je bord er meteen. Ongedaan kan. */
+function autoBord() {
+  if (!leeg()) return false;
+  const p = huidigProject();
+  if (p && (st.nee || []).includes(p)) return false;
+  if (!p && !stappenplannen().length) return false;
+  const v = maakVoorstelBord(p); if (!v) return false;
+  const oud = kopie();
+  if (!wijzig(() => { st.borden = [v.b]; st.actief = v.b.id; })) return false;
+  toast('Je bord ' + v.b.naam + ' staat klaar, met ' + v.n + ' tools', ocUndoable(() => { st = oud; if (p) st.nee = (st.nee || []).concat(p); save(); render(); zeg('Ongedaan gemaakt.'); }));
+  zeg('Je bord ' + v.b.naam + ' staat klaar met ' + v.n + ' tools, per fase.' + (v.metData ? ' Bij ' + v.metData + ' zie je meteen de kern.' : ''));
+  return true;
+}
 function tekenAanbod() {
   const A = $('aanbod'); if (!A) return;
   const p = huidigProject();
   const al = p && st.borden.some(b => zacht(b.naam) === zacht(p));
-  const T = p && !al && !(st.nee || []).includes(p) ? toolsMetData(p) : [];
-  A.hidden = !T.length;
-  if (!T.length) return;
+  const v = p && !al && !(st.nee || []).includes(p) ? voorstel(p) : { alle:[], metData:[] };
+  A.hidden = !v.alle.length;
+  if (!v.alle.length) return;
   $('aanbod-t').textContent = 'Maak een bord voor ' + p;
-  $('aanbod-s').textContent = 'Je werkte al in ' + T.length + (T.length === 1 ? ' tool' : ' tools') + ' voor dit project. De Cockpit zet ze op één bord, per fase, met hun kern.';
+  $('aanbod-s').textContent = v.metData.length ? 'Je werkte al in ' + v.metData.length + (v.metData.length === 1 ? ' tool' : ' tools') + ' voor dit project. De Cockpit zet ze op één bord, per fase, met hun kern.'
+    : 'De Cockpit zet de ' + v.alle.length + ' tools van je stappenplan op één bord, per fase.';
 }
 $('aanbod-ja').addEventListener('click', () => {
-  const p = huidigProject(), T = toolsMetData(p); if (!p || !T.length) return;
-  const kol = FASEN.map(([f, naam]) => ({ id:nieuwId('k'), naam, blokken:T.filter(t => ((t.pdca || [])[0] || 'do') === f).map(t => okBlok({ id:nieuwId('x'), soort:'tool', tool:t.id, project:p, widget:true, kleur:'wit' })).filter(Boolean) })).filter(k => k.blokken.length);
-  kol.unshift({ id:nieuwId('k'), naam:'Belangrijk', blokken:[] });
-  const b = { id:nieuwId('b'), naam:p, kolommen:kol.slice(0, MAX_KOL) };
+  const p = huidigProject(), v = p && maakVoorstelBord(p); if (!v) return;
   const oud = kopie();
   // een leeg standaardbord mag plaats maken voor het nieuwe
-  const lijst = st.borden.length === 1 && leeg() ? [b] : st.borden.concat(b);
-  if (!wijzig(() => { st.borden = lijst; st.actief = b.id; })) return;
-  toast('Bord ' + p + ' gemaakt', ocUndoable(() => { st = oud; save(); render(); zeg('Ongedaan gemaakt.'); }));
-  zeg('Bord ' + p + ' gemaakt met ' + T.length + ' tools.');
+  const lijst = leeg() ? [v.b] : st.borden.concat(v.b);
+  if (!wijzig(() => { st.borden = lijst; st.actief = v.b.id; })) return;
+  toast('Bord ' + v.b.naam + ' gemaakt', ocUndoable(() => { st = oud; save(); render(); zeg('Ongedaan gemaakt.'); }));
+  zeg('Bord ' + v.b.naam + ' gemaakt met ' + v.n + ' tools.');
   const f = document.querySelector('[data-plus]'); f && f.focus({ preventScroll:true });
 });
 $('aanbod-nee').addEventListener('click', () => {
