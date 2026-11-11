@@ -41,7 +41,7 @@ PADEN = [
 ]
 GROEPEN = {'projecten', 'zakmes', 'reset'}
 PDCA = ['plan', 'do', 'check', 'act']
-TRAJECTEN = ['verandering', 'project']
+TRAJECTEN = ['verandering', 'project', 'proces']
 
 
 class Kop(HTMLParser):
