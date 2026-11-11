@@ -1698,7 +1698,7 @@ function blokHTML(b, ki, bi, n) {
     const t = toolVan(b.tool);
     const naam = t ? t.title : b.tool;
     lijf = (b.titel ? kop(ico('tool'), b.titel) : '')
-      + `<a class="tool-kaart" href="${esc(t ? t.path : '#')}" data-open-tool="${esc(b.id)}">${t ? `<img src="${icoon(t)}" alt="">` : ''}<span class="tk"><b>${esc(naam)}</b><span>${b.project ? `<span class="proj">${esc(b.project)}</span>` : esc(t ? t.sub : 'Deze tool vind ik niet meer')}</span></span>${SVG(I.rechts)}</a>`
+      + `<a class="tool-kaart" href="${esc(t ? t.path : '#')}" data-open-tool="${esc(b.id)}">${t ? `<img src="${icoon(t)}" alt="">` : ''}<span class="tk"><b>${esc(naam)}</b><span>${b.project ? `<span class="proj">${esc(b.project)}</span>` : huidigProject() ? `<span class="proj">${esc(huidigProject())}</span> · volgt de app` : esc(t ? t.sub : 'Deze tool vind ik niet meer')}</span></span>${SVG(I.rechts)}</a>`
       + (b.widget ? widgetHTML(b) : '');
   }
   return `<article class="blok" data-id="${esc(b.id)}" data-soort="${b.soort}"${b.soort === 'tool' && !b.titel && !b.widget ? ' data-kaal' : ''}${b.widget ? ' data-widget' : ''}${b.groot ? ' data-groot' : ''} data-kleur="${esc(b.kleur)}" draggable="true">${lijf}${menu}</article>`;
@@ -2135,19 +2135,17 @@ addEventListener('storage', e => {
 });
 let widgetTimer = null;
 
-render();
-/* Voor tests: window.cockpit */
-window.cockpit = { herken, videoVan, okBlok, staat:() => kopie(), voegToe:(x, k) => voegToe(k || bord().kolommen[0].id, x) };
 
 /* ---------- Widgets: de kern van een tool op je bord ----------
    Elke tool legt wat ze te bieden heeft klaar onder oc.share.<tool> (voor "Overnemen uit…"): lijsten per project
    met items { type, text, note?, who?, when? }. De widget leest die en tekent de kern. Niets wordt hier gewijzigd. */
-const deelt = t => !!(t && Array.isArray(t.storage) && t.storage.includes('oc.share.' + t.id));
+function zacht(s) { return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ''); }
+function deelt(t) { return !!(t && Array.isArray(t.storage) && t.storage.includes('oc.share.' + t.id)); }
 function widgetLijst(b) {
   let d = null; try { d = JSON.parse(localStorage.getItem('oc.share.' + b.tool)); } catch (e) {}
   const L = d && Array.isArray(d.lists) ? d.lists.filter(l => l && Array.isArray(l.items)) : [];
   let p = b.project; if (!p) { try { const x = JSON.parse(localStorage.getItem('oc.project')); p = x && x.name; } catch (e) {} }
-  const lijst = (p && L.find(l => l.name === p)) || (!b.project && L.length === 1 ? L[0] : null);
+  const lijst = (p && L.find(l => zacht(l.name) === zacht(p))) || (!b.project && !p && L.length === 1 ? L[0] : null);
   return { lijst, updated:d && d.updated, p, aantal:L.length };
 }
 const DAG = 864e5;
@@ -2205,12 +2203,12 @@ function widgetHTML(b) {
 const FASEN = [['plan', 'Plannen'], ['do', 'Doen'], ['check', 'Opvolgen'], ['act', 'Bijsturen']];
 function huidigProject() { try { const x = JSON.parse(localStorage.getItem('oc.project')); return x && typeof x.name === 'string' && x.name.trim() ? x.name.trim() : ''; } catch (e) { return ''; } }
 function toolsMetData(p) {
-  return TOOLS.filter(t => deelt(t)).filter(t => { try { const d = JSON.parse(localStorage.getItem('oc.share.' + t.id)); return d && Array.isArray(d.lists) && d.lists.some(l => l && l.name === p && Array.isArray(l.items) && l.items.length); } catch (e) { return false; } });
+  return TOOLS.filter(t => deelt(t)).filter(t => { try { const d = JSON.parse(localStorage.getItem('oc.share.' + t.id)); return d && Array.isArray(d.lists) && d.lists.some(l => l && zacht(l.name) === zacht(p) && Array.isArray(l.items) && l.items.length); } catch (e) { return false; } });
 }
 function tekenAanbod() {
   const A = $('aanbod'); if (!A) return;
   const p = huidigProject();
-  const al = p && st.borden.some(b => b.naam === p);
+  const al = p && st.borden.some(b => zacht(b.naam) === zacht(p));
   const T = p && !al && !(st.nee || []).includes(p) ? toolsMetData(p) : [];
   A.hidden = !T.length;
   if (!T.length) return;
@@ -2235,7 +2233,15 @@ $('aanbod-nee').addEventListener('click', () => {
   wijzig(() => { st.nee = (st.nee || []).concat(p); });
   const m = document.querySelector('[data-plus]'); m && m.focus({ preventScroll:true });
 });
-addEventListener('storage', e => { if (e.key === 'oc.project' || (e.key && e.key.startsWith('oc.share.'))) tekenAanbod(); });
+addEventListener('storage', e => {
+  if (e.key === 'oc.project') { render(); return; }   // blokjes zonder eigen project tonen het nieuwe project
+  if (e.key && e.key.startsWith('oc.share.')) tekenAanbod();
+});
+
+/* Pas tekenen als alles hierboven bestaat (ook de widgets): zo kan een bewaard bord met widgets nooit haperen bij het openen */
+render();
+/* Voor tests: window.cockpit */
+window.cockpit = { herken, videoVan, okBlok, staat:() => kopie(), voegToe:(x, k) => voegToe(k || bord().kolommen[0].id, x) };
 </script>
 <input type="file" id="oc-bestand-in" accept=".json,application/json" hidden>
 <script>
