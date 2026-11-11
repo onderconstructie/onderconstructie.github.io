@@ -2487,7 +2487,7 @@ window.ocProjectkiezer = function (plek, o) {
         <a class="ft-link" href="https://www.linkedin.com/in/bartel-volckaert-8a96842/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Maker</a>
         <a class="ft-link" href="/privacy/#voorwaarden" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.01"/></svg>Disclaimer</a>
       </nav>
-      <p class="ft-meta"><button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (35 seconden)" title="Bekijk de film (35 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg><span>Film</span></button><button class="ft-film ft-inst" id="ft-app" type="button" hidden aria-label="Installeer de app"><img src="/app/icon.svg" alt="" width="22" height="22"><span>Installeer</span></button><span class="ft-dot" aria-hidden="true"></span><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v15.83</span></p>
+      <p class="ft-meta"><button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (35 seconden)" title="Bekijk de film (35 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg><span>Film</span></button><button class="ft-film ft-inst" id="ft-app" type="button" hidden aria-label="Installeer de app"><img src="/app/icon.svg" alt="" width="22" height="22"><span>Installeer</span></button><span class="ft-dot" aria-hidden="true"></span><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v15.84</span></p>
     </div>
   </footer>
   <dialog class="film" id="film" aria-labelledby="film-h">
@@ -5288,8 +5288,9 @@ function wzKlaar() {
   const st = wzSt(WZ.doel);
   if (st.path) {
     const s = stepsOf(st.path);
-    // Drie fasen, met de eerste drie stappen. Het aantal stappen zie je pas in de balk van de tool.
-    const fasen = FASEN[st.path] || [], toon = s.slice(0, 3);
+    // Drie fasen, met de stappen van de eerste fase. Het totale aantal stappen zie je nergens: de balk telt per fase.
+    // Alle stappen van fase 1 (tot de start van fase 2), zodat het klopt met de balk in de tool ("Opzetten · 1 van 5")
+    const fasen = FASEN[st.path] || [], f2 = fasen[1] ? s.findIndex(x => x.t.id === fasen[1].van) : -1, toon = s.slice(0, f2 > 0 ? f2 : 3);
     $('wz-klaar-p').textContent = s[0] ? (fasen.length ? `${fasen.length === 3 ? 'Drie' : fasen.length} fasen. Je begint met de eerste stap.` : 'Je begint met de eerste stap.') : '';
     $('wz-plan').innerHTML = fasen.length ? fasen.map((f, i) => `<li class="fase${i ? '' : ' nu'}"><span class="wz-plan-n" aria-hidden="true">${i + 1}</span><span><span class="wz-sr">Fase ${i + 1}: </span>${esc(f.naam)}</span></li>`
         + (i ? '' : toon.map((x, k) => `<li class="stap${k ? '' : ' nu'}"><span class="wz-plan-n" aria-hidden="true"></span><span>${esc(x.t.title)}</span></li>`).join(''))).join('')
