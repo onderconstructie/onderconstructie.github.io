@@ -1108,7 +1108,11 @@ header[data-oc-kop][data-stand="compact"]::before { content:""; order:-1; flex:n
      hernoem: naam => {...},                           // de nieuwe naam van het actieve project (nooit leeg)
      verwijder: () => {...},                           // de tool verwijdert het actieve project, met een melding en Ongedaan
      magWeg: () => true,                               // standaard: alleen als er meer dan één is
-     projectnaam: true                                 // een nieuwe naam reist mee naar de app zodra ze vastligt (via oc-sync, niet tijdens het typen)
+     projectnaam: true,                                // een nieuwe naam reist mee naar de app zodra ze vastligt (via oc-sync, niet tijdens het typen)
+     overal: true,                                     // één project overal (standaard: projectnaam en woord 'project'): kies je hier een project of maak je er een,
+                                                       // dan wordt het ook het project van de app (oc.project) en komt de naam in de lijst van de app
+     annuleer: () => {...},                            // optioneel: de naam van een nieuw project werd niet gegeven (Escape)
+     meer: [{ tekst, doe, ico }]                       // optioneel: extra regels onderaan het menu (ico: het binnenste van een svg)
    });
    pk.teken() na elke wijziging in de tool. pk.hernoem({ na }) start het hernoemen (na: wat er na Enter gebeurt). pk.tabs() geeft [element, id] voor ocKoppel.
    Toetsenbord: Enter of pijl omlaag opent, pijltjes, Home en End kiezen, Escape sluit en zet de focus terug op de knop. */
@@ -1118,6 +1122,7 @@ window.ocProjectkiezer = function (plek, o) {
   o = o || {};
   var W = o.woord || 'project', M = o.meervoud || 'projecten', HET = o.lidwoord === 'de' ? 'de' : 'het', id = 'ocpk' + Math.random().toString(36).slice(2, 7);
   var DEZE = o.deze || ((HET === 'de' ? 'deze ' : 'dit ') + W), NIEUW = (HET === 'de' ? 'Nieuwe ' : 'Nieuw ') + W;
+  var OVERAL = o.overal != null ? !!o.overal : !!o.projectnaam && W === 'project';
   var hoofd = function (s) { return s.charAt(0).toUpperCase() + s.slice(1); };
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
   var SVG = function (d) { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + '</svg>'; };
@@ -1154,12 +1159,39 @@ window.ocProjectkiezer = function (plek, o) {
       + '<div class="oc-pk-sep" role="separator"></div>'
       + '<button type="button" class="oc-pk-item" role="menuitem" data-pk="nieuw" tabindex="-1">' + SVG(I.plus) + esc(NIEUW) + '</button>'
       + '<button type="button" class="oc-pk-item" role="menuitem" data-pk="hernoem" tabindex="-1">' + SVG(I.pen) + 'Hernoem ' + esc(DEZE) + '</button>'
-      + (weg ? '<button type="button" class="oc-pk-item oc-pk-weg" role="menuitem" data-pk="weg" tabindex="-1">' + SVG(I.weg) + 'Verwijder ' + esc(DEZE) + '</button>' : '');
+      + (weg ? '<button type="button" class="oc-pk-item oc-pk-weg" role="menuitem" data-pk="weg" tabindex="-1">' + SVG(I.weg) + 'Verwijder ' + esc(DEZE) + '</button>' : '')
+      + (o.meer || []).map(function (m, i) { return '<button type="button" class="oc-pk-item" role="menuitem" data-pk="meer" data-i="' + i + '" tabindex="-1">' + SVG(m.ico || '') + esc(m.tekst) + '</button>'; }).join('');
+  }
+  /* Eén project overal: een project dat je hier kiest of maakt, wordt ook het project van de app (oc.project).
+     De andere tools volgen het zoals bij een keuze in de app. Een voorbeeld of een standaardnaam ("Nieuw project") niet. */
+  var std = function (v) { v = String(v || '').trim(); return window.ocStandaardNaam ? ocStandaardNaam(v) : !v || /^((mijn|nieuwe?) )?project( \d+)?$|^naamloos$/i.test(v); };
+  function lees(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
+  function overal(x) {
+    if (!OVERAL || !x || x.voorbeeld) return;
+    var n = String(x.naam || '').trim().slice(0, 80); if (std(n)) return;
+    try {
+      var p = lees('oc.project', null);
+      if (!p || p.name !== n) localStorage.setItem('oc.project', JSON.stringify({ name: n, since: Date.now() }));
+      var h = lees('oc-app.projects', []); h = Array.isArray(h) ? h : [];
+      if (h[0] !== n) localStorage.setItem('oc-app.projects', JSON.stringify([n].concat(h.filter(function (y) { return y !== n; })).slice(0, 8)));
+    } catch (e) {}
+  }
+  /* De app toont alle projecten die in de tools bestaan: elke tool legt haar projectnamen klaar in oc-app.projecten-tools (per pad). */
+  function meld(L) {
+    if (!OVERAL) return;
+    try {
+      var namen = L.filter(function (x) { return !x.voorbeeld && !std(x.naam); }).map(function (x) { return String(x.naam).trim().slice(0, 80); });
+      var r = lees('oc-app.projecten-tools', {}), pad = location.pathname; if (!r || typeof r !== 'object' || Array.isArray(r)) r = {};
+      if (JSON.stringify(r[pad] || []) === JSON.stringify(namen)) return;
+      if (namen.length) r[pad] = namen; else delete r[pad];
+      if (Object.keys(r).length) localStorage.setItem('oc-app.projecten-tools', JSON.stringify(r));
+      else if (localStorage.getItem('oc-app.projecten-tools') != null) localStorage.removeItem('oc-app.projecten-tools');
+    } catch (e) {}
   }
   function teken() {
     if (bewerk) return;   // niet onder de vingers van wie typt
     var L = lijst(), c = actief(L), f = document.activeElement, opnieuw = !menu.hidden && menu.contains(f) ? f.getAttribute('data-id') || f.getAttribute('data-pk') : null;
-    tekenKnop(L, c); tekenMenu(L, c);
+    tekenKnop(L, c); tekenMenu(L, c); meld(L);
     if (opnieuw) { var t = menu.querySelector('[data-id="' + CSS.escape(opnieuw) + '"]') || menu.querySelector('[data-pk="' + CSS.escape(opnieuw) + '"]'); if (t) t.focus(); }
   }
   var items = function () { return [].slice.call(menu.querySelectorAll('.oc-pk-item')); };
@@ -1184,8 +1216,9 @@ window.ocProjectkiezer = function (plek, o) {
   menu.addEventListener('click', function (e) {
     var b = e.target.closest('[data-pk]'); if (!b) return;
     var wat = b.getAttribute('data-pk');
-    if (wat === 'kies') { var nid = b.getAttribute('data-id'); sluit(true); if (nid !== o.actief()) o.kies(nid); teken(); knop.focus(); }
+    if (wat === 'kies') { var nid = b.getAttribute('data-id'); sluit(true); if (nid !== o.actief()) { o.kies(nid); overal(lijst().filter(function (x) { return x.id === nid; })[0]); } teken(); knop.focus(); }
     else if (wat === 'nieuw') { sluit(false); var zelf = o.nieuw() === false; teken(); if (!zelf) hernoem({ nieuw: true }); }
+    else if (wat === 'meer') { sluit(false); var m = (o.meer || [])[+b.getAttribute('data-i')]; if (m && m.doe) m.doe(); teken(); }
     else if (wat === 'hernoem') { sluit(false); hernoem(); }
     else if (wat === 'weg') { sluit(false); o.verwijder(); teken(); knop.focus(); }
   });
@@ -1193,7 +1226,7 @@ window.ocProjectkiezer = function (plek, o) {
   function hernoem(opt) {
     opt = opt || {};
     var L = lijst(), c = actief(L), oud = naamVan(c);
-    bewerk = { oud: oud, ruw: c.naam || '', na: opt.na, vb: !!c.voorbeeld };
+    bewerk = { oud: oud, ruw: c.naam || '', na: opt.na, vb: !!c.voorbeeld, nieuw: !!opt.nieuw };
     veld = document.createElement('input'); veld.type = 'text'; veld.className = 'oc-pk-veld'; veld.maxLength = 80; veld.autocomplete = 'off'; veld.spellcheck = false;
     veld.setAttribute('enterkeyhint', 'done'); veld.setAttribute('aria-label', 'Naam van ' + HET + ' ' + W); veld.setAttribute('aria-describedby', id + '-f');
     veld.value = c.naam || '';
@@ -1216,12 +1249,15 @@ window.ocProjectkiezer = function (plek, o) {
       o.hernoem(v);
       // oc-sync: pas nu de naam vastligt, reist ze mee naar de app (niet tijdens het typen, en niet na Escape).
       // Het veld meldt zich met de oude naam (focusin) en daarna met de nieuwe (change), zoals een gewoon naamveld.
-      if (o.projectnaam && !b.vb) try {
+      // een nieuw project is geen nieuwe naam voor het vorige: dat regelt overal() hieronder (anders zou de vorige naam als oude naam gelden)
+      if (o.projectnaam && !b.vb && !(b.nieuw && OVERAL)) try {
         veld.value = b.ruw; veld.setAttribute('data-oc-projectnaam', '');
         veld.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
         veld.value = v; veld.dispatchEvent(new Event('change', { bubbles: true }));
       } catch (e) {}
     }
+    if (b.nieuw && bewaar) overal(actief(lijst()));   // een nieuw project met een eigen naam: ook het project van de app
+    if (b.nieuw && !bewaar && o.annuleer) try { o.annuleer(); } catch (e) {}
     var v0 = veld; veld = null; fout.remove(); fout = null;
     knop.hidden = false; teken();
     if (focus && bewaar && b.na) b.na(); else if (focus) knop.focus();
