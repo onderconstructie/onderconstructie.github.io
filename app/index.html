@@ -1584,6 +1584,16 @@ body.searching #home #tabgroup { display:none !important; }
 @keyframes n-twinkel { 0%, 100% { opacity:1; } 50% { opacity:0.4; } }
 /* Na vijf seconden staat de versiering stil (WCAG 2.2.2): niets blijft bewegen naast de inhoud. */
 html.oc-stil .n-puls, html.oc-stil .n-halo, html.oc-stil .n-far circle { animation:none !important; }
+/* Verhuismelding: een rustige kaart onderaan, boven de tabbalk */
+.verhuis { position:fixed; z-index:70; left:50%; transform:translateX(-50%); bottom:calc(84px + env(safe-area-inset-bottom, 0px)); width:min(560px, calc(100% - 32px)); box-sizing:border-box;
+  background:#fff; border:1px solid #a7f3d0; border-radius:16px; box-shadow:0 18px 40px rgba(15,23,42,0.18); padding:1rem 1.125rem; display:grid; gap:0.5rem; }
+.verhuis-h { margin:0; font-weight:700; font-size:1.0625rem; color:#0f172a; }
+.verhuis-t { margin:0; font-size:0.9375rem; line-height:1.5; color:#475569; }
+.verhuis-k { display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.25rem; }
+.verhuis-ja, .verhuis-later { min-height:44px; padding:0 1rem; border-radius:12px; font-weight:600; font-size:0.9375rem; }
+.verhuis-ja { background:#0c8660; color:#fff; border:1px solid #047857; }
+.verhuis-ja:hover { background:#047857; }
+.verhuis-later { background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; }
 /* Een golf: bij het openen, bij een andere tab en als de footer in beeld komt loopt er even kleur over de paden
    en lichten de lijnen van het logo na elkaar op. Elke golf duurt korter dan vijf seconden (WCAG 2.2.2). */
 @media (prefers-reduced-motion:no-preference) {
@@ -2079,7 +2089,7 @@ html.oc-stil .n-puls, html.oc-stil .n-halo, html.oc-stil .n-far circle { animati
         <a class="ft-link" href="https://www.linkedin.com/in/bartel-volckaert-8a96842/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Maker</a>
         <button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (35 seconden)" title="Bekijk de film (35 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg></button>
       </nav>
-      <p class="ft-meta"><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v15.60</span></p>
+      <p class="ft-meta"><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v15.61</span></p>
     </div>
   </footer>
   <dialog class="film" id="film" aria-labelledby="film-h">
@@ -4787,7 +4797,8 @@ function start() {
   renderHome();
   document.body.classList.add('ready');
   const q = new URLSearchParams(location.search), first = location.hash.slice(1) || q.get('tool'), st = q.get('start');
-  if (byId[first]) { history.replaceState(null, '', location.pathname); openTool(first); }
+  if (location.hash.startsWith('#verhuis=')) { const code = location.hash.slice(9); history.replaceState(null, '', location.pathname); verhuisIn(code); }
+  else if (byId[first]) { history.replaceState(null, '', location.pathname); openTool(first); }
   else if (st) { history.replaceState(null, '', location.pathname); openStart(st); }
   else if (q.get('groep') === 'projecten' || GROUPS.some(g => g.id === q.get('groep'))) {   // oude overzichtspagina's (projectmanagement, reset, zakmes) sturen naar hun groep
     const id = q.get('groep'); history.replaceState(null, '', location.pathname);
@@ -4796,6 +4807,54 @@ function start() {
   else if (wizNodig()) wizOpen();   // allereerste bezoek
 }
 $('results-clear').addEventListener('click', () => setFilter(null));
+/* ---------- Verhuis naar onderconstructie.app ----------
+   Het oude adres (onderconstructie.github.io) stuurt na de verhuis door. De app die op dit toestel bewaard is, start dan nog op het oude adres
+   en merkt de doorverwijzing: ze toont een melding, en één tik neemt alles mee (ingepakt in het adres, achter #, dus niet naar een server).
+   Te groot of geen inpakken mogelijk: dan een reservekopie in de downloads. Op het nieuwe adres opent het gewone venster Terugzetten. */
+const VERHUIS_NAAR = (() => { try { return localStorage.getItem('oc-test-verhuis-naar') || 'https://onderconstructie.app/app/'; } catch { return 'https://onderconstructie.app/app/'; } })();
+async function verhuisInpak(txt) {
+  const s = new Blob([txt]).stream().pipeThrough(new CompressionStream('gzip'));
+  const buf = new Uint8Array(await new Response(s).arrayBuffer()); let b = '';
+  for (let i = 0; i < buf.length; i += 0x8000) b += String.fromCharCode.apply(null, buf.subarray(i, i + 0x8000));
+  return btoa(b).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+async function verhuisUitpak(code) {
+  const s = atob(code.replace(/-/g, '+').replace(/_/g, '/')), u = Uint8Array.from(s, c => c.charCodeAt(0));
+  return new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+}
+async function verhuisNodig() {
+  try { if (localStorage.getItem('oc-test-verhuis') === '1') return true; } catch {}
+  if (location.hostname !== 'onderconstructie.github.io') return false;
+  try { const r = await fetch('/verhuis.json?t=' + Date.now(), { redirect:'manual', cache:'no-store' }); return r.type === 'opaqueredirect'; } catch { return false; }
+}
+async function verhuisUit() {
+  const keys = allBackupKeys();
+  if (!keys.length) { location.href = VERHUIS_NAAR; return; }
+  const json = backupJSON(backupData(keys));
+  let code = null; try { if ('CompressionStream' in window) code = await verhuisInpak(json); } catch {}
+  if (code && code.length < 1500000) { location.href = VERHUIS_NAAR + '#verhuis=' + code; return; }
+  backup(keys);
+  appToast('Je reservekopie staat in je downloads. Zet ze in de nieuwe app terug via Reservekopie.');
+  setTimeout(() => { location.href = VERHUIS_NAAR; }, 5000);
+}
+async function verhuisIn(code) {
+  try {
+    const json = await verhuisUitpak(code);
+    openData();
+    await readRestore(new File([json], 'verhuis.json', { type:'application/json' }));
+    if (pendingRestore) dataMsg('Welkom op het nieuwe adres. Je werk van het oude adres staat klaar. Kies wat je terugzet.', false);
+  } catch { appToast('Je werk kon niet vanzelf mee. Maak op het oude adres een reservekopie en zet ze hier terug.'); }
+}
+function toonVerhuis() {
+  if (document.getElementById('verhuis')) return;
+  const d = document.createElement('div'); d.className = 'verhuis'; d.id = 'verhuis'; d.setAttribute('role', 'region'); d.setAttribute('aria-labelledby', 'verhuis-h');
+  d.innerHTML = '<p class="verhuis-h" id="verhuis-h">Onder Constructie verhuist</p><p class="verhuis-t">Het nieuwe adres is <b>onderconstructie.app</b>. Neem je werk in één tik mee. Het blijft op je toestel, er gaat niets naar een server.</p>'
+    + '<div class="verhuis-k"><button type="button" class="verhuis-ja" id="verhuis-ja">Neem mijn werk mee</button><button type="button" class="verhuis-later" id="verhuis-later">Later</button></div>';
+  document.body.appendChild(d);
+  $('verhuis-ja').addEventListener('click', () => { $('verhuis-ja').disabled = true; $('verhuis-ja').textContent = 'Even inpakken…'; verhuisUit(); });
+  $('verhuis-later').addEventListener('click', () => { try { sessionStorage.setItem('oc-verhuis-later', '1'); } catch {} d.remove(); });
+}
+setTimeout(async () => { try { if (sessionStorage.getItem('oc-verhuis-later')) return; } catch {} if (await verhuisNodig()) toonVerhuis(); }, 1500);
 (() => {
   let raw = null, list = null;
   try { raw = localStorage.getItem(KEY + 'tools-cache'); list = JSON.parse(raw); } catch {}
