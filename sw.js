@@ -12,13 +12,13 @@
   - Een nieuwe versie van de service worker wacht. De app toont "Nieuwe versie klaar" met Vernieuwen;
     pas dan wisselt hij. Nooit stil wisselen terwijl je werkt.
 */
-const VERSION = 'oc-app-v15.62';   // in de app getoond als v15.62
+const VERSION = 'oc-app-v15.63';   // in de app getoond als v15.63
 // Lettertypes en bibliotheken hebben vaste bestandsnamen (met versienummer): die bewaren we apart,
 // zodat een nieuwe versie van de app ze niet opnieuw moet downloaden.
 const STATIC = 'oc-static-1';
 
 const SHELL = [
-  '/app/', '/tools.json', '/app/manifest.webmanifest', '/app/icon.svg',
+  '/', '/tools.json', '/app/manifest.webmanifest', '/app/icon.svg',
   '/app/icon-180.png', '/app/icon-192.png', '/app/icon-512.png', '/app/icon-maskable.png', '/fonts/fonts.css'
 ];
 // Losse pagina's die ook offline moeten werken: privacy en de overzichtspagina's.
@@ -130,9 +130,9 @@ async function staleWhileRevalidate(e, key) {
   const cache = await caches.open(VERSION);
   let cached = await cache.match(key, { ignoreSearch: true });
   // Een onbekend adres binnen de app: toon offline de app zelf, niet een foutmelding.
-  if (!cached && key.startsWith('/app/') && e.request.mode === 'navigate') cached = await cache.match('/app/');
+  if (!cached && key.startsWith('/app/') && e.request.mode === 'navigate') cached = await cache.match('/');
   // een kopie om te vergelijken, nu al: het antwoord zelf gaat zo meteen naar de pagina
-  const before = cached && (key === '/tools.json' || key === '/app/') ? cached.clone() : null;
+  const before = cached && (key === '/tools.json' || key === '/') ? cached.clone() : null;
   const net = (async () => {
     const pre = e.request.mode === 'navigate' ? await Promise.resolve(e.preloadResponse).catch(() => null) : null;
     const res = pre || await fetch(e.request, { cache: 'no-cache' });
@@ -142,7 +142,7 @@ async function staleWhileRevalidate(e, key) {
       const changed = before ? (await before.text()) !== (await copy.clone().text()) : false;
       await cache.put(key, copy);
       if (changed && key === '/tools.json') { TOOLS = []; await tell('tools'); await syncTools(cache); }
-      if (changed && key === '/app/') await tell('update');
+      if (changed && key === '/') await tell('update');
     }
     return res;
   })();
@@ -176,6 +176,8 @@ self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   const nav = e.request.mode === 'navigate';
   if (url.origin === location.origin) {
+    // De app staat op /: wie /app/ opent, gaat daarheen (het zoekdeel gaat mee, wat achter # staat neemt de browser zelf mee)
+    if (nav && (url.pathname === '/app/' || url.pathname === '/app' || url.pathname === '/app/index.html')) { e.respondWith(Response.redirect(url.origin + '/' + url.search, 302)); return; }
     const path = url.pathname === '/tools.json' ? '/tools.json' : norm(url.pathname);
     if (isStatic(url.pathname)) { e.respondWith(cacheFirst(e)); return; }
     if (path.startsWith('/app/') || path === '/tools.json' || path === '/fonts/fonts.css' || PAGES.includes(path)) { e.respondWith(staleWhileRevalidate(e, path)); return; }
