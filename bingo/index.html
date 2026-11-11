@@ -242,6 +242,14 @@ html:has(.ocw-back) { overflow:hidden; }
 #nieuw .kort { display:none; }
 @media (max-width:420px) { #nieuw .lang { display:none; } #nieuw .kort { display:inline; } }
 .toolbij span { display:block; }
+
+/* Smalle gsm: een kaart van 4 op 4 krijgt elke pixel voor de woorden */
+@media (max-width:380px) {
+  .bord[data-n="4"] { gap:0.1875rem; }
+  .bord[data-n="4"] .vak .voor, .bord[data-n="4"] .vak .achter { padding:0.125rem; }
+}
+/* Heel smal (onder 340 px): alleen 3 op 3, want 4 op 4 wordt onleesbaar */
+@media (max-width:339px) { .seg { display:none; } }
 /* oc-uitleg v1 begin */
 /* "Hoe werkt dit?": één blok voor alle tools. Zonder JavaScript blijft de gewone uitklapper leesbaar.
    Het script zet .oc-u op <details class="explain"> en bouwt de inhoud om tot inleiding, stappen, tip en verwijzingen. */
@@ -1189,8 +1197,9 @@ const THEMAS = [
   { id:'projecten', naam:'Projecten', w:['Scope creep', 'Mijlpaal', 'Deliverable', 'Stakeholder', 'Bottleneck', 'Go-live', 'Afhankelijkheden', 'Kritiek pad', 'Buffer', 'Lessons learned', 'Kick-off', 'Backlog', 'Escaleren', 'De planning schuift', 'Het budget is op', 'Bijna klaar', 'Even afstemmen', 'Op schema', 'Harde deadline', 'Change request', 'Fase twee', 'Requirements', 'Capaciteit', 'Prioriteit nul', 'Next steps', 'Opleveren', 'Parkeren', 'Agile'] }
 ];
 /* Waar een lang woord mag afbreken (zacht afbreekstreepje), zodat het netjes in een vakje past */
-const AFBREEK = new Map([['Efficiëntiewinst', 'Efficiëntie|winst'], ['Afhankelijkheden', 'Afhankelijk|heden'], ['Talentmanagement', 'Talent|management'], ['Medewerkersbeleving', 'Medewerkers|beleving'], ['Paradigmashift', 'Paradigma|shift'], ['Ontwikkelgesprek', 'Ontwikkel|gesprek'], ['Helikopterview', 'Helikopter|view'], ['Feedbackcultuur', 'Feedback|cultuur'], ['Toekomstgericht', 'Toekomst|gericht'], ['Trainingsdata', 'Trainings|data'], ['Eigenaarschap', 'Eigenaar|schap'], ['Teamdynamiek', 'Team|dynamiek'], ['Bevlogenheid', 'Bevlogen|heid'], ['Automatiseren', 'Automati|seren'], ['Transformatie', 'Transfor|matie'], ['Hallucineren', 'Halluci|neren'], ['Gamechanger', 'Game|changer'], ['Loopbaanpad', 'Loopbaan|pad'], ['Competenties', 'Compe|tenties'], ['Leercultuur', 'Leer|cultuur'], ['Kernwaarden', 'Kern|waarden'], ['Datagedreven', 'Data|gedreven'], ['Synthetische data', 'Synthe|tische data'], ['Requirements', 'Require|ments'], ['Capaciteit', 'Capa|citeit'], ['Deliverable', 'Deliver|able'], ['Stakeholder', 'Stake|holder'], ['Bottleneck', 'Bottle|neck'], ['Ecosysteem', 'Eco|systeem'], ['Onboarding', 'On|boarding'], ['Engagement', 'Engage|ment'], ['AI-geletterdheid', 'AI-gelet|terdheid'], ['AI-verordening', 'AI-veror|dening'], ['Employer branding', 'Employer bran|ding'], ['Werkgeluk', 'Werk|geluk'], ['Veerkracht', 'Veer|kracht'], ['Groeimindset', 'Groei|mindset'], ['Vitaliteit', 'Vitali|teit'], ['Kantelpunt', 'Kantel|punt'], ['Speerpunt', 'Speer|punt'], ['Meerwaarde', 'Meer|waarde'], ['Draagvlak', 'Draag|vlak'], ['Algoritme', 'Algo|ritme'], ['Mijlpaal', 'Mijl|paal'], ['Proactief', 'Proac|tief'], ['Upskilling', 'Upskil|ling'], ['Tijdwinst', 'Tijd|winst'], ['Momentum', 'Momen|tum'], ['Holistisch', 'Holis|tisch'], ['Escaleren', 'Escale|ren']].map(([a, b]) => [a, b.replace('|', '\u00AD')]));
-const toonWoord = w => AFBREEK.get(w) || w;
+/* Waar een lang woord mag afbreken (zacht afbreekstreepje), per woord in een zin: zo past het in een smal vakje */
+const AFBREEK = new Map([['AI-geletterdheid', 'AI-gelet|terd|heid'], ['AI-verordening', 'AI-veror|dening'], ['Afhankelijkheden', 'Afhanke|lijk|heden'], ['Algoritme', 'Algo|ritme'], ['Automatiseren', 'Auto|mati|seren'], ['Bevlogenheid', 'Bevlogen|heid'], ['Bilateraal', 'Bila|teraal'], ['Bottleneck', 'Bottle|neck'], ['Capaciteit', 'Capa|citeit'], ['Competenties', 'Compe|tenties'], ['Datagedreven', 'Data|gedreven'], ['Deliverable', 'Deliver|able'], ['Draagvlak', 'Draag|vlak'], ['Ecosysteem', 'Eco|systeem'], ['Efficiëntiewinst', 'Effi|ciëntie|winst'], ['Eigenaarschap', 'Eigenaar|schap'], ['Engagement', 'Engage|ment'], ['Escaleren', 'Escale|ren'], ['Feedbackcultuur', 'Feed|back|cul|tuur'], ['Gamechanger', 'Game|changer'], ['Generatieve', 'Gene|ratieve'], ['Groeimindset', 'Groei|mindset'], ['Guardrails', 'Guard|rails'], ['Hallucineren', 'Hallu|ci|neren'], ['Helikopterview', 'Helikop|ter|view'], ['Holistisch', 'Holis|tisch'], ['Integraal', 'Inte|graal'], ['Kantelpunt', 'Kantel|punt'], ['Kernwaarden', 'Kern|waarden'], ['Laaghangend', 'Laag|hangend'], ['Leercultuur', 'Leer|cultuur'], ['Loopbaanpad', 'Loop|baan|pad'], ['Medewerkersbeleving', 'Mede|werkers|beleving'], ['Meerwaarde', 'Meer|waarde'], ['Mijlpaal', 'Mijl|paal'], ['Momentum', 'Momen|tum'], ['Onboarding', 'On|boarding'], ['Ontwikkelgesprek', 'Ont|wikkel|gesprek'], ['Opleveren', 'Op|leveren'], ['Opschalen', 'Op|schalen'], ['Paradigmashift', 'Paradig|ma|shift'], ['Proactief', 'Proac|tief'], ['Requirements', 'Require|ments'], ['Retentie', 'Reten|tie'], ['Speerpunt', 'Speer|punt'], ['Stakeholder', 'Stake|holder'], ['Synthetische', 'Synthe|tische'], ['Taalmodel', 'Taal|model'], ['Talentmanagement', 'Talent|manage|ment'], ['Teamdynamiek', 'Team|dynamiek'], ['Terugkoppelen', 'Terug|kop|pelen'], ['Tijdwinst', 'Tijd|winst'], ['Toekomstgericht', 'Toe|komst|gericht'], ['Touchpoint', 'Touch|point'], ['Trainingsdata', 'Trainings|data'], ['Transformatie', 'Trans|for|matie'], ['Upskilling', 'Upskil|ling'], ['Veerkracht', 'Veer|kracht'], ['Verbinding', 'Ver|binding'], ['Vitaliteit', 'Vitali|teit'], ['Wendbaar', 'Wend|baar'], ['Werkgeluk', 'Werk|geluk'], ['Werkpunt', 'Werk|punt'], ['Zelfsturend', 'Zelf|sturend'], ['aandachtspunt', 'aan|dachts|punt'], ['afstemmen', 'af|stemmen'], ['branding', 'bran|ding'], ['engineering', 'engi|neering'], ['netvlies', 'net|vlies'], ['pijplijn', 'pijp|lijn'], ['werkgroep', 'werk|groep'], ['werkpunt', 'werk|punt']].map(([a, b]) => [a, b.replace(/\|/g, '\u00AD')]));
+const toonWoord = w => String(w).split(' ').map(t => AFBREEK.get(t) || t).join(' ');
 /* De achterkant: hetzelfde in gewone taal (zoals de schrijftips van de Vlaamse overheid), of een tip voor een vlotte vergadering */
 const GEWOON = {
   'Kan iedereen mij horen?':'Tip: test je geluid voor de vergadering begint.', 'Je staat op mute':'Je micro staat uit.', 'Ik deel even mijn scherm':'Tip: stuur het vooraf, dan kan iedereen het rustig lezen.',
@@ -1296,7 +1305,7 @@ function load() {
   if (!d || typeof d !== 'object' || Array.isArray(d)) return s;
   if (Array.isArray(d.eigen)) s.eigen = leesEigen(d.eigen.filter(w => typeof w === 'string').join('\n'));
   if (Array.isArray(d.themas)) s.themas = [...new Set(d.themas.filter(t => t === EIGEN ? s.eigen.length : THEMAS.some(T => T.id === t)))];
-  if (d.maat === 3 || d.maat === 4) s.maat = d.maat;
+  if (d.maat === 3 || (d.maat === 4 && !matchMedia('(max-width:339px)').matches)) s.maat = d.maat;   // heel smal scherm: altijd 3 op 3
   if (typeof d.geluid === 'boolean') s.geluid = d.geluid;
   const n = s.maat * s.maat;
   if (Array.isArray(d.kaart) && d.kaart.length === n && d.kaart.every(w => typeof w === 'string' && schoon(w))) {
@@ -1374,6 +1383,7 @@ function render(nieuweBingo) {
     if (focusI >= 0 && B.children[focusI]) B.children[focusI].focus({ preventScroll:true });
   }
   om = new Set([...om].filter(i => inWin.has(i)));
+  pasLetterAan();
   renderStatus(wins, nieuweBingo);
   $('menu-wipe').hidden = $('sep-wipe').hidden = !heeftWerk();
   $('oc-restart-row').hidden = !heeftWerk();
@@ -1609,6 +1619,7 @@ addEventListener('storage', e => { if (e.key === KEY || e.key === null) { st = l
 if (!st.kaart.length && st.themas.length) { st.kaart = maakKaart(); }
 render(false);
 /* Voor tests: window.bingo */
+window.__tw = toonWoord;
 window.bingo = { GEWOON, THEMAS, rijen, leesEigen, maakKaart, pool, staat:() => kopie(), vink:i => vinkAan(i) };
 
 /* ---------- Delen: de kaart als afbeelding, met de link erbij ----------
@@ -1661,6 +1672,24 @@ async function deel() {
   knop.disabled = false;
 }
 $('deel').addEventListener('click', deel);
+
+/* Elk woord past in zijn vakje: is het langste stuk (tussen spaties of zachte afbreekstreepjes) te breed, dan wat kleiner.
+   Nooit kleiner dan 10,5 px: liever een afbreekstreepje dan onleesbaar. */
+function pasLetterAan() {
+  const meetCtx = pasLetterAan.ctx || (pasLetterAan.ctx = document.createElement('canvas').getContext('2d'));   // pas hier: deze functie draait al bij het eerste tekenen
+  document.querySelectorAll('.vak[data-i] .voor > span, .vak[data-i] .achter > span').forEach(sp => {
+    sp.style.fontSize = '';
+    const vlak = sp.parentElement, cs = getComputedStyle(sp), cv = getComputedStyle(vlak), basis = parseFloat(cs.fontSize);
+    const breed = vlak.clientWidth - parseFloat(cv.paddingLeft) - parseFloat(cv.paddingRight) - 2;
+    if (breed <= 0) return;
+    meetCtx.font = `${cs.fontWeight} ${basis}px ${cs.fontFamily}`;
+    const stukken = sp.textContent.split(/\s+/).flatMap(t => t.split(/(?<=-)/)).flatMap(t => t.split('\u00AD').map((x, k, a) => x + (k < a.length - 1 ? '-' : '')));
+    const w = Math.max(0, ...stukken.map(x => meetCtx.measureText(x).width));
+    if (w > breed) sp.style.fontSize = Math.max(10, Math.floor(basis * breed / w * 10) / 10) + 'px';
+  });
+}
+addEventListener('resize', () => { clearTimeout(pasLetterAan.t); pasLetterAan.t = setTimeout(pasLetterAan, 120); });
+try { document.fonts.ready.then(pasLetterAan); } catch (e) {}
 </script>
 <input type="file" id="oc-bestand-in" accept=".json,application/json" hidden>
 <script>
