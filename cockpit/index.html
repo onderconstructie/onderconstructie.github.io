@@ -348,6 +348,17 @@ html:has(.ocw-back) { overflow:hidden; }
 }
 @media (hover:none) and (pointer:coarse) { .tip-sleep { display:none; } }
 @media print { .plus, .kol-plus, .blok-menu, .kol .icon-btn, .tip { display:none !important; } .bord { overflow:visible; } }
+
+/* Aftelling */
+.aftel { display:flex; align-items:baseline; gap:0.5rem; margin:0.125rem 0 0; color:var(--slate-800); }
+.aftel-n { font-size:2.5rem; font-weight:700; line-height:1; letter-spacing:-0.02em; font-variant-numeric:tabular-nums; }
+.aftel-t { font-size:1rem; font-weight:600; color:var(--slate-600); }
+.aftel.dichtbij .aftel-n { color:#047857; }
+.aftel.nu .aftel-n { font-size:2rem; color:#047857; }
+.aftel.voorbij .aftel-n { font-size:1.75rem; color:var(--slate-500); }
+.aftel-d { margin:0.25rem 0 0; font-size:0.875rem; color:var(--slate-600); }
+.aftel-d::first-letter { text-transform:uppercase; }
+#f-datum { min-height:48px; }
 /* oc-uitleg v1 begin */
 /* "Hoe werkt dit?": één blok voor alle tools. Zonder JavaScript blijft de gewone uitklapper leesbaar.
    Het script zet .oc-u op <details class="explain"> en bouwt de inhoud om tot inleiding, stappen, tip en verwijzingen. */
@@ -1419,7 +1430,7 @@ window.ocProjectkiezer = function (plek, o) {
             <ul>
               <li><b>Maak een bord.</b> Zoveel als je wil: één per project, of één rond een thema met meerdere projecten. Je wisselt bovenaan.</li>
               <li><b>Kies je kolommen.</b> Geef ze een naam. Een kolom kan een project zijn, of gewoon "Links" of "Belangrijk".</li>
-              <li><b>Voeg blokjes toe.</b> Tekst, een link, een afbeelding, een video, een bericht van sociale media of een tool. Elk blokje krijgt een titel en een kleur.</li>
+              <li><b>Voeg blokjes toe.</b> Tekst, een link, een afbeelding, een video, een aftelling naar een datum of een tool. Een bericht van sociale media plak je gewoon: het wordt een link met de tekst erbij. Elk blokje krijgt een titel en een kleur.</li>
               <li><b>Plak of sleep.</b> Plak een link, tekst of afbeelding op het bord, of sleep ze naar een kolom. De Cockpit ziet zelf wat het is.</li>
               <li><b>Tools op je bord.</b> Kies een tool en een project. Je ziet de kern van die tool, en met een tik opent ze meteen met dat project.</li>
               <li><b>Klaar in één tik.</b> Werkte je al in tools voor een project? Dan stelt de Cockpit een bord voor met al die tools, per fase.</li>
@@ -1456,7 +1467,8 @@ window.ocProjectkiezer = function (plek, o) {
                 </div>
                 <label class="veld" data-voor="tool"><span>Project <small>(niet verplicht)</small></span><input type="text" id="f-project" list="f-projecten" maxlength="80" autocomplete="off" placeholder="Het project dat open staat"><datalist id="f-projecten"></datalist></label>
                 <label class="vink-veld" data-voor="tool" id="f-widget-veld"><input type="checkbox" id="f-widget" checked><span><b>Toon de kern op je bord</b><small>Bijvoorbeeld de risicomatrix, de volgende mijlpalen of de open taken. Wordt vanzelf bijgewerkt.</small></span></label>
-                <label class="veld" data-voor="tekst link beeld video bericht tool"><span>Titel <small id="f-titel-noot">(niet verplicht)</small></span><input type="text" id="f-titel" maxlength="80" autocomplete="off"></label>
+                <label class="veld" data-voor="aftelling"><span>Datum</span><input type="date" id="f-datum"></label>
+                <label class="veld" data-voor="tekst link beeld video bericht aftelling tool"><span>Titel <small id="f-titel-noot">(niet verplicht)</small></span><input type="text" id="f-titel" maxlength="80" autocomplete="off"></label>
                 <label class="veld" data-voor="tekst bericht link"><span id="f-tekst-l">Tekst</span><textarea id="f-tekst" rows="5" maxlength="4000"></textarea></label>
                 <label class="veld" data-voor="bericht"><span>Van wie <small>(niet verplicht)</small></span><input type="text" id="f-bron" maxlength="80" autocomplete="off"></label>
                 <div class="veld" data-voor="tekst link beeld video bericht tool">
@@ -1534,7 +1546,7 @@ function ocUndoable(restore) {
 }
 /* ==========================================================================
    Cockpit: je startpagina voor een project of thema. Borden met kolommen en blokjes:
-   tekst, link, afbeelding, video, bericht en tool. Alles blijft op dit toestel.
+   tekst, link, afbeelding, video, aftelling en tool. (Oude berichten blijven werken.) Alles blijft op dit toestel.
    Video's en berichten laden pas iets van buiten als je zelf op Afspelen tikt.
    ========================================================================== */
 const $ = id => document.getElementById(id);
@@ -1548,6 +1560,7 @@ const I = {
   beeld:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>',
   video:'<rect x="2.5" y="5" width="15" height="14" rx="2"/><path d="M17.5 10l4-2.5v9l-4-2.5"/>',
   bericht:'<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/>',
+  aftelling:'<rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/><path d="M9 15.5l2 2 4-4.5"/>',
   tool:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M17.5 14v7M14 17.5h7"/>',
   plus:'<path d="M12 5v14M5 12h14"/>', menu:'', pijl:'<path d="M7 17L17 7M9 7h8v8"/>', uit:'<path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
   pen:'<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>', op:'<path d="M12 19V5M5 12l7-7 7 7"/>', neer:'<path d="M12 5v14M19 12l-7 7-7-7"/>',
@@ -1557,8 +1570,9 @@ const I = {
 const PUNTJES = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>';
 const SOORTEN = [
   { id:'tekst', naam:'Tekst' }, { id:'link', naam:'Link' }, { id:'beeld', naam:'Afbeelding' },
-  { id:'video', naam:'Video' }, { id:'bericht', naam:'Bericht' }, { id:'tool', naam:'Tool' }
+  { id:'video', naam:'Video' }, { id:'aftelling', naam:'Aftelling' }, { id:'tool', naam:'Tool' }
 ];
+const OUDE_SOORTEN = ['bericht'];   // bestaan nog op borden, maar je maakt ze niet meer nieuw
 const KLEUREN = [
   { id:'wit', naam:'Wit', bg:'#ffffff', rand:'#cbd5e1' }, { id:'grijs', naam:'Grijs', bg:'#f1f5f9', rand:'#94a3b8' },
   { id:'groen', naam:'Groen', bg:'#d1fae5', rand:'#10b981' }, { id:'blauw', naam:'Blauw', bg:'#dbeafe', rand:'#60a5fa' },
@@ -1590,12 +1604,11 @@ function herken(tekst) {
   const een = urlVan(t);
   if (een && !/\s/.test(t)) {
     if (videoVan(een)) return { soort:'video', url:een.href };
-    if (BERICHT_SITES.test(host(een))) return { soort:'bericht', url:een.href, tekst:'' };
     return { soort:'link', url:een.href, titel:'' };
   }
   const urls = t.match(URL_RE) || [];
   const sociaal = urls.map(urlVan).find(u => u && BERICHT_SITES.test(host(u)));
-  if (sociaal) return { soort:'bericht', url:sociaal.href, tekst:t.replace(sociaal.href, '').trim() };
+  if (sociaal) return { soort:'link', url:sociaal.href, tekst:t.replace(sociaal.href, '').trim() };   // een bericht van sociale media: een link met de tekst erbij
   return { soort:'tekst', tekst:t };
 }
 
@@ -1605,7 +1618,7 @@ function leegBord(naam) {
 }
 const okStr = (v, max) => typeof v === 'string' ? v.slice(0, max) : '';
 function okBlok(b) {
-  if (!b || typeof b !== 'object' || !SOORTEN.some(s => s.id === b.soort)) return null;
+  if (!b || typeof b !== 'object' || !(SOORTEN.some(s => s.id === b.soort) || OUDE_SOORTEN.includes(b.soort))) return null;
   const u = urlVan(b.url);
   const x = { id:okStr(b.id, 40) || nieuwId('x'), soort:b.soort, titel:okStr(b.titel, 80), kleur:KLEUREN.some(k => k.id === b.kleur) ? b.kleur : 'wit' };
   if (b.groot === true) x.groot = true;
@@ -1614,6 +1627,7 @@ function okBlok(b) {
   if (b.soort === 'bericht') x.bron = okStr(b.bron, 80);
   if (b.soort === 'beeld') { if (typeof b.beeld !== 'string' || !/^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(b.beeld)) return null; x.beeld = b.beeld; }
   if (b.soort === 'tool') { x.tool = okStr(b.tool, 60); x.project = okStr(b.project, 80); x.widget = b.widget === true; if (!x.tool) return null; }
+  if (b.soort === 'aftelling') { if (!okDatum(b.datum)) return null; x.datum = b.datum; }
   if (b.soort === 'link' && !x.url) return null;
   if (b.soort === 'video' && !x.url) return null;
   return x;
@@ -1671,6 +1685,16 @@ function tekstHTML(t) {
   s.replace(URL_RE, (m, at) => { uit += esc(s.slice(i, at)) + `<a href="${esc(m)}" target="_blank" rel="noopener noreferrer">${esc(m)}</a>`; i = at + m.length; return m; });
   return uit + esc(s.slice(i));
 }
+/* Aftelling: dagen tot een datum. Rekent in kalenderdagen, op dit toestel. */
+function okDatum(s) { if (typeof s !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return false; const [y, m, d] = s.split('-').map(Number), x = new Date(y, m - 1, d); return x.getFullYear() === y && x.getMonth() === m - 1 && x.getDate() === d; }
+function dagenTotDatum(s) { const [y, m, d] = s.split('-').map(Number), nu = new Date(); return Math.round((new Date(y, m - 1, d) - new Date(nu.getFullYear(), nu.getMonth(), nu.getDate())) / 864e5); }
+function mooiDatum(s) { const [y, m, d] = s.split('-').map(Number), x = new Date(y, m - 1, d); return x.toLocaleDateString('nl-BE', { weekday:'long', day:'numeric', month:'long' }) + (y !== new Date().getFullYear() ? ' ' + y : ''); }
+function aftelHTML(s) {
+  const n = dagenTotDatum(s), dat = esc(mooiDatum(s));
+  if (n === 0) return `<div class="aftel nu"><span class="aftel-n">Vandaag</span></div><p class="aftel-d">${dat}</p>`;
+  if (n < 0) return `<div class="aftel voorbij"><span class="aftel-n">${-n}</span><span class="aftel-t">${n === -1 ? 'dag' : 'dagen'} geleden</span></div><p class="aftel-d">${dat}</p>`;
+  return `<div class="aftel${n <= 7 ? ' dichtbij' : ''}"><span class="aftel-n">${n}</span><span class="aftel-t">${n === 1 ? 'dag' : 'dagen'}</span></div><p class="aftel-d">${n === 1 ? 'Morgen, ' : 'Tot '}${dat}</p>`;
+}
 function blokHTML(b, ki, bi, n) {
   const kop = (ico, titel, stil) => `<div class="blok-kop">${ico}<h3${stil ? ' class="stil"' : ''}>${esc(titel)}</h3></div>`;
   const ico = s => `<span class="soort-ico">${SVG(I[s])}</span>`.replace('<span class="soort-ico"><svg', '<svg class="soort-ico"').replace('</svg></span>', '</svg>');
@@ -1694,6 +1718,8 @@ function blokHTML(b, ki, bi, n) {
     lijf = kop(ico('bericht'), b.titel || 'Bericht', !b.titel)
       + `<div class="bericht">${b.tekst ? `<div class="blok-tekst${b.tekst.length > 420 ? ' lang' : ''}">${tekstHTML(b.tekst)}</div>` : ''}<div class="bericht-bron">${b.bron ? `<span>${esc(b.bron)}</span>` : ''}${u ? `<a href="${esc(b.url)}" target="_blank" rel="noopener noreferrer">${SVG(I.uit)}Origineel op ${esc(d)}<span class="sr-only"> (opent in een nieuw venster)</span></a>` : ''}</div></div>`
       + (b.tekst.length > 420 ? '<button type="button" class="meer" data-meer>Toon alles</button>' : '');
+  } else if (b.soort === 'aftelling') {
+    lijf = kop(ico('aftelling'), b.titel || 'Aftelling', !b.titel) + aftelHTML(b.datum);
   } else if (b.soort === 'tool') {
     const t = toolVan(b.tool);
     const naam = t ? t.title : b.tool;
@@ -1750,6 +1776,7 @@ function toonVelden() {
   document.querySelectorAll('#blad .veld').forEach(v => { v.hidden = !v.dataset.voor.split(' ').includes(s); });
   $('f-tekst-l').textContent = s === 'link' ? 'Notitie (niet verplicht)' : s === 'bericht' ? 'Tekst van het bericht' : 'Tekst';
   $('f-titel-noot').textContent = s === 'tekst' || s === 'tool' || s === 'beeld' ? '(niet verplicht)' : '(niet verplicht)';
+  $('f-titel').placeholder = s === 'aftelling' ? 'Bijvoorbeeld: stuurgroep of deadline' : '';
   $('plak-hint').hidden = !!blad.id;
   $('f-widget-veld').hidden = s !== 'tool' || !deelt(toolVan($('f-tool').value));
   tekenSoorten();
@@ -1768,7 +1795,7 @@ function openBlad(kolId, b, voorvul) {
   $('blad-t').textContent = b ? 'Blokje wijzigen' : 'Nieuw blokje';
   $('blad-ok-t').textContent = b ? 'Bewaar' : 'Voeg toe';
   $('blad-weg').hidden = !b;
-  $('f-url').value = b && b.url || ''; $('f-titel').value = b && b.titel || ''; $('f-tekst').value = b && b.tekst || ''; $('f-bron').value = b && b.bron || '';
+  $('f-url').value = b && b.url || ''; $('f-titel').value = b && b.titel || ''; $('f-tekst').value = b && b.tekst || ''; $('f-bron').value = b && b.bron || ''; $('f-datum').value = b && b.datum || '';
   $('f-project').value = b && b.project || '';
   $('f-widget').checked = b ? !!b.widget : true;
   $('f-url').removeAttribute('aria-invalid');
@@ -1833,6 +1860,7 @@ $('blad-form').addEventListener('submit', e => {
   if (['tekst', 'link', 'bericht'].includes(s)) x.tekst = $('f-tekst').value.trim();
   if (s === 'bericht') x.bron = $('f-bron').value.trim();
   if (s === 'tekst' && !x.tekst && !x.titel) { $('f-tekst').focus(); toast('Schrijf eerst iets.'); return; }
+  if (s === 'aftelling') { x.datum = $('f-datum').value; if (!okDatum(x.datum)) { $('f-datum').focus(); toast('Kies een datum.'); return; } }
   if (s === 'bericht' && !x.tekst && !x.url) { $('f-tekst').focus(); toast('Plak de tekst of de link van het bericht.'); return; }
   if (s === 'beeld') { if (!blad.beeld) { $('f-beeld-k').focus(); toast('Kies eerst een afbeelding.'); return; } x.beeld = blad.beeld; }
   if (s === 'tool') { x.tool = $('f-tool').value; x.project = $('f-project').value.trim(); x.widget = deelt(toolVan(x.tool)) && $('f-widget').checked; if (!toolVan(x.tool)) { toast('Kies een tool.'); return; } }
@@ -2242,6 +2270,8 @@ addEventListener('storage', e => {
 render();
 /* Voor tests: window.cockpit */
 window.cockpit = { herken, videoVan, okBlok, staat:() => kopie(), voegToe:(x, k) => voegToe(k || bord().kolommen[0].id, x) };
+// kom je terug naar het bord (bv. de volgende dag), dan klopt de aftelling weer
+document.addEventListener('visibilitychange', () => { if (!document.hidden && bord().kolommen.some(k => k.blokken.some(b => b.soort === 'aftelling'))) render(); });
 </script>
 <input type="file" id="oc-bestand-in" accept=".json,application/json" hidden>
 <script>
