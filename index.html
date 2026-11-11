@@ -2487,7 +2487,7 @@ window.ocProjectkiezer = function (plek, o) {
         <a class="ft-link" href="https://www.linkedin.com/in/bartel-volckaert-8a96842/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Maker</a>
         <a class="ft-link" href="/privacy/#voorwaarden" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.01"/></svg>Disclaimer</a>
       </nav>
-      <p class="ft-meta"><button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (35 seconden)" title="Bekijk de film (35 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg><span>Film</span></button><button class="ft-film ft-inst" id="ft-app" type="button" hidden aria-label="Installeer de app"><img src="/app/icon.svg" alt="" width="22" height="22"><span>Installeer</span></button><span class="ft-dot" aria-hidden="true"></span><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v15.82</span></p>
+      <p class="ft-meta"><button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (35 seconden)" title="Bekijk de film (35 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg><span>Film</span></button><button class="ft-film ft-inst" id="ft-app" type="button" hidden aria-label="Installeer de app"><img src="/app/icon.svg" alt="" width="22" height="22"><span>Installeer</span></button><span class="ft-dot" aria-hidden="true"></span><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v15.83</span></p>
     </div>
   </footer>
   <dialog class="film" id="film" aria-labelledby="film-h">
@@ -4658,9 +4658,16 @@ function renderPathbar(id) {
   const st = startedPaths(), trId = plans.includes(pathCtx) ? pathCtx : plans.find(n => st.includes(n)) || plans[0], tr = TRAJECTEN.find(x => x.id === trId);
   const steps = stepsOf(trId), i = steps.findIndex(s => s.t.id === id);
   if (steps.length < 2 || i < 0) { show(false); return; }
-  const prev = steps[i - 1], next = steps[i + 1], q = (steps[i].t.extra ? steps[i].t.sub : tr.q[id]) || t.sub || '', pr = isPrivate() ? '' : ((getProject() || {}).name || ''), n = `stap ${i + 1} van ${steps.length}${pr ? ' · ' + pr : ''}`;
+  const prev = steps[i - 1], next = steps[i + 1], q = (steps[i].t.extra ? steps[i].t.sub : tr.q[id]) || t.sub || '', pr = isPrivate() ? '' : ((getProject() || {}).name || '');
+  // In fasen denken, niet in 14 stappen: "Opzetten · stap 1 van 4". De dunne lijn bovenaan toont de hele weg.
+  const fz = (FASEN[trId] || []).map(f => ({ naam:f.naam, at:steps.findIndex(s => s.t.id === f.van) })).filter(f => f.at >= 0).sort((a, b) => a.at - b.at);
+  const fi = fz.length && fz[0].at === 0 ? fz.reduce((k, f, j) => f.at <= i ? j : k, 0) : -1;
+  const fa = fi >= 0 ? fz[fi].at : 0, fb = fi >= 0 && fz[fi + 1] ? fz[fi + 1].at : steps.length;
+  const fNaam = fi >= 0 ? fz[fi].naam : '', fNr = i - fa + 1, fTot = fb - fa;
+  const n = (fNaam ? `${fNaam} · stap ${fNr} van ${fTot}` : `stap ${i + 1} van ${steps.length}`) + (pr ? ' · ' + pr : '');
   const arrow = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
   const bol = steps.map((s, k) => `<span class="${k === i ? 'here' : s.done ? 'done' : ''}"></span>`).join('');
+  const bolFase = fNaam ? steps.slice(fa, fb).map((s, k) => `<span class="${fa + k === i ? 'here' : s.done ? 'done' : ''}"></span>`).join('') : bol;
   // Niets veranderd (zelfde stap, zelfde vinkjes, zelfde project): niet opnieuw tekenen, dan blijft de focus op Vorige of Volgende staan
   const sig = [trId, i, steps.map(s => s.done ? 1 : 0).join(''), pr].join('|');
   duim(next && gevuld(steps[i]) ? { next, trId } : null);
@@ -4671,7 +4678,7 @@ function renderPathbar(id) {
   bar.setAttribute('aria-label', `Stappenplan: ${tr.title}`);
   $('topbar').style.setProperty('--pb', `${Math.round((i + 1) / steps.length * 100)}%`);
   bar.innerHTML = `
-    <span class="pb-where" title="${esc(`${tr.title} · ${n}${q ? ' · ' + q : ''}`)}"><span class="pb-tool">${esc(steps[i].t.title)}</span><span class="pb-sub"><span class="pb-plan">${esc(tr.title)} · </span>${esc(n)}${q ? ` · ${esc(q)}` : ''}</span><span class="pb-kort"><span class="pb-k"><span class="pb-stap">Stap </span>${i + 1} van ${steps.length}</span><span class="pb-bol" aria-hidden="true">${bol}</span></span></span>
+    <span class="pb-where" title="${esc(`${tr.title} · ${n}${q ? ' · ' + q : ''}`)}"><span class="pb-tool">${esc(steps[i].t.title)}</span><span class="pb-sub"><span class="pb-plan">${esc(tr.title)} · </span>${esc(n)}${q ? ` · ${esc(q)}` : ''}</span><span class="pb-kort"><span class="pb-k">${fNaam ? `${esc(fNaam)} <span class="pb-stap">· </span>${fNr} van ${fTot}` : `<span class="pb-stap">Stap </span>${i + 1} van ${steps.length}`}</span><span class="pb-bol" aria-hidden="true">${bolFase}</span></span></span>
     <span class="pb-dots" aria-hidden="true">${bol}</span>
     <span class="pb-nav">
       ${prev ? `<button type="button" class="pb-prev" data-id="${esc(prev.t.id)}"${zoekAttr(prev.t)} aria-label="Vorige stap: ${esc(prev.t.title)}" title="Vorige: ${esc(prev.t.title)}">${arrow('M15 18l-6-6 6-6')}</button>` : ''}
