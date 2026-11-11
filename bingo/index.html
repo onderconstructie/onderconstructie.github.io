@@ -231,6 +231,17 @@ html:has(.ocw-back) { overflow:hidden; }
 }
 
 @media (prefers-reduced-motion: reduce) { .vak .kaart { transition:none; } }
+
+/* Een tool die past bij het omgedraaide woord */
+.toolbij { text-align:center; font-size:0.875rem; color:var(--slate-600); margin:-0.25rem auto 0.5rem; }
+.toolbij a { display:inline-flex; align-items:center; gap:0.375rem; min-height:44px; padding:0 0.5rem; font-weight:700; color:var(--accent-dark); text-decoration:none; }
+.toolbij a:hover { text-decoration:underline; text-underline-offset:3px; }
+.toolbij img { width:22px; height:22px; }
+#deel:disabled { opacity:0.5; }
+
+#nieuw .kort { display:none; }
+@media (max-width:420px) { #nieuw .lang { display:none; } #nieuw .kort { display:inline; } }
+.toolbij span { display:block; }
 /* oc-uitleg v1 begin */
 /* "Hoe werkt dit?": één blok voor alle tools. Zonder JavaScript blijft de gewone uitklapper leesbaar.
    Het script zet .oc-u op <details class="explain"> en bouwt de inhoud om tot inleiding, stappen, tip en verwijzingen. */
@@ -1079,13 +1090,15 @@ header[data-oc-kop][data-stand="compact"]::before { content:""; order:-1; flex:n
 
             <div class="bord" id="bord" role="group" aria-label="Je bingokaart"></div>
             <div class="status" id="status"></div>
+            <p class="toolbij" id="toolbij" hidden></p>
 
             <div class="bediening">
-                <button type="button" class="btn btn-secondary" id="nieuw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>Nieuwe kaart</button>
+                <button type="button" class="btn btn-secondary" id="nieuw" aria-label="Nieuwe kaart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg><span class="lang">Nieuwe kaart</span><span class="kort" aria-hidden="true">Nieuw</span></button>
                 <div class="seg" role="group" aria-label="Grootte van de kaart">
                     <button type="button" data-maat="3" aria-pressed="true">3×3</button>
                     <button type="button" data-maat="4" aria-pressed="false">4×4</button>
                 </div>
+                <button type="button" class="geluid" id="deel" aria-label="Deel je kaart" title="Deel je kaart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/></svg></button>
                 <button type="button" class="geluid" id="geluid" aria-pressed="true" aria-label="Geluid"><svg class="aan" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg><svg class="uit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M16 9l5 6M21 9l-5 6"/></svg></button>
             </div>
         </section>
@@ -1099,7 +1112,8 @@ header[data-oc-kop][data-stand="compact"]::before { content:""; order:-1; flex:n
               <li><b>Tik een woord aan</b> zodra je het hoort. Nog eens tikken maakt het ongedaan.</li>
               <li><b>Een volle rij is bingo.</b> Recht, verticaal of schuin. Op een kaart van 4 op 4 heb je vier op een rij nodig.</li>
               <li><b>Eigen woorden.</b> Voeg de woorden toe die in jouw organisatie altijd terugkomen. Ze blijven bewaard.</li>
-              <li><b>Speel samen.</b> Iedereen opent de bingo op zijn eigen gsm: elke kaart is anders.</li>
+              <li><b>Speel samen.</b> Iedereen opent de bingo op zijn eigen gsm: elke kaart is anders. Met de deelknop stuur je je kaart door.</li>
+              <li><b>Gewone taal.</b> Tik op een groen vakje in een volle rij: dan zie je het woord in gewone taal of een tip. Soms past er een tool bij.</li>
             </ul>
             <p>Tip: zet het geluid uit in een echte vergadering. Bij bingo trilt je gsm dan alleen even.</p>
             <p>Een woord dat telkens terugkomt, zegt vaak iets. Wil je zien welke woorden echt terugkomen in een verslag? Maak een <a href="../zakmes/woordwolk/">Woordwolk</a>.</p>
@@ -1168,7 +1182,7 @@ const KEY = 'bingo.v1';
 
 /* Thema's en hun woorden. Eigen tekst, geen merknamen. */
 const THEMAS = [
-  { id:'vergaderen', naam:'Vergaderen', w:['Kan iedereen mij horen?', 'Je staat op mute', 'Ik deel even mijn scherm', 'Zie je mijn scherm?', 'Dat nemen we offline', 'Kort puntje nog', 'Ik ga het kort houden', 'Daar komen we op terug', 'Wie neemt dit op?', 'We lopen wat uit', 'Kunnen we afronden?', 'Een rondje doen', 'Is iedereen mee?', 'Zoals in mijn mail', 'Ik moet om twaalf uur weg', 'Volgende keer meer tijd', 'Ik zet het in de chat', 'Nog vragen?', 'Mijn camera doet raar', 'Sorry, ik was even weg', 'Kan dit niet per mail?', 'Een werkgroep oprichten', 'Wie maakt het verslag?', 'Terug naar de agenda', 'Ik hoor een echo', 'Goeie vraag', 'Even een stap terug', 'Dat is een ander punt', 'We nemen het mee', 'Meeting', 'Teamsen', 'Sparren', 'Terugkoppelen', 'Bilateraal bekijken', 'Touchpoint', 'Dat parkeren we even'] },
+  { id:'vergaderen', naam:'Vergaderen', w:['Daar komen we op terug', 'Dat nemen we offline', 'Kort puntje nog', 'Ik ga het kort houden', 'Wie neemt dit op?', 'Kunnen we afronden?', 'Een rondje doen', 'Is iedereen mee?', 'Zoals in mijn mail', 'Volgende keer meer tijd', 'Nog vragen?', 'Kan dit niet per mail?', 'Een werkgroep oprichten', 'Goeie vraag', 'Even een stap terug', 'Dat is een ander punt', 'Terug naar de agenda', 'We nemen het mee', 'Meeting', 'Teamsen', 'Sparren', 'Terugkoppelen', 'Bilateraal bekijken', 'Touchpoint', 'Dat parkeren we even', 'Dat is een aandachtspunt', 'Dat is een werkpunt', 'We bekijken het', 'In principe wel', 'Ter info', 'Laten we het concreet maken', 'Op het netvlies houden', 'Het zit in de pijplijn', 'Op korte termijn'] },
   { id:'ai', naam:'AI', w:['Prompt', 'Hallucineren', 'Taalmodel', 'AI-agent', 'Use case', 'Human in the loop', 'Generatieve AI', 'Algoritme', 'Datagedreven', 'Guardrails', 'AI-geletterdheid', 'Gamechanger', 'Automatiseren', 'Trainingsdata', 'Black box', 'Ethisch kader', 'Proof of concept', 'Chatbot', 'Efficiëntiewinst', 'Het is maar een tool', 'Dat kan AI ook', 'AI-verordening', 'Machine learning', 'Synthetische data', 'Prompt engineering', 'Bias in de data', 'Slimme assistent', 'Tijdwinst'] },
   { id:'hr', naam:'HR', w:['Talent', 'Onboarding', 'Employer branding', 'Veerkracht', 'Werkgeluk', 'Feedbackcultuur', 'Competenties', 'Loopbaanpad', 'Engagement', 'Vitaliteit', 'Purpose', 'Groeimindset', 'Duurzaam inzetbaar', 'Hybride werken', 'Teamdynamiek', 'Kernwaarden', 'Ontwikkelgesprek', 'Leercultuur', 'Eigenaarschap', 'Medewerkersbeleving', 'Talentmanagement', 'Wendbaar', 'Upskilling', 'Retentie', 'War for talent', 'Bevlogenheid', 'Zelfsturend team', 'Verbinding'] },
   { id:'strategie', naam:'Strategie', w:['Synergie', 'Quick win', 'Laaghangend fruit', 'Helikopterview', 'Out of the box', 'Draagvlak', 'Meerwaarde', 'Op de kaart zetten', 'Stip op de horizon', 'Paradigmashift', 'Win-win', 'Best practice', 'Toekomstgericht', 'Holistisch', 'Ecosysteem', 'Speerpunt', 'Proactief', 'De krachten bundelen', 'Kantelpunt', 'Vanuit de klant', 'Impact maken', 'Roadmap', 'Integraal', 'Transformatie', 'Momentum', 'Aligneren', 'Sense of urgency', "Uit de silo's", 'Opschalen', 'No-brainer'] },
@@ -1188,7 +1202,7 @@ const GEWOON = {
   'Sorry, ik was even weg':'Tip: lees het verslag na, dan hoeft niemand iets te herhalen.', 'Kan dit niet per mail?':'Tip: vraag je voor elke vergadering af: moet dit samen?', 'Een werkgroep oprichten':'Twee of drie mensen werken dit uit, tegen een vaste datum.',
   'Wie maakt het verslag?':'Tip: spreek dat af bij het begin.', 'Terug naar de agenda':'Tip: laat de agenda zien, dan blijft iedereen bij de les.', 'Ik hoor een echo':'Tip: zet je micro uit als je niet praat.',
   'Goeie vraag':'Tip: geef gewoon meteen het antwoord.', 'Even een stap terug':'Wat willen we eigenlijk bereiken?', 'Dat is een ander punt':'Tip: noteer het en bespreek het later.',
-  'We nemen het mee':'We beslissen dit later, op een vaste datum.', 'Meeting':'Vergadering', 'Teamsen':'Online vergaderen', 'Sparren':'Samen ideeën uitwisselen', 'Terugkoppelen':'Laten weten', 'Bilateraal bekijken':'Met z’n tweeën bespreken', 'Touchpoint':'Kort overleg', 'Dat parkeren we even':'Tip: schrijf het op en zeg wanneer je erop terugkomt.',
+  'We nemen het mee':'We beslissen dit later, op een vaste datum.', 'Meeting':'Vergadering', 'Teamsen':'Online vergaderen', 'Sparren':'Samen ideeën uitwisselen', 'Terugkoppelen':'Laten weten', 'Bilateraal bekijken':'Met z’n tweeën bespreken', 'Touchpoint':'Kort overleg', 'Dat is een aandachtspunt':'Wat kan er misgaan, en wie volgt het op?', 'Dat is een werkpunt':'Dit moet beter. Wie doet wat, tegen wanneer?', 'We bekijken het':'Wie bekijkt het, en tegen wanneer?', 'In principe wel':'Ja, als … Zeg meteen onder welke voorwaarde.', 'Ter info':'Je hoeft hier niets mee te doen.', 'Laten we het concreet maken':'Wat doen we morgen, en wie?', 'Op het netvlies houden':'Niet vergeten: zet het op de agenda.', 'Het zit in de pijplijn':'Het komt eraan. Wanneer precies?', 'Op korte termijn':'Tegen welke datum?', 'Dat parkeren we even':'Tip: schrijf het op en zeg wanneer je erop terugkomt.',
   'Prompt':'De vraag of opdracht die je aan AI geeft', 'Hallucineren':'Iets verzinnen dat niet klopt', 'Taalmodel':'Software die tekst schrijft door te voorspellen', 'AI-agent':'Software die zelf stappen zet voor jou',
   'Use case':'Waarvoor je het gebruikt', 'Human in the loop':'Een mens kijkt na en beslist', 'Generatieve AI':'AI die tekst of beelden maakt', 'Algoritme':'Vaste regels in software', 'Datagedreven':'Op basis van cijfers',
   'Guardrails':'Grenzen en regels', 'AI-geletterdheid':'Weten hoe AI werkt en waar het fout kan gaan', 'Gamechanger':'Iets dat veel verandert', 'Automatiseren':'De computer het laten doen', 'Trainingsdata':'De voorbeelden waaruit software leert',
@@ -1214,6 +1228,14 @@ const GEWOON = {
   'Fase twee':'Later, misschien', 'Requirements':'Waar het aan moet voldoen', 'Capaciteit':'Hoeveel tijd en mensen we hebben', 'Prioriteit nul':'Dit is het belangrijkste', 'Next steps':'Wat doen we nu, wie en wanneer?',
   'Opleveren':'Afgeven, klaar zijn', 'Parkeren':'Later bekijken', 'Agile':'In kleine stappen werken en snel bijsturen'
 };
+/* Soms past er een tool bij: dan staat ze onder de kaart, met een link */
+const TOOL_BIJ = { 'Wie neemt dit op?':'kanban', 'Backlog':'kanban', 'We nemen het mee':'beslissingen', 'Dat parkeren we even':'notities', 'Daar komen we op terug':'agenda', 'Kick-off':'agenda',
+  'Een rondje doen':'check-in', 'Kunnen we afronden?':'check-out', 'Stakeholder':'stakeholders', 'Draagvlak':'stakeholders', 'Mijlpaal':'tijdlijn', 'Kritiek pad':'tijdlijn', 'De planning schuift':'tijdlijn',
+  'Scope creep':'opdracht', 'Requirements':'opdracht', 'Stip op de horizon':'opdracht', 'Quick win':'prioriteit', 'Laaghangend fruit':'prioriteit', 'Prioriteit nul':'prioriteit', 'Lessons learned':'leerpunten',
+  'Capaciteit':'sprint', 'Agile':'sprint', 'Meeting':'vergaderkost', 'Teamsen':'vergaderkost', 'Dat is een aandachtspunt':'risico', 'Feedbackcultuur':'retro', 'Transformatie':'veranderprofiel', 'Escaleren':'raci', 'Bottleneck':'stroom' };
+let TOOLS = [];
+fetch('/tools.json').then(r => r.ok ? r.json() : []).then(d => { TOOLS = Array.isArray(d) ? d : []; }).catch(() => {});
+const toolBij = w => { const id = TOOL_BIJ[w]; return id ? TOOLS.find(t => t.id === id) || null : null; };
 const EIGEN_ACHTER = 'Zeg het in gewone taal: wat bedoel je echt?';
 const achterVan = w => GEWOON[w] || EIGEN_ACHTER;
 let om = new Set();   // vakjes die nu omgedraaid zijn (alleen in een volle rij)
@@ -1393,7 +1415,7 @@ function vinkAan(i) {
 }
 function nieuweKaart(melding) {
   const oud = kopie();
-  st.kaart = maakKaart(); st.vink = []; st.gevierd = []; om = new Set();
+  st.kaart = maakKaart(); st.vink = []; st.gevierd = []; om = new Set(); toonToolBij(null);
   save(); render(false);
   if (melding && oud.vink.length) toast(melding, ocUndoable(() => { st = oud; save(); render(false); zeg('Ongedaan gemaakt.'); }));
   else if (st.kaart.length) zeg('Nieuwe kaart.');
@@ -1410,7 +1432,19 @@ function draai(b, i) {
   b.style.animation = 'none';
   b.classList.toggle('om', nu);
   b.querySelector('.voor').setAttribute('aria-hidden', String(nu)); b.querySelector('.achter').setAttribute('aria-hidden', String(!nu));
-  zeg(nu ? st.kaart[i] + '. In gewone taal: ' + achterVan(st.kaart[i]).replace(/^Tip: /, 'tip: ') : st.kaart[i]);
+  const t = nu ? toolBij(st.kaart[i]) : null;
+  toonToolBij(t, st.kaart[i]);
+  zeg(nu ? st.kaart[i] + '. In gewone taal: ' + achterVan(st.kaart[i]).replace(/^Tip: /, 'tip: ') + (t ? ' Er is een tool bij: ' + t.title + '.' : '') : st.kaart[i]);
+}
+function toonToolBij(t, w) {
+  const el = $('toolbij'); if (!el) return;
+  el.hidden = !t;
+  if (!t) return;
+  el.innerHTML = '';
+  const span = document.createElement('span'); span.textContent = 'Bij \u201C' + w + '\u201D past deze tool:';
+  const a = document.createElement('a'); a.href = t.path; a.textContent = t.title;
+  if (t.icon) { const img = document.createElement('img'); img.src = 'data:image/svg+xml,' + encodeURIComponent(t.icon); img.alt = ''; a.prepend(img); }
+  el.append(span, a);
 }
 $('nieuw').addEventListener('click', () => {
   if (!st.themas.length) { toast('Kies eerst een thema.'); return; }
@@ -1576,6 +1610,57 @@ if (!st.kaart.length && st.themas.length) { st.kaart = maakKaart(); }
 render(false);
 /* Voor tests: window.bingo */
 window.bingo = { GEWOON, THEMAS, rijen, leesEigen, maakKaart, pool, staat:() => kopie(), vink:i => vinkAan(i) };
+
+/* ---------- Delen: de kaart als afbeelding, met de link erbij ----------
+   Op een gsm opent het deelmenu van het toestel; lukt dat niet, dan download je de afbeelding. */
+function tekenKaart() {
+  const n = st.maat, W = 1080, H = 1350, M = 72, c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d'), V = new Set(st.vink), win = new Set(vol().flatMap(R => R.i));
+  const F = (w, s) => `${w} ${s}px "DM Sans", system-ui, sans-serif`;
+  const rr = (x, y, w, h, r) => { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); };
+  g.fillStyle = '#f8fafc'; g.fillRect(0, 0, W, H);
+  g.fillStyle = '#1e293b'; g.font = F(700, 64); g.textAlign = 'center'; g.fillText('Buzzwordbingo', W / 2, 150);
+  g.fillStyle = '#64748b'; g.font = F(400, 32); g.fillText('Hoor je de modewoorden? Een volle rij is bingo', W / 2, 205);
+  const top = 260, size = 860, L0 = (W - size) / 2, gap = n === 3 ? 18 : 14, cel = (size - gap * (n - 1)) / n;
+  st.kaart.forEach((w, k) => {
+    const x = L0 + (k % n) * (cel + gap), y = top + Math.floor(k / n) * (cel + gap), aan = V.has(k), w2 = win.has(k);
+    rr(x, y, cel, cel, 26); g.fillStyle = w2 ? '#047857' : aan ? '#ecfdf5' : '#ffffff'; g.fill();
+    g.lineWidth = 3; g.strokeStyle = w2 ? '#047857' : aan ? '#a7f3d0' : '#e2e8f0'; g.stroke();
+    if (aan && !w2) { g.beginPath(); g.arc(x + cel / 2, y + cel / 2, cel * 0.37, 0, Math.PI * 2); g.fillStyle = 'rgba(16,185,129,0.2)'; g.fill(); }
+    g.fillStyle = w2 ? '#ffffff' : aan ? '#065f46' : '#334155';
+    let fs = n === 3 ? 40 : 30; g.font = F(600, fs);
+    const woorden = w.split(' '), regels = [], maxW = cel - 36;
+    let r = ''; woorden.forEach(x2 => { const t = r ? r + ' ' + x2 : x2; if (g.measureText(t).width > maxW && r) { regels.push(r); r = x2; } else r = t; }); if (r) regels.push(r);
+    while (regels.some(t => g.measureText(t).width > maxW) && fs > 18) { fs -= 2; g.font = F(600, fs); }
+    const lh = fs * 1.2, y0 = y + cel / 2 - (regels.length - 1) * lh / 2 + fs * 0.35;
+    regels.slice(0, 4).forEach((t, q) => g.fillText(t, x + cel / 2, y0 + q * lh));
+  });
+  const onder = top + size + 105;
+  g.font = F(800, 72); g.fillStyle = '#047857';
+  g.fillText(st.vink.length === n * n ? 'Volle kaart!' : vol().length ? 'Bingo!' : st.vink.length + ' van ' + n * n + ' gehoord', W / 2, onder);
+  g.font = F(600, 30); g.fillStyle = '#475569'; g.fillText('Speel mee op ' + location.host + '/bingo', W / 2, H - 60);
+  return c;
+}
+async function deel() {
+  const knop = $('deel'); if (knop.disabled) return;
+  if (!st.kaart.length) { toast('Er is nog geen kaart om te delen.'); return; }
+  knop.disabled = true;
+  const url = location.origin + '/bingo/', tekst = vol().length ? 'Bingo! Speel mee met de Buzzwordbingo.' : 'Speel mee met de Buzzwordbingo: hoor je de modewoorden?';
+  try {
+    try { await document.fonts.ready; } catch (e) {}
+    const blob = await new Promise(r => tekenKaart().toBlob(r, 'image/png'));
+    const file = new File([blob], 'buzzwordbingo.png', { type:'image/png' });
+    if (navigator.canShare && navigator.canShare({ files:[file] })) {
+      try { await navigator.share({ files:[file], title:'Buzzwordbingo', text:tekst + ' ' + url }); } catch (e) { if (e.name !== 'AbortError') throw e; }
+    } else {
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'buzzwordbingo.png'; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      toast('Afbeelding gedownload. Deel ze waar je wil.');
+    }
+  } catch (e) { toast('Delen lukt hier niet.'); }
+  knop.disabled = false;
+}
+$('deel').addEventListener('click', deel);
 </script>
 <input type="file" id="oc-bestand-in" accept=".json,application/json" hidden>
 <script>
