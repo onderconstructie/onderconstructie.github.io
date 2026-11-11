@@ -343,6 +343,8 @@ body.present .note-text, body.present .action-text { pointer-events:none; }
 .ocw-row .ocw-yes { background:#dc2626; } .ocw-row .ocw-yes:hover { background:#b91c1c; }
 .ocw-row button { min-height:44px; }
 button.oc-import { color:#047857; min-height:44px; }
+.retro-imp { display:flex; justify-content:flex-start; margin:0 0 0.75rem; }
+.retro-imp[hidden], .retro-imp:has(> [hidden]) { display:none; }
 
 /* Tikdoelen: titel en actievelden 44 px */
 .retro-name { min-height:44px; }
@@ -1532,6 +1534,7 @@ window.ocProjectkiezer = function (plek, o) {
     </button>
   </div>
 
+  <div class="imp-row retro-imp"><button type="button" class="oc-import btn btn-ghost" id="oc-imp" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v11M7.5 9.5L12 14l4.5-4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg><span id="oc-imp-t">Wat liep stroef? Neem over uit andere tools</span></button></div>
   <div class="board" id="board"></div>
 
   <section class="card actions-card" id="actions">
@@ -3390,7 +3393,27 @@ function render() {
   $('carried-hide').textContent = r.hideDone ? 'Toon alles' : 'Verberg wat klaar is';
 
   renderTabs();
+  toonImport();
 }
+/* Overnemen voor de terugblik: de zwakke punten uit de Project Radar en de risico's uit de Risicomatrix (of andere tools).
+   Ze komen in de tweede kolom (Wat remde, Beter, Moeite): daar hoort wat stroef liep. Niets staat vooraf aangevinkt. */
+const IMP_TYPES = ['actie', 'risico'];
+function toonImport() { const b = $('oc-imp'); if (!b) return; const r = cur(); b.hidden = !r || !!r.voorbeeld || !ocShare.count(IMP_TYPES, OC_ID); const F = FORMATS[(r && r.format)] || FORMATS.hrp; b.title = 'Komt in de kolom ' + F.cols[1].t; }
+async function ocOvernemenRetro() {
+  const r = cur(); if (!r || r.voorbeeld) return;
+  const F = FORMATS[r.format] || FORMATS.hrp, kol = F.cols[1].t;
+  const al = r.cards.filter(c => c.col === 1).map(c => c.text);
+  const picked = await ocShare.pick({ types:IMP_TYPES, self:OC_ID, title:'Wat liep stroef?', intro:`Kies zwakke punten uit de Project Radar of risico's uit de Risicomatrix. Ze komen in de kolom ${kol}, als gespreksstof.`, have:al, vink:false });
+  if (!picked.length) return;
+  const norm = s => String(s || '').toLowerCase().replace(/\s+/g, ' ').trim(), heeft = new Set(al.map(norm));
+  const nieuw = picked.map(it => (it.type === 'risico' ? 'Risico: ' : '') + String(it.text).trim()).filter(t => t && !heeft.has(norm(t)) && heeft.add(norm(t)));
+  if (!nieuw.length) { toast('Die punten staan er al.'); return; }
+  const restore = snapshot();
+  r.cards.push(...nieuw.map(t => ({ id:uid(), col:1, text:t.slice(0, 300), votes:0 })));
+  save(); render();
+  toast(`${nieuw.length} ${nieuw.length === 1 ? 'punt' : 'punten'} in ${kol}`, ocUndoable(restore));
+}
+document.addEventListener('click', e => { if (e.target.closest('#oc-imp')) ocOvernemenRetro(); });
 
 // Teller boven de acties; een open actie zonder eigenaar valt op, want die gebeurt zelden
 function actionsCount(r) {
