@@ -2487,7 +2487,7 @@ window.ocProjectkiezer = function (plek, o) {
         <a class="ft-link" href="https://www.linkedin.com/in/bartel-volckaert-8a96842/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Maker</a>
         <a class="ft-link" href="/privacy/#voorwaarden" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.01"/></svg>Disclaimer</a>
       </nav>
-      <p class="ft-meta"><button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (35 seconden)" title="Bekijk de film (35 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg><span>Film</span></button><button class="ft-film ft-inst" id="ft-app" type="button" hidden aria-label="Installeer de app"><img src="/app/icon.svg" alt="" width="22" height="22"><span>Installeer</span></button><span class="ft-dot" aria-hidden="true"></span><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v15.89</span></p>
+      <p class="ft-meta"><button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (35 seconden)" title="Bekijk de film (35 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg><span>Film</span></button><button class="ft-film ft-inst" id="ft-app" type="button" hidden aria-label="Installeer de app"><img src="/app/icon.svg" alt="" width="22" height="22"><span>Installeer</span></button><span class="ft-dot" aria-hidden="true"></span><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v15.90</span></p>
     </div>
   </footer>
   <dialog class="film" id="film" aria-labelledby="film-h">
@@ -3151,6 +3151,34 @@ $('tabbar').addEventListener('click', e => {
   if (document.body.classList.contains('searching')) closeSearch();
   setTab(b.dataset.tab);
 });
+/* Vegen tussen de hoofdpagina's, in de volgorde van de balk onderaan: naar links is de volgende, naar rechts de vorige.
+   Alleen op het startscherm (niet in een tool), niet in velden, vensters, de cirkel of rijen die zelf opzij schuiven,
+   en niet vanaf de uiterste rand (daar betekent vegen op een iPhone al "terug"). */
+(() => {
+  let x0 = 0, y0 = 0, t0 = 0, aan = false;
+  const nietHier = el => !!(el && el.closest && el.closest('input, textarea, select, [contenteditable], dialog, .sheet, #wiz, #cycle, .viewsw, [data-geen-veeg]'));
+  const schuift = el => { for (let e = el; e && e !== document.body; e = e.parentElement) { if (e.scrollWidth > e.clientWidth + 4) { const o = getComputedStyle(e).overflowX; if (o === 'auto' || o === 'scroll') return true; } } return false; };
+  const anim = dir => {
+    if (calm()) return;
+    ['mywork', 'favs', 'start', 'paths-wrap', 'myproj', 'tabgroup', 'alltools'].map(id => $(id)).filter(el => el && !el.hidden && el.getClientRects().length)
+      .forEach(el => { try { el.animate([{ opacity:0.35, transform:`translateX(${dir * 28}px)` }, { opacity:1, transform:'none' }], { duration:200, easing:'cubic-bezier(.2,.7,.3,1)' }); } catch {} });
+  };
+  $('home').addEventListener('touchstart', e => {
+    aan = false;
+    if (e.touches.length !== 1 || $('viewer').classList.contains('open') || document.body.classList.contains('searching')) return;
+    const t = e.target, q = e.touches[0];
+    if (q.clientX < 24 || q.clientX > innerWidth - 24 || nietHier(t) || schuift(t)) return;
+    x0 = q.clientX; y0 = q.clientY; t0 = Date.now(); aan = true;
+  }, { passive:true });
+  $('home').addEventListener('touchend', e => {
+    if (!aan) return; aan = false;
+    const q = e.changedTouches[0], dx = q.clientX - x0, dy = q.clientY - y0;
+    if (Date.now() - t0 > 700 || Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.8) return;
+    const i = TABS.findIndex(t => t.id === tab), j = i + (dx < 0 ? 1 : -1);
+    if (j < 0 || j >= TABS.length) return;
+    setTab(TABS[j].id); anim(dx < 0 ? 1 : -1);
+  }, { passive:true });
+})();
 function goGroup(id, smooth) {
   if (id === 'projecten') { setTab('projecten'); if (view !== 'onderwerp') setView('onderwerp', false, false); return; }   // oude adressen
   if (!GROUPS.some(g => g.id === id)) return;
