@@ -1838,7 +1838,15 @@ const ocExport = (() => {
   const draw = (node, o) => window.html2canvas(node, Object.assign({ scale: SCALE, backgroundColor: '#ffffff', logging: false, useCORS: true,
     ignoreElements: el => el.parentNode === document.body && el !== node && !/^(STYLE|LINK)$/.test(el.tagName) }, o));
   const free = c => { c.width = c.height = 0; };     // geheugen meteen vrijgeven (iPad)
-  function save(blob, name) {
+  // Op een gsm of tablet: meteen het deelmenu van het toestel (mail, chat, opslaan). Annuleren = niets doen.
+  // Lukt delen niet (bv. de tik is te lang geleden), dan downloaden zoals op een computer.
+  async function save(blob, name) {
+    try {
+      if (matchMedia('(pointer:coarse)').matches && navigator.canShare) {
+        const file = new File([blob], name, { type: blob.type || (/\.pdf$/.test(name) ? 'application/pdf' : 'image/png') });
+        if (navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: name.replace(/\.(png|pdf)$/, '') }); return; }
+      }
+    } catch (e) { if (e && e.name === 'AbortError') return; }
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob); a.download = name;
     document.body.appendChild(a); a.click(); a.remove();
