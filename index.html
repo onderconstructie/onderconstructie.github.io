@@ -1114,6 +1114,16 @@ body:not(.view-fase) #home[data-tab="projecten"] #alltools-h { cursor:pointer; }
 /* De kop van Projecten: alleen in dat onderdeel; de titel staat er dan visueel, de h2 blijft voor schermlezers */
 .proj-top { display:none !important; }
 #home[data-tab="projecten"] .proj-top { display:grid !important; }
+/* De Cockpit: overkoepelend, dus bovenaan Projecten, boven de fasen */
+.cp-kaart { display:none; width:100%; align-items:center; gap:0.875rem; margin:0 0 1.25rem; padding:0.75rem 0.875rem; min-height:64px; border-radius:16px; border:1px solid #a7f3d0; background:linear-gradient(120deg, #ffffff 30%, #ecfdf5); font:inherit; color:inherit; text-align:left; cursor:pointer; box-shadow:0 10px 24px -20px rgba(4,120,87,0.6); }
+#home[data-tab="projecten"] .cp-kaart { display:flex; }
+body.searching .cp-kaart { display:none !important; }
+@media (hover:hover) { .cp-kaart:hover { border-color:#6ee7b7; box-shadow:0 12px 26px -16px rgba(4,120,87,0.55); } }
+.cp-ico svg { width:44px; height:44px; display:block; }
+.cp-txt { flex:1; min-width:0; display:flex; flex-direction:column; }
+.cp-txt b { font-size:1rem; font-weight:700; color:var(--slate-800); }
+.cp-txt span { font-size:0.875rem; color:var(--slate-600); line-height:1.35; }
+.cp-pijl { width:20px; height:20px; flex:none; color:#047857; }
 .th-wrap.proj-wrap { display:none; } #home[data-tab="projecten"] .th-wrap.proj-wrap { display:grid; } body.searching .th-wrap.proj-wrap { display:none !important; }
 .proj-top .group-title, .proj-top .group-note { display:block; }
 .proj-top .group-title { font-size:1.0625rem; font-weight:700; }
@@ -1172,7 +1182,10 @@ body.searching .proj-top { display:none !important; }
 .group.collapsed .gh-namen { order:2; display:flex; flex-wrap:wrap; column-gap:0.875rem; row-gap:0.25rem; margin-top:0.375rem; font-size:0.875rem; line-height:1.5; font-weight:500; color:var(--slate-700, #334155); }
 .gh-t { display:inline-flex; align-items:center; gap:0.375rem; white-space:nowrap; }
 .gh-t > svg, .gh-t > img { width:18px; height:18px; flex:none; }
-.group.collapsed .group-meta .count:not(.count-live) { display:none; }
+/* Het aantal tools: een rustig cirkeltje rechts, naast het pijltje, alleen als de groep dicht is */
+.group:not(.collapsed) .group-meta .count:not(.count-live) { display:none; }
+.group.collapsed .group-meta .count:not(.count-live) { display:inline-grid; place-items:center; min-width:24px; height:24px; padding:0 0.4375rem; border-radius:999px; background:#f1f5f9; color:#475569; font-size:0.75rem; font-weight:700; line-height:1; }
+.group.has-live.collapsed .group-meta .count:not(.count-live) { display:none; }
 /* Het aantal tools: een cirkeltje met een getal op het groepslogo */
 .group-head .group-logo { position:relative; overflow:visible; }
 .gl-tel { position:absolute; top:-7px; right:-7px; min-width:22px; height:22px; padding:0 5px; border-radius:999px; background:#ecfdf5; color:#047857; box-shadow:0 0 0 2px #ffffff, inset 0 0 0 1px #a7f3d0; font-size:0.75rem; font-weight:700; line-height:22px; text-align:center; font-variant-numeric:tabular-nums; }
@@ -2398,6 +2411,7 @@ window.ocProjectkiezer = function (plek, o) {
       <!-- Projecten: dezelfde kop als Vergaderen, Zakmes en Reset (icoon, naam, uitleg, aantal); per onderwerp klapt een tik alles open of dicht -->
       <div class="th-wrap proj-wrap"><div class="tab-hero tg-top proj-top" id="proj-top" aria-hidden="true"><span class="th-ico"><svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="16" y="18" width="12" height="44" rx="2" fill="#cbd5e1"/><rect x="34" y="18" width="12" height="44" rx="2" fill="#cbd5e1"/><rect x="52" y="18" width="12" height="44" rx="2" fill="#cbd5e1"/><rect x="18" y="22" width="8" height="8" rx="1" fill="#10b981"/></svg></span>
         <span class="th-txt"><span class="th-meta"><span id="proj-count"></span> tools · <span class="pm-fase">4 fasen</span><span class="pm-ond"><span id="proj-ngroep"></span> groepen</span></span><span class="th-title">Projecten</span><span class="th-note">Van opzet tot verandering</span></span><span class="th-hint" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10l5 5 5-5"/></svg></span></div><div class="list-tools tg-tools" id="list-tools"><button type="button" id="all-open">Alles open</button><button type="button" id="all-closed">Alles dicht</button></div></div>
+      <button type="button" class="cp-kaart" id="cp-kaart" data-id="cockpit"><span class="cp-ico"><svg viewBox="0 0 40 40" fill="none" aria-hidden="true"><circle cx="20" cy="20" r="18" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.5"/><rect x="9" y="10" width="22" height="20" rx="3" stroke="#64748b" stroke-width="2"/><rect x="12" y="13" width="7" height="5" rx="1.2" fill="#10b981"/><rect x="12" y="20" width="7" height="3.5" rx="1.2" fill="#cbd5e1"/><rect x="21" y="13" width="7" height="3.5" rx="1.2" fill="#cbd5e1"/><rect x="21" y="18.5" width="7" height="7" rx="1.2" fill="#a7f3d0"/></svg></span><span class="cp-txt"><b>Cockpit</b><span id="cp-sub">Je startpagina: alles van je project op één bord</span></span><svg class="cp-pijl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
       <div class="all-head" id="all-head">
         <h2 class="section-label" id="alltools-h">Alle tools</h2>
         <!-- twee gelijkwaardige ingangen: dezelfde tools, anders geordend. De keuze wordt onthouden. -->
@@ -2457,7 +2471,7 @@ window.ocProjectkiezer = function (plek, o) {
         <a class="ft-link" href="/privacy/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 5 6v5c0 4.5 3 8.2 7 10 4-1.8 7-5.5 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></svg>Privacy</a>
         <a class="ft-link" href="https://www.linkedin.com/in/bartel-volckaert-8a96842/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Maker</a>
       </nav>
-      <p class="ft-meta"><button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (35 seconden)" title="Bekijk de film (35 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg><span>Film</span></button><span class="ft-dot" aria-hidden="true"></span><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v15.67</span><span class="ft-dot" aria-hidden="true"></span><a class="ft-vw" href="/privacy/#voorwaarden">Op eigen verantwoordelijkheid</a></p>
+      <p class="ft-meta"><button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (35 seconden)" title="Bekijk de film (35 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg><span>Film</span></button><span class="ft-dot" aria-hidden="true"></span><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v15.68</span><span class="ft-dot" aria-hidden="true"></span><a class="ft-vw" href="/privacy/#voorwaarden">Op eigen verantwoordelijkheid</a></p>
     </div>
   </footer>
   <dialog class="film" id="film" aria-labelledby="film-h">
@@ -2767,7 +2781,7 @@ function subGroup(t) {
   return ['do', 'check'].includes((t.pdca || [])[0]) ? 'opvolgen' : 'opzetten';
 }
 // Sommige tools horen ook in een tweede groep: ze staan dan op beide plaatsen.
-const ALSO_IN = { beslissingen:['vergaderen'], vinkje:['vergaderen'], focus:['reset'], schets:['vergaderen', 'projecten'] };
+const ALSO_IN = { bingo:['vergaderen'], beslissingen:['vergaderen'], vinkje:['vergaderen'], focus:['reset'], schets:['vergaderen', 'projecten'] };
 const inGroup = (t, gid) => t.g === gid || (ALSO_IN[t.id] || []).includes(gid);
 const HUBS = ['/', '/projectmanagement/', '/zakmes/', '/reset/', '/app/'];
 // Hoeveel tools tegelijk open blijven (snel wisselen). Op een toestel met weinig geheugen minder.
@@ -2826,9 +2840,9 @@ function renderGroups() {
     return `
     <section class="group${isClosed ? ' collapsed' : ''}" data-group="${g.id}">
       <button class="group-head" aria-expanded="${!isClosed}" aria-controls="body-${g.id}">
-        <span class="group-logo" aria-hidden="true">${bare(g.logo)}${telBol(tools.length)}</span>
+        <span class="group-logo" aria-hidden="true">${bare(g.logo)}</span>
         <span><span class="group-title" role="heading" aria-level="2">${g.label}</span><br><span class="group-note">${g.note}</span>${telSr(tools.length)}${namen(tools)}</span>
-        <span class="group-meta"><span class="count count-live"></span><span class="count">${tools.length}</span></span>
+        <span class="group-meta"><span class="count count-live"></span><span class="count" aria-hidden="true">${tools.length}</span></span>
         ${toggleIcon}
       </button>
       <div class="group-body" id="body-${g.id}">
@@ -2845,7 +2859,7 @@ const MEET_SUB = [
   { id:'nadenken',  logo:'<svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M40 14a15 15 0 0 0-9 27v6h18v-6a15 15 0 0 0-9-27z" fill="#cbd5e1"/><rect x="32" y="51" width="16" height="5" rx="2.5" fill="#cbd5e1"/><rect x="35" y="59" width="10" height="4" rx="2" fill="#cbd5e1"/><path d="M40 24v12" stroke="#10b981" stroke-width="5" stroke-linecap="round"/></svg>', label:'Samen nadenken',      note:'Sterke vragen en ideeën op tafel', tools:['kaartjes', 'schets'] },
   { id:'vastleggen',logo:'<svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="20" y="15" width="34" height="50" rx="4" fill="#cbd5e1"/><rect x="27" y="25" width="20" height="4" rx="2" fill="#fff"/><rect x="27" y="34" width="20" height="4" rx="2" fill="#fff"/><rect x="27" y="43" width="12" height="4" rx="2" fill="#fff"/><path d="M48 60 L62 40" stroke="#10b981" stroke-width="6" stroke-linecap="round"/></svg>', label:'Vastleggen',          note:'Notities, beslissingen en lijstjes', tools:['notities', 'beslissingen', 'vinkje'] },
   { id:'afsluiten', logo:'<svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="18" y="15" width="26" height="50" rx="3" fill="#cbd5e1"/><circle cx="38" cy="41" r="2.5" fill="#fff"/><path d="M48 40h15M56 33l7 7-7 7" stroke="#10b981" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>', label:'Afsluiten',           note:'Terugblikken en goed eindigen', tools:['check-out', 'retro'] },
-  { id:'slimmer',   logo:'<svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M25 15h30M25 65h30" stroke="#cbd5e1" stroke-width="5" stroke-linecap="round"/><path d="M29 17c0 12 22 14 22 23s-22 11-22 23M51 17c0 12-22 14-22 23s22 11 22 23" stroke="#cbd5e1" stroke-width="4" fill="none"/><path d="M32 60c3-6 13-6 16 0z" fill="#10b981"/></svg>', label:'Slimmer vergaderen',  note:'Wie moet erbij, en wat kost het?', tools:['vergaderkost', 'paradox'] }
+  { id:'slimmer',   logo:'<svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M25 15h30M25 65h30" stroke="#cbd5e1" stroke-width="5" stroke-linecap="round"/><path d="M29 17c0 12 22 14 22 23s-22 11-22 23M51 17c0 12-22 14-22 23s22 11 22 23" stroke="#cbd5e1" stroke-width="4" fill="none"/><path d="M32 60c3-6 13-6 16 0z" fill="#10b981"/></svg>', label:'Slimmer vergaderen',  note:'Wie moet erbij, wat kost het, en spreken we gewone taal?', tools:['vergaderkost', 'paradox', 'bingo'] }
 ];
 /* Zakmes: kleine hulpjes, in drie soorten */
 const ZAK_SUB = [
@@ -2873,9 +2887,9 @@ function subRows(gid) {
     return `
     <section class="group sub${isOpen ? '' : ' collapsed'}" data-group="${gid}" data-tools="${esc(ts.map(t => t.id).join(','))}">
       <button class="group-head" aria-expanded="${isOpen}" aria-controls="body-${gid}">
-        <span class="group-logo" aria-hidden="true">${m.logo}${telBol(ts.length)}</span>
+        <span class="group-logo" aria-hidden="true">${m.logo}</span>
         <span><span class="group-title" role="heading" aria-level="3">${esc(m.label)}</span><br><span class="group-note">${esc(m.note)}</span>${telSr(ts.length)}${namen(ts)}</span>
-        <span class="group-meta"><span class="count count-live"></span><span class="count">${ts.length}</span></span>
+        <span class="group-meta"><span class="count count-live"></span><span class="count" aria-hidden="true">${ts.length}</span></span>
         ${toggleIcon}
       </button>
       <div class="group-body" id="body-${gid}"><div class="list">${ts.map(t => rowHTML(t)).join('')}</div></div>
@@ -3200,6 +3214,7 @@ const getProject = () => { try { const p = JSON.parse(localStorage.getItem(PROJ_
 const projEdit = false;   // het oude formulier is weg: het menu van de kiezer doet het werk
 function projBox() { return $('proj-start'); }   // altijd bovenaan, in de kop van "Waar begin je?"
 function renderProject() {
+  try { const pc = getProject(); $('cp-sub').textContent = pc ? 'Alles van ' + pc.name + ' op één bord' : 'Je startpagina: alles van je project op één bord'; } catch {}
   if (typeof mwItems === 'number') syncMywork();
   const box = projBox(), p = getProject(), focus = box.contains(document.activeElement);
   if ($('proj')) $('proj').innerHTML = '';
@@ -4489,7 +4504,7 @@ const TRAJECTEN = [
   { id:'project', title:'Een project opzetten', note:'Van vertrekpunt tot terugblik',
     q:{ opdracht:'Wat is de opdracht?', gap:'Waar staan we, waar willen we heen?', meetplan:'Hoe weet je dat het lukt?', prioriteit:'Wat eerst?', raci:'Wie doet wat?', 'project-realisme':'Is het haalbaar?',
         sprint:'Wat past er in deze sprint?',
-        kanban:'Het werk zelf', 'project-radar':'Hoe staat het project ervoor?', dossier:'Wat leg je voor aan de stuurgroep?', retro:'Wat nemen we mee?' } }
+        kanban:'Het werk zelf', 'project-radar':'Hoe staat het project ervoor?', dossier:'Wat leg je voor aan de stuurgroep?', retro:'Wat nemen we mee?', cockpit:'Alles op één bord' } }
 ];
 const checkIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 /* Een stap kan ook een tool met een vraag in het adres zijn (zoek). De Productboom is de Ideeënkaart met het sjabloon productboom:

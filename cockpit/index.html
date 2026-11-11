@@ -10,6 +10,7 @@
 <meta name="oc:groep" content="projecten">
 <meta name="oc:labels" content="vastleggen, delen">
 <meta name="oc:pdca" content="do, plan">
+<meta name="oc:traject" content="project:12">
 <meta name="oc:kort" content="Je startpagina voor een project, alles op één bord">
 <meta name="oc:volgorde" content="22">
 <meta name="oc:opslag" content="cockpit.v1, cockpit.v1.kapot*">
@@ -127,6 +128,16 @@ html:has(.ocw-back) { overflow:hidden; }
 .main { max-width:720px; margin-left:auto; margin-right:auto; }
 /* ==== Cockpit ==== */
 .main { max-width:1200px; padding:1.25rem 1.5rem 2.5rem; }
+.aanbod { display:flex; align-items:center; gap:0.875rem; max-width:52rem; margin:0 auto 1.25rem; padding:0.875rem 0.875rem 0.875rem 1rem; border-radius:16px; background:linear-gradient(120deg, #ffffff 20%, #ecfdf5); border:1px solid var(--mint); box-shadow:0 10px 24px -20px rgba(4,120,87,0.6); }
+.aanbod[hidden] { display:none; }
+.aanbod-ico { flex:none; width:40px; height:40px; border-radius:12px; background:#fff; box-shadow:inset 0 0 0 1px var(--mint); display:grid; place-items:center; color:var(--accent-dark); }
+.aanbod-ico svg { width:22px; height:22px; }
+.aanbod-txt { flex:1; min-width:0; }
+.aanbod-t { font-weight:700; color:var(--slate-800); font-size:1rem; line-height:1.35; }
+.aanbod-s { font-size:0.875rem; color:var(--slate-600); line-height:1.4; margin-top:0.125rem; }
+.aanbod-k { display:flex; align-items:center; gap:0.25rem; flex:none; }
+.aanbod-k .btn { min-height:46px; padding:0.625rem 1rem; font-size:0.9375rem; }
+@media (max-width:640px) { .aanbod { flex-wrap:wrap; } .aanbod-k { width:100%; justify-content:space-between; } .aanbod-k .btn { flex:1; } }
 .tip { display:flex; align-items:center; gap:0.75rem; max-width:44rem; margin:0 auto 1.25rem; padding:0.75rem 1rem; border-radius:14px; background:#fff; border:1px dashed var(--mint); color:var(--slate-600); font-size:0.9375rem; line-height:1.45; }
 .tip svg { width:22px; height:22px; flex:none; color:var(--accent); }
 .tip strong { color:var(--slate-800); }
@@ -1388,6 +1399,12 @@ window.ocProjectkiezer = function (plek, o) {
     <main class="main">
         <p class="sr-only" id="live" role="status" aria-live="polite"></p>
 
+        <div class="aanbod" id="aanbod" hidden>
+            <span class="aanbod-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15.5l-1.9-4.6L5.5 9l4.6-1.4z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg></span>
+            <div class="aanbod-txt"><p class="aanbod-t" id="aanbod-t"></p><p class="aanbod-s" id="aanbod-s"></p></div>
+            <div class="aanbod-k"><button type="button" class="btn btn-primary" id="aanbod-ja">Maak mijn bord</button><button type="button" class="icon-btn" id="aanbod-nee" aria-label="Nee, dank je"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+        </div>
+
         <div class="tip" id="tip" hidden>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="3" width="8" height="4" rx="1"/><path d="M16 5h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"/></svg>
             <p><strong>Plak gewoon iets</strong>: een link, een video, tekst of een afbeelding. De Cockpit ziet zelf wat het is.<span class="tip-sleep"> Slepen naar een kolom kan ook.</span></p>
@@ -1404,7 +1421,8 @@ window.ocProjectkiezer = function (plek, o) {
               <li><b>Kies je kolommen.</b> Geef ze een naam. Een kolom kan een project zijn, of gewoon "Links" of "Belangrijk".</li>
               <li><b>Voeg blokjes toe.</b> Tekst, een link, een afbeelding, een video, een bericht van sociale media of een tool. Elk blokje krijgt een titel en een kleur.</li>
               <li><b>Plak of sleep.</b> Plak een link, tekst of afbeelding op het bord, of sleep ze naar een kolom. De Cockpit ziet zelf wat het is.</li>
-              <li><b>Tools op je bord.</b> Kies een tool en een project. Tik erop en die tool opent meteen met dat project.</li>
+              <li><b>Tools op je bord.</b> Kies een tool en een project. Je ziet de kern van die tool, en met een tik opent ze meteen met dat project.</li>
+              <li><b>Klaar in één tik.</b> Werkte je al in tools voor een project? Dan stelt de Cockpit een bord voor met al die tools, per fase.</li>
             </ul>
             <p>Video's en berichten laden pas iets van hun site als jij op Afspelen tikt. Tot dan blijft alles op dit toestel.</p>
             <p>Tip: neem je bord mee naar een ander toestel met Bewaar als bestand in het menu.</p>
@@ -1611,14 +1629,15 @@ function load() {
   if (!borden.length) borden.push(leegBord());
   borden.forEach(b => { if (!b.kolommen.length) b.kolommen.push({ id:nieuwId('k'), naam:'Kolom', blokken:[] }); });
   const actief = d && borden.some(b => b.id === d.actief) ? d.actief : borden[0].id;
-  return { borden, actief };
+  const nee = d && Array.isArray(d.nee) ? d.nee.filter(x => typeof x === 'string').slice(-50) : [];
+  return { borden, actief, nee };
 }
 let st = load(), ocBewaard = false;
 const bord = () => st.borden.find(b => b.id === st.actief) || st.borden[0];
 const leeg = () => st.borden.length === 1 && bord().kolommen.every(k => !k.blokken.length);
 function save() {
   ocSaves++;
-  const tekst = JSON.stringify({ v:1, actief:st.actief, borden:st.borden });
+  const tekst = JSON.stringify({ v:1, actief:st.actief, borden:st.borden, nee:st.nee || [] });
   try { localStorage.setItem(KEY, tekst); ocBewaard = true; return true; }
   catch (e) { toast('Je toestel heeft geen plaats meer. Verwijder een grote afbeelding of bewaar je bord als bestand.'); return false; }
 }
@@ -1706,6 +1725,7 @@ function render() {
   if (nieuwBlok) { const n = el.querySelector(`.blok[data-id="${CSS.escape(nieuwBlok)}"]`); if (n) { n.classList.add('nieuw'); n.scrollIntoView({ block:'nearest' }); } nieuwBlok = null; }
   if (fId && fSel === 'blokmenu') { const x = el.querySelector(`[data-blokmenu="${CSS.escape(fId)}"]`); x && x.focus({ preventScroll:true }); }
   else if (fKol && fSel === 'plus') { const x = el.querySelector(`[data-plus="${CSS.escape(fKol)}"]`); x && x.focus({ preventScroll:true }); }
+  tekenAanbod();
   $('menu-wipe').hidden = $('sep-wipe').hidden = leeg();
   $('oc-restart-row').hidden = leeg();
   if (window.ocPk) ocPk.teken();
@@ -2143,8 +2163,11 @@ function widgetHTML(b) {
   if (!lijst || !lijst.items.length) return `<div class="wg wg-leeg">${p ? 'Nog niets voor ' + esc(p) + ' in deze tool.' : 'Kies een project, of open de tool om te beginnen.'}</div>`;
   const it = lijst.items, van = type => it.filter(x => x.type === type);
   let lijf = '';
+  // de kern van een tool: haar eigen soort eerst (de Projectopdracht toont haar doelen, niet haar mijlpalen)
+  const VOORKEUR = { opdracht:'doel', tijdlijn:'mijlpaal', kanban:'actie', risico:'risico', stakeholders:'betrokkene', beslissingen:'besluit', leerpunten:'leerpunt', pestle:'omgevingsfactor', agenda:'agendapunt' };
+  const kies = it.some(x => x.type === VOORKEUR[b.tool]) ? VOORKEUR[b.tool] : ['risico', 'mijlpaal', 'actie', 'taak', 'betrokkene'].find(t => it.some(x => x.type === t)) || it[0].type;
   const risicos = van('risico');
-  if (risicos.length) {
+  if (kies === 'risico') {
     const R = risicos.map(r => { const m = /kans (\d)\/5 · impact (\d)\/5/.exec(r.note || ''); return { t:r.text, k:m ? +m[1] : 0, i:m ? +m[2] : 0 }; });
     const ok = R.filter(r => r.k && r.i), niveau = s => s >= 15 ? 'kritiek' : s >= 10 ? 'hoog' : s >= 5 ? 'midden' : 'laag';
     const tel = {}; ok.forEach(r => { const k = r.k + '-' + r.i; tel[k] = (tel[k] || 0) + 1; });
@@ -2154,27 +2177,65 @@ function widgetHTML(b) {
     const zwaar = ok.filter(r => r.k * r.i >= 10).length;
     lijf = `<div class="wg-risico"><div class="wg-matrix" role="img" aria-label="${esc(`Risicomatrix: ${ok.length} risico's ingeschat, ${zwaar} hoog of kritiek`)}"><span class="wg-as wg-as-y" aria-hidden="true">impact</span>${cellen}<span class="wg-as wg-as-x" aria-hidden="true">kans</span></div>
       <div class="wg-kern"><p class="wg-getal"><b>${zwaar}</b> hoog of kritiek</p><ol class="wg-lijst">${top.map(r => `<li><span class="wg-stip n-${niveau(r.k * r.i)}" aria-hidden="true"></span>${esc(r.t)}</li>`).join('')}</ol></div></div>`;
-  } else if (van('mijlpaal').length) {
+  } else if (kies === 'mijlpaal') {
     const M = van('mijlpaal').slice().sort((a, b) => String(a.when || '9').localeCompare(String(b.when || '9')));
     const gehaald = M.filter(m => /gehaald/i.test(m.note || '')).length;
     const open = M.filter(m => !/gehaald/i.test(m.note || '')).slice(0, G ? 10 : 3);
     lijf = `<div class="wg-balk" role="img" aria-label="${gehaald} van ${M.length} mijlpalen gehaald"><span style="width:${Math.round(gehaald / M.length * 100)}%"></span></div><p class="wg-getal"><b>${gehaald}</b> van ${M.length} mijlpalen gehaald</p>
       <ol class="wg-tijd">${open.map(m => { const d = dagenTot(m.when), laat = d != null && d < 0; return `<li class="${laat ? 'laat' : ''}"><span class="wg-datum">${m.when ? datumKort(m.when) : 'geen datum'}</span><span class="wg-t">${esc(m.text)}${/verschoven/i.test(m.note || '') ? ' <em>verschoven</em>' : ''}</span></li>`; }).join('')}</ol>`;
-  } else if (van('actie').length || van('taak').length) {
+  } else if (kies === 'actie' || kies === 'taak') {
     const A = van('actie').concat(van('taak'));
     const laat = A.filter(a => { const d = dagenTot(a.when); return d != null && d < 0; }).length;
     const volg = A.slice().sort((a, b) => String(a.when || '9').localeCompare(String(b.when || '9'))).slice(0, MAX);
     lijf = `<p class="wg-getal"><b>${A.length}</b> open${laat ? ` <span class="wg-laat">${laat} te laat</span>` : ''}</p>
       <ul class="wg-lijst wg-acties">${volg.map(a => { const d = dagenTot(a.when); return `<li><span class="wg-t">${esc(a.text)}</span>${a.when ? `<span class="wg-datum${d != null && d < 0 ? ' laat' : ''}">${datumKort(a.when)}</span>` : ''}${a.who ? `<span class="wg-wie">${esc(a.who)}</span>` : ''}</li>`; }).join('')}</ul>${meerRegel(A.length, MAX, 'meer')}`;
-  } else if (van('betrokkene').length) {
+  } else if (kies === 'betrokkene') {
     const B = van('betrokkene');
     lijf = `<p class="wg-getal"><b>${B.length}</b> ${B.length === 1 ? 'betrokkene' : 'betrokkenen'}</p><ul class="wg-chips">${B.slice(0, G ? 40 : 10).map(x => `<li>${esc(x.text)}</li>`).join('')}</ul>${meerRegel(B.length, G ? 40 : 10, 'meer')}`;
   } else {
-    const soort = it[0].type, naam = { besluit:['besluit', 'besluiten'], doel:['doel', 'doelen'], leerpunt:['leerpunt', 'leerpunten'], agendapunt:['agendapunt', 'agendapunten'], omgevingsfactor:['factor', 'factoren'] }[soort] || ['punt', 'punten'];
-    lijf = `<p class="wg-getal"><b>${it.length}</b> ${it.length === 1 ? naam[0] : naam[1]}</p><ul class="wg-lijst">${it.slice(0, MAX).map(x => `<li><span class="wg-t">${esc(x.text)}</span>${x.when && soort !== 'agendapunt' ? `<span class="wg-datum">${datumKort(x.when)}</span>` : ''}</li>`).join('')}</ul>${meerRegel(it.length, MAX, 'meer')}`;
+    const soort = kies, L = it.filter(x => x.type === kies), naam = { besluit:['besluit', 'besluiten'], doel:['doel', 'doelen'], leerpunt:['leerpunt', 'leerpunten'], agendapunt:['agendapunt', 'agendapunten'], omgevingsfactor:['factor', 'factoren'] }[soort] || ['punt', 'punten'];
+    lijf = `<p class="wg-getal"><b>${L.length}</b> ${L.length === 1 ? naam[0] : naam[1]}</p><ul class="wg-lijst">${L.slice(0, MAX).map(x => `<li><span class="wg-t">${esc(x.text)}</span>${x.when && soort !== 'agendapunt' ? `<span class="wg-datum">${datumKort(x.when)}</span>` : ''}</li>`).join('')}</ul>${meerRegel(L.length, MAX, 'meer')}`;
   }
   return `<div class="wg">${lijf}<p class="wg-wanneer">${esc(geleden(lijst.ch || updated))}</p></div>`;
 }
+
+/* ---------- Klaar in één tik: een bord voor het project waaraan je werkt ----------
+   Welke tools hebben al iets voor dit project klaargelegd (oc.share.<tool>)? Die komen op een nieuw bord,
+   per fase een kolom, telkens met hun kern. Alleen een voorstel: jij kiest, en je kan het ongedaan maken. */
+const FASEN = [['plan', 'Plannen'], ['do', 'Doen'], ['check', 'Opvolgen'], ['act', 'Bijsturen']];
+function huidigProject() { try { const x = JSON.parse(localStorage.getItem('oc.project')); return x && typeof x.name === 'string' && x.name.trim() ? x.name.trim() : ''; } catch (e) { return ''; } }
+function toolsMetData(p) {
+  return TOOLS.filter(t => deelt(t)).filter(t => { try { const d = JSON.parse(localStorage.getItem('oc.share.' + t.id)); return d && Array.isArray(d.lists) && d.lists.some(l => l && l.name === p && Array.isArray(l.items) && l.items.length); } catch (e) { return false; } });
+}
+function tekenAanbod() {
+  const A = $('aanbod'); if (!A) return;
+  const p = huidigProject();
+  const al = p && st.borden.some(b => b.naam === p);
+  const T = p && !al && !(st.nee || []).includes(p) ? toolsMetData(p) : [];
+  A.hidden = !T.length;
+  if (!T.length) return;
+  $('aanbod-t').textContent = 'Maak een bord voor ' + p;
+  $('aanbod-s').textContent = 'Je werkte al in ' + T.length + (T.length === 1 ? ' tool' : ' tools') + ' voor dit project. De Cockpit zet ze op één bord, per fase, met hun kern.';
+}
+$('aanbod-ja').addEventListener('click', () => {
+  const p = huidigProject(), T = toolsMetData(p); if (!p || !T.length) return;
+  const kol = FASEN.map(([f, naam]) => ({ id:nieuwId('k'), naam, blokken:T.filter(t => ((t.pdca || [])[0] || 'do') === f).map(t => okBlok({ id:nieuwId('x'), soort:'tool', tool:t.id, project:p, widget:true, kleur:'wit' })).filter(Boolean) })).filter(k => k.blokken.length);
+  kol.unshift({ id:nieuwId('k'), naam:'Belangrijk', blokken:[] });
+  const b = { id:nieuwId('b'), naam:p, kolommen:kol.slice(0, MAX_KOL) };
+  const oud = kopie();
+  // een leeg standaardbord mag plaats maken voor het nieuwe
+  const lijst = st.borden.length === 1 && leeg() ? [b] : st.borden.concat(b);
+  if (!wijzig(() => { st.borden = lijst; st.actief = b.id; })) return;
+  toast('Bord ' + p + ' gemaakt', ocUndoable(() => { st = oud; save(); render(); zeg('Ongedaan gemaakt.'); }));
+  zeg('Bord ' + p + ' gemaakt met ' + T.length + ' tools.');
+  const f = document.querySelector('[data-plus]'); f && f.focus({ preventScroll:true });
+});
+$('aanbod-nee').addEventListener('click', () => {
+  const p = huidigProject(); if (!p) return;
+  wijzig(() => { st.nee = (st.nee || []).concat(p); });
+  const m = document.querySelector('[data-plus]'); m && m.focus({ preventScroll:true });
+});
+addEventListener('storage', e => { if (e.key === 'oc.project' || (e.key && e.key.startsWith('oc.share.'))) tekenAanbod(); });
 </script>
 <input type="file" id="oc-bestand-in" accept=".json,application/json" hidden>
 <script>
