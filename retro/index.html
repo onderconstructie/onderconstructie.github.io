@@ -2817,6 +2817,18 @@ const ocShare = (() => {
         <div class="ocs-foot"><span class="ocs-hint">Vink eerst iets aan</span><button class="ocs-btn ocs-cancel" type="button">Annuleer</button>
           <button class="ocs-btn ocs-ok" type="button" disabled>Neem over</button></div></div>`;
       document.body.appendChild(back);
+      // Eerst je eigen project: lijsten van andere projecten klappen in onder één regel (een sprint "Sprint 1 · Project" telt mee)
+      try {
+        const pp = JSON.parse(localStorage.getItem('oc.project') || 'null') || {}, P = [pp.name].concat(Array.isArray(pp.oud) ? pp.oud : []).map(norm).filter(Boolean);
+        const eigen = s => P.some(p => { const l = norm(s.list); return l === p || l.startsWith(p + ' ') || l.endsWith(' ' + p); });
+        const els = [...back.querySelectorAll('.ocs-src')], ander = src.filter(s => !eigen(s));
+        if (P.length && els.length === src.length && ander.length && ander.length < src.length) {
+          const d = document.createElement('details'); d.className = 'ocs-ander';
+          d.innerHTML = `<summary style="min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:600;color:#047857;padding:0.25rem 0.125rem">Andere projecten en lijsten (${ander.length})</summary>`;
+          els.forEach((el, i) => { if (!eigen(src[i])) d.appendChild(el); });
+          back.querySelector('.ocs-body').appendChild(d);
+        }
+      } catch {}
       requestAnimationFrame(() => back.classList.add('open'));
       const ok = back.querySelector('.ocs-ok'), hint = back.querySelector('.ocs-hint');
       const boxes = () => [...back.querySelectorAll('input[type=checkbox]:not(:disabled)')];

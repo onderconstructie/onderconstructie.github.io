@@ -1419,6 +1419,7 @@ window.ocProjectkiezer = function (plek, o) {
                 <div class="menu" id="menu" role="menu" aria-label="Meer acties">
                     <button type="button" data-bestand="bewaar" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M12 11v6M9 14l3 3 3-3"/></svg><span class="ocb-t">Bewaar als bestand<small>Je borden, voor een ander toestel</small></span></button>
                     <button type="button" data-bestand="open" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 10v6M9 13l3-3 3 3"/></svg>Open bestand</button>
+                    <button type="button" data-act="bordlink" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.5-1.5"/></svg><span class="ocb-t">Kopieer de link naar dit bord<small>Voor een bladwijzer, of om dit bord meteen te openen</small></span></button>
                     <div class="sep" role="separator" id="sep-wipe"></div>
                     <button type="button" data-act="wipe" class="danger" role="menuitem" id="menu-wipe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>Alles wissen</button>
                 </div>
@@ -1641,6 +1642,7 @@ function okBlok(b) {
   const u = urlVan(b.url);
   const x = { id:okStr(b.id, 40) || nieuwId('x'), soort:b.soort, titel:okStr(b.titel, 80), kleur:KLEUREN.some(k => k.id === b.kleur) ? b.kleur : 'wit' };
   if (b.groot === true) x.groot = true;
+  if (b.auto === 'mijlpaal') x.auto = 'mijlpaal';   // de aftelling die met je eerstvolgende mijlpaal meeschuift
   if (['link', 'video', 'bericht'].includes(b.soort)) x.url = u ? u.href : '';
   if (['tekst', 'link', 'bericht'].includes(b.soort)) x.tekst = okStr(b.tekst, 4000);
   if (b.soort === 'bericht') x.bron = okStr(b.bron, 80);
@@ -1655,6 +1657,7 @@ function load() {
   let d = null; try { d = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
   const borden = (d && Array.isArray(d.borden) ? d.borden : []).filter(b => b && typeof b === 'object').map(b => ({
     id:okStr(b.id, 40) || nieuwId('b'), naam:okStr(b.naam, 80) || 'Naamloos',
+    ...(b.auto === true ? { auto:true, weg:(Array.isArray(b.weg) ? b.weg : []).filter(x => typeof x === 'string').slice(-60) } : {}),
     kolommen:(Array.isArray(b.kolommen) ? b.kolommen : []).filter(k => k && typeof k === 'object').slice(0, MAX_KOL).map(k => ({
       id:okStr(k.id, 40) || nieuwId('k'), naam:okStr(k.naam, 60), blokken:(Array.isArray(k.blokken) ? k.blokken : []).map(okBlok).filter(Boolean)
     }))
@@ -1666,6 +1669,7 @@ function load() {
   return { borden, actief, nee };
 }
 let st = load(), ocBewaard = false;
+try { const q = new URLSearchParams(location.search).get('bord'); if (q && st.borden.some(b => b.id === q)) st.actief = q; } catch (e) {}
 const bord = () => st.borden.find(b => b.id === st.actief) || st.borden[0];
 const leeg = () => st.borden.length === 1 && bord().kolommen.every(k => !k.blokken.length);
 function save() {
@@ -1686,7 +1690,7 @@ function wijzig(fn, melding) {
 
 /* ---------- Tools uit de app ---------- */
 let TOOLS = [];
-fetch('/tools.json').then(r => r.ok ? r.json() : []).then(d => { TOOLS = (Array.isArray(d) ? d : []).filter(t => t && t.id && t.path && t.id !== 'cockpit'); TOOLS.sort((a, b) => a.title.localeCompare(b.title, 'nl')); if (!autoBord()) render(); }).catch(() => {});
+fetch('/tools.json').then(r => r.ok ? r.json() : []).then(d => { TOOLS = (Array.isArray(d) ? d : []).filter(t => t && t.id && t.path && t.id !== 'cockpit'); TOOLS.sort((a, b) => a.title.localeCompare(b.title, 'nl')); if (!autoBord() && !bijwerken()) render(); }).catch(() => {});
 const toolVan = id => TOOLS.find(t => t.id === id);
 const icoon = t => t && t.icon ? 'data:image/svg+xml,' + encodeURIComponent(t.icon) : '';
 function projectNamen() {
@@ -1755,6 +1759,12 @@ function naamVan(b) {
   return (SOORTEN.find(s => s.id === b.soort) || {}).naam || 'Blokje';
 }
 let nieuwBlok = null;
+function bordLink(B) { return location.origin + '/cockpit/?bord=' + encodeURIComponent(B.id); }
+function meldBord() {
+  const B = bord(); if (!B) return;
+  try { const u = new URL(location.href); if (u.searchParams.get('bord') !== B.id) { u.searchParams.set('bord', B.id); history.replaceState(history.state, '', u.pathname + u.search + u.hash); } } catch (e) {}
+  try { if (window.parent !== window) window.parent.postMessage({ type:'oc-bord', id:B.id, naam:B.naam }, location.origin); } catch (e) {}
+}
 function render() {
   const B = bord(), el = $('bord');
   el.style.setProperty('--k', B.kolommen.length);
@@ -1778,6 +1788,7 @@ function render() {
   $('menu-wipe').hidden = $('sep-wipe').hidden = leeg();
   $('oc-restart-row').hidden = leeg();
   if (window.ocPk) ocPk.teken();
+  meldBord();
 }
 
 /* ---------- Zoeken in de staat ---------- */
@@ -2057,7 +2068,7 @@ function verplaats(id, dk, di) {
 function verwijder(id) {
   const p = vind(id); if (!p) return;
   const naam = naamVan(p.b), kolId = p.k.id;
-  const oud = wijzig(() => { const q = vind(id); q.k.blokken.splice(q.i, 1); });
+  const oud = wijzig(() => { const q = vind(id); q.k.blokken.splice(q.i, 1); const B = bord(); if (B.auto && q.b.soort === 'tool') B.weg = (B.weg || []).concat(q.b.tool).slice(-60); if (B.auto && q.b.auto) B.weg = (B.weg || []).concat('mijlpaal'); });
   if (!oud) return;
   const plus = document.querySelector(`[data-plus="${CSS.escape(kolId)}"]`); plus && plus.focus({ preventScroll:true });
   toast(naam + ' verwijderd', ocUndoable(() => { st = oud; save(); render(); zeg('Ongedaan gemaakt.'); }));
@@ -2178,6 +2189,12 @@ $('menu').addEventListener('keydown', e => {
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('menu').classList.contains('open')) { e.preventDefault(); closeMenu($('menu').contains(document.activeElement)); } });
 document.addEventListener('click', e => { if (e.target.closest('[data-act="wipe"]')) { closeMenu(); ocWipeAll(); } });
+document.addEventListener('click', async e => {
+  if (!e.target.closest('[data-act="bordlink"]')) return;
+  closeMenu(); const B = bord(), u = bordLink(B);
+  try { await navigator.clipboard.writeText(u); toast('Link naar ' + B.naam + ' gekopieerd. Zet hem als bladwijzer, of tik bovenaan in de app op het sterretje.'); }
+  catch (x) { toast('Kopiëren lukt hier niet. De link is ' + u); }
+});
 
 /* Een ander tabblad wijzigde de Cockpit: opnieuw inlezen */
 addEventListener('storage', e => {
@@ -2190,13 +2207,15 @@ let widgetTimer = null;
 /* ---------- Widgets: de kern van een tool op je bord ----------
    Elke tool legt wat ze te bieden heeft klaar onder oc.share.<tool> (voor "Overnemen uit…"): lijsten per project
    met items { type, text, note?, who?, when? }. De widget leest die en tekent de kern. Niets wordt hier gewijzigd. */
+/* Hoort een lijst bij dit project? Ook "Sprint 1 · Nieuwe bib" of "Productboom · Nieuwe bib" telt mee. */
+function zelfde(naam, p) { return !!p && (zacht(naam) === zacht(p) || zacht(String(naam || '').split(' · ').pop()) === zacht(p)); }
 function zacht(s) { return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ''); }
 function deelt(t) { return !!(t && Array.isArray(t.storage) && t.storage.includes('oc.share.' + t.id)); }
 function widgetLijst(b) {
   let d = null; try { d = JSON.parse(localStorage.getItem('oc.share.' + b.tool)); } catch (e) {}
   const L = d && Array.isArray(d.lists) ? d.lists.filter(l => l && Array.isArray(l.items)) : [];
   let p = b.project; if (!p) { try { const x = JSON.parse(localStorage.getItem('oc.project')); p = x && x.name; } catch (e) {} }
-  const lijst = (p && L.find(l => zacht(l.name) === zacht(p))) || (!b.project && !p && L.length === 1 ? L[0] : null);
+  const lijst = (p && L.find(l => zelfde(l.name, p))) || (!b.project && !p && L.length === 1 ? L[0] : null);
   return { lijst, updated:d && d.updated, p, aantal:L.length };
 }
 const DAG = 864e5;
@@ -2213,7 +2232,7 @@ function beeldVan(b) {
   let d = null; try { d = JSON.parse(localStorage.getItem('oc.beeld.' + b.tool)); } catch (e) {}
   const L = d && Array.isArray(d.lists) ? d.lists.filter(l => l && typeof l.svg === 'string' && /^\s*<svg[\s>]/.test(l.svg) && l.svg.length < 400000) : [];
   let p = b.project; if (!p) { try { const x = JSON.parse(localStorage.getItem('oc.project')); p = x && x.name; } catch (e) {} }
-  const l = (p && L.find(x => zacht(x.name) === zacht(p))) || (!b.project && !p && L.length === 1 ? L[0] : null);
+  const l = (p && L.find(x => zelfde(x.name, p))) || (!b.project && !p && L.length === 1 ? L[0] : null);
   return l ? { svg:l.svg, naam:l.name, updated:d.updated } : null;
 }
 function widgetHTML(b) {
@@ -2265,7 +2284,7 @@ function widgetHTML(b) {
 const FASEN = [['plan', 'Plannen'], ['do', 'Doen'], ['check', 'Opvolgen'], ['act', 'Bijsturen']];
 function huidigProject() { try { const x = JSON.parse(localStorage.getItem('oc.project')); return x && typeof x.name === 'string' && x.name.trim() ? x.name.trim() : ''; } catch (e) { return ''; } }
 function toolsMetData(p) {
-  return TOOLS.filter(t => deelt(t)).filter(t => { try { const d = JSON.parse(localStorage.getItem('oc.share.' + t.id)); return d && Array.isArray(d.lists) && d.lists.some(l => l && zacht(l.name) === zacht(p) && Array.isArray(l.items) && l.items.length); } catch (e) { return false; } });
+  return TOOLS.filter(t => deelt(t)).filter(t => { try { const d = JSON.parse(localStorage.getItem('oc.share.' + t.id)); return d && Array.isArray(d.lists) && d.lists.some(l => l && zelfde(l.name, p) && Array.isArray(l.items) && l.items.length); } catch (e) { return false; } });
 }
 /* Welke stappenplannen ben je begonnen (de app bewaart dat in oc-app.paths-started)? Hun tools horen op je bord, ook zonder gegevens. */
 function stappenplannen() { try { const x = JSON.parse(localStorage.getItem('oc-app.paths-started')); return Array.isArray(x) ? x.filter(s => typeof s === 'string') : []; } catch (e) { return []; } }
@@ -2284,7 +2303,7 @@ function voorstel(p) {
 /* De eerstvolgende mijlpaal met een datum voor dit project (uit Tijdlijn of Projectopdracht): wordt een aftelling bovenaan */
 function volgendeMijlpaal(p) {
   const nu = new Date(); nu.setHours(0, 0, 0, 0); let best = null;
-  TOOLS.filter(t => deelt(t)).forEach(t => { try { const d = JSON.parse(localStorage.getItem('oc.share.' + t.id)); (d && Array.isArray(d.lists) ? d.lists : []).filter(l => l && zacht(l.name) === zacht(p) && Array.isArray(l.items)).forEach(l => l.items.forEach(it => {
+  TOOLS.filter(t => deelt(t)).forEach(t => { try { const d = JSON.parse(localStorage.getItem('oc.share.' + t.id)); (d && Array.isArray(d.lists) ? d.lists : []).filter(l => l && zelfde(l.name, p) && Array.isArray(l.items)).forEach(l => l.items.forEach(it => {
     if (!it || it.type !== 'mijlpaal' || !okDatum(String(it.when || '').slice(0, 10)) || /gehaald/i.test(it.note || '')) return;
     const w = String(it.when).slice(0, 10), [y, m, dd] = w.split('-').map(Number); if (new Date(y, m - 1, dd) < nu) return;
     if (!best || w < best.datum) best = { datum:w, titel:String(it.text || 'Mijlpaal').slice(0, 80) };
@@ -2293,11 +2312,40 @@ function volgendeMijlpaal(p) {
 }
 function maakVoorstelBord(p) {
   const { alle, metData } = voorstel(p); if (!alle.length) return null;
-  const blok = t => okBlok({ id:nieuwId('x'), soort:'tool', tool:t.id, project:p || '', widget:metData.includes(t), kleur:'wit' });
+  const blok = t => okBlok({ id:nieuwId('x'), soort:'tool', tool:t.id, project:p || '', widget:deelt(t), kleur:'wit' });
   const kol = FASEN.map(([f, naam]) => ({ id:nieuwId('k'), naam, blokken:alle.filter(t => ((t.pdca || [])[0] || 'do') === f).map(blok).filter(Boolean) })).filter(k => k.blokken.length);
   const m = p && volgendeMijlpaal(p);
-  kol.unshift({ id:nieuwId('k'), naam:'Belangrijk', blokken:m ? [okBlok({ id:nieuwId('x'), soort:'aftelling', titel:m.titel, datum:m.datum, kleur:'groen' })].filter(Boolean) : [] });
-  return { b:{ id:nieuwId('b'), naam:p || 'Mijn project', kolommen:kol.slice(0, MAX_KOL) }, n:alle.length, metData:metData.length };
+  kol.unshift({ id:nieuwId('k'), naam:'Belangrijk', blokken:m ? [okBlok({ id:nieuwId('x'), soort:'aftelling', titel:m.titel, datum:m.datum, kleur:'groen', auto:'mijlpaal' })].filter(Boolean) : [] });
+  return { b:{ id:nieuwId('b'), naam:p || 'Mijn project', auto:true, weg:[], kolommen:kol.slice(0, MAX_KOL) }, n:alle.length, metData:metData.length };
+}
+/* Het bord van je project groeit mee: telkens je de Cockpit opent, komen tools met nieuwe inhoud erbij (in hun fase),
+   en schuift de aftelling naar je eerstvolgende mijlpaal. Alleen op borden die de Cockpit zelf maakte; wat je weghaalde, blijft weg. */
+function bijwerken() {
+  const B = bord(); if (!B || !B.auto || !TOOLS.length) return false;
+  const p = huidigProject() && zacht(B.naam) === zacht(huidigProject()) ? huidigProject() : B.naam;
+  const op = new Set(); B.kolommen.forEach(k => k.blokken.forEach(b => { if (b.soort === 'tool') op.add(b.tool); }));
+  const weg = new Set(B.weg || []), nieuw = voorstel(p).alle.filter(t => !op.has(t.id) && !weg.has(t.id));
+  const m = !weg.has('mijlpaal') && volgendeMijlpaal(p);
+  const af = B.kolommen.flatMap(k => k.blokken).find(b => b.auto === 'mijlpaal');
+  const afAnders = m ? !af || af.datum !== m.datum || af.titel !== m.titel : !!af && dagenTotDatum(af.datum) < 0;
+  if (!nieuw.length && !afAnders) return false;
+  const namen = nieuw.map(t => t.title);
+  const lukt = wijzig(() => {
+    const X = bord();
+    nieuw.forEach(t => {
+      const f = (t.pdca || [])[0] || 'do', naam = (FASEN.find(x => x[0] === f) || FASEN[1])[1];
+      let k = X.kolommen.find(c => zacht(c.naam) === zacht(naam));
+      if (!k && X.kolommen.length < MAX_KOL) { k = { id:nieuwId('k'), naam, blokken:[] }; X.kolommen.push(k); }
+      k = k || X.kolommen[X.kolommen.length - 1];
+      const bl = okBlok({ id:nieuwId('x'), soort:'tool', tool:t.id, project:p, widget:deelt(t), kleur:'wit' }); if (bl) k.blokken.push(bl);
+    });
+    const a = X.kolommen.flatMap(k => k.blokken).find(b => b.auto === 'mijlpaal');
+    if (m && a) { a.datum = m.datum; a.titel = m.titel; }
+    else if (m && !a) { const k0 = X.kolommen[0], bl = okBlok({ id:nieuwId('x'), soort:'aftelling', titel:m.titel, datum:m.datum, kleur:'groen', auto:'mijlpaal' }); if (k0 && bl) k0.blokken.unshift(bl); }
+    else if (!m && a && dagenTotDatum(a.datum) < 0) X.kolommen.forEach(k => { k.blokken = k.blokken.filter(b => b !== a); });
+  });
+  if (lukt && namen.length) toast('Nieuw op je bord: ' + (namen.length > 2 ? namen.slice(0, 2).join(', ') + ' en nog ' + (namen.length - 2) : namen.join(' en ')));
+  return !!lukt;
 }
 /* Klaar aan het einde van je stappenplan: is je Cockpit nog leeg en heb je een project of een stappenplan, dan staat je bord er meteen. Ongedaan kan. */
 function autoBord() {
@@ -2338,6 +2386,7 @@ $('aanbod-nee').addEventListener('click', () => {
   wijzig(() => { st.nee = (st.nee || []).concat(p); });
   const m = document.querySelector('[data-plus]'); m && m.focus({ preventScroll:true });
 });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) bijwerken(); });
 addEventListener('storage', e => {
   if (e.key === 'oc.project') { render(); return; }   // blokjes zonder eigen project tonen het nieuwe project
   if (e.key && e.key.startsWith('oc.share.')) tekenAanbod();

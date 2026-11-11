@@ -2487,7 +2487,7 @@ window.ocProjectkiezer = function (plek, o) {
         <a class="ft-link" href="https://www.linkedin.com/in/bartel-volckaert-8a96842/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Maker</a>
         <a class="ft-link" href="/privacy/#voorwaarden" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.01"/></svg>Disclaimer</a>
       </nav>
-      <p class="ft-meta"><button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (35 seconden)" title="Bekijk de film (35 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg><span>Film</span></button><button class="ft-film ft-inst" id="ft-app" type="button" hidden aria-label="Installeer de app"><img src="/app/icon.svg" alt="" width="22" height="22"><span>Installeer</span></button><span class="ft-dot" aria-hidden="true"></span><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v15.88</span></p>
+      <p class="ft-meta"><button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (35 seconden)" title="Bekijk de film (35 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg><span>Film</span></button><button class="ft-film ft-inst" id="ft-app" type="button" hidden aria-label="Installeer de app"><img src="/app/icon.svg" alt="" width="22" height="22"><span>Installeer</span></button><span class="ft-dot" aria-hidden="true"></span><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v15.89</span></p>
     </div>
   </footer>
   <dialog class="film" id="film" aria-labelledby="film-h">
@@ -3360,17 +3360,23 @@ function preview(t) {
 /* Favorieten: tools die je zelf op je startscherm zet (sterretje bovenaan een geopende tool). Hooguit 12, in de volgorde waarin je ze vastzette. */
 const FAV_MAX = 12;
 let favsEdit = false;
-const favs = () => (store.get('favs', []) || []).filter(id => byId[id]);
+/* Een favoriet is een tool ("risico") of een bord van de Cockpit ("cockpit#<bord-id>"): dat opent meteen dat bord. */
+const favBasis = id => String(id).split('#')[0], favBord = id => String(id).split('#')[1] || '';
+function bordNaam(bid) { try { const d = JSON.parse(localStorage.getItem('cockpit.v1')); const b = d && Array.isArray(d.borden) && d.borden.find(x => x && x.id === bid); return b && typeof b.naam === 'string' ? b.naam.slice(0, 80) : ''; } catch { return ''; } }
+const favTitel = id => { const t = byId[favBasis(id)]; return favBord(id) ? (bordNaam(favBord(id)) || t.title) : t.title; };
+let bordActief = '';   // het bord dat open staat in de Cockpit (de Cockpit meldt het)
+const favKey = () => current === 'cockpit' && bordActief ? 'cockpit#' + bordActief : current;
+const favs = () => (store.get('favs', []) || []).filter(id => byId[favBasis(id)] && (!favBord(id) || bordNaam(favBord(id))));
 function setFavs(a) { store.set('favs', a); renderFavs(); syncFavBtn(); }
 function toggleFav(id) {
-  const t = byId[id]; if (!t) return;
-  const voor = favs(), aan = voor.includes(id);
+  if (!byId[favBasis(id)]) return;
+  const voor = favs(), aan = voor.includes(id), nm = favTitel(id);
   setFavs(aan ? voor.filter(x => x !== id) : [...voor, id].slice(-FAV_MAX));
-  appToast(aan ? `${t.title} staat niet meer op je startscherm` : `${t.title} staat op je startscherm`, () => setFavs(voor));
+  appToast(aan ? `${nm} staat niet meer op je startscherm` : `${nm} staat op je startscherm`, () => setFavs(voor));
 }
 function syncFavBtn() {
   const b = $('fav-tool'); if (!b || !current) return;
-  const aan = favs().includes(current), lbl = aan ? 'Haal van je startscherm' : 'Zet op je startscherm';
+  const aan = favs().includes(favKey()), lbl = (aan ? 'Haal van je startscherm' : 'Zet op je startscherm') + (favKey() !== current ? ': ' + favTitel(favKey()) : '');
   b.setAttribute('aria-pressed', String(aan)); b.setAttribute('aria-label', lbl); b.title = lbl;
 }
 function renderFavs() {
@@ -3380,15 +3386,15 @@ function renderFavs() {
   if (!a.length) { favsEdit = false; $('fav-grid').innerHTML = ''; return; }
   $('favs-edit').textContent = favsEdit ? 'Klaar' : 'Bewerk'; $('favs-edit').setAttribute('aria-pressed', String(favsEdit));
   $('favs').classList.toggle('bewerk', favsEdit);
-  $('fav-grid').innerHTML = a.map((id, i) => { const t = byId[id];
+  $('fav-grid').innerHTML = a.map((id, i) => { const t = byId[favBasis(id)], bd = favBord(id), nm = bd ? esc(afbreek(favTitel(id))) : naam(t), tl = favTitel(id), z = bd ? ` data-zoek="?bord=${esc(encodeURIComponent(bd))}"` : '';
     return favsEdit
-      ? `<div class="fav-tile"><span class="icon">${iconHTML(t.icon)}</span><span class="fav-nm">${naam(t)}</span>
-          <span class="fav-ctl">${i ? `<button type="button" class="fav-mv" data-fav-mv="${i}" data-r="-1" aria-label="${esc(t.title)} naar voren"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>` : ''}<button type="button" class="fav-x" data-fav-x="${esc(id)}" aria-label="${esc(t.title)} van je startscherm halen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></span></div>`
-      : `<button type="button" class="fav-tile" data-id="${esc(id)}" title="${esc(t.sub)}"><span class="icon">${iconHTML(t.icon)}</span><span class="fav-nm">${naam(t)}</span><span class="live-dot" aria-hidden="true"></span></button>`;
+      ? `<div class="fav-tile"><span class="icon">${iconHTML(t.icon)}</span><span class="fav-nm">${nm}</span>
+          <span class="fav-ctl">${i ? `<button type="button" class="fav-mv" data-fav-mv="${i}" data-r="-1" aria-label="${esc(tl)} naar voren"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>` : ''}<button type="button" class="fav-x" data-fav-x="${esc(id)}" aria-label="${esc(tl)} van je startscherm halen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></span></div>`
+      : `<button type="button" class="fav-tile" data-id="${esc(t.id)}"${z} title="${esc(bd ? 'Je bord in de Cockpit' : t.sub)}"><span class="icon">${iconHTML(t.icon)}</span><span class="fav-nm">${nm}</span><span class="live-dot" aria-hidden="true"></span></button>`;
   }).join('');
 }
 document.addEventListener('click', e => {
-  if (e.target.closest('#fav-tool')) { if (current) toggleFav(current); return; }
+  if (e.target.closest('#fav-tool')) { if (current) toggleFav(favKey()); return; }
   if (e.target.closest('#fav-hint-x')) { store.set('fav-hint-weg', true); renderFavs(); return; }
   if (e.target.closest('#favs-edit')) { favsEdit = !favsEdit; renderFavs(); $('favs-edit').focus(); return; }
   const x = e.target.closest('[data-fav-x]'); if (x) { toggleFav(x.dataset.favX); if (favsEdit && $('favs-edit')) $('favs-edit').focus(); return; }
@@ -3540,7 +3546,7 @@ function openTool(id, fromHistory, van, zoek, stap) {
   let f = frames.get(id);
   if (!f && pre && pre.id === id) { f = pre.f; pre = null; f.inert = false; }
   // Een link met ?van=<tool> ("Zet in Takenbord"): de tool opnieuw laden met die vraag, dan opent ze meteen de kiezer
-  if (f && zoek && /[?&](van|sjabloon|plan)=/.test(zoek)) { delete f.dataset.loaded; f.classList.add('loading-frame'); try { f.contentWindow.location.replace(t.path + zoek); } catch { f.src = t.path + zoek; } }
+  if (f && zoek && /[?&](van|sjabloon|plan|bord)=/.test(zoek)) { delete f.dataset.loaded; f.classList.add('loading-frame'); try { f.contentWindow.location.replace(t.path + zoek); } catch { f.src = t.path + zoek; } }
   if (!f) f = makeFrame(id, zoek);
   else frames.delete(id);   // opnieuw achteraan zetten
   setLoading(!f.dataset.loaded);
@@ -3608,6 +3614,7 @@ function syncTitle() {
 window.addEventListener('message', e => {
   if (e.origin !== location.origin || !e.data || typeof e.data !== 'object') return;
   const id = frameId(e.source); if (!id) return;
+  if (e.data.type === 'oc-bord' && id === 'cockpit') { bordActief = String(e.data.id || '').slice(0, 40); if (current === 'cockpit') syncFavBtn(); renderFavs(); return; }
   if (e.data.type === 'oc-busy') {
     const was = busy.has(id);
     if (e.data.busy) busy.set(id, String(e.data.title || '').slice(0, 40));
@@ -3708,7 +3715,7 @@ document.addEventListener('pointerdown', e => { if (!e.target.closest('#tb-menu,
 $('tb-menu').addEventListener('click', e => {
   const b = e.target.closest('[data-tbm]'); if (!b) return;
   tbMenu(false); $('tb-meer').focus();
-  if (b.dataset.tbm === 'fav') { if (current) toggleFav(current); }
+  if (b.dataset.tbm === 'fav') { if (current) toggleFav(favKey()); }
   else if (b.dataset.tbm === 'fb') openFb(current);
   else $('ext').click();
 });
