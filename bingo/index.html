@@ -264,22 +264,51 @@ html:has(.ocw-back) { overflow:hidden; }
 .groot-kaart { position:absolute; z-index:5; display:flex; align-items:center; justify-content:center; padding:0.5rem; cursor:pointer; border-radius:16px; background:rgba(248,250,252,0.75); backdrop-filter:blur(2px); -webkit-backdrop-filter:blur(2px); }
 .groot-kaart[hidden] { display:none; }
 .gk-in { position:relative; width:100%; height:100%; max-height:22rem; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.375rem; padding:1.25rem 1.25rem 1rem; border-radius:20px; background:#fff; border:2px solid var(--accent-dark); box-shadow:0 18px 40px -14px rgba(4,120,87,0.45); text-align:center; cursor:default; }
+.gk-in:has(.gk-tool:not([hidden])) { padding-bottom:3.25rem; }
 .groot-kaart.in .gk-in { animation:gkIn 0.45s cubic-bezier(.3,.7,.3,1) both; }
 @keyframes gkIn { from { transform:perspective(900px) rotateY(80deg) scale(0.85); opacity:0; } to { transform:none; opacity:1; } }
 .gk-sluit { position:absolute; top:0.375rem; right:0.375rem; width:44px; height:44px; }
-.gk-lbl { font-size:0.75rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--accent-dark); }
-.gk-woord { font-size:1rem; color:var(--slate-500); }
-.gk-tekst { font-size:1.375rem; font-weight:700; line-height:1.3; color:var(--slate-800); text-wrap:balance; max-width:20rem; }
-.gk-tool { display:flex; align-items:center; gap:0.75rem; width:100%; max-width:20rem; min-height:56px; margin-top:0.625rem; padding:0.5rem 0.75rem; border-radius:14px; border:1px solid var(--mint); background:var(--accent-50); color:var(--slate-800); text-decoration:none; text-align:left; }
+.gk-woord { font-size:0.9375rem; color:var(--slate-500); max-width:20rem; text-wrap:balance; }
+.gk-tekst { font-size:1.5rem; font-weight:700; line-height:1.3; color:var(--slate-800); text-wrap:balance; max-width:20rem; margin-bottom:0.25rem; }
+/* De tool: een rustige link onderaan, geen tweede blikvanger */
+.gk-tool { position:absolute; left:50%; bottom:0.5rem; transform:translateX(-50%); display:inline-flex; align-items:center; gap:0.5rem; max-width:calc(100% - 1.5rem); min-height:44px; padding:0 0.75rem; border-radius:999px; color:var(--accent-dark); font-size:0.9375rem; text-decoration:none; white-space:nowrap; }
 .gk-tool[hidden] { display:none; }
-.gk-tool:hover { border-color:#6ee7b7; }
-.gk-tool img { width:36px; height:36px; flex:none; }
-.gk-tool-t { flex:1; min-width:0; display:flex; flex-direction:column; line-height:1.25; }
-.gk-tool-t small { font-size:0.75rem; font-weight:600; color:var(--accent-dark); }
-.gk-tool-t b { font-size:1rem; }
-.gk-pijl { width:20px; height:20px; flex:none; color:var(--accent-dark); }
+.gk-tool:hover .gk-tool-t { text-decoration:underline; text-underline-offset:3px; }
+.gk-tool:focus-visible { outline:3px solid var(--accent-dark); outline-offset:2px; }
+.gk-tool img { width:24px; height:24px; flex:none; }
+.gk-tool-t { overflow:hidden; text-overflow:ellipsis; font-weight:500; }
+.gk-tool-t b { font-weight:700; }
+.gk-pijl { width:16px; height:16px; flex:none; color:var(--accent-dark); }
 @media (prefers-reduced-motion: reduce) { .groot-kaart.in .gk-in { animation:none; } }
-@media (max-width:380px) { .gk-tekst { font-size:1.25rem; } .gk-in { padding:1rem 0.875rem 0.875rem; } }
+@media (max-width:380px) { .gk-tekst { font-size:1.3125rem; } .gk-in { padding:1rem 0.875rem 0.875rem; } }
+
+/* Deel je kaart: eerst de afbeelding, dan de keuzes */
+dialog.deel-sheet { width:min(26rem, calc(100% - 2rem)); max-height:calc(100dvh - 2rem); padding:0; border:0; border-radius:20px; background:#fff; color:var(--slate-800); box-shadow:0 24px 60px rgba(15,23,42,0.28); overflow:auto; }
+dialog.deel-sheet::backdrop { background:rgba(15,23,42,0.45); }
+dialog.deel-sheet[open] { animation:dsIn .28s cubic-bezier(.3,.7,.3,1) both; }
+@keyframes dsIn { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:none; } }
+.ds-kop { display:flex; align-items:center; justify-content:space-between; padding:0.75rem 0.5rem 0.25rem 1.25rem; }
+.ds-kop h2 { margin:0; font-size:1.125rem; }
+.ds-voorbeeld { padding:0.25rem 1.25rem 0; }
+.ds-voorbeeld img { display:block; width:100%; max-height:46dvh; object-fit:contain; border-radius:14px; background:#f8fafc; border:1px solid var(--slate-200); box-shadow:0 10px 24px -14px rgba(15,23,42,0.35); }
+.ds-acties { display:grid; gap:0.5rem; padding:1rem 1.25rem 0.75rem; }
+.ds-acties .btn { width:100%; }
+.ds-acties .btn[hidden] { display:none; }
+.ds-link { display:flex; align-items:center; gap:0.75rem; width:calc(100% - 1.5rem); min-height:60px; margin:0 0.75rem 0.75rem; padding:0.5rem 0.75rem 0.5rem 0.5rem; border:0; border-top:1px solid var(--slate-200); border-radius:0 0 14px 14px; background:none; color:var(--slate-800); font:inherit; text-align:left; cursor:pointer; }
+.ds-link:hover { background:var(--slate-50); }
+.ds-link:focus-visible { outline:3px solid var(--accent-dark); outline-offset:2px; }
+.ds-link-ico { flex:none; display:grid; place-items:center; width:40px; height:40px; border-radius:50%; background:var(--accent-50); color:var(--accent-dark); }
+.ds-link-ico svg { width:20px; height:20px; }
+.ds-link-t { flex:1; min-width:0; display:flex; flex-direction:column; line-height:1.3; }
+.ds-link-t b { font-size:0.9375rem; }
+.ds-link-t small { font-size:0.8125rem; color:var(--slate-600); }
+.ds-pijl { width:18px; height:18px; flex:none; color:var(--slate-500); }
+@media (max-width:600px) {
+  dialog.deel-sheet { width:100%; max-width:100%; margin:auto 0 0; border-radius:22px 22px 0 0; padding-bottom:env(safe-area-inset-bottom); max-height:92dvh; }
+  dialog.deel-sheet[open] { animation-name:dsOp; }
+  @keyframes dsOp { from { transform:translateY(40px); opacity:0.4; } to { transform:none; opacity:1; } }
+}
+@media (prefers-reduced-motion: reduce) { dialog.deel-sheet[open] { animation:none; } }
 /* oc-uitleg v1 begin */
 /* "Hoe werkt dit?": één blok voor alle tools. Zonder JavaScript blijft de gewone uitklapper leesbaar.
    Het script zet .oc-u op <details class="explain"> en bouwt de inhoud om tot inleiding, stappen, tip en verwijzingen. */
@@ -1131,10 +1160,9 @@ header[data-oc-kop][data-stand="compact"]::before { content:""; order:-1; flex:n
             <div class="groot-kaart" id="groot-kaart" role="dialog" aria-modal="false" aria-labelledby="gk-woord" hidden>
                 <div class="gk-in">
                     <button type="button" class="icon-btn gk-sluit" id="gk-sluit" aria-label="Sluit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
-                    <p class="gk-lbl" id="gk-lbl">In gewone taal</p>
                     <p class="gk-woord" id="gk-woord"></p>
                     <p class="gk-tekst" id="gk-tekst"></p>
-                    <a class="gk-tool" id="gk-tool" href="#" hidden><img id="gk-tool-ico" alt=""><span class="gk-tool-t"><small>Past erbij</small><b id="gk-tool-naam"></b></span><svg class="gk-pijl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+                    <a class="gk-tool" id="gk-tool" href="#" hidden><img id="gk-tool-ico" alt=""><span class="gk-tool-t">Open <b id="gk-tool-naam"></b></span><svg class="gk-pijl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
                 </div>
             </div>
 
@@ -1149,6 +1177,16 @@ header[data-oc-kop][data-stand="compact"]::before { content:""; order:-1; flex:n
             </div>
         </section>
 
+        <dialog class="deel-sheet" id="deel-sheet" aria-labelledby="ds-h">
+            <div class="ds-kop"><h2 id="ds-h">Deel je kaart</h2><button type="button" class="icon-btn" id="ds-x" aria-label="Sluit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+            <div class="ds-voorbeeld"><img id="ds-img" alt="Je bingokaart als afbeelding"></div>
+            <div class="ds-acties">
+                <button type="button" class="btn btn-primary" id="ds-beeld"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/></svg>Deel de afbeelding</button>
+                <button type="button" class="btn btn-secondary" id="ds-bewaar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Bewaar op je toestel</button>
+            </div>
+            <button type="button" class="ds-link" id="ds-link"><span class="ds-link-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.5-1.5"/></svg></span><span class="ds-link-t"><b>Nodig je collega's uit</b><small>Stuur de link: iedereen speelt op zijn eigen gsm</small></span><svg class="ds-pijl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+        </dialog>
+
         <details class="explain" id="hoe-werkt-dit">
           <summary>Hoe werkt dit?</summary>
           <div class="inner">
@@ -1158,7 +1196,7 @@ header[data-oc-kop][data-stand="compact"]::before { content:""; order:-1; flex:n
               <li><b>Tik een woord aan</b> zodra je het hoort. Nog eens tikken maakt het ongedaan.</li>
               <li><b>Een volle rij is bingo.</b> Recht, verticaal of schuin. Op een kaart van 4 op 4 heb je vier op een rij nodig.</li>
               <li><b>Eigen woorden.</b> Voeg de woorden toe die in jouw organisatie altijd terugkomen. Ze blijven bewaard.</li>
-              <li><b>Speel samen.</b> Iedereen opent de bingo op zijn eigen gsm: elke kaart is anders. Met de deelknop stuur je je kaart door.</li>
+              <li><b>Speel samen.</b> Iedereen opent de bingo op zijn eigen gsm: elke kaart is anders. Met de deelknop zie je je kaart meteen als afbeelding. Deel of bewaar ze, of stuur de link zodat je collega’s meespelen.</li>
               <li><b>Gewone taal.</b> Tik op een groen vakje in een volle rij: de kaart komt groot naar voren, met het woord in gewone taal of een tip. Past er een tool bij, dan open je die met één tik.</li>
             </ul>
             <p>Tip: zet het geluid uit in een echte vergadering. Bij bingo trilt je gsm dan alleen even.</p>
@@ -1493,8 +1531,7 @@ function toonGroot(i, van) {
   const w = st.kaart[i]; if (!w) return;
   const a = achterVan(w), tip = /^Tip: /.test(a), t = toolBij(w), G = $('groot-kaart'), bord = $('bord');
   grootVan = van || null;
-  $('gk-lbl').textContent = tip ? 'Tip' : 'In gewone taal';
-  $('gk-woord').textContent = '“' + w + '”';
+  $('gk-woord').textContent = tip ? 'Tip bij “' + w + '”' : '“' + w + '” in gewone taal';
   $('gk-tekst').textContent = tip ? hoofd(a.slice(5)) : a;
   const T = $('gk-tool');
   T.hidden = !t;
@@ -1710,26 +1747,46 @@ function tekenKaart() {
   g.font = F(600, 30); g.fillStyle = '#475569'; g.fillText('Speel mee op ' + location.host + '/bingo', W / 2, H - 60);
   return c;
 }
+/* Delen: eerst zie je de afbeelding zelf. Delen stuurt alleen de afbeelding (zonder link erbij, anders toont je gsm vooral de link).
+   De link naar de bingo is een aparte, bewuste keuze. */
+let deelBlob = null, deelUrlImg = null;
+const BINGO_URL = () => location.origin + '/bingo/';
+function deelBestand() { return new File([deelBlob], 'buzzwordbingo.png', { type:'image/png' }); }
 async function deel() {
-  const knop = $('deel'); if (knop.disabled) return;
   if (!st.kaart.length) { toast('Er is nog geen kaart om te delen.'); return; }
-  knop.disabled = true;
-  const url = location.origin + '/bingo/', tekst = vol().length ? 'Bingo! Speel mee met de Buzzwordbingo.' : 'Speel mee met de Buzzwordbingo: hoor je de modewoorden?';
-  try {
-    try { await document.fonts.ready; } catch (e) {}
-    const blob = await new Promise(r => tekenKaart().toBlob(r, 'image/png'));
-    const file = new File([blob], 'buzzwordbingo.png', { type:'image/png' });
-    if (navigator.canShare && navigator.canShare({ files:[file] })) {
-      try { await navigator.share({ files:[file], title:'Buzzwordbingo', text:tekst + ' ' + url }); } catch (e) { if (e.name !== 'AbortError') throw e; }
-    } else {
-      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'buzzwordbingo.png'; document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-      toast('Afbeelding gedownload. Deel ze waar je wil.');
-    }
-  } catch (e) { toast('Delen lukt hier niet.'); }
-  knop.disabled = false;
+  const D = $('deel-sheet'), img = $('ds-img');
+  try { await document.fonts.ready; } catch (e) {}
+  deelBlob = await new Promise(r => tekenKaart().toBlob(r, 'image/png'));
+  if (deelUrlImg) URL.revokeObjectURL(deelUrlImg);
+  deelUrlImg = URL.createObjectURL(deelBlob); img.src = deelUrlImg;
+  const kanBeeld = !!(navigator.canShare && navigator.canShare({ files:[deelBestand()] }));
+  $('ds-beeld').hidden = !kanBeeld;   // kan dit toestel geen afbeelding delen, dan is bewaren de hoofdknop
+  $('ds-bewaar').className = 'btn ' + (kanBeeld ? 'btn-secondary' : 'btn-primary');
+  if (!D.open) D.showModal();
+  (kanBeeld ? $('ds-beeld') : $('ds-bewaar')).focus();
+}
+function bewaarBeeld() {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(deelBlob); a.download = 'buzzwordbingo.png'; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  $('deel-sheet').close(); toast('De afbeelding staat bij je downloads.');
 }
 $('deel').addEventListener('click', deel);
+$('ds-x').addEventListener('click', () => $('deel-sheet').close());
+$('deel-sheet').addEventListener('click', e => { if (e.target === $('deel-sheet')) $('deel-sheet').close(); });
+$('deel-sheet').addEventListener('close', () => { const k = $('deel'); if (k && k.offsetParent) k.focus({ preventScroll:true }); });
+$('ds-beeld').addEventListener('click', async () => {
+  try { await navigator.share({ files:[deelBestand()] }); $('deel-sheet').close(); }
+  catch (e) { if (e && e.name === 'AbortError') return; bewaarBeeld(); }
+});
+$('ds-bewaar').addEventListener('click', bewaarBeeld);
+$('ds-link').addEventListener('click', async () => {
+  const tekst = vol().length ? 'Bingo! Speel mee met de Buzzwordbingo: hoor je de modewoorden?' : 'Speel mee met de Buzzwordbingo: hoor je de modewoorden?';
+  try {
+    if (navigator.share) { await navigator.share({ title:'Buzzwordbingo', text:tekst, url:BINGO_URL() }); $('deel-sheet').close(); return; }
+  } catch (e) { if (e && e.name === 'AbortError') return; }
+  try { await navigator.clipboard.writeText(BINGO_URL()); $('deel-sheet').close(); toast('De link is gekopieerd. Plak hem waar je wil.'); }
+  catch (e) { toast('Kopiëren lukt hier niet. De link is ' + BINGO_URL()); }
+});
 
 /* Elk woord past in zijn vakje: is het langste stuk (tussen spaties of zachte afbreekstreepjes) te breed, dan wat kleiner.
    Nooit kleiner dan 10,5 px: liever een afbreekstreepje dan onleesbaar. */
