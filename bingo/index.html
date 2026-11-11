@@ -158,7 +158,19 @@ html:has(.ocw-back) { overflow:hidden; }
 .vak { position:relative; aspect-ratio:1; min-height:44px; display:flex; align-items:center; justify-content:center; padding:0.375rem; border-radius:14px; border:1.5px solid var(--slate-200); background:#fff; color:var(--slate-700); font-size:0.9375rem; font-weight:600; line-height:1.2; text-align:center; hyphens:manual; -webkit-hyphens:manual; overflow-wrap:break-word; transition:background 0.2s, border-color 0.2s, color 0.2s, transform 0.12s; box-shadow:0 1px 2px rgba(15,23,42,0.04); }
 .vak:hover { border-color:var(--slate-300); background:var(--slate-50); }
 .vak:active { transform:scale(0.97); }
-.vak > span { position:relative; z-index:1; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:4; overflow:hidden; }
+/* Twee kanten: voor het woord, achter de gewone taal. Alleen een vakje in een volle rij draait om. */
+.vak { perspective:700px; }
+.vak .kaart { position:absolute; inset:0; transform-style:preserve-3d; transition:transform 0.55s cubic-bezier(.3,.7,.3,1); border-radius:inherit; }
+.vak.om .kaart { transform:rotateY(180deg); }
+.vak .voor, .vak .achter { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:0.375rem; border-radius:inherit; backface-visibility:hidden; -webkit-backface-visibility:hidden; }
+.vak .voor > span { position:relative; z-index:1; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:4; overflow:hidden; }
+.vak .achter { transform:rotateY(180deg); background:#ffffff; color:var(--accent-hover); box-shadow:inset 0 0 0 2px var(--accent-dark); gap:0.125rem; font-size:0.8125rem; font-weight:600; line-height:1.25; }
+.vak .achter small { font-size:0.625rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--accent-dark); }
+.vak .achter span { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:5; overflow:hidden; }
+.vak.win { cursor:pointer; }
+.vak.win::after { content:''; position:absolute; right:6px; bottom:6px; width:12px; height:12px; z-index:2; opacity:0.75; background:no-repeat center/12px url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 12a8 8 0 0 1 14-5.3L20 9M20 4v5h-5M20 12a8 8 0 0 1-14 5.3L4 15M4 20v-5h5'/%3E%3C/svg%3E"); }
+.vak.win.om::after { display:none; }
+.status .bh { font-size:0.8125rem; color:var(--slate-500); margin-top:0.25rem; }
 .vak::before { content:''; position:absolute; left:50%; top:50%; width:74%; aspect-ratio:1; border-radius:50%; background:rgba(16,185,129,0.2); transform:translate(-50%, -50%) scale(0); opacity:0; transition:transform 0.25s cubic-bezier(.3,1.6,.5,1), opacity 0.2s; }
 .vak[aria-pressed="true"] { background:var(--accent-50); border-color:var(--mint); color:var(--accent-hover); }
 .vak[aria-pressed="true"]::before { transform:translate(-50%, -50%) scale(1); opacity:1; }
@@ -167,6 +179,7 @@ html:has(.ocw-back) { overflow:hidden; }
 @keyframes win { 0% { transform:scale(1); } 40% { transform:scale(1.07); } 100% { transform:scale(1); } }
 .bord[data-n="4"] { gap:0.375rem; }
 .bord[data-n="4"] .vak { font-size:0.8125rem; border-radius:12px; padding:0.25rem; }
+.bord[data-n="4"] .vak .achter { font-size:0.6875rem; padding:0.25rem; }
 .vak.leeg { border-style:dashed; background:transparent; box-shadow:none; cursor:default; }
 .vak.leeg:hover { background:transparent; border-color:var(--slate-200); }
 
@@ -216,6 +229,8 @@ html:has(.ocw-back) { overflow:hidden; }
 @media (forced-colors:active) {
   .vak[aria-pressed="true"], .vak.win { forced-color-adjust:none; background:Highlight; color:HighlightText; }
 }
+
+@media (prefers-reduced-motion: reduce) { .vak .kaart { transition:none; } }
 /* oc-uitleg v1 begin */
 /* "Hoe werkt dit?": één blok voor alle tools. Zonder JavaScript blijft de gewone uitklapper leesbaar.
    Het script zet .oc-u op <details class="explain"> en bouwt de inhoud om tot inleiding, stappen, tip en verwijzingen. */
@@ -1153,15 +1168,55 @@ const KEY = 'bingo.v1';
 
 /* Thema's en hun woorden. Eigen tekst, geen merknamen. */
 const THEMAS = [
-  { id:'vergaderen', naam:'Vergaderen', w:['Kan iedereen mij horen?', 'Je staat op mute', 'Ik deel even mijn scherm', 'Zie je mijn scherm?', 'Dat nemen we offline', 'Kort puntje nog', 'Ik ga het kort houden', 'Daar komen we op terug', 'Wie neemt dit op?', 'We lopen wat uit', 'Kunnen we afronden?', 'Een rondje doen', 'Is iedereen mee?', 'Zoals in mijn mail', 'Ik moet om twaalf uur weg', 'Volgende keer meer tijd', 'Ik zet het in de chat', 'Nog vragen?', 'Mijn camera doet raar', 'Sorry, ik was even weg', 'Kan dit niet per mail?', 'Een werkgroep oprichten', 'Wie maakt het verslag?', 'Terug naar de agenda', 'Ik hoor een echo', 'Goeie vraag', 'Even een stap terug', 'Dat is een ander punt'] },
+  { id:'vergaderen', naam:'Vergaderen', w:['Kan iedereen mij horen?', 'Je staat op mute', 'Ik deel even mijn scherm', 'Zie je mijn scherm?', 'Dat nemen we offline', 'Kort puntje nog', 'Ik ga het kort houden', 'Daar komen we op terug', 'Wie neemt dit op?', 'We lopen wat uit', 'Kunnen we afronden?', 'Een rondje doen', 'Is iedereen mee?', 'Zoals in mijn mail', 'Ik moet om twaalf uur weg', 'Volgende keer meer tijd', 'Ik zet het in de chat', 'Nog vragen?', 'Mijn camera doet raar', 'Sorry, ik was even weg', 'Kan dit niet per mail?', 'Een werkgroep oprichten', 'Wie maakt het verslag?', 'Terug naar de agenda', 'Ik hoor een echo', 'Goeie vraag', 'Even een stap terug', 'Dat is een ander punt', 'We nemen het mee', 'Meeting', 'Teamsen', 'Sparren', 'Terugkoppelen', 'Bilateraal bekijken', 'Touchpoint'] },
   { id:'ai', naam:'AI', w:['Prompt', 'Hallucineren', 'Taalmodel', 'AI-agent', 'Use case', 'Human in the loop', 'Generatieve AI', 'Algoritme', 'Datagedreven', 'Guardrails', 'AI-geletterdheid', 'Gamechanger', 'Automatiseren', 'Trainingsdata', 'Black box', 'Ethisch kader', 'Proof of concept', 'Chatbot', 'Efficiëntiewinst', 'Het is maar een tool', 'Dat kan AI ook', 'AI-verordening', 'Machine learning', 'Synthetische data', 'Prompt engineering', 'Bias in de data', 'Slimme assistent', 'Tijdwinst'] },
   { id:'hr', naam:'HR', w:['Talent', 'Onboarding', 'Employer branding', 'Veerkracht', 'Werkgeluk', 'Feedbackcultuur', 'Competenties', 'Loopbaanpad', 'Engagement', 'Vitaliteit', 'Purpose', 'Groeimindset', 'Duurzaam inzetbaar', 'Hybride werken', 'Teamdynamiek', 'Kernwaarden', 'Ontwikkelgesprek', 'Leercultuur', 'Eigenaarschap', 'Medewerkersbeleving', 'Talentmanagement', 'Wendbaar', 'Upskilling', 'Retentie', 'War for talent', 'Bevlogenheid', 'Zelfsturend team', 'Verbinding'] },
-  { id:'strategie', naam:'Strategie', w:['Synergie', 'Quick win', 'Laaghangend fruit', 'Helikopterview', 'Out of the box', 'Draagvlak', 'Meerwaarde', 'Op de kaart zetten', 'Stip op de horizon', 'Paradigmashift', 'Win-win', 'Best practice', 'Toekomstgericht', 'Holistisch', 'Ecosysteem', 'Speerpunt', 'Proactief', 'De krachten bundelen', 'Kantelpunt', 'Vanuit de klant', 'Impact maken', 'Roadmap', 'Integraal', 'Transformatie', 'Momentum', 'Aligneren', 'Sense of urgency', "Uit de silo's"] },
+  { id:'strategie', naam:'Strategie', w:['Synergie', 'Quick win', 'Laaghangend fruit', 'Helikopterview', 'Out of the box', 'Draagvlak', 'Meerwaarde', 'Op de kaart zetten', 'Stip op de horizon', 'Paradigmashift', 'Win-win', 'Best practice', 'Toekomstgericht', 'Holistisch', 'Ecosysteem', 'Speerpunt', 'Proactief', 'De krachten bundelen', 'Kantelpunt', 'Vanuit de klant', 'Impact maken', 'Roadmap', 'Integraal', 'Transformatie', 'Momentum', 'Aligneren', 'Sense of urgency', "Uit de silo's", 'Opschalen', 'No-brainer'] },
   { id:'projecten', naam:'Projecten', w:['Scope creep', 'Mijlpaal', 'Deliverable', 'Stakeholder', 'Bottleneck', 'Go-live', 'Afhankelijkheden', 'Kritiek pad', 'Buffer', 'Lessons learned', 'Kick-off', 'Backlog', 'Escaleren', 'De planning schuift', 'Het budget is op', 'Bijna klaar', 'Even afstemmen', 'Op schema', 'Harde deadline', 'Change request', 'Fase twee', 'Requirements', 'Capaciteit', 'Prioriteit nul', 'Next steps', 'Opleveren', 'Parkeren', 'Agile'] }
 ];
 /* Waar een lang woord mag afbreken (zacht afbreekstreepje), zodat het netjes in een vakje past */
 const AFBREEK = new Map([['Efficiëntiewinst', 'Efficiëntie|winst'], ['Afhankelijkheden', 'Afhankelijk|heden'], ['Talentmanagement', 'Talent|management'], ['Medewerkersbeleving', 'Medewerkers|beleving'], ['Paradigmashift', 'Paradigma|shift'], ['Ontwikkelgesprek', 'Ontwikkel|gesprek'], ['Helikopterview', 'Helikopter|view'], ['Feedbackcultuur', 'Feedback|cultuur'], ['Toekomstgericht', 'Toekomst|gericht'], ['Trainingsdata', 'Trainings|data'], ['Eigenaarschap', 'Eigenaar|schap'], ['Teamdynamiek', 'Team|dynamiek'], ['Bevlogenheid', 'Bevlogen|heid'], ['Automatiseren', 'Automati|seren'], ['Transformatie', 'Transfor|matie'], ['Hallucineren', 'Halluci|neren'], ['Gamechanger', 'Game|changer'], ['Loopbaanpad', 'Loopbaan|pad'], ['Competenties', 'Compe|tenties'], ['Leercultuur', 'Leer|cultuur'], ['Kernwaarden', 'Kern|waarden'], ['Datagedreven', 'Data|gedreven'], ['Synthetische data', 'Synthe|tische data'], ['Requirements', 'Require|ments'], ['Capaciteit', 'Capa|citeit'], ['Deliverable', 'Deliver|able'], ['Stakeholder', 'Stake|holder'], ['Bottleneck', 'Bottle|neck'], ['Ecosysteem', 'Eco|systeem'], ['Onboarding', 'On|boarding'], ['Engagement', 'Engage|ment'], ['AI-geletterdheid', 'AI-gelet|terdheid'], ['AI-verordening', 'AI-veror|dening'], ['Employer branding', 'Employer bran|ding'], ['Werkgeluk', 'Werk|geluk'], ['Veerkracht', 'Veer|kracht'], ['Groeimindset', 'Groei|mindset'], ['Vitaliteit', 'Vitali|teit'], ['Kantelpunt', 'Kantel|punt'], ['Speerpunt', 'Speer|punt'], ['Meerwaarde', 'Meer|waarde'], ['Draagvlak', 'Draag|vlak'], ['Algoritme', 'Algo|ritme'], ['Mijlpaal', 'Mijl|paal'], ['Proactief', 'Proac|tief'], ['Upskilling', 'Upskil|ling'], ['Tijdwinst', 'Tijd|winst'], ['Momentum', 'Momen|tum'], ['Holistisch', 'Holis|tisch'], ['Escaleren', 'Escale|ren']].map(([a, b]) => [a, b.replace('|', '\u00AD')]));
 const toonWoord = w => AFBREEK.get(w) || w;
+/* De achterkant: hetzelfde in gewone taal (zoals de schrijftips van de Vlaamse overheid), of een tip voor een vlotte vergadering */
+const GEWOON = {
+  'Kan iedereen mij horen?':'Tip: test je geluid voor de vergadering begint.', 'Je staat op mute':'Je micro staat uit.', 'Ik deel even mijn scherm':'Tip: stuur het vooraf, dan kan iedereen het rustig lezen.',
+  'Zie je mijn scherm?':'Tip: zeg wat je toont, bijvoorbeeld: je ziet nu de planning.', 'Dat nemen we offline':'Dat bespreken we na de vergadering, met wie erbij hoort.', 'Kort puntje nog':'Tip: zet het op de agenda van de volgende keer.',
+  'Ik ga het kort houden':'Tip: hou het dan ook kort. Eén zin is genoeg.', 'Daar komen we op terug':'We bespreken dit op een vaste datum. Wie zet het op de agenda?', 'Wie neemt dit op?':'Wie doet dit, en tegen wanneer?',
+  'We lopen wat uit':'Tip: stop op tijd en plan een vervolg.', 'Kunnen we afronden?':'Wat hebben we beslist, en wie doet wat?', 'Een rondje doen':'Iedereen zegt kort wat hij denkt.', 'Is iedereen mee?':'Wat is nog niet duidelijk?',
+  'Zoals in mijn mail':'Tip: zeg in één zin wat erin stond.', 'Ik moet om twaalf uur weg':'Tip: zeg het bij het begin, dan past de agenda zich aan.', 'Volgende keer meer tijd':'Tip: zet minder punten op de agenda.',
+  'Ik zet het in de chat':'Tip: zet het ook in het verslag. De chat verdwijnt.', 'Nog vragen?':'Wat is nog niet duidelijk?', 'Mijn camera doet raar':'Tip: test je camera voor je begint.',
+  'Sorry, ik was even weg':'Tip: lees het verslag na, dan hoeft niemand iets te herhalen.', 'Kan dit niet per mail?':'Tip: vraag je voor elke vergadering af: moet dit samen?', 'Een werkgroep oprichten':'Twee of drie mensen werken dit uit, tegen een vaste datum.',
+  'Wie maakt het verslag?':'Tip: spreek dat af bij het begin.', 'Terug naar de agenda':'Tip: laat de agenda zien, dan blijft iedereen bij de les.', 'Ik hoor een echo':'Tip: zet je micro uit als je niet praat.',
+  'Goeie vraag':'Tip: geef gewoon meteen het antwoord.', 'Even een stap terug':'Wat willen we eigenlijk bereiken?', 'Dat is een ander punt':'Tip: noteer het en bespreek het later.',
+  'We nemen het mee':'We beslissen dit later, op een vaste datum.', 'Meeting':'Vergadering', 'Teamsen':'Online vergaderen', 'Sparren':'Samen ideeën uitwisselen', 'Terugkoppelen':'Laten weten', 'Bilateraal bekijken':'Met z’n tweeën bespreken', 'Touchpoint':'Kort overleg',
+  'Prompt':'De vraag of opdracht die je aan AI geeft', 'Hallucineren':'Iets verzinnen dat niet klopt', 'Taalmodel':'Software die tekst schrijft door te voorspellen', 'AI-agent':'Software die zelf stappen zet voor jou',
+  'Use case':'Waarvoor je het gebruikt', 'Human in the loop':'Een mens kijkt na en beslist', 'Generatieve AI':'AI die tekst of beelden maakt', 'Algoritme':'Vaste regels in software', 'Datagedreven':'Op basis van cijfers',
+  'Guardrails':'Grenzen en regels', 'AI-geletterdheid':'Weten hoe AI werkt en waar het fout kan gaan', 'Gamechanger':'Iets dat veel verandert', 'Automatiseren':'De computer het laten doen', 'Trainingsdata':'De voorbeelden waaruit software leert',
+  'Black box':'Je ziet niet hoe het tot een antwoord komt', 'Ethisch kader':'Afspraken over wat wel en niet mag', 'Proof of concept':'Een kleine test: werkt het?', 'Chatbot':'Een programma dat je vragen beantwoordt',
+  'Efficiëntiewinst':'We zijn sneller klaar', 'Het is maar een tool':'Het is een hulpmiddel. Jij beslist.', 'Dat kan AI ook':'Kan het echt? Probeer het eerst uit.', 'AI-verordening':'De Europese wet over AI',
+  'Machine learning':'Software die leert uit voorbeelden', 'Synthetische data':'Nagemaakte gegevens', 'Prompt engineering':'Goede vragen leren stellen aan AI', 'Bias in de data':'Scheve gegevens geven een scheef resultaat',
+  'Slimme assistent':'Een hulpprogramma', 'Tijdwinst':'Hoeveel tijd precies?',
+  'Talent':'Mensen die iets goed kunnen', 'Onboarding':'Een nieuwe collega goed laten starten', 'Employer branding':'Tonen waarom het hier fijn werken is', 'Veerkracht':'Tegen een stootje kunnen', 'Werkgeluk':'Graag werken',
+  'Feedbackcultuur':'Elkaar eerlijk zeggen wat goed gaat en wat beter kan', 'Competenties':'Wat je kan', 'Loopbaanpad':'Hoe je kan groeien in je werk', 'Engagement':'Betrokkenheid', 'Vitaliteit':'Fit en gezond blijven',
+  'Purpose':'Waarom we dit doen', 'Groeimindset':'Geloven dat je kan bijleren', 'Duurzaam inzetbaar':'Je werk lang en gezond kunnen doen', 'Hybride werken':'Soms thuis, soms op kantoor', 'Teamdynamiek':'Hoe het team samenwerkt',
+  'Kernwaarden':'Wat we belangrijk vinden', 'Ontwikkelgesprek':'Een gesprek over hoe je wil groeien', 'Leercultuur':'Hier mag je bijleren, ook van fouten', 'Eigenaarschap':'Je voelt je verantwoordelijk',
+  'Medewerkersbeleving':'Hoe collega’s hun werk ervaren', 'Talentmanagement':'Zorgen dat mensen kunnen groeien', 'Wendbaar':'Snel kunnen bijsturen', 'Upskilling':'Bijleren', 'Retentie':'Mensen houden',
+  'War for talent':'Goede mensen vinden is moeilijk', 'Bevlogenheid':'Met hart en ziel werken', 'Zelfsturend team':'Een team dat zelf beslist hoe het werkt', 'Verbinding':'Contact, een goede band',
+  'Synergie':'Samen bereiken we meer', 'Quick win':'Snel resultaat', 'Laaghangend fruit':'Wat makkelijk en snel kan', 'Helikopterview':'Overzicht', 'Out of the box':'Anders dan gewoonlijk', 'Draagvlak':'Steun',
+  'Meerwaarde':'Wat het oplevert', 'Op de kaart zetten':'Bekend maken', 'Stip op de horizon':'Ons doel', 'Paradigmashift':'Een andere manier van denken', 'Win-win':'Goed voor allebei', 'Best practice':'Een goed voorbeeld',
+  'Toekomstgericht':'Met het oog op later', 'Holistisch':'Als geheel bekeken', 'Ecosysteem':'Alle partners samen', 'Speerpunt':'Belangrijkste punt', 'Proactief':'Op tijd, voor het een probleem wordt', 'De krachten bundelen':'Samenwerken',
+  'Kantelpunt':'Het moment dat alles verandert', 'Vanuit de klant':'Voor de mensen die het gebruiken', 'Impact maken':'Iets veranderen', 'Roadmap':'Planning', 'Integraal':'Alles samen', 'Transformatie':'Grote verandering',
+  'Momentum':'Het goede moment', 'Aligneren':'Afstemmen', 'Sense of urgency':'Het is dringend', "Uit de silo's":'Samenwerken over de afdelingen heen', 'Opschalen':'Groter maken', 'No-brainer':'Dat spreekt vanzelf',
+  'Scope creep':'Het project wordt stilaan groter dan afgesproken', 'Mijlpaal':'Een belangrijk moment in het project', 'Deliverable':'Wat we opleveren', 'Stakeholder':'Betrokkene', 'Bottleneck':'Waar het vastloopt',
+  'Go-live':'De start: vanaf dan werkt het', 'Afhankelijkheden':'Wat eerst klaar moet zijn', 'Kritiek pad':'Taken die geen vertraging mogen hebben', 'Buffer':'Extra tijd voor het onverwachte', 'Lessons learned':'Wat we geleerd hebben',
+  'Kick-off':'Startvergadering', 'Backlog':'Lijst van wat nog moet', 'Escaleren':'Hulp vragen aan wie kan beslissen', 'De planning schuift':'We zijn te laat. Wat is de nieuwe datum?', 'Het budget is op':'Er is geen geld meer. Wat schrappen we?',
+  'Bijna klaar':'Wat moet er nog precies gebeuren?', 'Even afstemmen':'Kort overleggen', 'Op schema':'We liggen op koers', 'Harde deadline':'Deze datum schuift niet', 'Change request':'Vraag om iets te veranderen',
+  'Fase twee':'Later, misschien', 'Requirements':'Waar het aan moet voldoen', 'Capaciteit':'Hoeveel tijd en mensen we hebben', 'Prioriteit nul':'Dit is het belangrijkste', 'Next steps':'Wat doen we nu, wie en wanneer?',
+  'Opleveren':'Afgeven, klaar zijn', 'Parkeren':'Later bekijken', 'Agile':'In kleine stappen werken en snel bijsturen'
+};
+const EIGEN_ACHTER = 'Zeg het in gewone taal: wat bedoel je echt?';
+const achterVan = w => GEWOON[w] || EIGEN_ACHTER;
+let om = new Set();   // vakjes die nu omgedraaid zijn (alleen in een volle rij)
 const EIGEN = 'eigen';
 const MAX_EIGEN = 100, MAX_LEN = 40;
 const STANDAARD = { themas:['vergaderen', 'ai'], maat:3, eigen:[], kaart:[], vink:[], gevierd:[], geluid:true };
@@ -1284,11 +1339,19 @@ function render(nieuweBingo) {
       b.setAttribute('aria-pressed', String(V.has(i)));
       if (inWin.has(i)) b.style.setProperty('--i', nieuweBingo ? inWin.get(i) : 0);
       if (inWin.has(i) && !nieuweBingo) b.style.animation = 'none';
-      const s = document.createElement('span'); s.textContent = toonWoord(w); b.appendChild(s);
+      const k = document.createElement('span'); k.className = 'kaart';
+      const voor = document.createElement('span'); voor.className = 'voor'; const s = document.createElement('span'); s.textContent = toonWoord(w); voor.appendChild(s);
+      const achter = document.createElement('span'); achter.className = 'achter'; const a = achterVan(w), tip = /^Tip: /.test(a);
+      const l = document.createElement('small'); l.textContent = tip ? 'Tip' : 'Gewone taal'; const t = document.createElement('span'); t.textContent = tip ? a.slice(5) : a;
+      achter.append(l, t); k.append(voor, achter); b.appendChild(k);
+      const isOm = inWin.has(i) && om.has(i);
+      if (isOm) b.classList.add('om');
+      voor.setAttribute('aria-hidden', String(isOm)); achter.setAttribute('aria-hidden', String(!isOm));
       B.appendChild(b);
     });
     if (focusI >= 0 && B.children[focusI]) B.children[focusI].focus({ preventScroll:true });
   }
+  om = new Set([...om].filter(i => inWin.has(i)));
   renderStatus(wins, nieuweBingo);
   $('menu-wipe').hidden = $('sep-wipe').hidden = !heeftWerk();
   $('oc-restart-row').hidden = !heeftWerk();
@@ -1301,8 +1364,8 @@ function renderStatus(wins, nieuweBingo) {
     const tekort = n - pool().length;
     return zet('<p>' + (tekort > 0 ? 'Nog ' + tekort + (tekort === 1 ? ' woord' : ' woorden') + ' nodig voor een kaart. Kies een extra thema of voeg eigen woorden toe.' : 'Tik op Nieuwe kaart.') + '</p>');
   }
-  if (st.vink.length === n) return zet(`<p class="bw${nieuweBingo ? ' pop' : ''}">Volle kaart!</p><p class="bs">Wat een vergadering. Tijd voor gewone taal?</p>`);
-  if (wins.length) return zet(`<p class="bw${nieuweBingo ? ' pop' : ''}">${wins.length > 1 ? 'Dubbele bingo!' : 'Bingo!'}</p><p class="bs">${wins.length > 2 ? wins.length + ' rijen vol. Speel gerust verder.' : 'Roep het hardop. Of glimlach stilletjes.'}</p>`);
+  if (st.vink.length === n) return zet(`<p class="bw${nieuweBingo ? ' pop' : ''}">Volle kaart!</p><p class="bs">Wat een vergadering. Tijd voor gewone taal?</p><p class="bh">Tik op een groen vakje: dan zie je het in gewone taal.</p>`);
+  if (wins.length) return zet(`<p class="bw${nieuweBingo ? ' pop' : ''}">${wins.length > 1 ? 'Dubbele bingo!' : 'Bingo!'}</p><p class="bs">${wins.length > 2 ? wins.length + ' rijen vol. Speel gerust verder.' : 'Roep het hardop. Of glimlach stilletjes.'}</p><p class="bh">Tik op een groen vakje: dan zie je het in gewone taal.</p>`);
   if (bijna()) return zet('<p class="bijna">Nog één woord voor bingo.</p>');
   if (st.vink.length) return zet('<p>' + st.vink.length + ' van ' + n + ' gehoord.</p>');
   zet('<p>Tik een woord aan zodra je het hoort.</p>');
@@ -1330,12 +1393,25 @@ function vinkAan(i) {
 }
 function nieuweKaart(melding) {
   const oud = kopie();
-  st.kaart = maakKaart(); st.vink = []; st.gevierd = [];
+  st.kaart = maakKaart(); st.vink = []; st.gevierd = []; om = new Set();
   save(); render(false);
   if (melding && oud.vink.length) toast(melding, ocUndoable(() => { st = oud; save(); render(false); zeg('Ongedaan gemaakt.'); }));
   else if (st.kaart.length) zeg('Nieuwe kaart.');
 }
-$('bord').addEventListener('click', e => { const b = e.target.closest('.vak[data-i]'); if (b) vinkAan(+b.dataset.i); });
+$('bord').addEventListener('click', e => {
+  const b = e.target.closest('.vak[data-i]'); if (!b) return;
+  const i = +b.dataset.i;
+  if (b.classList.contains('win')) { draai(b, i); return; }
+  vinkAan(i);
+});
+function draai(b, i) {
+  const nu = !om.has(i);
+  if (nu) om.add(i); else om.delete(i);
+  b.style.animation = 'none';
+  b.classList.toggle('om', nu);
+  b.querySelector('.voor').setAttribute('aria-hidden', String(nu)); b.querySelector('.achter').setAttribute('aria-hidden', String(!nu));
+  zeg(nu ? st.kaart[i] + '. In gewone taal: ' + achterVan(st.kaart[i]).replace(/^Tip: /, 'tip: ') : st.kaart[i]);
+}
 $('nieuw').addEventListener('click', () => {
   if (!st.themas.length) { toast('Kies eerst een thema.'); return; }
   if (pool().length < st.maat * st.maat) { toast('Te weinig woorden voor een kaart.'); return; }
@@ -1499,7 +1575,7 @@ addEventListener('storage', e => { if (e.key === KEY || e.key === null) { st = l
 if (!st.kaart.length && st.themas.length) { st.kaart = maakKaart(); }
 render(false);
 /* Voor tests: window.bingo */
-window.bingo = { THEMAS, rijen, leesEigen, maakKaart, pool, staat:() => kopie(), vink:i => vinkAan(i) };
+window.bingo = { GEWOON, THEMAS, rijen, leesEigen, maakKaart, pool, staat:() => kopie(), vink:i => vinkAan(i) };
 </script>
 <input type="file" id="oc-bestand-in" accept=".json,application/json" hidden>
 <script>

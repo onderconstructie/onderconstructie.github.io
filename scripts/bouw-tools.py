@@ -32,7 +32,7 @@ from html.parser import HTMLParser
 
 SITE = 'https://onderconstructie.github.io'
 PADEN = [
-    '/project-radar/', '/kanban/', '/stakeholders/', '/risico/', '/mixer/', '/paradox/',
+    '/project-radar/', '/kanban/', '/cockpit/', '/stakeholders/', '/risico/', '/mixer/', '/paradox/',
     '/fortuna/', '/check-in/', '/project-realisme/', '/sprint/', '/vinkje/',
     '/beslissingen/', '/notities/', '/agenda/', '/raci/', '/prioriteit/', '/retro/', '/leerpunten/', '/vergaderkost/', '/ijsbreker/', '/kaartjes/', '/check-out/', '/goesting/', '/energie/',
     '/gap/', '/swot/', '/pestle/', '/weerstand/', '/impact/', '/klimaat/', '/veranderprofiel/', '/sponsor/', '/communicatie/', '/stroom/', '/mindmap/', '/gedrag/', '/visgraat/', '/schildpad/', '/informatie/', '/beslisscore/', '/opdracht/', '/tijdlijn/', '/meetplan/', '/dossier/',
