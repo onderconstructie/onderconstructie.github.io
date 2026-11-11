@@ -377,6 +377,14 @@ html:has(.ocw-back) { overflow:hidden; }
 .wg-beeld-k:hover { border-color:var(--mint); }
 .wg-beeld-k:focus-visible { outline:2px solid var(--accent-dark); outline-offset:2px; }
 .groot { background:#fff; }
+
+/* Kaartjes verslepen */
+.blok { cursor:grab; -webkit-touch-callout:none; }
+.blok a, .blok img { -webkit-user-drag:none; user-drag:none; }
+.blok-geest { position:fixed; z-index:9000; margin:0; pointer-events:none; cursor:grabbing; opacity:0.96; transform:rotate(1.2deg) scale(1.02); box-shadow:0 18px 40px rgba(15,23,42,0.22), 0 4px 10px rgba(15,23,42,0.12); transition:none; }
+.blok-plek { flex:none; height:6px; margin:-1px 0; border-radius:99px; background:#10b981; box-shadow:0 0 0 3px #d1fae5; }
+.sleept-nu, .sleept-nu * { cursor:grabbing !important; -webkit-user-select:none; user-select:none; }
+@media (prefers-reduced-motion:reduce) { .blok-geest { transform:none; } }
 /* oc-uitleg v1 begin */
 /* "Hoe werkt dit?": één blok voor alle tools. Zonder JavaScript blijft de gewone uitklapper leesbaar.
    Het script zet .oc-u op <details class="explain"> en bouwt de inhoud om tot inleiding, stappen, tip en verwijzingen. */
@@ -1750,7 +1758,7 @@ function blokHTML(b, ki, bi, n) {
       + `<a class="tool-kaart" href="${esc(t ? t.path : '#')}" data-open-tool="${esc(b.id)}">${t ? `<img src="${icoon(t)}" alt="">` : ''}<span class="tk"><b>${esc(naam)}</b><span>${b.project ? `<span class="proj">${esc(b.project)}</span>` : huidigProject() ? `<span class="proj">${esc(huidigProject())}</span> · volgt de app` : esc(t ? t.sub : 'Deze tool vind ik niet meer')}</span></span>${SVG(I.rechts)}</a>`
       + (b.widget ? widgetHTML(b) : '');
   }
-  return `<article class="blok" data-id="${esc(b.id)}" data-soort="${b.soort}"${b.soort === 'tool' && !b.titel && !b.widget ? ' data-kaal' : ''}${b.widget ? ' data-widget' : ''}${b.groot ? ' data-groot' : ''} data-kleur="${esc(b.kleur)}" draggable="true">${lijf}${menu}</article>`;
+  return `<article class="blok" data-id="${esc(b.id)}" data-soort="${b.soort}"${b.soort === 'tool' && !b.titel && !b.widget ? ' data-kaal' : ''}${b.widget ? ' data-widget' : ''}${b.groot ? ' data-groot' : ''} data-kleur="${esc(b.kleur)}">${lijf}${menu}</article>`;
 }
 function naamVan(b) {
   if (b.titel) return b.titel;
@@ -1981,6 +1989,86 @@ $('bord').addEventListener('drop', async e => {
   const t = e.dataTransfer.getData('text/uri-list').split('\n').find(r => r && r[0] !== '#') || e.dataTransfer.getData('text/plain');
   const h = herken(t); if (h) voegToe(kolId, h);
 });
+
+/* ---------- Kaartjes verslepen: muis, vinger en pen op dezelfde manier ----------
+   Muis of pen: vastpakken en bewegen. Vinger: even ingedrukt houden (zo blijft gewoon scrollen werken), dan slepen.
+   Een streep toont waar het kaartje komt. Loslaten verplaatst het, Esc annuleert. Het menu (Hoger, Lager, Naar ...) blijft voor het toetsenbord. */
+const SL = { id:null, el:null, geest:null, plek:null, pid:null, x0:0, y0:0, dx:0, dy:0, aan:false, wacht:null, x:0, y:0, rol:null, net:0 };
+function sleepDoel(x, y) {
+  // de kolom onder de vinger, en het kaartje waarvoor je loslaat (null = onderaan)
+  const K = [...document.querySelectorAll('#bord .kol')]; if (!K.length) return null;
+  const k = K.find(c => { const r = c.getBoundingClientRect(); return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom; })
+    || K.map(c => { const r = c.getBoundingClientRect(); return { c, d: Math.hypot(Math.max(r.left - x, 0, x - r.right), Math.max(r.top - y, 0, y - r.bottom)) }; }).sort((a, b) => a.d - b.d)[0].c;
+  const na = [...k.querySelectorAll('.blok:not(.sleept)')].find(b => { const r = b.getBoundingClientRect(); return y < r.top + r.height / 2; }) || null;
+  return { k, na };
+}
+function sleepToon() {
+  const d = sleepDoel(SL.x, SL.y); if (!d) return;
+  if (!SL.plek) { SL.plek = document.createElement('div'); SL.plek.className = 'blok-plek'; SL.plek.setAttribute('aria-hidden', 'true'); }
+  const voor = d.na || d.k.querySelector('.plus');
+  if (SL.plek.parentNode !== d.k || SL.plek.nextElementSibling !== voor) d.k.insertBefore(SL.plek, voor);
+  document.querySelectorAll('.kol.doel').forEach(x => x !== d.k && x.classList.remove('doel')); d.k.classList.add('doel');
+}
+function sleepStart() {
+  const b = SL.el; if (!b || !b.isConnected) { sleepWeg(); return; }
+  SL.aan = true; clearTimeout(SL.wacht);
+  const r = b.getBoundingClientRect(); SL.dx = SL.x - r.left; SL.dy = SL.y - r.top;
+  const g = b.cloneNode(true); g.classList.add('blok-geest'); g.removeAttribute('data-id'); g.querySelectorAll('iframe').forEach(f => f.remove());
+  g.style.width = r.width + 'px'; g.style.left = r.left + 'px'; g.style.top = r.top + 'px'; document.body.appendChild(g); SL.geest = g;
+  b.classList.add('sleept'); document.documentElement.classList.add('sleept-nu');
+  try { b.setPointerCapture(SL.pid); } catch (e) {}
+  try { if (navigator.vibrate) navigator.vibrate(12); } catch (e) {}
+  sleepToon();
+  // dicht bij de rand schuift het bord mee
+  SL.rol = setInterval(() => { const m = 70, v = SL.y < m ? -14 : SL.y > innerHeight - m ? 14 : 0; if (v) { scrollBy(0, v); sleepToon(); }
+    const sc = $('bord'), h = SL.x < 40 ? -14 : SL.x > innerWidth - 40 ? 14 : 0; if (h && sc.scrollWidth > sc.clientWidth) { sc.scrollLeft += h; sleepToon(); } }, 30);
+}
+function sleepWeg() {
+  clearTimeout(SL.wacht); clearInterval(SL.rol);
+  if (SL.geest) SL.geest.remove(); if (SL.plek) SL.plek.remove();
+  document.querySelectorAll('.sleept,.kol.doel').forEach(x => x.classList.remove('sleept', 'doel'));
+  document.documentElement.classList.remove('sleept-nu');
+  if (SL.aan) SL.net = Date.now();
+  Object.assign(SL, { id:null, el:null, geest:null, plek:null, pid:null, aan:false, wacht:null, rol:null });
+}
+$('bord').addEventListener('pointerdown', e => {
+  if (SL.id || (e.pointerType === 'mouse' && e.button !== 0)) return;
+  const b = e.target.closest('.blok'); if (!b || e.target.closest('button,input,textarea,select,iframe,[contenteditable]')) return;
+  Object.assign(SL, { id:b.dataset.id, el:b, pid:e.pointerId, x0:e.clientX, y0:e.clientY, x:e.clientX, y:e.clientY, aan:false });
+  if (e.pointerType === 'touch') SL.wacht = setTimeout(sleepStart, 380);
+});
+addEventListener('pointermove', e => {
+  if (!SL.id || e.pointerId !== SL.pid) return;
+  SL.x = e.clientX; SL.y = e.clientY;
+  if (!SL.aan) {
+    const ver = Math.hypot(e.clientX - SL.x0, e.clientY - SL.y0);
+    if (e.pointerType === 'touch') { if (ver > 9) sleepWeg(); return; }   // bewogen voor het vastpakken: gewoon scrollen
+    if (ver < 6) return;
+    sleepStart();
+  }
+  e.preventDefault();
+  SL.geest.style.left = (SL.x - SL.dx) + 'px'; SL.geest.style.top = (SL.y - SL.dy) + 'px';
+  sleepToon();
+}, { passive:false });
+// Tijdens het slepen met de vinger mag de pagina niet meeschuiven
+addEventListener('touchmove', e => { if (SL.aan) e.preventDefault(); }, { passive:false });
+addEventListener('contextmenu', e => { if (SL.id && (SL.aan || SL.wacht)) e.preventDefault(); });
+function sleepLos(e, annuleer) {
+  if (!SL.id || (e && e.pointerId !== SL.pid)) return;
+  const aan = SL.aan, id = SL.id, d = aan && !annuleer ? sleepDoel(SL.x, SL.y) : null;
+  sleepWeg();
+  if (!d) return;
+  const kolId = d.k.dataset.kol, naId = d.na ? d.na.dataset.id : null, voor = vind(id);
+  if (!voor || (voor.k.id === kolId && (naId === id || (voor.k.blokken[voor.i + 1] || {}).id === naId || (!naId && voor.i === voor.k.blokken.length - 1)))) return;   // zelfde plaats
+  wijzig(() => { const p = vind(id); if (!p) return; p.k.blokken.splice(p.i, 1); const doel = kolom(kolId); const j = naId ? doel.blokken.findIndex(b => b.id === naId) : -1; doel.blokken.splice(j < 0 ? doel.blokken.length : j, 0, p.b); });
+  const q = vind(id); zeg(q ? 'Verplaatst naar ' + (q.k.naam || 'de kolom') + ', plaats ' + (q.i + 1) + '.' : 'Verplaatst.');
+}
+addEventListener('pointerup', e => sleepLos(e, false));
+addEventListener('pointercancel', e => sleepLos(e, true));
+addEventListener('keydown', e => { if (e.key === 'Escape' && SL.aan) { e.preventDefault(); e.stopPropagation(); sleepLos(null, true); } }, true);
+// Na het slepen geen klik op een link of een tool in het kaartje; en geen eigen sleepgedrag van de browser voor links en beelden
+addEventListener('click', e => { if (Date.now() - SL.net < 350 && e.target.closest && e.target.closest('#bord')) { e.preventDefault(); e.stopPropagation(); } }, true);
+$('bord').addEventListener('dragstart', e => { if (e.target.closest && e.target.closest('.blok')) e.preventDefault(); }, true);
 
 /* ---------- Klikken op het bord ---------- */
 $('kol-plus-k').addEventListener('click', () => nieuweKolom());
