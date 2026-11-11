@@ -1476,7 +1476,7 @@ body.searching #home #tabgroup { display:none !important; }
 .at-pil .at-pil-n { font-size:0.8125rem; font-weight:600; color:var(--slate-500); font-variant-numeric:tabular-nums; }
 @media (hover:hover) { .at-pil:hover { color:#047857; background:#ecfdf5; box-shadow:inset 0 0 0 1px #a7f3d0; } }
 .at-pil[aria-pressed="true"] { background:#0c8660; color:#ffffff; box-shadow:none; }
-.at-pil[aria-pressed="true"] .at-pil-n { color:#d1fae5; }
+.at-pil[aria-pressed="true"] .at-pil-n { color:#ffffff; }   /* wit: contrast 4,6 op het groen */
 @media (hover:hover) { .at-pil[aria-pressed="true"]:hover { background:#047857; color:#ffffff; } }
 .at-pil:focus-visible { outline:2px solid #047857; outline-offset:2px; }
 .at-pil-x { width:16px; height:16px; margin-right:-0.25rem; flex:none; }
@@ -1844,7 +1844,14 @@ html.oc-stil .n-puls, html.oc-stil .n-halo, html.oc-stil .n-far circle { animati
   .topbar.has-path #fav-tool, .topbar.has-path #fb-tool-btn, .topbar.has-path #ext { display:none; }
   .topbar.has-path #tb-meer { display:flex; }
 }
-@media (max-width:439.98px) { .pb-stap { display:none; } .pb-k { letter-spacing:-0.02em; } }   /* smalle gsm: "Verbeelden 1 van 2" past volledig */
+.pb-rij { display:flex; align-items:center; gap:6px; min-width:0; }
+.pb-tel2 { display:none; }
+/* Smalle gsm: de fase op de eerste regel, de telling eronder naast de bolletjes. Zo wordt er nooit iets afgeknipt. */
+@media (max-width:439.98px) {
+  .pb-k .pb-tel { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; }   /* blijft voor wie laat voorlezen */
+  .pb-tel2 { display:block; flex:none; font-size:0.75rem; font-weight:600; line-height:1; color:var(--slate-500); font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .pb-bol { flex:0 1 auto; }
+}
 @media (max-width:339.98px) { .topbar.has-path .pb-prev { display:none; } }
 /* Idee 1: "Klaar? Volgende: …" onderaan, in je duim. Pas als de stap iets bevat, niet terwijl je typt. Alleen op een smal scherm. */
 .pb-duim { flex:none; border-top:1px solid #a7f3d0; background:#ecfdf5; padding:0 0 var(--bottom); }
@@ -2513,7 +2520,7 @@ window.ocProjectkiezer = function (plek, o) {
         <a class="ft-link" href="https://www.linkedin.com/in/bartel-volckaert-8a96842/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Maker</a>
         <a class="ft-link" href="/privacy/#voorwaarden" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.01"/></svg>Disclaimer</a>
       </nav>
-      <p class="ft-meta"><button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (35 seconden)" title="Bekijk de film (35 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg><span>Film</span></button><button class="ft-film ft-inst" id="ft-app" type="button" hidden aria-label="Installeer de app"><img src="/app/icon.svg" alt="" width="22" height="22"><span>Installeer</span></button><span class="ft-dot" aria-hidden="true"></span><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v15.98</span></p>
+      <p class="ft-meta"><button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (35 seconden)" title="Bekijk de film (35 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg><span>Film</span></button><button class="ft-film ft-inst" id="ft-app" type="button" hidden aria-label="Installeer de app"><img src="/app/icon.svg" alt="" width="22" height="22"><span>Installeer</span></button><span class="ft-dot" aria-hidden="true"></span><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v15.99</span></p>
     </div>
   </footer>
   <dialog class="film" id="film" aria-labelledby="film-h">
@@ -4748,6 +4755,8 @@ document.addEventListener('click', e => {
   const so = e.target.closest('[data-start]');
   if (so) { const u = store.get('start-used', []); if (!u.includes(so.dataset.start)) store.set('start-used', [...u, so.dataset.start]); }
 }, true);
+// Laatste stap van een stappenplan: Klaar brengt je terug naar Start, met een korte bevestiging
+document.addEventListener('click', e => { const k = e.target.closest('[data-pb-klaar]'); if (!k) return; const naam = k.dataset.pbKlaar; showHome(); appToast(`${naam}: je bent rond. Alles blijft bewaard.`); });
 function renderPathbar(id) {
   const t = byId[id], bar = $('pathbar'), plans = (t && t.traject || []).map(x => x.naam).concat(Object.keys(STAP_EXTRA).filter(n => STAP_EXTRA[n].some(x => x.id === id))).filter((n, k, a) => a.indexOf(n) === k && TRAJECTEN.some(tr => tr.id === n));
   // Zichtbaar = #pathbar zonder hidden (tools zoals Communicatieplan kijken daarnaar om hun eigen teller te verbergen)
@@ -4776,23 +4785,23 @@ function renderPathbar(id) {
   bar.setAttribute('aria-label', `Stappenplan: ${tr.title}`);
   $('topbar').style.setProperty('--pb', `${Math.round((i + 1) / steps.length * 100)}%`);
   bar.innerHTML = `
-    <span class="pb-where" title="${esc(`${tr.title} · ${n}${q ? ' · ' + q : ''}`)}"><span class="pb-tool">${esc(steps[i].t.title)}</span><span class="pb-sub"><span class="pb-plan">${esc(tr.title)} · </span>${esc(n)}${q ? ` · ${esc(q)}` : ''}</span><span class="pb-kort"><span class="pb-k">${fNaam ? (fTot > 1 ? `${esc(fNaam)} <span class="pb-stap">· </span>${fNr} van ${fTot}` : esc(fNaam)) : `<span class="pb-stap">Stap </span>${i + 1} van ${steps.length}`}</span><span class="pb-bol" aria-hidden="true">${bolFase}</span></span></span>
+    <span class="pb-where" title="${esc(`${tr.title} · ${n}${q ? ' · ' + q : ''}`)}"><span class="pb-tool">${esc(steps[i].t.title)}</span><span class="pb-sub"><span class="pb-plan">${esc(tr.title)} · </span>${esc(n)}${q ? ` · ${esc(q)}` : ''}</span><span class="pb-kort"><span class="pb-k">${fNaam ? (fTot > 1 ? `${esc(fNaam)}<span class="pb-tel"> <span class="pb-stap">· </span>${fNr} van ${fTot}</span>` : esc(fNaam)) : `<span class="pb-stap">Stap </span>${i + 1} van ${steps.length}`}</span><span class="pb-rij"><span class="pb-bol" aria-hidden="true">${bolFase}</span>${fNaam && fTot > 1 ? `<span class="pb-tel2" aria-hidden="true">${fNr} van ${fTot}</span>` : ''}</span></span></span>
     <span class="pb-dots" aria-hidden="true">${bolFase}</span>
     <span class="pb-nav">
       ${prev ? `<button type="button" class="pb-prev" data-id="${esc(prev.t.id)}"${zoekAttr(prev.t)} aria-label="Vorige stap: ${esc(prev.t.title)}" title="Vorige: ${esc(prev.t.title)}">${arrow('M15 18l-6-6 6-6')}</button>` : ''}
       ${next ? `<button type="button" class="pb-next" data-id="${esc(next.t.id)}"${zoekAttr(next.t)} title="Volgende stap: ${esc(next.t.title)}" aria-label="Volgende stap: ${esc(next.t.title)}"><span class="pb-lbl">Volgende<span class="pb-dp">:</span></span><span class="pb-nm">${esc(next.t.title)}</span>${arrow('M9 6l6 6-6 6')}</button>`
-        : `<span class="pb-end">Laatste stap</span>`}
+        : `<button type="button" class="pb-next pb-klaar" data-pb-klaar="${esc(tr.title)}" title="Laatste stap. Terug naar Start" aria-label="Klaar, terug naar Start"><span class="pb-lbl">Klaar</span>${arrow('M5 12.5l4.5 4.5L19 7.5')}</button>`}
     </span>`;
   show(true);
 }
 /* Waar begin je? Vier ingangen in gewone taal, zolang er geen stappenplan loopt */
 const STARTS = [
-  { path:'project', kort:'Een project', kortSub:'Van opdracht tot terugblik', title:'Start een project', sub:'Stap voor stap, van opdracht tot terugblik', logo:"<svg viewBox='0 0 40 40' fill='none' xmlns='http://www.w3.org/2000/svg'><circle cx='20' cy='20' r='18' fill='#f8fafc' stroke='#e2e8f0' stroke-width='1.5'/><path d='M9.399999999999999 29.5L14.6 20.5L14.6 23.62L11.799999999999999 29.5Z' fill='#94a3b8'/><path d='M19.8 29.5L14.6 20.5L14.6 23.62L17.400000000000002 29.5Z' fill='#94a3b8'/><path d='M20.2 29.5L25.4 20.5L25.4 23.62L22.599999999999998 29.5Z' fill='#94a3b8'/><path d='M30.599999999999998 29.5L25.4 20.5L25.4 23.62L28.2 29.5Z' fill='#94a3b8'/><rect x='9.4' y='18.6' width='21.2' height='2.2' fill='#94a3b8'/><path d='M14.8 17.4L20 8.399999999999999L20 11.52L17.2 17.4Z' fill='#10b981'/><path d='M25.2 17.4L20 8.399999999999999L20 11.52L22.8 17.4Z' fill='#10b981'/></svg>" },
-  { path:'proces', title:'Verbeter een proces', sub:'Van hoe het nu loopt naar hoe het beter kan', kort:'Een proces', kortSub:'Beter, sneller, eenvoudiger' },
-  { path:'verandering', title:'Neem mensen mee in een verandering', sub:'Wie moet mee, en hoe krijg je ze mee?', kort:'Een verandering', kortSub:'Wie moet mee, en hoe?' },
-  { path:'verhaal', title:'Vertel een verhaal', sub:'Van één heldere boodschap tot een verhaal dat blijft hangen', kort:'Een verhaal', kortSub:'Dat blijft hangen' },
-  { group:'vergaderen', title:'Leid een vergadering', sub:'Agenda, wie begint, groepjes, een rondje' },
-  { group:'reset', title:'Kom even tot rust', sub:'Ademen, aarden, vriendelijk zijn voor jezelf' }
+  { path:'project', kort:'Een project', kortSub:'Van opdracht tot terugblik', title:'Start een project', sub:'Van opdracht tot terugblik', logo:"<svg viewBox='0 0 40 40' fill='none' xmlns='http://www.w3.org/2000/svg'><circle cx='20' cy='20' r='18' fill='#f8fafc' stroke='#e2e8f0' stroke-width='1.5'/><path d='M9.399999999999999 29.5L14.6 20.5L14.6 23.62L11.799999999999999 29.5Z' fill='#94a3b8'/><path d='M19.8 29.5L14.6 20.5L14.6 23.62L17.400000000000002 29.5Z' fill='#94a3b8'/><path d='M20.2 29.5L25.4 20.5L25.4 23.62L22.599999999999998 29.5Z' fill='#94a3b8'/><path d='M30.599999999999998 29.5L25.4 20.5L25.4 23.62L28.2 29.5Z' fill='#94a3b8'/><rect x='9.4' y='18.6' width='21.2' height='2.2' fill='#94a3b8'/><path d='M14.8 17.4L20 8.399999999999999L20 11.52L17.2 17.4Z' fill='#10b981'/><path d='M25.2 17.4L20 8.399999999999999L20 11.52L22.8 17.4Z' fill='#10b981'/></svg>" },
+  { path:'proces', title:'Verbeter een proces', sub:'Van hoe het loopt naar beter', kort:'Een proces', kortSub:'Beter, sneller, eenvoudiger' },
+  { path:'verandering', title:'Begeleid een verandering', sub:'Wie moet mee, en hoe?', kort:'Een verandering', kortSub:'Wie moet mee, en hoe?' },
+  { path:'verhaal', title:'Vertel een verhaal', sub:'Een boodschap die blijft hangen', kort:'Een verhaal', kortSub:'Dat blijft hangen' },
+  { group:'vergaderen', title:'Leid een vergadering', sub:'Agenda, groepjes, een rondje' },
+  { group:'reset', title:'Kom even tot rust', sub:'Ademen, aarden, opladen' }
 ];
 const PIJL_CTA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
 function startTileHTML(st, all) {
