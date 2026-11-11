@@ -250,6 +250,31 @@ html:has(.ocw-back) { overflow:hidden; }
 }
 /* Heel smal (onder 340 px): alleen 3 op 3, want 4 op 4 wordt onleesbaar */
 @media (max-width:339px) { .seg { display:none; } }
+
+/* De uitleg onder de kaart: het omgedraaide woord in gewone taal, altijd leesbaar */
+.toolbij { max-width:24rem; margin:0.25rem auto 0.75rem; padding:0.75rem 1rem 0.625rem; border-radius:14px; background:#fff; border:1.5px solid var(--accent-dark); text-align:center; animation:zacht 0.25s ease; }
+.toolbij small { display:block; font-size:0.6875rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--accent-dark); }
+.toolbij .uk-woord { font-size:0.875rem; color:var(--slate-500); margin-top:0.125rem; }
+.toolbij .uk-tekst { font-size:1.0625rem; font-weight:700; color:var(--slate-800); line-height:1.35; margin-top:0.125rem; text-wrap:balance; }
+.toolbij .uk-tool { margin-top:0.375rem; font-size:0.875rem; color:var(--slate-600); }
+.toolbij .uk-tool a { min-height:40px; }
+.vak .achter .zie { display:none; font-style:normal; font-size:0.6875rem; font-weight:700; color:var(--accent-dark); }
+@media (max-width:520px) {
+  .bord[data-n="4"] .vak .achter span, .bord[data-n="4"] .vak .achter small { display:none; }
+  .bord[data-n="4"] .vak .achter .zie { display:block; }
+  .bord[data-n="4"] .vak .achter .zie::after { content:' \2193'; }
+}
+/* Smalle gsm: de vier knoppen op één rij */
+@media (max-width:380px) {
+  .bediening { gap:0.25rem; }
+  .bediening .btn { padding:0 0.625rem; }
+  .seg button { min-width:2.75rem; padding:0 0.375rem; }
+  .geluid { width:44px; height:44px; }
+}
+@media (max-width:380px) {
+  #nieuw { width:48px; min-width:48px; padding:0; }
+  #nieuw .kort, #nieuw .lang { display:none; }
+}
 /* oc-uitleg v1 begin */
 /* "Hoe werkt dit?": één blok voor alle tools. Zonder JavaScript blijft de gewone uitklapper leesbaar.
    Het script zet .oc-u op <details class="explain"> en bouwt de inhoud om tot inleiding, stappen, tip en verwijzingen. */
@@ -1098,7 +1123,7 @@ header[data-oc-kop][data-stand="compact"]::before { content:""; order:-1; flex:n
 
             <div class="bord" id="bord" role="group" aria-label="Je bingokaart"></div>
             <div class="status" id="status"></div>
-            <p class="toolbij" id="toolbij" hidden></p>
+            <div class="toolbij" id="toolbij" aria-live="off" hidden></div>
 
             <div class="bediening">
                 <button type="button" class="btn btn-secondary" id="nieuw" aria-label="Nieuwe kaart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg><span class="lang">Nieuwe kaart</span><span class="kort" aria-hidden="true">Nieuw</span></button>
@@ -1241,10 +1266,14 @@ const GEWOON = {
 const TOOL_BIJ = { 'Wie neemt dit op?':'kanban', 'Backlog':'kanban', 'We nemen het mee':'beslissingen', 'Dat parkeren we even':'notities', 'Daar komen we op terug':'agenda', 'Kick-off':'agenda',
   'Een rondje doen':'check-in', 'Kunnen we afronden?':'check-out', 'Stakeholder':'stakeholders', 'Draagvlak':'stakeholders', 'Mijlpaal':'tijdlijn', 'Kritiek pad':'tijdlijn', 'De planning schuift':'tijdlijn',
   'Scope creep':'opdracht', 'Requirements':'opdracht', 'Stip op de horizon':'opdracht', 'Quick win':'prioriteit', 'Laaghangend fruit':'prioriteit', 'Prioriteit nul':'prioriteit', 'Lessons learned':'leerpunten',
-  'Capaciteit':'sprint', 'Agile':'sprint', 'Meeting':'vergaderkost', 'Teamsen':'vergaderkost', 'Dat is een aandachtspunt':'risico', 'Feedbackcultuur':'retro', 'Transformatie':'veranderprofiel', 'Escaleren':'raci', 'Bottleneck':'stroom' };
+  'Capaciteit':'sprint', 'Agile':'sprint', 'Meeting':'vergaderkost', 'Teamsen':'vergaderkost', 'Dat is een aandachtspunt':'risico', 'Feedbackcultuur':'retro', 'Transformatie':'veranderprofiel', 'Escaleren':'raci', 'Bottleneck':'stroom',
+  'Use case':'opdracht', 'Proof of concept':'project-realisme', 'Datagedreven':'meetplan', 'Human in the loop':'raci', 'Automatiseren':'stroom', 'Tijdwinst':'focus', 'Gamechanger':'impact', 'Bias in de data':'beslisscore', 'Ethisch kader':'beslisscore',
+  'Onboarding':'vinkje', 'Ontwikkelgesprek':'goesting', 'Werkgeluk':'goesting', 'Engagement':'goesting', 'Bevlogenheid':'goesting', 'Vitaliteit':'energie', 'Veerkracht':'adem', 'Teamdynamiek':'check-in', 'Verbinding':'check-in', 'Kernwaarden':'kaartjes', 'Eigenaarschap':'raci', 'Zelfsturend team':'raci', 'Leercultuur':'leerpunten',
+  'Helikopterview':'mindmap', 'Holistisch':'mindmap', 'Win-win':'stakeholders', 'Ecosysteem':'stakeholders', 'Vanuit de klant':'stakeholders', 'Speerpunt':'prioriteit', 'Impact maken':'impact', 'Roadmap':'tijdlijn', 'Paradigmashift':'veranderprofiel', 'Sense of urgency':'veranderprofiel', 'Kantelpunt':'weerstand' };
 let TOOLS = [];
 fetch('/tools.json').then(r => r.ok ? r.json() : []).then(d => { TOOLS = Array.isArray(d) ? d : []; }).catch(() => {});
 const toolBij = w => { const id = TOOL_BIJ[w]; return id ? TOOLS.find(t => t.id === id) || null : null; };
+function hoofd(x) { return x.charAt(0).toUpperCase() + x.slice(1); }
 const EIGEN_ACHTER = 'Zeg het in gewone taal: wat bedoel je echt?';
 const achterVan = w => GEWOON[w] || EIGEN_ACHTER;
 let om = new Set();   // vakjes die nu omgedraaid zijn (alleen in een volle rij)
@@ -1283,7 +1312,13 @@ function maakKaart() {
       while (L.length && uit.length < n) { const w = L.shift(), k = w.toLowerCase(); if (!gezien.has(k)) { gezien.add(k); uit.push(w); bezig = true; break; } }
     });
   }
-  return uit.length === n ? schud(uit) : [];
+  const kaart = uit.length === n ? schud(uit) : [];
+  // Elke kaart heeft minstens één woord met een tool op de achterkant (als de gekozen thema's er een hebben)
+  if (kaart.length && !kaart.some(w => TOOL_BIJ[w])) {
+    const kand = st.themas.flatMap(id => lijstVan(id)).filter(w => TOOL_BIJ[w] && !kaart.includes(w));
+    if (kand.length) kaart[rnd(kaart.length)] = kand[rnd(kand.length)];
+  }
+  return kaart;
 }
 
 /* ---------- Rijen: horizontaal, verticaal en de twee diagonalen ---------- */
@@ -1373,8 +1408,9 @@ function render(nieuweBingo) {
       const k = document.createElement('span'); k.className = 'kaart';
       const voor = document.createElement('span'); voor.className = 'voor'; const s = document.createElement('span'); s.textContent = toonWoord(w); voor.appendChild(s);
       const achter = document.createElement('span'); achter.className = 'achter'; const a = achterVan(w), tip = /^Tip: /.test(a);
-      const l = document.createElement('small'); l.textContent = tip ? 'Tip' : 'Gewone taal'; const t = document.createElement('span'); t.textContent = tip ? a.slice(5) : a;
-      achter.append(l, t); k.append(voor, achter); b.appendChild(k);
+      const l = document.createElement('small'); l.textContent = tip ? 'Tip' : 'Gewone taal'; const t = document.createElement('span'); t.textContent = tip ? hoofd(a.slice(5)) : a;
+      const zie = document.createElement('i'); zie.className = 'zie'; zie.textContent = 'Zie onder';
+      achter.append(l, t, zie); k.append(voor, achter); b.appendChild(k);
       const isOm = inWin.has(i) && om.has(i);
       if (isOm) b.classList.add('om');
       voor.setAttribute('aria-hidden', String(isOm)); achter.setAttribute('aria-hidden', String(!isOm));
@@ -1425,7 +1461,7 @@ function vinkAan(i) {
 }
 function nieuweKaart(melding) {
   const oud = kopie();
-  st.kaart = maakKaart(); st.vink = []; st.gevierd = []; om = new Set(); toonToolBij(null);
+  st.kaart = maakKaart(); st.vink = []; st.gevierd = []; om = new Set(); toonUitleg(null);
   save(); render(false);
   if (melding && oud.vink.length) toast(melding, ocUndoable(() => { st = oud; save(); render(false); zeg('Ongedaan gemaakt.'); }));
   else if (st.kaart.length) zeg('Nieuwe kaart.');
@@ -1443,18 +1479,27 @@ function draai(b, i) {
   b.classList.toggle('om', nu);
   b.querySelector('.voor').setAttribute('aria-hidden', String(nu)); b.querySelector('.achter').setAttribute('aria-hidden', String(!nu));
   const t = nu ? toolBij(st.kaart[i]) : null;
-  toonToolBij(t, st.kaart[i]);
+  toonUitleg(nu ? i : [...om].pop());
   zeg(nu ? st.kaart[i] + '. In gewone taal: ' + achterVan(st.kaart[i]).replace(/^Tip: /, 'tip: ') + (t ? ' Er is een tool bij: ' + t.title + '.' : '') : st.kaart[i]);
 }
-function toonToolBij(t, w) {
+/* Onder de kaart: het omgedraaide woord en zijn gewone taal, groot en leesbaar (ook bij 4 op 4 op een gsm), met een tool als die past */
+function toonUitleg(i) {
   const el = $('toolbij'); if (!el) return;
-  el.hidden = !t;
-  if (!t) return;
+  const w = i == null ? null : st.kaart[i];
+  el.hidden = !w;
+  if (!w) { el.innerHTML = ''; return; }
+  const a = achterVan(w), tip = /^Tip: /.test(a), t = toolBij(w);
   el.innerHTML = '';
-  const span = document.createElement('span'); span.textContent = 'Bij \u201C' + w + '\u201D past deze tool:';
-  const a = document.createElement('a'); a.href = t.path; a.textContent = t.title;
-  if (t.icon) { const img = document.createElement('img'); img.src = 'data:image/svg+xml,' + encodeURIComponent(t.icon); img.alt = ''; a.prepend(img); }
-  el.append(span, a);
+  const kop = document.createElement('p'); kop.className = 'uk-woord'; kop.textContent = '“' + w + '”';
+  const lbl = document.createElement('small'); lbl.textContent = tip ? 'Tip' : 'In gewone taal';
+  const tekst = document.createElement('p'); tekst.className = 'uk-tekst'; tekst.textContent = tip ? hoofd(a.slice(5)) : a;
+  el.append(lbl, kop, tekst);
+  if (t) {
+    const r = document.createElement('p'); r.className = 'uk-tool'; r.append('Past erbij: ');
+    const l = document.createElement('a'); l.href = t.path; l.textContent = t.title;
+    if (t.icon) { const img = document.createElement('img'); img.src = 'data:image/svg+xml,' + encodeURIComponent(t.icon); img.alt = ''; l.prepend(img); }
+    r.append(l); el.append(r);
+  }
 }
 $('nieuw').addEventListener('click', () => {
   if (!st.themas.length) { toast('Kies eerst een thema.'); return; }
@@ -1620,7 +1665,7 @@ if (!st.kaart.length && st.themas.length) { st.kaart = maakKaart(); }
 render(false);
 /* Voor tests: window.bingo */
 window.__tw = toonWoord;
-window.bingo = { GEWOON, THEMAS, rijen, leesEigen, maakKaart, pool, staat:() => kopie(), vink:i => vinkAan(i) };
+window.bingo = { TOOL_BIJ, GEWOON, THEMAS, rijen, leesEigen, maakKaart, pool, staat:() => kopie(), vink:i => vinkAan(i) };
 
 /* ---------- Delen: de kaart als afbeelding, met de link erbij ----------
    Op een gsm opent het deelmenu van het toestel; lukt dat niet, dan download je de afbeelding. */
