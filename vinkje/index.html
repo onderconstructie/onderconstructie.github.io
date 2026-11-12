@@ -139,7 +139,9 @@ button { background:none; border:0; cursor:pointer; }
 .done-head.closed svg { transform:rotate(-90deg); }
 .done-head .clear { margin-left:auto; font-weight:500; color:var(--slate-500); padding:0.125rem 0.375rem; border-radius:6px; }
 .done-head .clear:hover { color:var(--rood); background:#fef2f2; }
-.done-head:focus-visible { outline-offset:-3px !important; }   /* de kaart knipt een ring buiten de knop af */
+.done-toggle { flex:1; min-width:0; min-height:44px; margin:-0.5rem 0; display:flex; align-items:center; gap:0.5rem; padding:0; border:0; background:none; font:inherit; color:inherit; text-align:left; cursor:pointer; }
+.done-head .clear { border:0; background:none; font:inherit; cursor:pointer; }
+.done-toggle:focus-visible { outline-offset:-3px !important; }   /* de kaart knipt een ring buiten de knop af */
 
 .empty { padding:2rem 1.25rem 2.25rem; text-align:center; color:var(--slate-500); font-size:0.9375rem; }
 .empty strong { display:block; color:var(--slate-600); font-weight:600; margin-bottom:0.25rem; }
@@ -1397,11 +1399,10 @@ window.ocProjectkiezer = function (plek, o) {
 
     <ul class="items" id="open-items"></ul>
     <div class="empty" id="empty" hidden></div>
-    <button class="done-head" id="done-head" hidden aria-expanded="true">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
-      <span id="done-label"></span>
-      <span class="clear" id="done-clear" role="button" tabindex="0" aria-label="Afgevinkte items wissen">wis</span>
-    </button>
+    <div class="done-head" id="done-head" hidden>
+      <button type="button" class="done-toggle" id="done-toggle" aria-expanded="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg><span id="done-label"></span></button>
+      <button type="button" class="clear" id="done-clear" aria-label="Afgevinkte items wissen">wis</button>
+    </div>
     <ul class="items" id="done-items"></ul>
   </section>
   <div class="export-row" id="export-row" hidden>
@@ -2066,7 +2067,7 @@ function render() {
   $('done-items').hidden = !state.doneOpen;
   $('done-head').hidden = done.length === 0;
   $('done-head').classList.toggle('closed', !state.doneOpen);
-  $('done-head').setAttribute('aria-expanded', String(state.doneOpen));
+  $('done-toggle').setAttribute('aria-expanded', String(state.doneOpen));
   $('done-label').textContent = `Afgevinkt (${done.length})`;
 
   const total = l.items.length, pct = total ? Math.round(done.length / total * 100) : 0;
