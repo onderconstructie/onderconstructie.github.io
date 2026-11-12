@@ -16,6 +16,7 @@ Ze draaien met Node en Playwright tegen een lokale kopie van de hele site (app e
 | `robuust.js` | Kapotte bewaarde gegevens en een volle opslag geven nooit een fout of een lege pagina; zoeken en toetsenbord in de app. |
 | `offline.js` | Na één bezoek opent elke tool zonder netwerk. |
 | `ideeenkaart.js` | Ideeënkaart: de plusjes aan een gekozen idee, en een idee verslepen (muis en aanraken), met Ongedaan en Esc. |
+| `kompas.js` | Kompas: nagebootste metingen van de sensor (Android en iPhone), de korte weg over het noorden, de melding zonder sensor, geen verkeer naar buiten. |
 
 Elk script eindigt met een telling. `proces.js`, `projectkeuze.js` en `ideeenkaart.js` moeten op `fouten: 0` uitkomen.
 Ze draaien nog niet mee in de automatische test: daarvoor moeten alle tools onder één lokaal adres staan.
