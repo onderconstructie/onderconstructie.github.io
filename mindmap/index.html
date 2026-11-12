@@ -2048,7 +2048,11 @@ let shownFit = true;
 const COARSE = matchMedia('(pointer:coarse)').matches || !matchMedia('(hover:hover)').matches;
 function fitNow() {
   if (state.fit != null) return state.fit;
-  if (window.innerWidth < 700) return true;   // op een telefoon eerst de hele kaart, met Ware grootte om in te zoomen
+  if (window.innerWidth < 700) {   // op een telefoon eerst de hele kaart, met Ware grootte om in te zoomen
+    // Een boom die daarvoor te klein moet worden (onleesbaar), opent op ware grootte, met het eindresultaat in het midden. Hele boom blijft één tik ver.
+    const m = cur(), c = $('canvas'), s = c && c.querySelector('svg');
+    return !(isBoom(m) && c && s && (c.clientWidth - 16) / +s.getAttribute('width') < 0.6);
+  }
   const c = $('canvas'), s = c && c.querySelector('svg');
   return !c || !s || (c.clientWidth - 24) / +s.getAttribute('width') >= (window.innerWidth >= 1000 ? 0.7 : 0.8);
 }

@@ -36,7 +36,7 @@ const { chromium } = require('playwright'); const B = (process.env.BASE || 'http
   // aanraken: lang vasthouden en slepen (pointer events van het type touch)
   const t = await b.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, serviceWorkers: 'block' }); const q = await t.newPage(), E2 = []; q.on('pageerror', e => E2.push(String(e).slice(0, 140)));
   await q.addInitScript(() => { try { localStorage.setItem('oc.welkom', '1'); } catch (e) {} }); await q.goto(B + '/mindmap/?sjabloon=productboom', { waitUntil: 'networkidle' }); await q.waitForTimeout(900);
-  await q.click('[data-act="fit"]').catch(() => {}); await q.waitForTimeout(500);
+  await q.waitForTimeout(300);   // een grote boom opent op een gsm op ware grootte
   const res = await q.evaluate(async () => { const zoek = t => [...document.querySelectorAll('#canvas g[data-node]')].find(g => g.textContent.replace(/\s+/g, ' ').includes(t)); const c = document.getElementById('canvas');
     const a = zoek('Welke delen horen'); a.scrollIntoView({ block: 'center', inline: 'center' }); const ra = a.querySelector('rect:last-of-type').getBoundingClientRect(), d = zoek('Eerste deelresultaat'), rd = d.querySelector('rect:last-of-type').getBoundingClientRect();
     const ev = (type, x, y) => (document.elementFromPoint(x, y) || document.body).dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: 7, pointerType: 'touch', isPrimary: true, clientX: x, clientY: y, button: 0 }));
