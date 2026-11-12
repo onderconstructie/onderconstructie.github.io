@@ -16,7 +16,22 @@
 <link rel="stylesheet" href="/fonts/fonts.css">
 <link rel="preload" href="/fonts/dm-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/dm-sans-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
-<style>html.oc-wacht body > .main, html.oc-wacht body > .footer { visibility:hidden; animation:oc-toon 0s 2.5s forwards; } @keyframes oc-toon { to { visibility:visible; } }</style>
+<style>html.oc-wacht body > .main, html.oc-wacht body > .footer { visibility:hidden; animation:oc-toon 0s 2.5s forwards; } @keyframes oc-toon { to { visibility:visible; } }/* oc-start-gelijk: op een gsm staan de startknoppen onder elkaar, even breed, met overal hetzelfde ritme */
+@media (max-width:640px) {
+  .oc-start-btns.oc-start-btns, .oc-start.start-card .btns { display:grid; grid-template-columns:minmax(0,17rem); justify-content:center; gap:0.625rem; margin-top:1rem; }
+  .oc-start-btns.oc-start-btns > *, .oc-start.start-card .btns > * { width:100%; min-height:48px; margin:0; justify-content:center; text-align:center; }
+  .oc-start.oc-start .oc-open-row, .oc-start.oc-start .oc-imp-rij { margin:0.375rem 0 0; padding:0; }
+  .oc-start.oc-start { gap:0; }
+  .oc-start.oc-start .oc-open-link, .oc-start.oc-start .oc-import { margin-top:0; }
+  .oc-start-btns.oc-start-btns + *, .oc-start.start-card .btns + * { margin-top:0.375rem; }
+  .oc-start > p:first-child, .oc-start > span:first-child, .oc-start > strong + p { font-size:0.9375rem; line-height:1.55; }
+  .oc-start > p:first-child, .oc-start > strong + p { margin-bottom:0; }
+  .oc-start .oc-imp-rij:not(:has(.oc-import:not([hidden]))) { display:none; }
+  .oc-start.empty, .oc-start.card, .oc-start.empty-board { padding:1.5rem 1.25rem; }
+}
+.oc-start.start-card .btns .btn-ghost { background:#ecfdf5; color:#047857; border-color:transparent; box-shadow:inset 0 0 0 1px #a7f3d0; }
+.oc-start.start-card .btns .btn-ghost:hover { background:#d1fae5; }
+</style>
 <script>document.documentElement.classList.add('oc-wacht');</script>
 <style>
 :root {
@@ -2523,7 +2538,9 @@ function publish() {
     // ideeën zonder subtakken zijn de concrete punten; de hoofdtak gaat mee als notitie.
     // De hoofdtak zegt ook wat het is: onder "Wie" of "Betrokkenen" staan mensen, onder "Risico's" risico's. De rest is werk.
     const kop = [];   // de tak boven elk niveau
-    m.nodes.forEach((n, i) => { kop[n.level] = n.text.trim(); if (n.level === 1) main = n.text.trim(); if (n.level >= 1 && n.text.trim() && !n.hint && !n.van && !hasKids(m.nodes, i)) items.push({ type: n.level > 1 ? soortVan(kop[n.level - 1]) : 'taak', text:n.text.trim(), note: n.level > 1 ? main || undefined : undefined }); });
+    // Een deel waaronder alleen nog vragen uit het sjabloon staan, is zelf het concrete punt: het gaat mee als taak.
+    const eigenKids = i => { for (let j = i + 1; j < m.nodes.length && m.nodes[j].level > m.nodes[i].level; j++) if (m.nodes[j].text.trim() && !m.nodes[j].hint) return true; return false; };
+    m.nodes.forEach((n, i) => { kop[n.level] = n.text.trim(); if (n.level === 1) main = n.text.trim(); if (n.level >= 1 && n.text.trim() && !n.hint && !n.van && !eigenKids(i)) items.push({ type: n.level > 1 ? soortVan(kop[n.level - 1]) : 'taak', text:n.text.trim(), note: n.level > 1 ? main || undefined : undefined }); });
     // Mijlpalen voor de Tijdlijn (zonder datum): de delen van een productboom ("Product af: …") en wat onder een tak "Mijlpalen" staat.
     // Alleen eigen tekst, geen vragen uit het sjabloon. De taken hierboven blijven zoals ze waren.
     const pboom = m.sjabloon === 'productboom' || (isBoom(m) && m.name === 'Productboom');

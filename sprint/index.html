@@ -150,6 +150,8 @@ a { color:var(--accent-dark); }
 .pill.rondes { font-weight:500; background:transparent; color:var(--slate-500); padding-left:0; }
 .past-btn { display:inline-flex; align-items:center; gap:0.25rem; min-height:44px; padding:0 0.625rem; border-radius:999px; border:1px solid var(--accent-200); background:var(--wit); color:var(--accent-dark); font-size:0.8125rem; font-weight:600; }
 .past-btn:hover { background:var(--accent-50); border-color:var(--accent); }
+.cap-team { margin:0.5rem 0 0; } .cap-team[hidden] { display:none; }
+.team-card button.oc-import.oc-imp2 { margin:0.5rem 1.125rem 0; max-width:calc(100% - 2.25rem); }
 .past-btn svg { width:14px; height:14px; }
 .est-btn { width:5.5rem; min-height:52px; padding:0.25rem 0.5rem; border-radius:12px; border:1.5px solid var(--slate-200); background:var(--wit); display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.1; font-variant-numeric:tabular-nums; }
 .est-btn b { font-size:1.125rem; font-weight:700; color:var(--slate-800); }
@@ -515,6 +517,21 @@ input::placeholder, textarea::placeholder { color:#64748b; opacity:1; }
 .main { max-width:1200px; margin-left:auto; margin-right:auto; }
 /* Een lang woord in een smal vak breekt af met een streepje op een lettergreep, niet midden in het woord */
 .st-title { -webkit-hyphens:auto; hyphens:auto; }
+/* oc-start-gelijk: op een gsm staan de startknoppen onder elkaar, even breed, met overal hetzelfde ritme */
+@media (max-width:640px) {
+  .oc-start-btns.oc-start-btns, .oc-start.start-card .btns { display:grid; grid-template-columns:minmax(0,17rem); justify-content:center; gap:0.625rem; margin-top:1rem; }
+  .oc-start-btns.oc-start-btns > *, .oc-start.start-card .btns > * { width:100%; min-height:48px; margin:0; justify-content:center; text-align:center; }
+  .oc-start.oc-start .oc-open-row, .oc-start.oc-start .oc-imp-rij { margin:0.375rem 0 0; padding:0; }
+  .oc-start.oc-start { gap:0; }
+  .oc-start.oc-start .oc-open-link, .oc-start.oc-start .oc-import { margin-top:0; }
+  .oc-start-btns.oc-start-btns + *, .oc-start.start-card .btns + * { margin-top:0.375rem; }
+  .oc-start > p:first-child, .oc-start > span:first-child, .oc-start > strong + p { font-size:0.9375rem; line-height:1.55; }
+  .oc-start > p:first-child, .oc-start > strong + p { margin-bottom:0; }
+  .oc-start .oc-imp-rij:not(:has(.oc-import:not([hidden]))) { display:none; }
+  .oc-start.empty, .oc-start.card, .oc-start.empty-board { padding:1.5rem 1.25rem; }
+}
+.oc-start.start-card .btns .btn-ghost { background:#ecfdf5; color:#047857; border-color:transparent; box-shadow:inset 0 0 0 1px #a7f3d0; }
+.oc-start.start-card .btns .btn-ghost:hover { background:#d1fae5; }
 </style>
 <script>
 /* oc-opslag v1 begin */
@@ -1477,6 +1494,7 @@ window.ocProjectkiezer = function (plek, o) {
         <div class="label">Wat past er in deze sprint</div>
         <div class="cap-top" aria-live="polite" aria-atomic="true"><span class="cap-big" id="cap-big">0</span><span class="cap-unit">halve dagen<b id="cap-days">= 0 dagen</b></span></div>
         <p class="cap-why" id="cap-why"></p>
+        <p class="cap-team" id="cap-team" hidden><button type="button" class="past-btn" data-addmember>Teamlid toevoegen</button></p>
         <div class="meter" id="meter" role="img" aria-label=""><i class="m-in" id="m-in"></i><i class="m-free" id="m-free"></i><i class="m-over" id="m-over"></i><span class="m-cap" id="m-cap" hidden></span></div>
         <p class="meter-txt" id="meter-txt"></p>
       </div>
@@ -1487,6 +1505,7 @@ window.ocProjectkiezer = function (plek, o) {
       <div class="team-cols" id="team-cols" aria-hidden="true"><span>Naam</span><span>Dagen</span><span>Deel</span><span></span></div>
       <ul class="team" id="team"></ul>
       <p class="team-empty" id="team-empty">Nog niemand. Voeg de mensen toe die aan deze sprint werken.</p>
+      <button type="button" class="oc-import" data-oc-types="betrokkene" id="oc-imp-team" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11M7.5 9.5L12 14l4.5-4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>Overnemen uit…</button>
       <button type="button" class="add-btn" id="tm-add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Teamlid</button>
       <p class="hint"><b>Dagen</b>: hoeveel dagen iemand er deze sprint is. Verlof gaat eraf. <b>Deel</b>: welk deel van die tijd naar sprintwerk gaat.</p>
     </section>
@@ -3239,8 +3258,9 @@ function renderCap() {
   $('cap-big').textContent = fmtU(f.cap);
   $('cap-days').textContent = '= ' + dagen(f.cap);
   const half = Math.round(persondays * 2 * 100) / 100, rounded = Math.abs(persondays * 2 * (1 - s.buffer / 100) - f.cap) > 1e-6;
+  $('cap-team').hidden = !!s.team.length;   // nog geen team: de knop staat erbij, je moet niet zoeken
   $('cap-why').textContent = !s.team.length
-    ? 'Voeg teamleden toe. Dan zie je hier hoeveel werk er in deze sprint past.'
+    ? 'Voeg eerst je team toe. Dan zie je hier hoeveel werk er in deze sprint past.'
     : `Het team heeft samen ${nl(persondays)} ${persondays === 1 ? 'dag' : 'dagen'} voor sprintwerk: ${nl(half)} halve ${half === 1 ? 'dag' : 'dagen'}. ` +
       (s.buffer ? `Je houdt ${s.buffer}% vrij voor onvoorzien. ` : 'Je houdt niets vrij voor onvoorzien. ') +
       (s.buffer || rounded ? `Er past dus ${fmtU(f.cap)}${rounded ? ', naar beneden afgerond' : ''}.` : '');
@@ -3665,7 +3685,19 @@ $('kaart-btn').addEventListener('click', () => {
 /* ---------- Overnemen uit andere tools ---------- */
 // Wat deze sprint al heeft: de kiezer grijst het uit, en de knop telt het niet als nieuw
 const ocAlStories = () => cur().stories.map(x => x.title);
-window.ocHave = types => { try { return types.some(t => t === 'taak' || t === 'actie') ? ocAlStories() : []; } catch { return []; } };
+window.ocHave = types => { try { return types.some(t => t === 'taak' || t === 'actie') ? ocAlStories() : types.includes('betrokkene') ? cur().team.map(m => m.name) : []; } catch { return []; } };
+// Het team overnemen: mensen die al in een andere tool staan (RACI-matrix, Betrokkenenradar, Takenbord). Elk krijgt de dagen van de sprint; pas ze aan per persoon.
+document.addEventListener('click', async e => {
+  if (!e.target.closest('#oc-imp-team')) return;
+  e.preventDefault();
+  const s0 = cur(), picked = await ocShare.pick({ types:['betrokkene'], self:OC_ID, title:'Teamleden overnemen', intro:'Kies wie aan deze sprint werkt. Ze krijgen de dagen van de sprint; pas die daarna aan per persoon.', have:s0.team.map(m => m.name), vink:false, notes:false });
+  if (!picked.length) return;
+  const s = cur(), have = new Set(s.team.map(m => ocNorm(m.name))), restore = snapshot(); let n = 0;
+  picked.forEach(p => { const naam = String(p.text || '').replace(/\s*[\r\n]+\s*/g, ' ').trim().slice(0, 60); if (!naam || have.has(ocNorm(naam))) return; have.add(ocNorm(naam)); s.team.push({ id:uid(), name:naam, days:s.days, pct:100 }); n++; });
+  if (!n) { toast('Die staan al in je team'); return; }
+  save(); render(); toast(n === 1 ? '1 teamlid overgenomen' : n + ' teamleden overgenomen', restore);
+  const el = document.querySelector('.team-card'); if (el) el.scrollIntoView({ block:'nearest' });
+});
 document.addEventListener('click', async e => {
   if (!e.target.closest('#oc-imp')) return;
   e.preventDefault();
