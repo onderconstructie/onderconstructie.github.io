@@ -1856,11 +1856,37 @@ function valid(s) {
   if (s.viewV !== 2) { s.view = 'draw'; s.viewV = 2; }
   return { ...fresh(), ...s, flows:s.flows };
 }
+/* ---------- Het proces van het stappenplan ----------
+   In de app kies je een project (in "Verbeter een proces" is dat je proces). Elke stroom onthoudt bij welk project ze hoort (proj).
+   Kies je in de app een ander project, dan opent de tool wat daarbij hoort, of begint ze er een nieuwe voor.
+   Wat je zelf opende (een bestand) blijft open staan tot je een ander project kiest (oc.keuze). */
+function ocProj() { try { const p = JSON.parse(localStorage.getItem('oc.project')); const n = p && typeof p.name === 'string' ? p.name.trim().slice(0, 80) : ''; if (!n || /^((mijn|nieuwe?) )?(project|proces)( \d+)?$|^naamloos$/i.test(n)) return null; return { n, s: String(p.since || n), oud: Array.isArray(p.oud) ? p.oud.filter(x => typeof x === 'string') : [] }; } catch { return null; } }
+function ocKeuzeSleutel() { return 'oc.keuze.' + location.pathname.replace(/index\.html$/, ''); }
+function ocKeuzeNu() { try { const p = JSON.parse(localStorage.getItem('oc.project')); return p && p.name ? String(p.since || p.name) : ''; } catch { return ''; } }
+function ocEigenKeuze() { try { const s = ocKeuzeNu(); return !!s && localStorage.getItem(ocKeuzeSleutel()) === s; } catch { return false; } }
+function ocEigenZet() { try { const s = ocKeuzeNu(); if (s) localStorage.setItem(ocKeuzeSleutel(), s); } catch {} }
+// Wat je hier begint of van jou maakt, hoort bij het actieve project. naam(x, n): geef het de naam van het project als dat past.
+function ocMerk(x, naam) { const p = ocProj(); if (p && x && !x.voorbeeld) { x.proj = p.n; if (naam) naam(x, p.n); } return x; }
+// Geeft true als er iets veranderde (de tool tekent dan opnieuw). Bewaren gebeurt pas bij je eerste wijziging.
+function ocVolg() {
+  const p = ocProj(); if (!p || ocEigenKeuze()) return false;
+  const L = state.flows, echt = L.filter(x => x && !x.voorbeeld), c = L.find(x => x.id === state.current);
+  if (c && !c.voorbeeld && c.proj === p.n) return false;
+  const u = echt.find(x => x.proj === p.n) || echt.find(x => x.proj && p.oud.includes(x.proj)) || echt.find(x => !x.proj && (x => x.name)(x) === p.n);
+  if (u) { u.proj = p.n; state.current = u.id; return true; }
+  const eerste = state.ocSince == null; if (state.ocSince === p.s) return false; state.ocSince = p.s;
+  if (!echt.length) return false;   // nog niets: de startkaart. Begin geeft het de naam van je proces
+  const los = echt.filter(x => !x.proj);
+  if (eerste && echt.length === 1 && los.length === 1) { los[0].proj = p.n; state.current = los[0].id; return true; }   // je enige werk van vroeger hoort bij dit project
+  const x = (n => newFlow(n))(p.n); x.proj = p.n; L.push(x); state.current = x.id; return true;
+}
 function load() { const d = ocLees(KEY);   // onleesbaar: de opslaglaag zet de ruwe tekst apart en meldt het
   try { if (d && Array.isArray(d.flows)) return valid(d); } catch {}
   ocKapot(KEY);   // de tool kan niet gebruiken wat er staat: een kopie apart (niets als er niets staat)
   return fresh(); }
 let state = load(), saves = 0, editId = null, newLaneId = null, licht = null;   // licht: de stap of rol die oplicht na Toon in de procescheck   // editId: de stap die open staat in het bewerkpaneel
+ocVolg();   // het actieve project van de app: open wat erbij hoort
+addEventListener('storage', e => { if (e.key === 'oc.project' && e.newValue !== e.oldValue && ocVolg()) { save(); render(); } });
 function save() {
   ocSchrijf(KEY, JSON.stringify(state));   // mislukt het, dan meldt de opslaglaag het (met Bewaar als bestand)
   saves++; clearTimeout(save.t); save.t = setTimeout(publish, 300);
@@ -2330,7 +2356,7 @@ document.addEventListener('click', async e => {
       if (n.type === 'stap' && !n.text.trim() && t.dataset.type === 'keuze') { Object.assign(n, node('keuze', '', n.lane), { id:n.id }); save(); openNode(n.id, { focus:true }); return; }
       if (n.type === 'stap' && !n.text.trim() && t.dataset.type === 'stap') { openNode(n.id, { focus:true }); return; }
       const x = node(t.dataset.type, '', n.lane); f.nodes.splice(n.type === 'einde' ? i : i + 1, 0, x); save(); openNode(x.id, { focus:true }); return; }
-    case 'new-flow': { const x = newFlow(state.flows.length ? 'Stroom ' + (state.flows.length + 1) : 'Mijn stroom'); state.flows.push(x); state.current = x.id; save(); openNode(x.nodes[1].id, { focus:true }); return; }
+    case 'new-flow': { const x = ocMerk(newFlow(state.flows.length ? 'Stroom ' + (state.flows.length + 1) : 'Mijn stroom'), (x, n) => { if (!state.flows.some(f => f.name === n)) x.name = n; }); state.flows.push(x); state.current = x.id; save(); openNode(x.nodes[1].id, { focus:true }); return; }
     case 'example': example(); return;
     case 'add': {
       const last = f.nodes[f.nodes.length - 1], before = last && last.type === 'einde' && t.dataset.type !== 'einde' ? f.nodes.length - 1 : f.nodes.length;
@@ -2344,7 +2370,7 @@ document.addEventListener('click', async e => {
     case 'del-lane': { const undo = snapshot(); f.lanes = f.lanes.filter(l => l.id !== id); f.nodes.forEach(m => { if (m.lane === id) m.lane = f.lanes[0] ? f.lanes[0].id : null; }); save(); render(); toast('Rol verwijderd', undo); return; }
     case 'del-flow': delFlow(); return;
     case 'vb-wis': { const undo = snapshot(); state.flows = state.flows.filter(x => !x.voorbeeld); state.current = (state.flows[0] || {}).id || null; save(); render(); toast('Voorbeeld gewist', undo); return; }
-    case 'vb-eigen': f.voorbeeld = false; save(); render(); toast('Het voorbeeld is nu van jou'); return;
+    case 'vb-eigen': f.voorbeeld = false; ocMerk(f); save(); render(); toast('Het voorbeeld is nu van jou'); return;
     case 'fit': if (zoomZ != null) { state.fit = !zoomFit; zoomZ = null; } else state.fit = !fitNow(isBpmn(f)); saveUi(); render(); return;
     case 'notatie': { const nw = t.dataset.n === 'bpmn'; if (nw === isBpmn(f)) return; if (nw) f.weergave = 'bpmn'; else delete f.weergave; zoomZ = null; editId = null; saveUi(); render(); return; }
     case 'goto': openNode(id, { focus:true }); return;
@@ -3075,6 +3101,7 @@ ocFileIn.addEventListener('change', async () => {
   let g; try { g = await ocBestand.lees(file); } catch (err) { toast(ocBestand.melding(err)); return; }
   if (state.flows.some(x => !x.voorbeeld) && !await ocConfirm('Dit vervangt wat nu in Stroom staat. Doorgaan?', 'Wil je je huidige werk houden? Kies dan Annuleer en eerst Bewaar als bestand.', 'Vervang')) return;
   if (!ocBestand.zetTerug(g)) return;
+  ocEigenZet();   // wat je net opende, blijft open staan
   try { sessionStorage.setItem('oc.bestand.terug', '1'); } catch {}
   location.reload();
 });
@@ -3087,7 +3114,7 @@ window.ocPk = ocProjectkiezer('#ocKiezer', {
   lijst: () => state.flows.map(x => { const n = x.nodes.filter(k => k.type !== 'start' && k.type !== 'einde').length; return { id: x.id, naam: x.name || 'Stroom', voorbeeld: !!x.voorbeeld, info: n ? `${n} ${n === 1 ? 'stap' : 'stappen'}` : 'leeg' }; }),
   actief: () => (cur() || {}).id,
   kies: id => { state.current = id; bpmnMeld = null; save(); render(); },
-  nieuw: () => { const x = newFlow('Nieuwe stroom'); state.flows.push(x); state.current = x.id; save(); render(); },   // daarna vraagt de kiezer de naam
+  nieuw: () => { const x = ocMerk(newFlow('Nieuwe stroom')); state.flows.push(x); state.current = x.id; save(); render(); },   // daarna vraagt de kiezer de naam
   hernoem: n => { const f = cur(); if (!f) return; f.name = n.slice(0, 80); save(); render(); },
   verwijder: () => delFlow(),
   magWeg: () => true   // zoals de vuilbak: ook de laatste stroom mag weg, dan staat de startkaart er weer

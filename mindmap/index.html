@@ -211,6 +211,21 @@ body { overflow-wrap:break-word; }
 .mm-bar button.add:hover { background:var(--accent-50); }
 .mm-bar button.del:hover { background:#fef2f2; color:#b91c1c; }
 .mm-bar svg { width:17px; height:17px; flex-shrink:0; }
+/* Plusjes aan het gekozen idee: eronder en ernaast. Het tikdoel is 44 px, het bolletje 28 px. */
+.mm-plus { position:absolute; z-index:5; width:44px; height:44px; padding:0; border:0; background:none; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+.mm-plus span { width:28px; height:28px; border-radius:50%; background:#0c8660; color:#fff; border:2px solid #fff; box-shadow:0 4px 12px rgba(15,23,42,0.22); display:flex; align-items:center; justify-content:center; transition:transform 0.12s; }
+.mm-plus svg { width:16px; height:16px; }
+.mm-plus:hover span { background:#047857; transform:scale(1.12); }
+.mm-plus:focus-visible { outline:none; } .mm-plus:focus-visible span { outline:2px solid #047857; outline-offset:2px; }
+/* Verslepen: het idee volgt je vinger of muis; een groene rand (erin) of streep (ervoor, erna) toont waar het landt */
+#canvas svg { -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+#canvas.sleept, #canvas.sleept g[data-node] { cursor:grabbing; }
+#canvas.sleept g[data-node].bron { opacity:0.35; }
+.mm-geest { position:fixed; z-index:50; pointer-events:none; max-width:14rem; padding:0.375rem 0.625rem; border-radius:10px; background:#fff; border:2px solid #0c8660; color:var(--slate-800); font-size:0.875rem; font-weight:600; line-height:1.3; box-shadow:0 12px 28px rgba(15,23,42,0.22); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; transform:translate(12px, 14px); }
+.mm-doel { position:absolute; z-index:4; pointer-events:none; border-radius:12px; }
+.mm-doel.in { border:3px solid #0c8660; background:rgba(16,185,129,0.12); }
+.mm-doel.lijn { background:#0c8660; border-radius:3px; box-shadow:0 0 0 2px #fff; }
+@media (prefers-reduced-motion:reduce) { .mm-plus span { transition:none; } }
 .mm-edit { position:absolute; z-index:6; font:inherit; font-size:16px; font-weight:600; text-align:center; padding:0.25rem 0.5rem; border:2px solid var(--accent-dark); border-radius:10px; background:var(--wit); color:var(--slate-800); box-shadow:0 8px 24px rgba(15,23,42,0.14); outline:none; }
 .mm-tip { position:absolute; z-index:6; font-size:0.75rem; color:var(--slate-600); text-align:center; pointer-events:none; }
 .mm-tip { background:var(--wit); border-radius:6px; padding:1px 4px; box-shadow:0 2px 8px rgba(15,23,42,0.10); }
@@ -2121,8 +2136,8 @@ function render() {
           <button type="button" class="zoom" data-export="png" aria-label="Download als afbeelding">Afbeelding</button><button type="button" class="zoom" data-export="pdf" aria-label="Download als PDF">PDF</button></div>
         <div class="canvas" id="canvas" tabindex="0" aria-label="${boom ? 'Boom. Druk Enter om een idee te kiezen. Pijl omlaag gaat naar het eerste idee eronder, omhoog naar het idee erboven, links en rechts naar de buren.' : 'Kaart. Druk Enter om een idee te kiezen, dan pijltjes.'} Enter voegt een idee toe, Tab een subidee, F2 wijzigt, Esc stopt.">${svgOf(m, { ui:true, sel:sel.id })}</div>
         <p class="hint-s">${!COARSE
-          ? 'Klik op een idee om het te kiezen. Enter voegt een idee ernaast toe, Tab een subidee. Dubbelklik of begin te typen om de tekst te wijzigen.'
-          : 'Tik op een idee om het te kiezen; tik nog eens om te wijzigen. Knijp met twee vingers om in of uit te zoomen.'}</p>
+          ? 'Klik op een idee: met de plusjes voeg je er een onder of naast toe. Sleep een idee naar een andere plek. Dubbelklik of begin te typen om de tekst te wijzigen.'
+          : 'Tik op een idee om het te kiezen; tik nog eens om te wijzigen. Houd een idee even vast om het te verslepen. Knijp met twee vingers om in of uit te zoomen.'}</p>
       </section>
       <section class="card" ${view === 'edit' ? '' : 'hidden'}>
         <div class="card-head">
@@ -2176,20 +2191,27 @@ function overlay() {
     const tip = ui.querySelector('.mm-tip'); if (tip) Object.assign(tip.style, { left: left + 'px', top: (box.y + box.h / 2 + h / 2 + 4) + 'px', width: w + 'px' });
     return;
   }
+  // Plusjes aan het idee zelf, op de plek waar het nieuwe idee komt. Is de tekening te klein verkleind, dan staan de knoppen in de balk.
+  const boom = isBoom(m), plusjes = box.w >= 64 && box.h >= 20, bl = plusjes ? (layout(m).boxes.find(b => b.n.id === n.id) || {}) : {};
+  const onderKind = boom && !bl.inStack;   // boom: een deel eronder; in een kolom of op de kaart staan broers onder elkaar
   ui.innerHTML = `<div class="mm-bar" role="toolbar" aria-label="Acties voor dit idee">
-    <button type="button" class="add" data-mm="child">${ICON.plus}${isBoom(m) ? 'Eronder' : 'Subidee'}</button>
-    ${i ? `<button type="button" class="add" data-mm="sibling">${ICON.plus}Ernaast</button>` : ''}
+    ${plusjes ? '' : `<button type="button" class="add" data-mm="child">${ICON.plus}${boom ? 'Eronder' : 'Subidee'}</button>
+    ${i ? `<button type="button" class="add" data-mm="sibling">${ICON.plus}Ernaast</button>` : ''}`}
     <button type="button" data-mm="edit" aria-label="Tekst wijzigen" title="Tekst wijzigen">${PEN}</button>
     ${kids && i ? `<button type="button" data-mm="toggle" aria-label="${n.collapsed ? 'Tak openklappen' : 'Tak inklappen'}" title="${n.collapsed ? 'Tak openklappen' : 'Tak inklappen'}">${n.collapsed ? ICON.shut : ICON.open}</button>` : ''}
     ${i ? `<button type="button" class="del" data-mm="del" aria-label="Verwijder dit idee${kids ? ' en zijn subtakken' : ''}" title="Verwijderen">${ICON.del}</button>` : ''}
-  </div>`;
+  </div>${plusjes ? `<button type="button" class="mm-plus" data-plek="onder" data-mm="${onderKind || !i ? 'child' : 'sibling'}" aria-label="${onderKind || !i ? 'Voeg een idee eronder toe' : 'Voeg een idee eronder toe, op hetzelfde niveau'}" title="${onderKind || !i ? 'Eronder toevoegen' : 'Nog een, eronder'}"><span>${ICON.plus}</span></button>
+    ${i ? `<button type="button" class="mm-plus" data-plek="zij" data-mm="${onderKind ? 'sibling' : 'child'}" aria-label="${onderKind ? 'Voeg een idee ernaast toe' : 'Voeg een subidee toe'}" title="${onderKind ? 'Ernaast toevoegen' : 'Subidee toevoegen'}"><span>${ICON.plus}</span></button>` : ''}` : ''}`;
+  if (plusjes) { const links = !boom && bl.dir < 0;
+    ui.querySelectorAll('.mm-plus').forEach(k => { const onder = k.dataset.plek === 'onder' && (boom || i > 0);
+      Object.assign(k.style, onder ? { left: (box.x + box.w / 2 - 22) + 'px', top: (box.y + box.h - 6) + 'px' } : { left: (links ? box.x - 38 : box.x + box.w - 6) + 'px', top: (box.y + box.h / 2 - 22) + 'px' }); }); }
   const bar = ui.firstElementChild, bw = bar.offsetWidth, bh = bar.offsetHeight;
   const left = Math.max(c.scrollLeft + 4, Math.min(box.x + box.w / 2 - bw / 2, c.scrollLeft + c.clientWidth - bw - 4));
   // Boven of onder het idee: waar de balk de minste andere ideeën bedekt (gelijk: boven)
   const others = [...c.querySelectorAll('[data-node]')].filter(g => g.dataset.node !== sel.id).map(g => g.querySelector('rect:last-of-type').getBoundingClientRect());
   const hits = t => others.filter(r => { const x = r.left - cr.left + c.scrollLeft, y = r.top - cr.top + c.scrollTop; return x < left + bw && x + r.width > left && y < t + bh && y + r.height > t; }).length;
   const up = box.y - bh - 10, down = box.y + box.h + 10;
-  let top = up < c.scrollTop + 2 ? down : hits(up) > hits(down) ? down : up;
+  let top = up < c.scrollTop + 2 ? down + (plusjes ? 30 : 0) : plusjes ? up : hits(up) > hits(down) ? down : up;   // met plusjes: boven, het plusje eronder blijft vrij
   Object.assign(bar.style, { left: left + 'px', top: top + 'px' });
 }
 function reveal() {   // het gekozen idee (en zijn balk) in beeld schuiven
@@ -2808,7 +2830,7 @@ document.addEventListener('pointerdown', e => { if (e.target.closest('.macts but
 (() => {
   let drag = null;
   document.addEventListener('pointerdown', e => {
-    const c = e.target.closest('#canvas'); if (!c || e.target.closest('.mm-ui') || e.pointerType !== 'mouse' || e.button !== 0) return;
+    const c = e.target.closest('#canvas'); if (!c || e.target.closest('.mm-ui') || e.target.closest('[data-node]') || e.pointerType !== 'mouse' || e.button !== 0) return;   // een idee vastpakken is verslepen
     if (c.scrollWidth <= c.clientWidth && c.scrollHeight <= c.clientHeight) return;
     drag = { c, x:e.clientX, y:e.clientY, l:c.scrollLeft, t:c.scrollTop, moved:false };
   });
@@ -2819,6 +2841,70 @@ document.addEventListener('pointerdown', e => { if (e.target.closest('.macts but
   });
   document.addEventListener('pointerup', () => { if (!drag) return; const d = drag; drag = null; d.c.classList.remove('panning');
     if (d.moved) { const stop = ev => { ev.stopPropagation(); ev.preventDefault(); }; document.addEventListener('click', stop, { capture:true, once:true }); setTimeout(() => document.removeEventListener('click', stop, true), 0); } });
+})();
+
+/* ---------- Een idee verslepen naar een andere plek ----------
+   Muis: pak een idee vast en sleep. Aanraken: houd het even vast (scrollen en knijpen blijven werken), sleep dan.
+   Laat los op een ander idee: het komt eronder (in het midden), ervoor of erna (aan de rand). De hele tak verhuist mee.
+   Zonder slepen kan het ook: in de lijst met inspringen en uitspringen, of met Tab en Shift+Tab. Esc annuleert. */
+function verplaatsTak(m, id, doelId, plek) {
+  const i = m.nodes.findIndex(n => n.id === id); if (i < 1) return false;
+  const e = end(m.nodes, i); if (m.nodes.slice(i, e).some(n => n.id === doelId)) return false;   // niet in zijn eigen tak
+  const blok = m.nodes.splice(i, e - i), j = m.nodes.findIndex(n => n.id === doelId); if (j < 0 || (j === 0 && plek !== 'in')) { m.nodes.splice(i, 0, ...blok); return false; }
+  const doel = m.nodes[j], lvl = plek === 'in' ? doel.level + 1 : doel.level, d = lvl - blok[0].level;
+  if (plek === 'in') doel.collapsed = false;
+  blok.forEach(n => { n.level += d; });
+  m.nodes.splice(plek === 'voor' ? j : end(m.nodes, j), 0, ...blok); normalize(m.nodes); return true;
+}
+(() => {
+  let S = null;
+  const weg = () => { if (!S) return; clearTimeout(S.wacht); if (S.geest) S.geest.remove(); if (S.merk) S.merk.remove(); if (S.g) S.g.classList.remove('bron'); const c = $('canvas'); if (c) c.classList.remove('sleept'); S = null; };
+  const start = () => { if (!S || S.aan) return; const m = cur(), n = m && m.nodes.find(x => x.id === S.id), c = $('canvas'); if (!n || !c) { weg(); return; }
+    S.aan = true; c.classList.add('sleept'); S.g.classList.add('bron'); if (sel.bar || sel.id) { sel = { id:S.id, bar:false, edit:null }; overlay(); }
+    S.geest = document.createElement('div'); S.geest.className = 'mm-geest'; S.geest.textContent = n.text || 'Leeg idee'; document.body.appendChild(S.geest);
+    S.merk = document.createElement('div'); S.merk.className = 'mm-doel'; S.merk.hidden = true; c.appendChild(S.merk);
+    const i = m.nodes.indexOf(n); S.tak = new Set(m.nodes.slice(i, end(m.nodes, i)).map(x => x.id));
+    try { navigator.vibrate && navigator.vibrate(12); } catch {} volg(S.x, S.y); };
+  const volg = (x, y) => { S.x = x; S.y = y; S.geest.style.left = x + 'px'; S.geest.style.top = y + 'px';
+    const c = $('canvas'), m = cur(), cr = c.getBoundingClientRect();
+    // aan de rand van de tekening schuift ze mee
+    if (x > cr.right - 36) c.scrollLeft += 14; else if (x < cr.left + 36) c.scrollLeft -= 14; if (y > cr.bottom - 36) c.scrollTop += 14; else if (y < cr.top + 36) c.scrollTop -= 14;
+    const el = document.elementFromPoint(x, y), g = el && el.closest ? el.closest('#canvas g[data-node]') : null; S.doel = null;
+    if (g && !S.tak.has(g.dataset.node)) { const r = g.querySelector('rect:last-of-type').getBoundingClientRect(), j = m.nodes.findIndex(n => n.id === g.dataset.node), bl = layout(m).boxes.find(b => b.n.id === g.dataset.node) || {};
+      const naast = isBoom(m) && !bl.inStack;   // broers naast elkaar (boom) of onder elkaar (kolom, kaart)
+      const t = naast ? (x - r.left) / r.width : (y - r.top) / r.height, plek = j === 0 ? 'in' : t < 0.25 ? 'voor' : t > 0.75 ? 'na' : 'in';
+      S.doel = { id:g.dataset.node, plek }; const L = r.left - cr.left + c.scrollLeft, T = r.top - cr.top + c.scrollTop;
+      S.merk.className = 'mm-doel ' + (plek === 'in' ? 'in' : 'lijn');
+      Object.assign(S.merk.style, plek === 'in' ? { left:(L - 5) + 'px', top:(T - 5) + 'px', width:(r.width + 10) + 'px', height:(r.height + 10) + 'px' }
+        : naast ? { left:(plek === 'voor' ? L - 9 : L + r.width + 3) + 'px', top:(T - 4) + 'px', width:'6px', height:(r.height + 8) + 'px' }
+        : { left:(L - 4) + 'px', top:(plek === 'voor' ? T - 8 : T + r.height + 2) + 'px', width:(r.width + 8) + 'px', height:'6px' }); }
+    S.merk.hidden = !S.doel; };
+  document.addEventListener('pointerdown', e => {
+    const g = e.target.closest && e.target.closest('#canvas g[data-node]'); if (!g || S || sel.edit || (e.pointerType === 'mouse' && e.button !== 0) || e.isPrimary === false) return;
+    const m = cur(); if (!m || !m.nodes.length || m.nodes[0].id === g.dataset.node) return;   // het centrale idee blijft staan
+    S = { id:g.dataset.node, g, pid:e.pointerId, x:e.clientX, y:e.clientY, x0:e.clientX, y0:e.clientY, aan:false, soort:e.pointerType };
+    if (e.pointerType !== 'mouse') S.wacht = setTimeout(start, 380);
+  });
+  document.addEventListener('pointermove', e => {
+    if (!S || e.pointerId !== S.pid) return; const ver = Math.abs(e.clientX - S.x0) + Math.abs(e.clientY - S.y0);
+    if (!S.aan) { if (S.soort === 'mouse') { if (ver < 6) return; S.x = e.clientX; S.y = e.clientY; start(); } else { if (ver > 10) weg(); return; } }
+    if (S && S.aan) { e.preventDefault(); volg(e.clientX, e.clientY); }
+  });
+  const los = (e, annuleer) => { if (!S || (e && e.pointerId != null && e.pointerId !== S.pid)) return; const s = S, was = s.aan; weg(); if (!was) return;
+    const stop = ev => { ev.stopPropagation(); ev.preventDefault(); }; document.addEventListener('click', stop, { capture:true, once:true }); setTimeout(() => document.removeEventListener('click', stop, true), 0);
+    const m = cur(); if (annuleer || !s.doel || !m) { renderMapOnly(); return; }
+    const undo = snapshot(), n = m.nodes.find(x => x.id === s.id), d = m.nodes.find(x => x.id === s.doel.id);
+    if (!verplaatsTak(m, s.id, s.doel.id, s.doel.plek)) { renderMapOnly(); return; }
+    sel = { id:s.id, bar:true, edit:null }; save(); render(); reveal();
+    const waar = s.doel.plek === 'in' ? 'onder' : s.doel.plek === 'voor' ? 'voor' : 'na';
+    toast(`Verplaatst: ${waar} ${(d && d.text) || 'een leeg idee'}`.slice(0, 80), undo); say(`${(n && n.text) || 'Idee'} verplaatst, ${waar} ${(d && d.text) || 'een leeg idee'}.`);
+  };
+  document.addEventListener('pointerup', e => los(e, false));
+  document.addEventListener('pointercancel', e => los(e, true));
+  document.addEventListener('keydown', e => { if (S && S.aan && e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); los(null, true); } }, true);
+  addEventListener('touchmove', e => { if (S && S.aan) e.preventDefault(); }, { passive:false });
+  addEventListener('contextmenu', e => { if (S) e.preventDefault(); });
+  addEventListener('blur', () => los(null, true));
 })();
 
 /* ---------- Zoomen in de tekening: knijpen met twee vingers (gsm, tablet) of Ctrl + scrollwiel (computer) ----------

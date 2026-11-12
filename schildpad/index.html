@@ -1935,15 +1935,41 @@ function valid(s) {
         return o;
       });
     });
-    return { id:id(p.id), ...(p.voorbeeld ? { voorbeeld:true } : {}), ...(p.weergave === 'bpmn' ? { weergave:'bpmn' } : {}), naam:str(p.naam, 100), doel:str(p.doel, 240), eigenaar:str(p.eigenaar, 80), start:str(p.start, 160), einde:str(p.einde, 160), vak };
+    return { id:id(p.id), ...(p.voorbeeld ? { voorbeeld:true } : {}), ...(typeof p.proj === 'string' && p.proj ? { proj:str(p.proj, 80) } : {}), ...(p.weergave === 'bpmn' ? { weergave:'bpmn' } : {}), naam:str(p.naam, 100), doel:str(p.doel, 240), eigenaar:str(p.eigenaar, 80), start:str(p.start, 160), einde:str(p.einde, 160), vak };
   });
-  return { v:1, procs, current: procs.some(p => p.id === s.current) ? s.current : (procs[0] || {}).id || null };
+  return { v:1, procs, current: procs.some(p => p.id === s.current) ? s.current : (procs[0] || {}).id || null, ...(typeof s.ocSince === 'string' ? { ocSince:s.ocSince } : {}) };
+}
+/* ---------- Het proces van het stappenplan ----------
+   In de app kies je een project (in "Verbeter een proces" is dat je proces). Elk proces onthoudt bij welk project het hoort (proj).
+   Kies je in de app een ander project, dan opent de tool wat daarbij hoort, of begint ze er een nieuwe voor.
+   Wat je zelf opende (een bestand) blijft open staan tot je een ander project kiest (oc.keuze). */
+function ocProj() { try { const p = JSON.parse(localStorage.getItem('oc.project')); const n = p && typeof p.name === 'string' ? p.name.trim().slice(0, 80) : ''; if (!n || /^((mijn|nieuwe?) )?(project|proces)( \d+)?$|^naamloos$/i.test(n)) return null; return { n, s: String(p.since || n), oud: Array.isArray(p.oud) ? p.oud.filter(x => typeof x === 'string') : [] }; } catch { return null; } }
+function ocKeuzeSleutel() { return 'oc.keuze.' + location.pathname.replace(/index\.html$/, ''); }
+function ocKeuzeNu() { try { const p = JSON.parse(localStorage.getItem('oc.project')); return p && p.name ? String(p.since || p.name) : ''; } catch { return ''; } }
+function ocEigenKeuze() { try { const s = ocKeuzeNu(); return !!s && localStorage.getItem(ocKeuzeSleutel()) === s; } catch { return false; } }
+function ocEigenZet() { try { const s = ocKeuzeNu(); if (s) localStorage.setItem(ocKeuzeSleutel(), s); } catch {} }
+// Wat je hier begint of van jou maakt, hoort bij het actieve project. naam(x, n): geef het de naam van het project als dat past.
+function ocMerk(x, naam) { const p = ocProj(); if (p && x && !x.voorbeeld) { x.proj = p.n; if (naam) naam(x, p.n); } return x; }
+// Geeft true als er iets veranderde (de tool tekent dan opnieuw). Bewaren gebeurt pas bij je eerste wijziging.
+function ocVolg() {
+  const p = ocProj(); if (!p || ocEigenKeuze()) return false;
+  const L = state.procs, echt = L.filter(x => x && !x.voorbeeld), c = L.find(x => x.id === state.current);
+  if (c && !c.voorbeeld && c.proj === p.n) return false;
+  const u = echt.find(x => x.proj === p.n) || echt.find(x => x.proj && p.oud.includes(x.proj)) || echt.find(x => !x.proj && (x => x.naam)(x) === p.n);
+  if (u) { u.proj = p.n; state.current = u.id; return true; }
+  const eerste = state.ocSince == null; if (state.ocSince === p.s) return false; state.ocSince = p.s;
+  if (!echt.length) return false;   // nog niets: de startkaart. Begin geeft het de naam van je proces
+  const los = echt.filter(x => !x.proj);
+  if (eerste && echt.length === 1 && los.length === 1) { los[0].proj = p.n; state.current = los[0].id; return true; }   // je enige werk van vroeger hoort bij dit project
+  const x = (n => { const x = newProc(); x.naam = n; return x; })(p.n); x.proj = p.n; L.push(x); state.current = x.id; return true;
 }
 function load() { const d = ocLees(KEY);   // onleesbaar: de opslaglaag zet de ruwe tekst apart en meldt het
   try { if (d && Array.isArray(d.procs)) return valid(d); } catch {}
   ocKapot(KEY);   // de tool kan niet gebruiken wat er staat: een kopie apart (niets als er niets staat)
   return fresh(); }
 let state = load(), saves = 0, editing = null;
+ocVolg();   // het actieve project van de app: open wat erbij hoort
+addEventListener('storage', e => { if (e.key === 'oc.project' && e.newValue !== e.oldValue && ocVolg()) { save(); render(); } });
 function save() {
   ocSchrijf(KEY, JSON.stringify(state));   // mislukt het, dan meldt de opslaglaag het (met Bewaar als bestand)
   saves++; clearTimeout(save.t); save.t = setTimeout(publish, 300);
@@ -2236,7 +2262,8 @@ document.addEventListener('click', e => {
     return;
   }
   switch (t.dataset.act) {
-    case 'new': { const x = newProc(); state.procs.push(x); state.current = x.id; editing = null; save(); render(); const n = focusF('p:naam'); reveal(n); return; }
+    case 'new': { const x = ocMerk(newProc(), (x, n) => { if (!state.procs.some(q => q.naam === n)) x.naam = n; }); state.procs.push(x); state.current = x.id; editing = null; save(); render(); const n = focusF('p:naam'); reveal(n); if (x.naam && n && n.select) n.select();   // de naam van je proces staat er al: typen vervangt ze
+      return; }
     case 'example': example(); return;
     case 'vb-wis': { const undo = snapshot(), idx = state.procs.indexOf(p); state.procs = state.procs.filter(x => !x.voorbeeld); state.current = (state.procs[Math.max(0, idx - 1)] || state.procs[0] || {}).id || null; editing = null; save(); render(); toast('Voorbeeld gewist', undo); return; }
     case 'vb-eigen': makeOwn(); return;
@@ -2272,7 +2299,7 @@ async function impWie() {
   toast(ocOvergenomen(n, alTel + dubbel, 'rol', 'rollen'), undo);
 }
 document.addEventListener('visibilitychange', () => { const b = document.querySelector('[data-act="imp-wie"]'); if (b && document.visibilityState === 'visible') b.hidden = !canImpWie(); });
-function makeOwn() { state.procs.forEach(x => { delete x.voorbeeld; }); save(); render(); toast('Het voorbeeld is nu van jou'); }
+function makeOwn() { state.procs.forEach(x => { delete x.voorbeeld; ocMerk(x); }); save(); render(); toast('Het voorbeeld is nu van jou'); }
 
 /* ---------- Slepen (muis en vinger), binnen één vak ---------- */
 let drag = null;
@@ -2773,7 +2800,7 @@ window.ocPk = ocProjectkiezer('#ocKiezer', {
     return { id: x.id, naam: title(x), voorbeeld: !!x.voorbeeld, info: n ? `${n} ${n === 1 ? 'item' : 'items'}` : 'leeg' }; }),
   actief: () => (cur() || {}).id,
   kies: id => { state.current = id; editing = null; save(); render(); },
-  nieuw: () => { const x = newProc(); state.procs.push(x); state.current = x.id; editing = null; save(); render(); const n = focusF('p:naam'); reveal(n); return false; },   // de naam typ je in het schild
+  nieuw: () => { const x = ocMerk(newProc()); state.procs.push(x); state.current = x.id; editing = null; save(); render(); const n = focusF('p:naam'); reveal(n); return false; },   // de naam typ je in het schild
   hernoem: n => { const x = cur(); if (!x) return; x.naam = n.slice(0, 100); save(); render(); },
   verwijder: () => delProc()
 });
@@ -2957,6 +2984,7 @@ window.ocBestand = (function () {
       Storage.prototype.setItem = function (k, v) { if (this === localStorage && eigen(k)) return; return set.call(this, k, v); };
       Storage.prototype.removeItem = function (k) { if (this === localStorage && eigen(k)) return; return rem.call(this, k); };
     } catch (e) {}
+    if (window.ocEigenZet) ocEigenZet();   // wat je net opende, blijft open staan
     location.reload();
   });
 })();

@@ -1802,15 +1802,41 @@ function valid(s) {
     let causes = (Array.isArray(u.causes) ? u.causes : []).filter(c => c && okId(c.id) && ids.has(c.cat)).map(c => ({ id:c.id, cat:c.cat, text:str(c.text, 160), parent: okId(c.parent) ? c.parent : null, likely:!!c.likely, waarom:(Array.isArray(c.waarom) ? c.waarom : []).slice(0, 3).map(x => str(x, 160)), toets:str(c.toets, 240), uit:['ja', 'nee'].includes(c.uit) ? c.uit : '' }));
     const cids = new Set(causes.map(c => c.id));
     causes = causes.map(c => ({ ...c, parent: c.parent && cids.has(c.parent) ? c.parent : null }));
-    return { id: okId(u.id) ? u.id : uid(), voorbeeld:!!u.voorbeeld, probleem:str(u.probleem, 200), cats, causes };
+    return { id: okId(u.id) ? u.id : uid(), voorbeeld:!!u.voorbeeld, ...(typeof u.proj === 'string' && u.proj ? { proj:str(u.proj, 80) } : {}), probleem:str(u.probleem, 200), cats, causes };
   });
-  return { units:s.units, current:s.current };
+  return { units:s.units, current:s.current, ...(typeof s.ocSince === 'string' ? { ocSince:s.ocSince } : {}) };
+}
+/* ---------- Het proces van het stappenplan ----------
+   In de app kies je een project (in "Verbeter een proces" is dat je proces). Elke analyse onthoudt bij welk project ze hoort (proj).
+   Kies je in de app een ander project, dan opent de tool wat daarbij hoort, of begint ze er een nieuwe voor.
+   Wat je zelf opende (een bestand) blijft open staan tot je een ander project kiest (oc.keuze). */
+function ocProj() { try { const p = JSON.parse(localStorage.getItem('oc.project')); const n = p && typeof p.name === 'string' ? p.name.trim().slice(0, 80) : ''; if (!n || /^((mijn|nieuwe?) )?(project|proces)( \d+)?$|^naamloos$/i.test(n)) return null; return { n, s: String(p.since || n), oud: Array.isArray(p.oud) ? p.oud.filter(x => typeof x === 'string') : [] }; } catch { return null; } }
+function ocKeuzeSleutel() { return 'oc.keuze.' + location.pathname.replace(/index\.html$/, ''); }
+function ocKeuzeNu() { try { const p = JSON.parse(localStorage.getItem('oc.project')); return p && p.name ? String(p.since || p.name) : ''; } catch { return ''; } }
+function ocEigenKeuze() { try { const s = ocKeuzeNu(); return !!s && localStorage.getItem(ocKeuzeSleutel()) === s; } catch { return false; } }
+function ocEigenZet() { try { const s = ocKeuzeNu(); if (s) localStorage.setItem(ocKeuzeSleutel(), s); } catch {} }
+// Wat je hier begint of van jou maakt, hoort bij het actieve project. naam(x, n): geef het de naam van het project als dat past.
+function ocMerk(x, naam) { const p = ocProj(); if (p && x && !x.voorbeeld) { x.proj = p.n; if (naam) naam(x, p.n); } return x; }
+// Geeft true als er iets veranderde (de tool tekent dan opnieuw). Bewaren gebeurt pas bij je eerste wijziging.
+function ocVolg() {
+  const p = ocProj(); if (!p || ocEigenKeuze()) return false;
+  const L = state.units, echt = L.filter(x => x && !x.voorbeeld), c = L.find(x => x.id === state.current);
+  if (c && !c.voorbeeld && c.proj === p.n) return false;
+  const u = echt.find(x => x.proj === p.n) || echt.find(x => x.proj && p.oud.includes(x.proj)) || echt.find(x => !x.proj && (() => null)(x) === p.n);
+  if (u) { u.proj = p.n; state.current = u.id; return true; }
+  const eerste = state.ocSince == null; if (state.ocSince === p.s) return false; state.ocSince = p.s;
+  if (!echt.length) return false;   // nog niets: de startkaart. Begin geeft het de naam van je proces
+  const los = echt.filter(x => !x.proj);
+  if (eerste && echt.length === 1 && los.length === 1) { los[0].proj = p.n; state.current = los[0].id; return true; }   // je enige werk van vroeger hoort bij dit project
+  const x = (() => newUnit())(p.n); x.proj = p.n; L.push(x); state.current = x.id; return true;
 }
 function load() { const d = ocLees(KEY);   // onleesbaar: de opslaglaag zet de ruwe tekst apart en meldt het
   try { if (d && Array.isArray(d.units)) return valid(d); } catch {}
   ocKapot(KEY);   // de tool kan niet gebruiken wat er staat: een kopie apart (niets als er niets staat)
   return fresh(); }
 let state = load(), saves = 0;
+ocVolg();   // het actieve project van de app: open wat erbij hoort
+addEventListener('storage', e => { if (e.key === 'oc.project' && e.newValue !== e.oldValue && ocVolg()) { save(); render(); } });
 function save() {
   ocSchrijf(KEY, JSON.stringify(state));   // mislukt het, dan meldt de opslaglaag het (met Bewaar als bestand)
   saves++; clearTimeout(save.t); save.t = setTimeout(publish, 300);
@@ -2029,7 +2055,7 @@ document.addEventListener('click', e => {
   if (t.dataset.unit) { state.current = t.dataset.unit; zoomZ = null; save(); render(); return; }
   const u = cur(), id = t.dataset.id;
   switch (t.dataset.act) {
-    case 'new': { const x = newUnit(); state.units.push(x); state.current = x.id; save(); render(); focusSel('[data-f="probleem"]'); return; }
+    case 'new': { const x = ocMerk(newUnit()); state.units.push(x); state.current = x.id; save(); render(); focusSel('[data-f="probleem"]'); return; }
     case 'example': example(); return;
     case 'fit': zoomZ = null; fitPref = !fitShown; sizeSvg(); return;
     case 'add-sub': { const p = u.causes.find(x => x.id === id), subs = u.causes.filter(x => x.parent === id), last = subs[subs.length - 1] || p, x = cause(p.cat, '', id); u.causes.splice(u.causes.indexOf(last) + 1, 0, x); save(); render(); focusSel(`[data-cid="${x.id}"]:not([data-k])`); return; }
@@ -2042,7 +2068,7 @@ document.addEventListener('click', e => {
     case 'del-cat': { const undo = snapshot(), c = u.cats.find(x => x.id === id), k = u.causes.filter(x => x.cat === id).length; u.cats = u.cats.filter(x => x.id !== id); u.causes = u.causes.filter(x => x.cat !== id); save(); render(); toast(`${c.name || 'Soort'} verwijderd${k ? ` met ${k} ${k === 1 ? 'oorzaak' : 'oorzaken'}` : ''}`, undo); return; }
     case 'del-unit': delUnit(); return;
     case 'vb-wis': { const undo = snapshot(); state.units = state.units.filter(x => !x.voorbeeld); state.current = (state.units[0] || {}).id || null; save(); render(); toast('Voorbeeld gewist', undo); return; }
-    case 'vb-eigen': u.voorbeeld = false; save(); render(); toast('Het voorbeeld is nu van jou'); return;
+    case 'vb-eigen': u.voorbeeld = false; ocMerk(u); save(); render(); toast('Het voorbeeld is nu van jou'); return;
     case 'to-board': {   // zoals in Schildpaddiagram: meteen klaarleggen en Takenbord openen om over te nemen
       if (u.voorbeeld) { toast('Een voorbeeld gaat niet naar Takenbord. Kies eerst "Maak er mijn eigen van".'); return; }
       clearTimeout(save.t); ocSchrijf(KEY, JSON.stringify(state)); publish();
@@ -2273,6 +2299,7 @@ ocFileIn.addEventListener('change', async () => {
   let g; try { g = await ocBestand.lees(file); } catch (err) { toast(ocBestand.melding(err)); return; }
   if (state.units.some(x => !x.voorbeeld) && !await ocConfirm('Dit vervangt wat nu in Visgraatdiagram staat. Doorgaan?', 'Wil je je huidige werk houden? Kies dan Annuleer en eerst Bewaar als bestand.', 'Vervang')) return;
   if (!ocBestand.zetTerug(g)) return;
+  ocEigenZet();   // wat je net opende, blijft open staan
   try { sessionStorage.setItem('oc.bestand.terug', '1'); } catch {}
   location.reload();
 });
@@ -2285,7 +2312,7 @@ window.ocPk = ocProjectkiezer('#ocKiezer', {
   lijst: () => state.units.map(x => { const n = x.causes.filter(c => c.text.trim()).length; return { id: x.id, naam: title(x), voorbeeld: !!x.voorbeeld, info: n ? `${n} ${n === 1 ? 'oorzaak' : 'oorzaken'}` : 'leeg' }; }),
   actief: () => (cur() || {}).id,
   kies: id => { state.current = id; save(); render(); },
-  nieuw: () => { const x = newUnit(); state.units.push(x); state.current = x.id; save(); render(); focusSel('[data-f="probleem"]'); return false; },   // het probleem typ je in stap 1
+  nieuw: () => { const x = ocMerk(newUnit()); state.units.push(x); state.current = x.id; save(); render(); focusSel('[data-f="probleem"]'); return false; },   // het probleem typ je in stap 1
   hernoem: n => { const u = cur(); if (!u) return; u.probleem = n.slice(0, 200); save(); render(); },
   verwijder: () => delUnit(),
   magWeg: () => true   // zoals de vuilbak: ook de laatste analyse mag weg, dan staat de startkaart er weer
