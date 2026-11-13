@@ -1,0 +1,23 @@
+// Gaat wat je invult mee naar de volgende stap? Nieuwe gebruiker, gsm, korte projectroute, met echte invoer.
+const { chromium } = require('playwright'); const B = 'http://127.0.0.1:' + (process.env.PORT || 8981);
+(async () => { const b = await chromium.launch(); const c = await b.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, serviceWorkers: 'block', locale: 'nl-BE' }); const p = await c.newPage(); const E = []; p.on('pageerror', e => E.push(String(e).slice(0, 140)));
+  await p.goto(B + '/', { waitUntil: 'networkidle' }); await p.waitForTimeout(800);
+  await p.click('#wz-start'); await p.waitForTimeout(300); await p.click('#wz-keuzes [data-doel="project"]'); await p.waitForTimeout(400); await p.fill('#wz-naam', 'Digitaal premieloket');
+  await p.click('#wz-form button[type=submit]'); await p.waitForTimeout(300); await (await p.$('#wiz .wz-scherm[data-scherm="4"] .wz-go')).click(); await p.waitForTimeout(1600);
+  const fr = async () => { for (const h of await p.$$('iframe')) if (await h.isVisible().catch(() => false)) return await h.contentFrame(); return null; };
+  const volgende = async () => { await p.click('#pathbar .pb-next'); await p.waitForTimeout(1400); return await fr(); };
+  let f = await fr(); const v = await f.$$('main textarea:visible, main input[type=text]:visible'); for (const [i, x] of v.slice(0, 3).entries()) await x.fill(['Aanvragers wachten nu drie weken op een beslissing.', 'Een online loket voor premies', 'Een beslissing binnen tien werkdagen'][i]).catch(() => {});
+  f = await volgende();   // Productboom
+  for (const [oud, nieuw] of [['Eerste deelresultaat', 'Website'], ['Tweede deelresultaat', 'Handleiding'], ['Derde deelresultaat', 'Opleiding']]) { const g = f.locator('#canvas g[data-node]', { hasText: oud }).first(); await g.scrollIntoViewIfNeeded().catch(() => {}); await g.tap().catch(e => console.log('  tik mislukt', oud)); await p.waitForTimeout(350); await g.tap().catch(() => {}); await p.waitForTimeout(350); await p.keyboard.press('Control+A'); await p.keyboard.type(nieuw); await p.keyboard.press('Enter'); await p.waitForTimeout(400); await f.locator('#canvas').tap({ position: { x: 5, y: 5 } }).catch(() => {}); }
+  await p.waitForTimeout(800); await p.screenshot({ path: 'reis/s2.png' });
+  console.log('Productboom deelt:', await p.evaluate(() => { try { return JSON.parse(localStorage.getItem('oc.share.mindmap')).lists.map(l => l.title + ': ' + l.items.map(i => i.type + ':' + i.text).join(', ')).join(' | ').slice(0, 300); } catch (e) { return 'NIETS'; } }));
+  for (const naam of ['Tijdlijn', 'RACI-matrix', 'Takenbord']) { f = await volgende(); await p.screenshot({ path: `reis/s-${naam}-a.png` });
+    const kaart = await f.evaluate(() => { const s = [...document.querySelectorAll('.oc-start')].find(e => e.getClientRects().length); const knoppen = [...document.querySelectorAll('button, a')].filter(e => e.getClientRects().length && /overnemen|neem .* over|uit /i.test(e.innerText)).map(e => e.innerText.replace(/\s+/g, ' ').trim().slice(0, 60)); return { start: s ? s.innerText.replace(/\s+/g, ' ').slice(0, 200) : '(geen startkaart)', aanbod: knoppen }; });
+    console.log('\n' + naam + ':', JSON.stringify(kaart));
+    const imp = await f.$('button[data-oc-types]:visible'); if (!imp) { console.log('  geen knop om over te nemen zichtbaar'); continue; }
+    await imp.tap(); await p.waitForTimeout(700); await p.screenshot({ path: `reis/s-${naam}-b.png` });
+    console.log('  kiezer:', await f.evaluate(() => { const d = [...document.querySelectorAll('dialog[open], [role=dialog]')].pop(); return d ? d.innerText.replace(/\s+/g, ' ').slice(0, 260) : 'geen venster'; }));
+    for (const t of ['Website', 'Handleiding', 'Opleiding']) await f.locator('dialog[open], [role=dialog]').last().getByText(t, { exact: true }).first().tap().catch(() => {});
+    await p.waitForTimeout(200); const neem = f.locator('dialog[open] button, [role=dialog] button').filter({ hasText: /^Neem/ }).last(); if (await neem.count() && await neem.isEnabled()) { console.log('  knop:', (await neem.innerText()).trim()); await neem.tap(); } else { console.log('  niets aangevinkt'); await p.keyboard.press('Escape'); }
+    await p.waitForTimeout(900); await p.screenshot({ path: `reis/s-${naam}-c.png` }); console.log('  daarna op het scherm:', ['Website', 'Handleiding', 'Opleiding'].map(t => t + ':' + 'x').length && await f.evaluate(() => ['Website', 'Handleiding', 'Opleiding'].map(t => t + ' ' + (document.body.innerText.includes(t) || [...document.querySelectorAll('input,textarea')].some(i => i.value.includes(t)) ? 'ja' : 'NEE')).join(', '))); }
+  console.log('\nfouten:', E.length, E.slice(0, 2).join(' || ')); await b.close(); })();
