@@ -449,6 +449,10 @@ body.filtering #groups, body.filtering #list-tools { display:none; }
 .pathbar { display:flex; align-items:center; gap:0.5rem; min-width:0; height:100%; }
 .pathbar[hidden] { display:none; }
 .pb-where { flex:1 1 auto; min-width:0; display:flex; flex-direction:column; justify-content:center; line-height:1.25; overflow:hidden; }
+button.pb-where { align-self:stretch; margin:0; padding:0 0.25rem; border:0; border-radius:8px; background:none; font:inherit; color:inherit; text-align:left; cursor:pointer; }
+button.pb-where:hover { background:var(--slate-50); }
+.pb-meer { display:inline-block; width:14px; height:14px; margin-left:3px; vertical-align:-2px; color:var(--slate-400); flex:none; }
+.path { scroll-margin-top:5rem; }
 .pb-tool { font-weight:600; font-size:0.9375rem; color:var(--slate-800); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .pb-sub { font-size:0.8125rem; color:var(--slate-500); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-variant-numeric:tabular-nums; }
 .pb-plan { color:var(--slate-600); font-weight:600; }
@@ -542,6 +546,11 @@ body.filtering #groups, body.filtering #list-tools { display:none; }
 .pn-dlg input { border-color:#7e8ea4; }   /* veldrand 3:1 */
 .pn-dlg input:focus { border-color:var(--accent); box-shadow:0 0 0 3px #d1fae5; }
 .pn-dlg input:focus { border-color:#059669; }   /* focusrand 3:1 */
+.pn-route { display:block; margin-top:1rem; }
+.pn-rt { display:block; font-size:0.9375rem; font-weight:600; color:#1e293b; }
+.pn-route .route-keuze { display:grid; grid-template-columns:1fr 1fr; gap:0.25rem; margin:0.5rem 0 0; padding:0.25rem; border-radius:12px; background:var(--slate-100); }
+.pn-rn { display:block; margin-top:0.375rem; font-size:0.8125rem; color:#64748b; }
+.wz-route { margin-top:1.25rem; text-align:left; }
 #wipe-tool:hover { color:#b91c1c; }
 
 /* Zoeken */
@@ -2540,7 +2549,7 @@ window.ocProjectkiezer = function (plek, o) {
         <a class="ft-link" href="https://www.linkedin.com/in/bartel-volckaert-8a96842/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Maker</a>
         <a class="ft-link" href="/privacy/#voorwaarden" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.01"/></svg>Disclaimer</a>
       </nav>
-      <p class="ft-meta"><button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (34 seconden)" title="Bekijk de film (34 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg><span>Film</span></button><button class="ft-film ft-inst" id="ft-app" type="button" hidden aria-label="Installeer de app"><img src="/app/icon.svg" alt="" width="22" height="22"><span>Installeer</span></button><span class="ft-dot" aria-hidden="true"></span><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v16.17</span></p>
+      <p class="ft-meta"><button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (34 seconden)" title="Bekijk de film (34 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg><span>Film</span></button><button class="ft-film ft-inst" id="ft-app" type="button" hidden aria-label="Installeer de app"><img src="/app/icon.svg" alt="" width="22" height="22"><span>Installeer</span></button><span class="ft-dot" aria-hidden="true"></span><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v16.18</span></p>
     </div>
   </footer>
   <dialog class="film" id="film" aria-labelledby="film-h">
@@ -2725,6 +2734,9 @@ window.ocProjectkiezer = function (plek, o) {
         <h2 id="wz-h3" tabindex="-1"><span class="wz-sr wz-stap"></span><label for="wz-naam">Hoe heet je project?</label></h2>
         <p class="wz-p" id="wz-naam-p">Mag ook later.</p>
         <input class="wz-naam" id="wz-naam" maxlength="80" autocomplete="off" enterkeyhint="next" autocapitalize="sentences" aria-describedby="wz-naam-p">
+        <div class="pn-route wz-route" id="wz-route" role="group" aria-labelledby="wz-rt" hidden><span class="pn-rt" id="wz-rt">Hoe uitgebreid wil je werken?</span>
+          <div class="route-keuze"><button type="button" class="rk aan" data-wz-route="kort" aria-pressed="true">Kort<span id="wz-rk"></span></button><button type="button" class="rk" data-wz-route="vol" aria-pressed="false">Uitgebreid<span id="wz-rv"></span></button></div>
+          <span class="pn-rn">Je kunt dit later nog wisselen.</span></div>
       </div>
       <div class="wz-acties"><button type="button" class="wz-terug" data-wz-terug>Terug</button><button type="submit" class="wz-go">Verder<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>
     </form>
@@ -2745,6 +2757,9 @@ window.ocProjectkiezer = function (plek, o) {
 <div class="app-toast" id="app-toast" role="status" aria-live="polite"><span id="app-toast-text"></span><button type="button" id="app-toast-btn" hidden>Ongedaan</button></div>
 <div class="app-dlg-back" id="pn-dlg" hidden><form class="app-dlg pn-dlg" id="pn-form" role="dialog" aria-modal="true" aria-labelledby="pn-t" aria-describedby="pn-p" novalidate><b id="pn-t">Hoe heet je project?</b><p id="pn-p">Dan krijgen de tools in dit stappenplan meteen die naam. Overslaan mag ook.</p>
   <input id="pn-name" list="pn-list" maxlength="80" autocomplete="off" enterkeyhint="go" autocapitalize="sentences" placeholder="Bv. Digitaal premieloket" aria-labelledby="pn-t"><datalist id="pn-list"></datalist>
+  <div class="pn-route" id="pn-route" role="group" aria-labelledby="pn-rt" hidden><span class="pn-rt" id="pn-rt">Hoe uitgebreid wil je werken?</span>
+    <div class="route-keuze"><button type="button" class="rk" data-pn-route="kort" aria-pressed="true">Kort<span id="pn-rk"></span></button><button type="button" class="rk" data-pn-route="vol" aria-pressed="false">Uitgebreid<span id="pn-rv"></span></button></div>
+    <span class="pn-rn">Je kunt dit later nog wisselen.</span></div>
   <div class="app-dlg-row"><button type="button" class="dbtn" id="pn-skip">Overslaan</button><button type="submit" class="dbtn go" id="pn-ok">Verder</button></div></form></div>
 <div class="app-dlg-back" id="app-dlg" hidden><div class="app-dlg" role="alertdialog" aria-modal="true" aria-labelledby="app-dlg-t"><b id="app-dlg-t"></b><p id="app-dlg-p"></p>
   <div class="app-dlg-row"><button type="button" class="dbtn" id="app-dlg-no">Annuleer</button><button type="button" class="dbtn danger solid" id="app-dlg-yes">Wis</button></div></div></div>
@@ -4736,7 +4751,7 @@ function startedPaths() {
   }
   return st;
 }
-function markStarted(id) { const st = startedPaths(); if (!st.includes(id)) store.set('paths-started', [...st, id]); }
+function markStarted(id) { const st = startedPaths(); if (st.includes(id)) return; store.set('paths-started', [...st, id]); const o = new Set(store.get('paths-open', [])); o.add(id); store.set('paths-open', [...o]); }   // een nieuw plan staat op Start meteen open: je ziet de stappen en de keuze Kort of Uitgebreid
 // Overgang: een plan dat al liep voor de korte route bestond, blijft volledig. Zo verdwijnt er geen stap waar je mee bezig was.
 (function () { if (store.get('route', null)) return; const r = {}; startedPaths().forEach(id => { if (ROUTE_KERN[id]) r[id] = 'vol'; }); store.set('route', r); })();
 /* Start van een stappenplan zonder projectnaam: één keer rustig vragen hoe het project heet (overslaan mag).
@@ -4763,9 +4778,15 @@ function askProjectName(then, tr) {
   const dlg = $('pn-dlg'), inp = $('pn-name'), back = document.activeElement, [vr, vb] = naamVraag(tr);
   $('pn-t').textContent = vr; inp.placeholder = vb;
   $('pn-list').innerHTML = store.get('projects', []).map(n => `<option value="${esc(n)}">`).join('');
+  // Kort of uitgebreid: alleen bij een plan met een korte route. De keuze geldt ook als je de naam overslaat.
+  const rBox = $('pn-route'), rKn = [...rBox.querySelectorAll('[data-pn-route]')], heeftRoute = !!ROUTE_KERN[tr]; let route = heeftRoute ? routeVan(tr) : null;
+  const rToon = () => rKn.forEach(b => { const aan = b.dataset.pnRoute === route; b.classList.toggle('aan', aan); b.setAttribute('aria-pressed', String(aan)); });
+  rBox.hidden = !heeftRoute;
+  if (heeftRoute) { $('pn-rk').textContent = `${ROUTE_KERN[tr].length} stappen`; $('pn-rv').textContent = `${trajectStappen(tr).length} stappen`; rToon(); rKn.forEach(b => b.onclick = () => { route = b.dataset.pnRoute; rToon(); }); }
   inp.value = ''; dlg.hidden = false; inp.focus();
   const done = save => {
     const name = save ? inp.value.trim().slice(0, 80) : '';
+    if (heeftRoute) { const o = Object.assign({}, store.get('route', {})); o[tr] = route; store.set('route', o); }
     dlg.hidden = true; document.removeEventListener('keydown', key, true);
     $('pn-form').onsubmit = $('pn-skip').onclick = dlg.onclick = null;
     if (name) zetProject(name);
@@ -4776,7 +4797,7 @@ function askProjectName(then, tr) {
   const key = e => {
     if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); done(false); }
     else if (e.key === 'Tab') {   // de focus blijft in de vraag
-      const f = [inp, $('pn-skip'), $('pn-ok')], i = f.indexOf(document.activeElement);
+      const f = [inp, ...(heeftRoute ? rKn : []), $('pn-skip'), $('pn-ok')], i = f.indexOf(document.activeElement);
       e.preventDefault(); f[(i + (e.shiftKey ? -1 : 1) + f.length) % f.length].focus();
     }
   };
@@ -4785,6 +4806,15 @@ function askProjectName(then, tr) {
   $('pn-skip').onclick = () => done(false);
   dlg.onclick = e => { if (e.target === dlg) done(false); };
 }
+// Tik op "Stap 2 van 6" in de balk: naar Start, met het stappenplan open. Daar staan alle stappen en de keuze Kort of Uitgebreid.
+document.addEventListener('click', e => {
+  const k = e.target.closest('[data-pb-plan]'); if (!k) return;
+  const tr = $('pathbar').dataset.path; if (!tr) return;
+  const set = new Set(store.get('paths-open', [])); set.add(tr); store.set('paths-open', [...set]);
+  showHome(); renderPaths();
+  const naar = () => { const el = document.querySelector(`.path[data-path="${tr}"]`); if (!el) return; el.scrollIntoView({ block:'start' }); const h = el.querySelector('.path-head'); if (h) h.focus({ preventScroll:true }); };
+  setTimeout(naar, 60); setTimeout(naar, 420);   // twee keer: Start zet eerst zelf de focus en de schuifstand
+});
 /* Stappenplanbalk in de app: in welk plan zit je, welke stap, wat komt hierna */
 let pathCtx = store.get('path-ctx', null), viaPad = false;
 document.addEventListener('click', e => {
@@ -4826,7 +4856,7 @@ function renderPathbar(id) {
   bar.setAttribute('aria-label', `Stappenplan: ${tr.title}`);
   $('topbar').style.setProperty('--pb', `${Math.round((i + 1) / steps.length * 100)}%`);
   bar.innerHTML = `
-    <span class="pb-where" title="${esc(`${tr.title} · ${n}${q ? ' · ' + q : ''}`)}"><span class="pb-tool">${esc(steps[i].t.title)}</span><span class="pb-sub"><span class="pb-plan">${esc(tr.title)} · </span>${esc(n)}${q ? ` · ${esc(q)}` : ''}</span><span class="pb-kort"><span class="pb-k">${fNaam ? (fTot > 1 ? `${esc(fNaam)}<span class="pb-tel"> <span class="pb-stap">· </span>${fNr} van ${fTot}</span>` : esc(fNaam)) : `<span class="pb-stap">Stap </span>${i + 1} van ${steps.length}`}</span><span class="pb-rij"><span class="pb-bol" aria-hidden="true">${bolFase}</span>${fNaam && fTot > 1 ? `<span class="pb-tel2" aria-hidden="true">${fNr} van ${fTot}</span>` : ''}</span></span></span>
+    <button type="button" class="pb-where" data-pb-plan aria-label="${esc(`Alle stappen van ${tr.title}. Nu: ${n}`)}" title="Toon alle stappen"><span class="pb-tool">${esc(steps[i].t.title)}<svg class="pb-meer" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span><span class="pb-sub"><span class="pb-plan">${esc(tr.title)} · </span>${esc(n)}${q ? ` · ${esc(q)}` : ''}</span><span class="pb-kort"><span class="pb-k">${fNaam ? (fTot > 1 ? `${esc(fNaam)}<span class="pb-tel"> <span class="pb-stap">· </span>${fNr} van ${fTot}</span>` : esc(fNaam)) : `<span class="pb-stap">Stap </span>${i + 1} van ${steps.length}`}<svg class="pb-meer" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span><span class="pb-rij"><span class="pb-bol" aria-hidden="true">${bolFase}</span>${fNaam && fTot > 1 ? `<span class="pb-tel2" aria-hidden="true">${fNr} van ${fTot}</span>` : ''}</span></span></button>
     <span class="pb-dots" aria-hidden="true">${bolFase}</span>
     <span class="pb-nav">
       ${prev ? `<button type="button" class="pb-prev" data-id="${esc(prev.t.id)}"${zoekAttr(prev.t)} aria-label="Vorige stap: ${esc(prev.t.title)}" title="Vorige: ${esc(prev.t.title)}">${arrow('M15 18l-6-6 6-6')}</button>` : ''}
@@ -5428,7 +5458,7 @@ function openStart(key) {
    (APP_QUIET) en de lege staat van een tool (oc.leeg.*) mogen er al zijn. Een terugkerende gebruiker of een teruggezette reservekopie: nooit.
    Niet bij een link naar een tool, een groep of een snelkoppeling: wie zo binnenkomt, weet al wat hij wil.
    Overslaan, Esc of de laatste knop: daarna komen de wizard en de welkomstkaart nooit meer. Privacy blijft in de voet van de app. */
-const WZ = { doel:null, naam:'', gevraagd:false };
+const WZ = { doel:null, naam:'', gevraagd:false, route:'kort' };
 // De fasen van een stappenplan (de eerste stap van elke fase). Alleen voor de wizard: kort en rustig in plaats van 13 stappen.
 const FASEN = {
   project: [{ naam:'Opzetten', van:'opdracht' }, { naam:'Plannen', van:'prioriteit' }, { naam:'Uitvoeren', van:'kanban' }],
@@ -5485,8 +5515,9 @@ function wzKlaar() {
     const s = stepsOf(st.path);
     // Drie fasen, met de stappen van de eerste fase. Het totale aantal stappen zie je nergens: de balk telt per fase.
     // Alle stappen van fase 1 (tot de start van fase 2), zodat het klopt met de balk in de tool ("Opzetten · 1 van 5")
-    const fasen = FASEN[st.path] || [], f2 = fasen[1] ? s.findIndex(x => x.t.id === fasen[1].van) : -1, toon = s.slice(0, f2 > 0 ? f2 : 3);
-    $('wz-klaar-p').textContent = s[0] ? (fasen.length ? `${fasen.length === 3 ? 'Drie' : fasen.length} fasen. Je begint met de eerste stap.` : 'Je begint met de eerste stap.') : '';
+    // Korte route: gewoon de stappen zelf, genummerd. Uitgebreid: drie fasen.
+    const kortR = routeVan(st.path) === 'kort', fasen = kortR ? [] : FASEN[st.path] || [], f2 = fasen[1] ? s.findIndex(x => x.t.id === fasen[1].van) : -1, toon = kortR ? s : s.slice(0, f2 > 0 ? f2 : 3);
+    $('wz-klaar-p').textContent = s[0] ? (kortR ? `${s.length} stappen. Je begint met de eerste.` : fasen.length ? `${fasen.length === 3 ? 'Drie' : fasen.length} fasen. Je begint met de eerste stap.` : 'Je begint met de eerste stap.') : '';
     $('wz-plan').innerHTML = fasen.length ? fasen.map((f, i) => `<li class="fase${i ? '' : ' nu'}"><span class="wz-plan-n" aria-hidden="true">${i + 1}</span><span><span class="wz-sr">Fase ${i + 1}: </span>${esc(f.naam)}</span></li>`
         + (i ? '' : toon.map((x, k) => `<li class="stap${k ? '' : ' nu'}"><span class="wz-plan-n" aria-hidden="true"></span><span>${esc(x.t.title)}</span></li>`).join(''))).join('')
       : toon.map((x, i) => `<li${i ? '' : ' class="nu"'}><span class="wz-plan-n" aria-hidden="true">${i + 1}</span><span>${esc(x.t.title)}</span></li>`).join('');
@@ -5527,12 +5558,18 @@ $('wz-keuzes').addEventListener('click', e => {
   if (wzSt(WZ.doel).path) {
     const i = $('wz-naam'); i.value = WZ.naam;
     const [vr, vb] = naamVraag(WZ.doel); i.placeholder = vb; document.querySelector('label[for="wz-naam"]').textContent = vr;
+    // Kort of uitgebreid: dezelfde keuze als in de vraag op Start
+    const kern = ROUTE_KERN[WZ.doel]; $('wz-route').hidden = !kern;
+    if (kern) { $('wz-rk').textContent = `${kern.length} stappen`; $('wz-rv').textContent = `${trajectStappen(WZ.doel).length} stappen`; wzRoute(WZ.route); }
     wzToon(3, wzFijn() ? i : null);
   } else { wzKlaar(); wzToon(4); }
 });
+function wzRoute(r) { WZ.route = r; document.querySelectorAll('[data-wz-route]').forEach(b => { const aan = b.dataset.wzRoute === r; b.classList.toggle('aan', aan); b.setAttribute('aria-pressed', String(aan)); }); }
+$('wz-route').addEventListener('click', e => { const b = e.target.closest('[data-wz-route]'); if (b) wzRoute(b.dataset.wzRoute); });
 $('wz-form').addEventListener('submit', e => {
   e.preventDefault();
   WZ.naam = $('wz-naam').value.trim().slice(0, 80); WZ.gevraagd = true;
+  if (ROUTE_KERN[WZ.doel]) { const o = Object.assign({}, store.get('route', {})); o[WZ.doel] = WZ.route; store.set('route', o); }
   wzKlaar(); wzToon(4);
 });
 $('wiz').addEventListener('click', e => {

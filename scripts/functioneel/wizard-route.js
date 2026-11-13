@@ -1,0 +1,7 @@
+const { chromium } = require('playwright'); const B = 'http://127.0.0.1:' + (process.env.PORT || 8978);
+(async () => { const b = await chromium.launch(); for (const keuze of ['kort', 'vol']) { const c = await b.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, serviceWorkers: 'block' }); const p = await c.newPage(); const E = []; p.on('pageerror', e => E.push(String(e).slice(0, 120)));
+  await p.goto(B + '/', { waitUntil: 'networkidle' }); await p.waitForTimeout(800); await p.click('#wz-start'); await p.waitForTimeout(300); await p.click('#wz-keuzes [data-doel="project"]'); await p.waitForTimeout(400);
+  await p.fill('#wz-naam', 'Nieuw loket'); if (keuze === 'vol') await p.click('[data-wz-route="vol"]'); await p.waitForTimeout(150); await p.screenshot({ path: `v/w${keuze}3.png` });
+  await p.click('#wz-form button[type=submit]'); await p.waitForTimeout(400); await p.screenshot({ path: `v/w${keuze}4.png` }); const tekst = await p.evaluate(() => document.getElementById('wz-klaar-p').innerText + ' | ' + [...document.querySelectorAll('#wz-plan li')].map(l => l.innerText.trim()).join(', '));
+  const knop = await p.$('#wiz .wz-scherm[data-scherm="4"] .wz-go'); await knop.click(); await p.waitForTimeout(1500);
+  console.log(keuze, '|', tekst.slice(0, 150), '\n   balk:', await p.evaluate(() => (document.querySelector('#pathbar .pb-where') || { getAttribute: () => 'GEEN BALK' }).getAttribute('aria-label')), '| fouten', E.length); await c.close(); } await b.close(); })();
