@@ -431,9 +431,12 @@ body.filtering #groups, body.filtering #list-tools { display:none; }
 }
 .back {
   display:flex; align-items:center; gap:0.125rem; padding:0.5rem 0.625rem 0.5rem 0.25rem; min-height:44px;
-  color:var(--accent-dark); font-weight:600; font-size:0.9375rem; border-radius:8px;
+  color:var(--slate-600, #475569); font-weight:500; font-size:0.9375rem; border-radius:8px;
 }
-.back svg { width:22px; height:22px; }
+.back svg { width:20px; height:20px; }
+.back:hover { background:var(--slate-100); }
+/* Na een tik krijgt de terugknop de focus (voor wie met een schermlezer werkt), maar geen rand: die is er voor het toetsenbord. */
+html.aanraak .back:focus-visible { outline:none; box-shadow:none; }
 .tb-title {
   text-align:center; font-weight:600; color:var(--slate-800); font-size:0.9375rem;
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
@@ -2561,7 +2564,7 @@ window.ocProjectkiezer = function (plek, o) {
         <a class="ft-link" href="https://www.linkedin.com/in/bartel-volckaert-8a96842/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Maker</a>
         <a class="ft-link" href="/privacy/#voorwaarden" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.01"/></svg>Disclaimer</a>
       </nav>
-      <p class="ft-meta"><button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (34 seconden)" title="Bekijk de film (34 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg><span>Film</span></button><button class="ft-film ft-inst" id="ft-app" type="button" hidden aria-label="Installeer de app"><img src="/app/icon.svg" alt="" width="22" height="22"><span>Installeer</span></button><span class="ft-dot" aria-hidden="true"></span><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v16.21</span></p>
+      <p class="ft-meta"><button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (34 seconden)" title="Bekijk de film (34 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg><span>Film</span></button><button class="ft-film ft-inst" id="ft-app" type="button" hidden aria-label="Installeer de app"><img src="/app/icon.svg" alt="" width="22" height="22"><span>Installeer</span></button><span class="ft-dot" aria-hidden="true"></span><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v16.22</span></p>
     </div>
   </footer>
   <dialog class="film" id="film" aria-labelledby="film-h">
@@ -3877,6 +3880,9 @@ function renderBack() {
   b.querySelector('.back-lbl').textContent = prev ? prev.title : 'Tools';
   b.setAttribute('aria-label', prev ? 'Terug naar ' + prev.title : 'Terug naar alle tools');
 }
+if (matchMedia('(pointer:coarse)').matches) document.documentElement.classList.add('aanraak');   // op een aanraakscherm begin je zonder rand
+addEventListener('pointerdown', () => document.documentElement.classList.add('aanraak'), true);
+addEventListener('keydown', e => { if (e.key === 'Tab' || e.key.startsWith('Arrow')) document.documentElement.classList.remove('aanraak'); }, true);
 $('back').addEventListener('click', () => {
   if (stapel.length && history.state && history.state.tool && (history.state.d || 1) > 1) history.back();
   else showHome();

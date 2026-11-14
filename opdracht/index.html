@@ -244,6 +244,8 @@ input[type="date"].field::-webkit-calendar-picker-indicator { cursor:pointer; op
 .knop.groen { background:#0c8660; border-color:var(--accent-dark); color:#fff; }
 .knop.groen:hover { background:#047857; }
 .teken-status .knoppen { display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.625rem; }
+.teken-status .na-teken { margin:0.5rem 0 0; }
+.teken-status a.knop { display:inline-flex; align-items:center; text-decoration:none; }
 
 /* Controle */
 .ctl { padding:1rem 1.125rem 1.125rem; scroll-margin-top:1rem; transition:border-color 0.2s, box-shadow 0.2s; }
@@ -3933,7 +3935,9 @@ function renderTeken() {
       <div class="knoppen"><button type="button" class="knop groen" data-teken="opnieuw">Opnieuw afgetekend, vandaag</button><button type="button" class="knop" data-teken="terug">Zet terug zoals afgetekend</button></div></div>`;
   } else if (getekend(o)) {
     box.className = 'teken-status ok';
-    box.innerHTML = `${ICON.ok}<div><b>Afgetekend op ${esc(fmtLang(o.teken.datum))}</b> door ${esc(o.teken.naam)}.</div>`;
+    // Na de start: kijk geregeld of je nog op koers zit. De Project Radar leest deze opdracht en de Tijdlijn al mee.
+    box.innerHTML = `${ICON.ok}<div><b>Afgetekend op ${esc(fmtLang(o.teken.datum))}</b> door ${esc(o.teken.naam)}.
+      <p class="na-teken">Kijk elke twee weken of je nog op koers zit.</p><div class="knoppen"><a class="knop" href="/project-radar/">Open de Project Radar</a></div></div>`;
   } else if (gepland(o)) {
     box.className = 'teken-status nog';
     box.innerHTML = `${ICON.pen}<div><b>Aftekenen gepland op ${esc(fmtLang(o.teken.datum))}</b> door ${esc(o.teken.naam)}. Tot die dag is de opdracht nog niet afgetekend.${hard.length ? ` Er ${hard.length === 1 ? 'staat nog 1 punt' : `staan nog ${hard.length} punten`} open bij ‘Klaar om te laten aftekenen?’.` : ''}</div>`;
