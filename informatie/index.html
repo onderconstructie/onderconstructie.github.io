@@ -1956,9 +1956,9 @@ ${delen.map(p).join('\n')}
         b.after(k);
       }
       // Staat de knop alleen op een rij (naast Afbeelding en PDF is geen plaats), dan neemt ze de hele breedte: geen los blokje.
+      // Past ze niet meer naast de andere, dan mag de rij breken (ook als de rij nu nog verborgen is).
+      if (!inMenu(k) && /flex/.test(getComputedStyle(k.parentNode).display) && getComputedStyle(k.parentNode).flexWrap === 'nowrap') k.parentNode.style.flexWrap = 'wrap';
       if (!inMenu(k) && k.offsetWidth && !k.dataset.ocBreed) {
-        // Past ze niet meer naast de andere, dan mag de rij breken.
-        if (/flex/.test(getComputedStyle(k.parentNode).display) && k.getBoundingClientRect().right > Math.min(k.parentNode.getBoundingClientRect().right, innerWidth) + 1) k.parentNode.style.flexWrap = 'wrap';
         const pd = getComputedStyle(k.parentNode).display, alleen = Math.abs(k.getBoundingClientRect().top - b.getBoundingClientRect().top) > 4 && !(k.nextElementSibling && k.nextElementSibling.offsetWidth && Math.abs(k.nextElementSibling.getBoundingClientRect().top - k.getBoundingClientRect().top) < 4);
         if (alleen && /grid/.test(pd)) { k.style.gridColumn = '1 / -1'; k.dataset.ocBreed = '1'; }
         else if (alleen && /flex/.test(pd)) { k.style.flex = '1 1 100%'; k.dataset.ocBreed = '1'; }
@@ -2515,7 +2515,7 @@ function viewGegevens(p, S) {
       <p class="hint pad">Wat doe je met de gegevens? Elk gegeven koppel je straks aan een of meer van deze gebruiken. Zo zie je wat je niet nodig hebt.</p>
       ${uses}
       <form class="add-row" data-form="use" autocomplete="off">
-        <input class="field" id="use-new" data-k="use-new" placeholder="Nieuw gebruik, bv. Beslissen of iemand recht heeft" aria-label="Nieuw gebruik" maxlength="120" enterkeyhint="next">
+        <input class="field" id="use-new" data-k="use-new" placeholder="Gebruik, bv. Premie toekennen" aria-label="Nieuw gebruik" maxlength="120" enterkeyhint="next">
         <button class="btn-add" type="submit" aria-label="Voeg gebruik toe">${ICON.plus}<span>Voeg toe</span></button>
       </form>
     </section>
@@ -2541,7 +2541,7 @@ function viewGegevens(p, S) {
         ${roles}
         <p class="hint">Een rol is een groep mensen, zoals Dossierbehandelaar of Boekhouding. Hernoem je hier een rol, dan verandert ze overal mee.</p>
         <form class="add-row" data-form="role" autocomplete="off">
-          <input class="field" data-k="role-new" placeholder="Nieuwe rol, bv. Dossierbehandelaar" aria-label="Nieuwe rol" maxlength="300">
+          <input class="field" data-k="role-new" placeholder="Rol, bv. Dossierbehandelaar" aria-label="Nieuwe rol" maxlength="300">
           <button class="btn-add" type="submit" aria-label="Voeg rol toe">${ICON.plus}<span>Voeg toe</span></button>
         </form>
         <div class="oc-imp"><button type="button" class="oc-import" data-oc-types="betrokkene" data-oc-roles${ocShare.count(['betrokkene'], OC_ID) ? '' : ' hidden'}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v11M7.5 9.5L12 14l4.5-4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>Rollen overnemen uit…</button></div>
@@ -2574,7 +2574,7 @@ function subjCard(p, s, si, S) {
     ${s.fields.length ? head : ''}
     <ul class="fields" aria-label="Gegevens van ${esc(s.name)}">${rows || `<li class="fields-empty">Nog geen gegevens in ${esc(s.name)}. Typ hieronder het eerste.</li>`}</ul>
     <form class="add-row" data-form="field" data-subj="${esc(s.id)}" autocomplete="off">
-      <input class="field" data-k="fn:${esc(s.id)}" placeholder="Nieuw gegeven, bv. Geboortedatum" aria-label="Nieuw gegeven in ${esc(s.name)}" maxlength="120" enterkeyhint="next">
+      <input class="field" data-k="fn:${esc(s.id)}" placeholder="Gegeven, bv. Geboortedatum" aria-label="Nieuw gegeven in ${esc(s.name)}" maxlength="120" enterkeyhint="next">
       <button class="btn-add" type="submit" aria-label="Voeg gegeven toe aan ${esc(s.name)}">${ICON.plus}<span>Voeg toe</span></button>
     </form>
   </section>`;

@@ -23,9 +23,11 @@ const fout = []; const ok = (c, m) => { console.log((c ? '  ok   ' : '  FOUT ') 
   ok(await p.evaluate(() => JSON.parse(localStorage.getItem('opdracht.v1')).opdrachten[0].risicos[0] === 'Iets'), 'gegevens blijven'); ok(!p.E.length, 'geen fouten b ' + p.E);
   // c. bestaande lege opdracht: de kern
   p = await nieuw({ width: 390, height: 844 }, { opdrachten: [basis], current: 'a1' }); await p.click('#begin-btn'); await p.waitForTimeout(500); await p.keyboard.press('Escape'); await p.waitForTimeout(200); ok(await p.isVisible('#kern'), 'bestaande lege opdracht: de kern');
-  // d. voorbeeld: alles, zonder schakelaar
+  // d. voorbeeld: eerst de kern, met de schakelaar; "Bekijk het volledige voorbeeld" toont alles
   await p.goto(B + '/opdracht/', { waitUntil: 'networkidle' }); 
-  p = await nieuw({ width: 390, height: 844 }); await p.click('#example'); await p.waitForTimeout(600); ok(await p.isVisible('#s-risicos') && !(await p.isVisible('.zicht')), 'voorbeeld: alle vakken, geen schakelaar'); ok(!p.E.length, 'geen fouten d ' + p.E);
+  p = await nieuw({ width: 390, height: 844 }); await p.click('#example'); await p.waitForTimeout(600); ok(await p.isVisible('#kern') && !(await p.isVisible('#s-risicos')) && await p.isVisible('.zicht'), 'voorbeeld: eerst de kern, met de schakelaar');
+  ok((await p.innerText('.groei .btn-s')) === 'Bekijk het volledige voorbeeld', 'voorbeeld: de knop heet "Bekijk het volledige voorbeeld"');
+  await p.click('.groei .btn-s'); await p.waitForTimeout(500); ok(await p.isVisible('#s-risicos') && await p.isVisible('#s-middelen'), 'voorbeeld: daarna alle vakken'); ok(!p.E.length, 'geen fouten d ' + p.E);
   // e. breed scherm
   p = await nieuw({ width: 1280, height: 900 }); await p.click('#begin-btn'); await p.waitForTimeout(500); await p.keyboard.press('Escape'); await p.waitForTimeout(300); await p.screenshot({ path: 'shots/e-breed-kern.png' });
   await p.click('.zicht [data-zicht="alles"]'); await p.waitForTimeout(400); await p.screenshot({ path: 'shots/e-breed-alles.png' }); ok(await p.isVisible('#controle'), 'breed: controle rechts bij alle vakken');

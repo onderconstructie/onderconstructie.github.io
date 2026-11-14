@@ -1228,7 +1228,7 @@ header[data-oc-kop][data-stand="compact"]::before { content:""; order:-1; flex:n
             <div class="add">
                 <form class="add-row" id="add-form" novalidate autocomplete="off">
                     <label class="sr-only" for="add-t">Nieuwe taak</label>
-                    <input class="add-input" id="add-t" maxlength="80" placeholder="Nieuwe taak, bv. Mails beantwoorden" enterkeyhint="enter" autocapitalize="sentences">
+                    <input class="add-input" id="add-t" maxlength="80" placeholder="Taak, bv. Mails beantwoorden" enterkeyhint="enter" autocapitalize="sentences">
                     <button type="submit" class="add-btn" id="add-btn" aria-label="Voeg de taak toe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span class="t">Voeg toe</span></button>
                 </form>
                 <div class="vbn" id="vbn" hidden></div>
@@ -1879,9 +1879,9 @@ ${delen.map(p).join('\n')}
         b.after(k);
       }
       // Staat de knop alleen op een rij (naast Afbeelding en PDF is geen plaats), dan neemt ze de hele breedte: geen los blokje.
+      // Past ze niet meer naast de andere, dan mag de rij breken (ook als de rij nu nog verborgen is).
+      if (!inMenu(k) && /flex/.test(getComputedStyle(k.parentNode).display) && getComputedStyle(k.parentNode).flexWrap === 'nowrap') k.parentNode.style.flexWrap = 'wrap';
       if (!inMenu(k) && k.offsetWidth && !k.dataset.ocBreed) {
-        // Past ze niet meer naast de andere, dan mag de rij breken.
-        if (/flex/.test(getComputedStyle(k.parentNode).display) && k.getBoundingClientRect().right > Math.min(k.parentNode.getBoundingClientRect().right, innerWidth) + 1) k.parentNode.style.flexWrap = 'wrap';
         const pd = getComputedStyle(k.parentNode).display, alleen = Math.abs(k.getBoundingClientRect().top - b.getBoundingClientRect().top) > 4 && !(k.nextElementSibling && k.nextElementSibling.offsetWidth && Math.abs(k.nextElementSibling.getBoundingClientRect().top - k.getBoundingClientRect().top) < 4);
         if (alleen && /grid/.test(pd)) { k.style.gridColumn = '1 / -1'; k.dataset.ocBreed = '1'; }
         else if (alleen && /flex/.test(pd)) { k.style.flex = '1 1 100%'; k.dataset.ocBreed = '1'; }

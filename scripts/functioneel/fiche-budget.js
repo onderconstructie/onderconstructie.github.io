@@ -20,6 +20,10 @@ const fout = []; const ok = (c, m) => { console.log((c ? '  ok   ' : '  FOUT ') 
   // zelf iets anders geschreven: eerst vragen
   await p.evaluate(() => { cur().budget = '€ 200.000 afgesproken'; save(); }); await zetBudget(A, { marge: 0 }); await p.evaluate(() => { groeiNu(); render(); }); await p.waitForTimeout(300);
   ok((await p.evaluate(() => cur().budget)) === '€ 200.000 afgesproken', 'zelf iets anders geschreven: de tool overschrijft het niet');
+  await p.click('[data-bron="budget"] [data-bron-laat]'); await p.waitForTimeout(300);
+  await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(500); await p.evaluate(() => { groeiNu(); render(); }); await p.waitForTimeout(300);
+  ok(await p.evaluate(() => cur().budget === '€ 200.000 afgesproken' && !/heeft iets anders/.test(document.querySelector('[data-bron="budget"]').innerText)), 'Laat zo: ook na herladen vraagt de tool het niet opnieuw');
+  await p.evaluate(() => { cur().bron.budget = undefined; delete cur().bron.budget; save(); render(); }); await p.waitForTimeout(200);
   const t = await p.innerText('[data-bron="budget"]');
   ok(/Het Projectbudget heeft iets anders/.test(t) && /€ 130\.000 over 3 jaar/.test(t) && /Werk bij uit het Projectbudget/.test(t) && /Laat zo/.test(t), 'de tool vraagt het eerst: ' + t.replace(/\n+/g, ' / '));
   await p.click('[data-bron="budget"] [data-bron-neem]'); await p.waitForTimeout(300);

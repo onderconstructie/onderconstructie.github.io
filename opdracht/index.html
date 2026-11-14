@@ -157,6 +157,14 @@ button { background:none; border:0; cursor:pointer; }
   .grid3 { grid-template-columns:minmax(0, 0.9fr) minmax(0, 1fr) minmax(0, 1.2fr); }
 }
 @container (max-width:719.98px) { .two.breed { grid-template-columns:minmax(0, 1fr); } }
+/* Vakken naast elkaar: hun invulvelden staan op dezelfde hoogte, ook als het ene label over twee regels loopt.
+   Elk vak deelt drie rijen met zijn buren (label, veld, wat eronder komt). Een vak met meer dan drie delen blijft zoals het was. */
+@supports (grid-template-rows:subgrid) {
+  @container (min-width:540px) {
+    .grid2 > :not(:has(> :nth-child(4))), .grid3 > :not(:has(> :nth-child(4))) { display:grid; grid-row:span 3; grid-template-rows:subgrid; row-gap:0; align-content:start; align-items:start; }
+    .grid2 > :not(:has(> :nth-child(4))) > .fld-label, .grid3 > :not(:has(> :nth-child(4))) > .fld-label { align-self:end; }
+  }
+}
 .field {
   width:100%; min-width:0; min-height:44px; border:1.5px solid var(--slate-200); border-radius:9px; background:var(--wit); outline:none;
   padding:0.5rem 0.625rem; font-size:0.9375rem; color:var(--slate-800); transition:border-color 0.15s;
@@ -3453,9 +3461,9 @@ ${delen.map(p).join('\n')}
         b.after(k);
       }
       // Staat de knop alleen op een rij (naast Afbeelding en PDF is geen plaats), dan neemt ze de hele breedte: geen los blokje.
+      // Past ze niet meer naast de andere, dan mag de rij breken (ook als de rij nu nog verborgen is).
+      if (!inMenu(k) && /flex/.test(getComputedStyle(k.parentNode).display) && getComputedStyle(k.parentNode).flexWrap === 'nowrap') k.parentNode.style.flexWrap = 'wrap';
       if (!inMenu(k) && k.offsetWidth && !k.dataset.ocBreed) {
-        // Past ze niet meer naast de andere, dan mag de rij breken.
-        if (/flex/.test(getComputedStyle(k.parentNode).display) && k.getBoundingClientRect().right > Math.min(k.parentNode.getBoundingClientRect().right, innerWidth) + 1) k.parentNode.style.flexWrap = 'wrap';
         const pd = getComputedStyle(k.parentNode).display, alleen = Math.abs(k.getBoundingClientRect().top - b.getBoundingClientRect().top) > 4 && !(k.nextElementSibling && k.nextElementSibling.offsetWidth && Math.abs(k.nextElementSibling.getBoundingClientRect().top - k.getBoundingClientRect().top) < 4);
         if (alleen && /grid/.test(pd)) { k.style.gridColumn = '1 / -1'; k.dataset.ocBreed = '1'; }
         else if (alleen && /flex/.test(pd)) { k.style.flex = '1 1 100%'; k.dataset.ocBreed = '1'; }
@@ -3659,9 +3667,10 @@ function norm(o) {
   // Zicht: de kern (vol: false) of alle vakken (vol: true). Een opdracht van voor deze keuze met inhoud blijft zoals ze was: alle vakken.
   n.vol = typeof o.vol === 'boolean' ? o.vol
     : TEKST.some(k => String(n[k] || '').trim()) || LIJST.some(k => n[k].some(x => String(x).trim())) || n.mijlpalen.some(m => m.text.trim() || m.date) || !!(n.teken.naam.trim() || n.teken.datum);
-  // Wat uit de Tijdlijn of de RACI-matrix kwam (zie BRON): h = de stand van de bron die we laatst zagen, was = wat hier toen stond.
+  // Wat uit de Tijdlijn, de RACI-matrix of Projectbudget kwam (zie BRON): h = de stand van de bron die we laatst zagen, was = wat hier toen stond.
   if (o.bron && typeof o.bron === 'object' && !Array.isArray(o.bron)) {
-    const b = {}; ['mijlpalen', 'kernteam'].forEach(k => { const x = o.bron[k]; if (x && typeof x === 'object' && typeof x.h === 'string' && typeof x.was === 'string') b[k] = { h:x.h.slice(0, 4000), was:x.was.slice(0, 4000) }; });
+    const b = {}; ['mijlpalen', 'kernteam', 'budget'].forEach(k => { const x = o.bron[k];   // vaste lijst: BRON bestaat nog niet als de opslag gelezen wordt
+    if (x && typeof x === 'object' && typeof x.h === 'string' && typeof x.was === 'string') b[k] = { h:x.h.slice(0, 4000), was:x.was.slice(0, 4000) }; });
     if (Object.keys(b).length) n.bron = b;
   }
   return n;
@@ -3837,9 +3846,9 @@ function msHTML(m, i) {
   </li>`;
 }
 
-// De kern of alle vakken. Een voorbeeld toont altijd alles.
-const kern = o => o.vol !== true && !o.voorbeeld;
-const zichtHTML = o => o.voorbeeld ? '' : `<div class="zicht" role="group" aria-label="Hoeveel vakken wil je zien?">
+// De kern of alle vakken. Ook het voorbeeld begint licht, met de kern; "Alle vakken" toont het volledige voorbeeld.
+const kern = o => o.vol !== true;
+const zichtHTML = o => `<div class="zicht" role="group" aria-label="Hoeveel vakken wil je zien?">
     <button type="button" class="zk${kern(o) ? ' aan' : ''}" data-zicht="kern" aria-pressed="${escA(kern(o))}">De kern</button>
     <button type="button" class="zk${kern(o) ? '' : ' aan'}" data-zicht="alles" aria-pressed="${escA(!kern(o))}">Alle vakken</button></div>`;
 function kernHTML(o) {
@@ -3860,9 +3869,9 @@ function kernHTML(o) {
   </section>
   <section class="card groei" id="groei" aria-labelledby="t-groei">
     <h2 id="t-groei">De rest komt later</h2>
-    <p>Meer hoef je nu niet in te vullen. Je fiche vult zich aan terwijl je verder werkt.</p>
+    <p>${o.voorbeeld ? 'Dit is de kern van het voorbeeld. De fiche vult zich aan terwijl je verder werkt.' : 'Meer hoef je nu niet in te vullen. Je fiche vult zich aan terwijl je verder werkt.'}</p>
     <ul data-groei></ul>
-    <button type="button" class="btn-s" data-zicht="alles">Toon alle vakken</button>
+    <button type="button" class="btn-s" data-zicht="alles">${o.voorbeeld ? 'Bekijk het volledige voorbeeld' : 'Toon alle vakken'}</button>
   </section>`;
 }
 function groeiHTML(o) {
@@ -4254,7 +4263,7 @@ function bronLaat(k) {
   groei(o); save(); afgeleid();
 }
 function zetZicht(alles) {
-  const o = cur(); if (o.voorbeeld || (o.vol === true) === alles) return;
+  const o = cur(); if ((o.vol === true) === alles) return;
   o.vol = alles; save(); render();
   const b = document.querySelector(`.zicht [data-zicht="${alles ? 'alles' : 'kern'}"]`); if (b) b.focus({ preventScroll:true });
   window.scrollTo({ top:0, behavior:'auto' });
@@ -4451,8 +4460,8 @@ $('example').addEventListener('click', () => {
   if (begun(o) || o.gedeeld === true || !(isStd(o.name) || o.name === ocProject(''))) { o = nieuw(''); state.opdrachten.push(o); state.current = o.id; }
   const id = o.id;
   Object.assign(o, norm({
-    id, voorbeeld:true, name:'Digitaal premieloket voor renovatie',
-    waarom:'Wie een renovatiepremie aanvraagt, vult nu een PDF-formulier in en wacht gemiddeld 21 werkdagen op een beslissing. Een op drie dossiers is onvolledig, en het loket krijgt elke week zo’n 600 telefoontjes over de stand van een aanvraag. Doen we niets, dan lopen de wachttijden verder op: volgend jaar komen er een kwart meer aanvragen.',
+    id, voorbeeld:true, vol:false, name:'Digitaal premieloket voor renovatie',
+    waarom:'Wie een renovatiepremie aanvraagt, wacht nu gemiddeld 21 werkdagen op een beslissing. Een op drie dossiers is onvolledig, en het loket krijgt elke week zo’n 600 telefoontjes over de stand van een aanvraag.',
     opleveren:'Een online loket waar burgers een renovatiepremie aanvragen, bijlagen opladen en hun dossier volgen. Met een behandelscherm voor de dossierbeheerders en een korte handleiding.',
     doelen:['Een volledige aanvraag krijgt binnen 10 werkdagen een beslissing (nu 21)', 'Minstens 80% van de aanvragen komt online binnen', 'Aanvragers weten op elk moment waar hun dossier staat'],
     binnen:['Aanvraag, bijlagen en status online', 'Koppeling met het bestaande dossierbeheer', 'Opleiding voor de 25 dossierbeheerders', 'Uitleg en veelgestelde vragen op de website'],
@@ -4472,7 +4481,7 @@ $('example').addEventListener('click', () => {
     escaleren:'Dreigt een mijlpaal meer dan 4 weken uit te lopen, of het budget meer dan 10% te stijgen, dan beslist de opdrachtgever binnen de week. Blijkt de koppeling niet haalbaar, dan stoppen we en kiezen we opnieuw.',
   }));
   save(); render();
-  toast('Voorbeeld geladen. Bij ‘Klaar om te laten aftekenen?’ zie je wat nog kan.');
+  toast('Voorbeeld geladen: eerst de kern. Kies Alle vakken voor het volledige voorbeeld.');
 });
 
 /* ---------- Voorbeeld wissen of houden, één opdracht verwijderen ---------- */
