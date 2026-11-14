@@ -150,6 +150,41 @@ textarea.field { resize:vertical; min-height:4.25rem; line-height:1.45; }
 .tl-kies button:hover { color:var(--slate-800); background:var(--slate-50); }
 .tl-kies button[aria-pressed="true"] { color:var(--accent-dark); background:var(--accent-50); box-shadow:inset 0 0 0 1px var(--accent-light); }
 .tl.is-schema { border:0; background:none; overflow:visible; }
+.tl-kies button[hidden] { display:none; }
+.mnd { display:grid; position:relative; padding:0.25rem 0 0.375rem; }
+/* Geen raster: zachte banden per maand, ruime rijen, ronde vormen. De kalender moet rustig lezen, niet als een rekenblad. */
+.mnd-hk { position:sticky; left:0; z-index:3; background:var(--wit); display:flex; align-items:flex-start; padding:0.5625rem 0 0 1rem; }
+.mnd-jaar { font-size:0.8125rem; font-weight:700; color:var(--slate-800); font-variant-numeric:tabular-nums; }
+.mnd-kop { display:grid; align-items:start; padding:0.375rem 0 0.5rem; }
+.mnd-kop span { justify-self:center; min-width:2.5rem; padding:0.25rem 0.5rem; border-radius:999px; font-size:0.8125rem; font-weight:600; color:var(--slate-500); text-align:center; line-height:1.2; }
+.mnd-kop span small { display:block; font-size:0.6875rem; font-weight:500; color:var(--slate-400); }
+.mnd-kop span.nu { background:var(--accent-50); color:var(--accent-dark); box-shadow:inset 0 0 0 1px #a7f3d0; }
+.mnd-kop span.nu small { color:var(--accent-dark); }
+.mnd-n { position:sticky; left:0; z-index:2; display:flex; flex-direction:column; justify-content:center; gap:0.0625rem; min-height:56px; padding:0.375rem 0.625rem 0.375rem 1rem; text-align:left; background:var(--wit); box-shadow:10px 0 10px -10px rgba(15,23,42,0.12); overflow-wrap:anywhere; }
+.mnd-n b { font-size:0.875rem; font-weight:600; line-height:1.25; color:var(--slate-800); }
+.mnd-n small { font-size:0.75rem; color:var(--slate-500); font-variant-numeric:tabular-nums; }
+.mnd-n.gehaald small { color:var(--accent-dark); }
+.mnd-n.laat small, .mnd-n.verschoven small { color:#92400e; }
+button.mnd-n:hover b { color:var(--accent-dark); }
+button.mnd-n:focus-visible { outline:2px solid var(--accent-dark); outline-offset:-2px; border-radius:10px; }
+.mnd-b { position:relative; background-image:linear-gradient(90deg, #f8fafc 50%, transparent 50%); background-repeat:repeat-x; }
+.mnd-b i { position:absolute; top:50%; height:12px; margin-top:-6px; border-radius:6px; background:linear-gradient(90deg, #d1fae5, #6ee7b7); }
+.mnd-b.gehaald i { background:linear-gradient(90deg, #6ee7b7, #10b981); }
+.mnd-b.laat i, .mnd-b.verschoven i { background:linear-gradient(90deg, #fef3c7, #fcd34d); }
+.mnd-b u { position:absolute; top:50%; width:22px; height:22px; margin:-11px 0 0 -11px; border-radius:50%; background:var(--wit); border:2.5px solid var(--accent-dark); box-shadow:0 0 0 3px var(--wit); }
+.mnd-b.gehaald u { background:var(--accent-dark) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center / 66% no-repeat; }
+.mnd-b.laat u, .mnd-b.verschoven u { border-color:#b45309; }
+.mnd-nu { position:absolute; top:3rem; bottom:0.375rem; width:2px; margin-left:-1px; border-radius:1px; background:var(--accent); z-index:1; pointer-events:none; }
+.mnd-nu::before { content:''; position:absolute; top:-4px; left:-3px; width:8px; height:8px; border-radius:50%; background:var(--accent); }
+.mnd-l { display:flex; flex-wrap:wrap; gap:0.25rem 1rem; margin:0; padding:0.5rem 1rem 0.625rem; font-size:0.8125rem; color:var(--slate-500); position:sticky; left:0; }
+.mnd-l span { display:inline-flex; align-items:center; gap:0.375rem; }
+.mnd-l em { width:20px; height:8px; border-radius:4px; background:linear-gradient(90deg, #d1fae5, #6ee7b7); }
+.mnd-l em.r { width:11px; height:11px; border-radius:50%; background:var(--wit); border:2px solid var(--accent-dark); }
+.mnd-l em.v { width:2px; height:12px; border-radius:1px; background:var(--accent); }
+.mnd-scroll { overflow-x:auto; overscroll-behavior-x:contain; scrollbar-width:thin; }
+.begin-hulp { margin:-0.25rem 0 0; font-size:0.8125rem; color:var(--slate-500); line-height:1.4; }
+.begin-hulp .fout { color:#b91c1c; font-weight:600; }
+.ms-edit .lbl small { font-weight:400; color:var(--slate-500); }
 .sch-scroll { overflow-x:auto; overscroll-behavior-x:contain; scrollbar-width:thin; padding:0.25rem 0 0.375rem; }
 .sch-scroll.kan-r { -webkit-mask-image:linear-gradient(90deg, #000 calc(100% - 40px), transparent); mask-image:linear-gradient(90deg, #000 calc(100% - 40px), transparent); }
 .sch-scroll.kan-l { -webkit-mask-image:linear-gradient(90deg, transparent, #000 40px); mask-image:linear-gradient(90deg, transparent, #000 40px); }
@@ -1529,7 +1564,7 @@ window.ocProjectkiezer = function (plek, o) {
     <p class="count-line" id="count-line" hidden></p>
     <div class="empty oc-start" id="empty" hidden></div>
 
-    <div class="tl-kies" id="tl-kies" role="group" aria-label="Weergave van de tijdlijn" hidden><button type="button" data-weergave="schema" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 12h18"/><circle cx="6" cy="12" r="2.2" fill="currentColor"/><circle cx="12" cy="12" r="2.2" fill="currentColor"/><circle cx="18" cy="12" r="2.2" fill="currentColor"/></svg>Schema</button><button type="button" data-weergave="schaal" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 12h18M5 9v6M10 10v4M14 10v4M19 9v6"/></svg>Op schaal</button></div>
+    <div class="tl-kies" id="tl-kies" role="group" aria-label="Weergave van de tijdlijn" hidden><button type="button" data-weergave="schema" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 12h18"/><circle cx="6" cy="12" r="2.2" fill="currentColor"/><circle cx="12" cy="12" r="2.2" fill="currentColor"/><circle cx="18" cy="12" r="2.2" fill="currentColor"/></svg>Lijn</button><button type="button" data-weergave="maanden" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h9M9 12h10M6 17h7"/></svg>Maanden</button><button type="button" data-weergave="schaal" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 12h18M5 9v6M10 10v4M14 10v4M19 9v6"/></svg>Op schaal</button></div>
     <div class="tl" id="tl" hidden></div>
 
     <div class="pl-kies" id="pl-kies" role="group" aria-label="Hoe plan je je mijlpalen?"><button type="button" data-plan="vooruit" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h15M14 7l5 5-5 5"/></svg>Plan vooruit</button><button type="button" data-plan="achteruit" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12H5M10 7l-5 5 5 5"/></svg>Plan achteruit</button></div>
@@ -2132,6 +2167,8 @@ function normItem(it) {
   if (okDate(it.orig) && it.orig !== o.date) o.orig = it.orig;
   if (typeof it.bron === 'string' && it.bron) o.bron = it.bron.slice(0, 60);
   if (typeof it.van === 'string' && it.van) { o.van = it.van.slice(0, 40); o.vanWas = str(it.vanWas); }
+  // Looptijd: een begindatum vóór de datum van de mijlpaal (optioneel). beginVan:'terug' = gezet door Achteruit plannen.
+  if (okDate(it.begin) && o.date && it.begin < o.date) { o.begin = it.begin; if (it.beginVan === 'terug') o.beginVan = 'terug'; }
   return o;
 }
 function load() {
@@ -2143,7 +2180,7 @@ function load() {
       const tg = tgNorm(l.terug); if (tg) n.terug = tg;   // het ontwerp van Plan achteruit (oude tijdlijnen: geen)
       return n;
     });
-    if (lists.length) return { lists, current: lists.some(l => l.id === d.current) ? d.current : lists[0].id, ...(d.weergave === 'schaal' ? { weergave:'schaal' } : {}), ...(d.plan === 'achteruit' ? { plan:'achteruit' } : {}), ...(typeof d.ocSince === 'string' ? { ocSince:d.ocSince } : {}) };
+    if (lists.length) return { lists, current: lists.some(l => l.id === d.current) ? d.current : lists[0].id, ...(d.weergave === 'schaal' || d.weergave === 'maanden' ? { weergave:d.weergave } : {}), ...(d.plan === 'achteruit' ? { plan:'achteruit' } : {}), ...(typeof d.ocSince === 'string' ? { ocSince:d.ocSince } : {}) };
   } } catch {}
   ocKapot(KEY);   // de tool kan niet gebruiken wat er staat: een kopie apart (niets als er niets staat)
   const first = { id:uid(), name:ocProject('Mijn project'), items:[] };
@@ -2245,7 +2282,8 @@ document.addEventListener('click', e => { if (e.target.closest('[data-act="wipe"
    Zet je de datum later dan eerst gepland, dan onthouden we die eerste datum (orig) en wordt de mijlpaal "verschoven".
    Terug naar die datum of vroeger: de oude datum valt weg. Een gehaalde mijlpaal blijft gehaald, met de oude datum erbij. */
 function zetDatum(it, d) {
-  if (!okDate(d)) { it.date = ''; return; }
+  if (!okDate(d)) { it.date = ''; delete it.begin; delete it.beginVan; return; }
+  if (it.begin && it.begin >= d) { delete it.begin; delete it.beginVan; }   // de looptijd kan niet na de mijlpaal beginnen
   const basis = it.orig || it.date;
   if (basis && d > basis) { it.orig = basis; if (it.status !== 'gehaald') it.status = 'verschoven'; }
   else if (it.orig) { delete it.orig; if (it.status === 'verschoven') it.status = 'gepland'; }
@@ -2300,10 +2338,19 @@ function rijKop(it) {
   return `<span class="ms-dot" aria-hidden="true"></span><span><span class="ms-t">${esc(it.text)}</span><span class="ms-meta">${metaVan(it)}</span>${it.note && it.id !== openId ? `<span class="ms-noot">${esc(it.note)}</span>` : ''}</span>${pilVan(it)}${CHEV}`;
 }
 const oudBinnen = it => `<span>Eerst gepland op <s>${esc(fmtLang(it.orig))}</s>. Nu op ${esc(fmtLang(it.date) || 'geen datum')}.</span><button type="button" data-act="vergeet">Wis de oude datum</button>`;
+// Onder het veld "Begint op": hoelang het werk loopt, of wat er niet klopt
+function beginHulp(it, fout) {
+  if (fout) return `<span class="fout">${esc(fout)}</span>`;
+  if (!it.begin || !it.date) return 'Vul in wanneer het werk voor deze mijlpaal begint. Dan zie je de looptijd in de weergave Maanden.';
+  const dagen = Math.round((new Date(it.date + 'T12:00:00') - new Date(it.begin + 'T12:00:00')) / 864e5), w = Math.round(dagen / 7);
+  return `Looptijd: ${dagen < 14 ? meer(dagen, 'dag', 'dagen') : meer(w, 'week', 'weken')}${it.beginVan === 'terug' ? ', uit je planning achteruit' : ''}.`;
+}
 function editHTML(it) {
   return `<div class="ms-edit"><div class="grid">
     <label class="full"><span class="lbl">Mijlpaal</span><input class="field" data-f="text" value="${escA(it.text)}" maxlength="120" enterkeyhint="done"></label>
     <label><span class="lbl">Datum</span><input class="field" data-f="date" type="date" value="${escA(it.date)}"></label>
+    <label><span class="lbl">Begint op <small>optioneel</small></span><input class="field" data-f="begin" type="date" value="${escA(it.begin || '')}" aria-describedby="bh-${escA(it.id)}"></label>
+    <p class="full begin-hulp" id="bh-${escA(it.id)}">${beginHulp(it)}</p>
     <label><span class="lbl">Wie</span><input class="field" data-f="who" value="${escA(it.who)}" maxlength="80" list="who-list" placeholder="Bv. projectleider" enterkeyhint="done"></label>
     <div class="full"><span class="lbl" id="st-${escA(it.id)}">Stand</span>
       <div class="status" role="radiogroup" aria-labelledby="st-${escA(it.id)}">
@@ -2505,6 +2552,33 @@ function schemaHTML(l, ex, perRij) {
   // een rij die verder loopt: de lijn loopt door tot de rand, en de volgende rij begint aan de rand
   return rs.map((r, i) => `<div class="sch${i < rs.length - 1 ? ' door' : ''}${i ? ' vervolg' : ''}"${ex ? '' : ' role="list"'}>${r.map(stuk).join('')}</div>`).join('');
 }
+/* Weergave Maanden: maanden als kolommen, mijlpalen als rijen. De balk is de looptijd (van "Begint op" tot de datum),
+   de ruit is de mijlpaal zelf: het resultaat op die dag. Zonder looptijd staat er alleen een ruit. Vandaag is een groene lijn.
+   Vaste regels: de kolommen lopen van de vroegste maand (begin of datum) tot de laatste; elke maand is even breed. */
+const MND = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
+function maandenHTML(l, ex, W) {
+  const its = sorted(l.items).filter(i => i.date); if (!its.length) return '';
+  const ym = d => { const [y, m] = d.split('-').map(Number); return y * 12 + (m - 1); };
+  const m0 = Math.min(...its.map(i => ym(i.begin || i.date))), m1 = Math.max(...its.map(i => ym(i.date))), n = Math.min(m1 - m0 + 1, 60);
+  const pos = d => { const [y, m, dag] = d.split('-').map(Number), in_ = new Date(y, m, 0).getDate(); return Math.max(0, Math.min(1, (ym(d) - m0 + (dag - 1) / (in_ - 1 || 1) * 0.92 + 0.04) / n)) * 100; };
+  const naamW = W < 520 ? 128 : 220, kol = Math.max(44, Math.floor((W - naamW) / n)), breed = naamW + kol * n;
+  const nu = today();
+  const kop = Array.from({ length:n }, (_, k) => { const a = m0 + k, m = a % 12, y = Math.floor(a / 12); return `<span class="${a === ym(nu) ? 'nu' : ''}">${MND[m]}${m === 0 || k === 0 ? `<small>${y}</small>` : ''}</span>`; }).join('');
+  const nuIn = ym(nu) >= m0 && ym(nu) <= m0 + n - 1;
+  const rij = it => {
+    const k = klasse(it), a = it.begin ? pos(it.begin) : null, b = pos(it.date), tag = ex ? 'div' : 'button';
+    const st = it.status === 'gehaald' ? 'gehaald' : (isLaat(it) && it.status === 'gepland') ? 'datum voorbij' : STATUS[it.status].toLowerCase();
+    const aria = ex ? '' : ` type="button" data-open="${escA(it.id)}" aria-label="${escA(`${it.text}, ${it.begin ? 'van ' + fmtLang(it.begin) + ' tot ' : ''}${fmtLang(it.date)}, ${st}. Toon in de lijst.`)}"`;
+    return `<${tag} class="mnd-n ${escA(k)}"${aria}><b>${esc(it.text)}</b><small>${esc(fmtDag(it.date))}${it.status === 'gehaald' ? ' · gehaald' : isLaat(it) ? ' · datum voorbij' : it.status === 'verschoven' ? ' · verschoven' : ''}</small></${tag}><div class="mnd-b ${escA(k)}" style="background-size:${200 / n}% 100%" aria-hidden="true">${a != null ? `<i style="left:${a}%;width:${Math.max(0, b - a)}%"></i>` : ''}<u style="left:${b}%"></u></div>`;
+  };
+  const zonder = l.items.length - its.length;
+  return `<div class="mnd" style="grid-template-columns:${naamW}px ${kol * n}px;width:${breed}px" data-m0="${m0}" data-kol="${kol}" role="${ex ? 'presentation' : 'list'}">
+      <div class="mnd-hk" aria-hidden="true"><span class="mnd-jaar">${Math.floor(m0 / 12)}</span></div><div class="mnd-kop" style="grid-template-columns:repeat(${n}, 1fr)" aria-hidden="true">${kop}</div>
+      ${its.map(rij).join('')}
+      ${nuIn ? `<span class="mnd-nu" style="left:calc(${naamW}px + ${kol * n}px * ${pos(nu) / 100})" aria-hidden="true"></span>` : ''}
+    </div>
+    <p class="mnd-l" aria-hidden="true"><span><em></em>looptijd</span><span><em class="r"></em>mijlpaal</span>${nuIn ? '<span><em class="v"></em>vandaag</span>' : ''}${zonder ? `<span>${meer(zonder, 'mijlpaal', 'mijlpalen')} zonder datum ${zonder === 1 ? 'staat' : 'staan'} niet in dit overzicht</span>` : ''}</p>`;
+}
 function schuifRand(sc) {
   const max = sc.scrollWidth - sc.clientWidth;
   sc.classList.toggle('kan-l', sc.scrollLeft > 4);
@@ -2515,12 +2589,26 @@ function renderChart() {
   const el = $('tl'), l = cur(), heeft = l.items.some(i => i.date);
   // Schema op elk scherm; "Op schaal" kan alleen als er plaats is
   const W0 = $('card').clientWidth - 2 - 36, smal = W0 < 520;
-  const view = smal || state.weergave !== 'schaal' ? 'schema' : 'schaal';
-  $('tl-kies').hidden = !heeft || smal;
+  const view = state.weergave === 'maanden' ? 'maanden' : smal || state.weergave !== 'schaal' ? 'schema' : 'schaal';
+  $('tl-kies').hidden = !heeft;
+  const ks = document.querySelector('#tl-kies [data-weergave="schaal"]'); if (ks) ks.hidden = smal;   // "Op schaal" kan alleen als er plaats is
   document.querySelectorAll('#tl-kies [data-weergave]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.weergave === view)));
   if (!heeft) { el.hidden = true; el.innerHTML = ''; el.classList.remove('is-schema'); return; }
   el.hidden = false;
   const n0 = l.items.filter(i => i.date), van0 = sorted(n0)[0].date, tot0 = sorted(n0)[n0.length - 1].date;
+  if (view === 'maanden') {
+    const oud = el.querySelector('.mnd-scroll'), sleutel = 'm|' + l.id + '|' + n0.length, x0 = oud ? oud.scrollLeft : 0;
+    el.classList.add('is-schema'); el.removeAttribute('role'); el.removeAttribute('aria-label');
+    el.innerHTML = `<div class="mnd-scroll" tabindex="-1" role="group" aria-label="${escA(`Overzicht per maand met ${meer(n0.length, 'mijlpaal', 'mijlpalen')}, van ${fmtLang(van0)} tot ${fmtLang(tot0)}. Vandaag is ${fmtLang(today())}.`)}">${maandenHTML(l, false, el.clientWidth || W0)}</div>`;
+    const sc = el.querySelector('.mnd-scroll');
+    // Nieuwe tijdlijn of mijlpaal erbij of weg: toon vandaag (een derde van links). Anders blijft hij staan waar je was.
+    if (el.dataset.sleutel !== sleutel) { const nu = sc.querySelector('.mnd-nu'); sc.scrollLeft = nu ? Math.max(0, nu.offsetLeft - sc.clientWidth / 2) : 0; el.dataset.sleutel = sleutel; }
+    else sc.scrollLeft = x0;
+    // Het jaar linksboven volgt de eerste maand die je ziet: ook ver in het project weet je in welk jaar je kijkt.
+    const g = sc.querySelector('.mnd'), jr = sc.querySelector('.mnd-jaar'), jaar = () => { if (jr) jr.textContent = Math.floor((+g.dataset.m0 + Math.floor((sc.scrollLeft + 2) / +g.dataset.kol)) / 12); };
+    jaar(); sc.addEventListener('scroll', jaar, { passive:true });
+    return;
+  }
   if (view === 'schema') {
     const oud = el.querySelector('.sch-scroll'), sleutel = l.id + '|' + n0.length, x0 = oud ? oud.scrollLeft : 0;
     el.classList.add('is-schema'); el.removeAttribute('role'); el.removeAttribute('aria-label');
@@ -2548,7 +2636,7 @@ try { document.fonts.ready.then(renderChart); } catch {}
 
 $('tl-kies').addEventListener('click', e => {
   const b = e.target.closest('[data-weergave]'); if (!b) return;
-  if (b.dataset.weergave === 'schaal') state.weergave = 'schaal'; else delete state.weergave;
+  if (b.dataset.weergave === 'schaal' || b.dataset.weergave === 'maanden') state.weergave = b.dataset.weergave; else delete state.weergave;
   ocSchrijf(KEY, JSON.stringify(state));
   renderChart();
 });
@@ -2631,11 +2719,24 @@ function datumVeld(el) {
     else { const st = li.querySelector('.ms-edit .status'); st && st.parentElement.insertAdjacentHTML('afterend', `<p class="full oud">${oudBinnen(it)}</p>`); }
   } else if (oud) oud.remove();
   const radio = li && li.querySelectorAll('[data-status]'); if (radio) radio.forEach(r => r.setAttribute('aria-checked', String(r.dataset.status === it.status)));
+  const bv = li && li.querySelector('[data-f="begin"]'), bh = li && li.querySelector('.begin-hulp');
+  if (bv && document.activeElement !== bv) bv.value = it.begin || ''; if (bh) bh.innerHTML = beginHulp(it);
 }
 $('ms').addEventListener('input', e => {
   const f = e.target.dataset && e.target.dataset.f; if (!f) return;
   if (f === 'date') { datumVeld(e.target); return; }
   const { it } = vindIt(e.target); if (!it) return;
+  if (f === 'begin') {   // de begindatum: leeg mag, anders een echte datum vóór de mijlpaal
+    const v = e.target.value, hulp = e.target.closest('.ms-edit').querySelector('.begin-hulp'); let fout = '';
+    if (v && !okDate(v)) return;   // nog niet af
+    if (!v) { delete it.begin; delete it.beginVan; }
+    else if (!it.date) fout = 'Geef de mijlpaal eerst een datum.';
+    else if (v >= it.date) fout = 'Het begin moet vóór de datum van de mijlpaal liggen.';
+    else { it.begin = v; delete it.beginVan; }
+    if (fout) { delete it.begin; delete it.beginVan; }
+    if (hulp) hulp.innerHTML = beginHulp(it, fout);
+    save(); renderChart(); return;
+  }
   if (f === 'note') grow(e.target);
   it[f] = e.target.value.slice(0, f === 'text' ? 120 : f === 'who' ? 80 : 600);
   // een overgenomen mijlpaal die je hernoemt, is nu je eigen mijlpaal
@@ -2879,6 +2980,9 @@ function tgZet() {
       l.items.push(it); nieuw++;
     }
     k.x.mid = it.id;
+    // Looptijd uit de planning: het werk voor deze mijlpaal begint op de datum van de stap ervoor. Een begin dat je zelf koos, blijft.
+    const vorige = knopen[i + 1];
+    if (vorige && vorige.d < it.date && (!it.begin || it.beginVan === 'terug')) { it.begin = vorige.d; it.beginVan = 'terug'; }
   });
   tgFout = ''; openId = null; save(); render();
   const delen = [nieuw && `${meer(nieuw, 'mijlpaal', 'mijlpalen')} op de tijdlijn gezet`, aangepast && `${meer(aangepast, 'mijlpaal', 'mijlpalen')} aangepast`].filter(Boolean);
@@ -2972,7 +3076,7 @@ async function download(act) {
 // Exportweergave: de tijdlijn zelf en daaronder elke mijlpaal op een rij. Zonder knoppen of velden.
 function buildExport(l) {
   const W = 1038, node = document.createElement('div'), its = sorted(l.items), t = telling(l);
-  const c = state.weergave === 'schaal' ? chartHTML(l, W, true) : (its.some(i => i.date) ? { html:`<div class="sch-scroll rijen" style="padding:4px 0">${schemaHTML(l, true, 7)}</div>` } : { html:'' });
+  const c = state.weergave === 'maanden' && its.some(i => i.date) ? { html:`<div class="mnd-scroll" style="padding:4px 0">${maandenHTML(l, true, W)}</div>` } : state.weergave === 'schaal' ? chartHTML(l, W, true) : (its.some(i => i.date) ? { html:`<div class="sch-scroll rijen" style="padding:4px 0">${schemaHTML(l, true, 7)}</div>` } : { html:'' });
   const C = { text:'#1e293b', soft:'#475569', muted:'#64748b', line:'#e2e8f0' };
   const pil = it => {
     const [tx, col, bg, rand] = it.status === 'gehaald' ? ['Gehaald', '#047857', '#ecfdf5', '#a7f3d0'] : it.status === 'verschoven' ? ['Verschoven', '#92400e', '#fffbeb', '#fde68a']
