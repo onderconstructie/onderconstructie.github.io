@@ -15,6 +15,6 @@ const { chromium } = require('playwright'); const B = 'http://127.0.0.1:' + (pro
         if (fout.length > 8) return { n, fout }; } }
     store.set('route', {}); store.set('stap-over', {}); store.set('stap-erbij', {});
     // de kern bestaat: elke kernstap is een echte stap van het plan, en elke kernstap heeft een "klaar als"
-    plannen.forEach(tr => { const ids = trajectStappen(tr).map(s => s.t.id); ROUTE_KERN[tr].forEach(id => { n++; if (!ids.includes(id)) fout.push(`${tr}: kernstap ${id} bestaat niet in het plan`); if (!(KLAAR_ALS[tr] || {})[id]) fout.push(`${tr}: kernstap ${id} heeft geen "klaar als"`); }); if (stepsOf(tr).length !== ROUTE_KERN[tr].length) fout.push(`${tr}: korte route telt ${stepsOf(tr).length} stappen, de kern ${ROUTE_KERN[tr].length}`); });
+    plannen.forEach(tr => { const ids = trajectStappen(tr).map(s => s.t.id); ROUTE_KERN[tr].forEach(id => { n++; if (!ids.includes(id)) fout.push(`${tr}: kernstap ${id} bestaat niet in het plan`); if (!(KLAAR_ALS[tr] || {})[id]) fout.push(`${tr}: kernstap ${id} heeft geen "klaar als"`); }); if (stepsOf(tr).length !== kernAantal(tr)) fout.push(`${tr}: korte route telt ${stepsOf(tr).length} stappen, de kern ${kernAantal(tr)}`); });
     return { n, fout }; });
   console.log((r.fout.length ? 'FOUT ' : 'ok   ') + 'Routelogica'.padEnd(34), r.n, 'gevallen', r.fout.slice(0, 6).join('\n     '), '| paginafouten', E.length); await b.close(); })();

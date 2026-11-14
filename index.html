@@ -2561,7 +2561,7 @@ window.ocProjectkiezer = function (plek, o) {
         <a class="ft-link" href="https://www.linkedin.com/in/bartel-volckaert-8a96842/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Maker</a>
         <a class="ft-link" href="/privacy/#voorwaarden" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.01"/></svg>Disclaimer</a>
       </nav>
-      <p class="ft-meta"><button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (34 seconden)" title="Bekijk de film (34 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg><span>Film</span></button><button class="ft-film ft-inst" id="ft-app" type="button" hidden aria-label="Installeer de app"><img src="/app/icon.svg" alt="" width="22" height="22"><span>Installeer</span></button><span class="ft-dot" aria-hidden="true"></span><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v16.20</span></p>
+      <p class="ft-meta"><button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (34 seconden)" title="Bekijk de film (34 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg><span>Film</span></button><button class="ft-film ft-inst" id="ft-app" type="button" hidden aria-label="Installeer de app"><img src="/app/icon.svg" alt="" width="22" height="22"><span>Installeer</span></button><span class="ft-dot" aria-hidden="true"></span><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v16.21</span></p>
     </div>
   </footer>
   <dialog class="film" id="film" aria-labelledby="film-h">
@@ -3672,10 +3672,11 @@ function openTool(id, fromHistory, van, zoek, stap) {
   let f = frames.get(id);
   if (!f && pre && pre.id === id) { f = pre.f; pre = null; f.inert = false; }
   // Een link met ?van=<tool> ("Zet in Takenbord"): de tool opnieuw laden met die vraag, dan opent ze meteen de kiezer
-  if (f && zoek && /[?&](van|sjabloon|plan|bord)=/.test(zoek)) { delete f.dataset.loaded; f.classList.add('loading-frame'); try { f.contentWindow.location.replace(t.path + zoek); } catch { f.src = t.path + zoek; } }
+  if (f && zoek && /[?&](van|sjabloon|plan|bord|toon)=/.test(zoek)) { delete f.dataset.loaded; f.classList.add('loading-frame'); try { f.contentWindow.location.replace(t.path + zoek); } catch { f.src = t.path + zoek; } }
   if (!f) f = makeFrame(id, zoek);
   else frames.delete(id);
   if (zoek) f.dataset.zoek = zoek;   // opnieuw achteraan zetten
+  else if (f.dataset.zoek === '?toon=alles') delete f.dataset.zoek;   // de Projectopdracht zelf openen is weer stap 1, niet de slotstap
   setLoading(!f.dataset.loaded);
   frames.set(id, f);
   if (current && current !== id && current !== van && byId[current] && !byId[current].keep) autoDrop(current);
@@ -4693,12 +4694,19 @@ function heeftSchets(k, eigen, open) {
   try { const a = JSON.parse(localStorage.getItem('schets.v1') || 'null'), L = a && Array.isArray(a.bl) ? a.bl : [];
     return L.some(b => Array.isArray(b) && b[1] === k && (!eigen || b[2] > b[3]) && (!open || b[0] === 1)); } catch { return false; }
 }
+// De Projectopdracht van het actieve project (dezelfde naam; anders de opdracht die open staat): is ze afgetekend of is dat gepland?
+function ficheAfgetekend() {
+  try { const d = JSON.parse(localStorage.getItem('opdracht.v1') || 'null'), L = d && Array.isArray(d.opdrachten) ? d.opdrachten.filter(o => o && typeof o === 'object' && !o.voorbeeld) : [];
+    const n = x => String(x || '').trim().toLowerCase(), p = n((getProject() || {}).name), o = (p && L.find(x => n(x.name) === p)) || L.find(x => x.id === d.current) || L[0];
+    return !!(o && o.teken && String(o.teken.naam || '').trim() && o.teken.datum); } catch { return false; }
+}
 const STAP_EXTRA = {
   verhaal: [
     { na:'verhaal', id:'schets', zoek:'?sjabloon=moodbord', title:'Moodbord', sub:'Welke sfeer heeft je verhaal?', icon:SJ_ICON.moodbord, klaar:() => heeftSchets('moodbord', true), gevuld:() => heeftSchets('moodbord', true), open:() => heeftSchets('moodbord', false, true) },
     { na:'schets', id:'schets', zoek:'?sjabloon=storyboard', title:'Storyboard', sub:'Zes beelden, je verhaal staat er al onder', icon:SJ_ICON.storyboard, klaar:() => heeftSchets('storyboard', true), gevuld:() => heeftSchets('storyboard', true), open:() => heeftSchets('storyboard', false, true) }
   ],
-  project: [{ na:'opdracht', id:'mindmap', zoek:'?sjabloon=productboom', title:'Productboom', sub:'Wat lever je op?', icon:SJ_ICON.productboom, klaar:() => heeftSjabloon('productboom'), gevuld:() => heeftSjabloon('productboom', true), open:() => heeftSjabloon('productboom', false, true) }]
+  project: [{ na:'kanban', id:'opdracht', zoek:'?toon=alles', title:'Kijk na en laat aftekenen', sub:'Je fiche is aangevuld. Klopt alles?', klaarTekst:'afgetekend', klaar:() => ficheAfgetekend(), gevuld:() => ficheAfgetekend() },
+    { na:'opdracht', id:'mindmap', zoek:'?sjabloon=productboom', title:'Productboom', sub:'Wat lever je op?', icon:SJ_ICON.productboom, klaar:() => heeftSjabloon('productboom'), gevuld:() => heeftSjabloon('productboom', true), open:() => heeftSjabloon('productboom', false, true) }]
 };
 // De stappen van een plan: de tools met oc:traject, aangevuld met de extra stappen hierboven
 function trajectStappen(trId) {
@@ -4710,14 +4718,16 @@ function trajectStappen(trId) {
   return st;
 }
 const stapKlaar = (s, all) => s.t.extra ? s.t.extra.klaar() : hasData(s.t, all);
-/* Korte route: per plan een kern van vijf of zes stappen. De rest staat onder "Ook handig" en neem je erbij met één tik.
+/* Korte route: per plan een kern van vijf tot zeven stappen. De rest staat onder "Ook handig" en neem je erbij met één tik.
    Vaste regels, niets geraden: in de route zit de kern, wat je erbij nam, en nooit wat je oversloeg. */
 const ROUTE_KERN = { project:['opdracht', 'mindmap', 'tijdlijn', 'raci', 'kanban', 'retro'], proces:['stroom', 'schildpad', 'visgraat', 'prioriteit', 'kanban', 'retro'], verandering:['stakeholders', 'sponsor', 'impact', 'communicatie', 'weerstand'] };
 const KLAAR_ALS = {
-  project:{ opdracht:'je opdrachtgever het doel in één zin herkent', mindmap:'je elk onderdeel kunt aanwijzen dat je oplevert', tijdlijn:'elke mijlpaal een datum heeft', raci:'elke taak precies één eigenaar heeft', kanban:'het werk van deze week op het bord staat', retro:'je één ding kiest dat je volgende keer anders doet' },
+  project:{ opdracht:'je opdrachtgever het doel in één zin herkent', 'opdracht?toon=alles':'je opdrachtgever heeft afgetekend', mindmap:'je elk onderdeel kunt aanwijzen dat je oplevert', tijdlijn:'elke mijlpaal een datum heeft', raci:'elke taak precies één eigenaar heeft', kanban:'het werk van deze week op het bord staat', retro:'je één ding kiest dat je anders doet. Doe dit ook na elke mijlpaal' },
   proces:{ stroom:'iemand die het proces uitvoert zegt: zo loopt het', schildpad:'je weet wat erin gaat, wat eruit komt en welke regels gelden', visgraat:'je de drie waarschijnlijkste oorzaken hebt aangeduid', prioriteit:'je weet wat je eerst aanpakt', kanban:'elke verbetering een eigenaar en een datum heeft', retro:'je weet of het proces beter loopt' },
   verandering:{ stakeholders:'je weet wie mee moet en wie kan blokkeren', sponsor:'je sponsor weet wat jij van hem nodig hebt', impact:'je per groep weet wat er verandert', communicatie:'elke groep weet wat, wanneer en van wie', weerstand:'je per groep één eerste stap hebt' }
 };
+const kernAantal = trId => trajectStappen(trId).filter(s => ROUTE_KERN[trId].includes(s.t.id)).length;
+const klaarAls = (trId, s) => { const K = KLAAR_ALS[trId] || {}; return K[stapSleutel(s)] || K[s.t.id] || ''; };
 const routeVan = trId => ROUTE_KERN[trId] ? ((store.get('route', {}) || {})[trId] || 'kort') : 'vol';
 const stapSleutel = s => s.t.id + (s.t.zoek || '');
 const stapLijst = (naam, trId) => (store.get(naam, {}) || {})[trId] || [];
@@ -4800,7 +4810,7 @@ function askProjectName(then, tr) {
   const rBox = $('pn-route'), rKn = [...rBox.querySelectorAll('[data-pn-route]')], heeftRoute = !!ROUTE_KERN[tr]; let route = heeftRoute ? routeVan(tr) : null;
   const rToon = () => rKn.forEach(b => { const aan = b.dataset.pnRoute === route; b.classList.toggle('aan', aan); b.setAttribute('aria-pressed', String(aan)); });
   rBox.hidden = !heeftRoute;
-  if (heeftRoute) { $('pn-rk').textContent = `${ROUTE_KERN[tr].length} stappen`; $('pn-rv').textContent = `${trajectStappen(tr).length} stappen`; rToon(); rKn.forEach(b => b.onclick = () => { route = b.dataset.pnRoute; rToon(); }); }
+  if (heeftRoute) { $('pn-rk').textContent = `${kernAantal(tr)} stappen`; $('pn-rv').textContent = `${trajectStappen(tr).length} stappen`; rToon(); rKn.forEach(b => b.onclick = () => { route = b.dataset.pnRoute; rToon(); }); }
   inp.value = ''; dlg.hidden = false; inp.focus();
   const done = save => {
     const name = save ? inp.value.trim().slice(0, 80) : '';
@@ -4939,21 +4949,21 @@ document.addEventListener('click', e => {
 // Schakelaar Kort of Uitgebreid, de stappen en "Ook handig". Eén bron voor het plan op Start en voor het venster in een tool.
 function planBinnen(tr, alle, steps, rest, next, kort, over, ookOpen) {
   return `${ROUTE_KERN[tr.id] ? `<div class="route-keuze" role="group" aria-label="Lengte van het stappenplan">
-        <button type="button" class="rk${kort ? ' aan' : ''}" data-route="kort" aria-pressed="${kort}">Kort<span>${ROUTE_KERN[tr.id].length} stappen</span></button>
+        <button type="button" class="rk${kort ? ' aan' : ''}" data-route="kort" aria-pressed="${kort}">Kort<span>${kernAantal(tr.id)} stappen</span></button>
         <button type="button" class="rk${kort ? '' : ' aan'}" data-route="vol" aria-pressed="${!kort}">Uitgebreid<span>${alle.length} stappen</span></button>
       </div>` : ''}
       <ol class="steps">${steps.map((s, i) => `<li class="step${s.done ? ' done' : ''}${s === next ? ' next' : ''}">
         <button class="step-btn" data-id="${esc(s.t.id)}"${zoekAttr(s.t)} title="${esc(s.t.desc)}">
           <span class="step-dot">${s.done ? checkIcon : i + 1}</span><span class="icon">${iconHTML(s.t.icon)}</span>
-          <span><span class="step-name">${esc(s.t.title)}</span><span class="step-q">${esc(tr.q[s.t.id] || s.t.sub)}</span></span>
-          <span class="step-st">${s.done ? 'begonnen' : s === next ? 'volgende' : ''}</span>
-        </button>${s === next ? `<p class="step-hulp">${(KLAAR_ALS[tr.id] || {})[s.t.id] ? `<span>Klaar als ${esc(KLAAR_ALS[tr.id][s.t.id])}.</span> ` : ''}${steps.length > 1 ? `<button type="button" class="lnk" data-skip="${esc(stapSleutel(s))}">Sla over</button>` : ''}</p>` : ''}</li>`).join('')}</ol>
+          <span><span class="step-name">${esc(s.t.title)}</span><span class="step-q">${esc((s.t.extra ? '' : tr.q[s.t.id]) || s.t.sub)}</span></span>
+          <span class="step-st">${s.done ? (s.t.extra && s.t.extra.klaarTekst) || 'begonnen' : s === next ? 'volgende' : ''}</span>
+        </button>${s === next ? `<p class="step-hulp">${klaarAls(tr.id, s) ? `<span>Klaar als ${esc(klaarAls(tr.id, s))}.</span> ` : ''}${steps.length > 1 ? `<button type="button" class="lnk" data-skip="${esc(stapSleutel(s))}">Sla over</button>` : ''}</p>` : ''}</li>`).join('')}</ol>
       ${rest.length ? `<div class="ook${ookOpen ? ' open' : ''}">
         <button type="button" class="ook-kop" data-ook aria-expanded="${ookOpen}"><span>${kort ? 'Ook handig' : 'Overgeslagen'}</span><span class="ook-n">${rest.length}</span>${toggleIcon}</button>
         <ul class="steps ook-lijst">${rest.map(s => `<li class="step ook-stap${s.done ? ' done' : ''}">
           <button class="step-btn" data-id="${esc(s.t.id)}"${zoekAttr(s.t)} data-erbij="${esc(stapSleutel(s))}" title="${esc(s.t.desc)}">
             <span class="step-dot">${s.done ? checkIcon : '+'}</span><span class="icon">${iconHTML(s.t.icon)}</span>
-            <span><span class="step-name">${esc(s.t.title)}</span><span class="step-q">${esc(tr.q[s.t.id] || s.t.sub)}</span></span>
+            <span><span class="step-name">${esc(s.t.title)}</span><span class="step-q">${esc((s.t.extra ? '' : tr.q[s.t.id]) || s.t.sub)}</span></span>
             <span class="step-st">${over.includes(stapSleutel(s)) ? 'overgeslagen' : s.done ? 'begonnen' : 'neem erbij'}</span>
           </button></li>`).join('')}</ul></div>` : ''}`;
 }
@@ -4969,7 +4979,9 @@ function renderPlanDlg() {
   const p = planDelen(tr, lsKeys());
   $('plan-h').textContent = tr.title;
   $('plan-body').innerHTML = `<section class="path open plan-in" data-path="${tr.id}">${planBinnen(tr, p.alle, p.steps, p.rest, p.next, p.kort, p.over, p.ookOpen)}</section>`;
-  const hier = current && [...$('plan-body').querySelectorAll('.step-btn')].find(b => b.dataset.id === current && !b.dataset.erbij);
+  // Staat een tool twee keer in het plan (de Projectopdracht en de slotstap), dan wijst de vraag waarmee ze openging de stap aan.
+  const hierIn = current ? [...$('plan-body').querySelectorAll('.step-btn')].filter(b => b.dataset.id === current && !b.dataset.erbij) : [], hierZ = ((frames.get(current) || {}).dataset || {}).zoek || '';
+  const hier = hierIn.find(b => (b.dataset.zoek || '') === hierZ) || hierIn[0];
   if (hier) { hier.setAttribute('aria-current', 'step'); hier.closest('.step').classList.add('hier'); const st = hier.querySelector('.step-st'); if (st) st.textContent = 'hier ben je'; }
 }
 function openPlanDlg(trId) { const d = $('plan-dlg'); d.dataset.path = trId; if (!d.open) d.showModal(); renderPlanDlg(); $('plan-x').focus(); }
@@ -5606,7 +5618,7 @@ $('wz-keuzes').addEventListener('click', e => {
     const [vr, vb] = naamVraag(WZ.doel); i.placeholder = vb; document.querySelector('label[for="wz-naam"]').textContent = vr;
     // Kort of uitgebreid: dezelfde keuze als in de vraag op Start
     const kern = ROUTE_KERN[WZ.doel]; $('wz-route').hidden = !kern;
-    if (kern) { $('wz-rk').textContent = `${kern.length} stappen`; $('wz-rv').textContent = `${trajectStappen(WZ.doel).length} stappen`; wzRoute(WZ.route); }
+    if (kern) { $('wz-rk').textContent = `${kernAantal(WZ.doel)} stappen`; $('wz-rv').textContent = `${trajectStappen(WZ.doel).length} stappen`; wzRoute(WZ.route); }
     wzToon(3, wzFijn() ? i : null);
   } else { wzKlaar(); wzToon(4); }
 });
