@@ -2606,7 +2606,7 @@ window.ocProjectkiezer = function (plek, o) {
         <a class="ft-link" href="https://www.linkedin.com/in/bartel-volckaert-8a96842/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Maker</a>
         <a class="ft-link" href="/privacy/#voorwaarden" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.01"/></svg>Disclaimer</a>
       </nav>
-      <p class="ft-meta"><button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (34 seconden)" title="Bekijk de film (34 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg><span>Film</span></button><button class="ft-film ft-inst" id="ft-app" type="button" hidden aria-label="Installeer de app"><img src="/app/icon.svg" alt="" width="22" height="22"><span>Installeer</span></button><span class="ft-dot" aria-hidden="true"></span><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v16.29</span></p>
+      <p class="ft-meta"><button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (34 seconden)" title="Bekijk de film (34 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg><span>Film</span></button><button class="ft-film ft-inst" id="ft-app" type="button" hidden aria-label="Installeer de app"><img src="/app/icon.svg" alt="" width="22" height="22"><span>Installeer</span></button><span class="ft-dot" aria-hidden="true"></span><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v16.30</span></p>
     </div>
   </footer>
   <dialog class="film" id="film" aria-labelledby="film-h">
@@ -3133,7 +3133,7 @@ function rowHTML(t, opts = {}) {
              + also.map(x => `<span class="tag pd also">ook ${esc(x.name.toLowerCase())}</span>`).join('');
   const grp = opts.showGroup ? `<span class="row-group">${esc((GROUPS.find(g => g.id === t.g) || {}).label || '')}</span>` : '';
   return `
-          <button class="row" data-id="${esc(t.id)}" title="${esc(t.desc)}">
+          <button class="row" data-id="${esc(t.id)}"${zoekAttr(t)} title="${esc(t.desc)}">
             <span class="icon">${iconHTML(t.icon)}</span>
             <span><span class="row-title">${naam(t)}</span><span class="live">Staat open</span>${tags}<br><span class="row-sub">${esc(t.sub)}</span>${grp}</span>
             <span>${chevron}</span>
@@ -3148,14 +3148,18 @@ const PHASES = [
   { id:'act',   name:'Bijsturen', sub:'Beter maken', q:'Wat doen we vanaf nu anders?',                     long:'Bijsturen en vastleggen wat we anders doen' }
 ];
 const LABEL_ORDER = ['mensen', 'vergaderen', 'inzicht'];
-/* Kerntools per fase: wat iemand in die fase het eerst nodig heeft (getoetst bij vijf profielen van projectleiders).
-   De volgorde is bewust. De andere tools van de fase staan eronder bij "Ook handig", ingeklapt. */
+/* Kerntools per fase: wat iemand in die fase het eerst nodig heeft. De volgorde is bewust.
+   De andere tools van de fase staan eronder bij "Ook handig", ingeklapt.
+   Plannen volgt de korte projectroute: eerst doel en afbakening (in onderzoek de meest genoemde oorzaak van mislukte projecten),
+   dan wat je oplevert, wanneer, wie, wat er mis kan gaan en wie mee moet. 'productboom' is de Ideeënkaart met dat sjabloon.
+   Checken begint bij de stand en de mijlpalen. Bijsturen legt vast wat je anders doet (Leerpuntenlog). */
 const KERN = {
-  plan:  ['opdracht', 'stakeholders', 'communicatie', 'risico', 'raci', 'meetplan'],
+  plan:  ['opdracht', 'productboom', 'tijdlijn', 'raci', 'risico', 'stakeholders'],
   do:    ['kanban', 'notities', 'beslissingen', 'vinkje', 'communicatie'],
-  check: ['cockpit', 'project-radar', 'meetplan', 'risico', 'project-realisme', 'dossier', 'sponsor'],
-  act:   ['retro', 'prioriteit', 'visgraat', 'beslisscore', 'weerstand']
+  check: ['project-radar', 'tijdlijn', 'meetplan', 'risico', 'dossier', 'cockpit'],
+  act:   ['retro', 'leerpunten', 'visgraat', 'prioriteit', 'beslisscore']
 };
+const kernTool = x => x === 'productboom' && byId.mindmap ? Object.assign({}, byId.mindmap, { title:'Productboom', sub:'Wat lever je op?', desc:'Splits op wat je oplevert, van groot naar klein.', icon:SJ_ICON.productboom, zoek:'?sjabloon=productboom', bron:byId.mindmap }) : byId[x];
 // Fasen die een tool er in de app bij krijgt, bovenop wat de tool zelf aangeeft
 const FASE_EXTRA = { schets:['plan', 'do'], visgraat:['act'], prioriteit:['act'], beslisscore:['act'], weerstand:['act'], 'project-realisme':['check'], notities:['do'] };
 const VIEWS = ['plan', 'fase', 'onderwerp'];
@@ -3171,7 +3175,7 @@ const calm = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 // eerst de tools waar deze fase hun hoofdfase is, dan de tools die er ook bij passen
 function phaseTools(id) {
   const inP = TOOLS.filter(t => (t.pdca || []).includes(id));
-  const kern = (KERN[id] || []).map(x => byId[x]).filter(t => t && inP.includes(t));
+  const kern = (KERN[id] || []).map(kernTool).filter(t => t && inP.includes(t.bron || t));
   return { main: kern, more: byOrder(inP.filter(t => !kern.includes(t))) };
 }
 function renderFilter() {
