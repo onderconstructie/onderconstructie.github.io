@@ -2,7 +2,7 @@
 const { chromium } = require('playwright'); const fs = require('fs'), os = require('os'), path = require('path'); const B = 'http://127.0.0.1:' + (process.env.PORT || 9421);
 const fout = []; const ok = (c, m) => { console.log((c ? '  ok   ' : '  FOUT ') + m); if (!c) fout.push(m); };
 (async () => { const b = await chromium.launch(); const c = await b.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block', locale: 'nl-BE', acceptDownloads: true }); const p = await c.newPage(); const E = []; p.on('pageerror', e => E.push(String(e).slice(0, 200)));
-  const tot = () => p.evaluate(() => [...document.querySelectorAll('.bg-cijfers b')].map(x => x.textContent));
+  const tot = () => p.evaluate(() => { const li = document.querySelectorAll('.bg-opbouw li'); return [li[0].querySelector('b').textContent, (li[1].querySelector('small').textContent.split(' ×')[0]), document.querySelector('.bg-hero .hb').textContent]; });
   await p.goto(B + '/projectbudget/', { waitUntil: 'networkidle' }); await p.waitForTimeout(500);
   ok(await p.isVisible('#ocStart'), 'leeg: de startkaart staat er');
   await p.click('#ocStart .oc-begin'); await p.waitForTimeout(400); await p.keyboard.press('Escape'); await p.waitForTimeout(300);
@@ -39,16 +39,17 @@ const fout = []; const ok = (c, m) => { console.log((c ? '  ok   ' : '  FOUT ') 
   // verwijderen met ongedaan
   await p.click('.bg-post:has-text("Opleiding") .del'); await p.waitForTimeout(250); ok((await p.locator('.bg-post').count()) === 3, 'kost verwijderd');
   await p.click('#toast-btn'); await p.waitForTimeout(250); ok((await p.locator('.bg-post').count()) === 4, 'Ongedaan zet ze terug');
-  // al uitgegeven
+  // al betaald: het veld staat er alleen bij een kost die je aanpast
+  ok(await p.isHidden('#uit'), 'bij een nieuwe kost staat "Al betaald" er niet');
   await p.click('.bg-post:has-text("Opleiding") .pn'); await p.waitForTimeout(300); await p.fill('#uit', '6.500'); await p.click('#submit'); await p.waitForTimeout(250);
   let u = await p.innerText('#stand');
-  ok(/Al uitgegeven\s*€ 6\.500/.test(u) && /1 kost zit boven haar raming/.test(u), 'al uitgegeven: het bedrag en de kost boven haar raming staan er (' + u.replace(/\n+/g, ' / ').slice(-120) + ')');
+  ok(/Al betaald\s*€ 6\.500/.test(u) && /1 kost zit boven haar raming/.test(u), 'al uitgegeven: het bedrag en de kost boven haar raming staan er (' + u.replace(/\n+/g, ' / ').slice(-120) + ')');
   ok(/€ 1\.500 te veel/.test(await p.innerText('.bg-post:has-text("Opleiding")')), 'bij de kost: 1.500 te veel');
   await p.click('.bg-post:has-text("Opleiding") .pn'); await p.waitForTimeout(300); await p.fill('#uit', 'abc'); await p.click('#submit'); await p.waitForTimeout(200);
   ok(await p.isVisible('#fout'), 'al uitgegeven: geen getal wordt geweigerd'); await p.fill('#uit', '2000'); await p.click('#submit'); await p.waitForTimeout(250);
-  u = await p.innerText('#stand'); ok(/Al uitgegeven\s*€ 2\.000/.test(u) && !/boven/.test(u), 'onder de raming: geen waarschuwing');
+  u = await p.innerText('#stand'); ok(/Al betaald\s*€ 2\.000/.test(u) && !/boven/.test(u), 'onder de raming: geen waarschuwing');
   await p.click('#evo-card [data-terug]'); await p.waitForTimeout(300);
-  ok(await p.isHidden('.bg-uit') && (await p.locator('.bg-post').count()) === 3, 'Neem terug: de kost die er toen niet was, is weg, met haar uitgave');
+  ok(await p.isHidden('.bg-betaald') && (await p.locator('.bg-post').count()) === 3, 'Neem terug: de kost die er toen niet was, is weg, met haar uitgave');
   await p.click('#toast-btn'); await p.waitForTimeout(300); ok(/€ 2\.000/.test(await p.innerText('#stand')), 'Ongedaan: de uitgave is terug');
   // Vlaamse overheid
   ok(await p.isHidden('#vo-card'), 'de aankoopprocedure staat standaard uit');

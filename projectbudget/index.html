@@ -462,6 +462,28 @@ select.input { min-height:48px; appearance:none; -webkit-appearance:none; backgr
 .bg-leeg { padding:1.25rem 1.125rem; font-size:0.9375rem; color:var(--slate-500); }
 @media (pointer:coarse) { select.input { font-size:16px !important; } }
 @media (prefers-reduced-motion:reduce) { .bg-schakel::before, .bg-schakel i { transition:none; } }
+/* Bovenaan: één groot getal en hoe het is opgebouwd */
+.bg-hero { border-radius:14px; background:var(--accent-50); border:1px solid #a7f3d0; padding:0.875rem 1rem 0.75rem; }
+.bg-hero .hl { display:block; font-size:0.875rem; font-weight:600; color:var(--accent-dark); }
+.bg-hero .hb { display:block; font-size:2rem; font-weight:700; letter-spacing:-0.02em; color:#064e3b; font-variant-numeric:tabular-nums; line-height:1.15; margin-top:0.125rem; }
+.bg-hero .bg-balk { margin-top:0.75rem; background:#d1fae5; }
+.bg-opbouw { list-style:none; margin:0.625rem 0 0; display:grid; gap:0.25rem; }
+.bg-opbouw li { display:grid; grid-template-columns:10px minmax(0, 1fr) auto; align-items:baseline; gap:0.5rem; font-size:0.875rem; color:var(--slate-700); }
+.bg-opbouw li i { width:10px; height:10px; border-radius:3px; align-self:center; }
+.bg-opbouw li i.een { background:#047857; } .bg-opbouw li i.jaar { background:#6ee7b7; } .bg-opbouw li i.mrg { background:#94a3b8; }
+.bg-opbouw li small { font-size:0.8125rem; color:var(--slate-500); margin-left:0.375rem; }
+.bg-opbouw li b { font-weight:600; color:var(--slate-800); font-variant-numeric:tabular-nums; white-space:nowrap; }
+.bg-betaald { margin-top:0.75rem; padding:0.75rem 1rem; border-radius:14px; border:1px solid var(--slate-200); }
+.bg-betaald .br { display:flex; justify-content:space-between; align-items:baseline; gap:0.75rem; font-size:0.875rem; font-weight:600; color:var(--slate-700); }
+.bg-betaald .br b { font-size:1.0625rem; color:var(--slate-800); font-variant-numeric:tabular-nums; white-space:nowrap; }
+.bg-betaald .ub { height:6px; border-radius:3px; background:var(--slate-100); margin-top:0.5rem; overflow:hidden; }
+.bg-betaald .ub i { display:block; height:100%; border-radius:3px; background:#047857; }
+.bg-betaald .ub i.over { background:#b45309; }
+.bg-betaald .bs { font-size:0.8125rem; color:var(--slate-500); margin-top:0.375rem; font-variant-numeric:tabular-nums; }
+.bg-betaald .bw { font-size:0.8125rem; font-weight:600; color:#92400e; margin-top:0.125rem; }
+.bg-exp-l { margin:0 1.125rem 1.125rem; padding-top:0.875rem; border-top:1px solid var(--slate-100); }
+.bg-exp[hidden], .bg-veld[hidden] { display:none; }
+#evo-card .bg-vast { margin-top:0.875rem; }
 </style>
 <style>
 /* UX-audit (nov 2026) */
@@ -1597,8 +1619,8 @@ window.ocProjectkiezer = function (plek, o) {
             <div><label for="dagprijs">Kost per dag</label><input class="input" id="dagprijs" inputmode="decimal" placeholder="bv. 500" maxlength="10" enterkeyhint="done" autocomplete="off"></div>
           </div>
         </div>
-        <div class="bg-veld">
-          <label for="uit">Al uitgegeven, in euro <span class="bg-mag">(mag leeg)</span></label>
+        <div class="bg-veld" id="veld-uit" hidden>
+          <label for="uit">Al betaald, in euro <span class="bg-mag">(mag leeg)</span></label>
           <input class="input" id="uit" inputmode="decimal" placeholder="bv. 4.000" maxlength="16" enterkeyhint="done" autocomplete="off">
         </div>
         <p class="bg-som" id="som" aria-live="polite"></p>
@@ -1609,7 +1631,7 @@ window.ocProjectkiezer = function (plek, o) {
         </button>
         <button class="btn-secondary" type="button" id="cancel-edit" hidden>Nieuwe kost</button>
       </form>
-      <p class="hint" id="hint">Een raming hoeft niet exact te zijn. Rond af, en stel bij als je meer weet.</p>
+      <p class="hint" id="hint">Een raming hoeft niet exact te zijn. Rond af, en stel bij als je meer weet. Wat je al betaalde, vul je later in: tik op de kost.</p>
     </section>
 
     <div class="bg-rechts">
@@ -1623,12 +1645,11 @@ window.ocProjectkiezer = function (plek, o) {
           <div class="bg-rij"><span id="lbl-vo">Ik werk bij de Vlaamse overheid<small>Toon welke aankoopprocedure kan.</small></span>
             <button type="button" class="bg-schakel" role="switch" aria-checked="false" aria-labelledby="lbl-vo" id="vo"><i></i></button></div>
         </div>
-        <button type="button" class="bg-vast" id="vast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16l-7-4-7 4z"/></svg>Leg deze raming vast</button>
-        <div class="bg-exp"><button type="button" class="exp-btn" data-exp="png">Afbeelding</button><button type="button" class="exp-btn" data-exp="pdf">PDF</button><button type="button" class="exp-btn" data-exp="copy">Kopieer als tekst</button></div>
       </section>
 
       <section class="card" aria-label="Kosten">
         <div id="list"></div>
+        <div class="bg-exp bg-exp-l"><button type="button" class="exp-btn" data-exp="png">Afbeelding</button><button type="button" class="exp-btn" data-exp="pdf">PDF</button><button type="button" class="exp-btn" data-exp="copy">Kopieer als tekst</button></div>
       </section>
 
       <section class="card bg-card" id="vo-card" aria-label="Overheidsopdrachten" hidden></section>
@@ -1646,7 +1667,7 @@ window.ocProjectkiezer = function (plek, o) {
         <li><b>Vergeet de eigen mensen niet.</b> Kies "Eigen mensen" en vul het aantal dagen en de kost per dag in. De tool rekent het bedrag uit.</li>
         <li><b>Kies de looptijd.</b> Het totaal telt de eenmalige kosten en de kosten van elk jaar samen, over het aantal jaren dat je kiest. Zo zie je wat het project echt kost, niet alleen de start.</li>
         <li><b>Reken een marge.</b> Projecten kosten vaak meer dan geraamd. Met een marge voor onvoorzien hou je daar vooraf rekening mee.</li>
-        <li><b>Volg op wat je al uitgaf.</b> Vul bij een kost in wat je al betaalde. Je ziet hoeveel van het totaal op is, en welke kost boven haar raming zit.</li>
+        <li><b>Volg op wat je al betaalde.</b> Tik op een kost en vul in wat je al betaalde. Je ziet hoeveel van het totaal op is, en welke kost boven haar raming zit.</li>
         <li><b>Leg je raming vast.</b> Op een belangrijk moment, bijvoorbeeld bij de goedkeuring, leg je de raming vast. Later zie je hoeveel ze veranderd is, en je kan een vorige raming terugnemen.</li>
       </ul>
       <p>Werk je bij de Vlaamse overheid? Zet de schakelaar aan. Dan zie je per aankoop welke procedure kan. Dat is een eerste richting. De regels zelf staan in het Draaiboek overheidsopdrachten, en je aankoopdienst beslist.</p>
@@ -2625,23 +2646,26 @@ const aankopen = l => l.items.filter(i => i.aard !== 'mensen' && i.bedrag > 0).m
 const ICON_DEL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 function renderStand() {
   const l = cur(), s = som(l), pct = v => s.totaal ? (v / s.totaal * 100).toFixed(2) + '%' : '0%';
-  $('stand').innerHTML = `<div class="bg-cijfers">
-      <div><span>Eenmalig</span><b>${euro(s.een)}</b></div>
-      <div><span>Elk jaar</span><b>${euro(s.jaar)}</b></div>
-      <div class="bg-tot"><span>Totaal over ${jarenTekst(l.jaren)}</span><b>${euro(s.totaal)}</b><small>${l.marge ? `met ${l.marge}% marge voor onvoorzien (${euro(s.marge)})` : 'zonder marge voor onvoorzien'}</small></div>
-    </div>
-    ${s.uit > 0 ? (() => { const n = l.items.filter(i => boven(i, l)).length, over = s.uit > s.totaal + 0.5;
-      return `<div class="bg-uit"><div class="ur"><span>Al uitgegeven</span><b>${euro(s.uit)}</b></div>
-        <div class="ub" role="img" aria-label="${escA(Math.round(s.uit / s.totaal * 100))}% van het totaal is uitgegeven"><i class="${over ? 'over' : ''}" style="width:${Math.min(100, s.uit / s.totaal * 100).toFixed(1)}%"></i></div>
-        <p class="uo" style="${over || n ? '' : 'color:var(--slate-600)'}">${over ? `Dat is ${euro(s.uit - s.totaal)} meer dan het totaal.` : `${Math.round(s.uit / s.totaal * 100)}% van het totaal. Nog ${euro(s.totaal - s.uit)} over.`}${n ? ` ${n === 1 ? '1 kost zit' : n + ' kosten zitten'} boven ${n === 1 ? 'haar' : 'hun'} raming.` : ''}</p></div>`; })() : ''}
-    ${s.totaal ? `<div class="bg-balk" role="img" aria-label="Verdeling: eenmalig ${euro(s.een)}, terugkerend over ${jarenTekst(l.jaren)} ${euro(s.terug)}, marge ${euro(s.marge)}"><i class="een" style="width:${pct(s.een)}"></i><i class="jaar" style="width:${pct(s.terug)}"></i><i class="mrg" style="width:${pct(s.marge)}"></i></div>
-    <div class="bg-leg"><span><i class="een"></i>Eenmalig</span><span><i class="jaar"></i>Terugkerend over ${jarenTekst(l.jaren)}</span>${l.marge ? '<span><i class="mrg"></i>Marge</span>' : ''}</div>` : ''}`;
+  // Eén groot getal, daaronder hoe het is opgebouwd: de balk en drie regels met de bedragen.
+  const deel = (cls, naam, uitleg, b) => `<li><i class="${cls}"></i><span>${naam}${uitleg ? `<small>${uitleg}</small>` : ''}</span><b>${euro(b)}</b></li>`;
+  let h = `<div class="bg-hero"><span class="hl">Totaal over ${jarenTekst(l.jaren)}</span><b class="hb">${euro(s.totaal)}</b>
+    ${s.totaal ? `<div class="bg-balk" role="img" aria-label="Opbouw: eenmalig ${euro(s.een)}, terugkerend over ${jarenTekst(l.jaren)} ${euro(s.terug)}, marge ${euro(s.marge)}"><i class="een" style="width:${pct(s.een)}"></i><i class="jaar" style="width:${pct(s.terug)}"></i><i class="mrg" style="width:${pct(s.marge)}"></i></div>` : ''}
+    <ul class="bg-opbouw">${deel('een', 'Eenmalig', '', s.een)}${deel('jaar', 'Elk jaar', `${euro(s.jaar)} × ${jarenTekst(l.jaren)}`, s.terug)}${deel('mrg', 'Marge voor onvoorzien', l.marge ? `${l.marge}%` : 'geen', s.marge)}</ul></div>`;
+  if (s.uit > 0) {
+    const n = l.items.filter(i => boven(i, l)).length, over = s.uit > s.totaal + 0.5, p = procent(s.uit, s.totaal);
+    h += `<div class="bg-betaald"><div class="br"><span>Al betaald</span><b>${euro(s.uit)}</b></div>
+      <div class="ub" role="img" aria-label="${escA(p)}% van het totaal is betaald"><i class="${over ? 'over' : ''}" style="width:${Math.min(100, p)}%"></i></div>
+      <p class="bs">${over ? `${euro(s.uit - s.totaal)} meer dan het totaal` : `${p}% van het totaal · nog ${euro(s.totaal - s.uit)}`}</p>
+      ${n ? `<p class="bw">${n === 1 ? '1 kost zit' : n + ' kosten zitten'} boven ${n === 1 ? 'haar' : 'hun'} raming.</p>` : ''}</div>`;
+  }
+  $('stand').innerHTML = h;
   $('jaren').textContent = jarenTekst(l.jaren);
   $('jaar-min').disabled = l.jaren <= 1; $('jaar-plus').disabled = l.jaren >= JAREN_MAX;
   $('marge').innerHTML = MARGES.map(m => `<button type="button" role="radio" aria-checked="${escA(l.marge === m)}" data-marge="${escA(m)}">${m}%</button>`).join('');
   $('vo').setAttribute('aria-checked', String(l.vo));
   const leeg = !l.items.length;
-  $('vast').disabled = leeg; document.querySelectorAll('.bg-exp .exp-btn').forEach(b => { if (!b.dataset.ocOdt) b.disabled = leeg; });
+  document.querySelectorAll('.bg-exp .exp-btn').forEach(b => { if (!b.dataset.ocOdt) b.disabled = leeg; });
+  document.querySelector('.bg-exp-l').hidden = leeg;
 }
 /* De lijst: per soort een kop met het totaal, per kost een icoon, het bedrag en een balk die toont hoe zwaar ze weegt. */
 const SVGI = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
@@ -2688,15 +2712,18 @@ function renderVo() {
     <p class="bg-p">Dit is een eerste richting, geen advies. Je aankoopdienst beslist. Voor werken gelden andere drempels. Bedragen geldig voor ${VO_GELDIG}.</p>
     <p class="bg-p"><a href="${escA(VO_LINKS.wijzer)}" target="_blank" rel="noopener">Procedurewijzer van de Vlaamse overheid</a> · <a href="${escA(VO_LINKS.drempels)}" target="_blank" rel="noopener">Alle drempelbedragen</a></p>`;
 }
+const ICON_VAST = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16l-7-4-7 4z"/></svg>';
 function renderEvo() {
   const l = cur(), card = $('evo-card');
-  card.hidden = !l.vast.length; if (!l.vast.length) return;
+  card.hidden = !l.items.length; if (!l.items.length) return;
+  const knop = `<button type="button" class="bg-vast" id="vast">${ICON_VAST}Leg deze raming vast</button>`;
+  if (!l.vast.length) { card.innerHTML = `<h2 class="bg-h">Evolutie van de raming</h2><p class="bg-p">Leg je raming vast op een belangrijk moment, bijvoorbeeld bij de goedkeuring. Later zie je wat er veranderde, en neem je een vorige raming terug.</p>${knop}`; return; }
   const nu = som(l).totaal, rij = [...l.vast].reverse();
   card.innerHTML = `<h2 class="bg-h">Evolutie van de raming</h2>
     <p class="bg-p">Nu: <b>${euro(nu)}</b>. Tegenover de laatste vastgelegde raming: ${verschilTekst(nu - som(rij[0]).totaal)}.</p>
     <ul class="bg-evo">${rij.map((v, i) => { const t = som(v).totaal, vorig = rij[i + 1];
       return `<li data-vast="${escA(v.id)}"><span class="ed"><b>${euro(t)}</b> op ${esc(datumTekst(v.datum))}<small>${v.items.length} ${v.items.length === 1 ? 'kost' : 'kosten'} · ${jarenTekst(v.jaren)} · ${v.marge}% marge${vorig ? ' · ' + verschilTekst(t - som(vorig).totaal) + ' tegenover de vorige' : ''}</small></span>
-        <button type="button" class="terug" data-terug>Neem terug</button><button type="button" class="del" aria-label="Verwijder de raming van ${escA(datumTekst(v.datum))}">${ICON_DEL}</button></li>`; }).join('')}</ul>`;
+        <button type="button" class="terug" data-terug>Neem terug</button><button type="button" class="del" aria-label="Verwijder de raming van ${escA(datumTekst(v.datum))}">${ICON_DEL}</button></li>`; }).join('')}</ul>${knop}`;
 }
 function syncForm() {
   const it = editing && cur().items.find(i => i.id === editing);
@@ -2705,6 +2732,7 @@ function syncForm() {
   $('form-title').textContent = it ? 'Kost aanpassen' : 'Kost toevoegen';
   $('submit-text').textContent = it ? 'Klaar' : 'Toevoegen';
   $('cancel-edit').hidden = !it; $('hint').hidden = !!it;
+  $('veld-uit').hidden = !it;   // wat al betaald is, vul je in bij een kost die er al staat
   paintForm();
 }
 const formSoort = () => (document.querySelector('#soort [aria-checked="true"]') || {}).dataset.soort || 'eenmalig';
@@ -2761,7 +2789,7 @@ $('form').addEventListener('submit', e => {
     if (!(b >= 0)) { meldFout('Vul een bedrag in, als getal. Bijvoorbeeld 12.500.', $('bedrag')); return; }
     nw.bedrag = b;
   }
-  if ($('uit').value.trim()) { const u = leesBedrag($('uit').value); if (!(u >= 0)) { meldFout('Vul bij "Al uitgegeven" een bedrag in, als getal. Of laat het leeg.', $('uit')); return; } if (u > 0) nw.uit = u; }
+  if ($('uit').value.trim()) { const u = leesBedrag($('uit').value); if (!(u >= 0)) { meldFout('Vul bij "Al betaald" een bedrag in, als getal. Of laat het leeg.', $('uit')); return; } if (u > 0) nw.uit = u; }
   meldFout('');
   const l = cur(), it = editing && l.items.find(i => i.id === editing);
   if (it) { delete it.dagen; delete it.dagprijs; delete it.uit; Object.assign(it, nw); editing = null; leegForm(); save(); render(); toast('Aangepast'); }
@@ -2805,7 +2833,8 @@ $('marge').addEventListener('click', e => { const b = e.target.closest('[data-ma
 $('vo').addEventListener('click', () => { const l = cur(); l.vo = !l.vo; save(); render(); if (l.vo) $('vo-card').scrollIntoView({ block:'nearest', behavior:'smooth' }); });
 
 /* ---------- Raming vastleggen, terugnemen ---------- */
-$('vast').addEventListener('click', () => {
+$('evo-card').addEventListener('click', e => {
+  if (!e.target.closest('#vast')) return;
   const l = cur(); if (!l.items.length) return;
   const restore = snapshot();
   l.vast.push({ id:uid(), datum:vandaag(), jaren:l.jaren, marge:l.marge, items:JSON.parse(JSON.stringify(l.items)).map(i => { delete i.uit; return i; }) });   // een raming is de schatting: wat al uitgegeven is, hoort er niet bij
@@ -2909,7 +2938,7 @@ async function copy(text) {
     document.body.appendChild(t); t.select(); const ok = document.execCommand('copy'); t.remove(); return ok;
   } catch { return false; }
 }
-const postRegel = it => `${it.name} (${aardNaam(it.aard)}${it.dagen ? `, ${invoer(it.dagen)} ${it.dagen === 1 ? 'dag' : 'dagen'} aan ${euro(it.dagprijs)}` : ''}): ${euro(it.bedrag)}${it.uit ? `, al uitgegeven ${euro(it.uit)}` : ''}`;
+const postRegel = it => `${it.name} (${aardNaam(it.aard)}${it.dagen ? `, ${invoer(it.dagen)} ${it.dagen === 1 ? 'dag' : 'dagen'} aan ${euro(it.dagprijs)}` : ''}): ${euro(it.bedrag)}${it.uit ? `, al betaald ${euro(it.uit)}` : ''}`;
 function asText() {
   const l = cur(), s = som(l), R = [`Projectbudget: ${l.name}`, `Raming van ${datumTekst(vandaag())}`, ''];
   SOORT.forEach(so => { const items = l.items.filter(i => i.soort === so.id).sort((a, b) => b.bedrag - a.bedrag); if (!items.length) return;
@@ -2917,7 +2946,7 @@ function asText() {
   R.push(`Eenmalig: ${euro(s.een)}`, `Terugkerend over ${jarenTekst(l.jaren)}: ${euro(s.terug)}`);
   if (l.marge) R.push(`Marge voor onvoorzien (${l.marge}%): ${euro(s.marge)}`);
   R.push(`TOTAAL OVER ${jarenTekst(l.jaren).toUpperCase()}: ${euro(s.totaal)}`);
-  if (s.uit > 0) R.push(`Al uitgegeven: ${euro(s.uit)} (${Math.round(s.uit / s.totaal * 100)}% van het totaal)`);
+  if (s.uit > 0) R.push(`Al betaald: ${euro(s.uit)} (${Math.round(s.uit / s.totaal * 100)}% van het totaal)`);
   if (l.vo) { const k = aankopen(l); if (k.length) { R.push('', `AANKOOPPROCEDURE (leveringen en diensten, zonder btw, drempels ${VO_GELDIG})`); k.forEach(a => R.push(`- ${a.it.name}: ${euro(a.waarde)}. ${voProcedure(a.waarde).naam}`));
     if (k.length > 1) { const t = k.reduce((n, a) => n + a.waarde, 0); R.push(`- Als alles samen één opdracht is: ${euro(t)}. ${voProcedure(t).naam}`); } R.push('Opsplitsen mag niet. Dit is een eerste richting: je aankoopdienst beslist.'); } }
   if (l.vast.length) { R.push('', 'VASTGELEGDE RAMINGEN'); l.vast.forEach(v => R.push(`- ${datumTekst(v.datum)}: ${euro(som(v).totaal)}`)); }
@@ -2928,7 +2957,7 @@ function ocCsvVeilig(s) { s = String(s == null ? '' : s); return /^[=+\-@\t\r]/.
 function asCSV() {
   const cell = v => { v = ocCsvVeilig(v); return /[;"\n\r]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v; };
   const l = cur(), s = som(l), num = n => String(Math.round(n * 100) / 100).replace('.', ',');
-  const rows = [['Hoe vaak', 'Soort kost', 'Kost', 'Dagen', 'Kost per dag', 'Bedrag in euro', 'Al uitgegeven']];
+  const rows = [['Hoe vaak', 'Soort kost', 'Kost', 'Dagen', 'Kost per dag', 'Bedrag in euro', 'Al betaald']];
   SOORT.forEach(so => l.items.filter(i => i.soort === so.id).sort((a, b) => b.bedrag - a.bedrag).forEach(i => rows.push([so.naam, aardNaam(i.aard), i.name, i.dagen ? num(i.dagen) : '', i.dagprijs ? num(i.dagprijs) : '', num(i.bedrag), i.uit ? num(i.uit) : ''])));
   rows.push([], ['', '', 'Eenmalig', '', '', num(s.een)], ['', '', 'Elk jaar', '', '', num(s.jaar)], ['', '', `Terugkerend over ${jarenTekst(l.jaren)}`, '', '', num(s.terug)],
     ['', '', `Marge voor onvoorzien (${l.marge}%)`, '', '', num(s.marge)], ['', '', `Totaal over ${jarenTekst(l.jaren)}`, '', '', num(s.totaal), s.uit ? num(s.uit) : '']);
@@ -2942,9 +2971,9 @@ function buildExport() {
   const kop = (t, r) => `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:22px 0 4px;font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#047857"><span>${esc(t)}</span><span style="letter-spacing:0;color:#1e293b;font-size:14px">${esc(r || '')}</span></div>`;
   const rij = (a, sub, b) => `<div data-oc-keep style="display:flex;justify-content:space-between;gap:16px;padding:7px 0;border-bottom:1px solid #f1f5f9;font-size:14px;color:#1e293b"><span>${esc(a)}${sub ? `<span style="color:#64748b;font-size:12px"> · ${esc(sub)}</span>` : ''}</span><span style="white-space:nowrap;font-weight:600;font-variant-numeric:tabular-nums">${esc(b)}</span></div>`;
   let h = `<div style="display:flex;gap:12px">${vak('Eenmalig', s.een)}${vak('Elk jaar', s.jaar)}${vak(`Totaal over ${jarenTekst(l.jaren)}`, s.totaal, true)}</div>
-    <div style="font-size:12px;color:#64748b;margin-top:8px">Totaal = eenmalig ${euro(s.een)} + terugkerend over ${jarenTekst(l.jaren)} ${euro(s.terug)}${l.marge ? ` + ${l.marge}% marge voor onvoorzien ${euro(s.marge)}` : ''}.${s.uit > 0 ? ` Al uitgegeven: ${euro(s.uit)}, dat is ${Math.round(s.uit / s.totaal * 100)}% van het totaal.` : ''}</div>`;
+    <div style="font-size:12px;color:#64748b;margin-top:8px">Totaal = eenmalig ${euro(s.een)} + terugkerend over ${jarenTekst(l.jaren)} ${euro(s.terug)}${l.marge ? ` + ${l.marge}% marge voor onvoorzien ${euro(s.marge)}` : ''}.${s.uit > 0 ? ` Al betaald: ${euro(s.uit)}, dat is ${Math.round(s.uit / s.totaal * 100)}% van het totaal.` : ''}</div>`;
   SOORT.forEach(so => { const items = l.items.filter(i => i.soort === so.id).sort((a, b) => b.bedrag - a.bedrag); if (!items.length) return;
-    h += kop(so.naam, euro(telOp(l.items, so.id)) + (so.id === 'jaarlijks' ? ' per jaar' : '')) + items.map(i => rij(i.name, aardNaam(i.aard) + (i.dagen ? `, ${invoer(i.dagen)} ${i.dagen === 1 ? 'dag' : 'dagen'} aan ${euro(i.dagprijs)}` : '') + (i.uit ? `, al uitgegeven ${euro(i.uit)}` : ''), euro(i.bedrag))).join(''); });
+    h += kop(so.naam, euro(telOp(l.items, so.id)) + (so.id === 'jaarlijks' ? ' per jaar' : '')) + items.map(i => rij(i.name, aardNaam(i.aard) + (i.dagen ? `, ${invoer(i.dagen)} ${i.dagen === 1 ? 'dag' : 'dagen'} aan ${euro(i.dagprijs)}` : '') + (i.uit ? `, al betaald ${euro(i.uit)}` : ''), euro(i.bedrag))).join(''); });
   if (l.vo) { const k = aankopen(l); if (k.length) { const t = k.reduce((n, a) => n + a.waarde, 0);
     h += kop('Welke aankoopprocedure kan?') + k.map(a => rij(a.it.name, voProcedure(a.waarde).naam, euro(a.waarde))).join('') + (k.length > 1 ? rij('Als alles samen één opdracht is', voProcedure(t).naam, euro(t)) : '')
       + `<div style="font-size:12px;color:#64748b;margin-top:8px;line-height:1.5">Leveringen en diensten, raming zonder btw, over de looptijd. Opsplitsen mag niet: horen aankopen samen, dan telt hun totaal. Dit is een eerste richting, je aankoopdienst beslist. Drempels ${esc(VO_GELDIG)}, bron: Draaiboek overheidsopdrachten van de Vlaamse overheid.</div>`; } }
