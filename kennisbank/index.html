@@ -1562,7 +1562,7 @@ window.ocProjectkiezer = function (plek, o) {
         <li><b>Maak een blok.</b> Geef het een titel en schrijf op wat je wil onthouden: een beslissing, een les, een afspraak, een idee.</li>
         <li><b>Geef het tags.</b> Een tag is een trefwoord, zoals besluit, loket of privacy. Blokken met dezelfde tag hangen samen.</li>
         <li><b>Verwijs naar een ander blok.</b> Zet de titel tussen dubbele haken, zoals [[Advies over privacy]]. Dan staan de twee blokken bij elkaar.</li>
-        <li><b>Haal blokken uit je andere tools.</b> Beslissingen, leerpunten, risico's, doelen, mijlpalen en betrokkenen neem je over met één tik. Ze krijgen vanzelf een tag.</li>
+        <li><b>Haal blokken uit je andere tools.</b> Beslissingen, leerpunten, risico's, doelen, mijlpalen en betrokkenen neem je over met één tik. Ze krijgen vanzelf een tag. In die tools staat in het menu ook "Bewaar in Kennisbank": dan kom je hier uit, met alles al aangevinkt.</li>
         <li><b>Zoek en filter.</b> Typ een woord of kies een tag. In de Kaart zie je welke blokken via welke tag samenhangen.</li>
         <li><b>Maak een rapport.</b> Wat je op dat moment ziet, download je als PDF, tekstdocument of afbeelding. Filter eerst op een tag en je hebt een rapport over dat onderwerp.</li>
       </ul>
@@ -2831,6 +2831,14 @@ window.ocPk = ocProjectkiezer('#ocKiezer', {
   magWeg: () => true
 });
 render();
+// Geopend vanuit een tool (?van=<tool>, de knop "Bewaar in Kennisbank"): de kiezer opent meteen, met wat die tool klaarlegt al aangevinkt.
+(() => {
+  let van = ''; try { const u = new URL(location.href); van = u.searchParams.get('van') || ''; if (van) { u.searchParams.delete('van'); history.replaceState(null, '', u.pathname + u.search + u.hash); } } catch {}
+  if (!van) return;
+  if (cur().voorbeeld) { toast('Dit is het voorbeeld. Kies of maak je eigen project: dan kan je blokken ophalen.'); return; }
+  window.ocVan = van; begonnen = true; render();
+  setTimeout(() => { try { $('oc-imp').click(); } finally { setTimeout(() => { window.ocVan = ''; }, 600); } }, 350);
+})();
 </script>
 <script>
 /* Opnieuw beginnen: zichtbaar zodra er echt iets ingevuld is; start de eigen 'Alles wissen' van de tool.

@@ -4649,5 +4649,28 @@ document.addEventListener('click', e => {
 })();
 /* oc-uitleg v1 einde */
 </script>
+<script>
+/* oc-kennis: "Bewaar in Kennisbank" in het menu. Opent de Kennisbank met wat deze tool klaarlegt al aangevinkt (?van=<tool>). */
+(() => {
+  try {
+    // Het menu van de tool is het menu met de PDF erin. De naam van de tool staat in de metatag (oc.share.<tool>).
+    const pdf = document.querySelector('[role="menu"] [data-act="pdf"], [role="menu"] [data-ocm="pdf"]'), menu = pdf && pdf.closest('[role="menu"]');
+    const mt = document.querySelector('meta[name="oc:opslag"]'), mz = mt && /oc\.share\.([\w-]+)/.exec(mt.content), OC_ZELF = mz ? mz[1] : '';
+    if (!menu || !OC_ZELF || menu.querySelector('[data-oc-kennis]')) return;
+    const na = [...menu.querySelectorAll('[data-act="copy"], [data-act="md"], [data-act="csv"], [data-ocm="csv"], [data-ocm="png"], [data-act="png"]')].pop(); if (!na) return;
+    const b = na.cloneNode(true);
+    [...b.attributes].forEach(a => { if (/^data-|^id$|^title$|^aria-label$/.test(a.name)) b.removeAttribute(a.name); });
+    b.dataset.ocKennis = '1';
+    b.querySelectorAll('small').forEach(e => e.remove());
+    const sv = b.querySelector('svg');
+    if (sv) sv.innerHTML = '<circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="8" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M8.3 7 15.6 7.7M7.2 8.2 11 15.8M16.8 10.2 13.2 15.9"/>';
+    const w = document.createTreeWalker(b, NodeFilter.SHOW_TEXT); let n, gezet = false;
+    while ((n = w.nextNode())) { if (!n.nodeValue.trim()) continue; if (sv && sv.contains(n)) continue; n.nodeValue = gezet ? '' : 'Bewaar in Kennisbank'; gezet = true; }
+    if (!gezet) b.appendChild(document.createTextNode('Bewaar in Kennisbank'));
+    b.addEventListener('click', e => { e.stopPropagation(); location.href = '../kennisbank/?van=' + encodeURIComponent(OC_ZELF); });
+    na.after(b);
+  } catch (e) {}
+})();
+</script>
 </body>
 </html>

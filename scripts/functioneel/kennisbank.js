@@ -58,6 +58,17 @@ const fout = []; const ok = (c, m) => { console.log((c ? '  ok   ' : '  FOUT ') 
   await p.click('.ocs-item input'); await p.evaluate(() => { const k = [...document.querySelectorAll('.ocs button, [class^="ocs"] button')].find(x => /overnemen|neem/i.test(x.innerText) && !x.disabled); k && k.click(); }); await p.waitForTimeout(500);
   const nw = await p.evaluate(() => { const i = cur().items.find(x => x.titel === 'We starten in januari'); return i ? i.tags.join() + '|' + i.bron + '|' + i.tekst : ''; });
   ok(nw === 'besluit|Beslissingslog|Beslist door de stuurgroep', 'het wordt een blok met tag besluit en de bron erbij (' + nw + ')');
+  // "Bewaar in Kennisbank" in een andere tool: je komt hier uit met de punten van die tool al aangevinkt
+  await p.goto(B + '/leerpunten/', { waitUntil: 'networkidle' }); await p.waitForTimeout(500);
+  ok((await p.evaluate(() => { const k = document.querySelector('[data-oc-kennis]'); return k ? k.innerText.trim() : ''; })) === 'Bewaar in Kennisbank', 'Leerpuntenlog: de knop staat in het menu');
+  await Promise.all([p.waitForNavigation({ waitUntil: 'networkidle' }), p.evaluate(() => document.querySelector('[data-oc-kennis]').click())]); await p.waitForTimeout(1200);
+  ok(await p.evaluate(() => location.pathname + location.search === '/kennisbank/' && !!document.querySelector('.ocs-back')), 'de knop brengt je naar de Kennisbank en de kiezer staat open');
+  await p.evaluate(() => { const k = [...document.querySelectorAll('.ocs button')].find(x => /annuleer/i.test(x.innerText)); k && k.click(); ocShare.publish('retro', 'Retro', [{ name: cur().name, items: [{ type: 'leerpunt', text: 'Test vroeg met echte gebruikers' }] }]); });
+  await p.goto(B + '/kennisbank/?van=retro', { waitUntil: 'networkidle' }); await p.waitForTimeout(1200);
+  const na = await p.evaluate(() => ({ url: location.pathname + location.search, open: !!document.querySelector('.ocs-back'), aan: [...document.querySelectorAll('.ocs-item input:checked')].map(i => i.closest('.ocs-item').innerText.trim().slice(0, 40)) }));
+  ok(na.url === '/kennisbank/' && na.open && na.aan.length === 1 && /Test vroeg met echte gebruikers/.test(na.aan[0]), 'met ?van=retro: alleen het punt van die tool is aangevinkt (' + JSON.stringify(na) + ')');
+  await p.evaluate(() => { const k = [...document.querySelectorAll('.ocs button')].find(x => /overnemen|neem/i.test(x.innerText) && !x.disabled); k && k.click(); }); await p.waitForTimeout(500);
+  ok(await p.evaluate(() => cur().items.some(i => i.titel === 'Test vroeg met echte gebruikers' && i.tags.join() === 'leerpunt' && i.bron === 'Retro')), 'het leerpunt is een blok met tag leerpunt en de bron erbij');
   // voorbeeld en vormgeving
   await p.evaluate(() => loadExample()); await p.waitForTimeout(400);
   const r = await p.evaluate(() => ({ n: document.querySelectorAll('.kb-blok').length, breed: document.documentElement.scrollWidth - innerWidth, klein: [...document.querySelectorAll('main button:not(.kb-sug button):not(.samen button), main input, main textarea')].filter(e => e.offsetWidth && e.getBoundingClientRect().height < 43.5).map(e => (e.id || e.className) + ':' + Math.round(e.getBoundingClientRect().height)) }));
