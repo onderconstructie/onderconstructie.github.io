@@ -1747,7 +1747,7 @@ const ocExport = (() => {
     try {
       if (matchMedia('(pointer:coarse)').matches && navigator.canShare) {
         const file = new File([blob], name, { type: blob.type || (/\.pdf$/.test(name) ? 'application/pdf' : 'image/png') });
-        if (navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: name.replace(/\.(png|pdf)$/, '') }); return; }
+        if (navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: name.replace(/\.(png|pdf|odt)$/, '') }); return; }
       }
     } catch (e) { if (e && e.name === 'AbortError') return; }
     const a = document.createElement('a');
@@ -1798,7 +1798,185 @@ const ocExport = (() => {
     });
     save(doc.output('blob'), name + '.pdf');
   }
-  return { png, pdf };
+  /* ---------- Tekstdocument (ODT, het open formaat van LibreOffice; opent ook in Word en Google Docs) ----------
+     Dezelfde exportknoop als voor de PDF. In het document: de titel, de figuur als afbeelding en daaronder de inhoud als echte,
+     bewerkbare tekst met koppen. Zonder bibliotheek: een ODT is een zip met een paar XML-bestanden.
+     De knop "Tekstdocument" komt vanzelf naast elke PDF-knop (odtKnoppen); een tik laat de tool haar PDF-weg lopen en
+     pdf() maakt dan het tekstdocument. Zo hoeft geen enkele tool haar eigen code te kennen. */
+  const x = s => String(s == null ? '' : s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/g, '').replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+  // Wat in de exportknoop staat, als alinea's: een blok zonder blokken erin is één alinea; een rij (naast elkaar) wordt één regel met puntjes ertussen.
+  function tekstVan(root) {
+    const uit = [], BLOK = /^(block|flex|grid|list-item|table|table-row|table-cell|table-row-group|table-header-group|flow-root)$/;
+    const zicht = el => { const c = getComputedStyle(el); return c.display !== 'none' && c.visibility !== 'hidden' && el.getAttribute('aria-hidden') !== 'true'; };
+    const schoon = t => String(t || '').replace(/\u00ad/g, '').replace(/[ \t\u00a0]+/g, ' ').replace(/\s*\n\s*/g, ' ').trim();
+    const zet = (t, c, li) => {
+      t = schoon(t).replace(/^[·•\s]+/, '').replace(/[·\s]+$/, ''); if (!t) return;
+      const px = parseFloat(c.fontSize) || 14, vet = (parseInt(c.fontWeight, 10) || 400) >= 600, kort = t.length <= 90;
+      const soort = vet && kort && (px >= 17 || c.textTransform === 'uppercase' || parseFloat(c.letterSpacing) > 0.3) ? 'h' : vet && kort ? 'b' : 'p';
+      const vorig = uit[uit.length - 1]; if (vorig && vorig.t === t) return;
+      uit.push({ t: (li ? '• ' : '') + t, soort: li ? 'p' : soort });
+    };
+    (function loop(el) {
+      if (!zicht(el) || /^(svg|canvas|img|style|script|button|input|select|textarea)$/i.test(el.tagName)) return;
+      const c = getComputedStyle(el), kids = [...el.children].filter(zicht);
+      if (el !== root && (c.position === 'absolute' || el.hasAttribute('data-oc-geen-tekst'))) return;   // labels in een tekening: die staan al in de figuur
+      if (!kids.some(k => BLOK.test(getComputedStyle(k).display))) { zet(el.innerText, c, el.tagName === 'LI'); return; }
+      const rij = (c.display === 'flex' && !/column/.test(c.flexDirection)) || (c.display === 'grid' && c.gridTemplateColumns.trim().split(/\s+/).length > 1) || c.display === 'table-row';
+      if (rij && kids.length <= 8 && kids.every(k => k.getBoundingClientRect().height < 140)) {
+        const d = [...el.childNodes].map(n => n.nodeType === 3 ? schoon(n.nodeValue) : n.nodeType === 1 && zicht(n) && !/^(svg|canvas|img)$/i.test(n.tagName) ? schoon(n.innerText) : null).filter(v => v !== null);
+        // In een tabel houdt een lege cel haar plaats (een streepje): zo blijft elke waarde onder haar kolom.
+        const leeg = v => /^[·\s]*$/.test(v), tabel = c.display === 'table-row' && d.some(v => !leeg(v));
+        const t = tabel ? d.map(v => leeg(v) ? '–' : v).join(' · ') : d.filter(v => !leeg(v)).join(' · ');
+        if (t.length <= 420) { zet(t, c, false); return; }
+      }
+      el.childNodes.forEach(n => { if (n.nodeType === 3) zet(n.nodeValue, c, false); else if (n.nodeType === 1) loop(n); });
+    })(root);
+    return uit;
+  }
+  // Zip zonder compressie (de afbeelding is al samengedrukt). "mimetype" moet het eerste bestand zijn.
+  const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+  const crc32 = u => { let c = 0xFFFFFFFF; for (let i = 0; i < u.length; i++) c = CRC[(c ^ u[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+  function zip(files) {
+    const enc = new TextEncoder(), d = new Date(), tijd = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1), dag = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+    const stuk = [], centraal = []; let pos = 0;
+    files.forEach(f => {
+      const naam = enc.encode(f.naam), data = typeof f.data === 'string' ? enc.encode(f.data) : f.data, crc = crc32(data);
+      const kop = (sig, extra) => { const b = new DataView(new ArrayBuffer(extra ? 46 : 30)); let o = 0; const u16 = v => { b.setUint16(o, v, true); o += 2; }, u32 = v => { b.setUint32(o, v, true); o += 4; };
+        u32(sig); if (extra) u16(20); u16(20); u16(0x0800); u16(0); u16(tijd); u16(dag); u32(crc); u32(data.length); u32(data.length); u16(naam.length); u16(0);
+        if (extra) { u16(0); u16(0); u16(0); u32(0); u32(pos); } return new Uint8Array(b.buffer); };
+      const lok = kop(0x04034b50, false); centraal.push(kop(0x02014b50, true), naam);
+      stuk.push(lok, naam, data); pos += lok.length + naam.length + data.length;
+    });
+    const cLen = centraal.reduce((n, p) => n + p.length, 0), e = new DataView(new ArrayBuffer(22));
+    e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true); e.setUint32(12, cLen, true); e.setUint32(16, pos, true);
+    return new Blob([...stuk, ...centraal, new Uint8Array(e.buffer)], { type:'application/vnd.oasis.opendocument.text' });
+  }
+  const NS = 'xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0" xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0" xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:meta="urn:oasis:names:tc:opendocument:xmlns:meta:1.0" office:version="1.3"';
+  async function odt(build, name, opts = {}) {
+    const width = widthFor(opts);
+    if (typeof opts.tekst !== 'string') await load(LIBS.h2c);
+    let titel = '', sub = '', delen = [], beeld = null, verh = 0, baseline = '';
+    if (typeof opts.tekst === 'string') {   // de tool geeft haar tekst zelf (bv. een verslag): geen figuur
+      const q = document.querySelector('footer .quote'); baseline = (q && q.textContent.trim()) || '';
+      titel = opts.title || ''; sub = opts.subtitle || '';
+      delen = opts.tekst.split('\n').map(t => t.trim()).filter(Boolean).map(t => ({ t, soort: t.length <= 60 && /[A-Z]/.test(t) && t === t.toUpperCase() ? 'h' : 'p' }));
+    } else await withPage(build, width, async node => {
+      const kop = node.children[0], inhoud = node.children[1], q = document.querySelector('footer .quote');
+      titel = kop.children[0].children[0].textContent.trim(); sub = kop.children[0].children[1].textContent.trim(); baseline = (q && q.textContent.trim()) || '';
+      delen = tekstVan(inhoud);
+      // De figuur: de inhoud zonder kop en voet. Alleen als ze op één blad past (hoogstens drie keer zo hoog als breed).
+      const r = inhoud.getBoundingClientRect(), W = Math.ceil(r.width), H = Math.ceil(r.height);
+      if (W > 0 && H > 0 && H / W <= 3) {
+        const c = await draw(inhoud, { scale: fit(W, H, 8e6), width: W, height: H, ignoreElements: el => el.parentNode === document.body && el !== node && !/^(STYLE|LINK)$/.test(el.tagName) });
+        const blob = await new Promise(ok => c.toBlob(ok, 'image/png')); free(c);
+        if (blob) { beeld = new Uint8Array(await blob.arrayBuffer()); verh = H / W; }
+      }
+    });
+    const cm = n => n.toFixed(2) + 'cm';
+    let bw = 17, bh = 17 * verh; if (bh > 22) { bh = 22; bw = 22 / verh; }
+    const p = d => d.soort === 'h' ? `<text:h text:style-name="Kop2" text:outline-level="2">${x(d.t)}</text:h>` : `<text:p text:style-name="${d.soort === 'b' ? 'Vet' : 'Tekst'}">${x(d.t)}</text:p>`;
+    const content = `<?xml version="1.0" encoding="UTF-8"?><office:document-content ${NS}><office:automatic-styles>
+<style:style style:name="Beeld" style:family="graphic"><style:graphic-properties style:wrap="none" style:vertical-pos="top" style:horizontal-pos="center" style:horizontal-rel="paragraph"/></style:style>
+</office:automatic-styles><office:body><office:text>
+<text:h text:style-name="Kop1" text:outline-level="1">${x(titel || name)}</text:h>
+${sub ? `<text:p text:style-name="Onder">${x(sub)}</text:p>` : ''}<text:p text:style-name="Onder">${x(today())}</text:p>
+${beeld ? `<text:p text:style-name="Figuur"><draw:frame draw:style-name="Beeld" draw:name="Figuur" text:anchor-type="as-char" svg:width="${cm(bw)}" svg:height="${cm(bh)}"><draw:image xlink:href="Pictures/figuur.png" xlink:type="simple" xlink:show="embed" xlink:actuate="onLoad"/><svg:title>${x(titel || name)}</svg:title><svg:desc>${x('Afbeelding van ' + (titel || name) + '. De inhoud staat hieronder als tekst.')}</svg:desc></draw:frame></text:p>` : ''}
+${delen.map(p).join('\n')}
+<text:p text:style-name="Voet">${x([baseline, 'onderconstructie.app'].filter(Boolean).join(' · '))}</text:p>
+</office:text></office:body></office:document-content>`;
+    const styles = `<?xml version="1.0" encoding="UTF-8"?><office:document-styles ${NS}><office:font-face-decls><style:font-face style:name="Arial" svg:font-family="Arial" style:font-family-generic="swiss"/></office:font-face-decls><office:styles>
+<style:default-style style:family="paragraph"><style:paragraph-properties fo:margin-top="0cm" fo:margin-bottom="0.2cm" fo:line-height="130%"/><style:text-properties style:font-name="Arial" fo:font-size="11pt" fo:language="nl" fo:country="BE" fo:color="#1e293b"/></style:default-style>
+<style:style style:name="Tekst" style:family="paragraph"/>
+<style:style style:name="Vet" style:family="paragraph"><style:paragraph-properties fo:margin-top="0.25cm" fo:keep-with-next="always"/><style:text-properties fo:font-weight="bold"/></style:style>
+<style:style style:name="Kop1" style:family="paragraph" style:default-outline-level="1"><style:paragraph-properties fo:margin-bottom="0.1cm" fo:keep-with-next="always"/><style:text-properties fo:font-size="20pt" fo:font-weight="bold"/></style:style>
+<style:style style:name="Kop2" style:family="paragraph" style:default-outline-level="2"><style:paragraph-properties fo:margin-top="0.5cm" fo:margin-bottom="0.15cm" fo:keep-with-next="always"/><style:text-properties fo:font-size="12pt" fo:font-weight="bold" fo:color="#047857"/></style:style>
+<style:style style:name="Onder" style:family="paragraph"><style:paragraph-properties fo:margin-bottom="0.05cm"/><style:text-properties fo:font-size="10pt" fo:color="#64748b"/></style:style>
+<style:style style:name="Figuur" style:family="paragraph"><style:paragraph-properties fo:margin-top="0.4cm" fo:margin-bottom="0.5cm" fo:text-align="center"/></style:style>
+<style:style style:name="Voet" style:family="paragraph"><style:paragraph-properties fo:margin-top="0.8cm" fo:padding-top="0.2cm" fo:border-top="0.5pt solid #e2e8f0"/><style:text-properties fo:font-size="9pt" fo:color="#64748b"/></style:style>
+</office:styles><office:automatic-styles><style:page-layout style:name="Blad"><style:page-layout-properties fo:page-width="21cm" fo:page-height="29.7cm" fo:margin-top="2cm" fo:margin-bottom="2cm" fo:margin-left="2cm" fo:margin-right="2cm"/></style:page-layout></office:automatic-styles>
+<office:master-styles><style:master-page style:name="Standard" style:page-layout-name="Blad"/></office:master-styles></office:document-styles>`;
+    const meta = `<?xml version="1.0" encoding="UTF-8"?><office:document-meta ${NS}><office:meta><dc:title>${x(titel || name)}</dc:title><dc:language>nl-BE</dc:language><dc:date>${new Date().toISOString().slice(0, 19)}</dc:date><meta:generator>Onder Constructie</meta:generator></office:meta></office:document-meta>`;
+    const manifest = `<?xml version="1.0" encoding="UTF-8"?><manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0" manifest:version="1.3"><manifest:file-entry manifest:full-path="/" manifest:version="1.3" manifest:media-type="application/vnd.oasis.opendocument.text"/><manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml"/><manifest:file-entry manifest:full-path="styles.xml" manifest:media-type="text/xml"/><manifest:file-entry manifest:full-path="meta.xml" manifest:media-type="text/xml"/>${beeld ? '<manifest:file-entry manifest:full-path="Pictures/figuur.png" manifest:media-type="image/png"/>' : ''}</manifest:manifest>`;
+    const files = [{ naam:'mimetype', data:'application/vnd.oasis.opendocument.text' }, { naam:'content.xml', data:content }, { naam:'styles.xml', data:styles }, { naam:'meta.xml', data:meta }, { naam:'META-INF/manifest.xml', data:manifest }];
+    if (beeld) files.push({ naam:'Pictures/figuur.png', data:beeld });
+    await save(zip(files), name + '.odt');
+  }
+  // De tool zegt na haar PDF-weg "PDF gedownload": voor het tekstdocument zetten we daar de juiste naam.
+  function odtMelding() {
+    const zet = el => { if (!el || el.nodeType !== 1 || el.textContent.length > 60 || !/PDF gedownload/.test(el.textContent)) return false;
+      const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT); let n; while ((n = w.nextNode())) if (/PDF gedownload/.test(n.nodeValue)) n.nodeValue = n.nodeValue.replace('PDF gedownload', 'Tekstdocument gedownload'); return true; };
+    const mo = new MutationObserver(ms => { for (const m of ms) { const t = m.target.nodeType === 3 ? m.target.parentNode : m.target; if (zet(t) || [...m.addedNodes].some(zet)) { mo.disconnect(); return; } } });
+    mo.observe(document.body, { childList:true, subtree:true, characterData:true });
+    setTimeout(() => mo.disconnect(), 60000);
+  }
+  let wilOdt = 0;
+  // Vroeg de gebruiker net het tekstdocument? (Voor een tool met een eigen PDF-weg: die roept dan zelf odt() aan.)
+  const vraagtOdt = () => { const ja = !!wilOdt && Date.now() - wilOdt < 5000; wilOdt = 0; if (ja) odtMelding(); return ja; };
+  const pdfOfOdt = async (build, name, opts) => vraagtOdt() ? odt(build, name, opts) : pdf(build, name, opts);
+  // Naast elke PDF-knop een knop "Tekstdocument": zelfde vorm, eigen icoon en woord.
+  const PDF_KNOP = 'button[data-exp="pdf"], button[data-act="pdf"], button[data-export="pdf"], button[data-ocm="pdf"], button[data-mx="pdf"], button[data-dl="pdf"], #exportPdfBtn, #exportPdf, [data-oc-pdf]';
+  // Eén beeldtaal voor de exportknoppen op de pagina: elk formaat een icoon en een woord, altijd in dezelfde volgorde.
+  const SVG = d => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:18px;height:18px;flex:none">' + d + '</svg>';
+  const ICOON = {
+    png: SVG('<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>'),
+    pdf: SVG('<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 15h6M9 18h4"/>'),
+    copy: SVG('<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>'),
+    bpmn: SVG('<path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/>')
+  };
+  const inMenu = b => !!b.closest('[role="menu"]');
+  function balk() {
+    document.querySelectorAll('button[data-exp], button[data-dl], button[data-act]').forEach(b => {
+      if (inMenu(b) || b.dataset.ocOdt) return;
+      const soort = b.dataset.exp || b.dataset.dl || b.dataset.act;
+      if (ICOON[soort] && !b.querySelector('svg') && b.textContent.trim()) {
+        b.insertAdjacentHTML('afterbegin', ICOON[soort]);
+        b.style.display = 'inline-flex'; b.style.alignItems = 'center'; b.style.justifyContent = 'center'; b.style.gap = '8px';
+      }
+      if (soort === 'pdf') {   // volgorde: Afbeelding, PDF, Tekstdocument
+        const a = b.dataset.exp ? 'exp' : b.dataset.dl ? 'dl' : 'act', png = b.parentNode.querySelector(':scope > button[data-' + a + '="png"]');
+        if (png && (b.compareDocumentPosition(png) & Node.DOCUMENT_POSITION_FOLLOWING)) b.before(png);
+      }
+    });
+    document.querySelectorAll('[role="menu"] button[data-act="csv"]').forEach(b => { const w = document.createTreeWalker(b, NodeFilter.SHOW_TEXT); let n; while ((n = w.nextNode())) if (n.nodeValue.trim() === 'Download CSV') n.nodeValue = n.nodeValue.replace('Download CSV', 'Download als CSV'); });
+  }
+  const ODT_ICOON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h5"/><path d="M14 3v6h6v2"/><path d="M8 13h4M8 17h2"/><path d="M19.4 14.6a1.5 1.5 0 0 1 2.1 2.1L16.5 21.7l-2.8.7.7-2.8z"/></svg>';
+  function odtKnoppen() {
+    balk();
+    document.querySelectorAll(PDF_KNOP).forEach(b => {
+      if (b.dataset.ocOdt || b.closest('[data-oc-geen-odt]')) return;
+      let k = b.nextElementSibling && b.nextElementSibling.dataset.ocOdt ? b.nextElementSibling : null;
+      if (!k) {
+        k = b.cloneNode(true); k.removeAttribute('id'); ['exp', 'act', 'export', 'ocm', 'mx', 'dl', 'ocPdf'].forEach(a => { delete k.dataset[a]; }); k.dataset.ocOdt = '1';
+        const sv = k.querySelector('svg'); if (sv) { const st = sv.getAttribute('style'), kl = sv.getAttribute('class'); sv.outerHTML = ODT_ICOON; const nw = k.querySelector('svg'); if (st) nw.setAttribute('style', st); if (kl) nw.setAttribute('class', kl); }
+        k.querySelectorAll('small').forEach(e => e.remove());
+        const w = document.createTreeWalker(k, NodeFilter.SHOW_TEXT); let n, gevonden = false;
+        while ((n = w.nextNode())) if (/pdf/i.test(n.nodeValue)) { gevonden = true; n.nodeValue = n.nodeValue.replace(/^.*als PDF of op papier.*$/i, 'Download als tekstdocument').replace(/PDF of afdrukken/i, 'Tekstdocument').replace(/als PDF/i, 'als tekstdocument').replace(/PDF/i, 'Tekstdocument'); }
+        const hulp = 'Download als tekstdocument (ODT). Open het in Word, LibreOffice of Google Docs.';
+        k.title = hulp; if (!gevonden || k.hasAttribute('aria-label')) k.setAttribute('aria-label', 'Download als tekstdocument (ODT)');
+        b.after(k);
+      }
+      // Staat de knop alleen op een rij (naast Afbeelding en PDF is geen plaats), dan neemt ze de hele breedte: geen los blokje.
+      if (!inMenu(k) && k.offsetWidth && !k.dataset.ocBreed) {
+        // Past ze niet meer naast de andere, dan mag de rij breken.
+        if (/flex/.test(getComputedStyle(k.parentNode).display) && k.getBoundingClientRect().right > Math.min(k.parentNode.getBoundingClientRect().right, innerWidth) + 1) k.parentNode.style.flexWrap = 'wrap';
+        const pd = getComputedStyle(k.parentNode).display, alleen = Math.abs(k.getBoundingClientRect().top - b.getBoundingClientRect().top) > 4 && !(k.nextElementSibling && k.nextElementSibling.offsetWidth && Math.abs(k.nextElementSibling.getBoundingClientRect().top - k.getBoundingClientRect().top) < 4);
+        if (alleen && /grid/.test(pd)) { k.style.gridColumn = '1 / -1'; k.dataset.ocBreed = '1'; }
+        else if (alleen && /flex/.test(pd)) { k.style.flex = '1 1 100%'; k.dataset.ocBreed = '1'; }
+      }
+      if (k.disabled !== b.disabled) k.disabled = b.disabled;
+      if (k.hidden !== b.hidden) k.hidden = b.hidden;
+    });
+  }
+  document.addEventListener('click', e => {
+    const k = e.target.closest && e.target.closest('[data-oc-odt]'); if (!k) return;
+    e.preventDefault(); e.stopPropagation();
+    const b = k.previousElementSibling; if (!b || k.disabled) return;
+    wilOdt = Date.now(); b.click();
+  }, true);
+  { let t = 0; const later = () => { clearTimeout(t); t = setTimeout(odtKnoppen, 60); };
+    const start = () => { odtKnoppen(); new MutationObserver(later).observe(document.body, { childList:true, subtree:true, attributes:true, attributeFilter:['disabled', 'hidden'] }); };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start(); }
+  return { png, pdf: pdfOfOdt, odt, vraagtOdt };
 })();
 
 /* ---------- Overnemen tussen tools (gedeeld door de Onder Constructie-tools, v2) ----------
