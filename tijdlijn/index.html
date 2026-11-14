@@ -156,12 +156,12 @@ textarea.field { resize:vertical; min-height:4.25rem; line-height:1.45; }
 .mnd-hk { position:sticky; left:0; z-index:3; background:var(--wit); display:flex; align-items:flex-start; padding:0.5625rem 0 0 1rem; }
 .mnd-jaar { font-size:0.8125rem; font-weight:700; color:var(--slate-800); font-variant-numeric:tabular-nums; }
 .mnd-kop { display:grid; align-items:start; padding:0.375rem 0 0.5rem; }
-.mnd-kop span { justify-self:center; min-width:2.5rem; padding:0.25rem 0.5rem; border-radius:999px; font-size:0.8125rem; font-weight:600; color:var(--slate-500); text-align:center; line-height:1.2; }
+.mnd-kop span { justify-self:center; min-width:2.25rem; padding:0.25rem 0.375rem; border-radius:999px; font-size:0.8125rem; font-weight:600; color:var(--slate-500); text-align:center; line-height:1.2; }
 .mnd-kop span small { display:block; font-size:0.6875rem; font-weight:500; color:var(--slate-400); }
 .mnd-kop span.nu { background:var(--accent-50); color:var(--accent-dark); box-shadow:inset 0 0 0 1px #a7f3d0; }
 .mnd-kop span.nu small { color:var(--accent-dark); }
-.mnd-n { position:sticky; left:0; z-index:2; display:flex; flex-direction:column; justify-content:center; gap:0.0625rem; min-height:56px; padding:0.375rem 0.625rem 0.375rem 1rem; text-align:left; background:var(--wit); box-shadow:10px 0 10px -10px rgba(15,23,42,0.12); overflow-wrap:anywhere; }
-.mnd-n b { font-size:0.875rem; font-weight:600; line-height:1.25; color:var(--slate-800); }
+.mnd-n { position:sticky; left:0; z-index:2; display:flex; flex-direction:column; justify-content:center; gap:0.0625rem; min-height:56px; padding:0.375rem 0.375rem 0.375rem 0.875rem; text-align:left; background:var(--wit); box-shadow:10px 0 10px -10px rgba(15,23,42,0.12); overflow-wrap:break-word; hyphens:auto; -webkit-hyphens:auto; }
+.mnd-n b { letter-spacing:-0.01em; font-size:0.8125rem; font-weight:600; line-height:1.25; color:var(--slate-800); }
 .mnd-n small { font-size:0.75rem; color:var(--slate-500); font-variant-numeric:tabular-nums; }
 .mnd-n.gehaald small { color:var(--accent-dark); }
 .mnd-n.laat small, .mnd-n.verschoven small { color:#92400e; }
@@ -2561,7 +2561,7 @@ function maandenHTML(l, ex, W) {
   const ym = d => { const [y, m] = d.split('-').map(Number); return y * 12 + (m - 1); };
   const m0 = Math.min(...its.map(i => ym(i.begin || i.date))), m1 = Math.max(...its.map(i => ym(i.date))), n = Math.min(m1 - m0 + 1, 60);
   const pos = d => { const [y, m, dag] = d.split('-').map(Number), in_ = new Date(y, m, 0).getDate(); return Math.max(0, Math.min(1, (ym(d) - m0 + (dag - 1) / (in_ - 1 || 1) * 0.92 + 0.04) / n)) * 100; };
-  const naamW = W < 520 ? 128 : 220, kol = Math.max(44, Math.floor((W - naamW) / n)), breed = naamW + kol * n;
+  const naamW = W < 520 ? 166 : 220, kol = Math.max(40, Math.floor((W - naamW) / n)), breed = naamW + kol * n;
   const nu = today();
   const kop = Array.from({ length:n }, (_, k) => { const a = m0 + k, m = a % 12, y = Math.floor(a / 12); return `<span class="${a === ym(nu) ? 'nu' : ''}">${MND[m]}${m === 0 || k === 0 ? `<small>${y}</small>` : ''}</span>`; }).join('');
   const nuIn = ym(nu) >= m0 && ym(nu) <= m0 + n - 1;
@@ -2602,10 +2602,12 @@ function renderChart() {
     el.innerHTML = `<div class="mnd-scroll" tabindex="-1" role="group" aria-label="${escA(`Overzicht per maand met ${meer(n0.length, 'mijlpaal', 'mijlpalen')}, van ${fmtLang(van0)} tot ${fmtLang(tot0)}. Vandaag is ${fmtLang(today())}.`)}">${maandenHTML(l, false, el.clientWidth || W0)}</div>`;
     const sc = el.querySelector('.mnd-scroll');
     // Nieuwe tijdlijn of mijlpaal erbij of weg: toon vandaag (een derde van links). Anders blijft hij staan waar je was.
-    if (el.dataset.sleutel !== sleutel) { const nu = sc.querySelector('.mnd-nu'); sc.scrollLeft = nu ? Math.max(0, nu.offsetLeft - sc.clientWidth / 2) : 0; el.dataset.sleutel = sleutel; }
+    const g = sc.querySelector('.mnd'), jr = sc.querySelector('.mnd-jaar');
+    // Nieuwe tijdlijn of mijlpaal erbij of weg: begin bij de maand voor deze maand, op een hele kolom. Zo zie je wat net achter je ligt en wat komt.
+    if (el.dataset.sleutel !== sleutel) { const t = new Date(), k = t.getFullYear() * 12 + t.getMonth() - 1 - +g.dataset.m0; sc.scrollLeft = sc.querySelector('.mnd-nu') ? Math.max(0, k * +g.dataset.kol) : 0; el.dataset.sleutel = sleutel; }
     else sc.scrollLeft = x0;
     // Het jaar linksboven volgt de eerste maand die je ziet: ook ver in het project weet je in welk jaar je kijkt.
-    const g = sc.querySelector('.mnd'), jr = sc.querySelector('.mnd-jaar'), jaar = () => { if (jr) jr.textContent = Math.floor((+g.dataset.m0 + Math.floor((sc.scrollLeft + 2) / +g.dataset.kol)) / 12); };
+    const jaar = () => { if (jr) jr.textContent = Math.floor((+g.dataset.m0 + Math.floor((sc.scrollLeft + 2) / +g.dataset.kol)) / 12); };
     jaar(); sc.addEventListener('scroll', jaar, { passive:true });
     return;
   }
@@ -3119,11 +3121,11 @@ document.addEventListener('click', e => {
   const d = n => { const x = new Date(); x.setDate(x.getDate() + n); return isoVan(x); };
   const mk = (text, dag, extra) => normItem(Object.assign({ id:uid(), text, date:d(dag), status:'gepland', created:Date.now() + dag }, extra || {}));
   const l = { id:uid(), name:'Digitaal premieloket voor renovatie', voorbeeld:true, items:[
-    mk('Ontwerp van het loket goedgekeurd', -75, { status:'gehaald', who:'Stuurgroep' }),
-    mk('Advies over gegevensbescherming binnen', -6, { who:'Projectleider', note:'Aangevraagd, nog geen antwoord.' }),
-    mk('Proefversie getest met 20 aanvragers', 24, { status:'verschoven', orig:d(-10), who:'Sara', note:'De testomgeving van de leverancier lag twee weken stil.' }),
-    mk('Koppeling met het dossierbeheer werkt', 120, { who:'Dienst ICT' }),
-    mk('Dossierbeheerders opgeleid', 210),
+    mk('Ontwerp van het loket goedgekeurd', -75, { status:'gehaald', who:'Stuurgroep', begin:d(-135) }),
+    mk('Advies over gegevensbescherming binnen', -6, { who:'Projectleider', note:'Aangevraagd, nog geen antwoord.', begin:d(-45) }),
+    mk('Proefversie getest met 20 aanvragers', 24, { status:'verschoven', orig:d(-10), who:'Sara', note:'De testomgeving van de leverancier lag twee weken stil.', begin:d(-60) }),
+    mk('Koppeling met het dossierbeheer werkt', 120, { who:'Dienst ICT', begin:d(30) }),
+    mk('Dossierbeheerders opgeleid', 210, { begin:d(150) }),
     mk('Loket open voor alle aanvragers', 300, { who:'Opdrachtgever' }) ] };
   state.lists.push(l); state.current = l.id; openId = null; save(); render(); toast('Voorbeeld geladen');
 });
