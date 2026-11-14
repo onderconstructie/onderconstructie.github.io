@@ -37,7 +37,7 @@ PADEN = [
     '/beslissingen/', '/notities/', '/agenda/', '/raci/', '/prioriteit/', '/projectbudget/', '/kennisbank/', '/retro/', '/leerpunten/', '/vergaderkost/', '/ijsbreker/', '/kaartjes/', '/check-out/', '/goesting/', '/energie/',
     '/gap/', '/swot/', '/pestle/', '/weerstand/', '/impact/', '/klimaat/', '/veranderprofiel/', '/sponsor/', '/communicatie/', '/stroom/', '/mindmap/', '/gedrag/', '/visgraat/', '/schildpad/', '/informatie/', '/beslisscore/', '/opdracht/', '/tijdlijn/', '/meetplan/', '/dossier/',
     '/qr/', '/focus/', '/zakmes/looplicht/', '/zakmes/kompas/', '/zakmes/memomiles/', '/zakmes/schets/', '/zakmes/werkdagen/', '/zakmes/woordwolk/', '/zakmes/klankkast/', '/zakmes/citaten/', '/zakmes/pdf/',
-    '/hier/', '/adem/', '/hart/', '/bingo/', '/verhaal/', '/oefen/',
+    '/hier/', '/adem/', '/hart/', '/bingo/', '/pluim/', '/verhaal/', '/oefen/',
 ]
 GROEPEN = {'projecten', 'zakmes', 'reset'}
 PDCA = ['plan', 'do', 'check', 'act']
