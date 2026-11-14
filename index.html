@@ -1237,8 +1237,8 @@ body.searching .cp-kaart { display:none !important; }
 .proj-top .group-title, .proj-top .group-note { display:block; }
 .proj-top .group-title { font-size:1.0625rem; font-weight:700; }
 #home[data-tab="projecten"] #alltools-h { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
-body.view-fase:not(.view-plan) .proj-top { cursor:default; }
-body.view-fase:not(.view-plan) .proj-top:active { background:none; }
+body.view-fase:not(.view-plan) .proj-top.geen-pijl { cursor:default; }
+body.view-fase:not(.view-plan) .proj-top.geen-pijl:active { background:none; }
 body.searching .proj-top { display:none !important; }
 .tg-top { cursor:pointer; border-radius:var(--r-md, 12px); -webkit-tap-highlight-color:transparent; }
 .tg-top:focus-visible { outline:2px solid var(--accent-dark); outline-offset:2px; }
@@ -1338,7 +1338,7 @@ body.searching .proj-top { display:none !important; }
   .th-note { font-size:0.9375rem; }
 }
 @media (prefers-reduced-motion:reduce) { .th-ico, .th-hint svg { transition:none; } }
-body.view-fase:not(.view-plan) .proj-top .th-hint { display:none !important; }
+body.view-fase:not(.view-plan) .proj-top.geen-pijl .th-hint { display:none !important; }
 body.view-fase .pm-ond, body:not(.view-fase) .pm-fase { display:none; }
 .tabgroup .group.solo .list { border-top:0; }
 .cy-more { display:flex; align-items:center; gap:0.5rem; width:100%; min-height:48px; font:inherit; font-size:0.875rem; font-weight:600; color:var(--accent-dark); padding:0.5rem 1rem; background:#f3fcf8; border:0; border-top:1px solid #a7f3d0; box-shadow:inset 0 1px 0 #ecfdf5; cursor:pointer; text-align:left; }
@@ -2606,7 +2606,7 @@ window.ocProjectkiezer = function (plek, o) {
         <a class="ft-link" href="https://www.linkedin.com/in/bartel-volckaert-8a96842/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Maker</a>
         <a class="ft-link" href="/privacy/#voorwaarden" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.01"/></svg>Disclaimer</a>
       </nav>
-      <p class="ft-meta"><button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (34 seconden)" title="Bekijk de film (34 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg><span>Film</span></button><button class="ft-film ft-inst" id="ft-app" type="button" hidden aria-label="Installeer de app"><img src="/app/icon.svg" alt="" width="22" height="22"><span>Installeer</span></button><span class="ft-dot" aria-hidden="true"></span><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v16.28</span></p>
+      <p class="ft-meta"><button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (34 seconden)" title="Bekijk de film (34 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg><span>Film</span></button><button class="ft-film ft-inst" id="ft-app" type="button" hidden aria-label="Installeer de app"><img src="/app/icon.svg" alt="" width="22" height="22"><span>Installeer</span></button><span class="ft-dot" aria-hidden="true"></span><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v16.29</span></p>
     </div>
   </footer>
   <dialog class="film" id="film" aria-labelledby="film-h">
@@ -3097,7 +3097,9 @@ document.addEventListener('click', e => {
 // Projecten per onderwerp: een tik op de titel doet hetzelfde voor de vier groepen
 function projAlles() {
   if (tab === 'projecten' && document.body.classList.contains('view-plan')) { planAlles(); return; }
-  if (tab !== 'projecten' || document.body.classList.contains('view-fase')) return;
+  // Per fase: de pijl opent "Ook handig in deze fase" en brengt die lijst in beeld (ze staat onder de cirkel)
+  if (tab === 'projecten' && document.body.classList.contains('view-fase')) { const m = $('cy-more'); if (!m) return; m.click(); if (m.getAttribute('aria-expanded') === 'true') m.scrollIntoView({ behavior: calm() ? 'auto' : 'smooth', block:'start' }); return; }
+  if (tab !== 'projecten') return;
   const gs = [...document.querySelectorAll('#groups .group')].filter(g => g.offsetParent), open = gs.some(g => g.classList.contains('collapsed'));
   gs.forEach(g => setCollapsed(g.dataset.group, !open)); saveCollapsed();
 }
@@ -3211,12 +3213,15 @@ function renderCycle() {
   $('cy-always').innerHTML = `<div class="cy-al-top"><h3 class="cy-al-h" id="cy-always-h">Altijd bij de hand</h3><p class="cy-al-note">Los van de fases: hulpjes die je op elk moment gebruikt.</p></div>`
     + `<div class="cy-al-grid">` + byG.map(({ g, tools }) => `<div class="cy-al-g"><div class="cy-al-k">${g.logo}<span><b>${esc(g.label)}</b><small>${esc(g.note)}</small></span></div><div class="cy-al-chips">${tools.map(t =>
       `<button type="button" class="chip cy-chip" data-id="${esc(t.id)}" title="${esc(t.sub)}"><span class="icon">${iconHTML(t.icon)}</span>${esc(t.title)}</button>`).join('')}</div></div>`).join('') + `</div>`;
+  // de pijl rechtsboven volgt "Ook handig"; heeft de fase geen extra tools, dan is er niets om open te klappen
+  if (!document.body.classList.contains('view-plan')) { $('proj-top').setAttribute('aria-expanded', String(!!more.length && meer)); $('proj-top').classList.toggle('geen-pijl', !more.length); }
   markLive();
 }
 document.addEventListener('click', e => {
   const b = e.target.closest('#cy-more'); if (!b) return;
   const open = b.getAttribute('aria-expanded') !== 'true';
   b.setAttribute('aria-expanded', String(open)); $('cy-more-list').hidden = !open; store.set('cy-meer', open);
+  if (document.body.classList.contains('view-fase') && !document.body.classList.contains('view-plan')) $('proj-top').setAttribute('aria-expanded', String(open));
 });
 function setView(v, focus, keep = true) {
   if (!VIEWS.includes(v)) return;
