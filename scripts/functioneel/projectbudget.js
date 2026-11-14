@@ -61,6 +61,7 @@ const fout = []; const ok = (c, m) => { console.log((c ? '  ok   ' : '  FOUT ') 
   const odt = await dl('.bg-exp [data-oc-odt]', 'odt'); ok(odt && /\.odt$/.test(odt.naam) && odt.u.toString('utf8').includes('Onderhandelingsprocedure zonder voorafgaande bekendmaking'), 'tekstdocument met de aankoopprocedure als tekst');
   // voorbeeld
   await p.evaluate(() => loadExample()); await p.waitForTimeout(400); t = await tot();
+  ok(await p.isHidden('#vo-card'), 'voorbeeld: de aankoopprocedure staat uit, het is een keuze');
   ok(t[2] === '€ 448.800' && await p.isVisible('#vb-bar'), 'voorbeeld: totaal 448.800, afgerond het budget van de Projectopdracht');
   const r = await p.evaluate(() => ({ breed: document.documentElement.scrollWidth - innerWidth, klein: [...document.querySelectorAll('main button, main select, main input')].filter(e => e.offsetWidth && (e.getBoundingClientRect().height < 43.5)).map(e => (e.id || e.className) + ':' + Math.round(e.getBoundingClientRect().height)) }));
   ok(r.breed <= 0, 'niets valt buiten het scherm op een gsm'); ok(r.klein.length === 0, 'alle knoppen en velden minstens 44 px hoog ' + r.klein.join(', '));
