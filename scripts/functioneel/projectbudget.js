@@ -39,6 +39,17 @@ const fout = []; const ok = (c, m) => { console.log((c ? '  ok   ' : '  FOUT ') 
   // verwijderen met ongedaan
   await p.click('.bg-post:has-text("Opleiding") .del'); await p.waitForTimeout(250); ok((await p.locator('.bg-post').count()) === 3, 'kost verwijderd');
   await p.click('#toast-btn'); await p.waitForTimeout(250); ok((await p.locator('.bg-post').count()) === 4, 'Ongedaan zet ze terug');
+  // al uitgegeven
+  await p.click('.bg-post:has-text("Opleiding") .pn'); await p.waitForTimeout(300); await p.fill('#uit', '6.500'); await p.click('#submit'); await p.waitForTimeout(250);
+  let u = await p.innerText('#stand');
+  ok(/Al uitgegeven\s*€ 6\.500/.test(u) && /1 kost zit boven haar raming/.test(u), 'al uitgegeven: het bedrag en de kost boven haar raming staan er (' + u.replace(/\n+/g, ' / ').slice(-120) + ')');
+  ok(/€ 1\.500 boven de raming/.test(await p.innerText('.bg-post:has-text("Opleiding")')), 'bij de kost: 1.500 boven de raming');
+  await p.click('.bg-post:has-text("Opleiding") .pn'); await p.waitForTimeout(300); await p.fill('#uit', 'abc'); await p.click('#submit'); await p.waitForTimeout(200);
+  ok(await p.isVisible('#fout'), 'al uitgegeven: geen getal wordt geweigerd'); await p.fill('#uit', '2000'); await p.click('#submit'); await p.waitForTimeout(250);
+  u = await p.innerText('#stand'); ok(/Al uitgegeven\s*€ 2\.000/.test(u) && !/boven/.test(u), 'onder de raming: geen waarschuwing');
+  await p.click('#evo-card [data-terug]'); await p.waitForTimeout(300);
+  ok(await p.isHidden('.bg-uit') && (await p.locator('.bg-post').count()) === 3, 'Neem terug: de kost die er toen niet was, is weg, met haar uitgave');
+  await p.click('#toast-btn'); await p.waitForTimeout(300); ok(/€ 2\.000/.test(await p.innerText('#stand')), 'Ongedaan: de uitgave is terug');
   // Vlaamse overheid
   ok(await p.isHidden('#vo-card'), 'de aankoopprocedure staat standaard uit');
   await p.click('#vo'); await p.waitForTimeout(300);

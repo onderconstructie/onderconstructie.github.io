@@ -430,6 +430,15 @@ select.input { min-height:48px; appearance:none; -webkit-appearance:none; backgr
 .bg-evo .terug { min-height:44px; padding:0 0.625rem; border-radius:8px; font-size:0.8125rem; font-weight:600; color:var(--accent-dark); }
 .bg-evo .terug:hover { background:var(--accent-50); }
 .nb { white-space:nowrap; }
+.bg-mag { font-weight:500; color:var(--slate-500); }
+.bg-uit { margin-top:0.625rem; border:1px solid var(--slate-200); border-radius:12px; padding:0.625rem 0.75rem; }
+.bg-uit .ur { display:flex; justify-content:space-between; align-items:baseline; gap:0.75rem; font-size:0.875rem; color:var(--slate-600); }
+.bg-uit .ur b { font-size:1.0625rem; color:var(--slate-800); font-variant-numeric:tabular-nums; white-space:nowrap; }
+.bg-uit .ub { height:8px; border-radius:4px; background:var(--slate-100); margin-top:0.5rem; overflow:hidden; }
+.bg-uit .ub i { display:block; height:100%; background:#047857; border-radius:4px; }
+.bg-uit .ub i.over { background:#b45309; }
+.bg-uit .uo { font-size:0.8125rem; line-height:1.45; color:#92400e; margin-top:0.375rem; }
+.bg-post .pn small .ov { color:#92400e; font-weight:600; }
 .bg-leeg { padding:1.25rem 1.125rem; font-size:0.9375rem; color:var(--slate-500); }
 @media (pointer:coarse) { select.input { font-size:16px !important; } }
 @media (prefers-reduced-motion:reduce) { .bg-schakel::before, .bg-schakel i { transition:none; } }
@@ -1568,6 +1577,10 @@ window.ocProjectkiezer = function (plek, o) {
             <div><label for="dagprijs">Kost per dag</label><input class="input" id="dagprijs" inputmode="decimal" placeholder="bv. 500" maxlength="10" enterkeyhint="done" autocomplete="off"></div>
           </div>
         </div>
+        <div class="bg-veld">
+          <label for="uit">Al uitgegeven, in euro <span class="bg-mag">(mag leeg)</span></label>
+          <input class="input" id="uit" inputmode="decimal" placeholder="bv. 4.000" maxlength="16" enterkeyhint="done" autocomplete="off">
+        </div>
         <p class="bg-som" id="som" aria-live="polite"></p>
         <p class="bg-fout" id="fout" role="alert" hidden></p>
         <button class="btn-primary" type="submit" id="submit">
@@ -1613,10 +1626,11 @@ window.ocProjectkiezer = function (plek, o) {
         <li><b>Vergeet de eigen mensen niet.</b> Kies "Eigen mensen" en vul het aantal dagen en de kost per dag in. De tool rekent het bedrag uit.</li>
         <li><b>Kies de looptijd.</b> Het totaal telt de eenmalige kosten en de kosten van elk jaar samen, over het aantal jaren dat je kiest. Zo zie je wat het project echt kost, niet alleen de start.</li>
         <li><b>Reken een marge.</b> Projecten kosten vaak meer dan geraamd. Met een marge voor onvoorzien hou je daar vooraf rekening mee.</li>
+        <li><b>Volg op wat je al uitgaf.</b> Vul bij een kost in wat je al betaalde. Je ziet hoeveel van het totaal op is, en welke kost boven haar raming zit.</li>
         <li><b>Leg je raming vast.</b> Op een belangrijk moment, bijvoorbeeld bij de goedkeuring, leg je de raming vast. Later zie je hoeveel ze veranderd is, en je kan een vorige raming terugnemen.</li>
       </ul>
       <p>Werk je bij de Vlaamse overheid? Zet de schakelaar aan. Dan zie je per aankoop welke procedure kan. Dat is een eerste richting. De regels zelf staan in het Draaiboek overheidsopdrachten, en je aankoopdienst beslist.</p>
-      <p>Het totaal zet je als budget in de <a href="../opdracht/">Projectopdracht</a>. Hoe het budget ervoor staat, scoor je in de <a href="../project-radar/">Project Radar</a>.</p>
+      <p>Het totaal komt vanzelf als budget in de <a href="../opdracht/">Projectopdracht</a> van hetzelfde project, en zo ook in het <a href="../dossier/">Projectdossier</a>. Hoe het budget ervoor staat, scoor je in de <a href="../project-radar/">Project Radar</a>.</p>
     </div>
   </details>
 </main>
@@ -2521,6 +2535,7 @@ function schoonItem(i) {
   const it = { id: typeof i.id === 'string' && i.id ? i.id : uid(), name: i.name.trim().slice(0, 120), soort: i.soort === 'jaarlijks' ? 'jaarlijks' : 'eenmalig',
     aard: AARD.some(a => a.id === i.aard) ? i.aard : 'ander', bedrag: getal(i.bedrag) };
   if (it.aard === 'mensen' && getal(i.dagen) && getal(i.dagprijs)) { it.dagen = getal(i.dagen); it.dagprijs = getal(i.dagprijs); it.bedrag = Math.min(it.dagen * it.dagprijs, BEDRAG_MAX); }
+  if (getal(i.uit) > 0) it.uit = getal(i.uit);   // wat al betaald is (mag ontbreken)
   return it;
 }
 function schoonLijst(l) {
@@ -2563,8 +2578,12 @@ const telOp = (items, soort) => items.filter(i => i.soort === soort).reduce((n, 
 // De som van een raming: de lijst zelf, of een vastgelegde raming (zelfde velden).
 function som(l) {
   const een = telOp(l.items, 'eenmalig'), jaar = telOp(l.items, 'jaarlijks'), terug = jaar * l.jaren, basis = een + terug, marge = basis * l.marge / 100;
-  return { een, jaar, terug, basis, marge, totaal: basis + marge };
+  const uit = l.items.reduce((n, i) => n + (i.uit || 0), 0);
+  return { een, jaar, terug, basis, marge, totaal: basis + marge, uit };
 }
+// De raming van één kost over de looptijd: daartegen zetten we wat al uitgegeven is.
+const waardeVan = (it, l) => it.soort === 'jaarlijks' ? it.bedrag * l.jaren : it.bedrag;
+const boven = (it, l) => it.uit && it.uit > waardeVan(it, l) + 0.5 ? it.uit - waardeVan(it, l) : 0;
 // "12.500", "12 500,50", "€ 12500": het getal. Onleesbaar of negatief: NaN.
 function leesBedrag(s) {
   s = String(s || '').replace(/[€\s ]/g, ''); if (!s) return NaN;
@@ -2591,6 +2610,10 @@ function renderStand() {
       <div><span>Elk jaar</span><b>${euro(s.jaar)}</b></div>
       <div class="bg-tot"><span>Totaal over ${jarenTekst(l.jaren)}</span><b>${euro(s.totaal)}</b><small>${l.marge ? `met ${l.marge}% marge voor onvoorzien (${euro(s.marge)})` : 'zonder marge voor onvoorzien'}</small></div>
     </div>
+    ${s.uit > 0 ? (() => { const n = l.items.filter(i => boven(i, l)).length, over = s.uit > s.totaal + 0.5;
+      return `<div class="bg-uit"><div class="ur"><span>Al uitgegeven</span><b>${euro(s.uit)}</b></div>
+        <div class="ub" role="img" aria-label="${escA(Math.round(s.uit / s.totaal * 100))}% van het totaal is uitgegeven"><i class="${over ? 'over' : ''}" style="width:${Math.min(100, s.uit / s.totaal * 100).toFixed(1)}%"></i></div>
+        <p class="uo" style="${over || n ? '' : 'color:var(--slate-600)'}">${over ? `Dat is ${euro(s.uit - s.totaal)} meer dan het totaal.` : `${Math.round(s.uit / s.totaal * 100)}% van het totaal. Nog ${euro(s.totaal - s.uit)} over.`}${n ? ` ${n === 1 ? '1 kost zit' : n + ' kosten zitten'} boven ${n === 1 ? 'haar' : 'hun'} raming.` : ''}</p></div>`; })() : ''}
     ${s.totaal ? `<div class="bg-balk" role="img" aria-label="Verdeling: eenmalig ${euro(s.een)}, terugkerend over ${jarenTekst(l.jaren)} ${euro(s.terug)}, marge ${euro(s.marge)}"><i class="een" style="width:${pct(s.een)}"></i><i class="jaar" style="width:${pct(s.terug)}"></i><i class="mrg" style="width:${pct(s.marge)}"></i></div>
     <div class="bg-leg"><span><i class="een"></i>Eenmalig</span><span><i class="jaar"></i>Terugkerend over ${jarenTekst(l.jaren)}</span>${l.marge ? '<span><i class="mrg"></i>Marge</span>' : ''}</div>` : ''}`;
   $('jaren').textContent = jarenTekst(l.jaren);
@@ -2608,7 +2631,7 @@ function renderList() {
     if (!items.length) return '';
     return `<div class="bg-kop">${so.naam}<small>${so.sub}</small><b>${euro(telOp(l.items, so.id))}${so.id === 'jaarlijks' ? ' per jaar' : ''}</b></div>
       <ul class="items">${items.map(it => `<li class="bg-post${it.id === editing ? ' selected' : ''}" data-id="${escA(it.id)}" tabindex="0">
-        <span class="pn">${esc(it.name)}<small>${esc(aardNaam(it.aard))}${it.dagen ? ` · ${invoer(it.dagen)} ${it.dagen === 1 ? 'dag' : 'dagen'} aan <span class="nb">${euro(it.dagprijs)}</span>` : ''}</small></span>
+        <span class="pn">${esc(it.name)}<small>${esc(aardNaam(it.aard))}${it.dagen ? ` · ${invoer(it.dagen)} ${it.dagen === 1 ? 'dag' : 'dagen'} aan <span class="nb">${euro(it.dagprijs)}</span>` : ''}${it.uit ? ` · uitgegeven <span class="nb">${euro(it.uit)}</span>${boven(it, l) ? ` · <span class="ov">${euro(boven(it, l))} boven de raming</span>` : ''}` : ''}</small></span>
         <span class="pb">${euro(it.bedrag)}</span>
         <button type="button" class="del" aria-label="Verwijder ${escA(it.name)}">${ICON_DEL}</button>
       </li>`).join('')}</ul>`;
@@ -2685,7 +2708,7 @@ const shortLabel = s => s.length > 32 ? s.slice(0, 30).trimEnd() + '…' : s;
 
 /* ---------- Toevoegen en aanpassen ---------- */
 function meldFout(t, veld) { $('fout').textContent = t; $('fout').hidden = !t; if (t && veld) veld.focus(); }
-function leegForm() { ['name', 'bedrag', 'dagen', 'dagprijs'].forEach(k => { $(k).value = ''; }); meldFout(''); }
+function leegForm() { ['name', 'bedrag', 'dagen', 'dagprijs', 'uit'].forEach(k => { $(k).value = ''; }); meldFout(''); }
 $('form').addEventListener('submit', e => {
   e.preventDefault();
   const name = $('name').value.trim().slice(0, 120), aard = $('aard').value, soort = formSoort(), mensen = aard === 'mensen';
@@ -2701,16 +2724,17 @@ $('form').addEventListener('submit', e => {
     if (!(b >= 0)) { meldFout('Vul een bedrag in, als getal. Bijvoorbeeld 12.500.', $('bedrag')); return; }
     nw.bedrag = b;
   }
+  if ($('uit').value.trim()) { const u = leesBedrag($('uit').value); if (!(u >= 0)) { meldFout('Vul bij "Al uitgegeven" een bedrag in, als getal. Of laat het leeg.', $('uit')); return; } if (u > 0) nw.uit = u; }
   meldFout('');
   const l = cur(), it = editing && l.items.find(i => i.id === editing);
-  if (it) { delete it.dagen; delete it.dagprijs; Object.assign(it, nw); editing = null; leegForm(); save(); render(); toast('Aangepast'); }
+  if (it) { delete it.dagen; delete it.dagprijs; delete it.uit; Object.assign(it, nw); editing = null; leegForm(); save(); render(); toast('Aangepast'); }
   else { l.items.push(Object.assign({ id:uid() }, nw)); leegForm(); save(); render(); toast(`'${shortLabel(name)}' toegevoegd`); $('name').focus(); }
 });
 function startEdit(id, focus) {
   const it = cur().items.find(i => i.id === id); if (!it) return;
   editing = id; meldFout('');
   $('name').value = it.name; $('aard').value = it.aard; zetSoort(it.soort);
-  $('bedrag').value = it.dagen ? '' : invoer(it.bedrag); $('dagen').value = invoer(it.dagen || 0); $('dagprijs').value = invoer(it.dagprijs || 0);
+  $('bedrag').value = it.dagen ? '' : invoer(it.bedrag); $('dagen').value = invoer(it.dagen || 0); $('dagprijs').value = invoer(it.dagprijs || 0); $('uit').value = invoer(it.uit || 0);
   render();
   $('form-card').scrollIntoView({ block:'start', behavior:'smooth' });
   if (focus) $('name').focus();
@@ -2719,7 +2743,7 @@ $('cancel-edit').addEventListener('click', () => { editing = null; leegForm(); r
 $('soort').addEventListener('click', e => { const b = e.target.closest('[data-soort]'); if (!b) return; zetSoort(b.dataset.soort); paintForm(); });
 $('soort').addEventListener('keydown', e => { if (!/^Arrow/.test(e.key)) return; e.preventDefault(); const nw = formSoort() === 'eenmalig' ? 'jaarlijks' : 'eenmalig'; zetSoort(nw); paintForm(); document.querySelector(`#soort [data-soort="${nw}"]`).focus(); });
 $('aard').addEventListener('change', paintForm);
-['dagen', 'dagprijs', 'bedrag', 'name'].forEach(k => $(k).addEventListener('input', () => { meldFout(''); paintForm(); }));
+['dagen', 'dagprijs', 'bedrag', 'name', 'uit'].forEach(k => $(k).addEventListener('input', () => { meldFout(''); paintForm(); }));
 
 /* ---------- Lijst: kiezen en verwijderen ---------- */
 $('list').addEventListener('click', e => {
@@ -2747,7 +2771,7 @@ $('vo').addEventListener('click', () => { const l = cur(); l.vo = !l.vo; save();
 $('vast').addEventListener('click', () => {
   const l = cur(); if (!l.items.length) return;
   const restore = snapshot();
-  l.vast.push({ id:uid(), datum:vandaag(), jaren:l.jaren, marge:l.marge, items:JSON.parse(JSON.stringify(l.items)) });
+  l.vast.push({ id:uid(), datum:vandaag(), jaren:l.jaren, marge:l.marge, items:JSON.parse(JSON.stringify(l.items)).map(i => { delete i.uit; return i; }) });   // een raming is de schatting: wat al uitgegeven is, hoort er niet bij
   if (l.vast.length > VAST_MAX) l.vast = l.vast.slice(-VAST_MAX);
   save(); render(); toast(`Raming van ${euro(som(l).totaal)} vastgelegd`, restore);
 });
@@ -2758,7 +2782,8 @@ $('evo-card').addEventListener('click', e => {
   if (e.target.closest('.del')) { l.vast = l.vast.filter(x => x !== v); save(); render(); toast('Vastgelegde raming verwijderd', restore); return; }
   if (e.target.closest('[data-terug]')) {
     // De raming van toen wordt weer de raming van nu. Wat je vastlegde, blijft staan.
-    l.items = JSON.parse(JSON.stringify(v.items)).map(i => Object.assign(i, { id:uid() })); l.jaren = v.jaren; l.marge = v.marge; editing = null; leegForm();
+    const betaald = new Map(l.items.filter(i => i.uit).map(i => [i.name.toLowerCase(), i.uit]));   // wat al uitgegeven is, blijft staan bij de kost met dezelfde naam
+    l.items = JSON.parse(JSON.stringify(v.items)).map(i => { delete i.uit; const u = betaald.get(i.name.toLowerCase()); if (u) i.uit = u; return Object.assign(i, { id:uid() }); }); l.jaren = v.jaren; l.marge = v.marge; editing = null; leegForm();
     save(); render(); toast(`Raming van ${datumTekst(v.datum)} teruggenomen`, restore);
   }
 });
@@ -2789,15 +2814,15 @@ function loadExample() {
   l.voorbeeld = true; l.name = 'Digitaal premieloket voor renovatie'; l.jaren = 3; l.marge = 10; l.vo = false;   // de aankoopprocedure is een keuze: ze staat ook in het voorbeeld uit
   // Zelfde voorbeeldproject als in de andere tools. Het totaal komt uit op het budget in de Projectopdracht (afgerond € 450.000).
   const ex = [
-    ['Ontwikkeling van het loket', 'eenmalig', 'extern', 180000], ['Projectleider', 'eenmalig', 'mensen', 0, 120, 500], ['Koppeling met het dossierbeheer', 'eenmalig', 'extern', 45000],
-    ['Opleiding van 25 dossierbeheerders', 'eenmalig', 'ander', 9000], ['Affiches en folders bij de start', 'eenmalig', 'aankoop', 6000],
+    ['Ontwikkeling van het loket', 'eenmalig', 'extern', 180000, 0, 0, 95000], ['Projectleider', 'eenmalig', 'mensen', 0, 120, 500, 22500], ['Koppeling met het dossierbeheer', 'eenmalig', 'extern', 45000],
+    ['Opleiding van 25 dossierbeheerders', 'eenmalig', 'ander', 9000], ['Affiches en folders bij de start', 'eenmalig', 'aankoop', 6000, 0, 0, 6800],
     ['Hosting en onderhoud', 'jaarlijks', 'licentie', 22000], ['Licentie voor de formulierenmodule', 'jaarlijks', 'licentie', 8000], ['Beheer door de dienst ICT', 'jaarlijks', 'mensen', 0, 12, 500],
-  ].map(([name, soort, aard, bedrag, dagen, dagprijs]) => schoonItem({ id:uid(), name, soort, aard, bedrag, dagen, dagprijs }));
+  ].map(([name, soort, aard, bedrag, dagen, dagprijs, uit]) => schoonItem({ id:uid(), name, soort, aard, bedrag, dagen, dagprijs, uit }));
   l.items = ex;
   // Een eerdere raming, twee maanden geleden: toen nog zonder de koppeling.
   const d = new Date(); d.setDate(d.getDate() - 61);
   l.vast = [{ id:uid(), datum:`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`, jaren:3, marge:10,
-    items: JSON.parse(JSON.stringify(ex.filter(i => i.name !== 'Koppeling met het dossierbeheer'))).map(i => Object.assign(i, { id:uid() })) }];
+    items: JSON.parse(JSON.stringify(ex.filter(i => i.name !== 'Koppeling met het dossierbeheer'))).map(i => { delete i.uit; return Object.assign(i, { id:uid() }); }) }];
   save(); render();
   toast('Voorbeeld geladen');
 }
@@ -2847,7 +2872,7 @@ async function copy(text) {
     document.body.appendChild(t); t.select(); const ok = document.execCommand('copy'); t.remove(); return ok;
   } catch { return false; }
 }
-const postRegel = it => `${it.name} (${aardNaam(it.aard)}${it.dagen ? `, ${invoer(it.dagen)} ${it.dagen === 1 ? 'dag' : 'dagen'} aan ${euro(it.dagprijs)}` : ''}): ${euro(it.bedrag)}`;
+const postRegel = it => `${it.name} (${aardNaam(it.aard)}${it.dagen ? `, ${invoer(it.dagen)} ${it.dagen === 1 ? 'dag' : 'dagen'} aan ${euro(it.dagprijs)}` : ''}): ${euro(it.bedrag)}${it.uit ? `, al uitgegeven ${euro(it.uit)}` : ''}`;
 function asText() {
   const l = cur(), s = som(l), R = [`Projectbudget: ${l.name}`, `Raming van ${datumTekst(vandaag())}`, ''];
   SOORT.forEach(so => { const items = l.items.filter(i => i.soort === so.id).sort((a, b) => b.bedrag - a.bedrag); if (!items.length) return;
@@ -2855,6 +2880,7 @@ function asText() {
   R.push(`Eenmalig: ${euro(s.een)}`, `Terugkerend over ${jarenTekst(l.jaren)}: ${euro(s.terug)}`);
   if (l.marge) R.push(`Marge voor onvoorzien (${l.marge}%): ${euro(s.marge)}`);
   R.push(`TOTAAL OVER ${jarenTekst(l.jaren).toUpperCase()}: ${euro(s.totaal)}`);
+  if (s.uit > 0) R.push(`Al uitgegeven: ${euro(s.uit)} (${Math.round(s.uit / s.totaal * 100)}% van het totaal)`);
   if (l.vo) { const k = aankopen(l); if (k.length) { R.push('', `AANKOOPPROCEDURE (leveringen en diensten, zonder btw, drempels ${VO_GELDIG})`); k.forEach(a => R.push(`- ${a.it.name}: ${euro(a.waarde)}. ${voProcedure(a.waarde).naam}`));
     if (k.length > 1) { const t = k.reduce((n, a) => n + a.waarde, 0); R.push(`- Als alles samen één opdracht is: ${euro(t)}. ${voProcedure(t).naam}`); } R.push('Opsplitsen mag niet. Dit is een eerste richting: je aankoopdienst beslist.'); } }
   if (l.vast.length) { R.push('', 'VASTGELEGDE RAMINGEN'); l.vast.forEach(v => R.push(`- ${datumTekst(v.datum)}: ${euro(som(v).totaal)}`)); }
@@ -2865,10 +2891,10 @@ function ocCsvVeilig(s) { s = String(s == null ? '' : s); return /^[=+\-@\t\r]/.
 function asCSV() {
   const cell = v => { v = ocCsvVeilig(v); return /[;"\n\r]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v; };
   const l = cur(), s = som(l), num = n => String(Math.round(n * 100) / 100).replace('.', ',');
-  const rows = [['Hoe vaak', 'Soort kost', 'Kost', 'Dagen', 'Kost per dag', 'Bedrag in euro']];
-  SOORT.forEach(so => l.items.filter(i => i.soort === so.id).sort((a, b) => b.bedrag - a.bedrag).forEach(i => rows.push([so.naam, aardNaam(i.aard), i.name, i.dagen ? num(i.dagen) : '', i.dagprijs ? num(i.dagprijs) : '', num(i.bedrag)])));
+  const rows = [['Hoe vaak', 'Soort kost', 'Kost', 'Dagen', 'Kost per dag', 'Bedrag in euro', 'Al uitgegeven']];
+  SOORT.forEach(so => l.items.filter(i => i.soort === so.id).sort((a, b) => b.bedrag - a.bedrag).forEach(i => rows.push([so.naam, aardNaam(i.aard), i.name, i.dagen ? num(i.dagen) : '', i.dagprijs ? num(i.dagprijs) : '', num(i.bedrag), i.uit ? num(i.uit) : ''])));
   rows.push([], ['', '', 'Eenmalig', '', '', num(s.een)], ['', '', 'Elk jaar', '', '', num(s.jaar)], ['', '', `Terugkerend over ${jarenTekst(l.jaren)}`, '', '', num(s.terug)],
-    ['', '', `Marge voor onvoorzien (${l.marge}%)`, '', '', num(s.marge)], ['', '', `Totaal over ${jarenTekst(l.jaren)}`, '', '', num(s.totaal)]);
+    ['', '', `Marge voor onvoorzien (${l.marge}%)`, '', '', num(s.marge)], ['', '', `Totaal over ${jarenTekst(l.jaren)}`, '', '', num(s.totaal), s.uit ? num(s.uit) : '']);
   return '﻿' + rows.map(r => r.map(cell).join(';')).join('\r\n') + '\r\n';
 }
 /* Exportweergave: de drie cijfers, dan de kosten per soort, de aankoopprocedure en de vastgelegde ramingen. */
@@ -2879,9 +2905,9 @@ function buildExport() {
   const kop = (t, r) => `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:22px 0 4px;font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#047857"><span>${esc(t)}</span><span style="letter-spacing:0;color:#1e293b;font-size:14px">${esc(r || '')}</span></div>`;
   const rij = (a, sub, b) => `<div data-oc-keep style="display:flex;justify-content:space-between;gap:16px;padding:7px 0;border-bottom:1px solid #f1f5f9;font-size:14px;color:#1e293b"><span>${esc(a)}${sub ? `<span style="color:#64748b;font-size:12px"> · ${esc(sub)}</span>` : ''}</span><span style="white-space:nowrap;font-weight:600;font-variant-numeric:tabular-nums">${esc(b)}</span></div>`;
   let h = `<div style="display:flex;gap:12px">${vak('Eenmalig', s.een)}${vak('Elk jaar', s.jaar)}${vak(`Totaal over ${jarenTekst(l.jaren)}`, s.totaal, true)}</div>
-    <div style="font-size:12px;color:#64748b;margin-top:8px">Totaal = eenmalig ${euro(s.een)} + terugkerend over ${jarenTekst(l.jaren)} ${euro(s.terug)}${l.marge ? ` + ${l.marge}% marge voor onvoorzien ${euro(s.marge)}` : ''}.</div>`;
+    <div style="font-size:12px;color:#64748b;margin-top:8px">Totaal = eenmalig ${euro(s.een)} + terugkerend over ${jarenTekst(l.jaren)} ${euro(s.terug)}${l.marge ? ` + ${l.marge}% marge voor onvoorzien ${euro(s.marge)}` : ''}.${s.uit > 0 ? ` Al uitgegeven: ${euro(s.uit)}, dat is ${Math.round(s.uit / s.totaal * 100)}% van het totaal.` : ''}</div>`;
   SOORT.forEach(so => { const items = l.items.filter(i => i.soort === so.id).sort((a, b) => b.bedrag - a.bedrag); if (!items.length) return;
-    h += kop(so.naam, euro(telOp(l.items, so.id)) + (so.id === 'jaarlijks' ? ' per jaar' : '')) + items.map(i => rij(i.name, aardNaam(i.aard) + (i.dagen ? `, ${invoer(i.dagen)} ${i.dagen === 1 ? 'dag' : 'dagen'} aan ${euro(i.dagprijs)}` : ''), euro(i.bedrag))).join(''); });
+    h += kop(so.naam, euro(telOp(l.items, so.id)) + (so.id === 'jaarlijks' ? ' per jaar' : '')) + items.map(i => rij(i.name, aardNaam(i.aard) + (i.dagen ? `, ${invoer(i.dagen)} ${i.dagen === 1 ? 'dag' : 'dagen'} aan ${euro(i.dagprijs)}` : '') + (i.uit ? `, al uitgegeven ${euro(i.uit)}` : ''), euro(i.bedrag))).join(''); });
   if (l.vo) { const k = aankopen(l); if (k.length) { const t = k.reduce((n, a) => n + a.waarde, 0);
     h += kop('Welke aankoopprocedure kan?') + k.map(a => rij(a.it.name, voProcedure(a.waarde).naam, euro(a.waarde))).join('') + (k.length > 1 ? rij('Als alles samen één opdracht is', voProcedure(t).naam, euro(t)) : '')
       + `<div style="font-size:12px;color:#64748b;margin-top:8px;line-height:1.5">Leveringen en diensten, raming zonder btw, over de looptijd. Opsplitsen mag niet: horen aankopen samen, dan telt hun totaal. Dit is een eerste richting, je aankoopdienst beslist. Drempels ${esc(VO_GELDIG)}, bron: Draaiboek overheidsopdrachten van de Vlaamse overheid.</div>`; } }

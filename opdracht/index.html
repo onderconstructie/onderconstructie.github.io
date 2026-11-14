@@ -3869,10 +3869,11 @@ function groeiHTML(o) {
   const od = onderdelen(o), ms = o.mijlpalen.filter(m => m.text.trim()), team = o.kernteam.trim(), ri = vol(o.risicos).length, a = aanbodNu;
   const eerst = ms.filter(m => m.date).map(m => m.date).sort()[0];
   const rij = (is, kop, tekst) => `<li class="${escA(is ? 'is' : '')}">${is ? ICON.ok : GRIJS}<div><b>${kop}</b><span>${tekst}</span></div></li>`;
-  const bij = k => a[k] ? ` <button type="button" class="mini-link" data-bron-neem="${escA(k)}">Werk bij uit de ${esc(BRON[k].tool)}</button>` : '';
+  const bij = k => a[k] ? ` <button type="button" class="mini-link" data-bron-neem="${escA(k)}">Werk bij uit ${esc(deTool(BRON[k]))}</button>` : '';
   return rij(od.length, 'Onderdelen', od.length ? esc(opsom(od)) : 'Komen uit de Productboom.')
     + rij(ms.length, 'Mijlpalen', (ms.length ? `${ms.length} ${ms.length === 1 ? 'mijlpaal' : 'mijlpalen'}${eerst ? ', de eerste op ' + esc(fmtDate(eerst)) : ''}.` : 'Komen uit de Tijdlijn.') + bij('mijlpalen'))
     + rij(team, 'Team', (team ? esc(kort(team, 90)) : 'Komt uit de RACI-matrix.') + bij('kernteam'))
+    + rij(o.budget.trim(), 'Budget', (o.budget.trim() ? esc(kort(o.budget, 90)) : 'Komt uit Projectbudget.') + bij('budget'))
     + rij(ri, "Risico's en afspraken", ri ? `${ri} ${ri === 1 ? 'risico' : "risico's"} genoteerd.` : 'Vul je in voor je laat aftekenen.');
 }
 const GRIJS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="8"/></svg>';
@@ -3880,8 +3881,8 @@ const opsom = a => a.length > 6 ? a.slice(0, 6).join(', ') + ` en nog ${a.length
 // Wat er in de volledige fiche bij een vak staat als het uit een andere tool komt, of als die tool iets anders heeft
 function bronHTML(o, k) {
   const B = BRON[k], a = aanbodNu[k], b = (o.bron || {})[k];
-  if (a) return `<b>De ${esc(B.tool)} heeft iets anders.</b> ${esc(B.wat(a))}<div class="rij"><button type="button" class="groen" data-bron-neem="${escA(k)}">Werk bij uit de ${esc(B.tool)}</button><button type="button" data-bron-laat="${escA(k)}">Laat zo</button></div>`;
-  if (b && B.ser(B.nu(o)) === b.h && B.heeft(o)) return `Komt uit je ${esc(B.tool)}. Wijzig je het daar, dan verandert het hier mee.<div class="rij"><a href="${escA(B.href)}">Bewerk in de ${esc(B.tool)}</a></div>`;
+  if (a) return `<b>${esc(deTool(B, true))} heeft iets anders.</b> ${esc(B.wat(a))}<div class="rij"><button type="button" class="groen" data-bron-neem="${escA(k)}">Werk bij uit ${esc(deTool(B))}</button><button type="button" data-bron-laat="${escA(k)}">Laat zo</button></div>`;
+  if (b && B.ser(B.nu(o)) === b.h && B.heeft(o)) return `Komt uit je ${esc(B.tool)}. Wijzig je het daar, dan verandert het hier mee.<div class="rij"><a href="${escA(B.href)}">Bewerk in ${esc(deTool(B))}</a></div>`;
   return '';
 }
 
@@ -3952,7 +3953,8 @@ function formHTML(o) {
       <div><label class="fld-label" for="f-einddatum">Einddatum <small>hoe lang duurde iets vergelijkbaars?</small></label>
         <input class="field" type="date" id="f-einddatum" data-f="einddatum" value="${esc(o.einddatum)}"></div>
       <div><label class="fld-label" for="f-budget">Budget</label>
-        <input class="field" id="f-budget" data-f="budget" value="${esc(o.budget)}" placeholder="Bv. € 450.000" maxlength="80" autocomplete="off"></div>
+        <input class="field" id="f-budget" data-f="budget" value="${esc(o.budget)}" placeholder="Bv. € 450.000" maxlength="80" autocomplete="off">
+        <div class="bron" data-bron="budget" hidden></div></div>
       <div><label class="fld-label" for="f-mensen">Inzet van mensen</label>
         <textarea class="field" rows="1" id="f-mensen" data-f="mensen" placeholder="Bv. 3 voltijds, 15 maanden" maxlength="160" autocomplete="off">${esc(o.mensen)}</textarea></div>
     </div>
@@ -4199,8 +4201,21 @@ const BRON = {
       return t || null;
     },
     nu: o => o.kernteam.trim(), heeft: o => !!o.kernteam.trim(), zet(o, v) { o.kernteam = v; }, ser: v => String(v),
-    wat: v => `Daar staat: ${kort(v, 80)}.` }
+    wat: v => `Daar staat: ${kort(v, 80)}.` },
+  // Het budget komt uit Projectbudget: het totaal over de looptijd, met de marge erbij. Zelfde rekenregel als daar.
+  budget: { tool:'Projectbudget', lw:'het', href:'../projectbudget/',
+    lees(o) {
+      const d = ocRuw('projectbudget.v1'), l = bronLijst(d && d.lists, o.name); if (!l || !Array.isArray(l.items)) return null;
+      const som = srt => l.items.reduce((n, i) => n + (i && i.soort === srt && +i.bedrag > 0 ? +i.bedrag : 0), 0);
+      const jaren = Math.max(1, Math.min(10, Math.round(+l.jaren) || 3)), marge = [0, 5, 10, 15, 20].includes(+l.marge) ? +l.marge : 10;
+      const basis = som('eenmalig') + som('jaarlijks') * jaren; if (!(basis > 0)) return null;
+      return `€ ${Math.round(basis * (1 + marge / 100)).toLocaleString('nl-BE')} over ${jaren} jaar${marge ? `, met ${marge}% marge` : ''}`;
+    },
+    nu: o => o.budget.trim(), heeft: o => !!o.budget.trim(), zet(o, v) { o.budget = String(v).slice(0, 80); }, ser: v => String(v),
+    wat: v => `Daar staat: ${v}.` }
 };
+// "de Tijdlijn", "het Projectbudget"
+const deTool = (B, hoofd) => { const l = B.lw || 'de'; return (hoofd ? l[0].toUpperCase() + l.slice(1) : l) + ' ' + B.tool; };
 // De onderdelen uit de Productboom met dezelfde naam als deze opdracht ("Productboom · <naam>"); is er maar één productboom, dan die.
 function onderdelen(o) {
   if (o.voorbeeld) return [];
@@ -4231,7 +4246,7 @@ function bronNeem(k) {
   const restore = snapshot();
   B.zet(o, src); o.bron = o.bron || {}; o.bron[k] = { h:B.ser(src), was:B.ser(B.nu(o)) };
   groei(o); save(); render();
-  toast(`Bijgewerkt uit de ${B.tool}`, () => { restore(); groei(cur()); save(); render(); });
+  toast(`Bijgewerkt uit ${deTool(B)}`, () => { restore(); groei(cur()); save(); render(); });
 }
 function bronLaat(k) {
   const o = cur(), B = BRON[k], src = B.lees(o); if (!src) return;

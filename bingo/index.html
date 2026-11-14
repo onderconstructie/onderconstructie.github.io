@@ -1755,8 +1755,13 @@ function tekenKaart() {
     if (aan && !w2) { g.beginPath(); g.arc(x + cel / 2, y + cel / 2, cel * 0.37, 0, Math.PI * 2); g.fillStyle = 'rgba(16,185,129,0.2)'; g.fill(); }
     g.fillStyle = w2 ? '#ffffff' : aan ? '#065f46' : '#334155';
     let fs = n === 3 ? 40 : 30; g.font = F(600, fs);
-    const woorden = w.split(' '), regels = [], maxW = cel - 36;
-    let r = ''; woorden.forEach(x2 => { const t = r ? r + ' ' + x2 : x2; if (g.measureText(t).width > maxW && r) { regels.push(r); r = x2; } else r = t; }); if (r) regels.push(r);
+    const regels = [], maxW = cel - 36;
+    // Een woord dat te breed is, breekt af waar het mag (zoals op de kaart zelf), met een streepje: zo blijft de letter groot.
+    const woorden = w.split(' ').flatMap(x2 => {
+      const af = AFBREEK.get(x2); if (!af || g.measureText(x2).width <= maxW) return [x2];
+      const uit = []; let deel = ''; af.split('\u00AD').forEach(st2 => { if (deel && g.measureText(deel + st2 + '-').width > maxW) { uit.push(deel + '-'); deel = st2; } else deel += st2; }); uit.push(deel); return uit;
+    });
+    let r = ''; woorden.forEach(x2 => { const los = /-$/.test(r) && r.length > 1, t = r ? (los ? r : r + ' ') + x2 : x2; if ((los || g.measureText(t).width > maxW) && r) { regels.push(r); r = x2; } else r = t; }); if (r) regels.push(r);
     while (regels.some(t => g.measureText(t).width > maxW) && fs > 18) { fs -= 2; g.font = F(600, fs); }
     const lh = fs * 1.2, y0 = y + cel / 2 - (regels.length - 1) * lh / 2 + fs * 0.35;
     regels.slice(0, 4).forEach((t, q) => g.fillText(t, x + cel / 2, y0 + q * lh));
