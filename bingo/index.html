@@ -190,8 +190,6 @@ html:has(.ocw-back) { overflow:hidden; }
 .vak.win::after { content:''; position:absolute; right:6px; bottom:6px; width:12px; height:12px; z-index:2; opacity:0.75; background:no-repeat center/12px url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 12a8 8 0 0 1 14-5.3L20 9M20 4v5h-5M20 12a8 8 0 0 1-14 5.3L4 15M4 20v-5h5'/%3E%3C/svg%3E"); }
 .vak.win.om::after { display:none; }
 .status .bh { font-size:0.8125rem; color:var(--slate-500); margin-top:0.25rem; }
-.status .fl-w { font-size:0.8125rem; color:var(--slate-500); }
-.status .fl-t { font-size:1.0625rem; font-weight:700; color:var(--accent-hover); line-height:1.3; margin-top:0.125rem; }
 .vak::before { content:''; position:absolute; left:50%; top:50%; width:74%; aspect-ratio:1; border-radius:50%; background:rgba(16,185,129,0.2); transform:translate(-50%, -50%) scale(0); opacity:0; transition:transform 0.25s cubic-bezier(.3,1.6,.5,1), opacity 0.2s; }
 .vak[aria-pressed="true"] { background:var(--accent-50); border-color:var(--mint); color:var(--accent-hover); }
 .vak[aria-pressed="true"]::before { transform:translate(-50%, -50%) scale(1); opacity:1; }
@@ -1211,7 +1209,7 @@ header[data-oc-kop][data-stand="compact"]::before { content:""; order:-1; flex:n
             <p>Een spel met een knipoog voor de volgende vergadering. Luister goed: welke modewoorden vallen er?</p>
             <ul>
               <li><b>Kies je thema's.</b> Vergaderen, AI, HR, leiderschap, strategie of projecten. Je krijgt een kaart met een mix van woorden.</li>
-              <li><b>Tik een woord aan</b> zodra je het hoort. De kaart draait even om: zo zie je het in gewone taal. Nog eens tikken maakt het ongedaan.</li>
+              <li><b>Tik een woord aan</b> zodra je het hoort. Nog eens tikken maakt het ongedaan.</li>
               <li><b>Een volle rij is bingo.</b> Recht, verticaal of schuin.</li>
               <li><b>Eigen buzzwords.</b> Voeg de woorden toe die in jouw organisatie altijd terugkomen. Ze blijven bewaard.</li>
               <li><b>Speel samen.</b> Iedereen opent de bingo op zijn eigen gsm: elke kaart is anders. Met de deelknop zie je je kaart meteen als afbeelding. Deel of bewaar ze, of stuur de link zodat je collega’s meespelen.</li>
@@ -1528,24 +1526,9 @@ function vinkAan(i) {
     zeg(volle ? 'Volle kaart!' : (wins.length > 1 ? 'Dubbele bingo! ' : 'Bingo! ') + 'Een volle rij.');
   } else {
     render(false);
-    if (aan) { plop(); flits(i); }
-    const a = achterVan(st.kaart[i]);
-    zeg(st.kaart[i] + (aan ? ' aangeduid. ' + (/^Tip: /.test(a) ? a : 'In gewone taal: ' + a) : ' niet meer aangeduid.') + (aan && bijna() && !vol().length ? ' Nog één woord voor bingo.' : ''));
+    if (aan) plop();
+    zeg(st.kaart[i] + (aan ? ' aangeduid.' : ' niet meer aangeduid.') + (aan && bijna() && !vol().length ? ' Nog één woord voor bingo.' : ''));
   }
-}
-/* Net aangetikt: de kaart draait even om en toont de gewone taal (of de tip). Ze staat ook onder de kaart, voluit. Daarna draait ze terug. */
-let flitsT = null;
-function flits(i) {
-  clearTimeout(flitsT);
-  const b = $('bord').children[i], w = st.kaart[i]; if (!b || !w) return;
-  const a = achterVan(w), tip = /^Tip: /.test(a);
-  b.querySelector('.voor').setAttribute('aria-hidden', 'true');
-  requestAnimationFrame(() => b.classList.add('om'));
-  const S = $('status'), p1 = document.createElement('p'), p2 = document.createElement('p');
-  p1.className = 'fl-w'; p1.textContent = tip ? 'Tip bij “' + w + '”' : '“' + w + '” in gewone taal';
-  p2.className = 'fl-t'; p2.textContent = tip ? hoofd(a.slice(5)) : a;
-  S.innerHTML = ''; S.append(p1, p2);
-  flitsT = setTimeout(() => { flitsT = null; const c = $('bord').children[i]; if (c && c.classList.contains('om') && !c.classList.contains('win')) { c.classList.remove('om'); setTimeout(() => { if (!flitsT) render(false); }, 560); } else render(false); }, 3200);
 }
 function nieuweKaart(melding) {
   const oud = kopie();
