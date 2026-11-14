@@ -1,0 +1,21 @@
+const { chromium } = require('playwright'); const B = 'http://127.0.0.1:' + (process.env.PORT || 9151);
+const fout = []; const ok = (c, m) => { console.log((c ? '  ok   ' : '  FOUT ') + m); if (!c) fout.push(m); };
+(async () => { const b = await chromium.launch();
+  for (const vp of [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 1280, height: 900 }]) { const gsm = vp.width < 500; const c = await b.newContext({ viewport: vp, hasTouch: gsm, isMobile: gsm, serviceWorkers: 'block', locale: 'nl-BE' }); const p = await c.newPage(); const E = []; p.on('pageerror', e => E.push(String(e).slice(0, 200)));
+    await p.addInitScript(() => { if (!localStorage.getItem('oc-app.welkom-weg')) localStorage.setItem('oc-app.welkom-weg', '1'); }); await p.goto(B + '/', { waitUntil: 'networkidle' }); await p.waitForTimeout(800);
+    ok(!(await p.isVisible('#plan-keuze')), vp.width + ' Start: het blok staat er niet');
+    await p.click('.tab[data-tab="projecten"]'); await p.waitForTimeout(800);
+    const past = () => p.evaluate(() => { const c = document.getElementById('cycle').getBoundingClientRect(), n = document.querySelector('.tabbar, nav.tabs, #tabs') ; const kaarten = [...document.querySelectorAll('.cy-st')].map(x => x.getBoundingClientRect().bottom); const nav = [...document.querySelectorAll('.tab')][0].closest('nav, div').getBoundingClientRect().top; return { onder: Math.round(Math.max(...kaarten)), nav: Math.round(nav), pk: Math.round(document.getElementById('plan-keuze').getBoundingClientRect().height) }; });
+    let m = await past(); console.log('   nieuw', JSON.stringify(m)); if (gsm) ok(m.onder <= m.nav, vp.width + ' nieuw: de vier fasen staan volledig in beeld'); await p.screenshot({ path: `shots/nav4-${vp.width}-nieuw.png` });
+    ok(/Begin een stappenplan/.test(await p.textContent('#plan-keuze [data-pk-meer]')), vp.width + ' één regel: Begin een stappenplan');
+    await p.click('#plan-keuze [data-pk-meer]'); await p.waitForTimeout(300); ok((await p.$$('#pk-lijst .pk-rij')).length === 3, vp.width + ' open: drie plannen'); await p.screenshot({ path: `shots/nav4-${vp.width}-open.png` });
+    const h = await p.evaluate(() => [...document.querySelectorAll('#plan-keuze button')].map(x => Math.round(x.getBoundingClientRect().height))); ok(h.every(x => x >= 44), vp.width + ' knoppen minstens 44 hoog ' + h); ok(!(await p.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), vp.width + ' niets te breed');
+    await p.click('#pk-lijst .pk-rij[data-ctx="project"]'); await p.waitForTimeout(700); if (await p.isVisible('#pn-name')) { await p.fill('#pn-name', 'Nieuw loket'); await p.keyboard.press('Enter'); await p.waitForTimeout(1500); }
+    ok(/stap 1 van 7/i.test(await p.textContent('#pathbar')), vp.width + ' plan gestart vanuit Projecten');
+    await p.click('#back'); await p.waitForTimeout(700); if (!(await p.isVisible('#plan-keuze'))) { await p.click('.tab[data-tab="projecten"]'); await p.waitForTimeout(700); } await p.waitForTimeout(2600);
+    m = await past(); console.log('   bezig', JSON.stringify(m)); if (gsm) ok(m.onder <= m.nav, vp.width + ' bezig: de vier fasen staan volledig in beeld');
+    ok(/Stap 1 van 7: Projectopdracht/.test(await p.textContent('#plan-keuze .pk-kop .pk-rij')) && /Ander/.test(await p.textContent('#plan-keuze .pk-ander')), vp.width + ' bezig: je plan en Ander op één regel'); await p.screenshot({ path: `shots/nav4-${vp.width}-bezig.png` });
+    await p.click('#plan-keuze .pk-ander'); await p.waitForTimeout(300); ok((await p.$$('#pk-lijst .pk-rij')).length === 2, vp.width + ' Ander: de twee andere plannen'); await p.click('#plan-keuze .pk-ander'); await p.waitForTimeout(200); ok(!(await p.isVisible('#pk-lijst')), vp.width + ' nog een tik sluit het weer');
+    await p.click('.vs-opt[data-view="onderwerp"]'); await p.waitForTimeout(500); ok(await p.evaluate(() => [...document.querySelectorAll('#groups .group-head')].some(x => /^\s*Proces verbeteren/.test(x.textContent))), vp.width + ' onderwerp Proces verbeteren');
+    ok(!E.length, vp.width + ' geen paginafouten ' + E); await c.close(); }
+  console.log(fout.length ? fout.length + ' FOUT' : 'alles ok'); await b.close(); process.exit(fout.length ? 1 : 0); })().catch(e => { console.error('CRASH', e); process.exit(2); });
