@@ -1,9 +1,9 @@
-// Budget: rekenen, invoer, vastleggen en terugnemen, aankoopprocedure, exports, bewaren.
+// Projectbudget: rekenen, invoer, vastleggen en terugnemen, aankoopprocedure, exports, bewaren.
 const { chromium } = require('playwright'); const fs = require('fs'), os = require('os'), path = require('path'); const B = 'http://127.0.0.1:' + (process.env.PORT || 9421);
 const fout = []; const ok = (c, m) => { console.log((c ? '  ok   ' : '  FOUT ') + m); if (!c) fout.push(m); };
 (async () => { const b = await chromium.launch(); const c = await b.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block', locale: 'nl-BE', acceptDownloads: true }); const p = await c.newPage(); const E = []; p.on('pageerror', e => E.push(String(e).slice(0, 200)));
   const tot = () => p.evaluate(() => [...document.querySelectorAll('.bg-cijfers b')].map(x => x.textContent));
-  await p.goto(B + '/budget/', { waitUntil: 'networkidle' }); await p.waitForTimeout(500);
+  await p.goto(B + '/projectbudget/', { waitUntil: 'networkidle' }); await p.waitForTimeout(500);
   ok(await p.isVisible('#ocStart'), 'leeg: de startkaart staat er');
   await p.click('#ocStart .oc-begin'); await p.waitForTimeout(400); await p.keyboard.press('Escape'); await p.waitForTimeout(300);
   const voeg = async (naam, soort, aard, v) => { await p.fill('#name', naam); await p.click(`#soort [data-soort="${soort}"]`); await p.selectOption('#aard', aard);
@@ -53,9 +53,9 @@ const fout = []; const ok = (c, m) => { console.log((c ? '  ok   ' : '  FOUT ') 
   await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(500); t = await tot();
   ok(t[0] === '€ 90.000' && (await p.locator('.bg-post').count()) === 4 && await p.isVisible('#vo-card'), 'na herladen staat alles er nog');
   // exports
-  const dl = async (sel, ext) => { const [d] = await Promise.all([p.waitForEvent('download', { timeout: 25000 }).catch(() => null), p.evaluate(s => document.querySelector(s).click(), sel)]); if (!d) return null; const f = path.join(os.tmpdir(), 'oc-budget-test.' + ext); await d.saveAs(f); const u = fs.readFileSync(f); fs.unlinkSync(f); return { naam: d.suggestedFilename(), u }; };
+  const dl = async (sel, ext) => { const [d] = await Promise.all([p.waitForEvent('download', { timeout: 25000 }).catch(() => null), p.evaluate(s => document.querySelector(s).click(), sel)]); if (!d) return null; const f = path.join(os.tmpdir(), 'oc-projectbudget-test.' + ext); await d.saveAs(f); const u = fs.readFileSync(f); fs.unlinkSync(f); return { naam: d.suggestedFilename(), u }; };
   const csv = await dl('#menu [data-act="csv"]', 'csv');
-  ok(csv && /^budget-.*\.csv$/.test(csv.naam) && /Elk jaar;Licenties en abonnementen;Licentie;;;12000,5/.test(csv.u.toString('utf8')) && /Totaal over 4 jaar;;;138002/.test(csv.u.toString('utf8')), 'CSV met de kosten en het totaal');
+  ok(csv && /^projectbudget-.*\.csv$/.test(csv.naam) && /Elk jaar;Licenties en abonnementen;Licentie;;;12000,5/.test(csv.u.toString('utf8')) && /Totaal over 4 jaar;;;138002/.test(csv.u.toString('utf8')), 'CSV met de kosten en het totaal');
   const pdf = await dl('.bg-exp [data-exp="pdf"]', 'pdf'); ok(pdf && pdf.u.slice(0, 4).toString() === '%PDF', 'PDF gedownload');
   const png = await dl('.bg-exp [data-exp="png"]', 'png'); ok(png && png.u[1] === 0x50 && png.u[2] === 0x4e, 'afbeelding gedownload');
   const odt = await dl('.bg-exp [data-oc-odt]', 'odt'); ok(odt && /\.odt$/.test(odt.naam) && odt.u.toString('utf8').includes('Onderhandelingsprocedure zonder voorafgaande bekendmaking'), 'tekstdocument met de aankoopprocedure als tekst');
