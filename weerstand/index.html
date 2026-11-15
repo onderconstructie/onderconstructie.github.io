@@ -3272,11 +3272,22 @@ function loadExample() {
 window.addEventListener('storage', e => { if (e.key === KEY) { state = load(); render(); } });
 if (!state.current && state.groups[0]) state.current = state.groups[0].id;
 // Open de laatste doelgroep van het actieve project uit de app (ook onder een vorige naam: die krijgt de nieuwe naam).
+// v16.53: een hernoemd project meteen bijwerken. Draagt een eenheid nog een vroegere naam die volgens de naamkaart (oc.project.namen)
+// bij precies één project hoort, dan krijgt ze die nieuwe naam, welk project er ook open staat. Een naam die zelf een project is, blijft: geen vermenging.
+function ocNaarNieuweNaam(L) {
+  let m = {}; try { m = JSON.parse(localStorage.getItem('oc.project.namen')) || {}; } catch {} if (!m || typeof m !== 'object' || Array.isArray(m)) return 0;
+  let n = 0;
+  L.forEach(u => { const x = String(u && u.project || '').trim(); if (!x || u.voorbeeld || Array.isArray(m[x])) return;
+    const k = Object.keys(m).filter(k => Array.isArray(m[k]) && m[k].includes(x)); if (k.length === 1) { u.project = k[0]; n++; } });
+  return n;
+}
 function ocKiesGroep() {
+  if (ocNaarNieuweNaam(state.groups)) save();   // v16.53: meteen bewaard, ook als de open doelgroep al bij het project hoort
   const p = ocProject(''), c = cur(); if (!p || (c && !c.voorbeeld && c.project === p)) return;
   const oud = ocProjectOud(), L = state.groups.filter(g => !g.voorbeeld && (g.project === p || oud.includes(g.project)));
   // Hertest f: na hernoemen blijft de open doelgroep open als ze bij dit project hoort (vroeger sprong de tool naar de laatste doelgroep)
-  L.forEach(g => { g.project = p; }); if (L.length && !(c && L.includes(c))) { state.current = L[L.length - 1].id; if (state.view === 'all') state.view = 'res'; }
+  const hern = L.some(g => g.project !== p); L.forEach(g => { g.project = p; }); if (hern) save();   // v16.53: de nieuwe naam meteen bewaren
+  if (L.length && !(c && L.includes(c))) { state.current = L[L.length - 1].id; if (state.view === 'all') state.view = 'res'; }
 }
 // Een ander project gekozen in de app en nog geen doelgroep ervoor: begin er een, zoals met "+ Doelgroep", met dat project. De vorige blijft in haar tabblad.
 // Staat er nog geen enkele doelgroep, dan niet: de eerste doelgroep krijgt het project vanzelf.

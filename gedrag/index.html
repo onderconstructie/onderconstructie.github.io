@@ -2107,7 +2107,17 @@ function ocProjectOud() { try { const p = JSON.parse(localStorage.getItem('oc.pr
     if (uit.some(x => !(p.oud || []).includes(x))) localStorage.setItem('oc.project', JSON.stringify(Object.assign({}, p, { oud: uit }))); } catch {}
   return uit; } catch { return []; } }
 function ocSinds() { try { const p = JSON.parse(localStorage.getItem('oc.project')); return p && p.name ? String(p.since || p.name).slice(0, 40) : ''; } catch { return ''; } }
+// v16.53: een hernoemd project meteen bijwerken. Draagt een eenheid nog een vroegere naam die volgens de naamkaart (oc.project.namen)
+// bij precies één project hoort, dan krijgt ze die nieuwe naam, welk project er ook open staat. Een naam die zelf een project is, blijft: geen vermenging.
+function ocNaarNieuweNaam(L) {
+  let m = {}; try { m = JSON.parse(localStorage.getItem('oc.project.namen')) || {}; } catch {} if (!m || typeof m !== 'object' || Array.isArray(m)) return 0;
+  let n = 0;
+  L.forEach(u => { const x = String(u && u.project || '').trim(); if (!x || u.voorbeeld || Array.isArray(m[x])) return;
+    const k = Object.keys(m).filter(k => Array.isArray(m[k]) && m[k].includes(x)); if (k.length === 1) { u.project = k[0]; n++; } });
+  return n;
+}
 function volgProject() {
+  if (ocNaarNieuweNaam(state.units)) save();   // v16.53: meteen bewaard, ook als de keuze van de app al verwerkt was
   const p = ocProject(''), s = ocSinds();
   if (!p || !s || state.ocSince === s) return false;
   state.ocSince = s;
@@ -2115,6 +2125,7 @@ function volgProject() {
   // het krijgt de nieuwe naam, en het open gedrag blijft open. Vroeger kwam er een leeg "Nieuw gedrag" en bleef het werk onder "Alfa".
   const oud = ocProjectOud(), van = x => String(x.project || '').trim(), mijn = x => !x.voorbeeld && (van(x) === p || oud.includes(van(x)));
   let hernoemd = false; state.units.forEach(x => { if (mijn(x) && van(x) !== p) { x.project = p; hernoemd = true; } });
+  if (hernoemd) save();   // v16.53: de nieuwe naam meteen bewaren, niet pas als je iets wijzigt (anders droeg het gedrag na een wissel de oude naam)
   const c = cur(); if (c && mijn(c)) return hernoemd;
   const eigen = state.units.filter(mijn);
   if (eigen.length) { state.current = eigen[eigen.length - 1].id; return true; }

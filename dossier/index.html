@@ -2902,6 +2902,7 @@ function norm(x) {
   const n = nieuw(typeof x.name === 'string' ? x.name : 'Naamloos');
   if (typeof x.id === 'string' && x.id) n.id = x.id;
   if (x.voorbeeld === true) n.voorbeeld = true;
+  if (x.voorbeeld === true && typeof x.vbKeuze === 'string') n.vbKeuze = x.vbKeuze.slice(0, 40);   // v16.53: bij welke projectkeuze het voorbeeld openging
   n.datum = okDate(x.datum) ? x.datum : '';
   n.vraag = str(x.vraag, 1500); n.toelichting = str(x.toelichting, 1500);
   if (obj(x.aan)) SECS.forEach(s => { if (typeof x.aan[s.id] === 'boolean') n.aan[s.id] = x.aan[s.id]; });
@@ -3430,6 +3431,7 @@ $('example').addEventListener('click', () => {
   Object.assign(d, { name:VBN, voorbeeld:true, datum:'', aan:{ gap:true, realisme:true }, keuze:{}, notas:[plus(-30)],
     vraag:'Gaan jullie akkoord om de opleiding van de dossierbeheerders te verschuiven naar januari?\nKrijgt de dienst ICT tot de zomer 2 dagen per week extra voor de koppeling?',
     toelichting:'De koppeling met het dossierbeheer loopt vier weken uit. Met de opleiding in januari halen we de einddatum nog.' });
+  try { const ap = JSON.parse(localStorage.getItem('oc.project')); d.vbKeuze = ap && ap.name ? String(ap.since || ap.name) : ''; } catch { d.vbKeuze = ''; }   // v16.53: bij welke projectkeuze het voorbeeld openging
   toelOpen = false; save(); render();
   toast('Voorbeeld geladen');
 });
@@ -3654,7 +3656,10 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) afge
 try { document.fonts.ready.then(() => document.querySelectorAll('#nota textarea').forEach(autosize)); } catch {}
 // Een nog onaangeroerd dossier met een standaardnaam krijgt de naam van het actieve project uit de app.
 (() => { const p = ocProject(''), d = cur(); if (p && !begun(d) && !d.voorbeeld && isStd(d.name)) d.name = p; })();
-ocNieuwProject();
+// v16.53: stond het voorbeeld open toen je de pagina verliet, dan staat het na herladen terug open (zoals in de andere tools).
+// Vroeger opende het dossier dan een leeg tijdelijk dossier van het project met de startkaart "Op dit toestel staat nog niets".
+// Kies je daarna in de app een ander project (ook terwijl het dossier dicht was), dan volgt het dossier zoals altijd: vbKeuze onthoudt de keuze van toen.
+if (!(cur() && cur().voorbeeld && cur().vbKeuze === (() => { try { const ap = JSON.parse(localStorage.getItem('oc.project')); return ap && ap.name ? String(ap.since || ap.name) : ''; } catch { return ''; } })())) ocNieuwProject();
 // Open in de app en daar een ander project gekozen: dat project tonen.
 ocProjectVolg(() => { const voor = JSON.stringify(ocBewaarbaar()); ocPickProject(state, 'dossiers'); ocNieuwProject(); if (JSON.stringify(ocBewaarbaar()) !== voor) save(); render(); });
 /* Eén projectkiezer (blok oc-projectkiezer): wisselen, nieuw, hernoemen en verwijderen met Ongedaan.

@@ -9,6 +9,10 @@ const sig = () => { const m = document.querySelector('main') || document.body; c
 const opslag = () => { const m = document.querySelector('meta[name="oc:opslag"]'); const pat = (m ? m.content : '').split(',').map(x => x.trim()).filter(x => x && !x.startsWith('oc.share.') && !x.startsWith('oc.beeld.'));   // oc.beeld.*: een afgeleid beeld, geen werk
   const eigen = k => pat.some(x => x.endsWith('*') ? k.startsWith(x.slice(0, -1)) : k === x); const o = {}; Object.keys(localStorage).filter(eigen).sort().forEach(k => { o[k] = localStorage.getItem(k); });
   return JSON.stringify(o).replace(/\\"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z\\"/g, 'T'); };   // een tijdstempel van bewaren (Schets) is geen werk
+// v16.53: stabiel onder last. Niet alleen een vaste tijd wachten: eerst minstens min ms, dan tot scherm en opslag drie metingen na elkaar gelijk blijven (hoogstens 10 s).
+const rustig = async (p, min) => { await p.waitForTimeout(min); let vorig = null, gelijk = 0; const t0 = Date.now();
+  while (Date.now() - t0 < 10000) { let nu = ''; try { nu = (await p.evaluate(sig)) + '##' + (await p.evaluate(opslag)); } catch (e) { nu = 'bezig ' + Date.now(); }
+    if (nu === vorig) { if (++gelijk >= 2) return; } else gelijk = 0; vorig = nu; await p.waitForTimeout(120); } };
 const zelfde = (a, b) => a && b && Math.abs(a.length - b.length) <= Math.max(12, a.length * 0.03);
 const klikTekst = async (p, re) => { const h = await p.evaluateHandle((src) => { const re = new RegExp(src, 'i'); return [...document.querySelectorAll('button,a,[role=button],[role=menuitem]')].find(e => e.getClientRects().length && re.test((e.innerText || '').trim())) || null; }, re.source); const el = h.asElement(); if (!el) return false; await el.click({ timeout: 1500 }).catch(() => {}); return true; };
 (async () => {
@@ -18,31 +22,31 @@ const klikTekst = async (p, re) => { const h = await p.evaluateHandle((src) => {
     p.on('dialog', d => d.accept().catch(() => {})); p.on('pageerror', e => E.push(String(e).slice(0, 100)));
     try {
       await p.addInitScript(() => { try { if (!localStorage.getItem('oc.welkom')) { localStorage.setItem('oc.welkom', '1'); localStorage.setItem('oc.project', JSON.stringify({ name: 'Alfa', since: 1 })); } } catch (e) {} });
-      await p.goto(B + t.path, { waitUntil: 'networkidle', timeout: 25000 }); await p.waitForTimeout(300);
+      await p.goto(B + t.path, { waitUntil: 'networkidle', timeout: 25000 }); await rustig(p, 300);
       const leeg = await p.evaluate(sig);
-      r.vb = await klikTekst(p, /^voorbeeld( bekijken| laden)?$|bekijk (eerst )?een voorbeeld/); await p.waitForTimeout(700);
-      if (r.vb) { r.eigen = await klikTekst(p, /maak er mijn eigen van/); await p.waitForTimeout(600);
-        const s1 = await p.evaluate(sig); r.len = s1.length; await p.waitForTimeout(800); const o1 = await p.evaluate(opslag);   // eerst laten bewaren (sommige tools bewaren even later)
-        await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(500); const s2 = await p.evaluate(sig);
+      r.vb = await klikTekst(p, /^voorbeeld( bekijken| laden)?$|bekijk (eerst )?een voorbeeld/); await rustig(p, 700);
+      if (r.vb) { r.eigen = await klikTekst(p, /maak (er )?mijn eigen( van| dossier)?/); await rustig(p, 600);   // v16.53: ook "Maak mijn eigen dossier" (Dossier)
+        const s1 = await p.evaluate(sig); r.len = s1.length; await rustig(p, 800); const o1 = await p.evaluate(opslag);   // eerst laten bewaren (sommige tools bewaren even later)
+        await p.reload({ waitUntil: 'networkidle' }); await rustig(p, 500); const s2 = await p.evaluate(sig);
         // Blijft het werk na herladen? Dezelfde eigen opslag, en het scherm toont niet de lege start (vroeger: tekstlengte, vals alarm bij Systeemkaart, Gap, Weerstand)
         const o2 = await p.evaluate(opslag), start = await p.evaluate(() => !![...document.querySelectorAll('.oc-start')].find(e => e.getClientRects().length && !e.closest('[hidden]')));
         r.blijft = o1 === o2 && o1 !== '{}' && !start;   // de startkaart zichtbaar = het werk staat niet op het scherm
-        if (await p.$('#menu-btn')) { await p.click('#menu-btn').catch(() => {}); await p.waitForTimeout(200);
-          const [dl] = await Promise.all([p.waitForEvent('download', { timeout: 3500 }).catch(() => null), p.click('[data-bestand="bewaar"]', { timeout: 1200 }).catch(() => {})]);
+        if (await p.$('#menu-btn')) { await p.click('#menu-btn').catch(() => {}); await rustig(p, 200);
+          const [dl] = await Promise.all([p.waitForEvent('download', { timeout: 10000 }).catch(() => null), p.click('[data-bestand="bewaar"]', { timeout: 5000 }).catch(() => {})]);
           if (dl) { r.f = require('os').tmpdir() + '/oc-' + t.id.replace(/\W/g, '') + '.' + dl.suggestedFilename().split('.').pop(); await dl.saveAs(r.f); r.bestand = dl.suggestedFilename(); } await p.keyboard.press('Escape'); }
-        await p.evaluate((v) => localStorage.setItem('oc.project', v), proj('Beta')); await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(500); const sB = await p.evaluate(sig); r.betaZietAlfa = zelfde(sB, s2) && !zelfde(sB, leeg);
-        await p.evaluate((v) => localStorage.setItem('oc.project', v), proj('Alfa')); await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(500); r.terug = zelfde(await p.evaluate(sig), s2);
-        if (r.f) { await p.evaluate(() => { Object.keys(localStorage).forEach(k => { if (k !== 'oc.welkom' && k !== 'oc.project') localStorage.removeItem(k); }); }); await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(300); r.naWisLeeg = !zelfde(await p.evaluate(sig), s2);
-          await p.click('#menu-btn').catch(() => {}); await p.waitForTimeout(200);
-          const [fc] = await Promise.all([p.waitForEvent('filechooser', { timeout: 2500 }).catch(() => null), p.click('[data-bestand="open"]', { timeout: 1200 }).catch(() => {})]);
-          if (fc) { await fc.setFiles(r.f); await p.waitForTimeout(1200); r.uitBestand = zelfde(await p.evaluate(sig), s2); } else r.uitBestand = 'geen kiezer'; }
+        await p.evaluate((v) => localStorage.setItem('oc.project', v), proj('Beta')); await p.reload({ waitUntil: 'networkidle' }); await rustig(p, 500); const sB = await p.evaluate(sig); r.betaZietAlfa = zelfde(sB, s2) && !zelfde(sB, leeg);
+        await p.evaluate((v) => localStorage.setItem('oc.project', v), proj('Alfa')); await p.reload({ waitUntil: 'networkidle' }); await rustig(p, 500); r.terug = zelfde(await p.evaluate(sig), s2);
+        if (r.f) { await p.evaluate(() => { Object.keys(localStorage).forEach(k => { if (k !== 'oc.welkom' && k !== 'oc.project') localStorage.removeItem(k); }); }); await p.reload({ waitUntil: 'networkidle' }); await rustig(p, 300); r.naWisLeeg = !zelfde(await p.evaluate(sig), s2);
+          await p.click('#menu-btn').catch(() => {}); await rustig(p, 200);
+          const [fc] = await Promise.all([p.waitForEvent('filechooser', { timeout: 10000 }).catch(() => null), p.click('[data-bestand="open"]', { timeout: 5000 }).catch(() => {})]);
+          if (fc) { await fc.setFiles(r.f); await rustig(p, 1200); r.uitBestand = zelfde(await p.evaluate(sig), s2); } else r.uitBestand = 'geen kiezer'; }
         r.sleutels = await p.evaluate((PAY) => { let n = 0; const gif = v => typeof v === 'string' ? (n++, v + PAY) : Array.isArray(v) ? v.map(gif) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, w]) => [k, gif(w)])) : v;
           Object.keys(localStorage).forEach(k => { if (k === 'oc.welkom') return; try { const j = JSON.parse(localStorage.getItem(k)); if (j && typeof j === 'object') localStorage.setItem(k, JSON.stringify(gif(j))); } catch (e) {} }); return n; }, PAY);
-        await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(800); r.gif = await p.evaluate(() => ({ x: window.__x || 0, inj: document.querySelectorAll('img[src="x"]').length }));
+        await p.reload({ waitUntil: 'networkidle' }); await rustig(p, 800); r.gif = await p.evaluate(() => ({ x: window.__x || 0, inj: document.querySelectorAll('img[src="x"]').length }));
         if (r.f) { try { const j = JSON.parse(fs.readFileSync(r.f, 'utf8')); const gif = v => typeof v === 'string' ? v + PAY : Array.isArray(v) ? v.map(gif) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, w]) => [k, gif(w)])) : v; fs.writeFileSync(r.f + '.gif.json', JSON.stringify(gif(j)));
             await p.evaluate(() => { Object.keys(localStorage).forEach(k => { if (k !== 'oc.welkom' && k !== 'oc.project') localStorage.removeItem(k); }); }); await p.reload({ waitUntil: 'networkidle' }); await p.click('#menu-btn').catch(() => {});
-            const [fc] = await Promise.all([p.waitForEvent('filechooser', { timeout: 2500 }).catch(() => null), p.click('[data-bestand="open"]', { timeout: 1200 }).catch(() => {})]);
-            if (fc) { await fc.setFiles(r.f + '.gif.json'); await p.waitForTimeout(1200); r.gifBestand = await p.evaluate(() => ({ x: window.__x || 0, inj: document.querySelectorAll('img[src="x"]').length })); } } catch (e) { r.gifBestand = 'geen json'; } }
+            const [fc] = await Promise.all([p.waitForEvent('filechooser', { timeout: 10000 }).catch(() => null), p.click('[data-bestand="open"]', { timeout: 5000 }).catch(() => {})]);
+            if (fc) { await fc.setFiles(r.f + '.gif.json'); await rustig(p, 1200); r.gifBestand = await p.evaluate(() => ({ x: window.__x || 0, inj: document.querySelectorAll('img[src="x"]').length })); } } catch (e) { r.gifBestand = 'geen json'; } }
       }
     } catch (e) { r.fout = String(e).slice(0, 120); }
     r.E = E.slice(0, 2); delete r.f; R[t.id] = r; await c.close();

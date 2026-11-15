@@ -70,5 +70,13 @@ const TOOLS = (process.argv[2] || 'opdracht,risico,kanban,retro,klimaat,impact,s
     await ga(pad); kaart = await p.evaluate(() => JSON.parse(localStorage.getItem('oc.project.namen') || '{}'));
     ok(JSON.stringify(kaart.Omega) === '["Oud omega"]', `migratie via ${pad}: de naamkaart krijgt de vorige naam uit oc.project.oud (${JSON.stringify(kaart)})`);
   }
+  // 9. v16.53: na hernoemen in de app (Gamma twee -> Gamma drie) en een wissel naar Beta dragen gedrag en doelgroepen in de opslag meteen de nieuwe naam,
+  //    ook als ze onder Beta geopend worden; het werk van Beta blijft van Beta
+  await ga('/'); await p.evaluate(() => projWissel('Gamma twee')); await p.evaluate(() => projOpslaan('Gamma drie', true)); await p.evaluate(() => projWissel('Beta')); await p.waitForTimeout(200);
+  for (const [t, k, lijst] of [['gedrag', 'gedrag.v1', 'units'], ['weerstand', 'weerstand.v1', 'groups']]) {
+    await ga('/' + t + '/'); await p.waitForTimeout(300);
+    const pr = await p.evaluate(([k, lijst]) => { const d = JSON.parse(localStorage.getItem(k) || '{}'); return (d[lijst] || []).filter(u => !u.voorbeeld).map(u => u.project); }, [k, lijst]);
+    ok(pr.includes('Gamma drie') && !pr.some(x => /^Gamma( twee)?$/.test(x)), `${t}: in de opslag meteen de nieuwe naam Gamma drie, ook geopend onder Beta (${pr.join(', ')})`);
+  }
   ok(!PE.length, 'geen fouten in de pagina ' + PE.join(' | '));
   await b.close(); console.log(fout.length ? fout.length + ' FOUT' : 'alles ok'); process.exit(fout.length ? 1 : 0); })();

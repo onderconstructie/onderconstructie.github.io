@@ -12,19 +12,23 @@ const fout = []; const ok = (c, m) => { console.log((c ? '  ok   ' : '  FOUT ') 
   await p.evaluate(() => { for (let i = 0; i < 2; i++) document.getElementById('plus').click(); }); await p.click('.chip[data-min="60"]');
   await p.evaluate(() => { document.getElementById('more').open = true; }); await zet('prep', '15');
   await p.evaluate(() => { const e = document.getElementById('euro-on'); e.checked = true; e.dispatchEvent(new Event('change')); }); await zet('rate', '62,5');
+  // v16.53: onder last wachten op de toestand (het getal en de vergelijking bijgewerkt), niet op een vaste tijd
+  const wacht = (fn, arg) => p.waitForFunction(fn, arg, { timeout:15000, polling:100 });
   await p.click('#start'); await p.clock.fastForward(50 * 60000);
+  await wacht(() => { const T = totals(), c = document.getElementById('cost').firstChild; return c && c.textContent.trim() === personTime(T.allMs) && document.getElementById('compare').textContent.trim(); });
   // 1. Het grote getal en de vergelijking eronder rekenen met dezelfde tijd (met voorbereiding: 6 u 30 min)
   const r1 = await p.evaluate(() => { const T = totals(); return { cost:document.getElementById('cost').firstChild.textContent.trim(), cmp:document.getElementById('compare').textContent, eur:document.getElementById('euro').textContent, noot:document.getElementById('prep-note').textContent, all:personTime(T.allMs), cAll:compareText(T.allMs), eAll:euroText(T.allMs) }; });
   ok(r1.cost === r1.all && r1.cmp === r1.cAll && r1.eur.startsWith(r1.eAll), 'na 50 min met 6 mensen: getal, vergelijking en euro tellen samen 6 u 30 min (' + [r1.cost, r1.cmp, r1.eur].join(' | ') + ')');
   ok(r1.noot === 'waarvan 1 u 30 min voorbereiding', 'de voorbereiding staat erbij als deel ervan (' + r1.noot + ')');
   // 2. Over tijd: de teller en de samenvatting tellen dezelfde minuten (15 min 30 s over: 15, niet 16)
   await p.clock.fastForward(25 * 60000 + 30000);
+  await wacht(() => /over tijd/.test(document.getElementById('over').innerText));   // de teller toont de tijd over
   const live = await txt('#over');
-  await p.evaluate(() => document.getElementById('stop').click()); await p.waitForFunction(() => /langer dan gepland|korter|zoals gepland/.test(document.getElementById('stats').innerText), null, { timeout:3000 }).catch(() => {});   // wachten tot de samenvatting er staat (onder last soms later dan 200 ms)   // rechtstreeks: met de nagebootste klok wacht een muisklik soms vergeefs
+  await p.evaluate(() => document.getElementById('stop').click()); await p.waitForFunction(() => /langer dan gepland|korter|zoals gepland/.test(document.getElementById('stats').innerText), null, { timeout:15000, polling:100 }).catch(() => {});   // wachten tot de samenvatting er staat (onder last soms later dan 200 ms)   // rechtstreeks: met de nagebootste klok wacht een muisklik soms vergeefs
   const sam = await txt('#stats');
   ok(live === '+15 min over tijd' && /(^| )15 min langer dan gepland/.test(sam), 'over tijd: "' + live + '" en "' + (/\S+ min langer dan gepland/.exec(sam) || [''])[0] + '"');
   // 3. Ongeldige waarden worden gemeld, niet stil genegeerd of op 0 gezet
-  await p.click('#again'); await p.waitForTimeout(200);
+  await p.click('#again'); await wacht(() => !/langer dan gepland|korter|zoals gepland/.test(document.getElementById('stats').innerText) || !document.getElementById('stats').offsetParent);
   await p.evaluate(() => { document.getElementById('more').open = true; });
   await p.fill('#prep', '20'); await p.fill('#prep', '600');
   ok(await p.evaluate(() => st.prep) === 20 && /0 tot 480/.test(await txt('#prep-msg')), 'voorbereiding 600: melding, de vorige 20 min blijft (' + await p.evaluate(() => st.prep) + ' | ' + await txt('#prep-msg') + ')');
@@ -39,7 +43,7 @@ const fout = []; const ok = (c, m) => { console.log((c ? '  ok   ' : '  FOUT ') 
   await p.evaluate(() => { document.getElementById('more').open = true; });
   await p.fill('#prep', '15'); await p.keyboard.press('Tab'); await p.click('#prep'); await p.keyboard.press('Control+A'); await p.keyboard.type('600', { delay:40 });
   let r = await p.evaluate(() => st.prep); ok(r === 15 && /480/.test(await txt('#prep-msg')), 'voorbereiding 600 typen: de tool rekent verder met 15, met een melding (' + r + ')');
-  await p.keyboard.press('Tab'); await p.waitForTimeout(100);
+  await p.keyboard.press('Tab'); await wacht(() => document.getElementById('prep').value === '15').catch(() => {});
   ok(await p.inputValue('#prep') === '15' && /480/.test(await txt('#prep-msg')), 'na het veld: het veld toont 15, waarmee de tool rekent, en de melding blijft (' + await p.inputValue('#prep') + ')');
   await p.click('.chip[data-min="60"]'); await p.click('#own-min'); await p.keyboard.type('6000', { delay:40 });
   r = await p.evaluate(() => st.planned); ok(r === 60, 'eigen duur 6000 typen: de tool rekent verder met 60, niet met 600 (' + r + ')');

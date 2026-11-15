@@ -38,5 +38,16 @@ const fout = []; const ok = (c, m) => { console.log((c ? '  ok   ' : '  FOUT ') 
     ok(/Leeszaal blijft open op zondag/.test(d.t) && !/Elke vrijdag een korte stand van zaken/.test(d.t) && /^Nieuwe bib/.test(d.sel), 'dossier van Nieuwe bib: de eigen besluiten, niet die van het voorbeeldproject (' + d.sel + ')');
     ok(/Gevonden op dit toestel.*Digitaal premieloket voor renovatie/.test(d.t) && !/voorbeeld/i.test(d.t.split('Datum van de nota')[0]), 'het voorbeeldproject staat apart in het dossier, onder zijn eigen naam');
     await c2.close(); }
+  // v16.53: met een actief project (Alfa, nog zonder dossier): Voorbeeld bekijken en herladen. Het voorbeeld staat terug open, niet de lege startkaart.
+  { const c3 = await b.newContext({ serviceWorkers:'block', locale:'nl-BE', timezoneId:'Europe/Brussels' }); const q = await c3.newPage(); q.on('pageerror', e => PE.push(String(e)));
+    await q.goto(B + '/dossier/', { waitUntil:'domcontentloaded' }); await q.evaluate(() => { localStorage.setItem('oc.welkom', '1'); localStorage.setItem('oc.project', JSON.stringify({ name:'Alfa', since:Date.now() })); });
+    await q.reload({ waitUntil:'networkidle' }); await q.waitForTimeout(300); await q.click('#example'); await q.waitForTimeout(400);
+    await q.reload({ waitUntil:'networkidle' }); await q.waitForTimeout(500);
+    const r = await q.evaluate(() => ({ vb:!!cur().voorbeeld, bar:!document.getElementById('vb-bar').hidden, start:!document.getElementById('vb-start').hidden, n:state.dossiers.filter(d => d.voorbeeld).length }));
+    ok(r.vb && r.bar && !r.start && r.n === 1, 'voorbeeld bekijken en herladen met een actief project: het voorbeeld staat terug open (' + JSON.stringify(r) + ')');
+    // daarna een ander project in de app: het dossier volgt nog altijd
+    await q.evaluate(() => localStorage.setItem('oc.project', JSON.stringify({ name:'Beta', since:Date.now() }))); await q.reload({ waitUntil:'networkidle' }); await q.waitForTimeout(500);
+    const r2 = await q.evaluate(() => ({ cur:cur().name, vb:state.dossiers.filter(d => d.voorbeeld).length }));
+    ok(r2.vb === 1 && r2.cur === 'Beta', 'een andere projectkeuze daarna: het dossier volgt Beta, het voorbeeld gaat niet verloren (' + JSON.stringify(r2) + ')'); await c3.close(); }
   ok(!PE.length, 'geen fouten in de pagina ' + PE.join(' | '));
   await b.close(); console.log(fout.length ? fout.length + ' FOUT' : 'alles ok'); process.exit(fout.length ? 1 : 0); })().catch(e => { console.error('CRASH', e); process.exit(2); });
