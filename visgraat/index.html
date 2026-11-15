@@ -1271,6 +1271,8 @@ window.ocProjectkiezer = function (plek, o) {
     } catch (e) {}
   }
   ocNaamMigreer();
+  // v16.54: kies je het voorbeeld in de kiezer, dan blijft het na herladen open (eigen keuze, oc.keuze), tot je in de app een ander project kiest
+  function vbKeuze(id) { var x = lijst().filter(function (y) { return y.id === id; })[0]; if (x && x.voorbeeld && typeof ocEigenZet === 'function') try { ocEigenZet(); } catch (e) {} }
   function overal(x) {
     if (!OVERAL || !x || x.voorbeeld) return;
     var n = String(x.naam || '').trim().slice(0, 80); if (std(n)) return;
@@ -1326,7 +1328,7 @@ window.ocProjectkiezer = function (plek, o) {
   menu.addEventListener('click', function (e) {
     var b = e.target.closest('[data-pk]'); if (!b) return;
     var wat = b.getAttribute('data-pk');
-    if (wat === 'kies') { var nid = b.getAttribute('data-id'); sluit(true); if (nid !== o.actief()) { o.kies(nid); overal(lijst().filter(function (x) { return x.id === nid; })[0]); } teken(); knop.focus(); }
+    if (wat === 'kies') { var nid = b.getAttribute('data-id'); sluit(true); if (nid !== o.actief()) { o.kies(nid); vbKeuze(nid); overal(lijst().filter(function (x) { return x.id === nid; })[0]); } teken(); knop.focus(); }
     else if (wat === 'nieuw') { sluit(false); var zelf = o.nieuw() === false; teken(); if (!zelf) hernoem({ nieuw: true }); }
     else if (wat === 'meer') { sluit(false); var m = (o.meer || [])[+b.getAttribute('data-i')]; if (m && m.doe) m.doe(); teken(); }
     else if (wat === 'hernoem') { sluit(false); hernoem(); }

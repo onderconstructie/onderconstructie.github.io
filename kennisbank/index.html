@@ -1395,6 +1395,8 @@ window.ocProjectkiezer = function (plek, o) {
     } catch (e) {}
   }
   ocNaamMigreer();
+  // v16.54: kies je het voorbeeld in de kiezer, dan blijft het na herladen open (eigen keuze, oc.keuze), tot je in de app een ander project kiest
+  function vbKeuze(id) { var x = lijst().filter(function (y) { return y.id === id; })[0]; if (x && x.voorbeeld && typeof ocEigenZet === 'function') try { ocEigenZet(); } catch (e) {} }
   function overal(x) {
     if (!OVERAL || !x || x.voorbeeld) return;
     var n = String(x.naam || '').trim().slice(0, 80); if (std(n)) return;
@@ -1450,7 +1452,7 @@ window.ocProjectkiezer = function (plek, o) {
   menu.addEventListener('click', function (e) {
     var b = e.target.closest('[data-pk]'); if (!b) return;
     var wat = b.getAttribute('data-pk');
-    if (wat === 'kies') { var nid = b.getAttribute('data-id'); sluit(true); if (nid !== o.actief()) { o.kies(nid); overal(lijst().filter(function (x) { return x.id === nid; })[0]); } teken(); knop.focus(); }
+    if (wat === 'kies') { var nid = b.getAttribute('data-id'); sluit(true); if (nid !== o.actief()) { o.kies(nid); vbKeuze(nid); overal(lijst().filter(function (x) { return x.id === nid; })[0]); } teken(); knop.focus(); }
     else if (wat === 'nieuw') { sluit(false); var zelf = o.nieuw() === false; teken(); if (!zelf) hernoem({ nieuw: true }); }
     else if (wat === 'meer') { sluit(false); var m = (o.meer || [])[+b.getAttribute('data-i')]; if (m && m.doe) m.doe(); teken(); }
     else if (wat === 'hernoem') { sluit(false); hernoem(); }
@@ -1845,6 +1847,11 @@ function ocEigenZet() { try { const s = ocKeuzeNu(); if (s) localStorage.setItem
 // (onder die naam) en blijft het project van de app staan. Is er geen actief project, dan wordt de naam van het voorbeeld het project.
 function ocEigenVolg(klik) { try { if (!window.ocPk || !ocPk.knop) return; const p0 = (() => { try { return JSON.parse(localStorage.getItem('oc.project')); } catch { return null; } })(), geen = !(p0 && typeof p0.name === 'string' && p0.name.trim()); if (!(klik === true && geen) && !ocEigenKeuze()) return; const k = ocPk.knop, n = String(k.title || '').trim().slice(0, 80); if (!/^Project:/.test(k.getAttribute('aria-label') || '') || k.querySelector('.oc-pk-vb') || !n || /^((mijn|nieuwe?) )?project( \d+)?$|^naamloos$/i.test(n) || (window.ocStandaardNaam && ocStandaardNaam(n))) return; const p = JSON.parse(localStorage.getItem('oc.project')); if (p && p.name === n) return; if (klik === true && p && typeof p.name === 'string' && p.name.trim() && !/^((mijn|nieuwe?) )?project( \d+)?$|^naamloos$/i.test(p.name.trim()) && !(window.ocStandaardNaam && ocStandaardNaam(p.name.trim())) && ocPk.naam) { ocPk.naam(p.name.trim()); return; } localStorage.setItem('oc.project', JSON.stringify({ name: n, since: Date.now() })); let h = []; try { h = JSON.parse(localStorage.getItem('oc-app.projects')) || []; } catch {} if (!Array.isArray(h)) h = []; localStorage.setItem('oc-app.projects', JSON.stringify([n].concat(h.filter(y => y !== n)).slice(0, 8))); if (geen) ocEigenZet(); } catch {} }
 document.addEventListener('click', e => { if (e.target.closest && e.target.closest('#vb-eigen, .vb-eigen')) { ocEigenZet(); setTimeout(() => ocEigenVolg(true), 0); } }, true);
+// v16.54: "Voorbeeld bekijken" is ook je eigen keuze (oc.keuze): na herladen blijft het voorbeeld open, tot je in de app een ander project kiest.
+// Vroeger opende de tool na herladen de lijst van het actieve project en stond het voorbeeld weg (Klimaat, SWOT, Tijdlijn ...). Wis voorbeeld: de tool volgt de app weer.
+document.addEventListener('click', e => { const t = e.target && e.target.closest ? e.target : null; if (!t) return;
+  if (t.closest('#example, #example-btn, #exampleBtn, #vb-show, #vb-load, #vbLoad, #vb-laad, .oc-vb, [data-act="example"], [data-vb="start"]')) ocEigenZet();
+  else if (t.closest('#vb-wis, .vb-wis, #vbWis')) { try { localStorage.removeItem(ocKeuzeSleutel()); } catch {} } }, true);
 addEventListener('load', () => setTimeout(ocEigenVolg, 0));
 // Koos je in de app een ander project en heeft de tool er nog geen eigen lijst voor (een voorbeeld telt niet), dan geeft ocProjectNieuw die naam terug: begin dan een nieuwe, lege lijst op de manier van de tool.
 // Eén keer per projectkeuze: st.ocSince onthoudt welke keuze (oc.project.since) al verwerkt is. Is de open lijst nog leeg (o.leeg) en heeft ze een standaardnaam, dan krijgt ze de naam (o.noem) en komt er niets bij.

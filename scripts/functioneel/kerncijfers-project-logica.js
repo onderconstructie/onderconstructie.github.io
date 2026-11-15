@@ -38,5 +38,14 @@ const VB = '#example, #example-btn, #vb-show, #vb-load';
   await app('Beta'); await ga('klimaat'); await p.waitForTimeout(400);   // nu staat de analyse van Beta open
   v = await profiel('Nieuwe bib'); ok(v.startsWith('Mijn analyse /'), 'Beta open in Klimaat: Nieuwe bib houdt zijn laatst bewaarde analyse (' + v + ')');
   v = await profiel('Beta'); ok(v === 'Beta / Beta', 'Beta toont nooit een analyse van Nieuwe bib (' + v + ')');
+  // v16.54: de tool zegt welke analyse het profiel gebruikt. Open analyse met cijfers: deze. Een lege analyse open: de laatst bewaarde met cijfers.
+  const noot = async () => { await ga('klimaat'); return p.evaluate(() => { const e = document.getElementById('kern-noot'); return e && !e.hidden ? e.textContent : ''; }); };
+  await app('Nieuwe bib'); await ga('klimaat');
+  await p.evaluate(() => { const a = state.analyses.find(x => x.name === 'Nieuwe bib'); state.current = a.id; save(); }); await p.waitForTimeout(500);
+  let nt = await noot(); ok(/Veranderprofiel van Nieuwe bib gebruikt deze analyse, omdat ze open staat/.test(nt), 'open analyse met cijfers: "gebruikt deze analyse" (' + nt + ')');
+  v = await profiel('Nieuwe bib'); ok(v.startsWith('Nieuwe bib /'), 'het profiel neemt die open analyse (' + v + ')');
+  await app('Nieuwe bib'); await ga('klimaat');
+  nt = await p.evaluate(() => { const n = newAnalysis('Mijn analyse 2'); n.project = 'Nieuwe bib'; /* standaardnaam: hoort bij het project uit het veld project */ state.analyses.push(n); state.current = n.id; save(); render(); const e = document.getElementById('kern-noot'); return e && !e.hidden ? e.textContent : ''; }); await p.waitForTimeout(500); ok(/gebruikt de analyse Nieuwe bib\. Deze analyse heeft nog geen cijfers/.test(nt), 'lege analyse open: de tool noemt de laatst bewaarde met cijfers (' + nt + ')');
+  v = await profiel('Nieuwe bib'); ok(v.startsWith('Nieuwe bib /'), 'en het profiel neemt die laatst bewaarde, niet Mijn analyse (' + v + ')');
   ok(!PE.length, 'geen fouten in de pagina ' + PE.join(' | '));
   await b.close(); console.log(fout.length ? fout.length + ' FOUT' : 'alles ok'); process.exit(fout.length ? 1 : 0); })();

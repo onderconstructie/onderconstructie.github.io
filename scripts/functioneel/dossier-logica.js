@@ -49,5 +49,17 @@ const fout = []; const ok = (c, m) => { console.log((c ? '  ok   ' : '  FOUT ') 
     await q.evaluate(() => localStorage.setItem('oc.project', JSON.stringify({ name:'Beta', since:Date.now() }))); await q.reload({ waitUntil:'networkidle' }); await q.waitForTimeout(500);
     const r2 = await q.evaluate(() => ({ cur:cur().name, vb:state.dossiers.filter(d => d.voorbeeld).length }));
     ok(r2.vb === 1 && r2.cur === 'Beta', 'een andere projectkeuze daarna: het dossier volgt Beta, het voorbeeld gaat niet verloren (' + JSON.stringify(r2) + ')'); await c3.close(); }
+  // v16.54: een eigen dossier van Alfa en het voorbeeld. Kies je het voorbeeld in de projectkiezer en herlaad je, dan blijft het voorbeeld open
+  { const c4 = await b.newContext({ serviceWorkers:'block', locale:'nl-BE', timezoneId:'Europe/Brussels' }); const q = await c4.newPage(); q.on('pageerror', e => PE.push(String(e)));
+    await q.goto(B + '/dossier/', { waitUntil:'domcontentloaded' }); await q.evaluate(() => { localStorage.setItem('oc.welkom', '1'); localStorage.setItem('oc.project', JSON.stringify({ name:'Alfa', since:Date.now() })); });
+    await q.reload({ waitUntil:'networkidle' }); await q.waitForTimeout(300);
+    await q.evaluate(() => { cur().vraag = 'Gaan jullie akkoord met de nieuwe planning?'; save(); document.getElementById('example').click(); }); await q.waitForTimeout(400);
+    await q.evaluate(() => ocPk.knop.click()); await q.waitForTimeout(150); await q.locator('.oc-pk-item:visible[data-id]:not(:has(.oc-pk-vb))').first().click(); await q.waitForTimeout(300);
+    const voor = await q.evaluate(() => cur().name + (cur().voorbeeld ? ' (vb)' : ''));
+    await q.evaluate(() => ocPk.knop.click()); await q.waitForTimeout(150); await q.locator('.oc-pk-item:visible[data-id]:has(.oc-pk-vb)').first().click(); await q.waitForTimeout(300);
+    await q.reload({ waitUntil:'networkidle' }); await q.waitForTimeout(500);
+    const r = await q.evaluate(() => ({ cur:cur().name, vb:!!cur().voorbeeld, alfa:state.dossiers.some(d => d.name === 'Alfa' && d.vraag) }));
+    ok(voor === 'Alfa' && r.vb && r.alfa, 'het voorbeeld gekozen in de projectkiezer en herladen: het voorbeeld blijft open, het dossier van Alfa blijft (' + voor + ' > ' + JSON.stringify(r) + ')');
+    await c4.close(); }
   ok(!PE.length, 'geen fouten in de pagina ' + PE.join(' | '));
   await b.close(); console.log(fout.length ? fout.length + ' FOUT' : 'alles ok'); process.exit(fout.length ? 1 : 0); })().catch(e => { console.error('CRASH', e); process.exit(2); });

@@ -2364,6 +2364,8 @@ window.ocProjectkiezer = function (plek, o) {
     } catch (e) {}
   }
   ocNaamMigreer();
+  // v16.54: kies je het voorbeeld in de kiezer, dan blijft het na herladen open (eigen keuze, oc.keuze), tot je in de app een ander project kiest
+  function vbKeuze(id) { var x = lijst().filter(function (y) { return y.id === id; })[0]; if (x && x.voorbeeld && typeof ocEigenZet === 'function') try { ocEigenZet(); } catch (e) {} }
   function overal(x) {
     if (!OVERAL || !x || x.voorbeeld) return;
     var n = String(x.naam || '').trim().slice(0, 80); if (std(n)) return;
@@ -2419,7 +2421,7 @@ window.ocProjectkiezer = function (plek, o) {
   menu.addEventListener('click', function (e) {
     var b = e.target.closest('[data-pk]'); if (!b) return;
     var wat = b.getAttribute('data-pk');
-    if (wat === 'kies') { var nid = b.getAttribute('data-id'); sluit(true); if (nid !== o.actief()) { o.kies(nid); overal(lijst().filter(function (x) { return x.id === nid; })[0]); } teken(); knop.focus(); }
+    if (wat === 'kies') { var nid = b.getAttribute('data-id'); sluit(true); if (nid !== o.actief()) { o.kies(nid); vbKeuze(nid); overal(lijst().filter(function (x) { return x.id === nid; })[0]); } teken(); knop.focus(); }
     else if (wat === 'nieuw') { sluit(false); var zelf = o.nieuw() === false; teken(); if (!zelf) hernoem({ nieuw: true }); }
     else if (wat === 'meer') { sluit(false); var m = (o.meer || [])[+b.getAttribute('data-i')]; if (m && m.doe) m.doe(); teken(); }
     else if (wat === 'hernoem') { sluit(false); hernoem(); }
@@ -2647,7 +2649,7 @@ window.ocProjectkiezer = function (plek, o) {
         <a class="ft-link" href="https://www.linkedin.com/in/bartel-volckaert-8a96842/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Maker</a>
         <a class="ft-link" href="/privacy/#voorwaarden" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.01"/></svg>Disclaimer</a>
       </nav>
-      <p class="ft-meta"><button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (34 seconden)" title="Bekijk de film (34 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg><span>Film</span></button><button class="ft-film ft-inst" id="ft-app" type="button" hidden aria-label="Installeer de app"><img src="/app/icon.svg" alt="" width="22" height="22"><span>Installeer</span></button><span class="ft-dot" aria-hidden="true"></span><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v16.53</span></p>
+      <p class="ft-meta"><button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (34 seconden)" title="Bekijk de film (34 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg><span>Film</span></button><button class="ft-film ft-inst" id="ft-app" type="button" hidden aria-label="Installeer de app"><img src="/app/icon.svg" alt="" width="22" height="22"><span>Installeer</span></button><span class="ft-dot" aria-hidden="true"></span><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v16.54</span></p>
     </div>
   </footer>
   <dialog class="film" id="film" aria-labelledby="film-h">
