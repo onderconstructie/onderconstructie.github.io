@@ -146,6 +146,8 @@ html:has(.ocw-back) { overflow:hidden; }
 .main > .explain { max-width:52rem; margin-left:auto; margin-right:auto; }
 .aanbod { display:flex; align-items:center; gap:0.875rem; max-width:52rem; margin:0 auto 1.25rem; padding:0.875rem 0.875rem 0.875rem 1rem; border-radius:16px; background:linear-gradient(120deg, #ffffff 20%, #ecfdf5); border:1px solid var(--mint); box-shadow:0 10px 24px -20px rgba(4,120,87,0.6); }
 .aanbod[hidden] { display:none; }
+.bord-ander { max-width:52rem; margin:0 auto 0.75rem; font-size:0.875rem; line-height:1.4; color:var(--slate-600); text-align:center; }
+.bord-ander[hidden] { display:none; }
 .aanbod-ico { flex:none; width:40px; height:40px; border-radius:12px; background:#fff; box-shadow:inset 0 0 0 1px var(--mint); display:grid; place-items:center; color:var(--accent-dark); }
 .aanbod-ico svg { width:22px; height:22px; }
 .aanbod-txt { flex:1; min-width:0; }
@@ -282,7 +284,7 @@ html:has(.ocw-back) { overflow:hidden; }
 .wg-tijd li::before { content:''; position:absolute; left:calc(-0.875rem - 6px); top:0.3rem; width:10px; height:10px; border-radius:50%; background:#fff; box-shadow:inset 0 0 0 2px var(--accent); }
 .wg-tijd li.laat::before { box-shadow:inset 0 0 0 2px #dc2626; }
 .wg-tijd .wg-datum { min-width:3.25rem; }
-.wg-tijd em { font-style:normal; font-size:0.8125rem; font-weight:700; color:#92400e; background:#fef3c7; padding:0 0.375rem; border-radius:999px; }
+.wg-tijd em, .wg-lijst em { font-style:normal; font-size:0.8125rem; font-weight:700; color:#92400e; background:#fef3c7; padding:0 0.375rem; border-radius:999px; }
 .wg-chips { list-style:none; display:flex; flex-wrap:wrap; gap:0.25rem; }
 .wg-chips li { padding:0.125rem 0.5rem; border-radius:999px; background:var(--slate-100); font-size:0.8125rem; color:var(--slate-700); }
 /* Groter tonen */
@@ -653,7 +655,7 @@ header[data-oc-kop] .oc-kop-acties .menu button { white-space:normal; }
     var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([inhoud], { type: 'application/json' })); a.download = bestand;
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
   }
-  function datum() { return new Date().toISOString().slice(0, 10); }
+  function datum() { return new Date(Date.now() - new Date().getTimezoneOffset() * 6e4).toISOString().slice(0, 10); }   // lokale datum: om 00:30 gaf UTC nog gisteren
   // De kopie zoals ze was, ongewijzigd. Meer dan één sleutel: één JSON-bestand met per sleutel de ruwe tekst.
   function downloadKopie() {
     var ks = Object.keys(kapot); if (!ks.length) return;
@@ -1318,12 +1320,47 @@ window.ocProjectkiezer = function (plek, o) {
      De andere tools volgen het zoals bij een keuze in de app. Een voorbeeld of een standaardnaam ("Nieuw project") niet. */
   var std = function (v) { v = String(v || '').trim(); return window.ocStandaardNaam ? ocStandaardNaam(v) : !v || /^((mijn|nieuwe?) )?project( \d+)?$|^naamloos$/i.test(v); };
   function lees(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
+  /* Hertest f: is v de naam van een ander bestaand project, of een vroegere naam ervan? Dan een melding, anders ''.
+     Bestaande projecten: de lijst van de app (oc-app.projects), de projecten die de tools klaarleggen (oc-app.projecten-tools)
+     en de naamkaart (oc.project.namen). Een eigen vroegere naam terugnemen mag. Zo vermengt het werk van twee projecten nooit. */
+  function ocAnder(v, eigen, zonderPad) {   // zonderPad: de lijst van deze tool zelf telt niet (die is net al hernoemd)
+    var z = function (x) { return String(x == null ? '' : x).trim().toLowerCase(); }, zv = z(v), ze = z(eigen);
+    if (!zv || zv === ze) return '';
+    var rd = function (k, d) { try { var x = JSON.parse(localStorage.getItem(k)); return x == null ? d : x; } catch (e) { return d; } };
+    var m = rd('oc.project.namen', {}); if (!m || typeof m !== 'object' || Array.isArray(m)) m = {};
+    var ek = Object.keys(m).filter(function (k) { return z(k) === ze; })[0];
+    if (ek && Array.isArray(m[ek]) && m[ek].map(z).indexOf(zv) >= 0) return '';
+    var eig = Object.keys(m).filter(function (k) { return z(k) !== ze && Array.isArray(m[k]) && m[k].map(z).indexOf(zv) >= 0; })[0];
+    if (eig) return String(v).trim() + ' was vroeger de naam van ' + eig + '. Kies een andere naam, zo blijft het werk gescheiden.';
+    var namen = [].concat(rd('oc-app.projects', []) || [], Object.keys(m)), t = rd('oc-app.projecten-tools', {});
+    if (t && typeof t === 'object' && !Array.isArray(t)) Object.keys(t).forEach(function (k) { if (Array.isArray(t[k]) && !(zonderPad && k === location.pathname)) namen = namen.concat(t[k]); });
+    var hit = namen.filter(function (x) { return typeof x === 'string' && z(x) === zv; })[0];
+    return hit ? hit + ' is al een ander project. Kies een andere naam, zo blijft het werk gescheiden.' : '';
+  }
+  // Hertest f: gegevens van v16.51 hebben oc.project.oud maar nog geen naamkaart. Vul ze aan, ook voor wie de app (Start) niet opent.
+  function ocNaamMigreer() {
+    try {
+      var p = JSON.parse(localStorage.getItem('oc.project')); if (!p || typeof p.name !== 'string' || !p.name.trim() || !Array.isArray(p.oud) || !p.oud.length) return;
+      var m = {}; try { m = JSON.parse(localStorage.getItem('oc.project.namen')) || {}; } catch (e) {} if (!m || typeof m !== 'object' || Array.isArray(m)) m = {};
+      var mijn = Array.isArray(m[p.name]) ? m[p.name] : [];
+      var bij = p.oud.filter(function (x) { return typeof x === 'string' && x.trim() && x !== p.name && mijn.indexOf(x) < 0 && !Array.isArray(m[x])
+        && !Object.keys(m).some(function (k) { return k !== p.name && Array.isArray(m[k]) && m[k].indexOf(x) >= 0; }); });
+      if (!bij.length) return;
+      m[p.name] = mijn.concat(bij).slice(-10); localStorage.setItem('oc.project.namen', JSON.stringify(m));
+    } catch (e) {}
+  }
+  ocNaamMigreer();
   function overal(x) {
     if (!OVERAL || !x || x.voorbeeld) return;
     var n = String(x.naam || '').trim().slice(0, 80); if (std(n)) return;
     try {
       var p = lees('oc.project', null);
-      if (!p || p.name !== n) localStorage.setItem('oc.project', JSON.stringify({ name: n, since: Date.now() }));
+      // Naamkaart (oc.project.namen: naam -> vorige namen, blijvend): een gekozen project krijgt zijn vorige namen mee (oud), zodat elke tool het werk terugvindt.
+      // Draagt dit tabblad nog een vorige naam van een project, dan is het dat project: werk gaat nooit naar een ander project met die oude naam.
+      var m = lees('oc.project.namen', {}); m = m && typeof m === 'object' && !Array.isArray(m) ? m : {};
+      if (!Array.isArray(m[n])) { var eig = Object.keys(m).filter(function (k) { return Array.isArray(m[k]) && m[k].indexOf(n) >= 0; })[0]; if (eig) n = eig; }
+      var oudN = Array.isArray(m[n]) ? m[n].filter(function (y) { return typeof y === 'string' && y !== n; }).slice(-10) : [];
+      if (!p || p.name !== n) localStorage.setItem('oc.project', JSON.stringify(oudN.length ? { name: n, since: Date.now(), oud: oudN } : { name: n, since: Date.now() }));
       var h = lees('oc-app.projects', []); h = Array.isArray(h) ? h : [];
       if (h[0] !== n) localStorage.setItem('oc-app.projects', JSON.stringify([n].concat(h.filter(function (y) { return y !== n; })).slice(0, 8)));
     } catch (e) {}
@@ -1395,7 +1432,10 @@ window.ocProjectkiezer = function (plek, o) {
   function klaar(bewaar, focus) {
     if (!bewerk) return;
     var v = veld.value.trim().slice(0, 80), b = bewerk;
-    if (bewaar && !v) { veld.setAttribute('aria-invalid', 'true'); fout.hidden = false; if (window.ocMeld) try { ocMeld(fout.textContent); } catch (e) {} veld.focus(); return; }
+    if (bewaar && !v) { if (fout.dataset.std) fout.textContent = fout.dataset.std; veld.setAttribute('aria-invalid', 'true'); fout.hidden = false; if (window.ocMeld) try { ocMeld(fout.textContent); } catch (e) {} veld.focus(); return; }
+    // Hertest f: hernoemen naar de naam van een ander bestaand project (of een vroegere naam ervan) mag niet: het veld blijft open met de reden.
+    var anders = bewaar && v !== b.oud && o.projectnaam && !b.vb && !b.nieuw ? ocAnder(v, b.oud) : '';
+    if (anders) { fout.dataset.std = fout.dataset.std || fout.textContent; fout.textContent = anders; veld.setAttribute('aria-invalid', 'true'); fout.hidden = false; if (window.ocMeld) try { ocMeld(anders); } catch (e) {} if (focus) veld.focus(); return; }
     bewerk = null;
     if (bewaar && v !== b.oud) {
       o.hernoem(v);
@@ -1463,6 +1503,7 @@ window.ocProjectkiezer = function (plek, o) {
             <p><strong>Plak gewoon iets</strong>: een link, een video, tekst of een afbeelding. De Cockpit ziet zelf wat het is.<span class="tip-sleep"> Slepen naar een kolom kan ook.</span></p>
         </div>
 
+        <p class="bord-ander" id="bord-ander" role="note" hidden></p>
         <div class="bord-balk"><button type="button" class="kol-plus-k" id="kol-plus-k" aria-label="Nieuwe kolom" title="Nieuwe kolom"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="7" height="16" rx="1.5"/><path d="M17.5 8v8M13.5 12h8"/></svg></button></div>
         <div class="bord" id="bord" aria-label="Je bord"></div>
 
@@ -1713,7 +1754,7 @@ function wijzig(fn, melding) {
 
 /* ---------- Tools uit de app ---------- */
 let TOOLS = [];
-fetch('/tools.json').then(r => r.ok ? r.json() : []).then(d => { TOOLS = (Array.isArray(d) ? d : []).filter(t => t && t.id && t.path && t.id !== 'cockpit'); TOOLS.sort((a, b) => a.title.localeCompare(b.title, 'nl')); if (!autoBord() && !bijwerken()) render(); }).catch(() => {});
+fetch('/tools.json').then(r => r.ok ? r.json() : []).then(d => { TOOLS = (Array.isArray(d) ? d : []).filter(t => t && t.id && t.path && t.id !== 'cockpit'); TOOLS.sort((a, b) => a.title.localeCompare(b.title, 'nl')); if (!bijwerken()) render(); }).catch(() => {});
 const toolVan = id => TOOLS.find(t => t.id === id);
 const icoon = t => t && t.icon ? 'data:image/svg+xml,' + encodeURIComponent(t.icon) : '';
 function projectNamen() {
@@ -1808,6 +1849,7 @@ function render() {
   if (fId && fSel === 'blokmenu') { const x = el.querySelector(`[data-blokmenu="${CSS.escape(fId)}"]`); x && x.focus({ preventScroll:true }); }
   else if (fKol && fSel === 'plus') { const x = el.querySelector(`[data-plus="${CSS.escape(fKol)}"]`); x && x.focus({ preventScroll:true }); }
   tekenAanbod();
+  tekenAnderProject(B);
   $('menu-wipe').hidden = $('sep-wipe').hidden = leeg();
   $('oc-restart-row').hidden = leeg();
   if (window.ocPk) ocPk.teken();
@@ -2312,13 +2354,16 @@ let widgetTimer = null;
    met items { type, text, note?, who?, when? }. De widget leest die en tekent de kern. Niets wordt hier gewijzigd. */
 /* Hoort een lijst bij dit project? Ook "Sprint 1 · Nieuwe bib" of "Productboom · Nieuwe bib" telt mee. */
 function zelfde(naam, p) { return !!p && (zacht(naam) === zacht(p) || zacht(String(naam || '').split(' · ').pop()) === zacht(p)); }
+/* v3: elke lijst draagt haar project (veld project). Eerst de naam (zoals vroeger), dan het projectveld: zo vindt het bord ook
+   Weerstand ("Doelgroepen"), Gedrag en Retro, waarvan de lijst niet naar het project heet. Kerncijfers zijn geen kern om te tonen. */
+function hoort(l, p) { return !!l && (zelfde(l.name, p) || (typeof l.project === 'string' && !!l.project && zelfde(l.project, p) && !/^kerncijfers$/i.test(String(l.name || '').trim()))); }
 function zacht(s) { return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ''); }
 function deelt(t) { return !!(t && Array.isArray(t.storage) && t.storage.includes('oc.share.' + t.id)); }
 function widgetLijst(b) {
   let d = null; try { d = JSON.parse(localStorage.getItem('oc.share.' + b.tool)); } catch (e) {}
   const L = d && Array.isArray(d.lists) ? d.lists.filter(l => l && Array.isArray(l.items)) : [];
   let p = b.project; if (!p) { try { const x = JSON.parse(localStorage.getItem('oc.project')); p = x && x.name; } catch (e) {} }
-  const lijst = (p && L.find(l => zelfde(l.name, p))) || (!b.project && !p && L.length === 1 ? L[0] : null);
+  const lijst = (p && (L.find(l => zelfde(l.name, p)) || L.find(l => hoort(l, p)))) || (!b.project && !p && L.length === 1 ? L[0] : null);
   return { lijst, updated:d && d.updated, p, aantal:L.length };
 }
 const DAG = 864e5;
@@ -2346,25 +2391,32 @@ function widgetHTML(b) {
   const it = lijst.items, van = type => it.filter(x => x.type === type);
   let lijf = '';
   // de kern van een tool: haar eigen soort eerst (de Projectopdracht toont haar doelen, niet haar mijlpalen)
-  const VOORKEUR = { opdracht:'doel', tijdlijn:'mijlpaal', kanban:'actie', risico:'risico', stakeholders:'betrokkene', beslissingen:'besluit', leerpunten:'leerpunt', pestle:'omgevingsfactor', agenda:'agendapunt' };
+  // Sprintplanning legt taken en een mijlpaal "Einde sprint" klaar: de kern van een sprint zijn haar taken
+  const VOORKEUR = { sprint:'taak', opdracht:'doel', tijdlijn:'mijlpaal', kanban:'actie', risico:'risico', stakeholders:'betrokkene', beslissingen:'besluit', leerpunten:'leerpunt', pestle:'omgevingsfactor', agenda:'agendapunt' };
   const kies = it.some(x => x.type === VOORKEUR[b.tool]) ? VOORKEUR[b.tool] : ['risico', 'mijlpaal', 'actie', 'taak', 'betrokkene'].find(t => it.some(x => x.type === t)) || it[0].type;
   const risicos = van('risico');
-  if (kies === 'risico') {
-    const R = risicos.map(r => { const m = /kans (\d)\/5 · impact (\d)\/5/.exec(r.note || ''); return { t:r.text, k:m ? +m[1] : 0, i:m ? +m[2] : 0 }; });
+  if (kies === 'risico' && !risicos.some(r => /kans \d\/5 · impact \d\/5/.test(r.note || ''))) {
+    // Zonder kans en impact (SWOT, PESTLE, Projectopdracht…) is een lege matrix zinloos: toon de lijst zoals de tool ze klaarlegt.
+    // De SWOT zet bij een bedreiging die een zwakte raakt "WT: raakt …" in de notitie, en "belangrijk" bij een grote.
+    const zw = risicos.filter(r => /^WT: raakt/.test(r.note || '')).length, nm = b.tool === 'swot' ? ['bedreiging', 'bedreigingen'] : ['risico', "risico's"];
+    lijf = `<p class="wg-getal"><b>${risicos.length}</b> ${risicos.length === 1 ? nm[0] : nm[1]}${zw ? ` · ${zw} ${zw === 1 ? 'raakt' : 'raken'} een zwakte` : ''}</p><ul class="wg-lijst">${risicos.slice(0, MAX).map(r => `<li><span class="wg-t">${esc(r.text)}${/(^| · )belangrijk( · |$)/.test(r.note || '') ? ' <em>belangrijk</em>' : ''}</span></li>`).join('')}</ul>${meerRegel(risicos.length, MAX, 'meer')}`;
+  } else if (kies === 'risico') {
+    // Onder controle (status uit de Risicomatrix): blijft in de matrix, maar telt niet als hoog of kritiek
+    const R = risicos.map(r => { const m = /kans (\d)\/5 · impact (\d)\/5/.exec(r.note || ''); return { t:r.text, k:m ? +m[1] : 0, i:m ? +m[2] : 0, onder:/onder controle/i.test(r.note || '') }; });
     const ok = R.filter(r => r.k && r.i), niveau = s => s >= 15 ? 'kritiek' : s >= 10 ? 'hoog' : s >= 5 ? 'midden' : 'laag';
     const tel = {}; ok.forEach(r => { const k = r.k + '-' + r.i; tel[k] = (tel[k] || 0) + 1; });
     let cellen = '';
     for (let i = 5; i >= 1; i--) for (let k = 1; k <= 5; k++) { const n = tel[k + '-' + i] || 0; cellen += `<span class="wg-cel n-${niveau(k * i)}">${n ? `<b>${n}</b>` : ''}</span>`; }
-    const top = ok.slice().sort((a, b) => b.k * b.i - a.k * a.i).slice(0, G ? 8 : 3);
-    const zwaar = ok.filter(r => r.k * r.i >= 10).length;
+    const top = ok.slice().sort((a, b) => a.onder - b.onder || b.k * b.i - a.k * a.i).slice(0, G ? 8 : 3);
+    const zwaar = ok.filter(r => r.k * r.i >= 10 && !r.onder).length;
     lijf = `<div class="wg-risico"><div class="wg-matrix" role="img" aria-label="${esc(`Risicomatrix: ${ok.length} risico's ingeschat, ${zwaar} hoog of kritiek`)}"><span class="wg-as wg-as-y" aria-hidden="true">impact</span>${cellen}<span class="wg-as wg-as-x" aria-hidden="true">kans</span></div>
-      <div class="wg-kern"><p class="wg-getal"><b>${zwaar}</b> hoog of kritiek</p><ol class="wg-lijst">${top.map(r => `<li><span class="wg-stip n-${niveau(r.k * r.i)}" aria-hidden="true"></span>${esc(r.t)}</li>`).join('')}</ol></div></div>`;
+      <div class="wg-kern"><p class="wg-getal"><b>${zwaar}</b> hoog of kritiek</p><ol class="wg-lijst">${top.map(r => `<li><span class="wg-stip n-${niveau(r.k * r.i)}" aria-hidden="true"></span>${esc(r.t)}${r.onder ? ' <em>onder controle</em>' : ''}</li>`).join('')}</ol></div></div>`;
   } else if (kies === 'mijlpaal') {
     const M = van('mijlpaal').slice().sort((a, b) => String(a.when || '9').localeCompare(String(b.when || '9')));
     const gehaald = M.filter(m => /gehaald/i.test(m.note || '')).length;
     const open = M.filter(m => !/gehaald/i.test(m.note || '')).slice(0, G ? 10 : 3);
     lijf = `<div class="wg-balk" role="img" aria-label="${gehaald} van ${M.length} mijlpalen gehaald"><span style="width:${Math.round(gehaald / M.length * 100)}%"></span></div><p class="wg-getal"><b>${gehaald}</b> van ${M.length} mijlpalen gehaald</p>
-      <ol class="wg-tijd">${open.map(m => { const d = dagenTot(m.when), laat = d != null && d < 0; return `<li class="${laat ? 'laat' : ''}"><span class="wg-datum">${m.when ? datumKort(m.when) : 'geen datum'}</span><span class="wg-t">${esc(m.text)}${/verschoven/i.test(m.note || '') ? ' <em>verschoven</em>' : ''}</span></li>`; }).join('')}</ol>`;
+      <ol class="wg-tijd">${open.map(m => { const d = dagenTot(m.when), laat = d != null && d < 0; return `<li class="${laat ? 'laat' : ''}"><span class="wg-datum">${m.when ? datumKort(m.when) : 'geen datum'}</span><span class="wg-t">${esc(m.text)}${/verschoven/i.test(m.note || '') ? ' <em>verschoven</em>' : ''}${laat ? ' <em>te laat</em>' : ''}</span></li>`; }).join('')}</ol>`;   // te laat ook in woorden, niet alleen in het rood (hertest b)
   } else if (kies === 'actie' || kies === 'taak') {
     const A = van('actie').concat(van('taak'));
     const laat = A.filter(a => { const d = dagenTot(a.when); return d != null && d < 0; }).length;
@@ -2387,7 +2439,7 @@ function widgetHTML(b) {
 const FASEN = [['plan', 'Plannen'], ['do', 'Doen'], ['check', 'Opvolgen'], ['act', 'Bijsturen']];
 function huidigProject() { try { const x = JSON.parse(localStorage.getItem('oc.project')); return x && typeof x.name === 'string' && x.name.trim() ? x.name.trim() : ''; } catch (e) { return ''; } }
 function toolsMetData(p) {
-  return TOOLS.filter(t => deelt(t)).filter(t => { try { const d = JSON.parse(localStorage.getItem('oc.share.' + t.id)); return d && Array.isArray(d.lists) && d.lists.some(l => l && zelfde(l.name, p) && Array.isArray(l.items) && l.items.length); } catch (e) { return false; } });
+  return TOOLS.filter(t => deelt(t)).filter(t => { try { const d = JSON.parse(localStorage.getItem('oc.share.' + t.id)); return d && Array.isArray(d.lists) && d.lists.some(l => l && hoort(l, p) && Array.isArray(l.items) && l.items.length); } catch (e) { return false; } });
 }
 /* Welke stappenplannen ben je begonnen (de app bewaart dat in oc-app.paths-started)? Hun tools horen op je bord, ook zonder gegevens. */
 function stappenplannen() { try { const x = JSON.parse(localStorage.getItem('oc-app.paths-started')); return Array.isArray(x) ? x.filter(s => typeof s === 'string') : []; } catch (e) { return []; } }
@@ -2406,7 +2458,7 @@ function voorstel(p) {
 /* De eerstvolgende mijlpaal met een datum voor dit project (uit Tijdlijn of Projectopdracht): wordt een aftelling bovenaan */
 function volgendeMijlpaal(p) {
   const nu = new Date(); nu.setHours(0, 0, 0, 0); let best = null;
-  TOOLS.filter(t => deelt(t)).forEach(t => { try { const d = JSON.parse(localStorage.getItem('oc.share.' + t.id)); (d && Array.isArray(d.lists) ? d.lists : []).filter(l => l && zelfde(l.name, p) && Array.isArray(l.items)).forEach(l => l.items.forEach(it => {
+  TOOLS.filter(t => deelt(t)).forEach(t => { try { const d = JSON.parse(localStorage.getItem('oc.share.' + t.id)); (d && Array.isArray(d.lists) ? d.lists : []).filter(l => l && hoort(l, p) && Array.isArray(l.items)).forEach(l => l.items.forEach(it => {
     if (!it || it.type !== 'mijlpaal' || !okDatum(String(it.when || '').slice(0, 10)) || /gehaald/i.test(it.note || '')) return;
     const w = String(it.when).slice(0, 10), [y, m, dd] = w.split('-').map(Number); if (new Date(y, m - 1, dd) < nu) return;
     if (!best || w < best.datum) best = { datum:w, titel:String(it.text || 'Mijlpaal').slice(0, 80) };
@@ -2450,7 +2502,7 @@ function bijwerken() {
   if (lukt && namen.length) toast('Nieuw op je bord: ' + (namen.length > 2 ? namen.slice(0, 2).join(', ') + ' en nog ' + (namen.length - 2) : namen.join(' en ')));
   return !!lukt;
 }
-/* Klaar aan het einde van je stappenplan: is je Cockpit nog leeg en heb je een project of een stappenplan, dan staat je bord er meteen. Ongedaan kan. */
+/* Niet meer automatisch bij het openen (te vol op een gsm, en anders dan de andere tools): het voorstel 'Maak een bord voor …' doet het op vraag. Bewaard voor wie het later toch wil oproepen. */
 function autoBord() {
   if (!leeg()) return false;
   const p = huidigProject();
@@ -2462,6 +2514,14 @@ function autoBord() {
   toast('Je bord ' + v.b.naam + ' staat klaar, met ' + v.n + ' tools', ocUndoable(() => { st = oud; if (p) st.nee = (st.nee || []).concat(p); save(); render(); zeg('Ongedaan gemaakt.'); }));
   zeg('Je bord ' + v.b.naam + ' staat klaar met ' + v.n + ' tools, per fase.' + (v.metData ? ' Bij ' + v.metData + ' zie je meteen de kern.' : ''));
   return true;
+}
+/* Na een wissel van project in de app toont dit bord nog de cijfers van een ander project: zeg dat duidelijk */
+function tekenAnderProject(B) {
+  const el = $('bord-ander'); if (!el) return;
+  const p = huidigProject(), eigen = [...new Set(B.kolommen.flatMap(k => k.blokken).filter(b => b.soort === 'tool' && b.project).map(b => b.project))];
+  const ander = p && eigen.length && !eigen.some(x => zacht(x) === zacht(p));
+  el.hidden = !ander;
+  el.textContent = ander ? `Dit bord toont ${eigen.length === 1 ? eigen[0] : eigen.slice(0, -1).join(', ') + ' en ' + eigen[eigen.length - 1]}. Je werkt nu aan ${p}.` : '';
 }
 function tekenAanbod() {
   const A = $('aanbod'); if (!A) return;
@@ -2541,7 +2601,7 @@ window.ocBestand = (function () {
     var blob = new Blob([JSON.stringify({ app: 'Onder Constructie', version: 1, created: new Date().toISOString(), tool: id, data: data }, null, 1)], { type: 'application/json' });
     var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
     var stuk = slug(naam()) + (extraNaam ? '-' + slug(extraNaam) : '');
-    a.download = stuk + '-' + new Date().toISOString().slice(0, 10) + '.json';
+    a.download = stuk + '-' + new Date(Date.now() - new Date().getTimezoneOffset() * 6e4).toISOString().slice(0, 10) + '.json';   // lokale datum, niet UTC
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
     return keys.length;
   }
@@ -2722,15 +2782,51 @@ window.ocBestand = (function () {
   document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', start) : start();
   var eigenNaam = null, naamT = null;
   function projectNu() { try { var p = JSON.parse(localStorage.getItem('oc.project')); return p && typeof p.name === 'string' ? p.name.trim() : ''; } catch (e) { return ''; } }
+  /* Hertest f: is v de naam van een ander bestaand project, of een vroegere naam ervan? Dan een melding, anders ''.
+     Bestaande projecten: de lijst van de app (oc-app.projects), de projecten die de tools klaarleggen (oc-app.projecten-tools)
+     en de naamkaart (oc.project.namen). Een eigen vroegere naam terugnemen mag. Zo vermengt het werk van twee projecten nooit. */
+  function ocAnder(v, eigen, zonderPad) {   // zonderPad: de lijst van deze tool zelf telt niet (die is net al hernoemd)
+    var z = function (x) { return String(x == null ? '' : x).trim().toLowerCase(); }, zv = z(v), ze = z(eigen);
+    if (!zv || zv === ze) return '';
+    var rd = function (k, d) { try { var x = JSON.parse(localStorage.getItem(k)); return x == null ? d : x; } catch (e) { return d; } };
+    var m = rd('oc.project.namen', {}); if (!m || typeof m !== 'object' || Array.isArray(m)) m = {};
+    var ek = Object.keys(m).filter(function (k) { return z(k) === ze; })[0];
+    if (ek && Array.isArray(m[ek]) && m[ek].map(z).indexOf(zv) >= 0) return '';
+    var eig = Object.keys(m).filter(function (k) { return z(k) !== ze && Array.isArray(m[k]) && m[k].map(z).indexOf(zv) >= 0; })[0];
+    if (eig) return String(v).trim() + ' was vroeger de naam van ' + eig + '. Kies een andere naam, zo blijft het werk gescheiden.';
+    var namen = [].concat(rd('oc-app.projects', []) || [], Object.keys(m)), t = rd('oc-app.projecten-tools', {});
+    if (t && typeof t === 'object' && !Array.isArray(t)) Object.keys(t).forEach(function (k) { if (Array.isArray(t[k]) && !(zonderPad && k === location.pathname)) namen = namen.concat(t[k]); });
+    var hit = namen.filter(function (x) { return typeof x === 'string' && z(x) === zv; })[0];
+    return hit ? hit + ' is al een ander project. Kies een andere naam, zo blijft het werk gescheiden.' : '';
+  }
+  // Hertest f: gegevens van v16.51 hebben oc.project.oud maar nog geen naamkaart. Vul ze aan, ook voor wie de app (Start) niet opent.
+  function ocNaamMigreer() {
+    try {
+      var p = JSON.parse(localStorage.getItem('oc.project')); if (!p || typeof p.name !== 'string' || !p.name.trim() || !Array.isArray(p.oud) || !p.oud.length) return;
+      var m = {}; try { m = JSON.parse(localStorage.getItem('oc.project.namen')) || {}; } catch (e) {} if (!m || typeof m !== 'object' || Array.isArray(m)) m = {};
+      var mijn = Array.isArray(m[p.name]) ? m[p.name] : [];
+      var bij = p.oud.filter(function (x) { return typeof x === 'string' && x.trim() && x !== p.name && mijn.indexOf(x) < 0 && !Array.isArray(m[x])
+        && !Object.keys(m).some(function (k) { return k !== p.name && Array.isArray(m[k]) && m[k].indexOf(x) >= 0; }); });
+      if (!bij.length) return;
+      m[p.name] = mijn.concat(bij).slice(-10); localStorage.setItem('oc.project.namen', JSON.stringify(m));
+    } catch (e) {}
+  }
   function deelNaam(el) {
     var v = String(el.value || '').trim().slice(0, 80), nu = projectNu();
     // hernoem je de lijst van het actieve project (het veld stond op die naam toen je begon), dan krijgt het project in de app die naam mee
     if (ocStandaardNaam(v) || (nu && nu !== eigenNaam && nu !== el.__ocWas)) return;
     if ([].some.call(document.querySelectorAll('.vb-bar'), function (b) { return b.getClientRects().length; })) return;   // in het voorbeeld niet
     if (v === nu) return;
+    // Hertest f: de naam van een ander bestaand project (of een vroegere naam ervan) gaat niet naar de app: anders vermengt het werk.
+    var anders = ocAnder(v, nu, true); if (anders) { if (window.ocMeld) try { ocMeld(anders); } catch (e) {} return; }
     try {
       var oud = []; try { var p0 = JSON.parse(localStorage.getItem('oc.project')); if (p0 && Array.isArray(p0.oud)) oud = p0.oud.slice(-9); } catch (e) {}
       oud = oud.filter(function (x) { return x !== v; }); if (nu && oud.indexOf(nu) < 0) oud.push(nu);   // de vorige naam blijft gekend: tools en dossier vinden het project zo terug
+      // Naamkaart bijwerken: de nieuwe naam erft de vorige namen (transitief, hoogstens 10). Is v een vorige naam van een ander project, dan niet: geen vermenging.
+      var m = {}; try { m = JSON.parse(localStorage.getItem('oc.project.namen')) || {}; } catch (e) {} if (!m || typeof m !== 'object' || Array.isArray(m)) m = {};
+      if (Object.keys(m).some(function (k) { return k !== nu && Array.isArray(m[k]) && m[k].indexOf(v) >= 0; })) return;
+      oud = oud.concat(Array.isArray(m[nu]) ? m[nu] : []).filter(function (x, i, a) { return typeof x === 'string' && x !== v && a.indexOf(x) === i; }).slice(-10);
+      if (nu) delete m[nu]; m[v] = oud; localStorage.setItem('oc.project.namen', JSON.stringify(m));
       localStorage.setItem('oc.project', JSON.stringify({ name: v, since: Date.now(), oud: oud })); eigenNaam = v; el.__ocWas = v;
     } catch (e) {}
   }

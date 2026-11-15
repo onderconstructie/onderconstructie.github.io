@@ -578,7 +578,7 @@ header[data-oc-kop] .oc-kop-acties .menu button { white-space:normal; }
     var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([inhoud], { type: 'application/json' })); a.download = bestand;
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
   }
-  function datum() { return new Date().toISOString().slice(0, 10); }
+  function datum() { return new Date(Date.now() - new Date().getTimezoneOffset() * 6e4).toISOString().slice(0, 10); }   // lokale datum: om 00:30 gaf UTC nog gisteren
   // De kopie zoals ze was, ongewijzigd. Meer dan één sleutel: één JSON-bestand met per sleutel de ruwe tekst.
   function downloadKopie() {
     var ks = Object.keys(kapot); if (!ks.length) return;
@@ -1822,7 +1822,7 @@ window.ocBestand = (function () {
     var blob = new Blob([JSON.stringify({ app: 'Onder Constructie', version: 1, created: new Date().toISOString(), tool: id, data: data }, null, 1)], { type: 'application/json' });
     var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
     var stuk = slug(naam()) + (extraNaam ? '-' + slug(extraNaam) : '');
-    a.download = stuk + '-' + new Date().toISOString().slice(0, 10) + '.json';
+    a.download = stuk + '-' + new Date(Date.now() - new Date().getTimezoneOffset() * 6e4).toISOString().slice(0, 10) + '.json';   // lokale datum, niet UTC
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
     return keys.length;
   }
@@ -2003,15 +2003,51 @@ window.ocBestand = (function () {
   document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', start) : start();
   var eigenNaam = null, naamT = null;
   function projectNu() { try { var p = JSON.parse(localStorage.getItem('oc.project')); return p && typeof p.name === 'string' ? p.name.trim() : ''; } catch (e) { return ''; } }
+  /* Hertest f: is v de naam van een ander bestaand project, of een vroegere naam ervan? Dan een melding, anders ''.
+     Bestaande projecten: de lijst van de app (oc-app.projects), de projecten die de tools klaarleggen (oc-app.projecten-tools)
+     en de naamkaart (oc.project.namen). Een eigen vroegere naam terugnemen mag. Zo vermengt het werk van twee projecten nooit. */
+  function ocAnder(v, eigen, zonderPad) {   // zonderPad: de lijst van deze tool zelf telt niet (die is net al hernoemd)
+    var z = function (x) { return String(x == null ? '' : x).trim().toLowerCase(); }, zv = z(v), ze = z(eigen);
+    if (!zv || zv === ze) return '';
+    var rd = function (k, d) { try { var x = JSON.parse(localStorage.getItem(k)); return x == null ? d : x; } catch (e) { return d; } };
+    var m = rd('oc.project.namen', {}); if (!m || typeof m !== 'object' || Array.isArray(m)) m = {};
+    var ek = Object.keys(m).filter(function (k) { return z(k) === ze; })[0];
+    if (ek && Array.isArray(m[ek]) && m[ek].map(z).indexOf(zv) >= 0) return '';
+    var eig = Object.keys(m).filter(function (k) { return z(k) !== ze && Array.isArray(m[k]) && m[k].map(z).indexOf(zv) >= 0; })[0];
+    if (eig) return String(v).trim() + ' was vroeger de naam van ' + eig + '. Kies een andere naam, zo blijft het werk gescheiden.';
+    var namen = [].concat(rd('oc-app.projects', []) || [], Object.keys(m)), t = rd('oc-app.projecten-tools', {});
+    if (t && typeof t === 'object' && !Array.isArray(t)) Object.keys(t).forEach(function (k) { if (Array.isArray(t[k]) && !(zonderPad && k === location.pathname)) namen = namen.concat(t[k]); });
+    var hit = namen.filter(function (x) { return typeof x === 'string' && z(x) === zv; })[0];
+    return hit ? hit + ' is al een ander project. Kies een andere naam, zo blijft het werk gescheiden.' : '';
+  }
+  // Hertest f: gegevens van v16.51 hebben oc.project.oud maar nog geen naamkaart. Vul ze aan, ook voor wie de app (Start) niet opent.
+  function ocNaamMigreer() {
+    try {
+      var p = JSON.parse(localStorage.getItem('oc.project')); if (!p || typeof p.name !== 'string' || !p.name.trim() || !Array.isArray(p.oud) || !p.oud.length) return;
+      var m = {}; try { m = JSON.parse(localStorage.getItem('oc.project.namen')) || {}; } catch (e) {} if (!m || typeof m !== 'object' || Array.isArray(m)) m = {};
+      var mijn = Array.isArray(m[p.name]) ? m[p.name] : [];
+      var bij = p.oud.filter(function (x) { return typeof x === 'string' && x.trim() && x !== p.name && mijn.indexOf(x) < 0 && !Array.isArray(m[x])
+        && !Object.keys(m).some(function (k) { return k !== p.name && Array.isArray(m[k]) && m[k].indexOf(x) >= 0; }); });
+      if (!bij.length) return;
+      m[p.name] = mijn.concat(bij).slice(-10); localStorage.setItem('oc.project.namen', JSON.stringify(m));
+    } catch (e) {}
+  }
   function deelNaam(el) {
     var v = String(el.value || '').trim().slice(0, 80), nu = projectNu();
     // hernoem je de lijst van het actieve project (het veld stond op die naam toen je begon), dan krijgt het project in de app die naam mee
     if (ocStandaardNaam(v) || (nu && nu !== eigenNaam && nu !== el.__ocWas)) return;
     if ([].some.call(document.querySelectorAll('.vb-bar'), function (b) { return b.getClientRects().length; })) return;   // in het voorbeeld niet
     if (v === nu) return;
+    // Hertest f: de naam van een ander bestaand project (of een vroegere naam ervan) gaat niet naar de app: anders vermengt het werk.
+    var anders = ocAnder(v, nu, true); if (anders) { if (window.ocMeld) try { ocMeld(anders); } catch (e) {} return; }
     try {
       var oud = []; try { var p0 = JSON.parse(localStorage.getItem('oc.project')); if (p0 && Array.isArray(p0.oud)) oud = p0.oud.slice(-9); } catch (e) {}
       oud = oud.filter(function (x) { return x !== v; }); if (nu && oud.indexOf(nu) < 0) oud.push(nu);   // de vorige naam blijft gekend: tools en dossier vinden het project zo terug
+      // Naamkaart bijwerken: de nieuwe naam erft de vorige namen (transitief, hoogstens 10). Is v een vorige naam van een ander project, dan niet: geen vermenging.
+      var m = {}; try { m = JSON.parse(localStorage.getItem('oc.project.namen')) || {}; } catch (e) {} if (!m || typeof m !== 'object' || Array.isArray(m)) m = {};
+      if (Object.keys(m).some(function (k) { return k !== nu && Array.isArray(m[k]) && m[k].indexOf(v) >= 0; })) return;
+      oud = oud.concat(Array.isArray(m[nu]) ? m[nu] : []).filter(function (x, i, a) { return typeof x === 'string' && x !== v && a.indexOf(x) === i; }).slice(-10);
+      if (nu) delete m[nu]; m[v] = oud; localStorage.setItem('oc.project.namen', JSON.stringify(m));
       localStorage.setItem('oc.project', JSON.stringify({ name: v, since: Date.now(), oud: oud })); eigenNaam = v; el.__ocWas = v;
     } catch (e) {}
   }

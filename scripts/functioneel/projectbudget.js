@@ -12,9 +12,11 @@ const fout = []; const ok = (c, m) => { console.log((c ? '  ok   ' : '  FOUT ') 
   await voeg('Projectleider', 'eenmalig', 'mensen', ['10', '500']);
   await voeg('Licentie', 'jaarlijks', 'licentie', '12 000,50');
   let t = await tot();
-  ok(t[0] === '€ 105.000' && t[1] === '€ 12.001', 'eenmalig 105.000 en elk jaar 12.001 (' + t.join(' | ') + ')');
+  // Elk jaar met centen toont exact (€ 12.000,50 × 3 jaar = € 36.001,50): afgerond gaf dat "€ 12.001 × 3 jaar = € 36.002" (herstel ronde audit)
+  ok(t[0] === '€ 105.000' && t[1] === '€ 12.000,50', 'eenmalig 105.000 en elk jaar 12.000,50 (' + t.join(' | ') + ')');
   // 105000 + 12000,5 × 3 = 141001,5; + 10% = 155101,65
-  ok(t[2] === '€ 155.102', 'totaal over 3 jaar met 10% marge = 155.102 (' + t[2] + ')');
+  // Eén afronding overal (op de cent): het totaal toont wat de som is (hertest b: scherm en tekst rondden anders af)
+  ok(t[2] === '€ 155.101,65', 'totaal over 3 jaar met 10% marge = 155.101,65 (' + t[2] + ')');
   await p.click('#jaar-plus'); await p.click('#marge [data-marge="0"]'); await p.waitForTimeout(200); t = await tot();
   ok(t[2] === '€ 153.002', '4 jaar zonder marge = 153.002 (' + t[2] + ')');
   await p.fill('#name', 'Fout'); await p.selectOption('#aard', 'extern'); await p.fill('#bedrag', 'veel'); await p.click('#submit'); await p.waitForTimeout(200);

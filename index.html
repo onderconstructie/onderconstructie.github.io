@@ -2334,12 +2334,47 @@ window.ocProjectkiezer = function (plek, o) {
      De andere tools volgen het zoals bij een keuze in de app. Een voorbeeld of een standaardnaam ("Nieuw project") niet. */
   var std = function (v) { v = String(v || '').trim(); return window.ocStandaardNaam ? ocStandaardNaam(v) : !v || /^((mijn|nieuwe?) )?project( \d+)?$|^naamloos$/i.test(v); };
   function lees(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
+  /* Hertest f: is v de naam van een ander bestaand project, of een vroegere naam ervan? Dan een melding, anders ''.
+     Bestaande projecten: de lijst van de app (oc-app.projects), de projecten die de tools klaarleggen (oc-app.projecten-tools)
+     en de naamkaart (oc.project.namen). Een eigen vroegere naam terugnemen mag. Zo vermengt het werk van twee projecten nooit. */
+  function ocAnder(v, eigen, zonderPad) {   // zonderPad: de lijst van deze tool zelf telt niet (die is net al hernoemd)
+    var z = function (x) { return String(x == null ? '' : x).trim().toLowerCase(); }, zv = z(v), ze = z(eigen);
+    if (!zv || zv === ze) return '';
+    var rd = function (k, d) { try { var x = JSON.parse(localStorage.getItem(k)); return x == null ? d : x; } catch (e) { return d; } };
+    var m = rd('oc.project.namen', {}); if (!m || typeof m !== 'object' || Array.isArray(m)) m = {};
+    var ek = Object.keys(m).filter(function (k) { return z(k) === ze; })[0];
+    if (ek && Array.isArray(m[ek]) && m[ek].map(z).indexOf(zv) >= 0) return '';
+    var eig = Object.keys(m).filter(function (k) { return z(k) !== ze && Array.isArray(m[k]) && m[k].map(z).indexOf(zv) >= 0; })[0];
+    if (eig) return String(v).trim() + ' was vroeger de naam van ' + eig + '. Kies een andere naam, zo blijft het werk gescheiden.';
+    var namen = [].concat(rd('oc-app.projects', []) || [], Object.keys(m)), t = rd('oc-app.projecten-tools', {});
+    if (t && typeof t === 'object' && !Array.isArray(t)) Object.keys(t).forEach(function (k) { if (Array.isArray(t[k]) && !(zonderPad && k === location.pathname)) namen = namen.concat(t[k]); });
+    var hit = namen.filter(function (x) { return typeof x === 'string' && z(x) === zv; })[0];
+    return hit ? hit + ' is al een ander project. Kies een andere naam, zo blijft het werk gescheiden.' : '';
+  }
+  // Hertest f: gegevens van v16.51 hebben oc.project.oud maar nog geen naamkaart. Vul ze aan, ook voor wie de app (Start) niet opent.
+  function ocNaamMigreer() {
+    try {
+      var p = JSON.parse(localStorage.getItem('oc.project')); if (!p || typeof p.name !== 'string' || !p.name.trim() || !Array.isArray(p.oud) || !p.oud.length) return;
+      var m = {}; try { m = JSON.parse(localStorage.getItem('oc.project.namen')) || {}; } catch (e) {} if (!m || typeof m !== 'object' || Array.isArray(m)) m = {};
+      var mijn = Array.isArray(m[p.name]) ? m[p.name] : [];
+      var bij = p.oud.filter(function (x) { return typeof x === 'string' && x.trim() && x !== p.name && mijn.indexOf(x) < 0 && !Array.isArray(m[x])
+        && !Object.keys(m).some(function (k) { return k !== p.name && Array.isArray(m[k]) && m[k].indexOf(x) >= 0; }); });
+      if (!bij.length) return;
+      m[p.name] = mijn.concat(bij).slice(-10); localStorage.setItem('oc.project.namen', JSON.stringify(m));
+    } catch (e) {}
+  }
+  ocNaamMigreer();
   function overal(x) {
     if (!OVERAL || !x || x.voorbeeld) return;
     var n = String(x.naam || '').trim().slice(0, 80); if (std(n)) return;
     try {
       var p = lees('oc.project', null);
-      if (!p || p.name !== n) localStorage.setItem('oc.project', JSON.stringify({ name: n, since: Date.now() }));
+      // Naamkaart (oc.project.namen: naam -> vorige namen, blijvend): een gekozen project krijgt zijn vorige namen mee (oud), zodat elke tool het werk terugvindt.
+      // Draagt dit tabblad nog een vorige naam van een project, dan is het dat project: werk gaat nooit naar een ander project met die oude naam.
+      var m = lees('oc.project.namen', {}); m = m && typeof m === 'object' && !Array.isArray(m) ? m : {};
+      if (!Array.isArray(m[n])) { var eig = Object.keys(m).filter(function (k) { return Array.isArray(m[k]) && m[k].indexOf(n) >= 0; })[0]; if (eig) n = eig; }
+      var oudN = Array.isArray(m[n]) ? m[n].filter(function (y) { return typeof y === 'string' && y !== n; }).slice(-10) : [];
+      if (!p || p.name !== n) localStorage.setItem('oc.project', JSON.stringify(oudN.length ? { name: n, since: Date.now(), oud: oudN } : { name: n, since: Date.now() }));
       var h = lees('oc-app.projects', []); h = Array.isArray(h) ? h : [];
       if (h[0] !== n) localStorage.setItem('oc-app.projects', JSON.stringify([n].concat(h.filter(function (y) { return y !== n; })).slice(0, 8)));
     } catch (e) {}
@@ -2411,7 +2446,10 @@ window.ocProjectkiezer = function (plek, o) {
   function klaar(bewaar, focus) {
     if (!bewerk) return;
     var v = veld.value.trim().slice(0, 80), b = bewerk;
-    if (bewaar && !v) { veld.setAttribute('aria-invalid', 'true'); fout.hidden = false; if (window.ocMeld) try { ocMeld(fout.textContent); } catch (e) {} veld.focus(); return; }
+    if (bewaar && !v) { if (fout.dataset.std) fout.textContent = fout.dataset.std; veld.setAttribute('aria-invalid', 'true'); fout.hidden = false; if (window.ocMeld) try { ocMeld(fout.textContent); } catch (e) {} veld.focus(); return; }
+    // Hertest f: hernoemen naar de naam van een ander bestaand project (of een vroegere naam ervan) mag niet: het veld blijft open met de reden.
+    var anders = bewaar && v !== b.oud && o.projectnaam && !b.vb && !b.nieuw ? ocAnder(v, b.oud) : '';
+    if (anders) { fout.dataset.std = fout.dataset.std || fout.textContent; fout.textContent = anders; veld.setAttribute('aria-invalid', 'true'); fout.hidden = false; if (window.ocMeld) try { ocMeld(anders); } catch (e) {} if (focus) veld.focus(); return; }
     bewerk = null;
     if (bewaar && v !== b.oud) {
       o.hernoem(v);
@@ -2609,7 +2647,7 @@ window.ocProjectkiezer = function (plek, o) {
         <a class="ft-link" href="https://www.linkedin.com/in/bartel-volckaert-8a96842/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Maker</a>
         <a class="ft-link" href="/privacy/#voorwaarden" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.01"/></svg>Disclaimer</a>
       </nav>
-      <p class="ft-meta"><button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (34 seconden)" title="Bekijk de film (34 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg><span>Film</span></button><button class="ft-film ft-inst" id="ft-app" type="button" hidden aria-label="Installeer de app"><img src="/app/icon.svg" alt="" width="22" height="22"><span>Installeer</span></button><span class="ft-dot" aria-hidden="true"></span><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v16.51</span></p>
+      <p class="ft-meta"><button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (34 seconden)" title="Bekijk de film (34 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg><span>Film</span></button><button class="ft-film ft-inst" id="ft-app" type="button" hidden aria-label="Installeer de app"><img src="/app/icon.svg" alt="" width="22" height="22"><span>Installeer</span></button><span class="ft-dot" aria-hidden="true"></span><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v16.52</span></p>
     </div>
   </footer>
   <dialog class="film" id="film" aria-labelledby="film-h">
@@ -3475,20 +3513,64 @@ function vervaag() {
   els.forEach(el => { el.classList.remove('oc-wissel'); void el.offsetWidth; el.classList.add('oc-wissel'); });
   setTimeout(() => els.forEach(el => el.classList.remove('oc-wissel')), 260);
 }
+// Naamkaart (oc.project.namen): per projectnaam de vorige namen, blijvend. Wie een project kiest, krijgt die mee in oc.project (oud):
+// zo vindt elke tool het werk terug, ook een tool die je na het hernoemen nog niet opende (hertest e: wisselen liet oud vallen).
+function naamKaart() { try { const m = JSON.parse(localStorage.getItem('oc.project.namen')); return m && typeof m === 'object' && !Array.isArray(m) ? m : {}; } catch { return {}; } }
+// Het project dat een naam (ook een vorige naam) nu draagt; anders de naam zelf
+const naamEigenaar = (m, n) => Array.isArray(m[n]) ? n : (Object.keys(m).find(k => Array.isArray(m[k]) && m[k].includes(n)) || n);
+const naamOud = (m, n) => (Array.isArray(m[n]) ? m[n] : []).filter(x => typeof x === 'string' && x !== n).slice(-10);
 function projWissel(name) {
   name = String(name || '').trim().slice(0, 80);
+  const m = naamKaart(); name = naamEigenaar(m, name);   // een vorige naam wisselt naar het project dat die naam had
   if (!name || (getProject() || {}).name === name) return;
-  try { localStorage.setItem(PROJ_KEY, JSON.stringify({ name, since: Date.now() })); } catch {}
+  const oud = naamOud(m, name);
+  try { localStorage.setItem(PROJ_KEY, JSON.stringify(oud.length ? { name, since: Date.now(), oud } : { name, since: Date.now() })); } catch {}
   store.set('projects', [name, ...store.get('projects', []).filter(n => n !== name)].slice(0, 8));
   dropPre(); renderRecent(); renderPaths(); vervaag();
   appToast(`Project: ${name}. De tools openen nu dit project.`);
 }
+/* Hertest f: is v de naam van een ander bestaand project, of een vroegere naam ervan? Dan een melding, anders ''.
+   Bestaande projecten: de lijst van de app (oc-app.projects), de projecten die de tools klaarleggen (oc-app.projecten-tools)
+   en de naamkaart (oc.project.namen). Een eigen vroegere naam terugnemen mag. Zo vermengt het werk van twee projecten nooit. */
+function ocAnder(v, eigen, zonderPad) {
+  var z = function (x) { return String(x == null ? '' : x).trim().toLowerCase(); }, zv = z(v), ze = z(eigen);
+  if (!zv || zv === ze) return '';
+  var rd = function (k, d) { try { var x = JSON.parse(localStorage.getItem(k)); return x == null ? d : x; } catch (e) { return d; } };
+  var m = rd('oc.project.namen', {}); if (!m || typeof m !== 'object' || Array.isArray(m)) m = {};
+  var ek = Object.keys(m).filter(function (k) { return z(k) === ze; })[0];
+  if (ek && Array.isArray(m[ek]) && m[ek].map(z).indexOf(zv) >= 0) return '';
+  var eig = Object.keys(m).filter(function (k) { return z(k) !== ze && Array.isArray(m[k]) && m[k].map(z).indexOf(zv) >= 0; })[0];
+  if (eig) return String(v).trim() + ' was vroeger de naam van ' + eig + '. Kies een andere naam, zo blijft het werk gescheiden.';
+  var namen = [].concat(rd('oc-app.projects', []) || [], Object.keys(m)), t = rd('oc-app.projecten-tools', {});
+  if (t && typeof t === 'object' && !Array.isArray(t)) Object.keys(t).forEach(function (k) { if (Array.isArray(t[k]) && !(zonderPad && k === location.pathname)) namen = namen.concat(t[k]); });
+  var hit = namen.filter(function (x) { return typeof x === 'string' && z(x) === zv; })[0];
+  return hit ? hit + ' is al een ander project. Kies een andere naam, zo blijft het werk gescheiden.' : '';
+}
+// Hertest f: gegevens van v16.51 hebben oc.project.oud maar nog geen naamkaart. Vul ze aan, ook voor wie de app (Start) niet opent.
+function ocNaamMigreer() {
+  try {
+    var p = JSON.parse(localStorage.getItem('oc.project')); if (!p || typeof p.name !== 'string' || !p.name.trim() || !Array.isArray(p.oud) || !p.oud.length) return;
+    var m = {}; try { m = JSON.parse(localStorage.getItem('oc.project.namen')) || {}; } catch (e) {} if (!m || typeof m !== 'object' || Array.isArray(m)) m = {};
+    var mijn = Array.isArray(m[p.name]) ? m[p.name] : [];
+    var bij = p.oud.filter(function (x) { return typeof x === 'string' && x.trim() && x !== p.name && mijn.indexOf(x) < 0 && !Array.isArray(m[x])
+      && !Object.keys(m).some(function (k) { return k !== p.name && Array.isArray(m[k]) && m[k].indexOf(x) >= 0; }); });
+    if (!bij.length) return;
+    m[p.name] = mijn.concat(bij).slice(-10); localStorage.setItem('oc.project.namen', JSON.stringify(m));
+  } catch (e) {}
+}
+ocNaamMigreer();   // bij het laden van de app
 function projOpslaan(name, hernoem) {
   name = String(name || '').trim().slice(0, 80); if (!name) return;
   const vorig = getProject() || {}, was = vorig.name;
   hernoem = !!(hernoem && was && name !== was);
-  // Hernoemen: de vorige naam blijft gekend (oud), zodat elke tool en het dossier het project terugvinden. Wisselen: een nieuw begin.
-  const oud = hernoem ? [...(Array.isArray(vorig.oud) ? vorig.oud : []).filter(x => x !== name), was].slice(-10) : [];
+  // Veilige regel: een naam die vroeger bij een ander project hoorde, krijgt geen nieuw project (tools die je sindsdien niet opende, kennen het werk nog onder die naam).
+  const m = naamKaart(), eigenaar = Object.keys(m).find(k => k !== name && !(hernoem && k === was) && Array.isArray(m[k]) && m[k].includes(name));   // terug hernoemen naar een eigen vorige naam mag
+  if (eigenaar && name !== was) { appToast(`${name} was vroeger de naam van ${eigenaar}. Kies een andere naam, zo blijft het werk gescheiden.`); return; }
+  // Hertest f: hernoemen naar de naam van een ander bestaand project mag niet (Alfa -> "Beta" vermengde het werk van beide projecten).
+  if (hernoem) { const anders = ocAnder(name, was); if (anders) { appToast(anders); return; } }
+  // Hernoemen: de vorige naam blijft gekend (oud), ook in de naamkaart, zodat elke tool en het dossier het project terugvinden, ook na wisselen.
+  let oud = hernoem ? [...(Array.isArray(vorig.oud) ? vorig.oud : []), ...naamOud(m, was), was].filter((x, i, a) => x !== name && a.indexOf(x) === i).slice(-10) : naamOud(m, name);
+  if (hernoem) { delete m[was]; m[name] = oud; try { localStorage.setItem('oc.project.namen', JSON.stringify(m)); } catch {} }
   try { localStorage.setItem(PROJ_KEY, JSON.stringify(oud.length ? { name, since: Date.now(), oud } : { name, since: Date.now() })); } catch {}
   if (!was) vraagBlijvend();   // je eerste project: vraag de browser om je werk te bewaren
   if (hernoem) store.set('projects', store.get('projects', []).filter(n => n !== was));
@@ -3987,9 +4069,9 @@ const DOEN = [
   { id:'afbakenen',  label:'Afbakenen',    tools:['opdracht', 'prioriteit', 'project-realisme', 'projectbudget', 'raci', 'risico', 'mindmap'] },
   { id:'inplannen',  label:'Inplannen',    tools:['tijdlijn', 'sprint', 'agenda', 'werkdagen', 'meetplan', 'communicatie'] },
   { id:'opvolgen',   label:'Opvolgen',     tools:['cockpit', 'kanban', 'project-radar', 'dossier', 'kennisbank', 'vinkje', 'risico', 'meetplan', 'tijdlijn'] },
-  { id:'analyseren', label:'Analyseren',   tools:['mindmap', 'stroom', 'visgraat', 'schildpad', 'informatie', 'swot', 'pestle', 'gap', 'impact'] },
+  { id:'analyseren', label:'Analyseren',   tools:['mindmap', 'stroom', 'visgraat', 'systeemkaart', 'schildpad', 'informatie', 'swot', 'pestle', 'gap', 'impact'] },
   { id:'beslissen',  label:'Beslissen',    tools:['beslisscore', 'prioriteit', 'beslissingen', 'paradox', 'kaartjes'] },
-  { id:'meekrijgen', label:'Meekrijgen',   tools:['stakeholders', 'sponsor', 'communicatie', 'veranderprofiel', 'weerstand', 'impact', 'klimaat', 'gedrag', 'raci'] },
+  { id:'meekrijgen', label:'Meekrijgen',   tools:['stakeholders', 'sponsor', 'communicatie', 'veranderprofiel', 'weerstand', 'impact', 'klimaat', 'systeemkaart', 'gedrag', 'raci'] },
   { id:'overleggen', label:'Overleggen',   tools:['agenda', 'check-in', 'check-out', 'mixer', 'fortuna', 'ijsbreker', 'kaartjes', 'notities', 'vergaderkost', 'paradox', 'klankkast', 'bingo'] },
   { id:'vastleggen', label:'Vastleggen',   tools:['notities', 'beslissingen', 'memomiles', 'citaten', 'schets', 'dossier', 'leerpunten'] },
   { id:'terugblikken', label:'Terugblikken', tools:['retro', 'leerpunten', 'check-out', 'gap'] },
@@ -4730,7 +4812,7 @@ const TRAJECTEN = [
         kanban:'Het werk zelf', 'project-radar':'Hoe staat het project ervoor?', dossier:'Wat leg je voor aan de stuurgroep?', retro:'Wat nemen we mee?', cockpit:'Alles op één bord' } },
   { id:'proces', title:'Verbeter een proces', note:'Van hoe het nu loopt naar hoe het beter kan',
     foot:'Stroom en Schildpad tonen het proces, de Visgraat de oorzaken. Gap, Prioriteren en Meetplan maken er een plan van.',
-    q:{ stroom:'Hoe loopt het nu?', schildpad:'Wat gaat erin, wat komt eruit?', visgraat:'Waar zit de oorzaak?', gap:'Van nu naar beter', prioriteit:'Wat pak je eerst aan?',
+    q:{ stroom:'Hoe loopt het nu?', schildpad:'Wat gaat erin, wat komt eruit?', visgraat:'Waar zit de oorzaak?', systeemkaart:'Wat houdt het in stand?', gap:'Van nu naar beter', prioriteit:'Wat pak je eerst aan?',
         meetplan:'Hoe weet je dat het beter is?', raci:'Wie doet wat in het nieuwe proces?', kanban:'De verbeteringen uitvoeren', retro:'Wat werkt, wat niet?', leerpunten:'Wat hou je vast?', cockpit:'Alles op één bord' } },
   { id:'verhaal', title:'Vertel een verhaal', note:'Van één heldere boodschap tot een verhaal dat blijft hangen',
     foot:'De Verhaalkaart voedt het storyboard en je spiekbriefje. Wat je invult, staat telkens al klaar.',
@@ -4787,8 +4869,8 @@ const stapKlaar = (s, all) => s.t.extra ? s.t.extra.klaar() : hasData(s.t, all);
 const ROUTE_KERN = { project:['opdracht', 'mindmap', 'tijdlijn', 'raci', 'kanban', 'retro'], proces:['stroom', 'schildpad', 'visgraat', 'prioriteit', 'kanban', 'retro'], verandering:['stakeholders', 'sponsor', 'impact', 'communicatie', 'weerstand'] };
 const KLAAR_ALS = {
   project:{ opdracht:'je opdrachtgever het doel in één zin herkent', projectbudget:'je weet wat het kost, ook de jaren na de start', 'opdracht?toon=alles':'je opdrachtgever heeft afgetekend', mindmap:'je elk onderdeel kunt aanwijzen dat je oplevert', tijdlijn:'elke mijlpaal een datum heeft', raci:'elke taak precies één eigenaar heeft', kanban:'het werk van deze week op het bord staat', retro:'je één ding kiest dat je anders doet. Doe dit ook na elke mijlpaal' },
-  proces:{ stroom:'iemand die het proces uitvoert zegt: zo loopt het', schildpad:'je weet wat erin gaat, wat eruit komt en welke regels gelden', visgraat:'je de drie waarschijnlijkste oorzaken hebt aangeduid', prioriteit:'je weet wat je eerst aanpakt', kanban:'elke verbetering een eigenaar en een datum heeft', retro:'je weet of het proces beter loopt' },
-  verandering:{ stakeholders:'je weet wie mee moet en wie kan blokkeren', sponsor:'je sponsor weet wat jij van hem nodig hebt', impact:'je per groep weet wat er verandert', communicatie:'elke groep weet wat, wanneer en van wie', weerstand:'je per groep één eerste stap hebt' }
+  proces:{ systeemkaart:'je ziet welke kring het probleem in stand houdt', stroom:'iemand die het proces uitvoert zegt: zo loopt het', schildpad:'je weet wat erin gaat, wat eruit komt en welke regels gelden', visgraat:'je de drie waarschijnlijkste oorzaken hebt aangeduid', prioriteit:'je weet wat je eerst aanpakt', kanban:'elke verbetering een eigenaar en een datum heeft', retro:'je weet of het proces beter loopt' },
+  verandering:{ systeemkaart:'je ziet welke kring het gedrag in stand houdt', stakeholders:'je weet wie mee moet en wie kan blokkeren', sponsor:'je sponsor weet wat jij van hem nodig hebt', impact:'je per groep weet wat er verandert', communicatie:'elke groep weet wat, wanneer en van wie', weerstand:'je per groep één eerste stap hebt' }
 };
 const kernAantal = trId => trajectStappen(trId).filter(s => ROUTE_KERN[trId].includes(s.t.id)).length;
 const klaarAls = (trId, s) => { const K = KLAAR_ALS[trId] || {}; return K[stapSleutel(s)] || K[s.t.id] || ''; };
@@ -5204,7 +5286,7 @@ const SYNONIEMEN = {
   impact:'verandering gevolgen reorganisatie herstructurering nieuwe structuur', klimaat:'verandering cultuur vertrouwen', veranderprofiel:'verandering samenvatting inspanning reorganisatie herstructurering',
   gap:'kloof verschil huidige gewenste situatie projectplan budget doelen', kennisbank:'kennisbank kennis kennisbeheer documenteren documentatie notities tags trefwoorden verbanden wiki naslag onthouden rapport rapportering bewaren', projectbudget:'budget projectbudget kosten kost geld raming begroting prijs licentie licenties abonnement personeel investering terugkerend overheidsopdracht overheidsopdrachten aankoop aankopen offerte drempel', prioriteit:'prioriteren belangrijk dringend snelle winst quick wins projectplan planning', risico:'risico kans gevolg projectplan stuurgroep budget rapport',
   'project-radar':'status gezondheid project rapport rapportering stuurgroep budget planning mijlpalen', retro:'terugblik evaluatie lessen overleg team vergadering verslag actiepunten', paradox:'afstemming overleg groepsgrootte',
-  cockpit:'startpagina dashboard prikbord bord overzicht links widgets startbord moodboard verzamelen', pluim:'pluim pluimpje compliment complimenten bedanken dankjewel dank je waardering waarderen kaartje kaart schouderklopje applaus felicitatie collega delen knipoog humor', bingo:'buzzword buzzwords modewoorden jargon bingo spel lachen humor knipoog vergadering', adem:'angst paniek rustig kalmeren stress rust ademhaling ontspannen kalm', hart:'mediteren meditatie meditatie mildheid ontspannen rust', hier:'angst paniek zintuigen aarden stress rust ontspannen', qr:'qr-code qrcode qr scancode code link delen', opdracht:'projectopdracht opdracht projectfiche projectplan scope afbakening doel doelen opdrachtgever mijlpalen mijlpaal aftekenen budget deadline einddatum opstart', meetplan:'meten meting indicator indicatoren kpi doel doelen nulmeting streefwaarde effect resultaat evaluatie opvolgen cijfers rapport', dossier:'dossier stuurgroep rapport rapportering statusrapport nota overzicht samenvatting voortgang', notities:'notities verslag vergaderverslag notulen notuleren kladblok aantekeningen acties actiepunten besluiten afspraken agenda aanwezigen overleg teamoverleg werkoverleg stuurgroep opvolging wie wat wanneer', kaartjes:'kaartjes kaarten strategiekaartjes strategische vragen vraagkaarten gespreksvragen vergadering strategie meten verbinden meta reflectie discussie trekken', klankkast:'klankkast geluid geluidjes geluiden soundboard effecten badum tss grap punchline applaus tromgeroffel zoemer tadaa metronoom tiktak drama scope alarm brandalarm sirene achteruit vrachtwagen terugkrabbelen treurmars begrafenis chopin hamer orde stilte jarig verjaardag happy birthday vergadering plezier knipoog', goesting:'goesting motivatie werkgoesting zin werkplezier autonomie verbondenheid competentie abc basisbehoeften zelfdeterminatie stress energie welzijn thermometer test zelftest', 'check-out':'check-out checkout uitcheck afsluiten afsluiter afronden terugblik evaluatie exitticket exit ticket inzicht vragen workshop sessie opleiding training minuut feedback drie woorden', woordwolk:'woordwolk wordcloud woordenwolk woorden tellen tekst analyse open antwoorden bevraging enquête enquete survey vragenlijst feedback interviews notulen trefwoorden kernwoorden frequentie csv', werkdagen:'werkdagen werkdag termijn termijnen deadline vervaldag kalenderdagen feestdagen feestdag datum datums tellen rekenen antwoordtermijn bezwaar beroep brugdag sluitingsdag', pdf:'pdf pdfs samenvoegen samenvoeging splitsen opsplitsen pagina paginas verwijderen eruit halen draaien roteren herschikken volgorde combineren knippen document bestand scan', looplicht:'zaklamp joggen lopen fietsen veiligheid licht nacht', kompas:'noorden noord zuid oost west richting windrichting windstreek verdwaald weg vinden gebouw plattegrond', schets:'tekenen schetsen schets whiteboard sjablonen sjabloon presenteren plattegrond scherm ontwerp stylus pen krabbel',
+  cockpit:'startpagina dashboard prikbord bord overzicht links widgets startbord moodboard verzamelen', systeemkaart:'systeemkaart systeemdenken systeem kringen kringloop vicieuze cirkel feedback oorzaak gevolg gedrag hefboom invloed causaal netwerk kaart ingrijpen wat als behavioural systems mapping', pluim:'pluim pluimpje compliment complimenten bedanken dankjewel dank je waardering waarderen kaartje kaart schouderklopje applaus felicitatie collega delen knipoog humor', bingo:'buzzword buzzwords modewoorden jargon bingo spel lachen humor knipoog vergadering', adem:'angst paniek rustig kalmeren stress rust ademhaling ontspannen kalm', hart:'mediteren meditatie meditatie mildheid ontspannen rust', hier:'angst paniek zintuigen aarden stress rust ontspannen', qr:'qr-code qrcode qr scancode code link delen', opdracht:'projectopdracht opdracht projectfiche projectplan scope afbakening doel doelen opdrachtgever mijlpalen mijlpaal aftekenen budget deadline einddatum opstart', meetplan:'meten meting indicator indicatoren kpi doel doelen nulmeting streefwaarde effect resultaat evaluatie opvolgen cijfers rapport', dossier:'dossier stuurgroep rapport rapportering statusrapport nota overzicht samenvatting voortgang', notities:'notities verslag vergaderverslag notulen notuleren kladblok aantekeningen acties actiepunten besluiten afspraken agenda aanwezigen overleg teamoverleg werkoverleg stuurgroep opvolging wie wat wanneer', kaartjes:'kaartjes kaarten strategiekaartjes strategische vragen vraagkaarten gespreksvragen vergadering strategie meten verbinden meta reflectie discussie trekken', klankkast:'klankkast geluid geluidjes geluiden soundboard effecten badum tss grap punchline applaus tromgeroffel zoemer tadaa metronoom tiktak drama scope alarm brandalarm sirene achteruit vrachtwagen terugkrabbelen treurmars begrafenis chopin hamer orde stilte jarig verjaardag happy birthday vergadering plezier knipoog', goesting:'goesting motivatie werkgoesting zin werkplezier autonomie verbondenheid competentie abc basisbehoeften zelfdeterminatie stress energie welzijn thermometer test zelftest', 'check-out':'check-out checkout uitcheck afsluiten afsluiter afronden terugblik evaluatie exitticket exit ticket inzicht vragen workshop sessie opleiding training minuut feedback drie woorden', woordwolk:'woordwolk wordcloud woordenwolk woorden tellen tekst analyse open antwoorden bevraging enquête enquete survey vragenlijst feedback interviews notulen trefwoorden kernwoorden frequentie csv', werkdagen:'werkdagen werkdag termijn termijnen deadline vervaldag kalenderdagen feestdagen feestdag datum datums tellen rekenen antwoordtermijn bezwaar beroep brugdag sluitingsdag', pdf:'pdf pdfs samenvoegen samenvoeging splitsen opsplitsen pagina paginas verwijderen eruit halen draaien roteren herschikken volgorde combineren knippen document bestand scan', looplicht:'zaklamp joggen lopen fietsen veiligheid licht nacht', kompas:'noorden noord zuid oost west richting windrichting windstreek verdwaald weg vinden gebouw plattegrond', schets:'tekenen schetsen schets whiteboard sjablonen sjabloon presenteren plattegrond scherm ontwerp stylus pen krabbel',
   citaten:'quotes quote citaat citaten boek boeken lezen gelezen leesclub bibliotheek uitspraak uitspraken spreuk spreuken zinnen onderstrepen markeren flashcards flashcard kaartjes leren onthouden memoriseren uit het hoofd herhalen studeren foto bladzijde tekst herkennen'
 };
 const fold = v => String(v || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();

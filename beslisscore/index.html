@@ -694,7 +694,7 @@ input::placeholder, textarea::placeholder { color:#64748b; opacity:1; }
     var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([inhoud], { type: 'application/json' })); a.download = bestand;
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
   }
-  function datum() { return new Date().toISOString().slice(0, 10); }
+  function datum() { return new Date(Date.now() - new Date().getTimezoneOffset() * 6e4).toISOString().slice(0, 10); }   // lokale datum: om 00:30 gaf UTC nog gisteren
   // De kopie zoals ze was, ongewijzigd. Meer dan één sleutel: één JSON-bestand met per sleutel de ruwe tekst.
   function downloadKopie() {
     var ks = Object.keys(kapot); if (!ks.length) return;
@@ -1359,12 +1359,47 @@ window.ocProjectkiezer = function (plek, o) {
      De andere tools volgen het zoals bij een keuze in de app. Een voorbeeld of een standaardnaam ("Nieuw project") niet. */
   var std = function (v) { v = String(v || '').trim(); return window.ocStandaardNaam ? ocStandaardNaam(v) : !v || /^((mijn|nieuwe?) )?project( \d+)?$|^naamloos$/i.test(v); };
   function lees(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
+  /* Hertest f: is v de naam van een ander bestaand project, of een vroegere naam ervan? Dan een melding, anders ''.
+     Bestaande projecten: de lijst van de app (oc-app.projects), de projecten die de tools klaarleggen (oc-app.projecten-tools)
+     en de naamkaart (oc.project.namen). Een eigen vroegere naam terugnemen mag. Zo vermengt het werk van twee projecten nooit. */
+  function ocAnder(v, eigen, zonderPad) {   // zonderPad: de lijst van deze tool zelf telt niet (die is net al hernoemd)
+    var z = function (x) { return String(x == null ? '' : x).trim().toLowerCase(); }, zv = z(v), ze = z(eigen);
+    if (!zv || zv === ze) return '';
+    var rd = function (k, d) { try { var x = JSON.parse(localStorage.getItem(k)); return x == null ? d : x; } catch (e) { return d; } };
+    var m = rd('oc.project.namen', {}); if (!m || typeof m !== 'object' || Array.isArray(m)) m = {};
+    var ek = Object.keys(m).filter(function (k) { return z(k) === ze; })[0];
+    if (ek && Array.isArray(m[ek]) && m[ek].map(z).indexOf(zv) >= 0) return '';
+    var eig = Object.keys(m).filter(function (k) { return z(k) !== ze && Array.isArray(m[k]) && m[k].map(z).indexOf(zv) >= 0; })[0];
+    if (eig) return String(v).trim() + ' was vroeger de naam van ' + eig + '. Kies een andere naam, zo blijft het werk gescheiden.';
+    var namen = [].concat(rd('oc-app.projects', []) || [], Object.keys(m)), t = rd('oc-app.projecten-tools', {});
+    if (t && typeof t === 'object' && !Array.isArray(t)) Object.keys(t).forEach(function (k) { if (Array.isArray(t[k]) && !(zonderPad && k === location.pathname)) namen = namen.concat(t[k]); });
+    var hit = namen.filter(function (x) { return typeof x === 'string' && z(x) === zv; })[0];
+    return hit ? hit + ' is al een ander project. Kies een andere naam, zo blijft het werk gescheiden.' : '';
+  }
+  // Hertest f: gegevens van v16.51 hebben oc.project.oud maar nog geen naamkaart. Vul ze aan, ook voor wie de app (Start) niet opent.
+  function ocNaamMigreer() {
+    try {
+      var p = JSON.parse(localStorage.getItem('oc.project')); if (!p || typeof p.name !== 'string' || !p.name.trim() || !Array.isArray(p.oud) || !p.oud.length) return;
+      var m = {}; try { m = JSON.parse(localStorage.getItem('oc.project.namen')) || {}; } catch (e) {} if (!m || typeof m !== 'object' || Array.isArray(m)) m = {};
+      var mijn = Array.isArray(m[p.name]) ? m[p.name] : [];
+      var bij = p.oud.filter(function (x) { return typeof x === 'string' && x.trim() && x !== p.name && mijn.indexOf(x) < 0 && !Array.isArray(m[x])
+        && !Object.keys(m).some(function (k) { return k !== p.name && Array.isArray(m[k]) && m[k].indexOf(x) >= 0; }); });
+      if (!bij.length) return;
+      m[p.name] = mijn.concat(bij).slice(-10); localStorage.setItem('oc.project.namen', JSON.stringify(m));
+    } catch (e) {}
+  }
+  ocNaamMigreer();
   function overal(x) {
     if (!OVERAL || !x || x.voorbeeld) return;
     var n = String(x.naam || '').trim().slice(0, 80); if (std(n)) return;
     try {
       var p = lees('oc.project', null);
-      if (!p || p.name !== n) localStorage.setItem('oc.project', JSON.stringify({ name: n, since: Date.now() }));
+      // Naamkaart (oc.project.namen: naam -> vorige namen, blijvend): een gekozen project krijgt zijn vorige namen mee (oud), zodat elke tool het werk terugvindt.
+      // Draagt dit tabblad nog een vorige naam van een project, dan is het dat project: werk gaat nooit naar een ander project met die oude naam.
+      var m = lees('oc.project.namen', {}); m = m && typeof m === 'object' && !Array.isArray(m) ? m : {};
+      if (!Array.isArray(m[n])) { var eig = Object.keys(m).filter(function (k) { return Array.isArray(m[k]) && m[k].indexOf(n) >= 0; })[0]; if (eig) n = eig; }
+      var oudN = Array.isArray(m[n]) ? m[n].filter(function (y) { return typeof y === 'string' && y !== n; }).slice(-10) : [];
+      if (!p || p.name !== n) localStorage.setItem('oc.project', JSON.stringify(oudN.length ? { name: n, since: Date.now(), oud: oudN } : { name: n, since: Date.now() }));
       var h = lees('oc-app.projects', []); h = Array.isArray(h) ? h : [];
       if (h[0] !== n) localStorage.setItem('oc-app.projects', JSON.stringify([n].concat(h.filter(function (y) { return y !== n; })).slice(0, 8)));
     } catch (e) {}
@@ -1436,7 +1471,10 @@ window.ocProjectkiezer = function (plek, o) {
   function klaar(bewaar, focus) {
     if (!bewerk) return;
     var v = veld.value.trim().slice(0, 80), b = bewerk;
-    if (bewaar && !v) { veld.setAttribute('aria-invalid', 'true'); fout.hidden = false; if (window.ocMeld) try { ocMeld(fout.textContent); } catch (e) {} veld.focus(); return; }
+    if (bewaar && !v) { if (fout.dataset.std) fout.textContent = fout.dataset.std; veld.setAttribute('aria-invalid', 'true'); fout.hidden = false; if (window.ocMeld) try { ocMeld(fout.textContent); } catch (e) {} veld.focus(); return; }
+    // Hertest f: hernoemen naar de naam van een ander bestaand project (of een vroegere naam ervan) mag niet: het veld blijft open met de reden.
+    var anders = bewaar && v !== b.oud && o.projectnaam && !b.vb && !b.nieuw ? ocAnder(v, b.oud) : '';
+    if (anders) { fout.dataset.std = fout.dataset.std || fout.textContent; fout.textContent = anders; veld.setAttribute('aria-invalid', 'true'); fout.hidden = false; if (window.ocMeld) try { ocMeld(anders); } catch (e) {} if (focus) veld.focus(); return; }
     bewerk = null;
     if (bewaar && v !== b.oud) {
       o.hernoem(v);
@@ -1985,7 +2023,9 @@ function norm(k) {
   k.step = STEPS.some(s => s.id === k.step) ? k.step : 'kenmerken';
   const b = k.besluit;
   k.besluit = b && typeof b === 'object' && oIds.has(b.gekozen) ? {
-    soort:['hoogste', 'afspraak', 'gelijk', 'afwijking'].includes(b.soort) ? b.soort : 'hoogste',
+    soort:['hoogste', 'afspraak', 'gelijk', 'deel', 'afwijking'].includes(b.soort) ? b.soort : 'hoogste',
+    ...(Array.isArray(b.deel) && b.deel.filter(id => oIds.has(id)).length > 1 ? { deel:b.deel.filter(id => oIds.has(id)) } : {}),
+    ...(Array.isArray(b.voor) && b.voor.filter(id => oIds.has(id)).length ? { voor:b.voor.filter(id => oIds.has(id)) } : {}),   // hertest e: wie volgens de afspraak voorging
     gekozen:b.gekozen, winnaar:oIds.has(b.winnaar) ? b.winnaar : null,
     feit:str(b.feit, 300), kenmerk:kIds.has(b.kenmerk) ? b.kenmerk : (b.kenmerk === 'geen' ? 'geen' : null),
     tG:+b.tG || 0, tW:+b.tW || 0, at:str(b.at, 40) || new Date().toISOString()
@@ -2010,14 +2050,26 @@ function load() {
 }
 let state = load();
 function save() { ocAfterSave(); ocSchrijf(KEY, JSON.stringify(state)); deelBesluiten(); }
+/* Hertest e: een afwijking bij een exact gelijke stand is geen afwijking van het hoogste totaal (de gekozen optie had evenveel),
+   maar van de afspraak. Dan nooit "hoewel B het hoogste totaal had (12 tegenover 12)". Ook voor oudere besluiten: tW gelijk aan tG. */
+function afwGelijk(b) { return !!(b && b.soort === 'afwijking' && b.winnaar && Math.abs((+b.tW || 0) - (+b.tG || 0)) < 1e-9); }
+// Wie volgens de afspraak voorging (bij de beslissing bewaard in b.voor; oudere besluiten: de referentie), als "A, B en C".
+function afwVoor(k, b) { const ids = Array.isArray(b.voor) && b.voor.length ? b.voor : [b.winnaar];
+  return ids.map(id => oName(k, id)).reduce((t, x, i, a) => t + (i === 0 ? '' : i === a.length - 1 ? ' en ' : ', ') + x, ''); }
 /* Genomen beslissingen klaarleggen voor de Beslissingslog (gedeelde vorm 'oc.share.<tool>', type 'besluit'). Een voorbeeld gaat nooit mee. */
 function deelBesluiten() {
   try {
     const nf1 = x => String(Math.round(x * 10) / 10).replace('.', ',');
     const items = state.keuzes.filter(k => !k.voorbeeld && k.besluit).map(k => {
       const b = k.besluit, g = oName(k, b.gekozen), w = b.winnaar ? oName(k, b.winnaar) : '';
-      const note = b.soort === 'afwijking' ? `Afwijking van het hoogste totaal (${w}, ${nf1(b.tW)} tegen ${nf1(b.tG)}). Feit: ${b.feit}`
-        : `Hoogste totaal in de Beslisscore: ${nf1(b.tG)}` + (w && w !== g ? '' : '');
+      const kb = k.kenmerken.find(x => x.id === k.beslist) || k.kenmerken[0], kbn = kb ? ((kb.naam || '').trim() || 'Naamloos kenmerk') : '';
+      // De zin volgt de soort keuze: alleen bij 'hoogste' had de gekozen optie ook het hoogste totaal.
+      const note = afwGelijk(b) ? `Afwijking van de afspraak bij een gelijke stand in totaal (${nf1(b.tG)}): ${afwVoor(k, b)} ging voor. Feit: ${b.feit}`
+        : b.soort === 'afwijking' ? `Afwijking van het hoogste totaal (${w}, ${nf1(b.tW)} tegen ${nf1(b.tG)}). Feit: ${b.feit}`
+        : b.soort === 'afspraak' ? (w && w !== g ? `Verschil in totaal kleiner dan 1 punt (${nf1(b.tG)} tegen ${nf1(b.tW)} voor ${w}). Volgens de afspraak besliste ${kbn}.` : `Gelijke stand in totaal (${nf1(b.tG)}). Volgens de afspraak besliste ${kbn}.`)
+        : b.soort === 'deel' ? `${b.winnaar && b.winnaar !== b.gekozen ? `Verschil in totaal kleiner dan 1 punt (${nf1(b.tG)} tegen ${nf1(b.tW)} voor ${w}).` : `Gelijke stand in totaal (${nf1(b.tG)}).`} Volgens de afspraak besliste ${kbn}: ${(b.deel || []).map(id => oName(k, id)).reduce((t, x, i, a) => t + (i === 0 ? '' : i === a.length - 1 ? ' en ' : ', ') + x, '')} even hoog. Zelf gekozen tussen hen.`
+        : b.soort === 'gelijk' ? `Gelijke stand in totaal (${nf1(b.tG)}), ook op ${kbn}. Zelf gekozen tussen de gelijke opties.`
+        : `Hoogste totaal in de Beslisscore: ${nf1(b.tG)}`;
       return { type:'besluit', text:`${(k.name || 'Keuze').trim()}: gekozen voor ${g}`.slice(0, 300), note:note.slice(0, 200), when:String(b.at || '').slice(0, 10) };
     });
     if (!items.length) { localStorage.removeItem('oc.share.beslisscore'); return; }
@@ -2063,20 +2115,28 @@ function results(k) {
   const group = rank.filter(o => tot[top.id] - tot[o.id] < 1 - EPS);        // binnen 1 punt van de hoogste
   const tied = rank.filter(o => tot[top.id] - tot[o.id] < EPS);             // exact gelijk
   const kb = tieK(k);
-  let kbw = null;   // wie wint op het afgesproken kenmerk, binnen de groep die nipt bij elkaar ligt
-  if (group.length > 1 && kb) {
-    const best = Math.max(...group.map(o => avg[kb.id][o.id].m));
-    const w = group.filter(o => best - avg[kb.id][o.id].m < EPS);
-    if (w.length === 1) kbw = w[0];
-  }
   const exact = tied.length > 1;
+  // Bij een exacte gelijke stand kiest de afspraak alleen tussen de exact gelijke opties, nooit een lagere optie.
+  const pool = exact ? tied : group;
+  let kbw = null;   // wie wint op het afgesproken kenmerk, binnen de groep die nipt (of exact) bij elkaar ligt
+  // kbDeel: twee of meer opties scoren even hoog op het afgesproken kenmerk, maar niet allemaal (hertest d2: A=B=5, C=3 liet C kiesbaar en zei "geen verschil")
+  let kbDeel = null;
+  if (pool.length > 1 && kb) {
+    const best = Math.max(...pool.map(o => avg[kb.id][o.id].m));
+    const w = pool.filter(o => best - avg[kb.id][o.id].m < EPS);
+    if (w.length === 1) kbw = w[0];
+    else if (w.length < pool.length) kbDeel = w;
+  }
   // Wie mag je kiezen zonder af te wijken: de hoogste, of (bij een nipt verschil) wie wint op het afgesproken kenmerk.
-  let legit = exact ? (kbw ? [kbw] : tied) : [top];
-  if (!exact && kbw && kbw !== top) legit = [top, kbw];
-  const ref = exact ? kbw : top;    // tegenover wie een afwijking gemeten wordt
+  let legit = exact ? (kbw ? [kbw] : kbDeel || tied) : [top];
+  // nipt en de hoogste hoort niet bij de winnaars op het afgesproken kenmerk: die winnaars eerst, het hoogste totaal blijft te kiezen
+  if (!exact && kbDeel && !kbDeel.includes(top)) legit = kbDeel.concat([top]);
+  // Nipt verschil: de regel zegt dat de afspraak beslist, dus is de winnaar op het afgesproken kenmerk de hoofdknop (eerst); het hoogste totaal blijft te kiezen.
+  if (!exact && kbw && kbw !== top) legit = [kbw, top];
+  const ref = exact ? (kbw || (kbDeel ? kbDeel[0] : null)) : top;    // tegenover wie een afwijking gemeten wordt
   const split = [];
   if (k.raters.length > 1) k.kenmerken.forEach(x => k.opties.forEach(o => { const a = avg[x.id][o.id]; if (a.max - a.min >= 2) split.push({ x, o, a }); }));
-  return { avg, tot, rank, top, max, group, tied, exact, kb, kbw, legit, ref, split, diff:rank.length > 1 ? tot[top.id] - tot[rank[1].id] : 0 };
+  return { avg, tot, rank, top, max, group, tied, pool, exact, kb, kbw, kbDeel, legit, ref, split, diff:rank.length > 1 ? tot[top.id] - tot[rank[1].id] : 0 };
 }
 
 /* ---------- Scoren: wie, waar, in welke volgorde ---------- */
@@ -2250,7 +2310,7 @@ function renderScoren(k) {
     const prev = k.raters.filter(x => rDone(k, x));
     return `<div class="handoff">${PASS}
       <h2>${prev.length ? 'Geef het toestel door aan ' : 'Beurt aan '}${esc(who)}</h2>
-      <p>${esc(who)} scoort nu, zonder de scores van de anderen te zien. ${prev.length ? `${esc(prev.map(x => rName(k, x)).join(' en '))} ${prev.length === 1 ? 'is' : 'zijn'} klaar.` : 'Wie na jou scoort, ziet jouw scores ook niet.'}</p>
+      <p>${esc(who)} scoort nu, zonder de scores van de anderen te zien. ${prev.length ? `${esc(prev.map(x => rName(k, x)).reduce((t, x, i, a) => t + (i === 0 ? '' : i === a.length - 1 ? ' en ' : ', ') + x, ''))} ${prev.length === 1 ? 'is' : 'zijn'} klaar.` : 'Wie na jou scoort, ziet jouw scores ook niet.'}</p>
       <button type="button" class="btn-pri" id="ho-start">Ik ben ${esc(who)}, begin${ICON.right}</button>
       ${others.length ? `<div class="ho-other"><span class="lbl">Scoort iemand anders eerst?</span><div class="chips">${others.map(x => `<button type="button" class="chip" data-cand="${esc(x.id)}">${esc(rName(k, x))}</button>`).join('')}</div></div>` : ''}
     </div>`;
@@ -2297,13 +2357,17 @@ function verdictHTML(k, R) {
   const g = oName(k, b.gekozen), w = b.winnaar ? oName(k, b.winnaar) : '', kb = R.kb ? kName(R.kb) : '';
   const datum = new Date(b.at).toLocaleDateString('nl-BE', { day:'numeric', month:'long', year:'numeric' });
   const kx = b.kenmerk && b.kenmerk !== 'geen' ? k.kenmerken.find(x => x.id === b.kenmerk) : null;
-  const lines = b.soort === 'afwijking'
+  const kxT = `<p>Dit feit hoort bij ${kx ? `het kenmerk <b>${esc(kName(kx))}</b>` : 'geen enkel kenmerk'}.</p>`;
+  const lines = afwGelijk(b)
+    ? `<p>De totalen waren gelijk (${nf(b.tG)}). Volgens de afspraak ging ${esc(afwVoor(k, b))} voor, toch is voor deze optie gekozen. Het feit: ${esc(b.feit)}</p>${kxT}`
+    : b.soort === 'afwijking'
     ? `<p>Hoewel ${esc(w)} het hoogste totaal had (${nf(b.tW)} tegenover ${nf(b.tG)}), is toch voor deze optie gekozen. Het feit: ${esc(b.feit)}</p><p>Dit feit hoort bij ${kx ? `het kenmerk <b>${esc(kName(kx))}</b>` : 'geen enkel kenmerk'}.</p>`
-    : b.soort === 'afspraak' ? `<p>Het verschil in totaal was kleiner dan 1 punt. Volgens de afspraak beslist dan <b>${esc(kb)}</b>, en daar scoorde ${esc(g)} het hoogst.</p>`
+    : b.soort === 'afspraak' ? `<p>${b.winnaar ? 'Het verschil in totaal was kleiner dan 1 punt.' : 'De totalen waren gelijk.'} Volgens de afspraak beslist dan <b>${esc(kb)}</b>, en daar scoorde ${esc(g)} het hoogst.</p>`
+    : b.soort === 'deel' ? `<p>${b.winnaar ? 'Het verschil in totaal was kleiner dan 1 punt.' : 'De totalen waren gelijk.'} Volgens de afspraak beslist dan <b>${esc(kb)}</b>. Daar scoorden ${esc(opsom(k, (b.deel || []).map(id => oById(k, id)).filter(Boolean)))} even hoog. Jullie kozen zelf tussen hen.</p>`
     : b.soort === 'gelijk' ? `<p>Gelijke stand in totaal, ook op ${esc(kb)}. Jullie kozen zelf tussen de gelijke opties.</p>`
     : `<p>De optie met het hoogste totaal: ${nf(b.tG)} van ${R.max}.</p>`;
   return `<div class="verdict${b.soort === 'afwijking' ? ' afw' : ''}" id="verdict">
-    <div class="kick">Beslissing${b.soort === 'afwijking' ? '<span>afwijking van het hoogste totaal</span>' : ''}</div>
+    <div class="kick">Beslissing${b.soort === 'afwijking' ? `<span>${afwGelijk(b) ? 'afwijking van de afspraak' : 'afwijking van het hoogste totaal'}</span>` : ''}</div>
     <p class="big">Gekozen: ${esc(g)}</p>${lines}
     <p class="when">Vastgelegd op ${esc(datum)}.</p>
     <div class="dec-btns"><button type="button" class="btn-s" data-exp="pdf">${ICON.pdf}PDF</button><button type="button" class="btn-s" data-exp="png">${ICON.img}Afbeelding</button><button type="button" class="btn-s" id="copy-dec">${ICON.copy}Kopieer de beslissing</button><button type="button" class="link-btn" id="undo-dec">Kies opnieuw</button></div>
@@ -2343,6 +2407,16 @@ function devHTML(k, R) {
     <div class="dev-btns">${dev.kenmerk && dev.kenmerk !== 'geen' ? `<button type="button" class="btn-sec" data-rescore="${esc(dev.kenmerk)}">${ICON.redo}Scoor dit kenmerk opnieuw</button>` : ''}<button type="button" class="btn-pri btn-dev" id="dev-ok"${ok ? '' : ' aria-disabled="true"'}>Kies toch ${esc(oName(k, O.id))}</button><button type="button" class="link-btn" id="dev-cancel">Annuleer</button></div>` : `<div class="dev-btns"><button type="button" class="link-btn" id="dev-cancel">Annuleer</button></div>`}
   </div>`;
 }
+// De regel boven de keuzeknoppen zegt wat hier echt beslist: het hoogste totaal, de afspraak, of jullie zelf bij een gelijke stand.
+const opsom = (k, L) => L.map(o => oName(k, o.id)).reduce((t, x, i, a) => t + (i === 0 ? '' : i === a.length - 1 ? ' en ' : ', ') + x, '');
+function decideLine(k, R) {
+  if (R.kbDeel && (R.exact || !R.kbDeel.includes(R.top))) return `${R.exact ? 'De totalen zijn gelijk.' : 'Het verschil is kleiner dan 1 punt.'} Volgens jullie afspraak beslist dan ${esc(kName(R.kb))}. Daar scoren ${esc(opsom(k, R.kbDeel))} even hoog: kies tussen hen.`;
+  if (R.exact) return R.kbw ? `De totalen zijn gelijk. Volgens jullie afspraak beslist dan ${esc(kName(R.kb))}.` : 'Kies tussen de gelijke opties, of voeg één kenmerk toe.';
+  if (R.kbw && R.kbw !== R.top) return `Het verschil is kleiner dan 1 punt. Volgens jullie afspraak beslist dan ${esc(kName(R.kb))}.`;
+  // nipt, en de hoogste wint ook op de afspraak: zeg dat, zoals de notitie erboven (hertest d2: "Het hoogste totaal beslist" sprak de notitie tegen)
+  if (R.kbw && R.kbw === R.top && R.group.length > 1) return `Het verschil is kleiner dan 1 punt. Volgens jullie afspraak beslist dan ${esc(kName(R.kb))}, en ook daar scoort ${esc(oName(k, R.top.id))} het hoogst.`;
+  return 'Het hoogste totaal beslist. Dat was de afspraak.';
+}
 const canExtra = k => k.kenmerken.length < MAX_K && !k.kenmerken.some(x => x.extra);
 function renderUitslag(k) {
   if (!allDone(k)) { k.step = 'scoren'; return renderScoren(k); }
@@ -2350,12 +2424,12 @@ function renderUitslag(k) {
   const multi = k.raters.length > 1;
   // Kop: de winnaar, of eerlijk zeggen dat het nipt of gelijk is.
   let head;
-  if (R.exact) head = `<div class="win even"><div class="kick">Gelijke stand</div><h2>${esc(R.tied.map(o => oName(k, o.id)).join(' en '))}</h2><p>Allebei ${nf(R.tot[top.id])} van ${R.max} punten.</p></div>`;
+  if (R.exact) head = `<div class="win even"><div class="kick">Gelijke stand</div><h2>${esc(R.tied.map(o => oName(k, o.id)).reduce((t, x, i, a) => t + (i === 0 ? '' : i === a.length - 1 ? ' en ' : ', ') + x, ''))}</h2><p>${R.tied.length === 2 ? 'Allebei' : 'Alle ' + (['drie', 'vier', 'vijf', 'zes', 'zeven', 'acht'][R.tied.length - 3] || R.tied.length)} ${nf(R.tot[top.id])} van ${R.max} punten.</p></div>`;
   else head = `<div class="win${R.group.length > 1 ? ' even' : ''}"><div class="kick">${R.group.length > 1 ? 'Hoogste totaal, maar nipt' : 'Hoogste totaal'}</div><h2>${esc(oName(k, top.id))}</h2><p>${nf(R.tot[top.id])} van ${R.max} punten${second ? ` · ${pts(R.diff)} meer dan ${esc(oName(k, second.id))}` : ''}</p></div>`;
   let close = '';
   if (R.group.length > 1) {
-    const kb = R.kb, names = R.group.map(o => `${esc(oName(k, o.id))} ${nf(R.avg[kb.id][o.id].m)}`).join(', ');
-    close = `<div class="note amber">${ICON.warn}<span><b>${R.exact ? 'De totalen zijn gelijk.' : 'Het verschil is kleiner dan 1 punt.'}</b> Dat is te weinig om op te bouwen. Jullie spraken af dat dan <b>${esc(kName(kb))}</b> beslist: ${names}. ${R.kbw ? `Daar wint ${esc(oName(k, R.kbw.id))}.` : 'Ook daar is er geen verschil.'} ${canExtra(k) ? 'Of voeg één kenmerk toe dat echt het verschil maakt.' : ''}${canExtra(k) ? `<br><button type="button" class="btn-s" data-extra>${ICON.plus}Voeg één kenmerk toe</button>` : ''}</span></div>`;
+    const kb = R.kb, names = R.pool.map(o => `${esc(oName(k, o.id))} ${nf(R.avg[kb.id][o.id].m)}`).join(', ');
+    close = `<div class="note amber">${ICON.warn}<span><b>${R.exact ? 'De totalen zijn gelijk.' : 'Het verschil is kleiner dan 1 punt.'}</b> Dat is te weinig om op te bouwen. Jullie spraken af dat dan <b>${esc(kName(kb))}</b> beslist: ${names}. ${R.kbw ? `Daar wint ${esc(oName(k, R.kbw.id))}.` : R.kbDeel ? `Daar scoren ${esc(opsom(k, R.kbDeel))} even hoog.` : 'Ook daar is er geen verschil.'} ${canExtra(k) ? 'Of voeg één kenmerk toe dat echt het verschil maakt.' : ''}${canExtra(k) ? `<br><button type="button" class="btn-s" data-extra>${ICON.plus}Voeg één kenmerk toe</button>` : ''}</span></div>`;
   }
   const rank = `<div><div class="sec-h"><span>Rangorde</span><span>totaal</span></div><ol class="rank">${R.rank.map((o, i) => `<li class="${i === 0 && !R.exact ? 'first' : ''}"><div class="rk-top"><span><i>${i + 1}.</i>${esc(oName(k, o.id))}</span><b>${nf(R.tot[o.id])} <small>van ${R.max}</small></b></div><div class="bar" aria-hidden="true"><i style="width:${(R.tot[o.id] / R.max * 100).toFixed(1)}%"></i></div></li>`).join('')}</ol>
     <p class="even-note">Alle kenmerken wegen even zwaar. Dat is een bewuste keuze: met gewichten kan je blijven schuiven tot je favoriet wint.</p></div>`;
@@ -2364,7 +2438,7 @@ function renderUitslag(k) {
   if (k.besluit) decide = verdictHTML(k, R);
   else {
     const others = k.opties.filter(o => !R.legit.includes(o));
-    decide = `<div class="decide" id="decide"><h3>Wat kies je?</h3><p>${R.legit.length > 1 && R.exact ? 'Kies tussen de gelijke opties, of voeg één kenmerk toe.' : 'Het hoogste totaal beslist. Dat was de afspraak.'}</p>
+    decide = `<div class="decide" id="decide"><h3>Wat kies je?</h3><p>${decideLine(k, R)}</p>
       <div class="dec-btns">${R.legit.map((o, i) => `<button type="button" class="${i === 0 ? 'btn-pri' : 'btn-sec'}" data-kies="${esc(o.id)}">Kies ${esc(oName(k, o.id))}${o === R.kbw && o !== top ? ` <span style="font-weight:500">(wint op ${esc(kName(R.kb))})</span>` : ''}</button>`).join('')}
       ${others.length && !dev.open ? `<button type="button" class="link-btn" id="dev-open">Ik wil toch een andere optie kiezen</button>` : ''}</div>${devHTML(k, R)}</div>`;
   }
@@ -2372,7 +2446,7 @@ function renderUitslag(k) {
   const winId = R.exact ? null : top.id;
   const table = `<div><div class="sec-h"><span>Scores per kenmerk</span><span>${multi ? `gemiddelde van ${k.raters.length}` : ''}</span></div><div class="tbl-wrap" role="region" aria-label="Scores per kenmerk" tabindex="0"><table class="tbl">
     <thead><tr><th class="k" scope="col">Kenmerk</th>${k.opties.map(o => `<th scope="col"${o.id === winId ? ' class="w"' : ''}>${esc(oName(k, o.id))}</th>`).join('')}</tr></thead>
-    <tbody>${k.kenmerken.map(x => `<tr><th class="k" scope="row">${esc(kName(x))}</th>${k.opties.map(o => { const a = R.avg[x.id][o.id], sp = multi && a.max - a.min >= 2; return `<td class="${o.id === winId ? 'w' : ''}${sp ? ' split' : ''}"><b>${nf(a.m)}</b>${sp ? `<small>${a.list.map(e => e.v.s).join(' en ')}</small>` : ''}</td>`; }).join('')}</tr>`).join('')}</tbody>
+    <tbody>${k.kenmerken.map(x => `<tr><th class="k" scope="row">${esc(kName(x))}</th>${k.opties.map(o => { const a = R.avg[x.id][o.id], sp = multi && a.max - a.min >= 2; return `<td class="${o.id === winId ? 'w' : ''}${sp ? ' split' : ''}"><b>${nf(a.m)}</b>${sp ? `<small>${a.list.map(e => e.v.s).reduce((t, x, i, a) => t + (i === 0 ? '' : i === a.length - 1 ? ' en ' : ', ') + x, '')}</small>` : ''}</td>`; }).join('')}</tr>`).join('')}</tbody>
     <tfoot><tr><th class="k" scope="row">Totaal</th>${k.opties.map(o => `<td${o.id === winId ? ' class="w"' : ''}>${nf(R.tot[o.id])}</td>`).join('')}</tr></tfoot>
   </table></div><p class="hint tbl-hint" hidden>Schuif de tabel opzij om alle opties te zien.</p>${whyHTML(k)}</div>`;
   const split = R.split.length ? `<div class="note amber">${ICON.warn}<span><b>Hier verschillen jullie 2 punten of meer.</b> Praat hierover, en scoor eventueel opnieuw.<ul class="split-list">${groupSplit(R.split).map(g => `<li><span><b>${esc(kName(g.x))}</b>: ${g.items.map(s => `${esc(oName(k, s.o.id))} (${s.a.list.map(e => `${esc(rName(k, e.r))} ${e.v.s}`).join(', ')})`).join('; ')}</span><button type="button" class="btn-s" data-rescore="${esc(g.x.id)}">${ICON.redo}Scoor opnieuw</button></li>`).join('')}</ul></span></div>` : '';
@@ -2665,6 +2739,7 @@ $('stage').addEventListener('click', async e => {
     const R = results(k), O = oById(k, dev.opt), W = R.ref || R.top;
     const restore = snapshot();
     k.besluit = { soort:'afwijking', gekozen:O.id, winnaar:W ? W.id : null, feit:dev.feit.trim(), kenmerk:dev.kenmerk, tG:R.tot[O.id], tW:W ? R.tot[W.id] : 0, at:new Date().toISOString() };
+    if (R.exact && (R.kbw || R.kbDeel)) k.besluit.voor = R.kbw ? [R.kbw.id] : R.kbDeel.map(o => o.id);   // wie volgens de afspraak voorging (voor de tekst bij een gelijke stand)
     dev = { open:false, opt:null, kenmerk:'', feit:'' };
     save(); render(); toast(`Gekozen: ${oName(k, O.id)}. De reden staat erbij.`, restore);
     const v = $('verdict'); v && v.scrollIntoView({ block:'nearest', behavior:still() ? 'auto' : 'smooth' });
@@ -2717,9 +2792,10 @@ function nextKenmerk() {
 }
 function decideFor(oid) {
   const k = cur(), R = results(k), O = oById(k, oid); if (!O) return;
-  const soort = O === R.top && !R.exact ? 'hoogste' : O === R.kbw ? 'afspraak' : 'gelijk';
+  const deel = R.kbDeel && R.kbDeel.includes(O) && !(O === R.top && !R.exact) ? R.kbDeel.map(o => o.id) : null;
+  const soort = O === R.top && !R.exact ? 'hoogste' : O === R.kbw ? 'afspraak' : deel ? 'deel' : 'gelijk';
   const restore = snapshot();
-  k.besluit = { soort, gekozen:O.id, winnaar:R.exact ? null : R.top.id, feit:'', kenmerk:null, tG:R.tot[O.id], tW:R.tot[R.top.id], at:new Date().toISOString() };
+  k.besluit = { soort, gekozen:O.id, winnaar:R.exact ? null : R.top.id, feit:'', kenmerk:null, tG:R.tot[O.id], tW:R.tot[R.top.id], at:new Date().toISOString(), ...(deel ? { deel } : {}) };
   save(); render(); toast(`Gekozen: ${oName(k, O.id)}`, restore);
   const v = $('verdict'); if (v) { v.setAttribute('tabindex', '-1'); v.focus({ preventScroll:true }); v.scrollIntoView({ block:'nearest', behavior:still() ? 'auto' : 'smooth' }); }
 }
@@ -2865,10 +2941,12 @@ function fileBase() {
 // De beslissing in één zin (voor kopiëren, tekst en PDF).
 function decisionLine(k, R) {
   const b = k.besluit;
-  if (!b) return R.exact ? `Gelijke stand: ${R.tied.map(o => oName(k, o.id)).join(' en ')}. Nog geen beslissing vastgelegd.` : `Hoogste totaal: ${oName(k, R.top.id)} (${nf(R.tot[R.top.id])} van ${R.max}). Nog geen beslissing vastgelegd.`;
+  if (!b) return R.exact ? `Gelijke stand: ${R.tied.map(o => oName(k, o.id)).reduce((t, x, i, a) => t + (i === 0 ? '' : i === a.length - 1 ? ' en ' : ', ') + x, '')}. Nog geen beslissing vastgelegd.` : `Hoogste totaal: ${oName(k, R.top.id)} (${nf(R.tot[R.top.id])} van ${R.max}). Nog geen beslissing vastgelegd.`;
   const g = oName(k, b.gekozen), kx = b.kenmerk && b.kenmerk !== 'geen' ? k.kenmerken.find(x => x.id === b.kenmerk) : null;
+  if (afwGelijk(b)) return `Gekozen: ${g}. De totalen waren gelijk (${nf(b.tG)}); volgens de afspraak ging ${afwVoor(k, b)} voor. Het feit: ${b.feit} (dit feit hoort bij ${kx ? kName(kx) : 'geen enkel kenmerk'}).`;
   if (b.soort === 'afwijking') return `Gekozen: ${g}, hoewel ${b.winnaar ? oName(k, b.winnaar) : 'een andere optie'} het hoogste totaal had (${nf(b.tW)} tegenover ${nf(b.tG)}). Het feit: ${b.feit} (dit feit hoort bij ${kx ? kName(kx) : 'geen enkel kenmerk'}).`;
-  if (b.soort === 'afspraak') return `Gekozen: ${g}. Het verschil in totaal was kleiner dan 1 punt; volgens de afspraak besliste ${kName(R.kb)}, en daar scoorde ${g} het hoogst.`;
+  if (b.soort === 'afspraak') return `Gekozen: ${g}. ${b.winnaar ? 'Het verschil in totaal was kleiner dan 1 punt' : 'De totalen waren gelijk'}; volgens de afspraak besliste ${kName(R.kb)}, en daar scoorde ${g} het hoogst.`;
+  if (b.soort === 'deel') return `Gekozen: ${g}. ${b.winnaar ? 'Het verschil in totaal was kleiner dan 1 punt' : 'De totalen waren gelijk'}; volgens de afspraak besliste ${kName(R.kb)}, en daar scoorden ${opsom(k, (b.deel || []).map(id => oById(k, id)).filter(Boolean))} even hoog.`;
   if (b.soort === 'gelijk') return `Gekozen: ${g}, bij een gelijke stand in totaal en op ${kName(R.kb)}.`;
   return `Gekozen: ${g}, de optie met het hoogste totaal (${nf(b.tG)} van ${R.max}).`;
 }
@@ -2905,7 +2983,7 @@ function buildExport() {
   }
   const R = results(k), b = k.besluit, afw = b && b.soort === 'afwijking', winId = R.exact ? null : R.top.id;
   const dec = `<div data-oc-keep style="padding:14px 16px;border-radius:12px;border:1.5px solid ${afw ? '#fde68a' : '#10b981'};background:${afw ? '#fffbeb' : '#ffffff'}">
-    <div style="font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${afw ? '#92400e' : '#047857'}">Beslissing${afw ? ' · afwijking van het hoogste totaal' : ''}</div>
+    <div style="font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${afw ? '#92400e' : '#047857'}">Beslissing${afw ? (afwGelijk(b) ? ' · afwijking van de afspraak' : ' · afwijking van het hoogste totaal') : ''}</div>
     <div style="font-size:17px;font-weight:700;color:#1e293b;margin-top:4px;line-height:1.4">${esc(decisionLine(k, R))}</div>
     ${b ? `<div style="font-size:12px;color:#64748b;margin-top:4px">Vastgelegd op ${esc(new Date(b.at).toLocaleDateString('nl-BE', { day:'numeric', month:'long', year:'numeric' }))}</div>` : ''}</div>`;
   const rank = `${H(`Rangorde · totaal van ${R.max}`)}${R.rank.map((o, i) => `<div data-oc-keep style="display:grid;grid-template-columns:24px 220px 1fr 60px;gap:10px;align-items:center;padding:5px 0;font-size:14px">
@@ -2916,7 +2994,7 @@ function buildExport() {
   const multi = k.raters.length > 1;
   const table = `${H(`Scores per kenmerk${multi ? ` · gemiddelde van ${k.raters.length} beoordelaars` : ''}`)}<table style="width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums">
     <tr><th style="${th}text-align:left">Kenmerk</th>${k.opties.map(o => `<th style="${th}text-align:center;${o.id === winId ? 'color:#047857;background:#ecfdf5;' : ''}">${esc(oName(k, o.id))}</th>`).join('')}</tr>
-    ${k.kenmerken.map(x => `<tr data-oc-keep><td style="${td}color:#334155">${esc(kName(x))}</td>${k.opties.map(o => { const a = R.avg[x.id][o.id], sp = multi && a.max - a.min >= 2; return `<td style="${td}text-align:center;${o.id === winId ? 'background:#f6fdf9;' : ''}"><b style="color:#1e293b">${nf(a.m)}</b>${sp ? `<div style="font-size:11px;color:#92400e;font-weight:600">verschil: ${a.list.map(e => e.v.s).join(' en ')}</div>` : ''}</td>`; }).join('')}</tr>`).join('')}
+    ${k.kenmerken.map(x => `<tr data-oc-keep><td style="${td}color:#334155">${esc(kName(x))}</td>${k.opties.map(o => { const a = R.avg[x.id][o.id], sp = multi && a.max - a.min >= 2; return `<td style="${td}text-align:center;${o.id === winId ? 'background:#f6fdf9;' : ''}"><b style="color:#1e293b">${nf(a.m)}</b>${sp ? `<div style="font-size:11px;color:#92400e;font-weight:600">verschil: ${a.list.map(e => e.v.s).reduce((t, x, i, a) => t + (i === 0 ? '' : i === a.length - 1 ? ' en ' : ', ') + x, '')}</div>` : ''}</td>`; }).join('')}</tr>`).join('')}
     <tr><td style="${td}font-weight:700;color:#1e293b;border-bottom:0">Totaal</td>${k.opties.map(o => `<td style="${td}text-align:center;font-weight:700;color:#1e293b;border-bottom:0;${o.id === winId ? 'background:#ecfdf5;' : ''}">${nf(R.tot[o.id])}</td>`).join('')}</tr></table>${who}`;
   const imps = k.raters.filter(r => r.indruk);
   const imp = imps.length ? `${H('Eerste indruk, voor het scoren')}<div style="font-size:13px;color:#334155">${imps.map(r => `${multi ? esc(rName(k, r)) + ': ' : ''}${esc(oName(k, r.indruk))}`).join(' · ')}</div>` : '';
@@ -3054,7 +3132,7 @@ window.ocBestand = (function () {
     var blob = new Blob([JSON.stringify({ app: 'Onder Constructie', version: 1, created: new Date().toISOString(), tool: id, data: data }, null, 1)], { type: 'application/json' });
     var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
     var stuk = slug(naam()) + (extraNaam ? '-' + slug(extraNaam) : '');
-    a.download = stuk + '-' + new Date().toISOString().slice(0, 10) + '.json';
+    a.download = stuk + '-' + new Date(Date.now() - new Date().getTimezoneOffset() * 6e4).toISOString().slice(0, 10) + '.json';   // lokale datum, niet UTC
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
     return keys.length;
   }
@@ -3235,15 +3313,51 @@ window.ocBestand = (function () {
   document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', start) : start();
   var eigenNaam = null, naamT = null;
   function projectNu() { try { var p = JSON.parse(localStorage.getItem('oc.project')); return p && typeof p.name === 'string' ? p.name.trim() : ''; } catch (e) { return ''; } }
+  /* Hertest f: is v de naam van een ander bestaand project, of een vroegere naam ervan? Dan een melding, anders ''.
+     Bestaande projecten: de lijst van de app (oc-app.projects), de projecten die de tools klaarleggen (oc-app.projecten-tools)
+     en de naamkaart (oc.project.namen). Een eigen vroegere naam terugnemen mag. Zo vermengt het werk van twee projecten nooit. */
+  function ocAnder(v, eigen, zonderPad) {   // zonderPad: de lijst van deze tool zelf telt niet (die is net al hernoemd)
+    var z = function (x) { return String(x == null ? '' : x).trim().toLowerCase(); }, zv = z(v), ze = z(eigen);
+    if (!zv || zv === ze) return '';
+    var rd = function (k, d) { try { var x = JSON.parse(localStorage.getItem(k)); return x == null ? d : x; } catch (e) { return d; } };
+    var m = rd('oc.project.namen', {}); if (!m || typeof m !== 'object' || Array.isArray(m)) m = {};
+    var ek = Object.keys(m).filter(function (k) { return z(k) === ze; })[0];
+    if (ek && Array.isArray(m[ek]) && m[ek].map(z).indexOf(zv) >= 0) return '';
+    var eig = Object.keys(m).filter(function (k) { return z(k) !== ze && Array.isArray(m[k]) && m[k].map(z).indexOf(zv) >= 0; })[0];
+    if (eig) return String(v).trim() + ' was vroeger de naam van ' + eig + '. Kies een andere naam, zo blijft het werk gescheiden.';
+    var namen = [].concat(rd('oc-app.projects', []) || [], Object.keys(m)), t = rd('oc-app.projecten-tools', {});
+    if (t && typeof t === 'object' && !Array.isArray(t)) Object.keys(t).forEach(function (k) { if (Array.isArray(t[k]) && !(zonderPad && k === location.pathname)) namen = namen.concat(t[k]); });
+    var hit = namen.filter(function (x) { return typeof x === 'string' && z(x) === zv; })[0];
+    return hit ? hit + ' is al een ander project. Kies een andere naam, zo blijft het werk gescheiden.' : '';
+  }
+  // Hertest f: gegevens van v16.51 hebben oc.project.oud maar nog geen naamkaart. Vul ze aan, ook voor wie de app (Start) niet opent.
+  function ocNaamMigreer() {
+    try {
+      var p = JSON.parse(localStorage.getItem('oc.project')); if (!p || typeof p.name !== 'string' || !p.name.trim() || !Array.isArray(p.oud) || !p.oud.length) return;
+      var m = {}; try { m = JSON.parse(localStorage.getItem('oc.project.namen')) || {}; } catch (e) {} if (!m || typeof m !== 'object' || Array.isArray(m)) m = {};
+      var mijn = Array.isArray(m[p.name]) ? m[p.name] : [];
+      var bij = p.oud.filter(function (x) { return typeof x === 'string' && x.trim() && x !== p.name && mijn.indexOf(x) < 0 && !Array.isArray(m[x])
+        && !Object.keys(m).some(function (k) { return k !== p.name && Array.isArray(m[k]) && m[k].indexOf(x) >= 0; }); });
+      if (!bij.length) return;
+      m[p.name] = mijn.concat(bij).slice(-10); localStorage.setItem('oc.project.namen', JSON.stringify(m));
+    } catch (e) {}
+  }
   function deelNaam(el) {
     var v = String(el.value || '').trim().slice(0, 80), nu = projectNu();
     // hernoem je de lijst van het actieve project (het veld stond op die naam toen je begon), dan krijgt het project in de app die naam mee
     if (ocStandaardNaam(v) || (nu && nu !== eigenNaam && nu !== el.__ocWas)) return;
     if ([].some.call(document.querySelectorAll('.vb-bar'), function (b) { return b.getClientRects().length; })) return;   // in het voorbeeld niet
     if (v === nu) return;
+    // Hertest f: de naam van een ander bestaand project (of een vroegere naam ervan) gaat niet naar de app: anders vermengt het werk.
+    var anders = ocAnder(v, nu, true); if (anders) { if (window.ocMeld) try { ocMeld(anders); } catch (e) {} return; }
     try {
       var oud = []; try { var p0 = JSON.parse(localStorage.getItem('oc.project')); if (p0 && Array.isArray(p0.oud)) oud = p0.oud.slice(-9); } catch (e) {}
       oud = oud.filter(function (x) { return x !== v; }); if (nu && oud.indexOf(nu) < 0) oud.push(nu);   // de vorige naam blijft gekend: tools en dossier vinden het project zo terug
+      // Naamkaart bijwerken: de nieuwe naam erft de vorige namen (transitief, hoogstens 10). Is v een vorige naam van een ander project, dan niet: geen vermenging.
+      var m = {}; try { m = JSON.parse(localStorage.getItem('oc.project.namen')) || {}; } catch (e) {} if (!m || typeof m !== 'object' || Array.isArray(m)) m = {};
+      if (Object.keys(m).some(function (k) { return k !== nu && Array.isArray(m[k]) && m[k].indexOf(v) >= 0; })) return;
+      oud = oud.concat(Array.isArray(m[nu]) ? m[nu] : []).filter(function (x, i, a) { return typeof x === 'string' && x !== v && a.indexOf(x) === i; }).slice(-10);
+      if (nu) delete m[nu]; m[v] = oud; localStorage.setItem('oc.project.namen', JSON.stringify(m));
       localStorage.setItem('oc.project', JSON.stringify({ name: v, since: Date.now(), oud: oud })); eigenNaam = v; el.__ocWas = v;
     } catch (e) {}
   }

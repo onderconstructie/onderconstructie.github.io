@@ -711,7 +711,7 @@ input::placeholder, textarea::placeholder { color:#64748b; opacity:1; }
     var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([inhoud], { type: 'application/json' })); a.download = bestand;
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
   }
-  function datum() { return new Date().toISOString().slice(0, 10); }
+  function datum() { return new Date(Date.now() - new Date().getTimezoneOffset() * 6e4).toISOString().slice(0, 10); }   // lokale datum: om 00:30 gaf UTC nog gisteren
   // De kopie zoals ze was, ongewijzigd. Meer dan één sleutel: één JSON-bestand met per sleutel de ruwe tekst.
   function downloadKopie() {
     var ks = Object.keys(kapot); if (!ks.length) return;
@@ -1376,12 +1376,47 @@ window.ocProjectkiezer = function (plek, o) {
      De andere tools volgen het zoals bij een keuze in de app. Een voorbeeld of een standaardnaam ("Nieuw project") niet. */
   var std = function (v) { v = String(v || '').trim(); return window.ocStandaardNaam ? ocStandaardNaam(v) : !v || /^((mijn|nieuwe?) )?project( \d+)?$|^naamloos$/i.test(v); };
   function lees(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
+  /* Hertest f: is v de naam van een ander bestaand project, of een vroegere naam ervan? Dan een melding, anders ''.
+     Bestaande projecten: de lijst van de app (oc-app.projects), de projecten die de tools klaarleggen (oc-app.projecten-tools)
+     en de naamkaart (oc.project.namen). Een eigen vroegere naam terugnemen mag. Zo vermengt het werk van twee projecten nooit. */
+  function ocAnder(v, eigen, zonderPad) {   // zonderPad: de lijst van deze tool zelf telt niet (die is net al hernoemd)
+    var z = function (x) { return String(x == null ? '' : x).trim().toLowerCase(); }, zv = z(v), ze = z(eigen);
+    if (!zv || zv === ze) return '';
+    var rd = function (k, d) { try { var x = JSON.parse(localStorage.getItem(k)); return x == null ? d : x; } catch (e) { return d; } };
+    var m = rd('oc.project.namen', {}); if (!m || typeof m !== 'object' || Array.isArray(m)) m = {};
+    var ek = Object.keys(m).filter(function (k) { return z(k) === ze; })[0];
+    if (ek && Array.isArray(m[ek]) && m[ek].map(z).indexOf(zv) >= 0) return '';
+    var eig = Object.keys(m).filter(function (k) { return z(k) !== ze && Array.isArray(m[k]) && m[k].map(z).indexOf(zv) >= 0; })[0];
+    if (eig) return String(v).trim() + ' was vroeger de naam van ' + eig + '. Kies een andere naam, zo blijft het werk gescheiden.';
+    var namen = [].concat(rd('oc-app.projects', []) || [], Object.keys(m)), t = rd('oc-app.projecten-tools', {});
+    if (t && typeof t === 'object' && !Array.isArray(t)) Object.keys(t).forEach(function (k) { if (Array.isArray(t[k]) && !(zonderPad && k === location.pathname)) namen = namen.concat(t[k]); });
+    var hit = namen.filter(function (x) { return typeof x === 'string' && z(x) === zv; })[0];
+    return hit ? hit + ' is al een ander project. Kies een andere naam, zo blijft het werk gescheiden.' : '';
+  }
+  // Hertest f: gegevens van v16.51 hebben oc.project.oud maar nog geen naamkaart. Vul ze aan, ook voor wie de app (Start) niet opent.
+  function ocNaamMigreer() {
+    try {
+      var p = JSON.parse(localStorage.getItem('oc.project')); if (!p || typeof p.name !== 'string' || !p.name.trim() || !Array.isArray(p.oud) || !p.oud.length) return;
+      var m = {}; try { m = JSON.parse(localStorage.getItem('oc.project.namen')) || {}; } catch (e) {} if (!m || typeof m !== 'object' || Array.isArray(m)) m = {};
+      var mijn = Array.isArray(m[p.name]) ? m[p.name] : [];
+      var bij = p.oud.filter(function (x) { return typeof x === 'string' && x.trim() && x !== p.name && mijn.indexOf(x) < 0 && !Array.isArray(m[x])
+        && !Object.keys(m).some(function (k) { return k !== p.name && Array.isArray(m[k]) && m[k].indexOf(x) >= 0; }); });
+      if (!bij.length) return;
+      m[p.name] = mijn.concat(bij).slice(-10); localStorage.setItem('oc.project.namen', JSON.stringify(m));
+    } catch (e) {}
+  }
+  ocNaamMigreer();
   function overal(x) {
     if (!OVERAL || !x || x.voorbeeld) return;
     var n = String(x.naam || '').trim().slice(0, 80); if (std(n)) return;
     try {
       var p = lees('oc.project', null);
-      if (!p || p.name !== n) localStorage.setItem('oc.project', JSON.stringify({ name: n, since: Date.now() }));
+      // Naamkaart (oc.project.namen: naam -> vorige namen, blijvend): een gekozen project krijgt zijn vorige namen mee (oud), zodat elke tool het werk terugvindt.
+      // Draagt dit tabblad nog een vorige naam van een project, dan is het dat project: werk gaat nooit naar een ander project met die oude naam.
+      var m = lees('oc.project.namen', {}); m = m && typeof m === 'object' && !Array.isArray(m) ? m : {};
+      if (!Array.isArray(m[n])) { var eig = Object.keys(m).filter(function (k) { return Array.isArray(m[k]) && m[k].indexOf(n) >= 0; })[0]; if (eig) n = eig; }
+      var oudN = Array.isArray(m[n]) ? m[n].filter(function (y) { return typeof y === 'string' && y !== n; }).slice(-10) : [];
+      if (!p || p.name !== n) localStorage.setItem('oc.project', JSON.stringify(oudN.length ? { name: n, since: Date.now(), oud: oudN } : { name: n, since: Date.now() }));
       var h = lees('oc-app.projects', []); h = Array.isArray(h) ? h : [];
       if (h[0] !== n) localStorage.setItem('oc-app.projects', JSON.stringify([n].concat(h.filter(function (y) { return y !== n; })).slice(0, 8)));
     } catch (e) {}
@@ -1453,7 +1488,10 @@ window.ocProjectkiezer = function (plek, o) {
   function klaar(bewaar, focus) {
     if (!bewerk) return;
     var v = veld.value.trim().slice(0, 80), b = bewerk;
-    if (bewaar && !v) { veld.setAttribute('aria-invalid', 'true'); fout.hidden = false; if (window.ocMeld) try { ocMeld(fout.textContent); } catch (e) {} veld.focus(); return; }
+    if (bewaar && !v) { if (fout.dataset.std) fout.textContent = fout.dataset.std; veld.setAttribute('aria-invalid', 'true'); fout.hidden = false; if (window.ocMeld) try { ocMeld(fout.textContent); } catch (e) {} veld.focus(); return; }
+    // Hertest f: hernoemen naar de naam van een ander bestaand project (of een vroegere naam ervan) mag niet: het veld blijft open met de reden.
+    var anders = bewaar && v !== b.oud && o.projectnaam && !b.vb && !b.nieuw ? ocAnder(v, b.oud) : '';
+    if (anders) { fout.dataset.std = fout.dataset.std || fout.textContent; fout.textContent = anders; veld.setAttribute('aria-invalid', 'true'); fout.hidden = false; if (window.ocMeld) try { ocMeld(anders); } catch (e) {} if (focus) veld.focus(); return; }
     bewerk = null;
     if (bewaar && v !== b.oud) {
       o.hernoem(v);
@@ -1475,6 +1513,8 @@ window.ocProjectkiezer = function (plek, o) {
   }
   var api = {
     teken: teken, sluit: sluit, hernoem: hernoem, knop: knop,
+    // Zet de naam van het actieve project zonder invulveld ("Maak er mijn eigen van" in een actief project). Zonder oc-sync: de app houdt haar project.
+    naam: function (n) { n = String(n == null ? '' : n).trim().slice(0, 80); if (!n || typeof o.hernoem !== 'function' || bewerk) return; o.hernoem(n); teken(); },
     tabs: function () { var a = o.actief(); return [].slice.call(menu.querySelectorAll('.oc-pk-item[data-id] .oc-pk-i-naam')).map(function (el) { return [el, el.closest('[data-id]').getAttribute('data-id')]; }).concat([[knop.querySelector('.oc-pk-naam'), a]]); }
   };
   teken();
@@ -1576,7 +1616,7 @@ window.ocProjectkiezer = function (plek, o) {
 <script>
 /* Een cel die begint met = + - of @ zou Excel als formule uitvoeren: zet er een ' voor (gewone getallen blijven). */
 function ocCsvVeilig(s) { s = String(s == null ? '' : s); return /^[=+\-@\t\r]/.test(s) && !/^[+-]?\d+([.,]\d+)*%?$/.test(s) ? "'" + s : s; }
-/* ---------- Overnemen tussen tools (gedeeld door de Onder Constructie-tools, v2) ----------
+/* ---------- Overnemen tussen tools (gedeeld door de Onder Constructie-tools, v3) ----------
    Alle tools draaien op hetzelfde domein en delen dus localStorage. Elke tool legt wat hij te bieden
    heeft klaar onder 'oc.share.<tool-id>', in een vaste vorm, zodat andere tools het kunnen overnemen
    zonder elkaars binnenkant te kennen.
@@ -1601,7 +1641,7 @@ function ocCsvVeilig(s) { s = String(s == null ? '' : s); return /^[=+\-@\t\r]/.
      ]);                                   // aanroepen na elke bewaring
      ocShare.clear('raci');                // bij "Alles wissen"
      const gekozen = await ocShare.pick({ types:['betrokkene'], self:'weerstand', title:'Doelgroepen overnemen' });
-     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source, .bronId en .list erbij)
+     // geeft [] terug bij annuleren, anders de aangevinkte items (met .source, .bronId, .list en .project erbij; .ref als de bron die meegaf)
      // Afspraak: een tool geeft wat ze overnam (bronId) NIET opnieuw door, tenzij ze er een eigen oordeel aan toevoegde
      // (een score, een eigenaar, een datum). Zo blijft de bron de baas en komt wat daar verwijderd is niet terug.
      ocShare.pick({ ..., have:['Budget goedkeuren'] })  // optioneel: wat de tool al heeft, staat uitgegrijsd ("staat er al")
@@ -1612,6 +1652,17 @@ function ocCsvVeilig(s) { s = String(s == null ? '' : s); return /^[=+\-@\t\r]/.
    of een lijst die met de projectnaam begint). &lijst=<naam> vinkt precies die lijst aan. Anders: de lijst die het laatst veranderde.
    Dezelfde tekst als taak en als actie is één item: de rijkste versie (met wie en wanneer) blijft.
    Zo ook dezelfde tekst als omgevingsfactor en als risico (de PESTLE legt een grote bedreiging als allebei klaar).
+
+   Project (v3): elke klaargelegde lijst hoort bij een project: { name, project, items }.
+   Een tool met meer projecten tegelijk geeft per lijst het project mee (project:'' = bij geen project).
+   Zonder project houdt publish het project dat de lijst met dezelfde naam al had, dan een gekend project waarmee de lijstnaam
+   begint of eindigt (zo deed de kiezer het vroeger), en anders het actieve project van de app (oc.project).
+   De kiezer zet de lijsten van het actieve project bovenaan. Andere projecten staan ingeklapt en zijn nooit vooraf aangevinkt.
+   Oude gegevens zonder project: de kiezer kijkt naar de lijstnaam, zoals vroeger.
+   Herkomst (v3): een item mag een vaste id meekrijgen { ref } (bv. de id in de bron). Hernoem je het in de bron, dan blijft de ref:
+   wie overneemt, werkt dan het item met die ref bij in plaats van het dubbel toe te voegen.
+   ocShare.refs('stakeholders', 'Nieuwe bib') geeft { tool, refs } van wat die bron nu klaarlegt (null als ze niets klaarlegt),
+   voor een zacht signaal "staat niet meer in Betrokkenenradar". Nooit zelf wissen.
 */
 const ocShare = (() => {
   const PREFIX = 'oc.share.';
@@ -1621,22 +1672,55 @@ const ocShare = (() => {
   const datum = v => { const s = String(v || '').trim(), d = /^\d{4}-\d{2}-\d{2}$/.test(s) ? new Date(s + 'T12:00:00') : null;
     return d && !isNaN(d) ? d.toLocaleDateString('nl-BE', { day:'numeric', month:'long', year:'numeric' }) : s; };
 
+  // Het actieve project van de app (oc.project) met zijn vorige namen, en de projecten die de app kent.
+  function actief() {
+    try { const p = JSON.parse(localStorage.getItem('oc.project') || 'null') || {};
+      return { naam: typeof p.name === 'string' ? p.name.trim().slice(0, 80) : '', oud: Array.isArray(p.oud) ? p.oud.filter(x => typeof x === 'string' && x.trim()) : [] };
+    } catch { return { naam:'', oud:[] }; }
+  }
+  function gekend() { try { const h = JSON.parse(localStorage.getItem('oc-app.projects') || '[]'); return Array.isArray(h) ? h.filter(x => typeof x === 'string' && x.trim()) : []; } catch { return []; } }
+  // Een lijstnaam hoort bij project p als ze zo heet, of ermee begint of eindigt ("Sprint 1 · Nieuwe bib")
+  const past = (lijst, p) => { const l = norm(lijst), q = norm(p); return !!q && (l === q || l.startsWith(q + ' ') || l.endsWith(' ' + q)); };
+
   function publish(id, tool, lists) {
     try {
+      let vorig = []; try { vorig = (JSON.parse(localStorage.getItem(PREFIX + id)) || {}).lists || []; } catch {}
+      if (!Array.isArray(vorig)) vorig = [];
+      const A = actief(), namen = [A.naam].concat(gekend()).filter(Boolean);
+      // Het project van een lijst (v3): wat de tool meegeeft; anders wat de lijst al had; anders een gekend project in de naam; anders het actieve project.
+      // Zo blijft een lijst bij haar project, ook als je daarna in de app een ander project kiest.
+      const projVan = l => {
+        if (l.project != null) return String(l.project).trim().slice(0, 80);
+        const n = String(l.name || '').slice(0, 80), v = vorig.find(x => x && x.name === n && typeof x.project === 'string');
+        if (v) return v.project;
+        const oud = A.oud.find(p => past(n, p)); if (oud && A.naam) return A.naam;   // een vorige naam van het actieve project
+        return namen.filter(p => past(n, p)).sort((a, b) => b.length - a.length)[0] || A.naam;
+      };
       const clean = (lists || []).map(l => ({
-        name: String(l.name || '').slice(0, 80),
+        name: String(l.name || '').slice(0, 80), project: projVan(l || {}),
         items: (l.items || []).filter(i => i && i.type && String(i.text || '').trim())
           .slice(0, 300).map(i => ({ type:i.type, text:String(i.text).trim().slice(0, 300),
             note: i.note ? String(i.note).slice(0, 200) : undefined, who: typeof i.who === 'string' && i.who.trim() ? i.who.trim().slice(0, 120) : undefined,
-            when: typeof i.when === 'string' && i.when.trim() ? i.when.trim().slice(0, 40) : undefined }))
+            when: typeof i.when === 'string' && i.when.trim() ? i.when.trim().slice(0, 40) : undefined,
+            // vaste herkomst-id: blijft gelijk als je het item in de bron hernoemt
+            ref: i.ref != null && String(i.ref).trim() ? String(i.ref).trim().slice(0, 80) : undefined }))
       })).filter(l => l.items.length);
       if (!clean.length) { localStorage.removeItem(PREFIX + id); return; }
-      // per lijst: wanneer veranderde ze laatst (zo weet de kiezer aan welke lijst je net werkte)
-      let vorig = {}; try { (JSON.parse(localStorage.getItem(PREFIX + id)) || {}).lists.forEach(l => { vorig[l.name] = l; }); } catch {}
+      // per lijst: wanneer veranderde ze laatst (zo weet de kiezer aan welke lijst je net werkte). Dezelfde naam in twee projecten is twee lijsten.
       const nu = Date.now(), hash = s => { let h = 5381; for (let i = 0; i < s.length; i++) h = (h * 33 + s.charCodeAt(i)) | 0; return h; };
-      clean.forEach(l => { const h = hash(JSON.stringify(l.items)), v = vorig[l.name]; l.h = h; l.ch = v && v.h === h && v.ch ? v.ch : nu; });
+      clean.forEach(l => { const h = hash(JSON.stringify(l.items)), v = vorig.find(x => x && x.name === l.name && (typeof x.project !== 'string' || x.project === l.project)); l.h = h; l.ch = v && v.h === h && v.ch ? v.ch : nu; });
       localStorage.setItem(PREFIX + id, JSON.stringify({ id, tool, updated: nu, lists: clean }));
     } catch {}
+  }
+  // Wat bron id nu klaarlegt (voor het project, als je dat meegeeft): { tool, refs }. null als die bron niets klaarlegt.
+  function refs(id, project) {
+    try {
+      const d = JSON.parse(localStorage.getItem(PREFIX + id)); if (!d || !Array.isArray(d.lists)) return null;
+      const r = new Set();
+      d.lists.forEach(l => { if (!l || !Array.isArray(l.items)) return; if (project != null && typeof l.project === 'string' && norm(l.project) !== norm(project)) return;
+        l.items.forEach(i => { if (i && i.ref != null) r.add(String(i.ref)); }); });
+      return { tool: String(d.tool || id), refs: r };
+    } catch { return null; }
   }
   function clear(id) { try { localStorage.removeItem(PREFIX + id); } catch {} }
 
@@ -1654,7 +1738,9 @@ const ocShare = (() => {
           if (!l || !Array.isArray(l.items)) return;
           const items = l.items.filter(it => it && types.includes(it.type) && typeof it.text === 'string' && it.text.trim())
             .map(it => ({ ...it, who: typeof it.who === 'string' ? it.who : undefined, when: typeof it.when === 'string' ? it.when : undefined }));
-          if (items.length) out.push({ tool: String(d.tool || d.id || k.slice(PREFIX.length)), id: d.id, updated: +d.updated || 0, ch: +l.ch || 0, list: String(l.name || ''), items });
+          // project: undefined bij oude gegevens (dan kijkt de kiezer naar de lijstnaam)
+          if (items.length) out.push({ tool: String(d.tool || d.id || k.slice(PREFIX.length)), id: d.id, updated: +d.updated || 0, ch: +l.ch || 0, list: String(l.name || ''),
+            project: typeof l.project === 'string' ? l.project : undefined, items });
         });
       } catch {}
     });
@@ -1664,10 +1750,11 @@ const ocShare = (() => {
     // Mist de gekozen versie een wie of wanneer die een andere bron wel heeft, dan vullen we aan.
     const score = (s, it) => [s.id === voorkeur ? 1 : 0, (it.note ? 2 : 0) + (it.who ? 1 : 0) + (it.when ? 1 : 0), s.items.length, s.updated || 0];
     const beter = (a, b) => { for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] > b[i]; return false; };
-    const best = new Map(), sl = it => (it.type === 'actie' ? 'taak' : it.type === 'omgevingsfactor' ? 'risico' : it.type) + '|' + norm(it.text);   // een taak en een actie (of een omgevingsfactor en een risico) met dezelfde tekst zijn één item
-    out.forEach(s => s.items.forEach(it => { const k = sl(it), sc = score(s, it), e = best.get(k); if (!e || beter(sc, e.sc)) best.set(k, { it, sc }); }));
-    out.forEach(s => s.items.forEach(it => { const e = best.get(sl(it)).it; if (e !== it) { if (!e.who && it.who) e.who = it.who; if (!e.when && it.when) e.when = it.when; } }));
-    return out.map(s => ({ ...s, items: s.items.filter(it => best.get(sl(it)).it === it) }))
+    // Per project: dezelfde tekst in twee projecten is twee items (anders verdwijnt hij uit het ene project)
+    const best = new Map(), sl = (s, it) => (it.type === 'actie' ? 'taak' : it.type === 'omgevingsfactor' ? 'risico' : it.type) + '|' + norm(it.text) + '|' + (s.project == null ? '?' : norm(s.project));   // een taak en een actie (of een omgevingsfactor en een risico) met dezelfde tekst zijn één item
+    out.forEach(s => s.items.forEach(it => { const k = sl(s, it), sc = score(s, it), e = best.get(k); if (!e || beter(sc, e.sc)) best.set(k, { it, sc }); }));
+    out.forEach(s => s.items.forEach(it => { const e = best.get(sl(s, it)).it; if (e !== it) { if (!e.who && it.who) e.who = it.who; if (!e.when && it.when) e.when = it.when; } }));
+    return out.map(s => ({ ...s, items: s.items.filter(it => best.get(sl(s, it)).it === it) }))
       .filter(s => s.items.length);
   }
   // Vergelijken zonder hoofdletters, dubbele spaties of leestekens aan de rand
@@ -1716,10 +1803,15 @@ const ocShare = (() => {
     style();
     return new Promise(resolve => {
       let van = window.ocVan || ''; try { van = van || new URLSearchParams(location.search).get('van') || ''; } catch {}
-      const src = sources(types, self, van), terug = document.activeElement;
+      // Eerst je eigen project (v3: het veld project; oude gegevens zonder project: de lijstnaam, ook onder een vorige naam)
+      const A = actief(), P = [A.naam].concat(A.oud).filter(Boolean);
+      const eigen = s => !!P.length && (s.project != null ? P.some(p => norm(p) === norm(s.project)) : P.some(p => past(s.list, p)));
+      const src0 = sources(types, self, van), src = src0.filter(eigen).concat(src0.filter(s => !eigen(s))), terug = document.activeElement;
       const heeft = new Set((have || []).map(norm));
       const vanNaam = van && !src.some(s => s.id === van) ? van : '';
       const vol = s => s.items.every(it => heeft.has(norm(it.text))), alles = src.length > 0 && src.every(vol);
+      // Een lijst van een ander project draagt de naam van dat project, als die niet al in de lijstnaam staat
+      const lijstVan = s => !eigen(s) && s.project && !past(s.list, s.project) ? s.list + ' · ' + s.project : s.list;
       const back = document.createElement('div');
       back.className = 'ocs-back';
       const what = types.map(t => LABEL[t] || t).join(' of ');
@@ -1727,8 +1819,8 @@ const ocShare = (() => {
         <div class="ocs-head"><div class="ocs-title">${esc(title || 'Overnemen uit een andere tool')}</div>
           <div class="ocs-sub">${esc(intro || `Kies welke ${what} je wil overnemen.`)}</div></div>
         <div class="ocs-body">${vanNaam ? `<p class="ocs-note">Uit die tool ligt nog niets klaar. Hieronder staat wat andere tools aanbieden.</p>` : ''}${src.length && alles ? `<p class="ocs-empty">Alles staat er al. Er is niets nieuws om over te nemen.</p>` : ''}${src.length && !alles ? src.map((s, si) => vol(s) ? `
-          <div class="ocs-src"><div class="ocs-src-head"><b>${esc(s.tool)}</b><span>${esc(s.list)} · alles staat er al</span></div></div>` : `
-          <div class="ocs-src"><div class="ocs-src-head"><b>${esc(s.tool)}</b><span>${esc(s.list)} · ${s.items.length}</span>
+          <div class="ocs-src"><div class="ocs-src-head"><b>${esc(s.tool)}</b><span>${esc(lijstVan(s))} · alles staat er al</span></div></div>` : `
+          <div class="ocs-src"><div class="ocs-src-head"><b>${esc(s.tool)}</b><span>${esc(lijstVan(s))} · ${s.items.length}</span>
             <button class="ocs-all" type="button" data-all="${si}">alles</button></div>
             ${s.items.map((it, ii) => { const al = heeft.has(norm(it.text)); return `<label class="ocs-item${al ? ' al' : ''}"><input type="checkbox" data-s="${si}" data-i="${ii}"${al ? ' disabled' : ''}>
               <span>${esc(it.text)}${al ? '<em>staat er al</em>' : ''}${it.who || it.when || (notes !== false && it.note) ? `<small>${esc([it.who, datum(it.when), notes !== false && it.note].filter(Boolean).join(' · '))}</small>` : ''}</span></label>`; }).join('')}
@@ -1737,15 +1829,15 @@ const ocShare = (() => {
         <div class="ocs-foot"><span class="ocs-hint">Vink eerst iets aan</span><button class="ocs-btn ocs-cancel" type="button">Annuleer</button>
           <button class="ocs-btn ocs-ok" type="button" disabled>Neem over</button></div></div>`;
       document.body.appendChild(back);
-      // Eerst je eigen project: lijsten van andere projecten klappen in onder één regel (een sprint "Sprint 1 · Project" telt mee)
+      // Eerst je eigen project: lijsten van andere projecten klappen in onder één regel (een sprint "Sprint 1 · Project" telt mee).
+      // Is er voor je project niets, dan zegt een regel dat; de andere projecten blijven ingeklapt.
       try {
-        const pp = JSON.parse(localStorage.getItem('oc.project') || 'null') || {}, P = [pp.name].concat(Array.isArray(pp.oud) ? pp.oud : []).map(norm).filter(Boolean);
-        const eigen = s => P.some(p => { const l = norm(s.list); return l === p || l.startsWith(p + ' ') || l.endsWith(' ' + p); });
         const els = [...back.querySelectorAll('.ocs-src')], ander = src.filter(s => !eigen(s));
-        if (P.length && els.length === src.length && ander.length && ander.length < src.length) {
+        if (P.length && els.length === src.length && ander.length) {
           const d = document.createElement('details'); d.className = 'ocs-ander';
-          d.innerHTML = `<summary style="min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:600;color:#047857;padding:0.25rem 0.125rem">Andere projecten en lijsten (${ander.length})</summary>`;
+          d.innerHTML = `<summary style="min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:600;color:#047857;padding:0.25rem 0.125rem">${ander.every(s => s.project) ? 'Andere projecten' : 'Andere projecten en lijsten'} (${ander.length})</summary>`;
           els.forEach((el, i) => { if (!eigen(src[i])) d.appendChild(el); });
+          if (ander.length === src.length && !alles) { const n = document.createElement('p'); n.className = 'ocs-note'; n.textContent = `Voor ${A.naam} ligt hier nog niets klaar.`; back.querySelector('.ocs-body').appendChild(n); }
           back.querySelector('.ocs-body').appendChild(d);
         }
       } catch {}
@@ -1756,16 +1848,16 @@ const ocShare = (() => {
       const sync = () => { const n = boxes().filter(b => b.checked).length; ok.disabled = !n; ok.textContent = n ? `Neem ${n} over` : 'Neem over'; hint.hidden = !!n || !boxes().length; };
       // Geopend vanuit een tool (?van=<tool>): alleen die bron aanvinken, en daarin de lijst van het actieve project als die er is.
       // Zonder ?van= en met één bron: die staat aangevinkt.
-      let namen = [], lijst = ''; try { const pp = JSON.parse(localStorage.getItem('oc.project') || 'null') || {}; namen = [pp.name].concat(Array.isArray(pp.oud) ? pp.oud : []).map(norm).filter(Boolean); } catch {}
+      let lijst = '';
       try { lijst = norm(window.ocLijst || new URLSearchParams(location.search).get('lijst') || ''); } catch {}
-      const vanSrc = van ? src.filter(s => s.id === van && !vol(s)) : [];
+      // Met een actief project: alleen lijsten van dat project, nooit een ander project (die staan ingeklapt)
+      const vanSrc = van ? src.filter(s => s.id === van && !vol(s) && (!P.length || eigen(s))) : [];
       const vanLijst = lijst ? vanSrc.filter(s => norm(s.list) === lijst) : [];
-      const vanProj = vanLijst.length ? vanLijst : vanSrc.filter(s => namen.some(p => norm(s.list) === p || norm(s.list).startsWith(p + ' ')));
       // geen lijst van het project: dan alleen de lijst die het laatst veranderde (daar werkte je net aan), nooit alles
       const laatst = vanSrc.length > 1 ? vanSrc.filter(s => s.ch && s.ch === Math.max(...vanSrc.map(x => x.ch || 0))).slice(0, 1) : vanSrc;
       // Alleen vanuit een link (?van=) staat iets vooraf aangevinkt. Anders kies je zelf (of tik op "alles"):
       // één tik op het punt dat je wil, mag nooit de rest overnemen.
-      const aan = vink === false || !van ? [] : (vanProj.length ? vanProj : laatst);
+      const aan = vink === false || !van ? [] : (vanLijst.length ? vanLijst : P.length ? vanSrc : laatst);
       boxes().forEach(b => { if (aan.includes(src[+b.dataset.s])) b.checked = true; }); sync();
       back.addEventListener('change', sync);
       back.addEventListener('click', e => {
@@ -1786,7 +1878,7 @@ const ocShare = (() => {
       document.addEventListener('keydown', onKey, true);
       back.querySelector('.ocs-cancel').addEventListener('click', () => close([]));
       ok.addEventListener('click', () => close(boxes().filter(b => b.checked).map(b => {
-        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, bronId: s.id, list: s.list };
+        const s = src[+b.dataset.s]; return { ...s.items[+b.dataset.i], source: s.tool, bronId: s.id, list: s.list, project: s.project };
       })));
       const first = back.querySelector('input:not(:disabled),.ocs-cancel'); first && first.focus();
     });
@@ -1794,7 +1886,7 @@ const ocShare = (() => {
 
   // Hoeveel er klaarligt voor deze soorten (om een knop te tonen of een teller te zetten).
   const count = (types, self) => sources(types, self).reduce((n, s) => n + s.items.length, 0);
-  return { publish, clear, pick, count, sources, esc };
+  return { publish, clear, pick, count, sources, refs, esc };
 })();
 
 /* ---------- Alles wissen, klaarleggen en overnemen ---------- */
@@ -1866,13 +1958,18 @@ function ocOvergenomen(n, al, een, veel) {
 // Doelgroepen uit het voorbeeld worden niet klaargelegd.
 // Een overgenomen doelgroep (g.van) geven we niet opnieuw door: de bron blijft de baas. Zijn acties zijn wel eigen werk.
 function ocPublish() {
-  const echt = state.groups.filter(g => !g.voorbeeld);
-  const lists = [{ name:'Doelgroepen', items: echt.filter(g => !g.van).map(g => {
+  const echt = state.groups.filter(g => !g.voorbeeld), proj = g => String(g.project || '').trim();
+  // v3: één lijst "Doelgroepen" per project (veld project). Vroeger stonden alle doelgroepen van alle projecten in één lijst,
+  // en vinkte een andere tool (bv. Gedrag via ?van=weerstand) een doelgroep van een ander project aan. ref = vaste id van de doelgroep.
+  const per = new Map();
+  echt.filter(g => !g.van).forEach(g => {
     const d = dominant(levelScores(lastScan(g))), br = bronScores(lastScan(g));
     const note = [d.length ? 'dominant: ' + d.map(x => x.L.stem.toLowerCase()).join(', ') : '', br.top.length ? 'knelpunt: ' + topNames(br) : ''].filter(Boolean).join(' · ');
-    return { type:'betrokkene', text:ocNaam(g.name), note: note || undefined };
-  }) }];
-  echt.forEach(g => lists.push({ name:g.name, items: g.plan.filter(p => !p.done && p.text).map(p => ({ type:'actie', text:p.text, who:p.who, when:p.due || WHEN[p.when] || undefined })) }));   // nooit de interne code (voor/rond/na) als termijn
+    if (!per.has(proj(g))) per.set(proj(g), []);
+    per.get(proj(g)).push({ type:'betrokkene', text:ocNaam(g.name), note: note || undefined, ref:g.id });
+  });
+  const lists = [...per].map(([project, items]) => ({ name:'Doelgroepen', project, items }));
+  echt.forEach(g => lists.push({ name:g.name, project:proj(g), items: g.plan.filter(p => !p.done && p.text).map(p => ({ type:'actie', text:p.text, who:p.who, when:p.due || WHEN[p.when] || undefined, ref:p.id })) }));   // nooit de interne code (voor/rond/na) als termijn
   ocShare.publish(OC_ID, OC_TOOL, lists);
 }
 
@@ -2313,15 +2410,27 @@ function ocSharedChange(self) {
 /* Het actieve project uit de app (oc.project): nieuwe projecten, analyses en lijsten krijgen die naam. */
 function ocProject(fb) { try { const p = JSON.parse(localStorage.getItem('oc.project')); return p && typeof p.name === 'string' && p.name.trim() ? p.name.trim().slice(0, 80) : fb; } catch { return fb; } }
 // Het project kreeg een nieuwe naam (in de app of in een tool): de vorige namen staan in oc.project.oud. Zo vindt elke tool het terug.
-function ocProjectOud() { try { const p = JSON.parse(localStorage.getItem('oc.project')); return p && Array.isArray(p.oud) ? p.oud.filter(x => typeof x === 'string') : []; } catch { return []; } }
+// Vorige namen van het actieve project: uit oc.project (oud) én uit de blijvende naamkaart (oc.project.namen), zodat ze ook na wisselen gelden (hertest e).
+// Gaf de app een oud mee, dan komt het in de naamkaart; ontbreekt het in oc.project, dan zet de tool het er weer bij (voor de andere tools).
+// Een naam die in de kaart bij een ander project hoort, telt nooit mee: geen werk naar een verkeerd project.
+function ocProjectOud() { try { const p = JSON.parse(localStorage.getItem('oc.project')); if (!p || typeof p.name !== 'string' || !p.name.trim()) return [];
+  let m = {}; try { m = JSON.parse(localStorage.getItem('oc.project.namen')) || {}; } catch {} if (!m || typeof m !== 'object' || Array.isArray(m)) m = {};
+  const ander = x => Object.keys(m).some(k => k !== p.name && (k === x || (Array.isArray(m[k]) && m[k].includes(x))));
+  const eigen = (Array.isArray(p.oud) ? p.oud : []).filter(x => typeof x === 'string' && x !== p.name && !ander(x)), kaart = (Array.isArray(m[p.name]) ? m[p.name] : []).filter(x => typeof x === 'string' && x !== p.name);
+  const uit = [...new Set([...kaart, ...eigen])].slice(-10);
+  try { if (eigen.some(x => !kaart.includes(x))) { m[p.name] = uit; localStorage.setItem('oc.project.namen', JSON.stringify(m)); }
+    if (uit.some(x => !(p.oud || []).includes(x))) localStorage.setItem('oc.project', JSON.stringify(Object.assign({}, p, { oud: uit }))); } catch {}
+  return uit; } catch { return []; } }
 // Opende je zelf een bestand of maakte je een voorbeeld van jou, dan blijft dat open staan (oc.keuze onthoudt bij welke projectkeuze).
 // Het actieve project van de app trekt de tool pas weer mee bij een volgende keuze. Heeft wat open staat een eigen projectnaam, dan volgt de app: één project overal.
 function ocKeuzeSleutel() { return 'oc.keuze.' + location.pathname.replace(/index\.html$/, ''); }
 function ocKeuzeNu() { try { const p = JSON.parse(localStorage.getItem('oc.project')); return p && p.name ? String(p.since || p.name) : ''; } catch { return ''; } }
 function ocEigenKeuze(s) { try { s = s == null ? ocKeuzeNu() : s; return !!s && localStorage.getItem(ocKeuzeSleutel()) === s; } catch { return false; } }
 function ocEigenZet() { try { const s = ocKeuzeNu(); if (s) localStorage.setItem(ocKeuzeSleutel(), s); } catch {} }
-function ocEigenVolg() { try { if (!ocEigenKeuze() || !window.ocPk || !ocPk.knop) return; const k = ocPk.knop, n = String(k.title || '').trim().slice(0, 80); if (!/^Project:/.test(k.getAttribute('aria-label') || '') || k.querySelector('.oc-pk-vb') || !n || /^((mijn|nieuwe?) )?project( \d+)?$|^naamloos$/i.test(n) || (window.ocStandaardNaam && ocStandaardNaam(n))) return; const p = JSON.parse(localStorage.getItem('oc.project')); if (p && p.name === n) return; localStorage.setItem('oc.project', JSON.stringify({ name: n, since: Date.now() })); let h = []; try { h = JSON.parse(localStorage.getItem('oc-app.projects')) || []; } catch {} if (!Array.isArray(h)) h = []; localStorage.setItem('oc-app.projects', JSON.stringify([n].concat(h.filter(y => y !== n)).slice(0, 8))); } catch {} }
-document.addEventListener('click', e => { if (e.target.closest && e.target.closest('#vb-eigen, .vb-eigen')) { ocEigenZet(); setTimeout(ocEigenVolg, 0); } }, true);
+// "Maak er mijn eigen van" (klik): één regel voor alle tools. Is er een actief project, dan wordt het voorbeeld eigen werk van dát project
+// (onder die naam) en blijft het project van de app staan. Is er geen actief project, dan wordt de naam van het voorbeeld het project.
+function ocEigenVolg(klik) { try { if (!window.ocPk || !ocPk.knop) return; const p0 = (() => { try { return JSON.parse(localStorage.getItem('oc.project')); } catch { return null; } })(), geen = !(p0 && typeof p0.name === 'string' && p0.name.trim()); if (!(klik === true && geen) && !ocEigenKeuze()) return; const k = ocPk.knop, n = String(k.title || '').trim().slice(0, 80); if (!/^Project:/.test(k.getAttribute('aria-label') || '') || k.querySelector('.oc-pk-vb') || !n || /^((mijn|nieuwe?) )?project( \d+)?$|^naamloos$/i.test(n) || (window.ocStandaardNaam && ocStandaardNaam(n))) return; const p = JSON.parse(localStorage.getItem('oc.project')); if (p && p.name === n) return; if (klik === true && p && typeof p.name === 'string' && p.name.trim() && !/^((mijn|nieuwe?) )?project( \d+)?$|^naamloos$/i.test(p.name.trim()) && !(window.ocStandaardNaam && ocStandaardNaam(p.name.trim())) && ocPk.naam) { ocPk.naam(p.name.trim()); return; } localStorage.setItem('oc.project', JSON.stringify({ name: n, since: Date.now() })); let h = []; try { h = JSON.parse(localStorage.getItem('oc-app.projects')) || []; } catch {} if (!Array.isArray(h)) h = []; localStorage.setItem('oc-app.projects', JSON.stringify([n].concat(h.filter(y => y !== n)).slice(0, 8))); if (geen) ocEigenZet(); } catch {} }
+document.addEventListener('click', e => { if (e.target.closest && e.target.closest('#vb-eigen, .vb-eigen')) { ocEigenZet(); setTimeout(() => ocEigenVolg(true), 0); } }, true);
 addEventListener('load', () => setTimeout(ocEigenVolg, 0));
 // Koos je in de app een ander project en heeft de tool er nog geen eigen lijst voor (een voorbeeld telt niet), dan geeft ocProjectNieuw die naam terug: begin dan een nieuwe, lege lijst op de manier van de tool.
 // Eén keer per projectkeuze: st.ocSince onthoudt welke keuze (oc.project.since) al verwerkt is. Is de open lijst nog leeg (o.leeg) en heeft ze een standaardnaam, dan krijgt ze de naam (o.noem) en komt er niets bij.
@@ -2330,6 +2439,49 @@ function ocProjectNieuw(st, arr, o = {}) { const n = ocProject(''), cur = o.cur 
 // De app houdt tools open: kies je daar een ander project, dan voert de tool fn() opnieuw uit (openen of nieuw beginnen). Typ je net in deze tool, dan pas bij de volgende focus of als ze weer zichtbaar wordt.
 function ocProjectVolg(fn) { let wacht = false; const typt = () => { const a = document.activeElement; return document.hasFocus() && !!a && (a.isContentEditable || a.tagName === 'TEXTAREA' || a.tagName === 'SELECT' || (a.tagName === 'INPUT' && !/^(checkbox|radio|button|submit|reset|range|color|file)$/i.test(a.type))); }; const doe = () => { if (!wacht) return; wacht = false; try { fn(); } catch (e) { console.error(e); } }; addEventListener('storage', e => { if (e.key === 'oc.project' && e.newValue !== e.oldValue) { wacht = true; if (!typt()) doe(); } }); addEventListener('focus', doe); document.addEventListener('visibilitychange', doe); }
 function ocPickProject(st, arr, cur = 'current') { const p = ocProject(''); if (!p || !st || !Array.isArray(st[arr])) return; if (ocEigenKeuze()) return; let u = st[arr].find(x => x && x.name === p); if (!u) { const o = ocProjectOud(); u = st[arr].find(x => x && o.includes(x.name)); if (u) u.name = p; } if (u) st[cur] = u.id; }   // open het actieve project uit de app
+// "Maak er mijn eigen van" (v4): één regel voor alle tools, zoals in Risicomatrix, Takenbord en Projectrealisme.
+// arr: de lijsten van de tool (wordt ter plaatse aangepast); vb: het voorbeeld dat eigen werk wordt.
+// o.van(u): het project van een lijst (standaard de naam); o.leeg(u): nog geen werk; o.zet(u, naam): geef de lijst dat project (standaard de naam);
+// o.houd: velden die de lege lijst van het project houdt (bv. ['name'] als de naam niet het project is).
+// 1. Actief project zonder werk hier: het voorbeeld komt in de lege lijst van dat project (zelfde id). Nooit een tweede, lege lijst met die naam.
+// 2. Actief project met werk hier: het voorbeeld blijft een apart project onder zijn eigen naam (" 2" bij botsing). De app houdt haar project.
+// 3. Geen actief project: de naam van het voorbeeld wordt het project van de app. Een lege lijst met een standaardnaam verdwijnt.
+// Geeft { u: de lijst die nu open moet, melding } terug.
+function ocEigenLijst(arr, vb, o = {}) {
+  const van = o.van || (u => u.name), zet = o.zet || ((u, n) => { u.name = n; }), leeg = o.leeg || (() => false);
+  const zacht = v => String(v || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
+  const std = v => { v = String(v || '').trim(); return !v || /^((mijn|nieuwe?) )?project( \d+)?$|^naamloos$/i.test(v) || !!(window.ocStandaardNaam && ocStandaardNaam(v)); };
+  let ap = ''; try { const p = JSON.parse(localStorage.getItem('oc.project')); ap = p && typeof p.name === 'string' ? p.name.trim().slice(0, 80) : ''; } catch {}
+  if (std(ap)) ap = '';
+  delete vb.voorbeeld;
+  const naam = String(van(vb) || '').replace(/^voorbeeld:\s*/i, '').replace(/\s*\(voorbeeld\)$/i, '').trim().slice(0, 80) || String(o.basis || '').trim().slice(0, 80) || 'Voorbeeld';
+  const weg = x => { const i = arr.indexOf(x); if (i >= 0) arr.splice(i, 1); };
+  const ander = () => arr.filter(x => x && x !== vb && !x.voorbeeld);
+  const ok = 'Het voorbeeld is nu van jou';
+  if (ap) {
+    const zelfde = ander().filter(x => zacht(van(x)) === zacht(ap)), vol = zelfde.find(x => !leeg(x));
+    if (vol) {
+      let n = naam, i = 2;
+      while (zacht(n) === zacht(ap) || ander().some(x => zacht(van(x)) === zacht(n))) n = naam + ' ' + i++;
+      zet(vb, n); zelfde.filter(x => leeg(x)).forEach(weg);   // een lege lijst van het project ernaast heeft geen zin: weg
+      try { localStorage.removeItem(ocKeuzeSleutel()); } catch {}   // dan hernoemt ocEigenVolg het voorbeeld niet en volgt de tool bij herladen de app
+      return { u: vb, apart: n, melding: `${ok}, als apart project ${n}. ${van(vol)} blijft zoals het was.` };
+    }
+    if (zelfde.length) {   // de lege lijst van het project krijgt de inhoud van het voorbeeld
+      const doel = zelfde[0];
+      const houd = ['id'].concat(o.houd || []);
+      Object.keys(doel).forEach(k => { if (!houd.includes(k) && !(k in vb)) delete doel[k]; });
+      Object.keys(vb).forEach(k => { if (!houd.includes(k)) doel[k] = vb[k]; });
+      zet(doel, ap); zelfde.forEach(x => { if (x !== doel) weg(x); }); weg(vb);
+      return { u: doel, melding: ok };
+    }
+    zet(vb, ap); return { u: vb, melding: ok };
+  }
+  ander().filter(x => leeg(x) && (std(van(x)) || std(x.name) || zacht(van(x)) === zacht(naam))).forEach(weg);
+  zet(vb, naam);
+  try { localStorage.setItem('oc.project', JSON.stringify({ name: naam, since: Date.now() })); let h = []; try { h = JSON.parse(localStorage.getItem('oc-app.projects')) || []; } catch {} if (!Array.isArray(h)) h = []; localStorage.setItem('oc-app.projects', JSON.stringify([naam].concat(h.filter(y => y !== naam)).slice(0, 8))); ocEigenZet(); } catch {}
+  return { u: vb, melding: ok };
+}
 
 /* ---------- Inhoud: vijf vormen van weerstand (eigen formulering) ----------
    Elke vorm heeft een label, een typische uitspraak, wat erachter zit en wat helpt.
@@ -2402,7 +2554,7 @@ const TIPS = {
 /* ---------- Opslag ---------- */
 const KEY = 'weerstand.v1';
 const uid = () => Math.random().toString(36).slice(2, 10);
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };   // lokale datum, niet UTC (om 00:30 was het anders nog gisteren)
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
 const escA = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));   // waarde in een attribuut: ook ids, statussen, datums en getallen
@@ -2509,7 +2661,8 @@ function bronScores(scan) {
     const vals = B.q.map((_, i) => bronVal(scan, 'b' + B.id + i));
     const known = vals.filter(v => typeof v === 'number');
     return { B, pct: known.length ? Math.round(known.reduce((s, v) => s + v, 0) / (known.length * 3) * 100) : null,
-             unknown: vals.filter(v => v === '?').length, answered: vals.filter(v => v !== undefined).length };
+             unknown: vals.filter(v => v === '?').length, answered: vals.filter(v => v !== undefined).length,
+             own: B.q.filter((_, i) => !LINK['b' + B.id + i] && typeof scan.a['b' + B.id + i] === 'number').length };   // eigen antwoorden bij de bron, niet overgenomen uit de scan
   });
   const known = els.filter(e => e.pct !== null);
   const max = known.length ? Math.max(...known.map(e => e.pct)) : null;
@@ -2524,8 +2677,10 @@ const topNames = br => joinEn(br.top.map(e => lc(e.B.name)));
 
 // Zeggen scan en bronnen hetzelfde?
 function agreement(dom, br) {
-  if (!dom.length || !br.top.length) return null;
-  const hit = dom.find(s => br.top.some(t => t.B.id === s.L.bron));
+  // Een bron die alleen uit overgenomen scan-signalen bestaat, is geen tweede bron: die telt hier niet mee.
+  const top = br.top.filter(t => t.own > 0);
+  if (!dom.length || !top.length) return null;
+  const hit = dom.find(s => top.some(t => t.B.id === s.L.bron));
   return hit ? { kind:'match', lvl:hit.L, bron:BRON(hit.L.bron) } : { kind:'diff' };
 }
 
@@ -3055,9 +3210,14 @@ $('vb-wis').addEventListener('click', () => {
   toast('Voorbeeld gewist', restore);
 });
 $('vb-eigen').addEventListener('click', () => {
-  // De doelgroepen van het voorbeeld horen samen: ze worden allemaal van jou.
-  state.groups.forEach(x => { delete x.voorbeeld; }); save(); render();
-  toast('Het voorbeeld is nu van jou');
+  // De doelgroepen van het voorbeeld horen samen: ze worden allemaal van jou, en bij hetzelfde project.
+  // Eén regel voor "Maak er mijn eigen van" (ocEigenLijst): met een actief project zonder doelgroepen met werk hier horen ze bij dat project
+  // (de lege doelgroep van dat project krijgt de eerste). Heeft dat project al doelgroepen met werk, dan blijft het voorbeeld bij zijn eigen project.
+  const vb = state.groups.filter(x => x.voorbeeld); if (!vb.length) return;
+  const r = ocEigenLijst(state.groups, vb.includes(cur()) ? cur() : vb[0], { van: x => x.project, zet: (x, n) => { x.project = n; }, leeg: g => !(g.plan || []).length && (g.scans || []).every(s => !Object.keys(s.a || {}).length) });
+  vb.forEach(x => { if (x !== r.u && state.groups.includes(x)) { delete x.voorbeeld; x.project = r.u.project; } });
+  state.current = r.u.id; save(); render();
+  toast(r.melding);
 });
 function deleteGroup(g) {
   const restore = snapshot(), idx = state.groups.indexOf(g);
@@ -3072,7 +3232,7 @@ function loadExample() {
   // Bestaat er al een voorbeeld, spring er dan naartoe in plaats van een tweede te maken.
   const bestaand = state.groups.find(x => x.voorbeeld);
   if (bestaand) { state.current = bestaand.id; save(); render(); toast('Dit is het voorbeeld'); return; }
-  const ago = n => { const d = new Date(); d.setDate(d.getDate() - n); return d.toISOString().slice(0, 10); };
+  const ago = n => { const d = new Date(); d.setDate(d.getDate() - n); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };   // lokale datum, niet UTC
   // w: per vorm drie signalen; b: per bron twee signalen (0 = herken ik niet … 3 = sterk, null = leeg).
   // Signalen die scan en bronnen delen (LINK), neemt de bron over uit de scan; wat hier bij de bron staat, telt daar niet.
   const fill = (w, b) => { const o = {}; w.forEach((v, li) => v.forEach((x, i) => { if (x !== null) o['w' + (li + 1) + i] = x; }));
@@ -3092,6 +3252,16 @@ function loadExample() {
   g2.project = 'Digitaal premieloket voor renovatie'; g2.size = '5'; g2.change = 'Zij sturen hun team aan tijdens de omschakeling';
   g2.scans = [{ id:uid(), date:ago(3), a:fill([[0, 0, 1], [0, 1, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]], [[0, 0], [1, 0], [0, 1], [1, 1], [2, 2]]) }];
   g1.voorbeeld = g2.voorbeeld = true;   // tellen niet mee in andere tools tot je het voorbeeld van jou maakt
+  // De lege doelgroep die de tool voor dit project klaarzette (nog niets ingevuld), laten we niet achter naast het voorbeeld (hertest d1: "Nieuwe doelgroep" bleef bewaard en lag klaar voor andere tools)
+  // Hertest e: alleen een echt onaangeroerde doelgroep valt weg. "Wat verandert er" telt als ingevuld zodra het afwijkt van de zin die de tool
+  // zelf klaarzette (uit een andere tool); elk ander veld met inhoud (ook een veld dat de tool later krijgt) houdt de doelgroep ook.
+  const zin0 = (() => { try { const c = ocSharedChange('weerstand'); return c ? c.text.slice(0, 200).trim() : ''; } catch { return ''; } })();
+  const vastW = ['id', 'name', 'size', 'change', 'project', 'scans', 'plan'];
+  const leegW = x => !x.voorbeeld && !x.van && /^(nieuwe doelgroep)?$/i.test(String(x.name || '').trim()) && !String(x.size || '').trim() && !(x.plan || []).length
+    && (!String(x.change || '').trim() || String(x.change).trim() === zin0)
+    && !(x.scans || []).some(s => Object.keys((s && s.a) || {}).length || Object.keys(s || {}).some(k => !['id', 'date', 'a'].includes(k) && s[k] != null && s[k] !== ''))
+    && Object.keys(x).every(k => vastW.includes(k) || x[k] == null || x[k] === '' || x[k] === false || (Array.isArray(x[k]) && !x[k].length));
+  state.groups = state.groups.filter(x => !leegW(x));
   state.groups.push(g1, g2); state.current = g1.id; state.view = 'res'; state.step = 0;
   $('empty-state') && $('empty-state').remove();
   save(); render();
@@ -3105,7 +3275,8 @@ if (!state.current && state.groups[0]) state.current = state.groups[0].id;
 function ocKiesGroep() {
   const p = ocProject(''), c = cur(); if (!p || (c && !c.voorbeeld && c.project === p)) return;
   const oud = ocProjectOud(), L = state.groups.filter(g => !g.voorbeeld && (g.project === p || oud.includes(g.project)));
-  L.forEach(g => { g.project = p; }); if (L.length) { state.current = L[L.length - 1].id; if (state.view === 'all') state.view = 'res'; }
+  // Hertest f: na hernoemen blijft de open doelgroep open als ze bij dit project hoort (vroeger sprong de tool naar de laatste doelgroep)
+  L.forEach(g => { g.project = p; }); if (L.length && !(c && L.includes(c))) { state.current = L[L.length - 1].id; if (state.view === 'all') state.view = 'res'; }
 }
 // Een ander project gekozen in de app en nog geen doelgroep ervoor: begin er een, zoals met "+ Doelgroep", met dat project. De vorige blijft in haar tabblad.
 // Staat er nog geen enkele doelgroep, dan niet: de eerste doelgroep krijgt het project vanzelf.
@@ -3230,7 +3401,7 @@ window.ocBestand = (function () {
     var blob = new Blob([JSON.stringify({ app: 'Onder Constructie', version: 1, created: new Date().toISOString(), tool: id, data: data }, null, 1)], { type: 'application/json' });
     var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
     var stuk = slug(naam()) + (extraNaam ? '-' + slug(extraNaam) : '');
-    a.download = stuk + '-' + new Date().toISOString().slice(0, 10) + '.json';
+    a.download = stuk + '-' + new Date(Date.now() - new Date().getTimezoneOffset() * 6e4).toISOString().slice(0, 10) + '.json';   // lokale datum, niet UTC
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
     return keys.length;
   }
@@ -3412,15 +3583,51 @@ window.ocBestand = (function () {
   document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', start) : start();
   var eigenNaam = null, naamT = null;
   function projectNu() { try { var p = JSON.parse(localStorage.getItem('oc.project')); return p && typeof p.name === 'string' ? p.name.trim() : ''; } catch (e) { return ''; } }
+  /* Hertest f: is v de naam van een ander bestaand project, of een vroegere naam ervan? Dan een melding, anders ''.
+     Bestaande projecten: de lijst van de app (oc-app.projects), de projecten die de tools klaarleggen (oc-app.projecten-tools)
+     en de naamkaart (oc.project.namen). Een eigen vroegere naam terugnemen mag. Zo vermengt het werk van twee projecten nooit. */
+  function ocAnder(v, eigen, zonderPad) {   // zonderPad: de lijst van deze tool zelf telt niet (die is net al hernoemd)
+    var z = function (x) { return String(x == null ? '' : x).trim().toLowerCase(); }, zv = z(v), ze = z(eigen);
+    if (!zv || zv === ze) return '';
+    var rd = function (k, d) { try { var x = JSON.parse(localStorage.getItem(k)); return x == null ? d : x; } catch (e) { return d; } };
+    var m = rd('oc.project.namen', {}); if (!m || typeof m !== 'object' || Array.isArray(m)) m = {};
+    var ek = Object.keys(m).filter(function (k) { return z(k) === ze; })[0];
+    if (ek && Array.isArray(m[ek]) && m[ek].map(z).indexOf(zv) >= 0) return '';
+    var eig = Object.keys(m).filter(function (k) { return z(k) !== ze && Array.isArray(m[k]) && m[k].map(z).indexOf(zv) >= 0; })[0];
+    if (eig) return String(v).trim() + ' was vroeger de naam van ' + eig + '. Kies een andere naam, zo blijft het werk gescheiden.';
+    var namen = [].concat(rd('oc-app.projects', []) || [], Object.keys(m)), t = rd('oc-app.projecten-tools', {});
+    if (t && typeof t === 'object' && !Array.isArray(t)) Object.keys(t).forEach(function (k) { if (Array.isArray(t[k]) && !(zonderPad && k === location.pathname)) namen = namen.concat(t[k]); });
+    var hit = namen.filter(function (x) { return typeof x === 'string' && z(x) === zv; })[0];
+    return hit ? hit + ' is al een ander project. Kies een andere naam, zo blijft het werk gescheiden.' : '';
+  }
+  // Hertest f: gegevens van v16.51 hebben oc.project.oud maar nog geen naamkaart. Vul ze aan, ook voor wie de app (Start) niet opent.
+  function ocNaamMigreer() {
+    try {
+      var p = JSON.parse(localStorage.getItem('oc.project')); if (!p || typeof p.name !== 'string' || !p.name.trim() || !Array.isArray(p.oud) || !p.oud.length) return;
+      var m = {}; try { m = JSON.parse(localStorage.getItem('oc.project.namen')) || {}; } catch (e) {} if (!m || typeof m !== 'object' || Array.isArray(m)) m = {};
+      var mijn = Array.isArray(m[p.name]) ? m[p.name] : [];
+      var bij = p.oud.filter(function (x) { return typeof x === 'string' && x.trim() && x !== p.name && mijn.indexOf(x) < 0 && !Array.isArray(m[x])
+        && !Object.keys(m).some(function (k) { return k !== p.name && Array.isArray(m[k]) && m[k].indexOf(x) >= 0; }); });
+      if (!bij.length) return;
+      m[p.name] = mijn.concat(bij).slice(-10); localStorage.setItem('oc.project.namen', JSON.stringify(m));
+    } catch (e) {}
+  }
   function deelNaam(el) {
     var v = String(el.value || '').trim().slice(0, 80), nu = projectNu();
     // hernoem je de lijst van het actieve project (het veld stond op die naam toen je begon), dan krijgt het project in de app die naam mee
     if (ocStandaardNaam(v) || (nu && nu !== eigenNaam && nu !== el.__ocWas)) return;
     if ([].some.call(document.querySelectorAll('.vb-bar'), function (b) { return b.getClientRects().length; })) return;   // in het voorbeeld niet
     if (v === nu) return;
+    // Hertest f: de naam van een ander bestaand project (of een vroegere naam ervan) gaat niet naar de app: anders vermengt het werk.
+    var anders = ocAnder(v, nu, true); if (anders) { if (window.ocMeld) try { ocMeld(anders); } catch (e) {} return; }
     try {
       var oud = []; try { var p0 = JSON.parse(localStorage.getItem('oc.project')); if (p0 && Array.isArray(p0.oud)) oud = p0.oud.slice(-9); } catch (e) {}
       oud = oud.filter(function (x) { return x !== v; }); if (nu && oud.indexOf(nu) < 0) oud.push(nu);   // de vorige naam blijft gekend: tools en dossier vinden het project zo terug
+      // Naamkaart bijwerken: de nieuwe naam erft de vorige namen (transitief, hoogstens 10). Is v een vorige naam van een ander project, dan niet: geen vermenging.
+      var m = {}; try { m = JSON.parse(localStorage.getItem('oc.project.namen')) || {}; } catch (e) {} if (!m || typeof m !== 'object' || Array.isArray(m)) m = {};
+      if (Object.keys(m).some(function (k) { return k !== nu && Array.isArray(m[k]) && m[k].indexOf(v) >= 0; })) return;
+      oud = oud.concat(Array.isArray(m[nu]) ? m[nu] : []).filter(function (x, i, a) { return typeof x === 'string' && x !== v && a.indexOf(x) === i; }).slice(-10);
+      if (nu) delete m[nu]; m[v] = oud; localStorage.setItem('oc.project.namen', JSON.stringify(m));
       localStorage.setItem('oc.project', JSON.stringify({ name: v, since: Date.now(), oud: oud })); eigenNaam = v; el.__ocWas = v;
     } catch (e) {}
   }

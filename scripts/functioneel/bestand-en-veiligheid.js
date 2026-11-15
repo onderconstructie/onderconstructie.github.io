@@ -5,6 +5,10 @@ const tools = JSON.parse(fs.readFileSync(process.env.TOOLS || require('path').jo
 const PAY = `x"'><img src=x onerror="window.__x=(window.__x||0)+1"><svg onload="window.__x=(window.__x||0)+1">`;
 const proj = n => JSON.stringify({ name: n, since: Date.now() });
 const sig = () => { const m = document.querySelector('main') || document.body; const t = [...m.querySelectorAll('input,textarea')].filter(e => e.getClientRects().length).map(e => e.value).join('|') + '§' + m.innerText; return t.replace(/[\d\s]+/g, ' ').replace(/Voorbeeld geladen|Bewaard|Geopend[^ ]*/g, '').trim(); };
+// De eigen opslag van de tool (sleutels uit meta oc:opslag, ook met *; zonder oc.share.*): wat de tool bewaart, niet wat het scherm toont
+const opslag = () => { const m = document.querySelector('meta[name="oc:opslag"]'); const pat = (m ? m.content : '').split(',').map(x => x.trim()).filter(x => x && !x.startsWith('oc.share.') && !x.startsWith('oc.beeld.'));   // oc.beeld.*: een afgeleid beeld, geen werk
+  const eigen = k => pat.some(x => x.endsWith('*') ? k.startsWith(x.slice(0, -1)) : k === x); const o = {}; Object.keys(localStorage).filter(eigen).sort().forEach(k => { o[k] = localStorage.getItem(k); });
+  return JSON.stringify(o).replace(/\\"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z\\"/g, 'T'); };   // een tijdstempel van bewaren (Schets) is geen werk
 const zelfde = (a, b) => a && b && Math.abs(a.length - b.length) <= Math.max(12, a.length * 0.03);
 const klikTekst = async (p, re) => { const h = await p.evaluateHandle((src) => { const re = new RegExp(src, 'i'); return [...document.querySelectorAll('button,a,[role=button],[role=menuitem]')].find(e => e.getClientRects().length && re.test((e.innerText || '').trim())) || null; }, re.source); const el = h.asElement(); if (!el) return false; await el.click({ timeout: 1500 }).catch(() => {}); return true; };
 (async () => {
@@ -18,8 +22,11 @@ const klikTekst = async (p, re) => { const h = await p.evaluateHandle((src) => {
       const leeg = await p.evaluate(sig);
       r.vb = await klikTekst(p, /^voorbeeld( bekijken| laden)?$|bekijk (eerst )?een voorbeeld/); await p.waitForTimeout(700);
       if (r.vb) { r.eigen = await klikTekst(p, /maak er mijn eigen van/); await p.waitForTimeout(600);
-        const s1 = await p.evaluate(sig); r.len = s1.length;
-        await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(500); const s2 = await p.evaluate(sig); r.blijft = zelfde(s1, s2);
+        const s1 = await p.evaluate(sig); r.len = s1.length; await p.waitForTimeout(800); const o1 = await p.evaluate(opslag);   // eerst laten bewaren (sommige tools bewaren even later)
+        await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(500); const s2 = await p.evaluate(sig);
+        // Blijft het werk na herladen? Dezelfde eigen opslag, en het scherm toont niet de lege start (vroeger: tekstlengte, vals alarm bij Systeemkaart, Gap, Weerstand)
+        const o2 = await p.evaluate(opslag), start = await p.evaluate(() => !![...document.querySelectorAll('.oc-start')].find(e => e.getClientRects().length && !e.closest('[hidden]')));
+        r.blijft = o1 === o2 && o1 !== '{}' && !start;   // de startkaart zichtbaar = het werk staat niet op het scherm
         if (await p.$('#menu-btn')) { await p.click('#menu-btn').catch(() => {}); await p.waitForTimeout(200);
           const [dl] = await Promise.all([p.waitForEvent('download', { timeout: 3500 }).catch(() => null), p.click('[data-bestand="bewaar"]', { timeout: 1200 }).catch(() => {})]);
           if (dl) { r.f = require('os').tmpdir() + '/oc-' + t.id.replace(/\W/g, '') + '.' + dl.suggestedFilename().split('.').pop(); await dl.saveAs(r.f); r.bestand = dl.suggestedFilename(); } await p.keyboard.press('Escape'); }
