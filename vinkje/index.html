@@ -71,9 +71,15 @@ button { background:none; border:0; cursor:pointer; }
   display:flex; align-items:center; gap:0.375rem;
 }
 .tab .n { font-size:0.8125rem; font-weight:500; color:var(--slate-500); font-variant-numeric:tabular-nums; }
-.tab.active { background:var(--slate-800); border-color:var(--slate-800); color:var(--wit); }
-.tab.active .n { color:var(--slate-300); }
-.tab.add { color:var(--accent-dark); border-style:dashed; }
+.tab.active { background:var(--accent-dark); border-color:var(--accent-dark); color:var(--wit); }
+.tab.active .n { color:var(--accent-light); }
+.tab.add { color:var(--accent-dark); border-style:dashed; background:transparent; }
+.tab:not(.active):hover { border-color:#a7f3d0; background:var(--accent-50); }
+.tab .tn { max-width:12rem; overflow:hidden; text-overflow:ellipsis; }
+.tab svg { width:16px; height:16px; flex-shrink:0; }
+/* Tabbladen: alle lijsten naast elkaar, ook op een gsm; past het niet op één rij, dan lopen ze door op de volgende */
+#tabs.lists { flex-wrap:wrap; overflow:visible; margin:0 0 0.875rem; padding:0; }
+#tabs .tn { max-width:11rem; }
 
 /* Kaart */
 .card { background:var(--wit); border:1px solid var(--slate-200); border-radius:16px; box-shadow:0 1px 2px rgba(15,23,42,0.04); overflow:hidden; }
@@ -1383,6 +1389,9 @@ window.ocProjectkiezer = function (plek, o) {
   }
   var api = {
     teken: teken, sluit: sluit, hernoem: hernoem, knop: knop,
+    // Kiezen of een nieuwe maken van buiten het menu (bv. tabbladen): dezelfde weg als in het menu, dus ook de app volgt.
+    kies: function (nid) { if (bewerk) return; if (nid !== o.actief()) { o.kies(nid); vbKeuze(nid); overal(lijst().filter(function (x) { return x.id === nid; })[0]); } teken(); },
+    nieuw: function () { if (bewerk) return; sluit(false); var zelf = o.nieuw() === false; teken(); if (!zelf) hernoem({ nieuw: true }); },
     // Zet de naam van het actieve project zonder invulveld ("Maak er mijn eigen van" in een actief project). Zonder oc-sync: de app houdt haar project.
     naam: function (n) { n = String(n == null ? '' : n).trim().slice(0, 80); if (!n || typeof o.hernoem !== 'function' || bewerk) return; o.hernoem(n); teken(); },
     tabs: function () { var a = o.actief(); return [].slice.call(menu.querySelectorAll('.oc-pk-item[data-id] .oc-pk-i-naam')).map(function (el) { return [el, el.closest('[data-id]').getAttribute('data-id')]; }).concat([[knop.querySelector('.oc-pk-naam'), a]]); }
@@ -1430,6 +1439,7 @@ window.ocProjectkiezer = function (plek, o) {
 </header>
 
 <main class="main">
+  <div class="lists" id="tabs" role="tablist" aria-label="Je lijsten" hidden></div>
   <div class="import" id="import" hidden>
     <p>Gedeelde lijst: <strong id="import-name"></strong> (<span id="import-count"></span>)</p>
     <button class="btn btn-ghost" id="import-no">Negeer</button>
@@ -2348,7 +2358,26 @@ function itemHTML(it) {
 
 function renderTabs() {
   if (window.ocPk) ocPk.teken();
+  const t = $('tabs'); if (!t) return;
+  // Pas vanaf twee lijsten: één lijst heeft geen tabbladen nodig (de kiezer bovenaan blijft voor hernoemen en wissen).
+  if (state.lists.length < 2) { t.hidden = true; t.innerHTML = ''; return; }
+  const a = cur().id, plus = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
+  t.hidden = false;
+  t.innerHTML = state.lists.map(l => { const open = l.items.filter(i => !i.done).length, op = l.id === a;
+    return `<button type="button" class="tab${op ? ' active' : ''}" role="tab" aria-selected="${op}" tabindex="${op ? 0 : -1}" data-tab="${escA(l.id)}" title="${escA(l.name)}"><span class="tn">${esc(l.name)}</span>${l.voorbeeld ? '<span class="vb-tag">voorbeeld</span>' : ''}<span class="n" aria-label="${open} open">${open}</span></button>`; }).join('')
+    + `<button type="button" class="tab add" data-tab-nieuw>${plus}Nieuwe lijst</button>`;
 }
+$('tabs').addEventListener('click', e => {
+  const b = e.target.closest('[data-tab],[data-tab-nieuw]'); if (!b || !window.ocPk) return;
+  if (b.hasAttribute('data-tab-nieuw')) ocPk.nieuw(); else ocPk.kies(b.getAttribute('data-tab'));
+  if (!b.hasAttribute('data-tab-nieuw')) { const n = $('tabs').querySelector(`[data-tab="${CSS.escape(b.getAttribute('data-tab'))}"]`); if (n) n.focus(); }
+});
+// Pijltjes links en rechts, Home en End: zoals bij tabbladen gebruikelijk
+$('tabs').addEventListener('keydown', e => {
+  const L = [...$('tabs').querySelectorAll('[data-tab]')], i = L.indexOf(document.activeElement); if (i < 0) return;
+  const j = e.key === 'ArrowRight' ? (i + 1) % L.length : e.key === 'ArrowLeft' ? (i - 1 + L.length) % L.length : e.key === 'Home' ? 0 : e.key === 'End' ? L.length - 1 : -1;
+  if (j < 0) return; e.preventDefault(); ocPk.kies(L[j].getAttribute('data-tab')); const n = $('tabs').querySelector(`[data-tab="${CSS.escape(L[j].getAttribute('data-tab'))}"]`); if (n) n.focus();
+});
 
 function render() {
   const l = cur();
