@@ -900,6 +900,15 @@ header[data-oc-kop] { position:relative; z-index:30; }
 header[data-oc-kop]:focus-within, header[data-oc-kop]:has([aria-expanded="true"]) { z-index:200; }
 header[data-oc-kop] .oc-kop-acties { position:absolute; top:0.625rem; right:0.75rem; display:flex; align-items:center; min-height:44px; gap:0.25rem; z-index:20; }
 header[data-oc-kop] .oc-kop-acties:empty { display:none; }
+/* v16.62: deel-icoon "Deel deze tool", links van het menu. Grijs, 44 px, zoals de andere knoppen in de kop. */
+header[data-oc-kop] .oc-deel { display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px; min-width:44px; padding:0; margin:0; border:0; border-radius:12px; background:transparent; color:#64748b; cursor:pointer; flex:none; }
+header[data-oc-kop] .oc-deel:hover { background:rgba(100,116,139,0.12); color:#334155; }
+header[data-oc-kop] .oc-deel:focus-visible { outline:2px solid #047857; outline-offset:2px; }
+header[data-oc-kop] .oc-deel svg { width:20px; height:20px; }
+.oc-deel-melding { position:fixed; left:50%; bottom:calc(1.25rem + env(safe-area-inset-bottom, 0px)); transform:translateX(-50%); z-index:10050; max-width:calc(100vw - 2rem); padding:0.75rem 1rem; border-radius:12px; background:#1e293b; color:#ffffff; font:600 0.9375rem/1.4 'DM Sans', system-ui, sans-serif; box-shadow:0 8px 24px rgba(15,23,42,0.25); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) header[data-oc-kop] .oc-deel { color:#94a3b8; } :root:not([data-theme="light"]) header[data-oc-kop] .oc-deel:hover { color:#e2e8f0; background:rgba(148,163,184,0.16); } }
+:root[data-theme="dark"] header[data-oc-kop] .oc-deel { color:#94a3b8; }
+:root[data-theme="dark"] header[data-oc-kop] .oc-deel:hover { color:#e2e8f0; background:rgba(148,163,184,0.16); }
 header[data-oc-kop] .oc-kop-project { display:flex; justify-content:center; margin:0.875rem auto 0; max-width:100%; }
 header[data-oc-kop] .oc-kop-project:empty { display:none; }
 /* lange namen breken alleen op een woordgrens (Gedrags-verandering), nooit midden in een woorddeel: het blok zet zachte
@@ -967,8 +976,37 @@ header[data-oc-kop][data-stand="compact"]::before { content:""; order:-1; flex:n
     var w = a.getClientRects().length ? Math.ceil(a.getBoundingClientRect().width) : 0;
     if (kop.style.getPropertyValue('--oc-acties-b') !== w + 'px') kop.style.setProperty('--oc-acties-b', w + 'px');
   }
+  /* v16.62: "Deel deze tool". Deelt alleen de naam van de tool, één zin (meta description) en het gewone adres zonder ?... en #...:
+     nooit inhoud, een project of iets anders uit de adresbalk. Op een aanraakscherm het deelmenu van het toestel, anders de link naar het klembord. */
+  var DEEL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>';
+  function deelGegevens() {
+    var m = function (s) { var e = document.querySelector(s); return e ? String(e.getAttribute('content') || '').trim() : ''; };
+    var titel = m('meta[property="og:title"]') || String(document.title || '').trim();
+    return { title: titel, text: m('meta[name="description"]'), url: location.origin + location.pathname };
+  }
+  function deelMelding(t) {
+    var el = document.createElement('div'); el.className = 'oc-deel-melding'; el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite'); el.textContent = t;
+    document.body.appendChild(el); setTimeout(function () { el.remove(); }, 2600);
+  }
+  function deelKopieer(u) {
+    var klaar = function () { deelMelding('Link naar de tool gekopieerd'); };
+    var oud = function () { try { var t = document.createElement('textarea'); t.value = u; t.setAttribute('readonly', ''); t.style.position = 'fixed'; t.style.opacity = '0'; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); } catch (e) {} klaar(); };
+    try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(klaar, oud); else oud(); } catch (e) { oud(); }
+  }
+  function deel() {
+    var g = deelGegevens(), aanraak = false; try { aanraak = matchMedia('(pointer: coarse)').matches; } catch (e) {}
+    if (aanraak && navigator.share) { navigator.share(g).catch(function () {}); return; }
+    deelKopieer(g.url);
+  }
+  function deelKnop() {
+    if (!kop) return; var a = kop.querySelector('.oc-kop-acties');
+    if (!a) { a = document.createElement('div'); a.className = 'oc-kop-acties'; kop.appendChild(a); }   // een tool zonder menu (Kompas): de plek rechts in de kop maken
+    if (a.querySelector('.oc-deel')) return;
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'oc-deel'; b.setAttribute('aria-label', 'Deel deze tool'); b.title = 'Deel deze tool'; b.innerHTML = DEEL_SVG;
+    b.addEventListener('click', deel); a.insertBefore(b, a.firstChild);
+  }
   function start() {
-    kop = kop || document.querySelector('header[data-oc-kop]'); try { breekTitel(); } catch (e) {} try { terugSpan(); } catch (e) {}
+    kop = kop || document.querySelector('header[data-oc-kop]'); try { breekTitel(); } catch (e) {} try { terugSpan(); } catch (e) {} try { deelKnop(); } catch (e) {}
     try { meetActies(); var a = kop && kop.querySelector('.oc-kop-acties'); if (a && window.ResizeObserver) new ResizeObserver(meetActies).observe(a); } catch (e) {}
     later();   // pas na de eigen start van de tool (ook als die op DOMContentLoaded wacht), vóór de volgende paint
     try { new MutationObserver(later).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['hidden', 'class', 'style'] }); } catch (e) {}

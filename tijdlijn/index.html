@@ -1069,6 +1069,15 @@ header[data-oc-kop] { position:relative; z-index:30; }
 header[data-oc-kop]:focus-within, header[data-oc-kop]:has([aria-expanded="true"]) { z-index:200; }
 header[data-oc-kop] .oc-kop-acties { position:absolute; top:0.625rem; right:0.75rem; display:flex; align-items:center; min-height:44px; gap:0.25rem; z-index:20; }
 header[data-oc-kop] .oc-kop-acties:empty { display:none; }
+/* v16.62: deel-icoon "Deel deze tool", links van het menu. Grijs, 44 px, zoals de andere knoppen in de kop. */
+header[data-oc-kop] .oc-deel { display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px; min-width:44px; padding:0; margin:0; border:0; border-radius:12px; background:transparent; color:#64748b; cursor:pointer; flex:none; }
+header[data-oc-kop] .oc-deel:hover { background:rgba(100,116,139,0.12); color:#334155; }
+header[data-oc-kop] .oc-deel:focus-visible { outline:2px solid #047857; outline-offset:2px; }
+header[data-oc-kop] .oc-deel svg { width:20px; height:20px; }
+.oc-deel-melding { position:fixed; left:50%; bottom:calc(1.25rem + env(safe-area-inset-bottom, 0px)); transform:translateX(-50%); z-index:10050; max-width:calc(100vw - 2rem); padding:0.75rem 1rem; border-radius:12px; background:#1e293b; color:#ffffff; font:600 0.9375rem/1.4 'DM Sans', system-ui, sans-serif; box-shadow:0 8px 24px rgba(15,23,42,0.25); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) header[data-oc-kop] .oc-deel { color:#94a3b8; } :root:not([data-theme="light"]) header[data-oc-kop] .oc-deel:hover { color:#e2e8f0; background:rgba(148,163,184,0.16); } }
+:root[data-theme="dark"] header[data-oc-kop] .oc-deel { color:#94a3b8; }
+:root[data-theme="dark"] header[data-oc-kop] .oc-deel:hover { color:#e2e8f0; background:rgba(148,163,184,0.16); }
 header[data-oc-kop] .oc-kop-project { display:flex; justify-content:center; margin:0.875rem auto 0; max-width:100%; }
 header[data-oc-kop] .oc-kop-project:empty { display:none; }
 /* lange namen breken alleen op een woordgrens (Gedrags-verandering), nooit midden in een woorddeel: het blok zet zachte
@@ -1136,8 +1145,37 @@ header[data-oc-kop][data-stand="compact"]::before { content:""; order:-1; flex:n
     var w = a.getClientRects().length ? Math.ceil(a.getBoundingClientRect().width) : 0;
     if (kop.style.getPropertyValue('--oc-acties-b') !== w + 'px') kop.style.setProperty('--oc-acties-b', w + 'px');
   }
+  /* v16.62: "Deel deze tool". Deelt alleen de naam van de tool, één zin (meta description) en het gewone adres zonder ?... en #...:
+     nooit inhoud, een project of iets anders uit de adresbalk. Op een aanraakscherm het deelmenu van het toestel, anders de link naar het klembord. */
+  var DEEL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>';
+  function deelGegevens() {
+    var m = function (s) { var e = document.querySelector(s); return e ? String(e.getAttribute('content') || '').trim() : ''; };
+    var titel = m('meta[property="og:title"]') || String(document.title || '').trim();
+    return { title: titel, text: m('meta[name="description"]'), url: location.origin + location.pathname };
+  }
+  function deelMelding(t) {
+    var el = document.createElement('div'); el.className = 'oc-deel-melding'; el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite'); el.textContent = t;
+    document.body.appendChild(el); setTimeout(function () { el.remove(); }, 2600);
+  }
+  function deelKopieer(u) {
+    var klaar = function () { deelMelding('Link naar de tool gekopieerd'); };
+    var oud = function () { try { var t = document.createElement('textarea'); t.value = u; t.setAttribute('readonly', ''); t.style.position = 'fixed'; t.style.opacity = '0'; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); } catch (e) {} klaar(); };
+    try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(klaar, oud); else oud(); } catch (e) { oud(); }
+  }
+  function deel() {
+    var g = deelGegevens(), aanraak = false; try { aanraak = matchMedia('(pointer: coarse)').matches; } catch (e) {}
+    if (aanraak && navigator.share) { navigator.share(g).catch(function () {}); return; }
+    deelKopieer(g.url);
+  }
+  function deelKnop() {
+    if (!kop) return; var a = kop.querySelector('.oc-kop-acties');
+    if (!a) { a = document.createElement('div'); a.className = 'oc-kop-acties'; kop.appendChild(a); }   // een tool zonder menu (Kompas): de plek rechts in de kop maken
+    if (a.querySelector('.oc-deel')) return;
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'oc-deel'; b.setAttribute('aria-label', 'Deel deze tool'); b.title = 'Deel deze tool'; b.innerHTML = DEEL_SVG;
+    b.addEventListener('click', deel); a.insertBefore(b, a.firstChild);
+  }
   function start() {
-    kop = kop || document.querySelector('header[data-oc-kop]'); try { breekTitel(); } catch (e) {} try { terugSpan(); } catch (e) {}
+    kop = kop || document.querySelector('header[data-oc-kop]'); try { breekTitel(); } catch (e) {} try { terugSpan(); } catch (e) {} try { deelKnop(); } catch (e) {}
     try { meetActies(); var a = kop && kop.querySelector('.oc-kop-acties'); if (a && window.ResizeObserver) new ResizeObserver(meetActies).observe(a); } catch (e) {}
     later();   // pas na de eigen start van de tool (ook als die op DOMContentLoaded wacht), vóór de volgende paint
     try { new MutationObserver(later).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['hidden', 'class', 'style'] }); } catch (e) {}
@@ -2265,7 +2303,30 @@ const ocExport = (() => {
     return new Blob([...stuk, ...centraal, new Uint8Array(e.buffer)], { type:'application/vnd.oasis.opendocument.text' });
   }
   const NS = 'xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0" xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0" xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:meta="urn:oasis:names:tc:opendocument:xmlns:meta:1.0" office:version="1.3"';
+  /* v16.62: "Open in Kladblok". Dezelfde tekst als het tekstdocument (tekstVan), als eenvoudige markdown: koppen met #, lijsten met -,
+     de rest als alinea's. Klaargelegd in localStorage 'oc.naar.kladblok' (formaat: zie het commentaar bovenaan Kladblok); Kladblok maakt er een nieuwe notitie van. */
+  function naarMd(titel, sub, delen) {
+    const r = ['# ' + titel, '']; if (sub) r.push(sub, ''); let lijst = false;
+    delen.forEach(d => { const t = String(d.t || '').trim(); if (!t) return;
+      if (/^[•·] /.test(t)) { r.push('- ' + t.replace(/^[•·] /, '')); lijst = true; return; }
+      if (lijst) { r.push(''); lijst = false; }
+      r.push((d.soort === 'h' ? '## ' : '') + t, ''); });
+    return r.join('\n').replace(/\n{3,}/g, '\n\n').trim() + '\n';
+  }
+  async function naarKladblok(build, name, opts = {}) {
+    let titel = '', sub = '', delen = [];
+    if (typeof opts.tekst === 'string') { titel = opts.title || ''; sub = opts.subtitle || ''; delen = opts.tekst.split('\n').map(t => t.trim()).filter(Boolean).map(t => ({ t, soort: t.length <= 60 && /[A-Z]/.test(t) && t === t.toUpperCase() ? 'h' : 'p' })); }
+    else await withPage(build, widthFor(opts), async node => { const kop = node.children[0], inhoud = node.children[1];
+      titel = kop.children[0].children[0].textContent.trim(); sub = kop.children[0].children[1] ? kop.children[0].children[1].textContent.trim() : ''; delen = tekstVan(inhoud); });
+    const og = document.querySelector('meta[property="og:title"]'), tool = String(og ? og.getAttribute('content') : document.title).split(/ [·–|] /)[0].trim();
+    const id = location.pathname.split('/').filter(Boolean).pop() || 'tool';
+    titel = titel || tool;
+    try { localStorage.setItem('oc.naar.kladblok', JSON.stringify({ t: Date.now(), van: id, vanTitel: tool, titel, soort: 'md', tekst: naarMd(titel, sub, delen) })); }
+    catch (e) { if (window.ocMeld) try { ocMeld('Openen in Kladblok lukt nu niet: de opslag van dit toestel is vol.'); } catch (x) {} return; }
+    location.href = '/zakmes/kladblok/?van=' + encodeURIComponent(id);
+  }
   async function odt(build, name, opts = {}) {
+    if (kladNu) { kladNu = false; return naarKladblok(build, name, opts); }
     const width = widthFor(opts);
     if (typeof opts.tekst !== 'string') await load(LIBS.h2c);
     let titel = '', sub = '', delen = [], beeld = null, verh = 0, baseline = '';
@@ -2322,9 +2383,10 @@ ${delen.map(p).join('\n')}
     mo.observe(document.body, { childList:true, subtree:true, characterData:true });
     setTimeout(() => mo.disconnect(), 60000);
   }
-  let wilOdt = 0;
+  let wilOdt = 0, wilKlad = 0, kladNu = false;
   // Vroeg de gebruiker net het tekstdocument? (Voor een tool met een eigen PDF-weg: die roept dan zelf odt() aan.)
-  const vraagtOdt = () => { const ja = !!wilOdt && Date.now() - wilOdt < 5000; wilOdt = 0; if (ja) odtMelding(); return ja; };
+  // v16.62: ook "Open in Kladblok" loopt langs deze weg: odt() ziet kladNu en geeft de tekst dan aan Kladblok in plaats van een bestand te maken.
+  const vraagtOdt = () => { const klad = !!wilKlad && Date.now() - wilKlad < 5000, ja = klad || (!!wilOdt && Date.now() - wilOdt < 5000); wilOdt = 0; wilKlad = 0; kladNu = klad; if (ja && !klad) odtMelding(); return ja; };
   const pdfOfOdt = async (build, name, opts) => vraagtOdt() ? odt(build, name, opts) : pdf(build, name, opts);
   // Naast elke PDF-knop een knop "Tekstdocument": zelfde vorm, eigen icoon en woord.
   const PDF_KNOP = 'button[data-exp="pdf"], button[data-act="pdf"], button[data-export="pdf"], button[data-ocm="pdf"], button[data-mx="pdf"], button[data-dl="pdf"], #exportPdfBtn, #exportPdf, [data-oc-pdf]';
@@ -2364,7 +2426,7 @@ ${delen.map(p).join('\n')}
         k.querySelectorAll('small').forEach(e => e.remove());
         const w = document.createTreeWalker(k, NodeFilter.SHOW_TEXT); let n, gevonden = false;
         while ((n = w.nextNode())) if (/pdf/i.test(n.nodeValue)) { gevonden = true; n.nodeValue = n.nodeValue.replace(/^.*als PDF of op papier.*$/i, 'Download als tekstdocument').replace(/PDF of afdrukken/i, 'Tekstdocument').replace(/als PDF/i, 'als tekstdocument').replace(/PDF/i, 'Tekstdocument'); }
-        const hulp = 'Download als tekstdocument (ODT). Open het in Word, LibreOffice of Google Docs.';
+        const hulp = 'Download als tekstdocument (ODT). Opent in elke tekstverwerker.';   // v16.62: geen merknamen
         k.title = hulp; if (!gevonden || k.hasAttribute('aria-label')) k.setAttribute('aria-label', 'Download als tekstdocument (ODT)');
         b.after(k);
       }
@@ -2378,8 +2440,32 @@ ${delen.map(p).join('\n')}
       }
       if (k.disabled !== b.disabled) k.disabled = b.disabled;
       if (k.hidden !== b.hidden) k.hidden = b.hidden;
+      kladKnop(k);
     });
   }
+  // v16.62: naast "Tekstdocument" een knop "Open in Kladblok": zelfde vorm, eigen icoon. Niet in Kladblok zelf.
+  const KLAD_ICOON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3h8a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M6 7H4M6 12H4M6 17H4"/><path d="M10 8h4M10 12h4"/></svg>';
+  function kladKnop(k) {
+    if (/^\/zakmes\/kladblok\//.test(location.pathname)) return;
+    let kb = k.nextElementSibling && k.nextElementSibling.dataset.ocKlad ? k.nextElementSibling : null;
+    if (!kb) {
+      kb = k.cloneNode(true); delete kb.dataset.ocOdt; delete kb.dataset.ocBreed; kb.dataset.ocKlad = '1'; kb.style.gridColumn = ''; kb.style.flex = '';
+      const sv = kb.querySelector('svg'); if (sv) { const st = sv.getAttribute('style'), kl = sv.getAttribute('class'); sv.outerHTML = KLAD_ICOON; const nw = kb.querySelector('svg'); if (st) nw.setAttribute('style', st); if (kl) nw.setAttribute('class', kl); }
+      const w = document.createTreeWalker(kb, NodeFilter.SHOW_TEXT); let n, gezet = false;
+      while ((n = w.nextNode())) if (/tekstdocument/i.test(n.nodeValue)) { n.nodeValue = gezet ? '' : n.nodeValue.replace(/^(\s*).*?(\s*)$/, '$1Open in Kladblok$2'); gezet = true; }
+      if (!gezet && !kb.querySelector('svg')) kb.textContent = 'Open in Kladblok';
+      kb.title = 'Open de tekst als nieuwe notitie in Kladblok'; kb.setAttribute('aria-label', 'Open in Kladblok');
+      k.after(kb);
+    }
+    if (kb.disabled !== k.disabled) kb.disabled = k.disabled;
+    if (kb.hidden !== k.hidden) kb.hidden = k.hidden;
+  }
+  document.addEventListener('click', e => {
+    const kb = e.target.closest && e.target.closest('[data-oc-klad]'); if (!kb) return;
+    e.preventDefault(); e.stopPropagation();
+    const k = kb.previousElementSibling, b = k && k.previousElementSibling; if (!b || kb.disabled) return;
+    wilKlad = Date.now(); b.click();
+  }, true);
   document.addEventListener('click', e => {
     const k = e.target.closest && e.target.closest('[data-oc-odt]'); if (!k) return;
     e.preventDefault(); e.stopPropagation();
