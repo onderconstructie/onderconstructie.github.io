@@ -98,6 +98,24 @@ const T = s => String(s || '').replace(/\s+/g, ' ').trim();
   }
   ok(!passend.length, 'op 1280 en 1440 vult de kaart het vak (minstens 70%, niets buiten beeld, zoom tot 1,6) bij laden, volledig beeld en Schikken' + (passend.length ? ': ' + passend.slice(0, 4).join(' | ') : ''));
   ok(!uitgelicht.length, 'uitlichten (actor of bevinding): alle uitgelichte elementen volledig in beeld' + (uitgelicht.length ? ': ' + uitgelicht.slice(0, 4).join(' | ') : ''));
+  // 9b. Op de gsm (390): bij laden, volledig beeld en Schikken alles in beeld; uitlichten snijdt nooit af
+  { const g = await b.newContext({ viewport:{ width:390, height:844 }, hasTouch:true, isMobile:true, serviceWorkers:'block' }), q = await g.newPage(); q.on('pageerror', e => PE.push('gsm: ' + String(e)));
+    await q.goto(B + PAD, { waitUntil:'networkidle' }); const weg = [];
+    const binnen = () => q.evaluate(() => { const s = document.getElementById('sk-svg').getBoundingClientRect(), P = document.getElementById('sk-paneel'), pr = P.getBoundingClientRect(), blad = getComputedStyle(P).position === 'fixed' && pr.height && !P.hasAttribute('data-leeg') ? pr.top : innerHeight, onder = Math.min(s.bottom, blad, innerHeight), boven = Math.max(s.top, 0), uit = [];
+      document.querySelectorAll('#sk-els .el:not(.vaag) .vorm').forEach(v => { const r = v.getBoundingClientRect(); if (r.left < s.left - 1 || r.right > s.right + 1 || r.top < boven - 1 || r.bottom > onder + 1) uit.push(v.closest('.el').dataset.el); }); return uit.length; });
+    for (const vb of ['premie', 'werkdruk', 'toxisch', 'thuis']) {
+      await q.evaluate(vb => window.systeem.laadVoorbeeld(true, vb), vb); await q.waitForTimeout(600);
+      await q.evaluate(() => scrollTo(0, 0)); await q.click('[data-p="sluit"]').catch(() => {}); await q.waitForTimeout(400);
+      let n = await binnen(); if (n) weg.push(vb + ' laden: ' + n);
+      await q.click('#z-alles'); await q.waitForTimeout(300); n = await binnen(); if (n) weg.push(vb + ' volledig beeld: ' + n);
+      await q.click('#b-schik'); await q.waitForTimeout(500); n = await binnen(); if (n) weg.push(vb + ' schikken: ' + n);
+      await q.click('#b-zie'); await q.waitForTimeout(300);
+      const m = Math.min(await q.locator('#sk-paneel [data-p="zie"]').count(), 6);
+      for (let i = 0; i < m; i++) { await q.locator('#sk-paneel [data-p="zie"]').nth(i).click(); await q.waitForTimeout(450); n = await binnen(); if (n) weg.push(vb + ' uitlichten ' + i + ': ' + n); await q.locator('#sk-paneel [data-p="zie"]').nth(i).click(); await q.waitForTimeout(150); }
+      await q.click('[data-p="sluit"]').catch(() => {}); await q.waitForTimeout(200);
+    }
+    ok(!weg.length, 'gsm 390: bij laden, volledig beeld, Schikken en uitlichten staat niets half buiten beeld' + (weg.length ? ': ' + weg.slice(0, 5).join(' | ') : ''));
+    await g.close(); }
   await laad({ id:'z', name:'Klein', over:'', ing:{}, els:[{ id:'a', t:'factor', n:'Werkdruk', x:0, y:0 }, { id:'b', t:'factor', n:'Fouten', x:260, y:0 }], ver:[{ id:'v', a:'a', b:'b', s:'+' }] });
   ok(await p.evaluate(() => window.systeem.view.k) <= 1.6, 'twee elementen worden niet reusachtig (zoom ' + (await p.evaluate(() => window.systeem.view.k)).toFixed(2) + ')');
   ok(PE.length === 0, '(controle) geen fouten in de pagina ' + PE.join(' | '));

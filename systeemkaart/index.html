@@ -608,6 +608,17 @@ select.sk-in { appearance:none; -webkit-appearance:none; padding-right:2.25rem; 
 .sk-actor-rij { display:flex; gap:0.5rem; align-items:stretch; }
 .sk-actor-rij .sk-in { flex:1; min-width:0; }
 .sk-actor-rij .sk-knop { margin:0; flex-shrink:0; }
+/* Kringnaam, wegen (1.5) */
+.sk-kring-li { display:flex; gap:0.375rem; align-items:stretch; }
+.sk-kring-li > button[data-p="zie"] { flex:1; min-width:0; }
+.sk-potlood { flex:none; width:44px; min-height:44px; display:grid; place-items:center; border:1.5px solid var(--slate-200); border-radius:12px; background:#fff; color:var(--slate-500); }
+.sk-potlood:hover { border-color:#10b981; color:#047857; }
+.sk-potlood svg { width:18px; height:18px; }
+.sk-lijst .sk-kring-li > .sk-potlood { width:44px; padding:0; justify-content:center; align-items:center; }   /* niet de volle breedte van een lijstknop */
+#sk-paneel .sk-lijst[style] .sk-kring-li > .sk-potlood { border:0; border-bottom:1px solid var(--slate-100); border-radius:0; }
+.sk-wegen { margin-top:0.25rem; }
+.sk-weg-kop { display:block; }
+.sk-weg-bij { display:block; font-style:normal; font-size:0.875rem; color:#047857; margin-top:0.125rem; }
 
 /* ---------- Laptop: ruimte voor de kaart ---------- */
 @media (min-width:1024px) {
@@ -1873,6 +1884,16 @@ window.ocProjectkiezer = function (plek, o) {
             <p class="sk-mw-klein">Het grijze vlak is de tijd waarin iets duwt. Bij een ingreep kies je hoe lang hij loopt: blijvend of tijdelijk. Een tijdelijke ingreep stopt na een tijd. Wat meteen verandert, zakt dan terug. Wat opstapelde, blijft.</p>
           </section>
           <section class="sk-mw-blok">
+            <h3>Samenhang en bewijs</h3>
+            <div class="sk-mw-kringen">
+              <figure><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="4" y="8" width="18" height="12" rx="3" fill="#ecfdf5" stroke="#047857" stroke-width="2"/><rect x="42" y="44" width="18" height="12" rx="3" fill="#fff" stroke="#047857" stroke-width="2"/><rect x="40" y="10" width="14" height="10" rx="2" fill="#fff" stroke="#94a3b8" stroke-width="1.5"/><path d="M22 14h16M47 20v22" stroke="#047857" stroke-width="3" stroke-linecap="round"/><path d="M13 20v26h27" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="3 3"/></svg>
+                <figcaption><b>Hoe hangt dit samen?</b><span>Kies twee elementen. De tool zoekt de wegen langs je pijlen en zegt per weg of meer van het ene meer of minder van het andere geeft.</span><small>In Inzicht, of bij een element</small></figcaption></figure>
+              <figure><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="6" y="16" width="44" height="28" rx="5" fill="#fff" stroke="#64748b" stroke-width="2"/><circle cx="48" cy="44" r="10" fill="#fff" stroke="#94a3b8" stroke-width="1.5"/><path d="M44 40h8M44 44h8M44 48h5" stroke="#047857" stroke-width="2" stroke-linecap="round"/></svg>
+                <figcaption><b>Hoe weten we dit?</b><span>Noteer bij een element of een pijl waar het vandaan komt: uit een gesprek, een cijfer, eigen ervaring. Een klein blad op de kaart toont waar dat staat.</span><small>Mag leeg</small></figcaption></figure>
+            </div>
+            <p class="sk-mw-klein">Geef een kring een naam in Inzicht, met het potlood. Dan praat je er samen makkelijker over.</p>
+          </section>
+          <section class="sk-mw-blok">
             <h3>Kunnen, kans krijgen, willen</h3>
             <p>Mensen doen iets als ze het kunnen, de kans krijgen en het willen. Kies bij een factor waar die over gaat. De tool kijkt dan of je ingreep op de juiste plek werkt: een opleiding helpt weinig als mensen de tijd niet krijgen.</p>
             <ul class="sk-mw-com">
@@ -2930,6 +2951,7 @@ function schoonEl(e, id) {
   if ((el.t === 'gedrag' || el.t === 'uitkomst') && ['meer', 'minder'].includes(e.doel)) el.doel = e.doel;   // wil je dit meer (vaker) of minder?   // kan je hier zelf iets aan doen?
   if (el.t === 'factor' && e.dyn === 'stapel') el.dyn = 'stapel';   // hoe verandert dit? standaard meteen; stapelt op = een voorraad (vanaf 1.2)
   if (el.t === 'ingreep' && e.duur === 'tijdelijk') el.duur = 'tijdelijk';   // hoe lang? standaard blijvend (vanaf 1.2)
+  { const u = tekst(e.uit, 300); if (u) el.uit = u; }   // hoe weten we dit? (vanaf 1.5; bij een pijl heette dit veld vroeger Waarom)
   return el;
 }
 let geknipt = false;   // te veel elementen of verbanden bij het laden: we melden het één keer
@@ -2943,9 +2965,11 @@ function schoonKaart(l) {
   (Array.isArray(l.ver) ? l.ver : []).forEach(v => {
     if (!v || typeof v !== 'object') return; if (ver.length >= MAX_VER) { geknipt = true; return; }
     const a = map.get(String(v.a)), b = map.get(String(v.b)); if (!a || !b || a === b || paar.has(a + '>' + b)) return; paar.add(a + '>' + b);
-    ver.push({ id: ID_OK.test(v.id) ? v.id : uid(), a, b, s: ['+', '-', '?'].includes(v.s) ? v.s : '+', w: [1, 2, 3].includes(+v.w) ? +v.w : 2, v: v.v === true, z: v.z === true, uit: tekst(v.uit, 200) });
+    ver.push({ id: ID_OK.test(v.id) ? v.id : uid(), a, b, s: ['+', '-', '?'].includes(v.s) ? v.s : '+', w: [1, 2, 3].includes(+v.w) ? +v.w : 2, v: v.v === true, z: v.z === true, uit: tekst(v.uit, 300) });
   });
   l.ver = ver;
+  // kringnamen: sleutel = de gesorteerde ids van de elementen in de kring
+  { const kn = {}; if (l.kringNamen && typeof l.kringNamen === 'object') Object.keys(l.kringNamen).forEach(k => { const ids = k.split(',').map(x => map.get(x)), n = tekst(l.kringNamen[k], 40); if (n && ids.length >= 2 && ids.every(Boolean)) kn[ids.slice().sort().join(',')] = n; }); if (Object.keys(kn).length) l.kringNamen = kn; else delete l.kringNamen; }
   const ingSchoon = o => { const r = {}; if (o && typeof o === 'object') Object.keys(o).forEach(k => { const id = map.get(k); if (id && (o[k] === 1 || o[k] === -1)) r[id] = o[k]; }); return r; };
   l.ing = ingSchoon(l.ing);
   const a = ingSchoon(l.ingA); if (Object.keys(a).length) l.ingA = a; else delete l.ingA;
@@ -3066,7 +3090,7 @@ function inBeeld(id) {
 // nooit verder dan 1,2 x de passende zoom van de hele kaart, en nooit zo ver dat iets van het uitgelichte deel buiten beeld valt.
 const MARGE = 24, ZOOM_MAX = 1.6;
 // gsm en tablet: alleen wat boven het blad zichtbaar is; laptop: het hele kaartvak
-function vakVan(r) { const zicht = smal(), boven = MARGE + (zicht ? Math.max(0, -r.top) : 0), onder = MARGE + (zicht ? Math.max(0, r.bottom - (innerHeight - bladHoogte())) : 0); return { links:MARGE, rechts:MARGE + 48, boven, onder, w:r.width - MARGE - (MARGE + 48), h:r.height - boven - onder }; }
+function vakVan(r) { const zicht = smal(), M = innerWidth < 600 ? 12 : MARGE, boven = M + 32 + (zicht ? Math.max(0, -r.top) : 0), onder = M + (zicht ? Math.max(0, r.bottom - (innerHeight - bladHoogte())) : 0); return { links:M, rechts:M + 48, boven, onder, w:r.width - M - (M + 48), h:r.height - boven - onder }; }
 function kader(els) { let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity; els.forEach(e => { const m = mt(e); x0 = Math.min(x0, e.x - m.w / 2); x1 = Math.max(x1, e.x + m.w / 2 + 14); y0 = Math.min(y0, e.y - m.h / 2 - 22); y1 = Math.max(y1, e.y + m.h / 2 + 4); }); return { x0, y0, x1, y1 }; }   // +14 en -22: de badges rechtsboven en het pijltje van wat je wil
 const pasZoom = (b, v) => Math.min(v.w / (b.x1 - b.x0 || 1), v.h / (b.y1 - b.y0 || 1));
 // Verandert het vak van grootte (een balk verschijnt, het paneel opent) terwijl de kaart nog passend staat, dan past ze opnieuw.
@@ -3081,9 +3105,10 @@ function allesInBeeld(ids, echt, buren) {
   if (!els.length || !r.width) { view.k = 1; view.x = r.width / 2; view.y = r.height / 2; zetView(); return; }
   const v = vakVan(r), b = kader(els), heel = pasZoom(kader(l.els), v), past = pasZoom(b, v);
   let k;
-  if (!ids) k = clamp(past, typeof echt === 'number' ? echt : echt ? 0.3 : innerWidth < 600 ? 0.82 : 0.35, ZOOM_MAX);   // op gsm bij het laden zoals voorheen: leesbaar, en schuiven met je vinger
-  else if (smal()) k = clamp(past, innerWidth < 600 ? 0.4 : 0.6, 1.25);   // gsm en tablet zoals voorheen: leesbaar, schuiven met je vinger
+  if (!ids) k = Math.min(past, ZOOM_MAX);   // overal passend: niets buiten beeld (inzoomen en schuiven kan je zelf)
+  else if (smal()) k = Math.min(past, 1.25);   // gsm en tablet: het uitgelichte deel volledig in beeld
   else k = Math.max(Math.min(past, Math.max(heel, 0.3) * 1.2, ZOOM_MAX), 0.2);
+  k = Math.max(k, 0.12);   // ook als het blad bijna alles bedekt
   view.k = k; view.x = v.links + v.w / 2 - (b.x0 + b.x1) / 2 * k; view.y = v.boven + v.h / 2 - (b.y0 + b.y1) / 2 * k; zetView(); if (ids) autoNa();
 }
 
@@ -3160,7 +3185,33 @@ function inKringSet(l) {
   return res;
 }
 const KRING_NAAM = { R:'Versterkende kring (maakt groter)', B:'Remmende kring (remt af)', '?':'Kring met een twijfel' };
+const KRING_KORT = { R:'versterkende kring', B:'remmende kring', '?':'kring met een twijfel' };
 const KRING_UIT = { R:'Maakt een verandering groter, ten goede of ten kwade.', B:'Duwt terug naar een evenwicht. Daarom verandert er soms weinig.', '?':'Er zit een verband in waarvan je niet weet of het meer of minder geeft.' };
+/* ---------- Hoe hangt dit samen? Wegen van A naar B langs de pijlen ----------
+   Alle enkelvoudige wegen tot 6 pijlen, de kortste eerst (hoogstens 5 getoond). Netto-effect van een weg: het product van de tekens;
+   een pijl "weet ik niet" maakt de weg onbepaald; een pijl "pas na een tijd" maakt de weg traag. */
+const WEG_MAX = 6, WEG_TOON = 5;
+function wegen(l, a, b) {
+  const res = [], uit = new Map(l.els.map(e => [e.id, []])); l.ver.forEach(v => { if (uit.has(v.a)) uit.get(v.a).push(v); });
+  if (!a || !b || a === b || !uit.has(a) || !uit.has(b)) return { lijst:[], totaal:0, tegen:false };
+  let budget = 20000; const op = new Set([a]), pad = [];
+  const dfs = u => { if (--budget < 0 || res.length >= 400) return; for (const v of uit.get(u)) { if (v.b === b) { res.push(pad.concat(v)); continue; } if (op.has(v.b) || pad.length + 1 >= WEG_MAX) continue; op.add(v.b); pad.push(v); dfs(v.b); pad.pop(); op.delete(v.b); } };
+  dfs(a);
+  const info = vs => { const onz = vs.some(v => v.s === '?'), min = vs.filter(v => v.s === '-').length; return { ver:vs, els:[a].concat(vs.map(v => v.b)), teken:onz ? '?' : min % 2 ? '-' : '+', traag:vs.some(v => v.v) }; };
+  const alle = res.map(info).sort((x, y) => x.ver.length - y.ver.length);
+  return { lijst:alle.slice(0, WEG_TOON), totaal:alle.length, tegen:alle.some(w => w.teken === '+') && alle.some(w => w.teken === '-') };
+}
+// "Meer werkdruk geeft langs deze weg vaker overuren", in gewone taal
+function wegZin(l, w) {
+  const A = elVan(w.els[0]), B = elVan(w.els[w.els.length - 1]), meer = e => e.t === 'gedrag' ? 'vaker' : 'meer', minder = e => e.t === 'gedrag' ? 'minder vaak' : 'minder', nm = e => e.t === 'gedrag' ? `"${kortNaam(e, 40)}"` : klein(kortNaam(e, 40));
+  const begin = (A.t === 'ingreep' ? kortNaam(A, 40) : (meer(A) === 'vaker' ? 'Vaker ' : 'Meer ') + nm(A));
+  if (w.teken === '?') return `${begin}: langs deze weg hangt het effect op ${nm(B)} af van een pijl "weet ik niet"${w.traag ? ', en het komt pas na een tijd' : ''}.`;
+  return `${begin} geeft langs deze weg ${w.teken === '+' ? meer(B) : minder(B)} ${nm(B)}${w.traag ? ', maar pas na een tijd' : ''}.`;
+}
+const kringSleutel = k => k.els.slice().sort().join(',');
+const kringNaam = (l, k) => (l.kringNamen || {})[kringSleutel(k)] || '';
+// Verdwijnt een kring (een pijl of element weg), dan verdwijnt haar naam stil. Alleen als alle kringen geteld zijn.
+function ruimKringNamen(l, A) { if (!l.kringNamen || !A.kringen.volledig || A.kringen.length < A.kringen.totaal) return false; const z = new Set(A.kringen.map(kringSleutel)); let weg = false; Object.keys(l.kringNamen).forEach(k => { if (!z.has(k)) { delete l.kringNamen[k]; weg = true; } }); if (weg && !Object.keys(l.kringNamen).length) delete l.kringNamen; return weg; }
 const kringTekst = (k, l, n = 28) => k.els.map(id => kortNaam(l.els.find(e => e.id === id), n)).concat(kortNaam(l.els.find(e => e.id === k.els[0]), n)).join(' → ');
 // een naam die al een negatieve richting zegt ("te weinig plaats"): bij hernoemen draaien de pijlen mee om
 const NEGATIEF = /^(te\s+)?(lage|lager|minder|weinig|kleine|dalende|afnemende|gebrek aan|tekort aan|daling van|gebrek|tekort|slechte)\b/i;
@@ -3360,6 +3411,8 @@ function vormSvg(e, m) {
   if (e.t === 'ingreep') return `<path class="vorm" d="${pijlvormPad(e, m, 0)}" fill="#047857" stroke="#047857" stroke-width="1.5" stroke-linejoin="round"/>`;
   return `<rect class="vorm" x="${x}" y="${y}" width="${m.w}" height="${m.h}" rx="8" fill="#fff" stroke="#64748b" stroke-width="1.5"/>`;
 }
+// Hoe weten we dit? ingevuld: een klein blad met lijnen, rustig in de hoek (element) of naast het plus- of minbolletje (pijl)
+const bronSvg = (cx, cy, r) => `<g class="bron" aria-hidden="true"><circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r}" fill="#fff" stroke="#94a3b8" stroke-width="1.2"/><path d="M${(cx - r * 0.38).toFixed(1)} ${(cy - r * 0.48).toFixed(1)}h${(r * 0.76).toFixed(1)}M${(cx - r * 0.38).toFixed(1)} ${cy.toFixed(1)}h${(r * 0.76).toFixed(1)}M${(cx - r * 0.38).toFixed(1)} ${(cy + r * 0.48).toFixed(1)}h${(r * 0.5).toFixed(1)}" stroke="#047857" stroke-width="1.4" stroke-linecap="round"/></g>`;
 // klein persoon-icoon (14 x 14) voor de actor van een gedrag; één kleur voor iedereen
 const persoonSvg = (x, y, kl) => `<g class="actor" aria-hidden="true"><circle cx="${(x + 7).toFixed(1)}" cy="${(y + 4.2).toFixed(1)}" r="3.2" fill="none" stroke="${kl}" stroke-width="1.6"/><path d="M${(x + 1.2).toFixed(1)} ${(y + 13.5).toFixed(1)}c0-3.4 2.6-5.4 5.8-5.4s5.8 2 5.8 5.4" fill="none" stroke="${kl}" stroke-width="1.6" stroke-linecap="round"/></g>`;
 function tekstSvg(e, m) {
@@ -3392,6 +3445,7 @@ function tekenKaart(A, snel) {
       + `<path d="${g.d}" fill="none" stroke="${kl}" stroke-width="${st.d}" stroke-linecap="round"${v.z ? ' stroke-dasharray="7 6"' : ''} marker-end="url(#${hl ? 'pt-g' : 'pt'})"/>`;
     if (v.v) { const p = g.P(0.3), tg = g.T(0.3), nx = -tg.y, ny = tg.x; [-3.5, 3.5].forEach(o => { const cx = p.x + tg.x * o, cy = p.y + tg.y * o; hv += `<path d="M${(cx + nx * 7 - tg.x * 2).toFixed(1)} ${(cy + ny * 7 - tg.y * 2).toFixed(1)}L${(cx - nx * 7 + tg.x * 2).toFixed(1)} ${(cy - ny * 7 + tg.y * 2).toFixed(1)}" stroke="${kl}" stroke-width="2" stroke-linecap="round"/>`; }); }
     const tk = v.s === '+' ? '+' : v.s === '-' ? '−' : '?', rk = v.s === '+' ? '#047857' : '#64748b';
+    if (v.uit) hv += bronSvg(g.m.x + 15, g.m.y - 13, 7);
     hv += `<circle cx="${g.m.x.toFixed(1)}" cy="${g.m.y.toFixed(1)}" r="12" fill="#fff" stroke="${rk}" stroke-width="1.4"/><text x="${g.m.x.toFixed(1)}" y="${(g.m.y + 6).toFixed(1)}" text-anchor="middle" font-size="18" font-weight="700" fill="${v.s === '+' ? '#047857' : '#475569'}">${tk}</text>`
       + `<path class="raak" d="${g.d}" fill="none" stroke="transparent" stroke-width="${Math.max(22, 26 / k).toFixed(1)}" pointer-events="stroke"/><circle class="raak" cx="${g.m.x.toFixed(1)}" cy="${g.m.y.toFixed(1)}" r="${Math.max(16, 22 / k).toFixed(1)}" fill="transparent"/></g>`;
   });
@@ -3404,7 +3458,7 @@ function tekenKaart(A, snel) {
     he += `<g class="el${vaag}" data-el="${esc(e.id)}"><title>${esc(SOORT[e.t].naam + ': ' + naamVan(e))}</title>`;
     if (kies || (licht && licht.els.has(e.id))) he += `<rect x="${e.x - m.w / 2 - 6}" y="${e.y - m.h / 2 - 6}" width="${m.w + 12}" height="${m.h + 12}" rx="${e.t === 'gedrag' ? Math.min(m.h / 2 + 6, 36) : 13}" fill="none" stroke="${kies ? '#10b981' : '#a7f3d0'}" stroke-width="${kies ? 3 : 4}"/>`;
     if (e.id === doelId || e.id === flitsId) he += `<rect class="${e.id === flitsId ? 'sk-puls' : ''}" x="${e.x - m.w / 2 - 7}" y="${e.y - m.h / 2 - 7}" width="${m.w + 14}" height="${m.h + 14}" rx="14" fill="none" stroke="#10b981" stroke-width="3" stroke-dasharray="${e.id === doelId ? '7 5' : 'none'}"/>`;
-    he += vormSvg(e, m) + tekstSvg(e, m) + (e.dyn === 'stapel' ? vulSvg(e, m, SIM ? 0.5 + 0.46 * (SIM.xs[Math.min(stap, SIM.T)].get(e.id) || 0) : null) : '');
+    he += vormSvg(e, m) + tekstSvg(e, m) + (e.uit ? bronSvg(e.x + m.w / 2 - (e.t === 'ingreep' ? PUNT(m) + 4 : 6), e.y + m.h / 2 - 2, 9) : '') + (e.dyn === 'stapel' ? vulSvg(e, m, SIM ? 0.5 + 0.46 * (SIM.xs[Math.min(stap, SIM.T)].get(e.id) || 0) : null) : '');
     if (e.doel && !(modus === 'ing' && I(l)[e.id])) { const cx = e.x - m.w / 2 + 4, cy = e.y - m.h / 2 - 2, op = e.doel === 'meer'; he += `<g class="wil"><title>${e.t === 'gedrag' ? (op ? 'Je wil dit vaker' : 'Je wil dit minder vaak') : (op ? 'Je wil hier meer van' : 'Je wil hier minder van')}</title><circle cx="${cx}" cy="${cy}" r="11" fill="#fff" stroke="#047857" stroke-width="1.5" stroke-dasharray="3 2"/><path d="${op ? `M${cx} ${cy + 5}V${cy - 5}M${cx - 4} ${cy - 1}l4-4 4 4` : `M${cx} ${cy - 5}V${cy + 5}M${cx - 4} ${cy + 1}l4 4 4-4`}" fill="none" stroke="#047857" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g>`; }   // wat je wil: gestippeld pijltje linksboven
     if (modus === 'ing' && I(l)[e.id]) { const meer = I(l)[e.id] > 0, tw = meer ? 70 : 84, ty = e.y - m.h / 2 - 30; he += `<rect x="${e.x - tw / 2}" y="${ty}" width="${tw}" height="24" rx="8" fill="#047857"/><path d="${meer ? `M${e.x - tw / 2 + 10} ${ty + 15}l5-5 5 5` : `M${e.x - tw / 2 + 10} ${ty + 10}l5 5 5-5`}" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="${e.x - tw / 2 + 25}" y="${ty + 17}" font-size="14" font-weight="700" fill="#fff">${meer ? 'meer' : 'minder'}</text>`; }
     else if (p) { const cx = e.x + m.w / 2 + 2 - (e.t === 'ingreep' ? PUNT(m) : 0), cy = e.y - m.h / 2 - 2, op = p === '↑', neer = p === '↓'; he += `<circle cx="${cx}" cy="${cy}" r="12.5" fill="${op ? '#ecfdf5' : neer ? '#f1f5f9' : '#fff'}" stroke="${op ? '#10b981' : neer ? '#94a3b8' : '#64748b'}" stroke-width="1.5"${p === '↕' ? ' stroke-dasharray="3 3"' : ''}/><path d="${PIJL_PAD(cx, cy, p)}" fill="none" stroke="${op ? '#047857' : '#475569'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`; }
@@ -3417,15 +3471,15 @@ function tekenKaart(A, snel) {
   if (snel) return;
   // kringen: de drie belangrijkste als knop op de kaart
   let hk = ''; const kringPlek = [];
-  if (!SIM) A.kringen.slice(0, 3).forEach((kr, i) => {
+  if (!SIM) A.kringen.map((kr, i) => [kr, i]).filter(([kr, i]) => i < 3 || (kringNaam(l, kr) && i < 12)).forEach(([kr, i]) => {
     const ps = kr.els.map(id => elVan(id)); const mx = ps.reduce((s, e) => s + e.x, 0) / ps.length, my = ps.reduce((s, e) => s + e.y, 0) / ps.length;
     if (kr.els.length < 3) return;   // te klein: niet tonen (wel in Inzicht)
     // in het midden van de kring, of er net naast als daar een element, een plus- of minbolletje of een ander kringteken staat
     const vrij = (x, y) => !l.els.some(e => { const m = mt(e); return Math.abs(e.x - x) < m.w / 2 + 18 && Math.abs(e.y - y) < m.h / 2 + 18; }) && !l.ver.some(v => { const g = geo(v); return g && Math.hypot(g.m.x - x, g.m.y - y) < 34; }) && !kringPlek.some(q => Math.hypot(q.x - x, q.y - y) < 60);
     const plek = [[0, 0], [0, -56], [0, 56], [-64, 0], [64, 0], [-56, -48], [56, -48], [-56, 48], [56, 48]].map(([dx, dy]) => ({ x:mx + dx, y:my + dy })).find(q => vrij(q.x, q.y));
     if (!plek) return; const cx = plek.x, cy = plek.y; kringPlek.push(plek);
-    const kl = kr.soort === 'R' ? '#047857' : '#64748b', woord = kr.soort === 'R' ? 'versterkt' : kr.soort === 'B' ? 'remt' : 'twijfel', vaag = licht && !kr.els.every(id => licht.els.has(id)) ? ' vaag' : '';
-    hk += `<g class="kring${vaag}" data-kring="${i}"><circle cx="${cx}" cy="${cy}" r="17" fill="#fff" stroke="${kl}" stroke-width="1.5"/>`
+    const naam = kringNaam(l, kr), kl = kr.soort === 'R' ? '#047857' : '#64748b', woord = naam ? kortNaam({ t:'factor', n:naam }, 22) : kr.soort === 'R' ? 'versterkt' : kr.soort === 'B' ? 'remt' : 'twijfel', vaag = licht && !kr.els.every(id => licht.els.has(id)) ? ' vaag' : '';
+    hk += `<g class="kring${vaag}" data-kring="${i}"><title>${esc((naam ? naam + ': ' : '') + KRING_NAAM[kr.soort])}</title><circle cx="${cx}" cy="${cy}" r="17" fill="#fff" stroke="${kl}" stroke-width="1.5"/>`
       + `<path d="M${cx + 7} ${cy - 5}a8 8 0 1 0 1.5 7" fill="none" stroke="${kl}" stroke-width="2" stroke-linecap="round"/><path d="M${cx + 3.5} ${cy - 6.5}l4 1.5 1-4.2" fill="none" stroke="${kl}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`
       + (kr.soort === 'R' ? `<path d="M${cx - 2} ${cy}h4M${cx} ${cy - 2}v4" stroke="${kl}" stroke-width="1.8" stroke-linecap="round"/>` : kr.soort === 'B' ? `<path d="M${cx - 2.5} ${cy - 1.3}h5M${cx - 2.5} ${cy + 1.3}h5" stroke="${kl}" stroke-width="1.6" stroke-linecap="round"/>` : '')
       + `<text x="${cx}" y="${cy + 34}" text-anchor="middle" font-size="14" font-weight="600" fill="${kl}" stroke="#fbfcfd" stroke-width="4" paint-order="stroke">${woord}</text><circle cx="${cx}" cy="${cy}" r="22" fill="transparent"/></g>`;
@@ -3438,6 +3492,7 @@ function render() {
   if (!l.ingA) toonA = false;
   SIM = modus === 'ing' && Object.keys(I(l)).length ? simuleer(l, pushVan(l)) : null;
   const A = analyse(l); window.__sk = A;
+  if (ruimKringNamen(l, A)) save();
   tekenKaart(A);
   // de rest van de pagina
   const leeg = !l.els.length;
@@ -3450,8 +3505,8 @@ function render() {
   $('b-terug').disabled = !(terugVan === l.id && terug.length);
   ['toe', 'ing', 'zie'].forEach(k => $('b-' + k).setAttribute('aria-pressed', String(paneel === k)));
   $('b-ing').setAttribute('aria-pressed', String(modus === 'ing'));
-  const band = modus === 'ing' ? bandIng(l) : modus === 'verbind' ? 'Tik op het element waarmee je verbindt.' + (matchMedia('(pointer:fine)').matches ? ' Met het toetsenbord: pijltjes en Enter.' : '') : '';
-  $('sk-band').hidden = !band; $('sk-band-t').textContent = band; $('sk-band-x').textContent = modus === 'verbind' ? 'Annuleer' : 'Klaar';
+  const band = modus === 'ing' ? bandIng(l) : modus === 'samen' ? (samenA ? 'Tik op het tweede element.' : 'Tik op het eerste element.') : modus === 'verbind' ? 'Tik op het element waarmee je verbindt.' + (matchMedia('(pointer:fine)').matches ? ' Met het toetsenbord: pijltjes en Enter.' : '') : '';
+  $('sk-band').hidden = !band; $('sk-band-t').textContent = band; $('sk-band-x').textContent = modus === 'verbind' || modus === 'samen' ? 'Annuleer' : 'Klaar';
   renderPaneel(A);
   renderTabs();
   $('oc-restart-row').hidden = leeg;
@@ -3493,6 +3548,7 @@ function renderPaneel(A) {
   else if (paneel === 'toe') h = paneelToe(l);
   else if (paneel === 'ing' || modus === 'ing') h = paneelIng(l, A);
   else if (paneel === 'zie') h = paneelZie(l, A);
+  else if (paneel === 'samen') h = paneelSamen(l);
   else h = paneelLeeg(l, A);
   // invoer met focus niet vervangen terwijl iemand typt
   const f = document.activeElement, fid = f && P.contains(f) && f.id;
@@ -3549,7 +3605,8 @@ function paneelEl(e, A) {
   if (e.t === 'factor' && nieuwId !== e.id) h += `<div><span class="sk-lbl">Hoe verandert dit?</span>${chips('dyn', [{ v:'', t:'Meteen' }, { v:'stapel', t:'Stapelt op' }], e.dyn || '')}<p class="sub" data-vers="dyn">${e.dyn === 'stapel' ? 'Groeit zolang iets erin duwt, en blijft dan staan. Het zakt pas als iets het afbouwt. Bijvoorbeeld een achterstand.' : 'Volgt meteen wat erop inwerkt. Valt dat weg, dan zakt het terug. Bijvoorbeeld werkdruk.'}</p></div>`;
   if (e.t === 'ingreep' && nieuwId !== e.id) h += `<div><span class="sk-lbl">Hoe lang?</span>${chips('duur', [{ v:'', t:'Blijvend' }, { v:'tijdelijk', t:'Tijdelijk' }], e.duur || '')}<p class="sub" data-vers="duur">${e.duur === 'tijdelijk' ? `Stopt na een tijd (in de berekening na ${TIJDELIJK} stappen).` : 'Loopt door zolang je niets anders beslist.'}</p></div>`;
   h += `</div><div data-vers="tip">${tip ? `<div class="sk-tip">${esc(tip.tekst)}${tip.fix ? ` <button type="button" data-p="fix" data-fix="${esc(tip.fix)}">Maak er "${esc(tip.fix)}" van</button>` : ''}</div>` : ''}</div>`;
-  h += `<details class="sk-meer"><summary>Meer over dit element</summary><div class="sk-ed">`;
+  h += `<details class="sk-meer"${e.uit ? ' open' : ''}><summary>Meer over dit element</summary><div class="sk-ed">`;
+  if (nieuwId !== e.id) h += `<div><label class="sk-lbl" for="e-bron">Hoe weten we dit? <small>(mag leeg)</small></label><input class="sk-in" id="e-bron" maxlength="300" value="${esc(e.uit || '')}" placeholder="bv. uit een gesprek, een cijfer, eigen ervaring" autocomplete="off"></div>`;
   if (nieuwId !== e.id) h += `<div><span class="sk-lbl">Soort</span>${chips('soort', SOORTEN.map(s => ({ v:s, t:SOORT[s].naam, ic:IC[s] })), e.t)}</div>`;
   if (e.t === 'factor') h += `<div><span class="sk-lbl">Waar werkt dit op? <small>(mag leeg)</small></span>${chips('pl', [{ v:'', t:'Weet ik niet' }].concat(PIJLERS.map(p => ({ v:p.id, t:p.naam }))), e.pl || '')}<p class="sub" data-vers="pl">${e.pl ? (p => `${esc(p.naam)}: ${esc(p.uit)}.`)(PIJLERS.find(p => p.id === e.pl)) : 'Kunnen, kans krijgen of willen: wat helpt mensen of houdt hen tegen?'}</p></div>`;
   if (e.t !== 'uitkomst') h += `<div><span class="sk-lbl">Kan je hier zelf iets aan doen? <small>(mag leeg)</small></span>${chips('st', [{ v:'', t:'Weet ik niet' }, { v:'ja', t:'Ja' }, { v:'deels', t:'Een beetje' }, { v:'nee', t:'Nee' }], e.st || '')}</div>`;
@@ -3557,7 +3614,7 @@ function paneelEl(e, A) {
   h += `</div></details>`;
   const rij = v => `<li><button type="button" data-p="open-ver" data-id="${esc(v.id)}"><span class="ic${v.s === '+' ? '' : ' grijs'}">${v.s === '+' ? '+' : v.s === '-' ? '−' : '?'}</span><span class="t">${zin(v)}</span></button></li>`;
   h += `<div class="sk-blok"><span class="lbl">Verbanden</span>${uit.length || inn.length ? `<ul class="sk-lijst">${inn.concat(uit).map(rij).join('')}</ul>` : '<p class="sub">Nog geen. Trek een lijn vanaf een groen bolletje, of kies Verbind met.</p>'}</div>`;
-  h += `<div class="sk-acties"><button type="button" class="sk-knop" data-p="verbind">Verbind met…</button><button type="button" class="sk-knop" data-p="watals">Wat als dit meer wordt?</button>${e.t === 'gedrag' ? '<button type="button" class="sk-knop" data-p="naar-gedrag">Aanpakken in Gedragsverandering</button>' : ''}<button type="button" class="sk-knop gevaar" data-p="wis-el">Wis</button></div>`;
+  h += `<div class="sk-acties"><button type="button" class="sk-knop" data-p="verbind">Verbind met…</button><button type="button" class="sk-knop" data-p="watals">Wat als dit meer wordt?</button><button type="button" class="sk-knop" data-p="samen">Hoe hangt dit samen met…</button>${e.t === 'gedrag' ? '<button type="button" class="sk-knop" data-p="naar-gedrag">Aanpakken in Gedragsverandering</button>' : ''}<button type="button" class="sk-knop gevaar" data-p="wis-el">Wis</button></div>`;
   return h;
 }
 function paneelVer(v) {
@@ -3567,7 +3624,7 @@ function paneelVer(v) {
   h += `<div class="sk-blok"><span class="lbl">Hoe sterk?</span>${chips('w', [1, 2, 3].map(n => ({ v:String(n), t:STERKTE[n].naam })), String(v.w))}</div>`;
   h += `<div class="sk-blok"><span class="lbl">Wanneer?</span>${chips('v', [{ v:'0', t:'Meteen' }, { v:'1', t:'Pas na een tijd' }], v.v ? '1' : '0')}</div>`;
   h += `<div class="sk-blok"><span class="lbl">Hoe zeker?</span>${chips('z', [{ v:'0', t:'Vrij zeker' }, { v:'1', t:'Vermoeden' }], v.z ? '1' : '0')}</div>`;
-  h += `<div class="sk-blok"><label class="sk-lbl" for="v-uit">Waarom? Bron <small>(mag leeg)</small></label><input class="sk-in" id="v-uit" maxlength="200" value="${esc(v.uit || '')}" placeholder="bv. gezien in de planning van maart, interview met twee teamleden" autocomplete="off"></div>`;
+  h += `<div class="sk-blok"><label class="sk-lbl" for="v-uit">Hoe weten we dit? <small>(mag leeg)</small></label><input class="sk-in" id="v-uit" maxlength="300" value="${esc(v.uit || '')}" placeholder="bv. uit een gesprek, een cijfer, eigen ervaring" autocomplete="off"></div>`;   // vroeger: Waarom? Bron (zelfde veld)
   h += `<div class="sk-acties"><button type="button" class="sk-knop" data-p="omdraaien">Draai om</button><button type="button" class="sk-knop gevaar" data-p="wis-ver">Wis</button></div>`;
   return h;
 }
@@ -3827,9 +3884,28 @@ const ZIE_IC = {
   A:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-4 3-6.5 7-6.5s7 2.5 7 6.5"/></svg>',
   H:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20h18"/><path d="M6 20l12-12"/><circle cx="18" cy="8" r="2"/></svg>',
 };
-let zieKeuze = null;
+let zieKeuze = null, kringOpen = null;
+let samenA = null, samenB = null, wegKeuze = null;
+function paneelSamen(l) {
+  let h = kopHtml('Hoe hangt dit samen?', 'Kies twee elementen. De tool zoekt de wegen langs je pijlen.');
+  const opt = (w, zonder) => `<option value="">Kies…</option>` + l.els.filter(e => e.id !== zonder).map(e => `<option value="${e.id}"${e.id === w ? ' selected' : ''}>${esc(kortNaam(e, 44))}</option>`).join('');
+  h += `<div class="sk-ed"><div><label class="sk-lbl" for="samen-a">Van</label><select class="sk-in" id="samen-a">${opt(samenA)}</select></div><div><label class="sk-lbl" for="samen-b">Naar</label><select class="sk-in" id="samen-b">${opt(samenB, samenA)}</select></div></div>`;
+  if (modus === 'samen') h += `<p class="sub">${samenA ? 'Tik op de kaart op het tweede element' : 'Tik op de kaart op het eerste element'}, of kies het hierboven.</p>`;
+  if (!samenA || !samenB || !elVan(samenA) || !elVan(samenB)) return h;
+  const W = wegen(l, samenA, samenB), A = elVan(samenA), B = elVan(samenB), q = e => `<b>${esc(kortNaam(e, 40))}</b>`;
+  if (!W.lijst.length) { const terug = wegen(l, samenB, samenA).lijst.length; return h + `<p class="sk-zin sk-samen-geen">Er is geen weg van ${q(A)} naar ${q(B)} langs je pijlen. ${terug ? `Wel een weg terug, van ${q(B)} naar ${q(A)}: kies ze om in de andere richting.` : `Ook niet van ${q(B)} naar ${q(A)}.`}</p>`; }
+  h += `<span class="sk-lbl">${W.totaal === 1 ? 'Eén weg' : `${W.totaal} wegen`}${W.totaal > 1 ? ', de kortste eerst' : ''}</span>`;
+  if (W.tegen) h += `<p class="sk-tip sk-samen-tegen">Deze wegen spreken elkaar tegen: langs de ene wordt het meer, langs de andere minder. Wat wint, zie je met Ingrijpen.</p>`;
+  const kopWeg = w => { const g = B.t === 'gedrag', wd = w.teken === '+' ? (g ? 'Vaker' : 'Meer') : w.teken === '-' ? (g ? 'Minder vaak' : 'Minder') : (g ? 'Vaker of minder vaak' : 'Meer of minder'); return `${wd} ${naamVan(B)}`; };
+  const bij = w => [w.teken === '?' ? 'hangt af van een pijl "weet ik niet"' : '', w.traag ? 'pas na een tijd' : ''].filter(Boolean).join(', ');
+  h += `<ul class="sk-lijst sk-wegen">` + W.lijst.map((w, i) => `<li><button type="button" data-p="weg" data-i="${i}" aria-pressed="${wegKeuze === i}"><span class="ic${w.teken === '+' ? '' : ' grijs'}" aria-hidden="true">${w.teken === '+' ? '+' : w.teken === '-' ? '−' : '?'}</span><span class="t"><b class="sk-weg-kop">${esc(kopWeg(w))}</b>${bij(w) ? `<em class="sk-weg-bij">${esc(bij(w))}</em>` : ''}<small>${esc(w.els.map(id => kortNaam(elVan(id), 26)).join(' → '))}</small><span class="sr-only">${esc(wegZin(l, w))}</span></span></button></li>`).join('') + '</ul>';
+  if (W.totaal > W.lijst.length) h += `<p class="sub">En nog ${W.totaal - W.lijst.length} langere ${W.totaal - W.lijst.length === 1 ? 'weg' : 'wegen'}.</p>`;
+  return h + '<p class="sk-eerlijk">Een weg zegt wat er langs die pijlen gebeurt. Wat er in totaal gebeurt, toont Ingrijpen. Tik op een weg: de kaart toont waar ze loopt.</p>';
+}
 function paneelZie(l, A) {
+  let hS = l.els.length >= 2 ? '<div class="sk-acties" style="margin-top:0.5rem"><button type="button" class="sk-knop" data-p="samen-open">Hoe hangt dit samen?</button></div>' : '';
   let h = kopHtml('Wat zie je?', smal() ? 'Tik op een bevinding.' : 'Vaste regels, geen oordeel. Tik op een bevinding: de kaart toont waar het zit.');
+  h += hS;
   if (l.els.length < 3) return h + '<p class="sk-zin">Zet eerst minstens drie elementen met verbanden op de kaart.</p>';
   const B = []; const knop = (id, titel, tekst, ic) => B.push(`<li><button type="button" data-p="zie" data-id="${id}" aria-pressed="${zieKeuze === id}"><span class="ic${ic === 'g' ? ' grijs' : ''}">${ZIE_IC[ic] || ZIE_IC.H}</span><span class="t"><b>${esc(titel)}</b><small>${esc(tekst)}</small></span></button></li>`);
   // Wie doet wat: tik op een actor om zijn gedrag uit te lichten; nog eens tikken of Esc zet alles terug
@@ -3837,7 +3913,9 @@ function paneelZie(l, A) {
   if (A.actoren.length) { hA = `<span class="sk-lbl" style="margin-top:0.875rem">Wie doet wat</span><ul class="sk-lijst sk-actoren">` + A.actoren.map((a, i) => { const id = 'a' + i, aan = zieKeuze === id;
     return `<li><button type="button" data-p="zie" data-id="${id}" aria-pressed="${aan}"><span class="ic">${ZIE_IC.A}</span><span class="t"><b>${esc(a.naam)}</b><small>${a.gedrag.length} ${a.gedrag.length === 1 ? 'gedrag' : 'gedragingen'}${a.kring ? ', in een kring' : ''}: ${esc(a.gedrag.map(e => e.n || '…').join(', '))}</small></span></button></li>`
       + (aan ? `<li class="sk-actor-ed"><label class="sk-lbl" for="actor-naam">Andere naam voor deze rol <small>(voor al dit gedrag)</small></label><div class="sk-actor-rij"><input class="sk-in" id="actor-naam" maxlength="40" value="${esc(a.naam)}" autocomplete="off" enterkeyhint="done"><button type="button" class="sk-knop" data-p="actor-hernoem" data-oud="${esc(a.sleutel)}">Hernoem</button></div></li>` : ''); }).join('') + '</ul>'; }
-  A.kringen.slice(0, 5).forEach((k, i) => knop('k' + i, KRING_NAAM[k.soort] + (k.traag && k.soort === 'B' ? ', met vertraging' : ''), kringTekst(k, l) + '. ' + KRING_UIT[k.soort] + (k.traag && k.soort === 'B' ? ' Door de vertraging kan het gaan schommelen.' : ''), k.soort === '?' ? 'g' : k.soort));
+  A.kringen.slice(0, 5).forEach((k, i) => { const id = 'k' + i, sl = kringSleutel(k), naam = kringNaam(l, k), soort = KRING_NAAM[k.soort] + (k.traag && k.soort === 'B' ? ', met vertraging' : ''), uit = kringTekst(k, l) + '. ' + KRING_UIT[k.soort] + (k.traag && k.soort === 'B' ? ' Door de vertraging kan het gaan schommelen.' : '');
+    B.push(`<li class="sk-kring-li"><button type="button" data-p="zie" data-id="${id}" aria-pressed="${zieKeuze === id}"><span class="ic${k.soort === '?' ? ' grijs' : ''}">${ZIE_IC[k.soort === '?' ? 'g' : k.soort] || ZIE_IC.H}</span><span class="t"><b>${esc(naam ? naam + ' · ' + KRING_KORT[k.soort] : soort)}</b><small>${esc(uit)}</small></span></button><button type="button" class="sk-potlood" data-p="kring-naam" data-sleutel="${esc(sl)}" aria-label="${naam ? 'Andere naam voor deze kring' : 'Geef deze kring een naam'}" title="${naam ? 'Andere naam' : 'Geef een naam'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></button></li>`
+      + (kringOpen === sl ? `<li class="sk-actor-ed"><label class="sk-lbl" for="kring-naam">Naam voor deze kring <small>(mag leeg, hoogstens 40 tekens)</small></label><div class="sk-actor-rij"><input class="sk-in" id="kring-naam" maxlength="40" value="${esc(naam)}" placeholder="bv. Vicieuze cirkel van overuren" autocomplete="off" enterkeyhint="done"><button type="button" class="sk-knop" data-p="kring-bewaar" data-sleutel="${esc(sl)}">Bewaar</button></div></li>` : '')); });
   if (A.kringen.totaal > 5) B.push(`<li><p class="sub">${A.kringen.volledig ? `In totaal ${A.kringen.totaal} kringen` : `Meer dan ${A.kringen.totaal} kringen: je kaart is erg verweven`}. Bovenaan staan de kringen met een gedrag en een uitkomst, de sterkste eerst.</p></li>`);
   if (!A.kringen.length) B.push(A.lus.size ? '<li><p class="sub">Er is een kring van meer dan 8 schakels. Zo lange kringen toont de tool niet apart: maak de kaart eenvoudiger als je ze wil zien.</p></li>' : '<li><p class="sub">Nog geen kringen. Een kring is een rondje van pijlen dat terugkomt waar het begon. Die houden een probleem vaak in stand.</p></li>');
   if (A.hefbomen.length) knop('hef', 'Aandachtspunten (mogelijke hefbomen)', A.hefbomen.map(e => `${kortNaam(e, 30)} (bereikt ${e._bereik} ${e._bereik === 1 ? 'element' : 'elementen'} in twee stappen${e._lus ? ', zit in een kring' : ''}${e.st === 'ja' ? ', je kan er iets aan doen' : e.st === 'deels' ? ', je kan er een beetje aan doen' : ''})`).join('; ') + '. Zo telt de tool. Wat je zelf kan beïnvloeden, telt extra: duid dat aan bij elk element.', 'H');
@@ -3963,7 +4041,7 @@ svg.addEventListener('pointerdown', e => {
   if (greep && !modus) { gebaar = Object.assign(basis, { soort:'lijn', id:greep.dataset.greep }); return; }
   const hit = raakEl(w), kr = e.target.closest('[data-kring]'), vr = e.target.closest('[data-ver]');
   if (schuifModus && !hit && !kr && !vr && !modus) { gebaar = Object.assign(basis, { soort:'tikleeg', v0:Object.assign({}, view) }); return; }
-  if (modus === 'ing' || modus === 'verbind') { gebaar = Object.assign(basis, { soort:'tikmodus', id: hit && hit.id, v0:Object.assign({}, view) }); return; }
+  if (modus === 'ing' || modus === 'verbind' || modus === 'samen') { gebaar = Object.assign(basis, { soort:'tikmodus', id: hit && hit.id, v0:Object.assign({}, view) }); return; }
   if (hit) gebaar = Object.assign(basis, { soort: hit.zone === 'rand' && e.pointerType !== 'touch' ? 'lijn' : 'sleep', id:hit.id });   // met een vinger: een lijn alleen vanaf een groen bolletje
   else if (kr) gebaar = Object.assign(basis, { soort:'tikkring', id:+kr.dataset.kring });
   else if (vr) gebaar = Object.assign(basis, { soort:'tikver', id:vr.dataset.ver, pts:[[w.x, w.y]] });
@@ -4098,6 +4176,7 @@ function wisEl(id) {
 }
 function tikInModus(id) {
   const l = cur();
+  if (modus === 'samen') { if (!id) return; if (!samenA) samenA = id; else if (id !== samenA) { samenB = id; modus = ''; } wegKeuze = null; licht = null; render(); const W = samenA && samenB ? wegen(l, samenA, samenB) : null; zeg(W ? (W.totaal ? `${W.totaal} ${W.totaal === 1 ? 'weg' : 'wegen'} gevonden.` : 'Geen weg gevonden.') : 'Tik nu op het tweede element.'); return; }
   if (modus === 'verbind') { const van = verbindVan || (sel && sel.id); if (id && van && id !== van) { modus = ''; doelId = null; maakVerband(van, id); } else if (!id) { modus = ''; doelId = null; render(); } return; }
   if (!id) return;
   const e = elVan(id), nu = I(l)[id] || 0, nw = e.t === 'ingreep' ? (nu ? 0 : 1) : nu === 0 ? 1 : nu === 1 ? -1 : 0;
@@ -4202,6 +4281,11 @@ $('sk-paneel').addEventListener('click', e => {
   }
   if (p === 'imp-acties') { impActies(); return; }
   if (p === 'actor-hernoem') { hernoemActor(b.dataset.oud); return; }
+  if (p === 'kring-naam') { kringOpen = kringOpen === b.dataset.sleutel ? null : b.dataset.sleutel; render(); const x = $('kring-naam'); if (x) x.focus(); return; }
+  if (p === 'kring-bewaar') { bewaarKringNaam(b.dataset.sleutel); return; }
+  if (p === 'samen') { samenA = sel ? sel.id : null; samenB = null; wegKeuze = null; sel = null; licht = null; paneel = 'samen'; modus = 'samen'; render(); requestAnimationFrame(() => allesInBeeld(null, true)); zeg('Tik op het tweede element, of kies het uit de lijst.'); return; }   // de hele kaart in beeld om te kiezen
+  if (p === 'samen-open') { samenA = null; samenB = null; wegKeuze = null; licht = null; zieKeuze = null; paneel = 'samen'; modus = 'samen'; render(); return; }
+  if (p === 'weg') { const i = +b.dataset.i, W = wegen(cur(), samenA, samenB); wegKeuze = wegKeuze === i ? null : i; const w = W.lijst[wegKeuze]; licht = w ? { els:new Set(w.els), ver:new Set(w.ver.map(v => v.id)) } : null; render(); if (licht) requestAnimationFrame(() => allesInBeeld(licht.els, false, true)); return; }
   if (p === 'soort-open') { soortOpen = true; render(); const c = document.querySelector('#sk-paneel [data-k="soort"]'); if (c) { const d = c.closest('details'); if (d) d.open = true; c.focus(); } return; }
   if (p === 'fix') { const id = b.dataset.id || (sel && sel.id), el = elVan(id); if (el) { const om = NEGATIEF.test(el.n), keer = t => t === '+' ? '-' : t === '-' ? '+' : t; wijzig(l2 => { el.n = b.dataset.fix; if (om) { l2.ver.forEach(v => { if (v.a === id || v.b === id) v.s = keer(v.s); }); if (el.doel) el.doel = el.doel === 'meer' ? 'minder' : 'meer'; [l2.ing, l2.ingA].forEach(o => { if (o && o[id]) o[id] = -o[id]; }); } }); zeg(`Hernoemd naar ${b.dataset.fix}`); if (om) toast(`Hernoemd naar "${b.dataset.fix}". De pijlen en wat je wil zijn mee omgedraaid, zodat je kaart hetzelfde blijft zeggen.`); } return; }
   if (p === 'push') { const id = b.dataset.id, v = +b.dataset.v; stap = EINDE; wijzig(l2 => { const o = I(l2); if (v) o[id] = v; else delete o[id]; if (l2.ingA && !Object.keys(l2.ingA).length) { if (toonA) { l2.ingA = undefined; delete l2.ingA; toonA = false; } } }); return; }   // een ingreep wijzigen: terug naar het einde; A leeg = geen vergelijking meer
@@ -4217,20 +4301,27 @@ function hernoemActor(oud) {
   const A = analyse(cur()), k = A.actoren.findIndex(a => a.sleutel === actorSleutel(nw)); zieKeuze = k >= 0 ? 'a' + k : null; licht = lichtVoor(zieKeuze, A); render(); if (licht) requestAnimationFrame(() => allesInBeeld(licht.els, false, true));
   toast(`${n} ${n === 1 ? 'gedrag' : 'gedragingen'} nu bij "${nw}"`, () => ongedaan());
 }
+function bewaarKringNaam(sl) {
+  const i = $('kring-naam'), n = i ? tekst(i.value, 40) : '';
+  wijzig(l2 => { l2.kringNamen = l2.kringNamen || {}; if (n) l2.kringNamen[sl] = n; else delete l2.kringNamen[sl]; if (!Object.keys(l2.kringNamen).length) delete l2.kringNamen; });
+  kringOpen = null; render(); toast(n ? `Kring heet nu "${n}"` : 'Naam van de kring gewist', () => ongedaan());
+}
 let typBezig = null;
-$('sk-paneel').addEventListener('focusin', e => { if (e.target.matches('#e-naam,#e-wie,#v-uit') && typBezig !== e.target.id) { typBezig = e.target.id; bewaarStap(); } });
-$('sk-paneel').addEventListener('focusout', e => { if (e.target.matches('#v-uit')) typBezig = null; if (e.target.matches('#e-naam,#e-wie')) { typBezig = null; setTimeout(() => { if (nieuwId && !$('sk-paneel').contains(document.activeElement)) { const el = elVan(nieuwId); if (el && !el.n && !(el.wie)) ruimLeegOp(); else nieuwId = null; } }, 200); } });
+$('sk-paneel').addEventListener('focusin', e => { if (e.target.matches('#e-naam,#e-wie,#v-uit,#e-bron') && typBezig !== e.target.id) { typBezig = e.target.id; bewaarStap(); } });
+$('sk-paneel').addEventListener('focusout', e => { if (e.target.matches('#v-uit,#e-bron')) typBezig = null; if (e.target.matches('#e-naam,#e-wie')) { typBezig = null; setTimeout(() => { if (nieuwId && !$('sk-paneel').contains(document.activeElement)) { const el = elVan(nieuwId); if (el && !el.n && !(el.wie)) ruimLeegOp(); else nieuwId = null; } }, 200); } });
 $('sk-paneel').addEventListener('input', e => {
   const t = e.target, el = sel && sel.soort === 'el' && elVan(sel.id);
   if (t.id === 'e-naam' && el) { el.n = tekst(t.value, 80); save(); render(); }
   if (t.id === 'e-wie' && el) { el.wie = tekst(t.value, 40); save(); render(); }
-  if (t.id === 'v-uit' && sel && sel.soort === 'ver') { const v = verVan(sel.id); if (v) { v.uit = tekst(t.value, 200); save(); } }
+  if (t.id === 'v-uit' && sel && sel.soort === 'ver') { const v = verVan(sel.id); if (v) { const had = !!v.uit; v.uit = tekst(t.value, 300); if (!v.uit) delete v.uit; save(); if (had !== !!v.uit) render(); } }
+  if (t.id === 'e-bron' && el) { const had = !!el.uit; el.uit = tekst(t.value, 300); if (!el.uit) delete el.uit; save(); if (had !== !!el.uit) render(); }
   if (t.id === 'ing-stap') { stap = +t.value; t.style.setProperty('--p', (t.max > 1 ? Math.round((stap - 1) / (t.max - 1) * 100) : 100) + '%'); render(); }
 });
 $('sk-paneel').addEventListener('change', e => {
   const t = e.target, el = sel && sel.soort === 'el' && elVan(sel.id);
   if (t.id === 'e-ik' && el) wijzig(() => { if (t.value) el.ik = t.value; else delete el.ik; });
   if (t.id === 'e-wie' && el && el.wie) { const v = zelfdeRol(cur(), el.wie, el.id); if (v && v !== el.wie) { el.wie = v; t.value = v; save(); render(); } }   // zelfde rol, zelfde schrijfwijze
+  if (t.id === 'samen-a' || t.id === 'samen-b') { if (t.id === 'samen-a') { samenA = t.value || null; if (samenB === samenA) samenB = null; } else samenB = t.value || null; if (samenA && samenB) modus = ''; wegKeuze = null; licht = null; $('sk-paneel').dataset.sleutel = ''; render(); const x = $(t.id); if (x) x.focus({ preventScroll:true }); }
   if (t.id === 'v-a') toeVan = t.value;
   if (t.id === 'v-b') toeNaar = t.value;
   if ((t.id === 'v-a' || t.id === 'v-b') && $('v-zin')) { $('v-zin').innerHTML = toeZin(cur()); $('v-fout').hidden = true; }
@@ -4239,6 +4330,7 @@ $('sk-paneel').addEventListener('change', e => {
 });
 $('sk-paneel').addEventListener('keydown', e => {
   if (e.target.matches('[role="radio"]') && /^Arrow(Left|Right|Up|Down)$/.test(e.key)) { const g = [...e.target.parentElement.querySelectorAll('[role="radio"]')], i = g.indexOf(e.target), n = g[(i + (/Right|Down/.test(e.key) ? 1 : g.length - 1)) % g.length]; e.preventDefault(); n.click(); return; }
+  if (e.key === 'Enter' && e.target.id === 'kring-naam') { e.preventDefault(); const b = document.querySelector('[data-p="kring-bewaar"]'); if (b) bewaarKringNaam(b.dataset.sleutel); return; }
   if (e.key === 'Enter' && e.target.id === 'actor-naam') { e.preventDefault(); const b = document.querySelector('[data-p="actor-hernoem"]'); if (b) hernoemActor(b.dataset.oud); return; }
   if (e.key === 'Enter' && e.target.matches('#e-naam,#e-wie')) { e.preventDefault(); if (e.target.id === 'e-wie') { $('e-naam').focus(); return; } nieuwId = null; e.target.blur(); svg.focus({ preventScroll:true }); if (smal()) scrollTo({ top:0 }); zeg('Opgeslagen'); }
 });
@@ -4264,9 +4356,9 @@ $('sk-paneel').addEventListener('submit', e => {
 
 /* ---------- Werkbalk en zoom ---------- */
 $('b-terug').addEventListener('click', ongedaan);
-$('b-toe').addEventListener('click', () => { if (modus === 'ing') modus = ''; paneel = paneel === 'toe' ? 'leeg' : 'toe'; sel = null; licht = null; render(); if (paneel === 'toe') toonPaneel(); });
+$('b-toe').addEventListener('click', () => { if (modus === 'ing' || modus === 'samen') modus = ''; paneel = paneel === 'toe' ? 'leeg' : 'toe'; sel = null; licht = null; render(); if (paneel === 'toe') toonPaneel(); });
 $('b-ing').addEventListener('click', () => { if (modus === 'ing') stopIng(); else { if (!cur().els.length) { toast('Zet eerst iets op de kaart'); return; } startIng(); } });
-$('b-zie').addEventListener('click', () => { if (modus === 'ing') modus = ''; paneel = paneel === 'zie' ? 'leeg' : 'zie'; sel = null; licht = null; zieKeuze = null; render(); if (paneel === 'zie') toonPaneel(); });
+$('b-zie').addEventListener('click', () => { if (modus === 'ing' || modus === 'samen') modus = ''; paneel = paneel === 'zie' ? 'leeg' : 'zie'; sel = null; licht = null; zieKeuze = null; render(); if (paneel === 'zie') toonPaneel(); });
 $('b-schik').addEventListener('click', () => { if (cur().els.length < 2) { toast('Er is nog niets te schikken'); return; } const l0 = cur(), proef = JSON.parse(JSON.stringify(l0.els)), beter = schik(l0); if (!beter) { toast('Je kaart staat al overzichtelijk. Er is niets verzet.'); return; } const nieuw = l0.els.map(e => [e.x, e.y]); l0.els.forEach((e, i) => { e.x = proef[i].x; e.y = proef[i].y; }); wijzig(l => { l.els.forEach((e, i) => { [e.x, e.y] = nieuw[i]; }); }); allesInBeeld(null, innerWidth < 600 ? 0.45 : true); toast('Netjes geschikt', () => ongedaan()); });
 $('z-in').addEventListener('click', () => zoomOp(1.25));
 $('z-uit').addEventListener('click', () => zoomOp(0.8));
@@ -4283,7 +4375,8 @@ $('sk-titel').addEventListener('input', e => { cur().over = tekst(e.target.value
 svg.addEventListener('keydown', e => {
   const l = cur(); if (e.target !== svg) return;
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); e.shiftKey ? opnieuw() : ongedaan(); return; }
-  if (e.key === 'Escape' && !modus && paneel === 'zie' && zieKeuze) { zieKeuze = null; licht = null; render(); return; }   // uitlichten uit, Inzicht blijft open
+  if (e.key === 'Escape' && !modus && paneel === 'zie' && zieKeuze) { zieKeuze = null; licht = null; render(); return; }
+  if (e.key === 'Escape' && !modus && paneel === 'samen' && wegKeuze != null) { wegKeuze = null; licht = null; render(); return; }   // uitlichten uit, Inzicht blijft open
   if (e.key === 'Escape') { if (modus) { modus === 'ing' ? stopIng() : (modus = '', doelId = null, render()); } else { sel = null; licht = null; paneel = 'leeg'; render(); } return; }
   if (!l.els.length) return;
   const cu = sel && sel.soort === 'el' ? elVan(sel.id) : null;
@@ -4429,7 +4522,7 @@ function deleteList(l) {
 function closeMenu() { $('menu').classList.remove('open'); $('menu-btn').setAttribute('aria-expanded', 'false'); }
 $('menu-btn').addEventListener('click', e => { e.stopPropagation(); const open = !$('menu').classList.contains('open'); $('menu').classList.toggle('open', open); $('menu-btn').setAttribute('aria-expanded', String(open)); });
 document.addEventListener('click', e => { if (!e.target.closest('.menu-wrap')) closeMenu(); });
-document.addEventListener('keydown', e => { if (e.key !== 'Escape') return; closeMenu(); if (e.target.closest && e.target.closest('#sk-paneel') && !e.defaultPrevented && paneel === 'zie' && zieKeuze && modus !== 'ing') { zieKeuze = null; licht = null; render(); const x = document.querySelector('#sk-paneel [data-p="zie"]'); if (x) x.focus({ preventScroll:true }); return; } if (e.target.closest && e.target.closest('#sk-paneel') && !e.defaultPrevented) { if (modus === 'ing') stopIng(); else { if (nieuwId) ruimLeegOp(); sel = null; paneel = 'leeg'; licht = null; zieKeuze = null; modus = ''; doelId = null; render(); } svg.focus({ preventScroll:true }); } });
+document.addEventListener('keydown', e => { if (e.key !== 'Escape') return; closeMenu(); if (e.target.closest && e.target.closest('#sk-paneel') && !e.defaultPrevented && ((paneel === 'zie' && zieKeuze) || (paneel === 'samen' && wegKeuze != null)) && modus !== 'ing') { zieKeuze = null; wegKeuze = null; licht = null; render(); const x = document.querySelector('#sk-paneel [data-p="zie"]'); if (x) x.focus({ preventScroll:true }); return; } if (e.target.closest && e.target.closest('#sk-paneel') && !e.defaultPrevented) { if (modus === 'ing') stopIng(); else { if (nieuwId) ruimLeegOp(); sel = null; paneel = 'leeg'; licht = null; zieKeuze = null; modus = ''; doelId = null; render(); } svg.focus({ preventScroll:true }); } });
 document.addEventListener('click', e => { const x = e.target.closest('.exp-btn'); if (!x || x.disabled || x.dataset.ocOdt) return; const m = document.querySelector(`#menu [data-act="${escA(x.dataset.exp)}"]`); m && m.click(); });
 const vandaag = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 function fileBase() { const l0 = cur(), nm = String((/^(mijn|nieuw) project$|^naamloos$/i.test(l0.name || '') && l0.over ? l0.over : l0.name) || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50).replace(/-$/, ''); return ['systeemkaart', nm, vandaag()].filter(Boolean).join('-'); }
@@ -4437,10 +4530,10 @@ function download(blob, name) { const a = document.createElement('a'); a.href = 
 async function copy(t) { try { await navigator.clipboard.writeText(t); return true; } catch {} try { const x = document.createElement('textarea'); x.value = t; x.style.position = 'fixed'; x.style.opacity = '0'; document.body.appendChild(x); x.select(); const ok = document.execCommand('copy'); x.remove(); return ok; } catch { return false; } }
 function asText() {
   const l = cur(), A = analyse(l), R = [`Systeemkaart: ${l.name}`]; if (l.over) R.push(`Over: ${l.over}`); R.push('');
-  SOORTEN.forEach(s => { const els = l.els.filter(e => e.t === s); if (!els.length) return; R.push(SOORT[s].naam.toUpperCase()); els.forEach(e => R.push('- ' + naamVan(e) + (e.pl ? ` (werkt op: ${PIJLER[e.pl]})` : '') + (e.dyn === 'stapel' ? ' (stapelt op)' : '') + (e.ik ? ` (${e.ik})` : '') + (e.duur === 'tijdelijk' ? ' (tijdelijk)' : '') + (e.st ? ` (zelf te beïnvloeden: ${e.st === 'deels' ? 'een beetje' : e.st})` : ''))); R.push(''); });
+  SOORTEN.forEach(s => { const els = l.els.filter(e => e.t === s); if (!els.length) return; R.push(SOORT[s].naam.toUpperCase()); els.forEach(e => R.push('- ' + naamVan(e) + (e.pl ? ` (werkt op: ${PIJLER[e.pl]})` : '') + (e.dyn === 'stapel' ? ' (stapelt op)' : '') + (e.ik ? ` (${e.ik})` : '') + (e.duur === 'tijdelijk' ? ' (tijdelijk)' : '') + (e.uit ? ` (hoe weten we dit: ${e.uit})` : '') + (e.st ? ` (zelf te beïnvloeden: ${e.st === 'deels' ? 'een beetje' : e.st})` : ''))); R.push(''); });
   if (A.actoren.length) { R.push('WIE DOET WAT'); A.actoren.forEach(a => R.push(`- ${a.naam}: ${a.gedrag.map(e => e.n || '…').join('; ')}${a.kring ? ' (in een kring)' : ''}`)); R.push(''); }
-  if (l.ver.length) { R.push('VERBANDEN'); l.ver.forEach(v => R.push('- ' + zinTekst(v, 300) + (v.w !== 2 ? ` (${STERKTE[v.w].naam})` : '') + (v.z ? ' (vermoeden)' : '') + (v.uit ? ` Waarom: ${v.uit}` : ''))); R.push(''); }
-  if (A.kringen.length) { R.push(`KRINGEN (${A.kringen.volledig ? A.kringen.totaal + ' in totaal' : 'meer dan ' + A.kringen.totaal}; eerst die met een gedrag en een uitkomst, de sterkste eerst)`); A.kringen.slice(0, 30).forEach(k => R.push(`- ${KRING_NAAM[k.soort]}${k.traag ? ' (met vertraging)' : ''}: ${kringTekst(k, l, 200)}`)); R.push(''); }
+  if (l.ver.length) { R.push('VERBANDEN'); l.ver.forEach(v => R.push('- ' + zinTekst(v, 300) + (v.w !== 2 ? ` (${STERKTE[v.w].naam})` : '') + (v.z ? ' (vermoeden)' : '') + (v.uit ? ` Hoe weten we dit: ${v.uit}` : ''))); R.push(''); }
+  if (A.kringen.length) { R.push(`KRINGEN (${A.kringen.volledig ? A.kringen.totaal + ' in totaal' : 'meer dan ' + A.kringen.totaal}; eerst die met een gedrag en een uitkomst, de sterkste eerst)`); A.kringen.slice(0, 30).forEach(k => R.push(`- ${kringNaam(l, k) ? '"' + kringNaam(l, k) + '", ' : ''}${KRING_NAAM[k.soort]}${k.traag ? ' (met vertraging)' : ''}: ${kringTekst(k, l, 200)}`)); R.push(''); }
   ingTekst(l, A).forEach(r => R.push(r));
   if (A.hefbomen.length) R.push('AANDACHTSPUNTEN (MOGELIJKE HEFBOMEN): ' + A.hefbomen.map(e => `${naamVan(e)} (bereik ${e._bereik}${e._lus ? ', in een kring' : ''})`).join('; '), '');
   R.push('Een hulpmiddel om samen na te denken, geen wetenschappelijk model en geen voorspelling. Geïnspireerd door het systeemdenken en het COM-B-model van Michie, van Stralen en West (2011).', '', `Systeemkaart ${TOOL_VERSIE}, onderconstructie.app, ${vandaag()}`);
@@ -4457,11 +4550,11 @@ function ingTekst(l, A) {
 function ocCsvVeilig(s) { s = String(s == null ? '' : s); return /^[=+\-@\t\r]/.test(s) && !/^[+-]?\d+([.,]\d+)*%?$/.test(s) ? "'" + s : s; }
 function asCSV() {
   const cell = v => { v = ocCsvVeilig(v); return /[;"\n\r]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v; }, l = cur();
-  const rows = [['Van ID', 'Van', 'Soort van', 'Pijler van', 'Effect', 'Teken', 'Naar ID', 'Naar', 'Soort naar', 'Sterkte', 'Gewicht', 'Vertraging', 'Zekerheid', 'Waarom of bron', 'Soort ingreep van', 'Wat wil je met van', 'Wat wil je met naar', 'Hoe verandert van', 'Hoe verandert naar', 'Hoe lang (ingreep van)', 'Wie (van)', 'Wie (naar)']];
+  const rows = [['Van ID', 'Van', 'Soort van', 'Pijler van', 'Effect', 'Teken', 'Naar ID', 'Naar', 'Soort naar', 'Sterkte', 'Gewicht', 'Vertraging', 'Zekerheid', 'Hoe weten we dit (verband)', 'Soort ingreep van', 'Wat wil je met van', 'Wat wil je met naar', 'Hoe verandert van', 'Hoe verandert naar', 'Hoe lang (ingreep van)', 'Wie (van)', 'Wie (naar)', 'Hoe weten we dit (van)', 'Hoe weten we dit (naar)']];
   const hoe = e => e.t === 'factor' ? (e.dyn === 'stapel' ? 'stapelt op' : 'meteen') : '', lang = e => e.t === 'ingreep' ? (e.duur === 'tijdelijk' ? 'tijdelijk' : 'blijvend') : '';
   const wil = e => e.doel === 'meer' ? (e.t === 'gedrag' ? 'vaker' : 'meer') : e.doel === 'minder' ? (e.t === 'gedrag' ? 'minder vaak' : 'minder') : '';
-  l.ver.forEach(v => { const a = elVan(v.a), b = elVan(v.b); rows.push([a.id, naamVan(a), SOORT[a.t].naam, a.pl ? PIJLER[a.pl] : '', v.s === '+' ? 'meer geeft meer' : v.s === '-' ? 'meer geeft minder' : 'weet ik niet', v.s === '-' ? '-1' : v.s === '+' ? '1' : '?', b.id, naamVan(b), SOORT[b.t].naam, STERKTE[v.w].naam, String(STERKTE[v.w].w).replace('.', ','), v.v ? 'ja (twee stappen later)' : 'nee', v.z ? 'vermoeden' : 'vrij zeker', v.uit || '', a.ik || '', wil(a), wil(b), hoe(a), hoe(b), lang(a), a.wie || '', b.wie || '']); });
-  l.els.filter(e => !l.ver.some(v => v.a === e.id || v.b === e.id)).forEach(e => rows.push([e.id, naamVan(e), SOORT[e.t].naam, e.pl ? PIJLER[e.pl] : '', '', '', '', '', '', '', '', '', '', '', e.ik || '', wil(e), '', hoe(e), '', lang(e), e.wie || '', '']));
+  l.ver.forEach(v => { const a = elVan(v.a), b = elVan(v.b); rows.push([a.id, naamVan(a), SOORT[a.t].naam, a.pl ? PIJLER[a.pl] : '', v.s === '+' ? 'meer geeft meer' : v.s === '-' ? 'meer geeft minder' : 'weet ik niet', v.s === '-' ? '-1' : v.s === '+' ? '1' : '?', b.id, naamVan(b), SOORT[b.t].naam, STERKTE[v.w].naam, String(STERKTE[v.w].w).replace('.', ','), v.v ? 'ja (twee stappen later)' : 'nee', v.z ? 'vermoeden' : 'vrij zeker', v.uit || '', a.ik || '', wil(a), wil(b), hoe(a), hoe(b), lang(a), a.wie || '', b.wie || '', a.uit || '', b.uit || '']); });
+  l.els.filter(e => !l.ver.some(v => v.a === e.id || v.b === e.id)).forEach(e => rows.push([e.id, naamVan(e), SOORT[e.t].naam, e.pl ? PIJLER[e.pl] : '', '', '', '', '', '', '', '', '', '', '', e.ik || '', wil(e), '', hoe(e), '', lang(e), e.wie || '', '', e.uit || '', '']));
   rows.push([], [`Systeemkaart ${TOOL_VERSIE}, onderconstructie.app, ${vandaag()}`], ['Rekenwijze: ' + METHODE]);
   return '﻿' + rows.map(r => r.map(cell).join(';')).join('\r\n') + '\r\n';
 }
@@ -4498,11 +4591,12 @@ function buildExport() {
   if (KAART_BEELD) { const bw = Math.min(718, KAART_BEELD.w), bh = KAART_BEELD.h * bw / KAART_BEELD.w; h += `<img data-kaart alt="De systeemkaart" style="display:block;width:${bw}px;height:${bh}px;margin:0 auto;border:1px solid #e2e8f0;border-radius:12px">`; }
   const st = (svg2, t2) => `<span style="display:inline-flex;align-items:center;gap:6px"><svg width="28" height="16" viewBox="0 0 28 16">${svg2}</svg>${t2}</span>`;
   h += `<div data-oc-keep style="display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:12px;font-size:13px;color:#475569">${st('<rect x="1" y="2" width="26" height="12" rx="6" fill="#ecfdf5" stroke="#047857" stroke-width="1.5"/>', 'Gedrag')}${st('<rect x="1" y="2" width="26" height="12" rx="2" fill="#fff" stroke="#64748b" stroke-width="1.2"/>', 'Factor')}${st('<rect x="1" y="1" width="26" height="14" rx="3" fill="#fff" stroke="#047857" stroke-width="1.2"/><rect x="3.5" y="3.5" width="21" height="9" rx="2" fill="none" stroke="#047857" stroke-width="1.2"/>', 'Uitkomst')}${st('<path d="M1 2h20l6 6-6 6H1z" fill="#047857"/>', 'Ingreep')}${st('<path d="M1 8h22" stroke="#475569" stroke-width="1.6"/><path d="M21 4l6 4-6 4z" fill="#475569"/>', '+ meer geeft meer, − meer geeft minder')}${st('<path d="M1 8h26" stroke="#475569" stroke-width="1.6"/><path d="M11 12l3-8M15 12l3-8" stroke="#475569" stroke-width="1.6"/>', 'pas na een tijd')}${st('<path d="M1 8h26" stroke="#475569" stroke-width="1.6" stroke-dasharray="4 3"/>', 'vermoeden')}</div>`;
-  if (A.kringen.length) h += kop(`Kringen (${A.kringen.volledig ? A.kringen.totaal + ' in totaal' : 'meer dan ' + A.kringen.totaal}${A.kringen.totaal > 12 ? ', de 12 belangrijkste' : ''})`) + A.kringen.slice(0, 12).map((k, i) => rij(`<b>${i + 1}. ${esc(KRING_NAAM[k.soort])}</b>: ${esc(kringTekst(k, l, 200))}. <span style="color:#64748b">${esc(KRING_UIT[k.soort])}</span>`)).join('');
+  if (A.kringen.length) h += kop(`Kringen (${A.kringen.volledig ? A.kringen.totaal + ' in totaal' : 'meer dan ' + A.kringen.totaal}${A.kringen.totaal > 12 ? ', de 12 belangrijkste' : ''})`) + A.kringen.slice(0, 12).map((k, i) => rij(`<b>${i + 1}. ${kringNaam(l, k) ? '"' + esc(kringNaam(l, k)) + '", ' : ''}${esc(KRING_NAAM[k.soort])}</b>: ${esc(kringTekst(k, l, 200))}. <span style="color:#64748b">${esc(KRING_UIT[k.soort])}</span>`)).join('');
   if (A.actoren.length) h += kop('Wie doet wat') + A.actoren.map(a => rij(`<b>${esc(a.naam)}</b>: ${esc(a.gedrag.map(e => e.n || '…').join(', '))}${a.kring ? ' <span style="color:#64748b">(in een kring)</span>' : ''}`)).join('');
   if (A.hefbomen.length) h += kop('Aandachtspunten (mogelijke hefbomen)') + A.hefbomen.map(e => rij(`${esc(naamVan(e))} <span style="color:#64748b">bereikt ${e._bereik} elementen in twee stappen${e._lus ? ', zit in een kring' : ''}${e.st === 'ja' ? ', zelf te beïnvloeden' : ''}</span>`)).join('');
   { const r = ingTekst(l, A); if (r.length) h += kop('Ingrijpen') + r.filter(x => x).map(x => /^[A-Z ]+[:(]/.test(x) ? `<div style="margin-top:10px;font-weight:700;color:#1e293b;font-size:14px">${esc(x)}</div>` : rij(esc(x.replace(/^- /, '')))).join('') + `<div style="font-size:13px;color:#64748b;margin-top:6px">De logica van de kaart, geen voorspelling. Een stap is geen vaste tijd.</div>`; }
-  if (l.ver.length) h += kop('Verbanden') + l.ver.map(v => rij(esc(zinTekst(v)) + (v.z ? ' <span style="color:#64748b">(vermoeden)</span>' : '') + (v.uit ? `<br><span style="color:#64748b;font-size:12px">Waarom: ${esc(v.uit)}</span>` : ''))).join('');
+  if (l.ver.length) h += kop('Verbanden') + l.ver.map(v => rij(esc(zinTekst(v)) + (v.z ? ' <span style="color:#64748b">(vermoeden)</span>' : ''))).join('');
+  { const met = l.els.filter(e => e.uit).map(e => rij(`<b>${esc(naamVan(e))}</b><br><span style="color:#475569">${esc(e.uit)}</span>`)).concat(l.ver.filter(v => v.uit).map(v => rij(`${esc(zinTekst(v))}<br><span style="color:#475569">${esc(v.uit)}</span>`))); if (met.length) h += kop('Hoe weten we dit?') + met.join(''); }
   h += `<div data-oc-keep style="margin-top:20px;font-size:13px;line-height:1.5;color:#64748b">De tool volgt je pijlen en telt wat elkaar versterkt of afremt. Een hulpmiddel om samen na te denken, geen wetenschappelijk model en geen voorspelling. Geïnspireerd door het systeemdenken en het COM-B-model van Michie, van Stralen en West (2011).</div>`;
   h += `<div data-oc-keep style="margin-top:8px;font-size:12px;line-height:1.45;color:#64748b">Rekenwijze: ${esc(METHODE.split(' Een hulpmiddel')[0])}</div>`;
   node.innerHTML = h;
@@ -4546,7 +4640,7 @@ if (geknipt) setTimeout(() => toast(`Je kaart had meer dan ${MAX_EL} elementen o
 try { const q = new URLSearchParams(location.search).get('kies'); if (q && ID_OK.test(q) && elVan(q)) { history.replaceState(null, '', location.pathname); setTimeout(() => { kiesEl(q); inBeeld(q); }, 120); } } catch {}
 try { document.fonts.ready.then(() => { render(); allesInBeeld(); }); } catch {}
 /* Voor tests */
-window.systeem = { _sim:simuleer, _pijl:pijlVan, _kringen:vindKringen, analyse:() => analyse(cur()), simuleer:(p) => simuleer(cur(), p || cur().ing), herken, staat:() => JSON.parse(JSON.stringify(cur())), vindKringen:() => vindKringen(cur()), view, laadVoorbeeld:loadExample, voorbeelden:() => VOORBEELDEN.map(v => v.id), nieuwEl, maakVerband, schik:() => { schik(cur()); save(); render(); }, _zet:(id, veld, w) => { const e = elVan(id); if (e && ['pl', 'ik', 'st'].includes(veld)) { e[veld] = w; save(); render(); } } };
+window.systeem = { _sim:simuleer, _pijl:pijlVan, _kringen:vindKringen, analyse:() => analyse(cur()), simuleer:(p) => simuleer(cur(), p || cur().ing), herken, staat:() => JSON.parse(JSON.stringify(cur())), vindKringen:() => vindKringen(cur()), view, laadVoorbeeld:loadExample, wegen:(a, b) => { const W = wegen(cur(), a, b); return { totaal:W.totaal, tegen:W.tegen, lijst:W.lijst.map(w => ({ els:w.els, teken:w.teken, traag:w.traag, zin:wegZin(cur(), w) })) }; }, voorbeelden:() => VOORBEELDEN.map(v => v.id), nieuwEl, maakVerband, schik:() => { schik(cur()); save(); render(); }, _zet:(id, veld, w) => { const e = elVan(id); if (e && ['pl', 'ik', 'st'].includes(veld)) { e[veld] = w; save(); render(); } } };
 </script>
 <script>
 /* Opnieuw beginnen: zichtbaar zodra er echt iets ingevuld is; start de eigen 'Alles wissen' van de tool.
