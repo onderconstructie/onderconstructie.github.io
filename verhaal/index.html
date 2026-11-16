@@ -2373,7 +2373,8 @@ function load() {
 let book = load(), state = null, saves = 0;
 const huidig = () => book.projecten.find(p => p.id === book.current) || book.projecten[0];
 function kies(id) { if (id) book.current = id; state = huidig(); book.current = state.id; }
-function ocKiesProject() { const n = ocProject(''); if (!n) return; let u = book.projecten.find(p => p.project === n); if (!u) { const o = ocProjectOud(); u = book.projecten.find(p => o.includes(p.project)); if (u) u.project = n; } if (u) book.current = u.id; kies(); }
+// v16.55: koos je zelf iets (het voorbeeld in de projectkiezer, Voorbeeld bekijken, een bestand), dan blijft dat open tot je in de app een ander project kiest (oc.keuze). Vroeger sprong de tool na herladen naar het project van de app.
+function ocKiesProject() { if (ocEigenKeuze()) return; const n = ocProject(''); if (!n) return; let u = book.projecten.find(p => p.project === n); if (!u) { const o = ocProjectOud(); u = book.projecten.find(p => o.includes(p.project)); if (u) u.project = n; } if (u) book.current = u.id; kies(); }
 function ocNieuwProject() { const n = ocProjectNieuw(book, 'projecten', { van: p => p.project, leeg, noem: (p, x) => { p.project = x; } }); if (n) { const p = fresh(n); book.projecten.push(p); book.current = p.id; } kies(); return !!n; }
 ocKiesProject();
 function persist() { ocSchrijf(KEY, JSON.stringify(book)); }

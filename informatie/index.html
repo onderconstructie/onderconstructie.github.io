@@ -2434,7 +2434,8 @@ function load() {
       const projects = d.projects.filter(p => p && typeof p === 'object').map(normProject);
       if (projects.length) {
         let current = projects.some(p => p.id === d.current) ? d.current : projects[0].id;
-        const act = ocProject(''); if (act) { const u = projects.find(p => p.name === act); if (u) current = u.id; }   // open het actieve project uit de app
+        // v16.55: koos je zelf iets (het voorbeeld in de projectkiezer, Voorbeeld bekijken, een bestand), dan blijft dat open tot je in de app een ander project kiest (oc.keuze). Vroeger sprong de tool na herladen naar het project van de app.
+        const act = ocEigenKeuze() ? '' : ocProject(''); if (act) { const u = projects.find(p => p.name === act); if (u) current = u.id; }   // open het actieve project uit de app
         return { v:1, projects, current, view: VIEWS.includes(d.view) ? d.view : 'gegevens', ...(typeof d.ocSince === 'string' ? { ocSince:d.ocSince } : {}) };
       }
     }

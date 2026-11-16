@@ -2328,7 +2328,8 @@ let book = load(), state = null, saves = 0;
 const huidig = () => book.projecten.find(p => p.id === book.current) || book.projecten[0];
 function kies(id) { if (id) book.current = id; state = huidig(); book.current = state.id; }
 // Het actieve project uit de app openen: dezelfde regel als ocPickProject, op de projectnaam van de inschatting.
-function ocKiesProject() { const n = ocProject(''); if (!n) return; let u = book.projecten.find(p => p.project === n); if (!u) { const o = ocProjectOud(); u = book.projecten.find(p => o.includes(p.project)); if (u) u.project = n; } if (u) book.current = u.id; kies(); }
+// v16.55: koos je zelf iets (het voorbeeld in de projectkiezer, Voorbeeld bekijken, een bestand), dan blijft dat open tot je in de app een ander project kiest (oc.keuze). Vroeger sprong de tool na herladen naar het project van de app.
+function ocKiesProject() { if (ocEigenKeuze()) return; const n = ocProject(''); if (!n) return; let u = book.projecten.find(p => p.project === n); if (!u) { const o = ocProjectOud(); u = book.projecten.find(p => o.includes(p.project)); if (u) u.project = n; } if (u) book.current = u.id; kies(); }
 // Een ander project gekozen in de app en nog geen inschatting ervoor: begin er een, zoals met "+ Project". De vorige blijft in haar tabblad.
 function ocNieuwProject() { const n = ocProjectNieuw(book, 'projecten', { van: p => p.project, leeg, noem: (p, x) => { p.project = x; } }); if (n) { const p = fresh(n); book.projecten.push(p); book.current = p.id; } kies(); return !!n; }
 ocKiesProject();

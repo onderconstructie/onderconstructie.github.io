@@ -590,6 +590,19 @@ select.sk-in { appearance:none; -webkit-appearance:none; padding-right:2.25rem; 
 @media (min-width:700px) {
   .sk-mw-vormen, .sk-mw-kringen { grid-template-columns:1fr 1fr; }
 }
+/* ---------- Je tekent dit, je krijgt dit; voorbeeld kiezen (1.2) ---------- */
+.sk-gebaar { list-style:none; margin:0.75rem auto 0.25rem; padding:0; display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:0.5rem 1rem; max-width:30rem; text-align:left; }
+.sk-gebaar li { display:flex; align-items:center; gap:0.5rem; min-width:0; }
+.sk-gebaar svg { width:72px; height:23px; flex-shrink:0; }
+.sk-gebaar span { display:flex; flex-direction:column; font-size:0.8125rem; line-height:1.3; color:var(--slate-500); }
+.sk-gebaar b { font-size:0.875rem; color:#047857; }
+.sk-leeg .sk-gebaar { margin:0; }
+@media (min-width:700px) { .sk-leeg .sk-gebaar { grid-template-columns:repeat(4, minmax(0, 1fr)); max-width:44rem; } .sk-leeg .sk-gebaar li { flex-direction:column; align-items:center; text-align:center; } .sk-leeg .sk-gebaar span { align-items:center; } }
+.sk-legende svg { width:88px; }
+.sk-leg-kop { margin-top:0.75rem; }
+.vb-kies-l { display:inline-flex; }
+.vb-kies { min-height:44px; max-width:16rem; padding:0 0.5rem; border:1.5px solid var(--slate-200); border-radius:10px; background:#fff; color:var(--slate-700); font:inherit; font-size:0.875rem; font-weight:600; }
+.vb-kies:focus-visible { outline:2px solid #10b981; outline-offset:2px; }
 
 /* ---------- Laptop: ruimte voor de kaart ---------- */
 @media (min-width:1024px) {
@@ -1740,11 +1753,16 @@ window.ocProjectkiezer = function (plek, o) {
 </header>
 
 <main class="main">
-  <div class="empty oc-start" id="ocStart" hidden><strong>Nog geen systeemkaart</strong>Teken wat elkaar beïnvloedt, of bekijk eerst een voorbeeld.<div class="oc-start-btns"><button type="button" class="oc-begin" data-oc-begin="#sk-svg">Begin met tekenen</button><button type="button" class="oc-ex" id="example">Bekijk een voorbeeld</button></div></div>
+  <div class="empty oc-start" id="ocStart" hidden><strong>Nog geen systeemkaart</strong>Teken wat elkaar beïnvloedt, of bekijk eerst een voorbeeld.<ul class="sk-gebaar" aria-label="Je tekent dit, je krijgt dit">
+    <li><svg viewBox="0 0 88 28" aria-hidden="true"><circle cx="14" cy="14" r="10" fill="none" stroke="#94a3b8" stroke-width="1.8" stroke-dasharray="4 3"/><path d="M30 14h9m-3.5-3.5 3.5 3.5-3.5 3.5" fill="none" stroke="#94a3b8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><rect x="44" y="4" width="42" height="20" rx="10" fill="#ecfdf5" stroke="#047857" stroke-width="2"/></svg><span><b>Gedrag</b>teken een cirkel</span></li>
+    <li><svg viewBox="0 0 88 28" aria-hidden="true"><rect x="4" y="5" width="20" height="18" rx="2" fill="none" stroke="#94a3b8" stroke-width="1.8" stroke-dasharray="4 3"/><path d="M30 14h9m-3.5-3.5 3.5 3.5-3.5 3.5" fill="none" stroke="#94a3b8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><rect x="44" y="4" width="42" height="20" rx="4" fill="#fff" stroke="#64748b" stroke-width="1.5"/></svg><span><b>Factor</b>teken een rechthoek</span></li>
+    <li><svg viewBox="0 0 88 28" aria-hidden="true"><rect x="4" y="5" width="20" height="18" rx="2" fill="none" stroke="#94a3b8" stroke-width="1.8" stroke-dasharray="4 3"/><path d="M30 14h9m-3.5-3.5 3.5 3.5-3.5 3.5" fill="none" stroke="#94a3b8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><rect x="44" y="3" width="42" height="22" rx="5" fill="#fff" stroke="#047857" stroke-width="1.5"/><rect x="47.5" y="6.5" width="35" height="15" rx="3" fill="none" stroke="#047857" stroke-width="1.5"/></svg><span><b>Uitkomst</b>een rechthoek, kies Uitkomst</span></li>
+    <li><svg viewBox="0 0 88 28" aria-hidden="true"><path d="M14 4l11 20H3z" fill="none" stroke="#94a3b8" stroke-width="1.8" stroke-dasharray="4 3" stroke-linejoin="round"/><path d="M30 14h9m-3.5-3.5 3.5 3.5-3.5 3.5" fill="none" stroke="#94a3b8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M51 4h35v20H51l-7-10z" fill="#047857"/></svg><span><b>Ingreep</b>teken een driehoek</span></li>
+  </ul><div class="oc-start-btns"><button type="button" class="oc-begin" data-oc-begin="#sk-svg">Begin met tekenen</button><button type="button" class="oc-ex" id="example">Bekijk een voorbeeld</button></div></div>
 
   <div class="vb-bar" id="vb-bar" role="note" hidden>
     <span class="vb-text"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg><span id="vb-tekst">Dit is een voorbeeld. Speel er gerust mee.</span></span>
-    <span class="vb-btns"><button type="button" class="vb-btn" id="vb-vol">Volledig voorbeeld</button><button type="button" class="vb-btn vb-wis" id="vb-wis">Wis voorbeeld</button><button type="button" class="vb-btn vb-eigen" id="vb-eigen">Maak er mijn eigen van</button></span>
+    <span class="vb-btns"><label class="vb-kies-l"><span class="sr-only">Kies een voorbeeld</span><select class="vb-kies" id="vb-kies"></select></label><button type="button" class="vb-btn" id="vb-vol">Volledig voorbeeld</button><button type="button" class="vb-btn vb-wis" id="vb-wis">Wis voorbeeld</button><button type="button" class="vb-btn vb-eigen" id="vb-eigen">Maak er mijn eigen van</button></span>
   </div>
 
   <p class="sr-only" id="sk-live" role="status" aria-live="polite"></p>
@@ -1760,17 +1778,13 @@ window.ocProjectkiezer = function (plek, o) {
         <g id="sk-vp"><g id="sk-kringen"></g><g id="sk-ver"></g><g id="sk-els"></g><g id="sk-tmp"></g></g>
       </svg>
       <div class="sk-leeg" id="sk-leeg" hidden>
-        <svg viewBox="0 0 440 150" fill="none" aria-hidden="true">
-          <g class="sk-leeg-anim" stroke="#94a3b8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="14" y="34" width="112" height="50" rx="25"/><rect x="164" y="34" width="112" height="50" rx="8"/><path d="M364 30l42 56h-84z"/><path d="M126 59h30"/><path d="M148 53l8 6-8 6"/>
-          </g>
-          <g font-family="DM Sans, system-ui, sans-serif" font-size="14" fill="#64748b" text-anchor="middle">
-            <text x="70" y="114">Teken een cirkel:</text><text x="70" y="134" font-weight="700" fill="#047857">gedrag</text>
-            <text x="220" y="114">Een rechthoek:</text><text x="220" y="134" font-weight="700" fill="#047857">factor</text>
-            <text x="364" y="114">Een driehoek:</text><text x="364" y="134" font-weight="700" fill="#047857">ingreep</text>
-          </g>
-        </svg>
-        <p class="sk-leeg-t">Gedrag is wat mensen doen. Een factor wordt meer of minder. Een driehoek wordt een groene vlag: je ingreep. Tik daarna op een element en trek een lijn vanaf een groen bolletje. Schuiven: twee vingers of de handknop.</p>
+        <ul class="sk-gebaar" aria-label="Je tekent dit, je krijgt dit">
+          <li><svg viewBox="0 0 88 28" aria-hidden="true"><circle cx="14" cy="14" r="10" fill="none" stroke="#94a3b8" stroke-width="1.8" stroke-dasharray="4 3"/><path d="M30 14h9m-3.5-3.5 3.5 3.5-3.5 3.5" fill="none" stroke="#94a3b8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><rect x="44" y="4" width="42" height="20" rx="10" fill="#ecfdf5" stroke="#047857" stroke-width="2"/></svg><span><b>Gedrag</b>teken een cirkel</span></li>
+          <li><svg viewBox="0 0 88 28" aria-hidden="true"><rect x="4" y="5" width="20" height="18" rx="2" fill="none" stroke="#94a3b8" stroke-width="1.8" stroke-dasharray="4 3"/><path d="M30 14h9m-3.5-3.5 3.5 3.5-3.5 3.5" fill="none" stroke="#94a3b8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><rect x="44" y="4" width="42" height="20" rx="4" fill="#fff" stroke="#64748b" stroke-width="1.5"/></svg><span><b>Factor</b>teken een rechthoek</span></li>
+          <li><svg viewBox="0 0 88 28" aria-hidden="true"><rect x="4" y="5" width="20" height="18" rx="2" fill="none" stroke="#94a3b8" stroke-width="1.8" stroke-dasharray="4 3"/><path d="M30 14h9m-3.5-3.5 3.5 3.5-3.5 3.5" fill="none" stroke="#94a3b8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><rect x="44" y="3" width="42" height="22" rx="5" fill="#fff" stroke="#047857" stroke-width="1.5"/><rect x="47.5" y="6.5" width="35" height="15" rx="3" fill="none" stroke="#047857" stroke-width="1.5"/></svg><span><b>Uitkomst</b>een rechthoek, kies Uitkomst</span></li>
+          <li><svg viewBox="0 0 88 28" aria-hidden="true"><path d="M14 4l11 20H3z" fill="none" stroke="#94a3b8" stroke-width="1.8" stroke-dasharray="4 3" stroke-linejoin="round"/><path d="M30 14h9m-3.5-3.5 3.5 3.5-3.5 3.5" fill="none" stroke="#94a3b8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M51 4h35v20H51l-7-10z" fill="#047857"/></svg><span><b>Ingreep</b>teken een driehoek</span></li>
+        </ul>
+        <p class="sk-leeg-t">Gedrag is wat mensen doen. Een factor wordt meer of minder. Waar het om draait, maak je een uitkomst. Een driehoek wordt een groene vlag: je ingreep. Tik daarna op een element en trek een lijn vanaf een groen bolletje. Schuiven: twee vingers of de handknop.</p>
         <div class="knoppen"><button type="button" id="leeg-vb">Toon een voorbeeld</button><button type="button" id="leeg-toe">Toevoegen zonder tekenen</button></div>
       </div>
       <div class="sk-band" id="sk-band" hidden><span id="sk-band-t"></span><button type="button" id="sk-band-x">Klaar</button></div>
@@ -1842,6 +1856,17 @@ window.ocProjectkiezer = function (plek, o) {
             </div>
           </section>
           <section class="sk-mw-blok">
+            <h3>Meteen of stapelt op</h3>
+            <p>Bij een factor kies je hoe ze verandert.</p>
+            <div class="sk-mw-kringen sk-mw-tijd">
+              <figure><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="12" y="10" width="16" height="44" fill="#e2e8f0"/><path d="M6 54h54" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/><path d="M6 46h6c4 0 6-26 12-26h4c6 0 8 26 14 26h18" fill="none" stroke="#64748b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <figcaption><b>Meteen</b><span>Volgt wat erop inwerkt. Valt de oorzaak weg, dan zakt het terug. Werkdruk is vaak zo: minder taken, minder werkdruk.</span><small>Zo staat het als je niets kiest</small></figcaption></figure>
+              <figure><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="12" y="10" width="16" height="44" fill="#e2e8f0"/><path d="M6 54h54" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/><path d="M6 46h6l16-26h32" fill="none" stroke="#047857" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><rect x="36" y="58" width="22" height="4" rx="2" fill="#10b981"/></svg>
+                <figcaption><b>Stapelt op</b><span>Groeit zolang er iets in duwt, en blijft dan staan. Het zakt pas als iets het afbouwt. Een achterstand is zo: ze verdwijnt niet vanzelf.</span><small>Op de kaart: een vulstreep onderaan</small></figcaption></figure>
+            </div>
+            <p class="sk-mw-klein">Het grijze vlak is de tijd waarin iets duwt. Bij een ingreep kies je hoe lang hij loopt: blijvend of tijdelijk. Een tijdelijke ingreep stopt na een tijd. Wat meteen verandert, zakt dan terug. Wat opstapelde, blijft.</p>
+          </section>
+          <section class="sk-mw-blok">
             <h3>Kunnen, kans krijgen, willen</h3>
             <p>Mensen doen iets als ze het kunnen, de kans krijgen en het willen. Kies bij een factor waar die over gaat. De tool kijkt dan of je ingreep op de juiste plek werkt: een opleiding helpt weinig als mensen de tijd niet krijgen.</p>
             <ul class="sk-mw-com">
@@ -1852,13 +1877,14 @@ window.ocProjectkiezer = function (plek, o) {
           </section>
           <section class="sk-mw-blok">
             <h3>Wat de tool berekent</h3>
-            <p>Met Ingrijpen zet je een ingreep aan, of maak je iets meer of minder. De tool volgt je pijlen stap voor stap tot alles tot rust komt.</p>
+            <p>Met Ingrijpen zet je een ingreep aan, of maak je iets meer of minder. De tool rekent hoe alles verandert tegenover zoals het nu is. Ze volgt je pijlen stap voor stap tot alles tot rust komt.</p>
             <ul class="sk-mw-pijlen sk-mw-uit">
               <li><i aria-hidden="true">↑</i><div><b>Stijgt</b></div></li>
               <li><i aria-hidden="true">↓</i><div><b>Daalt</b></div></li>
               <li><i aria-hidden="true">↕</i><div><b>Hangt ervan af</b><span>van een pijl "weet ik niet", of van twee kanten die elkaar opheffen.</span></div></li>
             </ul>
-            <p>Met A en B vergelijk je twee ingrepen. De tool kiest alleen als het verschil duidelijk is. Inzicht toont de aandachtspunten: elementen die veel andere bereiken, in een kring zitten en waar je zelf iets aan kan doen.</p>
+            <p>Een kring maakt een duw groter of kleiner, maar rolt nooit vanzelf verder. Stopt je ingreep, dan zakt alles terug. Alleen wat opstapelt, blijft.</p>
+            <p>Met A en B vergelijk je twee ingrepen. De tool kiest alleen als het verschil duidelijk is. Gaan ze allebei de verkeerde kant op, dan zegt ze welke de schade beperkt. Inzicht toont de aandachtspunten: elementen die veel andere bereiken, in een kring zitten en waar je zelf iets aan kan doen.</p>
             <p class="sk-mw-let"><b>Goed om te weten.</b> De tool rekent met richtingen, niet met echte getallen. Ze zegt of iets stijgt of daalt, niet hoeveel. Een kaart is een vermoeden: bespreek ze met de mensen die het werk doen.</p>
           </section>
           <section class="sk-mw-blok">
@@ -2858,6 +2884,13 @@ const SOORT = {
   ingreep:  { naam:'Ingreep',  hint:'Wat doe je eraan? bv. Wekelijks teamoverleg', kort:'ingreep' },
 };
 const SOORTEN = ['gedrag', 'factor', 'uitkomst', 'ingreep'];
+// De voorbeelden: kies er een in de voorbeeldbalk. Rollen, nooit namen.
+const VOORBEELDEN = [
+  { id:'premie', naam:'Overuren en fouten in een dossierteam' },
+  { id:'werkdruk', naam:'Werkdruk en verloop' },
+  { id:'toxisch', naam:'Een leidinggevende die kleineert' },
+  { id:'thuis', naam:'Thuiswerken' },
+];
 // Waar werkt een factor op? Kunnen, kans krijgen, willen (geïnspireerd door COM-B).
 const PIJLERS = [
   { id:'kunnen', naam:'Kunnen', uit:'weten hoe, vaardigheid, onthouden, fysiek in staat' },
@@ -2870,8 +2903,8 @@ const PIJLER = { kunnen:'kunnen', kans:'kans krijgen', willen:'willen' };
 const RAAKT = { 'Uitleggen':['kunnen', 'willen'], 'Overtuigen':['willen'], 'Belonen':['willen'], 'Sanctie of kost':['willen'], 'Oefenen':['kunnen', 'kans', 'willen'], 'Beperken':['kans'], 'Omgeving aanpassen':['kunnen', 'kans', 'willen'], 'Voorbeeld geven':['kans', 'willen'], 'Hindernissen wegnemen':['kunnen', 'kans', 'willen'] };
 const INGREPEN = Object.keys(RAAKT), INGREEP_OUD = { 'Verplichten':'Sanctie of kost', 'Drempels wegnemen':'Hindernissen wegnemen' };
 const STERKTE = { 1:{ naam:'zwak', w:0.5, d:1.25 }, 2:{ naam:'gewoon', w:1, d:1.9 }, 3:{ naam:'sterk', w:1.5, d:3.2 } };
-const MAX_EL = 40, MAX_VER = 120, TOOL_VERSIE = '1.1';
-const METHODE = 'Kringen: alle kringen tot 8 schakels, eerst de korte met een gedrag of uitkomst; een even aantal min-pijlen versterkt, een oneven aantal remt, een pijl "weet ik niet" maakt de kring onbepaald. Aandachtspunt: bereik in twee stappen, plus 2 als het in een kring zit, plus 2 (ja) of 1 (een beetje) als je er zelf iets aan kan doen. Ingrijpen: per stap nieuwe waarde = 0,5 x vorige waarde + 0,5 x tanh(som van teken x gewicht x bron + duw), gewicht zwak 0,5, gewoon 1, sterk 1,5, duw +1 of -1 zolang de ingreep loopt; "pas na een tijd" gebruikt de bron van drie stappen eerder, dus twee stappen later dan een gewone pijl; een pijl "weet ik niet" rekent de tool zowel als + als als - (alle mogelijkheden tot 6 zulke pijlen, daarboven alles + en alles -); gaat een element niet in alle gevallen dezelfde kant op, of heffen tegengestelde invloeden elkaar bijna op, dan toont ze onzeker (↕); onder 0,02 toont ze niets; ze rekent tot de grootste verandering kleiner is dan 0,0005 (hoogstens 60 stappen); schommelen: de richting wisselt minstens twee keer in de laatste 24 stappen. Vrij zeker of vermoeden telt niet mee in de berekening. A en B: sterker vanaf een kwart meer, veel sterker vanaf het dubbele, op de eindtoestand of anders gemiddeld in de eindrichting over de stappen 1 tot 6; een eindoordeel alleen als je bij de uitkomst koos wat je wil, als beide tot rust komen en als minstens één ingreep de goede kant op gaat. Acties overnemen: soort uit woorden in de actie, anders uit het deel; een pijl naar een factor alleen als een woord uit de actie terugkomt in die factor en de pijler past, anders naar het gedrag; het teken volgt wat je met het gedrag wil. Een hulpmiddel om samen na te denken, geen wetenschappelijk model en geen voorspelling. Geïnspireerd door het systeemdenken en het COM-B-model van Michie, van Stralen en West (2011).';
+const MAX_EL = 40, MAX_VER = 120, TOOL_VERSIE = '1.2';
+const METHODE = 'Kringen: alle kringen tot 8 schakels; bovenaan de kringen met een gedrag en een uitkomst, dan de sterkste (gemiddelde sterkte van hun pijlen), dan de kortste; een even aantal min-pijlen versterkt, een oneven aantal remt, een pijl "weet ik niet" maakt de kring onbepaald. Aandachtspunt: bereik in twee stappen, plus 2 als het in een kring zit, plus 2 (ja) of 1 (een beetje) als je er zelf iets aan kan doen; ingrepen tellen niet mee. Ingrijpen: de tool rekent hoeveel elk element afwijkt van zoals het nu is (nul). Per stap: nieuwe waarde = 0,5 x vorige waarde + 0,5 x (z(som van teken x gewicht x bron) + duw), begrensd tussen -1 en 1, met z(s) = s / wortel(1 + s x s); gewicht zwak 0,5, gewoon 1, sterk 1,5; duw +1 of -1. Kringen getemperd: in elke groep elementen die via kringen met elkaar verbonden zijn, krijgen alle pijlen hetzelfde kleinere gewicht tot de lusversterking (de spectraalstraal van de gewichten) hoogstens 0,8 is. Zo maakt een kring een duw groter of kleiner, maar dooft alles uit als niemand nog duwt: nul blijft een stabiel rustpunt. Stapelt op: nieuwe waarde = vorige waarde + 0,5 x instroom, waarbij de instroom zachter wordt naar de grens van -1 of 1; zonder instroom blijft de waarde staan. Een tijdelijke ingreep duwt 8 stappen en stopt dan. "Pas na een tijd" gebruikt de bron van drie stappen eerder; een pijl "weet ik niet" rekent de tool zowel als + als als - (alle mogelijkheden tot 6 zulke pijlen, daarboven alles + en alles -); gaat een element op het einde, of op zijn hoogste punt, niet in alle gevallen dezelfde kant op, of heffen tegengestelde invloeden elkaar bijna op, dan toont ze onzeker (↕), op elke stap hetzelfde; onder 0,02 toont ze niets; ze rekent tot de grootste verandering kleiner is dan 0,0005 (hoogstens 100 stappen); schommelen: de richting wisselt minstens twee keer in de laatste 24 stappen. Vrij zeker of vermoeden telt niet mee in de berekening. A en B: sterker vanaf een kwart meer, veel sterker vanaf het dubbele, op de eindtoestand (met een tijdelijke ingreep: op het moment dat hij het sterkst werkt, en de tool zegt dat het effect tijdelijk is) of anders gemiddeld in de eindrichting over de stappen 1 tot 6; een eindoordeel alleen als je bij de uitkomst koos wat je wil en als die uitkomst met A en met B tot rust komt (de laatste 10 stappen samen minder dan 0,02 verandering, zonder schommelen); gaan A en B allebei de verkeerde kant op, dan zegt ze welke de schade beperkt (minstens een vijfde minder). Acties overnemen: soort uit woorden in de actie, anders uit het deel; een pijl naar een factor alleen als een woord uit de actie terugkomt in die factor en de pijler past, anders naar het gedrag; het teken volgt wat je met het gedrag wil. Een hulpmiddel om samen na te denken, geen wetenschappelijk model en geen voorspelling. Geïnspireerd door het systeemdenken en het COM-B-model van Michie, van Stralen en West (2011).';
 
 /* ---------- Opslag ---------- */
 const KEY = 'systeemkaart.v1';
@@ -2889,6 +2922,8 @@ function schoonEl(e, id) {
   const ik = INGREEP_OUD[e.ik] || e.ik; if (el.t === 'ingreep' && INGREPEN.includes(ik)) el.ik = ik;
   if (el.t !== 'uitkomst' && ['ja', 'deels', 'nee'].includes(e.st)) el.st = e.st;
   if ((el.t === 'gedrag' || el.t === 'uitkomst') && ['meer', 'minder'].includes(e.doel)) el.doel = e.doel;   // wil je dit meer (vaker) of minder?   // kan je hier zelf iets aan doen?
+  if (el.t === 'factor' && e.dyn === 'stapel') el.dyn = 'stapel';   // hoe verandert dit? standaard meteen; stapelt op = een voorraad (vanaf 1.2)
+  if (el.t === 'ingreep' && e.duur === 'tijdelijk') el.duur = 'tijdelijk';   // hoe lang? standaard blijvend (vanaf 1.2)
   return el;
 }
 let geknipt = false;   // te veel elementen of verbanden bij het laden: we melden het één keer
@@ -2908,7 +2943,7 @@ function schoonKaart(l) {
   const ingSchoon = o => { const r = {}; if (o && typeof o === 'object') Object.keys(o).forEach(k => { const id = map.get(k); if (id && (o[k] === 1 || o[k] === -1)) r[id] = o[k]; }); return r; };
   l.ing = ingSchoon(l.ing);
   const a = ingSchoon(l.ingA); if (Object.keys(a).length) l.ingA = a; else delete l.ingA;
-  if (l.voorbeeld !== true) { delete l.voorbeeld; delete l.beperkt; }
+  if (l.voorbeeld !== true) { delete l.voorbeeld; delete l.beperkt; delete l.vbId; } else if (!VOORBEELDEN.some(v => v.id === l.vbId)) l.vbId = 'premie';   // oudere voorbeelden: het premieloket
   return l;
 }
 const nieuweLeeg = name => ({ id:uid(), name, over:'', els:[], ver:[], ing:{} });
@@ -2939,7 +2974,8 @@ let sel = null;          // { soort:'el'|'ver', id }
 let paneel = 'leeg';     // leeg, el, ver, toe, ing, zie
 let modus = '';          // '' of 'ing' (ingrijpen) of 'verbind'
 let licht = null;        // uitgelicht: { els:Set, ver:Set }
-let stap = 99;           // getoonde stap bij ingrijpen (99 = het einde)
+const EINDE = 1e6;
+let stap = EINDE;        // getoonde stap bij ingrijpen (EINDE = de laatste stap)
 let begonnen = false;
 
 /* ---------- Ongedaan maken: per kaart, tot 50 stappen ---------- */
@@ -2953,7 +2989,7 @@ function zetTerug(van, naar) {
   naar.push(JSON.stringify({ els:l.els, ver:l.ver, ing:l.ing, ingA:l.ingA || null, over:l.over }));
   const d = JSON.parse(van.pop()); if (!d.ingA) delete l.ingA; Object.assign(l, d); if (!d.ingA) delete l.ingA; schoonKaart(l);
   if (sel && !(sel.soort === 'el' ? elVan(sel.id) : verVan(sel.id))) { sel = null; if (paneel === 'el' || paneel === 'ver') paneel = 'leeg'; }
-  licht = null; zieKeuze = null; stap = 99; if (toonA && !l.ingA) toonA = false;   // na ongedaan maken kan een kring of stap iets anders betekenen
+  licht = null; zieKeuze = null; stap = EINDE; if (toonA && !l.ingA) toonA = false;   // na ongedaan maken kan een kring of stap iets anders betekenen
   save(); render(); return true;
 }
 const ongedaan = () => { if (zetTerug(terug, vooruit)) zeg('Ongedaan gemaakt'); else toast('Er is niets om ongedaan te maken'); };
@@ -2981,9 +3017,9 @@ function maat(e) {
   let extra = '';
   if (e.t === 'gedrag') extra = e.wie || 'Wie?';
   if (e.t === 'factor' && e.pl) extra = (PIJLERS.find(p => p.id === e.pl) || {}).naam || '';
-  if (e.t === 'ingreep') extra = e.ik || 'Ingreep';
+  if (e.t === 'ingreep') extra = e.duur === 'tijdelijk' ? 'Tijdelijk' : e.ik || 'Ingreep';   // tijdelijk weegt zwaarder in de berekening dan de soort
   if (extra) { extra = breek(extra, F_KLEIN, 172, 1)[0]; meet.font = F_KLEIN; bw = Math.max(bw, meet.measureText(extra).width); }
-  const h = (e.t === 'gedrag' ? 16 : 13) + (extra ? 20 : 0) + r.length * 20 + (e.t === 'gedrag' ? 14 : 12) + (e.t === 'uitkomst' ? 6 : 0);
+  const h = (e.t === 'gedrag' ? 16 : 13) + (extra ? 20 : 0) + r.length * 20 + (e.t === 'gedrag' ? 14 : 12) + (e.t === 'uitkomst' ? 6 : 0) + (e.dyn === 'stapel' ? 10 : 0);   // stapelt op: plaats voor de vulstreep
   const w = clamp(Math.round(bw) + (e.t === 'gedrag' ? 44 : e.t === 'ingreep' ? 44 : 32), e.t === 'gedrag' ? 136 : 116, 228);
   return { w, h: Math.max(h, 52), r, extra };
 }
@@ -3097,8 +3133,8 @@ function inKringSet(l) {
   l.els.forEach(e => { if (!nr.has(e.id)) sc(e.id); });
   return res;
 }
-const KRING_NAAM = { R:'Versterkende kring (houdt zichzelf in stand)', B:'Remmende kring (remt zichzelf af)', '?':'Kring met een twijfel' };
-const KRING_UIT = { R:'Duwt verder in dezelfde richting, ten goede of ten kwade.', B:'Duwt terug naar een evenwicht. Daarom verandert er soms weinig.', '?':'Er zit een verband in waarvan je niet weet of het meer of minder geeft.' };
+const KRING_NAAM = { R:'Versterkende kring (maakt groter)', B:'Remmende kring (remt af)', '?':'Kring met een twijfel' };
+const KRING_UIT = { R:'Maakt een verandering groter, ten goede of ten kwade.', B:'Duwt terug naar een evenwicht. Daarom verandert er soms weinig.', '?':'Er zit een verband in waarvan je niet weet of het meer of minder geeft.' };
 const kringTekst = (k, l, n = 28) => k.els.map(id => kortNaam(l.els.find(e => e.id === id), n)).concat(kortNaam(l.els.find(e => e.id === k.els[0]), n)).join(' → ');
 // een naam die al een negatieve richting zegt ("te weinig plaats"): bij hernoemen draaien de pijlen mee om
 const NEGATIEF = /^(te\s+)?(lage|lager|minder|weinig|kleine|dalende|afnemende|gebrek aan|tekort aan|daling van|gebrek|tekort|slechte)\b/i;
@@ -3110,12 +3146,18 @@ function analyse(l) {
   l.els.forEach(e => { inn.set(e.id, []); uitg.set(e.id, []); inK.set(e.id, 0); });
   l.ver.forEach(v => { uitg.get(v.a).push(v); inn.get(v.b).push(v); });
   kr.forEach(k => k.els.forEach(id => inK.set(id, inK.get(id) + 1)));
-  const rang = k => k.els.length + (k.els.some(id => { const e = l.els.find(x => x.id === id); return e && (e.t === 'gedrag' || e.t === 'uitkomst'); }) ? 0 : 2);
-  const kringen = Object.assign(kr.slice().sort((a, b) => rang(a) - rang(b)), { totaal:kr.totaal, volledig:kr.volledig });
+  // Belang van een kring: zit er een gedrag en een uitkomst in (en hoeveel), dan hoe sterk de pijlen gemiddeld zijn, dan de kortste.
+  // Zo staat de kern van een probleem bovenaan, ook als ze uit veel schakels bestaat (een korte kring van twee factoren telt minder).
+  const soortVan = id => { const e = l.els.find(x => x.id === id); return e ? e.t : ''; };
+  const belang = k => { const t = k.els.map(soortVan), gu = t.filter(x => x === 'gedrag' || x === 'uitkomst').length; return (t.includes('gedrag') ? 2 : 0) + (t.includes('uitkomst') ? 2 : 0) + gu; };
+  const kracht = k => Math.pow(k.ver.reduce((p, v) => p * STERKTE[v.w].w, 1), 1 / k.ver.length);
+  kr.forEach(k => { k.belang = belang(k); k.kracht = kracht(k); });
+  const kringen = Object.assign(kr.slice().sort((a, b) => b.belang - a.belang || b.kracht - a.kracht || a.els.length - b.els.length), { totaal:kr.totaal, volledig:kr.volledig });
   // Aandachtspunt (mogelijke hefboom): bereik in twee stappen, plus 2 als het in een kring zit, plus 2 als je er zelf iets aan kan doen.
   const bereik2 = id => { const z = new Set(); uitg.get(id).filter(v => v.s !== '?').forEach(v => { z.add(v.b); uitg.get(v.b).filter(w => w.s !== '?').forEach(w => z.add(w.b)); }); z.delete(id); return z.size; };   // via 'weet ik niet' bereik je niets zeker
   const score = e => bereik2(e.id) + (lus.has(e.id) ? 2 : 0) + (e.st === 'ja' ? 2 : e.st === 'deels' ? 1 : 0);
-  const hefbomen = l.els.filter(e => e.t !== 'uitkomst' && e.st !== 'nee' && (lus.has(e.id) || bereik2(e.id) >= 2)).sort((a, b) => score(b) - score(a) || a.n.localeCompare(b.n)).slice(0, 3).map(e => Object.assign(Object.create(e), { _bereik:bereik2(e.id), _lus:lus.has(e.id) }));
+  // een ingreep is al wat je doet: geen plek om een hefboom te zoeken
+  const hefbomen = l.els.filter(e => e.t !== 'uitkomst' && e.t !== 'ingreep' && e.st !== 'nee' && (lus.has(e.id) || bereik2(e.id) >= 2)).sort((a, b) => score(b) - score(a) || a.n.localeCompare(b.n)).slice(0, 3).map(e => Object.assign(Object.create(e), { _bereik:bereik2(e.id), _lus:lus.has(e.id) }));
   const begin = l.els.filter(e => uitg.get(e.id).length && !inn.get(e.id).length && e.t !== 'ingreep');
   const los = l.els.filter(e => !uitg.get(e.id).length && !inn.get(e.id).length);
   const gedragZonder = l.els.filter(e => e.t === 'gedrag' && !inn.get(e.id).filter(v => elVan(v.a) && elVan(v.a).t !== 'ingreep').length);
@@ -3125,7 +3167,11 @@ function analyse(l) {
   // een ingreep die geen gedrag raakt
   const bereik = id => { const z = new Set([id]), q = [id]; while (q.length) { const x = q.shift(); uitg.get(x).forEach(v => { if (!z.has(v.b)) { z.add(v.b); q.push(v.b); } }); } return z; };
   const ingrepen = l.els.filter(e => e.t === 'ingreep');
-  const ingZonder = ingrepen.filter(i => ![...bereik(i.id)].some(id => { const e = l.els.find(x => x.id === id); return e && e.t === 'gedrag'; }));
+  // een ingreep die geen gedrag en geen uitkomst raakt: dan is niet te zien wat ze oplevert (een ingreep op een factor die naar een uitkomst leidt, is in orde)
+  const ingZonder = ingrepen.filter(i => ![...bereik(i.id)].some(id => { const e = l.els.find(x => x.id === id); return e && (e.t === 'gedrag' || e.t === 'uitkomst'); }));
+  // iets dat zich opstapelt, maar geen pijl met − bouwt het af
+  // alleen als alles wat erin duwt met + zelf door niets op de kaart beïnvloed wordt (een ingreep of een begin): dan kan de voorraad echt alleen stijgen
+  const nietAf = l.els.filter(e => e.dyn === 'stapel' && inn.get(e.id).length && inn.get(e.id).every(v => v.s === '+' && !inn.get(v.a).length));
   // welke pijler (kunnen, kans, willen) werkt in op een gedrag
   const eenPijler = l.els.filter(e => e.t === 'gedrag').map(g => {
     const p = inn.get(g.id).map(v => elVan(v.a)).filter(f => f && f.t === 'factor' && f.pl).map(f => f.pl);
@@ -3147,20 +3193,53 @@ function analyse(l) {
     else if (MENS_PROBLEEM.test(e.n + ' ' + (e.wie || ''))) tips.push({ e, soort:'mens', tekst:`"${kortNaam(e)}" klinkt als een oordeel over mensen. Wat maakt dat ze dit doen? Zet dat erbij.` });
     else if (/^(de\s+)?tijd$/i.test(e.n)) tips.push({ e, soort:'tijd', tekst:'Tijd zelf is geen oorzaak. Wat verandert er met de tijd?' });
   });
-  return { kringen, inK, inn, uitg, lus, hefbomen, begin, los, gedragZonder, uitkomsten, ingZonder, eenPijler, mismatch, gelijk, alleenUitleg, terugslag, tips: tips.slice(0, 3) };
+  return { kringen, inK, inn, uitg, lus, hefbomen, begin, los, gedragZonder, uitkomsten, ingZonder, nietAf, eenPijler, mismatch, gelijk, alleenUitleg, terugslag, tips: tips.slice(0, 3) };
 }
 
 /* ---------- Ingrijpen: doorrekenen langs de pijlen ----------
-   Een kwalitatieve fuzzy cognitive map. Per stap en per element zet de tool de helft van de verandering door:
-     x(t) = 0,5 · x(t−1) + 0,5 · tanh( som van teken · gewicht · x(bron)  +  duw )
-   gewicht: zwak 0,5, gewoon 1, sterk 1,5; een pijl "pas na een tijd" gebruikt de bron van drie stappen eerder; duw: +1 (meer) of −1 (minder), blijvend.
-   Halfweg doorzetten voorkomt dat korte remmende kringen schommelen door de rekenstap zelf. Onzekerheid (pijl "weet ik niet") rekenen we apart en die werkt door.
-   We rekenen tot alles tot rust komt (hoogstens 60 stappen). Getallen tonen we nooit. */
-const GEHEUGEN = 0.5, DUW = 1, MAXSTAP = 60, NUL = 0.02;
+   Een kwalitatieve fuzzy cognitive map, gerekend als afwijking van "zoals het nu is" (nul). Per stap en per element:
+     x(t) = 0,5 · x(t−1) + 0,5 · grens( z(som van teken · gewicht · x(bron)) + duw ),   z(s) = s / √(1 + s²), grens: tussen −1 en 1
+   gewicht: zwak 0,5, gewoon 1, sterk 1,5; een pijl "pas na een tijd" gebruikt de bron van drie stappen eerder; duw: +1 (meer) of −1 (minder).
+   Stabiel nulpunt: in elke groep elementen die via kringen samenhangen (sterk samenhangende component) krijgen alle pijlen hetzelfde
+   kleinere gewicht tot de lusversterking (spectraalstraal van |gewicht|) hoogstens 0,8 is. Dan is de rekenstap een samentrekking:
+   er is één rustpunt, een duw die stopt dooft uit, niets kantelt vanzelf en niets schommelt eeuwig. Zo meet A tegenover B de ingreep,
+   niet welke kring toevallig wint. z() verzadigt zachter dan tanh, zodat een sterkere ingreep zichtbaar verder komt.
+   Stapelt op (een voorraad): x(t) = x(t−1) + 0,5 · instroom, zachter naar de grens; zonder instroom blijft de waarde staan.
+   Tijdelijke ingreep: duwt 8 stappen. We rekenen tot alles tot rust komt (hoogstens 100 stappen: een getemperde kring dooft traag uit). Getallen tonen we nooit. */
+const GEHEUGEN = 0.5, DUW = 1, MAXSTAP = 100, NUL = 0.02, LUS_MAX = 0.8, TIJDELIJK = 8, OPSTAP = 0.5;
+const zacht = s => s / Math.sqrt(1 + s * s);
+// Groepen elementen die via kringen samenhangen (Tarjan): id -> nummer van de groep.
+function groepen(l) {
+  const uit = new Map(l.els.map(e => [e.id, []])); l.ver.forEach(v => { if (uit.has(v.a) && uit.has(v.b)) uit.get(v.a).push(v.b); });
+  let i = 0, g = 0; const nr = new Map(), laag = new Map(), st = [], op = new Set(), res = new Map();
+  const sc = v => { nr.set(v, i); laag.set(v, i); i++; st.push(v); op.add(v);
+    uit.get(v).forEach(w => { if (!nr.has(w)) { sc(w); laag.set(v, Math.min(laag.get(v), laag.get(w))); } else if (op.has(w)) laag.set(v, Math.min(laag.get(v), nr.get(w))); });
+    if (laag.get(v) === nr.get(v)) { let w; g++; do { w = st.pop(); op.delete(w); res.set(w, g); } while (w !== v); } };
+  l.els.forEach(e => { if (!nr.has(e.id)) sc(e.id); });
+  return res;
+}
+// Spectraalstraal van een niet-negatieve matrix binnen één groep (machtsmethode op I + W, die convergeert ook bij een even kring).
+function straal(ids, ed) {
+  if (!ed.length) return 0; let x = new Map(ids.map(i => [i, 1])), r = 0;
+  for (let it = 0; it < 300; it++) { const y = new Map(ids.map(i => [i, x.get(i)])); ed.forEach(e => y.set(e.b, y.get(e.b) + e.w * x.get(e.a))); let m = 0; y.forEach(v => { m = Math.max(m, v); }); if (!m) return 0; y.forEach((v, k) => y.set(k, v / m)); const nr2 = m - 1; if (Math.abs(nr2 - r) < 1e-7 && it > 20) return nr2; r = nr2; x = y; }
+  return r;
+}
+// Het gewicht waarmee elke pijl rekent: de sterkte, en binnen een groep met kringen getemperd tot lusversterking 0,8.
+function gewichten(l) {
+  const gr = groepen(l), per = new Map(), G = new Map();
+  l.ver.forEach(v => { const g = gr.get(v.a); if (g && g === gr.get(v.b)) { if (!per.has(g)) per.set(g, []); per.get(g).push(v); } });
+  const k = new Map(); per.forEach((vs, g) => { const ids = [...new Set(vs.flatMap(v => [v.a, v.b]))], r = straal(ids, vs.map(v => ({ a:v.a, b:v.b, w:STERKTE[v.w].w }))); k.set(g, r > LUS_MAX ? LUS_MAX / r : 1); });
+  l.ver.forEach(v => { const g = gr.get(v.a); G.set(v.id, STERKTE[v.w].w * (g && g === gr.get(v.b) ? k.get(g) : 1)); });
+  return G;
+}
+// Welke duwen stoppen na een tijd? (een ingreep die je tijdelijk zette)
+const stopVan = (l, push) => { const m = new Map(); Object.keys(push).forEach(id => { const e = l.els.find(x => x.id === id); if (e && e.t === 'ingreep' && e.duur === 'tijdelijk') m.set(id, TIJDELIJK); }); return m; };
 // Eén doorrekening. Een pijl "weet ik niet" krijgt hier het teken uit `teken` (+ of -).
-function simKern(l, push, teken) {
-  const ids = l.els.map(e => e.id), inn = new Map(ids.map(id => [id, []]));
+function simKern(l, push, teken, G) {
+  G = G || gewichten(l);
+  const ids = l.els.map(e => e.id), inn = new Map(ids.map(id => [id, []])), stapel = new Set(l.els.filter(e => e.dyn === 'stapel').map(e => e.id));
   l.ver.forEach(v => inn.get(v.b).push(v));
+  const stop = stopVan(l, push), laatste = Math.max(0, ...stop.values());
   const xs = [new Map(ids.map(id => [id, 0]))], bal = [new Map()];
   let rust = 0;
   for (let t = 1; t <= MAXSTAP; t++) {
@@ -3168,37 +3247,55 @@ function simKern(l, push, teken) {
     ids.forEach(id => {
       let pos = 0, neg = 0;
       inn.get(id).forEach(v => {
-        const lag = v.v ? 3 : 1, xu = t - lag >= 0 ? (xs[t - lag].get(v.a) || 0) : 0, w = STERKTE[v.w].w, sg = v.s === '?' ? (teken[v.id] || '+') : v.s;
+        const lag = v.v ? 3 : 1, xu = t - lag >= 0 ? (xs[t - lag].get(v.a) || 0) : 0, w = G.get(v.id), sg = v.s === '?' ? (teken[v.id] || '+') : v.s;
         const c = (sg === '+' ? 1 : -1) * w * xu; if (c > 0) pos += c; else neg -= c;
       });
-      const p = push[id] || 0, som = pos - neg + p * DUW;
+      const p = stop.has(id) && t > stop.get(id) ? 0 : (push[id] || 0);
       // twee kanten die elkaar bijna helemaal opheffen: tonen als 'hangt ervan af'
       if (Math.max(pos, neg) > 0.2 && Math.min(pos, neg) > 0.85 * Math.max(pos, neg)) b.set(id, true);
-      const xv = GEHEUGEN * (xs[t - 1].get(id) || 0) + (1 - GEHEUGEN) * Math.tanh(som);
-      x.set(id, xv); d = Math.max(d, Math.abs(xv - (xs[t - 1].get(id) || 0)));
+      const u = clamp(zacht(pos - neg) + p * DUW, -1, 1), vor = xs[t - 1].get(id) || 0;
+      const xv = stapel.has(id) ? clamp(vor + OPSTAP * u * (u * vor > 0 ? 1 - Math.abs(vor) : 1), -1, 1) : GEHEUGEN * vor + (1 - GEHEUGEN) * u;
+      x.set(id, xv); d = Math.max(d, Math.abs(xv - vor));
     });
     xs.push(x); bal.push(b);
-    if (d < 0.0005 && t > 3) { rust = t; break; }
+    if (d < 0.0005 && t > 3 && t > laatste + 1) { rust = t; break; }   // een tijdelijke ingreep moet eerst gestopt zijn
   }
   return { xs, bal, T: xs.length - 1, rust };
 }
 /* Pijlen "weet ik niet": we rekenen alle mogelijkheden door (+ of -; bij meer dan 6 zulke pijlen alleen alles + en alles -).
-   Gaat een element in alle gevallen dezelfde kant op, dan tonen we die richting. Verschilt het, dan is het onzeker (↕). */
+   Per element beslissen we één keer of het onzeker is: als de mogelijkheden op het einde (of, als het effect uitdooft, op hun hoogste punt)
+   een andere kant op gaan. Dan toont de tool op elke stap ↕, en anders nooit: geen geflikker van stap tot stap. */
 function simuleer(l, push) {
   const vraag = l.ver.filter(v => v.s === '?').map(v => v.id), combos = [];
   if (!vraag.length) combos.push({});
   else if (vraag.length <= 6) for (let m = 0; m < (1 << vraag.length); m++) { const t = {}; vraag.forEach((id, i) => { t[id] = m & (1 << i) ? '-' : '+'; }); combos.push(t); }
   else { const p = {}, n = {}; vraag.forEach(id => { p[id] = '+'; n[id] = '-'; }); combos.push(p, n); }
-  const runs = combos.map(t => simKern(l, push, t)), T = Math.max(...runs.map(r => r.T)), ids = l.els.map(e => e.id);
-  const xs = [], qs = [], bal = [];
+  const G = gewichten(l), runs = combos.map(t => simKern(l, push, t, G)), T = Math.max(...runs.map(r => r.T)), ids = l.els.map(e => e.id);
+  const xs = [], qs = [];
   for (let t = 0; t <= T; t++) {
     const x = new Map(), q = new Map();
-    ids.forEach(id => { let som = 0, op = 0, neer = 0; runs.forEach(r => { const v = r.xs[Math.min(t, r.T)].get(id) || 0; som += v; if (v >= NUL) op++; else if (v <= -NUL) neer++; }); x.set(id, som / runs.length); q.set(id, op && neer ? 1 : 0); });
-    xs.push(x); qs.push(q); bal.push(runs[0].bal[Math.min(t, runs[0].T)]);
+    ids.forEach(id => { let som = 0, iets = 0; runs.forEach(r => { const v = r.xs[Math.min(t, r.T)].get(id) || 0; som += v; if (Math.abs(v) >= NUL) iets = 1; }); x.set(id, som / runs.length); q.set(id, iets); });
+    xs.push(x); qs.push(q);
   }
-  return { xs, qs, bal, T, rust: runs.every(r => r.rust) ? T : 0 };
+  const ref = (r, id) => { const e = r.xs[r.T].get(id) || 0; if (Math.abs(e) >= NUL) return e; let m = 0; for (let t = 1; t <= r.T; t++) { const v = r.xs[t].get(id) || 0; if (Math.abs(v) > Math.abs(m)) m = v; } return m; };
+  const onz = new Map();
+  ids.forEach(id => {
+    const rs = runs.map(r => ref(r, id));
+    if (rs.some(v => v >= NUL) && rs.some(v => v <= -NUL)) onz.set(id, '?');
+    else { const r0 = runs[0], e = Math.abs(xs[T].get(id) || 0); if (r0.bal[r0.T] && r0.bal[r0.T].get(id) && e < 0.2) onz.set(id, 'bal'); }
+  });
+  const stop = stopVan(l, push);
+  return { xs, qs, onz, T, rust: runs.every(r => r.rust) ? T : 0, tijd: stop.size ? Math.max(...stop.values()) : 0, stapel: new Set(l.els.filter(e => e.dyn === 'stapel').map(e => e.id)) };
 }
-const pijlVan = (sim, id, t) => { if (!sim) return ''; t = Math.min(t, sim.T); const x = sim.xs[t].get(id) || 0, q = sim.qs[t].get(id) || 0; if (q > 0.1 && q >= Math.abs(x) * 0.8) return '↕'; if (sim.bal[t] && sim.bal[t].get(id) && Math.abs(x) < 0.2) return '↕'; return Math.abs(x) < NUL ? '' : x > 0 ? '↑' : '↓'; };
+const pijlVan = (sim, id, t) => { if (!sim) return ''; t = Math.min(t, sim.T); const x = sim.xs[t].get(id) || 0; if (sim.onz.get(id)) return sim.qs[t].get(id) ? '↕' : ''; return Math.abs(x) < NUL ? '' : x > 0 ? '↑' : '↓'; };
+// Hoogste punt van een effect dat weer uitdooft (na een tijdelijke ingreep): richting en stap.
+const piek = (sim, id) => { let m = 0, s = 0; for (let t = 1; t <= sim.T; t++) { const v = sim.xs[t].get(id) || 0; if (Math.abs(v) > Math.abs(m)) { m = v; s = t; } } return { p: sim.onz.get(id) ? (Math.abs(m) >= NUL ? '↕' : '') : Math.abs(m) < NUL ? '' : m > 0 ? '↑' : '↓', t:s }; };
+// Richting op het einde, of bij een tijdelijke ingreep die uitdoofde: tijdens de ingreep.
+const eindPijl = (sim, id) => { const p = pijlVan(sim, id, sim.T); if (!sim.tijd) return { p, tijdens:false }; const k = piek(sim, id); if (p && p === k.p) return { p, tijdens:false }; return { p:k.p, tijdens:!!k.p }; };   // tijdelijk: blijft het (zelfde kant als op zijn sterkst), of was het er alleen tijdens de werking?
+// Hoe ver een element komt: op het einde, of bij een tijdelijke ingreep op zijn sterkst (na het uitdoven is er niets meer te zien).
+const werking = (sim, id) => { if (!sim.tijd) return sim.xs[sim.T].get(id) || 0; const k = piek(sim, id); return k.t ? sim.xs[k.t].get(id) || 0 : 0; };
+// Verandert een voorraad op het einde nog?
+const nogBezig = (sim, id) => sim.T > 1 && Math.abs((sim.xs[sim.T].get(id) || 0) - (sim.xs[sim.T - 1].get(id) || 0)) > 0.0005;
 // Schommelt een element nog in de laatste stappen?
 const schommelt = (sim, id) => { if (sim.rust) return false; let w = 0, vorig = ''; for (let t = Math.max(1, sim.T - 24); t <= sim.T; t++) { const p = pijlVan(sim, id, t); if (p && p !== '↕') { if (vorig && p !== vorig) w++; vorig = p; } } return w >= 2; };
 // Vanaf welke stap staat het effect in zijn eindrichting, en blijft het zo?
@@ -3210,6 +3307,11 @@ const pushVan = l => Object.assign({}, I(l));
 
 /* ---------- Tekenen van de kaart ---------- */
 const PUSH_TAB = { 1:'▲ meer', '-1':'▼ minder' };
+// Stapelt op: een vulstreep onderaan het element. Zonder doorrekening half vol; bij Ingrijpen voller of leger dan nu.
+function vulSvg(e, m, vul) {
+  const x = e.x - m.w / 2 + 10, w = m.w - 20, y = e.y + m.h / 2 - 11, f = clamp(vul == null ? 0.5 : vul, 0.04, 1);
+  return `<g class="vul"><title>Stapelt op</title><rect x="${x}" y="${y}" width="${w}" height="6" rx="3" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1"/><rect x="${x}" y="${y}" width="${(w * f).toFixed(1)}" height="6" rx="3" fill="#10b981"/><path d="M${x + w / 2} ${y - 1.5}v9" stroke="#64748b" stroke-width="1.2" stroke-linecap="round"/></g>`;
+}
 function vormSvg(e, m) {
   const x = e.x - m.w / 2, y = e.y - m.h / 2;
   if (e.t === 'gedrag') return `<rect class="vorm" x="${x}" y="${y}" width="${m.w}" height="${m.h}" rx="${Math.min(m.h / 2, 30)}" fill="#ecfdf5" stroke="#047857" stroke-width="2"/>`;
@@ -3219,7 +3321,7 @@ function vormSvg(e, m) {
 }
 function tekstSvg(e, m) {
   const wit = e.t === 'ingreep', kleur = wit ? '#fff' : '#1e293b';
-  const regels = m.r.length + (m.extra ? 1 : 0); let y = e.y - (regels * 20) / 2 + 15; let h = '';
+  const regels = m.r.length + (m.extra ? 1 : 0); let y = e.y - (regels * 20) / 2 + 15 - (e.dyn === 'stapel' ? 5 : 0); let h = '';
   const xm = e.x + (e.t === 'ingreep' ? 6 : 0);
   if (m.extra) {
     const kl = e.t === 'gedrag' ? '#047857' : wit ? '#d1fae5' : '#64748b', leeg = (e.t === 'gedrag' && !e.wie);
@@ -3257,7 +3359,7 @@ function tekenKaart(A, snel) {
     he += `<g class="el${vaag}" data-el="${esc(e.id)}"><title>${esc(SOORT[e.t].naam + ': ' + naamVan(e))}</title>`;
     if (kies || (licht && licht.els.has(e.id))) he += `<rect x="${e.x - m.w / 2 - 6}" y="${e.y - m.h / 2 - 6}" width="${m.w + 12}" height="${m.h + 12}" rx="${e.t === 'gedrag' ? Math.min(m.h / 2 + 6, 36) : 13}" fill="none" stroke="${kies ? '#10b981' : '#a7f3d0'}" stroke-width="${kies ? 3 : 4}"/>`;
     if (e.id === doelId || e.id === flitsId) he += `<rect class="${e.id === flitsId ? 'sk-puls' : ''}" x="${e.x - m.w / 2 - 7}" y="${e.y - m.h / 2 - 7}" width="${m.w + 14}" height="${m.h + 14}" rx="14" fill="none" stroke="#10b981" stroke-width="3" stroke-dasharray="${e.id === doelId ? '7 5' : 'none'}"/>`;
-    he += vormSvg(e, m) + tekstSvg(e, m);
+    he += vormSvg(e, m) + tekstSvg(e, m) + (e.dyn === 'stapel' ? vulSvg(e, m, SIM ? 0.5 + 0.46 * (SIM.xs[Math.min(stap, SIM.T)].get(e.id) || 0) : null) : '');
     if (e.doel && !(modus === 'ing' && I(l)[e.id])) { const cx = e.x - m.w / 2 + 4, cy = e.y - m.h / 2 - 2, op = e.doel === 'meer'; he += `<g class="wil"><title>${e.t === 'gedrag' ? (op ? 'Je wil dit vaker' : 'Je wil dit minder vaak') : (op ? 'Je wil hier meer van' : 'Je wil hier minder van')}</title><circle cx="${cx}" cy="${cy}" r="11" fill="#fff" stroke="#047857" stroke-width="1.5" stroke-dasharray="3 2"/><path d="${op ? `M${cx} ${cy + 5}V${cy - 5}M${cx - 4} ${cy - 1}l4-4 4 4` : `M${cx} ${cy - 5}V${cy + 5}M${cx - 4} ${cy + 1}l4 4 4-4`}" fill="none" stroke="#047857" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g>`; }   // wat je wil: gestippeld pijltje linksboven
     if (modus === 'ing' && I(l)[e.id]) { const meer = I(l)[e.id] > 0, tw = meer ? 70 : 84, ty = e.y - m.h / 2 - 30; he += `<rect x="${e.x - tw / 2}" y="${ty}" width="${tw}" height="24" rx="8" fill="#047857"/><path d="${meer ? `M${e.x - tw / 2 + 10} ${ty + 15}l5-5 5 5` : `M${e.x - tw / 2 + 10} ${ty + 10}l5 5 5-5`}" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="${e.x - tw / 2 + 25}" y="${ty + 17}" font-size="14" font-weight="700" fill="#fff">${meer ? 'meer' : 'minder'}</text>`; }
     else if (p) { const cx = e.x + m.w / 2 + 2, cy = e.y - m.h / 2 - 2, op = p === '↑', neer = p === '↓'; he += `<circle cx="${cx}" cy="${cy}" r="12.5" fill="${op ? '#ecfdf5' : neer ? '#f1f5f9' : '#fff'}" stroke="${op ? '#10b981' : neer ? '#94a3b8' : '#64748b'}" stroke-width="1.5"${p === '↕' ? ' stroke-dasharray="3 3"' : ''}/><path d="${PIJL_PAD(cx, cy, p)}" fill="none" stroke="${op ? '#047857' : '#475569'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`; }
@@ -3269,11 +3371,14 @@ function tekenKaart(A, snel) {
   $('sk-els').innerHTML = he;
   if (snel) return;
   // kringen: de drie belangrijkste als knop op de kaart
-  let hk = '';
+  let hk = ''; const kringPlek = [];
   if (!SIM) A.kringen.slice(0, 3).forEach((kr, i) => {
-    const ps = kr.els.map(id => elVan(id)); const cx = ps.reduce((s, e) => s + e.x, 0) / ps.length, cy = ps.reduce((s, e) => s + e.y, 0) / ps.length;
-    if (kr.els.length < 3 || l.els.some(e => { const m = mt(e); return Math.abs(e.x - cx) < m.w / 2 + 18 && Math.abs(e.y - cy) < m.h / 2 + 18; })) return;   // te klein of valt op een element: niet tonen (wel in Inzicht)
-    if (l.ver.some(v => { const g = geo(v); return g && Math.hypot(g.m.x - cx, g.m.y - cy) < 34; })) return;
+    const ps = kr.els.map(id => elVan(id)); const mx = ps.reduce((s, e) => s + e.x, 0) / ps.length, my = ps.reduce((s, e) => s + e.y, 0) / ps.length;
+    if (kr.els.length < 3) return;   // te klein: niet tonen (wel in Inzicht)
+    // in het midden van de kring, of er net naast als daar een element, een plus- of minbolletje of een ander kringteken staat
+    const vrij = (x, y) => !l.els.some(e => { const m = mt(e); return Math.abs(e.x - x) < m.w / 2 + 18 && Math.abs(e.y - y) < m.h / 2 + 18; }) && !l.ver.some(v => { const g = geo(v); return g && Math.hypot(g.m.x - x, g.m.y - y) < 34; }) && !kringPlek.some(q => Math.hypot(q.x - x, q.y - y) < 60);
+    const plek = [[0, 0], [0, -56], [0, 56], [-64, 0], [64, 0], [-56, -48], [56, -48], [-56, 48], [56, 48]].map(([dx, dy]) => ({ x:mx + dx, y:my + dy })).find(q => vrij(q.x, q.y));
+    if (!plek) return; const cx = plek.x, cy = plek.y; kringPlek.push(plek);
     const kl = kr.soort === 'R' ? '#047857' : '#64748b', woord = kr.soort === 'R' ? 'versterkt' : kr.soort === 'B' ? 'remt' : 'twijfel', vaag = licht && !kr.els.every(id => licht.els.has(id)) ? ' vaag' : '';
     hk += `<g class="kring${vaag}" data-kring="${i}"><circle cx="${cx}" cy="${cy}" r="17" fill="#fff" stroke="${kl}" stroke-width="1.5"/>`
       + `<path d="M${cx + 7} ${cy - 5}a8 8 0 1 0 1.5 7" fill="none" stroke="${kl}" stroke-width="2" stroke-linecap="round"/><path d="M${cx + 3.5} ${cy - 6.5}l4 1.5 1-4.2" fill="none" stroke="${kl}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`
@@ -3294,7 +3399,7 @@ function render() {
   $('ocStart').hidden = begonnen || !!l.voorbeeld || !leeg;
   document.querySelector('.sk').hidden = !$('ocStart').hidden;   // eerst de startkaart, zoals in de andere tools
   $('sk-leeg').hidden = !leeg || !$('ocStart').hidden;
-  $('vb-bar').hidden = !l.voorbeeld; $('vb-vol').hidden = !(l.voorbeeld === true && l.beperkt);
+  $('vb-bar').hidden = !l.voorbeeld; $('vb-vol').hidden = !(l.voorbeeld === true && l.beperkt); if ($('vb-kies') && l.voorbeeld) $('vb-kies').value = l.vbId || 'premie';
   $('sk-exp').hidden = leeg;
   if (document.activeElement !== $('sk-titel')) $('sk-titel').value = l.over || '';
   $('b-terug').disabled = !(terugVan === l.id && terug.length);
@@ -3308,9 +3413,9 @@ function render() {
 }
 function actiefVer(v) { const l = cur(); return !!(I(l)[v.a] || pijlVan(SIM, v.a, stap)) && !!pijlVan(SIM, v.b, stap); }
 // "Vaker teamleden vragen hulp", "Meer werkdruk", of bij een ingreep gewoon de naam: "Kort teamoverleg"
-const duwNaam = (id, w, n) => { const e = elVan(id), k = klein(kortNaam(e, n)); return e.t === 'ingreep' ? (w > 0 ? kortNaam(e, n) : 'Minder: ' + k) : e.t === 'gedrag' ? (w > 0 ? 'Vaker ' : 'Minder vaak ') + k : (w > 0 ? 'Meer ' : 'Minder ') + k; };
-// komt het tot rust, schommelt er iets, of is het na 60 stappen gewoon nog niet uitgewerkt (lange vertraagde keten)?
-const rustZin = l => SIM.rust ? 'Komt tot rust.' : l.els.some(e => schommelt(SIM, e.id)) ? 'Komt niet tot rust: er blijft iets schommelen.' : `Na ${MAXSTAP} stappen nog niet helemaal uitgewerkt: het effect loopt nog door.`;
+const duwNaam = (id, w, n) => { const e = elVan(id), k = klein(kortNaam(e, n)); return e.t === 'ingreep' ? (w > 0 ? kortNaam(e, n) : 'Minder: ' + k) + (e.duur === 'tijdelijk' ? ' (tijdelijk)' : '') : e.t === 'gedrag' ? (w > 0 ? 'Vaker ' : 'Minder vaak ') + k : (w > 0 ? 'Meer ' : 'Minder ') + k; };
+// komt het tot rust, schommelt er iets, of is het na MAXSTAP stappen gewoon nog niet uitgewerkt (lange vertraagde keten)?
+const rustZin = l => { if (SIM.rust) return 'Komt tot rust.'; const v = l.els.find(e => SIM.stapel.has(e.id) && nogBezig(SIM, e.id)); if (v) return `Na ${MAXSTAP} stappen nog niet in rust: "${kortNaam(v, 30)}" verandert nog traag.`; return l.els.some(e => schommelt(SIM, e.id)) ? 'Komt niet tot rust: er blijft iets schommelen.' : `Na ${MAXSTAP} stappen nog niet helemaal uitgewerkt: het effect loopt nog door.`; };
 function bandIng(l) {
   const ing = I(l), p = Object.keys(ing), wie = l.ingA ? (toonA ? 'A: ' : 'B: ') : ''; if (!p.length) return wie + 'Ingrijpen: tik op wat je meer of minder maakt.';
   const T = SIM ? SIM.T : 0, s = Math.min(stap, T);
@@ -3365,19 +3470,21 @@ let bladHoog = false, greepY = null, abGetoond = '';
 $('sk-paneel').addEventListener('pointerdown', e => { if (e.target.closest('.sk-greep')) greepY = e.clientY; });
 $('sk-paneel').addEventListener('pointerup', e => { if (greepY == null) return; const d = e.clientY - greepY; greepY = null; if (d > 40) { if (bladHoog) bladHoog = false; else { if (nieuwId) ruimLeegOp(); if (modus === 'ing') { stopIng(); return; } sel = null; paneel = 'leeg'; licht = null; zieKeuze = null; } } else if (d < -40) bladHoog = true; else bladHoog = !bladHoog; render(); });
 function bijwerkPaneel(P, h, fid) { const t = document.createElement('div'); t.innerHTML = h; P.querySelectorAll('[data-vers]').forEach(x => { const n = t.querySelector(`[data-vers="${x.dataset.vers}"]`); if (n) x.innerHTML = n.innerHTML; }); }
+const GB_PIJL = '<path d="M30 14h9m-3.5-3.5 3.5 3.5-3.5 3.5" fill="none" stroke="#94a3b8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>';   // je tekent dit, je krijgt dit
 function paneelLeeg(l, A) {
   const n = l.els.length;
   return `<h2>${n ? 'Je kaart' : 'Zo werkt het'}</h2><p class="sub">${n ? `${n} ${n === 1 ? 'element' : 'elementen'}, ${l.ver.length} ${l.ver.length === 1 ? 'verband' : 'verbanden'}${A.kringen.length ? `, ${A.kringen.volledig ? A.kringen.totaal : 'meer dan ' + A.kringen.totaal} ${A.kringen.totaal === 1 ? 'kring' : 'kringen'}` : ''}. Tik op een element of een pijl om het aan te passen.` : 'Teken met je vinger, pen of muis. De tool maakt er nette vormen van.'}</p>
-  <div class="sk-legende">
-    <svg viewBox="0 0 56 28"><rect x="3" y="4" width="50" height="20" rx="10" fill="#ecfdf5" stroke="#047857" stroke-width="2"/></svg><span><b>Gedrag</b>: wie doet wat. Teken een cirkel.</span>
-    <svg viewBox="0 0 56 28"><rect x="4" y="4" width="48" height="20" rx="4" fill="#fff" stroke="#64748b" stroke-width="1.5"/></svg><span><b>Factor</b>: wordt meer of minder. Teken een rechthoek.</span>
-    <svg viewBox="0 0 56 28"><rect x="3" y="3" width="50" height="22" rx="5" fill="#fff" stroke="#047857" stroke-width="1.5"/><rect x="6.5" y="6.5" width="43" height="15" rx="3" fill="none" stroke="#047857" stroke-width="1.5"/></svg><span><b>Uitkomst</b>: waar het om draait. Kies de soort Uitkomst bij een element.</span>
-    <svg viewBox="0 0 56 28"><path d="M10 4h42v20H10L4 14z" fill="#047857"/></svg><span><b>Ingreep</b>: wat je eraan doet. Teken een driehoek.</span>
-    <svg viewBox="0 0 56 28"><path d="M4 14h40" stroke="#334155" stroke-width="2.25"/><path d="M42 9l10 5-10 5z" fill="#334155"/><circle cx="24" cy="14" r="9" fill="#fff" stroke="#047857" stroke-width="1.5"/><text x="24" y="18.5" text-anchor="middle" font-size="14" font-weight="700" fill="#047857">+</text></svg><span><b>Verband</b>: tik op een element en trek een lijn vanaf een groen bolletje. Met een muis kan het ook vanaf de rand.</span>
+  <span class="sk-lbl sk-leg-kop">Je tekent dit, je krijgt dit</span><div class="sk-legende">
+    <svg viewBox="0 0 88 28" aria-hidden="true">${GB_PIJL}<circle cx="14" cy="14" r="10" fill="none" stroke="#94a3b8" stroke-width="1.8" stroke-dasharray="4 3"/><rect x="44" y="4" width="42" height="20" rx="10" fill="#ecfdf5" stroke="#047857" stroke-width="2"/></svg><span><b>Gedrag</b>: wie doet wat. Teken een cirkel.</span>
+    <svg viewBox="0 0 88 28" aria-hidden="true">${GB_PIJL}<rect x="4" y="5" width="20" height="18" rx="2" fill="none" stroke="#94a3b8" stroke-width="1.8" stroke-dasharray="4 3"/><rect x="44" y="4" width="42" height="20" rx="4" fill="#fff" stroke="#64748b" stroke-width="1.5"/></svg><span><b>Factor</b>: wordt meer of minder. Teken een rechthoek.</span>
+    <svg viewBox="0 0 88 28" aria-hidden="true">${GB_PIJL}<rect x="4" y="5" width="20" height="18" rx="2" fill="none" stroke="#94a3b8" stroke-width="1.8" stroke-dasharray="4 3"/><rect x="44" y="3" width="42" height="22" rx="5" fill="#fff" stroke="#047857" stroke-width="1.5"/><rect x="47.5" y="6.5" width="35" height="15" rx="3" fill="none" stroke="#047857" stroke-width="1.5"/></svg><span><b>Uitkomst</b>: waar het om draait. Teken een rechthoek en kies de soort Uitkomst.</span>
+    <svg viewBox="0 0 88 28" aria-hidden="true">${GB_PIJL}<path d="M14 4l11 20H3z" fill="none" stroke="#94a3b8" stroke-width="1.8" stroke-dasharray="4 3" stroke-linejoin="round"/><path d="M51 4h35v20H51l-7-10z" fill="#047857"/></svg><span><b>Ingreep</b>: wat je eraan doet. Teken een driehoek.</span>
+    <svg viewBox="0 0 88 28" aria-hidden="true"><path d="M4 14h72" stroke="#334155" stroke-width="2.25"/><path d="M74 9l10 5-10 5z" fill="#334155"/><circle cx="40" cy="14" r="9" fill="#fff" stroke="#047857" stroke-width="1.5"/><text x="40" y="18.5" text-anchor="middle" font-size="14" font-weight="700" fill="#047857">+</text></svg><span><b>Verband</b>: tik op een element en trek een lijn vanaf een groen bolletje. Met een muis kan het ook vanaf de rand.</span>
+    <svg viewBox="0 0 88 28" aria-hidden="true"><rect x="22" y="2" width="44" height="24" rx="4" fill="#fff" stroke="#64748b" stroke-width="1.5"/><rect x="28" y="18" width="32" height="4" rx="2" fill="#f1f5f9" stroke="#94a3b8" stroke-width="0.8"/><rect x="28" y="18" width="20" height="4" rx="2" fill="#10b981"/></svg><span><b>Stapelt op</b>: een factor die blijft groeien tot iets ze afbouwt, zoals een achterstand. Kies het bij de factor.</span>
   </div>
   ${n ? '' : '<div class="sk-acties"><button type="button" class="sk-knop" data-p="voorbeeld">Toon een voorbeeld</button></div>'}`;
 }
-const CHIP_LABEL = { 't-nieuw':'Soort element', 's-nieuw':'Wat gebeurt er?', 'w-nieuw':'Hoe sterk?', soort:'Soort element', pl:'Waar werkt dit op?', st:'Kan je hier zelf iets aan doen?', s:'Wat gebeurt er?', w:'Hoe sterk?', v:'Wanneer?', z:'Hoe zeker?', ab:'Ingreep A of B', ik:'Soort ingreep', doel:'Wat wil je?' };
+const CHIP_LABEL = { 't-nieuw':'Soort element', 's-nieuw':'Wat gebeurt er?', 'w-nieuw':'Hoe sterk?', soort:'Soort element', pl:'Waar werkt dit op?', st:'Kan je hier zelf iets aan doen?', s:'Wat gebeurt er?', w:'Hoe sterk?', v:'Wanneer?', z:'Hoe zeker?', ab:'Ingreep A of B', ik:'Soort ingreep', doel:'Wat wil je?', dyn:'Hoe verandert dit?', duur:'Hoe lang?' };
 function chips(naam, opties, waarde, groot) {
   return `<div class="sk-chips${groot ? ' groot' : ''}" role="radiogroup" aria-label="${esc(CHIP_LABEL[naam] || naam)}">${opties.map(o => `<button type="button" role="radio" aria-checked="${o.v === waarde}" data-k="${esc(naam)}" data-v="${esc(o.v)}">${o.ic || ''}${esc(o.t)}</button>`).join('')}</div>`;
 }
@@ -3391,6 +3498,9 @@ function paneelEl(e, A) {
   if (e.t === 'gedrag') h += `<div><label class="sk-lbl" for="e-wie">Wie? <small>(een rol, geen naam)</small></label><input class="sk-in" id="e-wie" maxlength="40" value="${esc(e.wie || '')}" placeholder="bv. Teamleden, klanten" autocomplete="off" enterkeyhint="next"></div>`;
   h += `<div><label class="sk-lbl" for="e-naam">${e.t === 'gedrag' ? 'Doet wat?' : 'Naam'}</label><input class="sk-in" id="e-naam" maxlength="80" value="${esc(e.n)}" placeholder="${esc(SOORT[e.t].hint)}" autocomplete="off" enterkeyhint="done"></div>`;
   if (e.t === 'gedrag' || e.t === 'uitkomst') h += `<div><span class="sk-lbl">Wat wil je?</span>${chips('doel', e.t === 'gedrag' ? [{ v:'meer', t:'Vaker' }, { v:'minder', t:'Minder vaak' }, { v:'', t:'Weet ik niet' }] : [{ v:'meer', t:'Meer' }, { v:'minder', t:'Minder' }, { v:'', t:'Weet ik niet' }], e.doel || '')}</div>`;
+  // Eén keuze over de tijd: hoe verandert een factor, hoe lang loopt een ingreep?
+  if (e.t === 'factor' && nieuwId !== e.id) h += `<div><span class="sk-lbl">Hoe verandert dit?</span>${chips('dyn', [{ v:'', t:'Meteen' }, { v:'stapel', t:'Stapelt op' }], e.dyn || '')}<p class="sub" data-vers="dyn">${e.dyn === 'stapel' ? 'Groeit zolang iets erin duwt, en blijft dan staan. Het zakt pas als iets het afbouwt. Bijvoorbeeld een achterstand.' : 'Volgt meteen wat erop inwerkt. Valt dat weg, dan zakt het terug. Bijvoorbeeld werkdruk.'}</p></div>`;
+  if (e.t === 'ingreep' && nieuwId !== e.id) h += `<div><span class="sk-lbl">Hoe lang?</span>${chips('duur', [{ v:'', t:'Blijvend' }, { v:'tijdelijk', t:'Tijdelijk' }], e.duur || '')}<p class="sub" data-vers="duur">${e.duur === 'tijdelijk' ? `Stopt na een tijd (in de berekening na ${TIJDELIJK} stappen).` : 'Loopt door zolang je niets anders beslist.'}</p></div>`;
   h += `</div><div data-vers="tip">${tip ? `<div class="sk-tip">${esc(tip.tekst)}${tip.fix ? ` <button type="button" data-p="fix" data-fix="${esc(tip.fix)}">Maak er "${esc(tip.fix)}" van</button>` : ''}</div>` : ''}</div>`;
   h += `<details class="sk-meer"><summary>Meer over dit element</summary><div class="sk-ed">`;
   if (nieuwId !== e.id) h += `<div><span class="sk-lbl">Soort</span>${chips('soort', SOORTEN.map(s => ({ v:s, t:SOORT[s].naam, ic:IC[s] })), e.t)}</div>`;
@@ -3535,59 +3645,81 @@ function paneelIng(l, A) {
   h += `<p class="sk-eerlijk">Dit is de logica van je kaart, geen voorspelling. De tool rekent met de richting en de sterkte van je pijlen, niet met echte getallen. Een stap is geen vaste tijd.</p>`;
   return h;
 }
+// Welke pijl "weet ik niet" maakt het onzeker? Bij één pijl: van waar naar waar.
+const vraagTekst = l => { const q = l.ver.filter(v => v.s === '?'); return q.length === 1 ? `de pijl "weet ik niet" van "${kortNaam(elVan(q[0].a), 30)}" naar "${kortNaam(elVan(q[0].b), 30)}"` : `${q.length} pijlen "weet ik niet"`; };
 function gevolgen(l, A) {
-  const lijst = [], notes = [], push = I(l), T = SIM.T, s = Math.min(stap, T);
+  const lijst = [], notes = [], push = I(l), T = SIM.T, s = Math.min(stap, T), einde = s >= T;
   l.els.forEach(e => {
-    const p = push[e.id] ? (push[e.id] > 0 ? '↑' : '↓') : pijlVan(SIM, e.id, s); if (!p) return;   // waar je zelf ingrijpt: de richting van je duw
+    let p = push[e.id] ? (push[e.id] > 0 ? '↑' : '↓') : pijlVan(SIM, e.id, s), tijdens = false;   // waar je zelf ingrijpt: de richting van je duw
+    if (!push[e.id] && einde && SIM.tijd) { const k = eindPijl(SIM, e.id); p = k.p; tijdens = k.tijdens; }   // na een tijdelijke ingreep: wat er tijdens gebeurde (zoals in de tabel)
+    if (!p) return;
     const reeks = []; for (let t = 1; t <= T; t++) { const q = pijlVan(SIM, e.id, t); if (q && q !== '↕' && reeks[reeks.length - 1] !== q) reeks.push(q); }
     const ww = e.t === 'gedrag' ? { '↑':'gebeurt vaker', '↓':'gebeurt minder vaak', '↕':'onzeker' } : { '↑':'stijgt', '↓':'daalt', '↕':'onzeker' };
+    const opgestapeld = SIM.stapel.has(e.id) && Math.abs(SIM.xs[T].get(e.id) || 0) > 0.9;
     let noot = '';
-    if (push[e.id]) noot = 'Hier grijp je in.' + (A.kringen.some(k => k.soort === 'B' && k.els.includes(e.id)) && Math.abs(SIM.xs[T].get(e.id) || 0) < 0.6 ? ' Een remmende kring duwt terug: het effect is kleiner dan je duw.' : '');
-    else if (p === '↕') noot = 'Onzeker: er zit een pijl "weet ik niet" in de weg, of twee wegen heffen elkaar bijna helemaal op.';
-    else if (schommelt(SIM, e.id)) noot = l.ver.some(v => v.v) ? 'Blijft schommelen: op en neer, door de vertraging in je kaart.' : 'Blijft schommelen. In een lange, sterke remmende kring kan dat echt gebeuren, maar het kan ook een rekeneffect zijn: kijk vooral naar de richting op de meeste stappen.';
+    if (push[e.id]) noot = (e.duur === 'tijdelijk' ? `Tijdelijk: je ingreep stopt na stap ${TIJDELIJK}.` : '') + (A.kringen.some(k => k.soort === 'B' && k.els.includes(e.id)) && Math.abs(SIM.xs[T].get(e.id) || 0) < 0.6 && !SIM.tijd ? ' Een remmende kring duwt terug: het effect is kleiner dan je duw.' : '');
+    else if (p === '↕') noot = SIM.onz.get(e.id) === 'bal' ? 'Onzeker: twee wegen heffen elkaar bijna helemaal op.' : `Hangt af van ${vraagTekst(l)}.`;
+    else if (schommelt(SIM, e.id)) noot = l.ver.some(v => v.v) ? 'Blijft schommelen: op en neer, door de vertraging in je kaart.' : 'Blijft schommelen. Kijk vooral naar de richting op de meeste stappen.';
     else if (reeks.length >= 2 && reeks[0] !== reeks[reeks.length - 1]) { const w2 = e.t === 'gedrag' ? { '↑':'vaker', '↓':'minder vaak' } : { '↑':'meer', '↓':'minder' }; noot = `Eerst ${w2[reeks[0]]}, later ${w2[reeks[reeks.length - 1]]}.`; }
+    if (!push[e.id] && !tijdens && p !== '↕' && SIM.stapel.has(e.id)) noot = (noot ? noot + ' ' : '') + (opgestapeld ? 'Stapelt op tot de grens van wat de tool rekent.' : SIM.tijd && einde && T > SIM.tijd ? 'Stapelt op: blijft ook na je ingreep.' : 'Stapelt op.');
     const oordeel = e.doel && (p === '↑' || p === '↓') ? ((p === '↑') === (e.doel === 'meer') ? ', zoals je wil' : ', niet wat je wil') : '';
-    lijst.push({ p, e, eerst:reeks[0], tekst: push[e.id] ? `${naamVan(e)}: hier grijp je in (${push[e.id] > 0 ? (e.t === 'gedrag' ? 'vaker' : 'meer') : (e.t === 'gedrag' ? 'minder vaak' : 'minder')})` : `${naamVan(e)}: ${ww[p]}${oordeel}`, noot: push[e.id] ? noot.replace(/^Hier grijp je in\.\s*/, '') : noot, gewicht: (push[e.id] ? -1 : 0) + Math.abs(SIM.xs[s].get(e.id) || 0) + (e.t === 'uitkomst' ? 2 : 0) });
+    lijst.push({ p, e, eerst:reeks[0], tekst: push[e.id] ? `${naamVan(e)}: hier grijp je in (${push[e.id] > 0 ? (e.t === 'gedrag' ? 'vaker' : 'meer') : (e.t === 'gedrag' ? 'minder vaak' : 'minder')})` : `${naamVan(e)}: ${ww[p]}${tijdens ? ' tijdens je ingreep' : ''}${oordeel}`, noot: noot.trim(), gewicht: (push[e.id] ? -1 : 0) + Math.abs((tijdens ? SIM.xs[piek(SIM, e.id).t] : SIM.xs[s]).get(e.id) || 0) + (e.t === 'uitkomst' ? 2 : 0) });
   });
   lijst.sort((a, b) => b.gewicht - a.gewicht);
+  // Onzeker door een pijl "weet ik niet": rustig, in één regel (uitkomsten blijven apart staan).
+  const onz = lijst.filter(x => x.p === '↕' && !push[x.e.id] && SIM.onz.get(x.e.id) === '?' && x.e.t !== 'uitkomst');
+  if (onz.length >= 2) { onz.forEach(x => lijst.splice(lijst.indexOf(x), 1)); lijst.push({ p:'↕', e:onz[0].e, tekst:'Onzeker: ' + onz.map(x => kortNaam(x.e, 40)).join(', '), noot:`Hangt af van ${vraagTekst(l)}.`, gewicht:0 }); }
   const ids = Object.keys(push);
-  A.kringen.filter(k => k.els.some(id => ids.includes(id))).slice(0, 2).forEach(k => notes.push(k.soort === 'R' ? `Je ingreep zit in een versterkende kring (${kringTekst(k, l)}). Volgens je kaart duwt die het effect verder.` : k.soort === 'B' ? `Je ingreep zit in een remmende kring (${kringTekst(k, l)}). Die duwt terug op je ingreep.` : ''));
-  const omslag = lijst.filter(x => /^Eerst/.test(x.noot) && A.kringen.some(k => k.traag && k.els.includes(x.e.id)));   // alleen een kring met een vertraging erin
-  if (omslag.length) {
-    const goed = x => x.e.doel === 'meer' ? '↑' : '↓', goedEerst = omslag.find(x => x.e.doel && x.eerst === goed(x) && x.p !== goed(x)), slechtEerst = omslag.find(x => x.e.doel && x.eerst !== goed(x) && x.p === goed(x));
-    if (goedEerst) notes.push(`"${kortNaam(goedEerst.e)}" gaat eerst de goede kant op en later de verkeerde, met een vertraging in de kring. Dat is vaak het teken van een snelle oplossing die later terugslaat.`);
-    else if (slechtEerst) notes.push(`"${kortNaam(slechtEerst.e)}" wordt eerst slechter en later beter. Geef je ingreep dus tijd, en zeg dat op voorhand.`);
-    else notes.push('Eerst de ene kant op en later de andere, door een vertraging in een kring. Duid bij een gedrag of uitkomst aan wat je wil (meer of minder): dan zegt de tool of het eerst beter of eerst slechter wordt.');
-  }
-  l.els.forEach(e => { if (!push[e.id] && Math.abs(SIM.xs[T].get(e.id) || 0) > 0.95 && A.kringen.some(k => k.soort === 'R' && k.els.includes(e.id))) notes.push(`In je kaart blijft "${kortNaam(e)}" ${(SIM.xs[T].get(e.id) || 0) > 0 ? 'stijgen' : 'dalen'} tot de grens van wat de tool rekent. In het echt stopt het ergens. Wat remt het af?`); });
+  if (SIM.tijd && einde && lijst.some(x => / tijdens je ingreep/.test(x.tekst))) notes.push(`Je ingreep stopte na stap ${SIM.tijd}. Wat "tijdens je ingreep" gebeurde, is daarna terug zoals nu${l.els.some(e => SIM.stapel.has(e.id) && Math.abs(SIM.xs[T].get(e.id) || 0) >= NUL) ? ', behalve wat opstapelde' : ''}. Schuif terug om het te zien. Een tijdelijke ingreep keert een versterkende kring niet blijvend om.`);
+  A.kringen.filter(k => k.els.some(id => ids.includes(id))).slice(0, 2).forEach(k => notes.push(k.soort === 'R' ? `Je ingreep zit in een versterkende kring (${kringTekst(k, l)}). Volgens je kaart maakt die het effect groter.` : k.soort === 'B' ? `Je ingreep zit in een remmende kring (${kringTekst(k, l)}). Die duwt terug op je ingreep.` : ''));
+  // Eerst de ene kant op, later de andere: zegt iets als je bij dat gedrag of die uitkomst koos wat je wil.
+  const omslag = lijst.filter(x => /^Eerst/.test(x.noot)), goed = x => x.e.doel === 'meer' ? '↑' : '↓';
+  const goedEerst = omslag.find(x => x.e.doel && x.eerst === goed(x) && x.p !== goed(x)), slechtEerst = omslag.find(x => x.e.doel && x.eerst !== goed(x) && x.p === goed(x));
+  if (goedEerst) notes.push(`"${kortNaam(goedEerst.e)}" gaat eerst de goede kant op en later de verkeerde. Dat is vaak het teken van een snelle oplossing die later terugslaat.`);
+  else if (slechtEerst) notes.push(`"${kortNaam(slechtEerst.e)}" wordt eerst slechter en later beter. Geef je ingreep dus tijd, en zeg dat op voorhand.`);
+  else { const zonder = omslag.find(x => (x.e.t === 'gedrag' || x.e.t === 'uitkomst') && !x.e.doel); if (zonder) notes.push(`"${kortNaam(zonder.e)}" gaat eerst de ene kant op en later de andere. Duid bij dit ${zonder.e.t === 'gedrag' ? 'gedrag' : 'element'} aan wat je wil (meer of minder): dan zegt de tool of het eerst beter of eerst slechter wordt.`); }
+  // Een voorraad die blijft groeien of dalen: in het echt stopt het ergens.
+  l.els.forEach(e => { if (push[e.id] || !SIM.stapel.has(e.id)) return; const x = SIM.xs[T].get(e.id) || 0, dx = x - (SIM.xs[Math.max(0, T - 1)].get(e.id) || 0), weg = Math.abs(x) >= NUL && dx * x > 0 && Math.abs(dx) > 0.0005;   // loopt nog weg van zoals nu
+    if (!(Math.abs(x) > 0.9 || weg)) return;
+    const af = A.inn.get(e.id).some(v => v.s === '-');
+    notes.push(x > 0 ? (af ? `"${kortNaam(e)}" blijft opstapelen: wat het afbouwt, is te zwak. Wat zorgt voor herstel?` : `Niets bouwt "${kortNaam(e)}" af. Wat zorgt voor herstel?`) : `"${kortNaam(e)}" blijft dalen tot de grens van wat de tool rekent. In het echt stopt het ergens. Wat remt het af?`); });
+  l.els.forEach(e => { if (!push[e.id] && !SIM.stapel.has(e.id) && Math.abs(SIM.xs[T].get(e.id) || 0) > 0.95 && A.kringen.some(k => k.soort === 'R' && k.els.includes(e.id))) notes.push(`In je kaart blijft "${kortNaam(e)}" ${(SIM.xs[T].get(e.id) || 0) > 0 ? 'stijgen' : 'dalen'} tot de grens van wat de tool rekent. In het echt stopt het ergens. Wat remt het af?`); });
   if (ids.some(id => elVan(id) && elVan(id).t === 'gedrag')) notes.push('Een gedrag kan je niet zomaar meer of minder maken. Hoe zorg je daarvoor? Teken een ingreep (een driehoek) en verbind die met wat het gedrag helpt.');
   if (A.gelijk) notes.push('Al je pijlen zijn even sterk. Dan kan de tool ingrepen moeilijk onderscheiden. Duid aan welke verbanden sterk of zwak zijn.');
   return { lijst: lijst.slice(0, 14), notes: [...new Set(notes.filter(Boolean))].slice(0, 4) };
 }
 /* ---------- Twee ingrepen naast elkaar: wat doen ze anders, en welke werkt sneller? ---------- */
 /* hoe sterk het effect gemiddeld is in de eerste stappen (1 tot 6), in de eindrichting: zo zie je verschil, ook als A en B allebei tot de grens gaan */
-const begin = (sim, id) => { const n = Math.min(6, sim.T), r = Math.sign(sim.xs[sim.T].get(id) || 0); let t = 0; for (let i = 1; i <= n; i++) t += r * (sim.xs[i].get(id) || 0); return n ? Math.max(0, t / n) : 0; };   // in de eindrichting; eerst de verkeerde kant op telt niet als sterk
+const begin = (sim, id) => { const n = Math.min(6, sim.T), r = Math.sign(werking(sim, id)); let t = 0; for (let i = 1; i <= n; i++) t += r * (sim.xs[i].get(id) || 0); return n ? Math.max(0, t / n) : 0; };   // in de eindrichting; eerst de verkeerde kant op telt niet als sterk
 /* Zelfde richting: eerst hoe groot (eindtoestand, anders de eerste stappen), relatief gemeten; dan wie vroeger is. */
-const eerstAnders = (sim, id) => { const r = Math.sign(sim.xs[sim.T].get(id) || 0); if (!r) return false; for (let t = 1; t < sim.T; t++) { const x = sim.xs[t].get(id) || 0; if (Math.abs(x) >= NUL && Math.sign(x) === -r) return true; } return false; };
+const eerstAnders = (sim, id) => { const r = Math.sign(werking(sim, id)); if (!r) return false; const tot = sim.tijd ? piek(sim, id).t : sim.T; for (let t = 1; t < tot; t++) { const x = sim.xs[t].get(id) || 0; if (Math.abs(x) >= NUL && Math.sign(x) === -r) return true; } return false; };
+// Hoe ver een element komt: de eindtoestand, of met een tijdelijke ingreep het gemiddelde over alle stappen (anders zie je op het einde niets meer).
+const effect = (sim, id) => werking(sim, id);
+// Ligt een element op het einde stil? Alles in rust, of het schommelt niet en verandert de laatste 10 stappen samen minder dan 0,02 (een voorraad kan elders nog traag bewegen).
+const stilOp = (sim, id) => sim.rust > 0 || (!schommelt(sim, id) && sim.T > 10 && Math.abs((sim.xs[sim.T].get(id) || 0) - (sim.xs[sim.T - 10].get(id) || 0)) < 0.02);
 // Eindoordeel per uitkomst waarbij je koos wat je wil: welke ingreep brengt ze meer de goede kant op?
 function oordeelVan(l, v) {
+  const tijd = !!(v.sa.tijd || v.sb.tijd);   // tijdelijk: beoordeeld op zijn werking (op zijn sterkst); vergelijkHtml zegt dat het effect tijdelijk is
   return v.rijen.filter(r => r.e.t === 'uitkomst' && r.e.doel).map(r => {
-    const n = klein(kortNaam(r.e, 40)), w = r.e.doel === 'meer' ? 1 : -1, eind = sim => w * (sim.xs[sim.T].get(r.e.id) || 0), a = eind(v.sa), b = eind(v.sb);
-    if (pijlVan(v.sa, r.e.id, v.sa.T) === '↕' || pijlVan(v.sb, r.e.id, v.sb.T) === '↕') return `Voor ${n} is het onzeker, door een pijl "weet ik niet". Daarom geeft de tool geen oordeel.`;
-    if (!v.sa.rust || !v.sb.rust) return `Voor ${n} komt A of B niet tot rust. Daarom geeft de tool geen oordeel.`;
-    const g = Math.max(a, b), k = Math.min(a, b);
-    if (g <= 0.03) return `Volgens je kaart brengen A en B ${n} niet de kant op die je wil. Zoek een andere ingreep, of kijk je pijlen na.`;
-    if (k <= 0 || g / k >= 1.25) return `Voor ${n} doet ${a > b ? 'A' : 'B'} het volgens je kaart beter.`;
+    const n = klein(kortNaam(r.e, 40)), w = r.e.doel === 'meer' ? 1 : -1, a = w * effect(v.sa, r.e.id), b = w * effect(v.sb, r.e.id), voor = tijd ? `Op zijn sterkst, voor ${n}` : `Voor ${n}`;
+    if (v.sa.onz.get(r.e.id) === '?' || v.sb.onz.get(r.e.id) === '?') return `Voor ${n} is het onzeker, door een pijl "weet ik niet". Daarom geeft de tool geen oordeel.`;
+    if (!stilOp(v.sa, r.e.id) || !stilOp(v.sb, r.e.id)) return `Voor ${n} komt A of B niet tot rust. Daarom geeft de tool geen oordeel.`;
+    const g = Math.max(a, b), k = Math.min(a, b), beste = a > b ? 'A' : 'B';
+    if (g < NUL) {   // geen van beide de goede kant op (dezelfde grens als de pijlen in de tabel): beperkt er één de schade?
+      if (k <= -NUL && (g > -NUL || g >= k * 0.8)) return `Volgens je kaart brengen A en B ${n} niet de kant op die je wil, maar ${beste} beperkt de schade.`;
+      return `Volgens je kaart brengen A en B ${n} niet de kant op die je wil. Zoek een andere ingreep, of kijk je pijlen na.`;
+    }
+    if (k <= 0 || g / k >= 1.25) return `${voor} doet ${beste} het volgens je kaart beter.`;
     const ba = begin(v.sa, r.e.id), bb = begin(v.sb, r.e.id);
     if (Math.max(ba, bb) >= 0.03 && Math.max(ba, bb) / Math.max(Math.min(ba, bb), 0.001) >= 1.25) return `Voor ${n} komen A en B ongeveer even ver, maar ${ba > bb ? 'A' : 'B'} sterker in het begin.`;
     if (r.ta && r.tb && Math.abs(r.ta - r.tb) >= 2) return `Voor ${n} komen A en B ongeveer even ver, maar ${r.ta < r.tb ? 'A' : 'B'} sneller.`;
-    if (Math.min(Math.abs(a), Math.abs(b)) > 0.85) return `Voor ${n} gaan A en B allebei tot de grens van wat de tool rekent, door een versterkende kring. Daardoor lijken ze even goed. Kijk of je pijlen niet te sterk staan.`;
-    return `Voor ${n} doen A en B het volgens je kaart ongeveer even goed.`;
+    if (Math.min(Math.abs(a), Math.abs(b)) > 0.85) return `Voor ${n} gaan A en B allebei tot de grens van wat de tool rekent. Daardoor lijken ze even goed. Kijk of je pijlen niet te sterk staan.`;
+    return `${voor} doen A en B het volgens je kaart ongeveer even goed.`;
   });
 }
 function sterkVerschil(sa, sb, id, ta, tb, woord) {
-  const ea = Math.abs(sa.xs[sa.T].get(id) || 0), eb = Math.abs(sb.xs[sb.T].get(id) || 0), ba = begin(sa, id), bb = begin(sb, id);
-  const maat = (x, y) => { const g = Math.max(x, y), k = Math.min(x, y); return g < 0.03 ? 1 : g / Math.max(k, 0.001); };
+  const ea = Math.abs(werking(sa, id)), eb = Math.abs(werking(sb, id)), ba = begin(sa, id), bb = begin(sb, id);
+  const maat = (x, y) => { const g = Math.max(x, y), k = Math.min(x, y); return g < NUL ? 1 : g / Math.max(k, 0.001); };
   const delen = [];
   const re = maat(ea, eb), rb = maat(ba, bb);
   if (re >= 1.25) delen.push(`met ${ea > eb ? 'A' : 'B'} ${re >= 2 ? 'veel ' : ''}sterker`);
@@ -3602,15 +3734,15 @@ function vergelijk(l) {
   const ww = e => e.t === 'gedrag' ? { '↑':'gebeurt vaker', '↓':'gebeurt minder vaak', '↕':'onzeker' } : { '↑':'stijgt', '↓':'daalt', '↕':'onzeker' };
   l.els.forEach(e => {
     if (l.ingA[e.id] && l.ing[e.id]) return;   // waar je in A en B ingrijpt, vergelijk je niet
-    const a = pijlVan(sa, e.id, sa.T), b = pijlVan(sb, e.id, sb.T); if (!a && !b) return;
-    const ta = a ? aankomst(sa, e.id) : 0, tb = b ? aankomst(sb, e.id) : 0, za = schommelt(sa, e.id), zb = schommelt(sb, e.id);
+    const ea = eindPijl(sa, e.id), eb = eindPijl(sb, e.id), a = ea.p, b = eb.p; if (!a && !b) return;
+    const ta = a && !ea.tijdens ? aankomst(sa, e.id) : 0, tb = b && !eb.tijdens ? aankomst(sb, e.id) : 0, za = schommelt(sa, e.id), zb = schommelt(sb, e.id);
     let verschil = '';
     if (za || zb) verschil = `${za && zb ? 'schommelt met A en B' : za ? 'schommelt met A' : 'schommelt met B'}`;
     else if (a && b && a !== b) verschil = `A: ${ww(e)[a]}, B: ${ww(e)[b]}`;
     else if (a && !b) verschil = `alleen met A: ${ww(e)[a]}`;
     else if (b && !a) verschil = `alleen met B: ${ww(e)[b]}`;
     else if (a === b && a !== '↕') verschil = sterkVerschil(sa, sb, e.id, ta, tb, ww(e)[a]);
-    rijen.push({ e, a, b, ta, tb, za, zb, verschil, gewicht:(e.t === 'uitkomst' ? 3 : 0) + (verschil ? 1 : 0) });
+    rijen.push({ e, a, b, ta, tb, za, zb, da:ea.tijdens, db:eb.tijdens, verschil, gewicht:(e.t === 'uitkomst' ? 3 : 0) + (verschil ? 1 : 0) });
   });
   rijen.forEach(r => { r.alleen = !!(r.a && !r.b) || !!(r.b && !r.a); r.gap = Math.abs((sa.xs[sa.T].get(r.e.id) || 0) - (sb.xs[sb.T].get(r.e.id) || 0)); });
   rijen.sort((x, y) => y.gewicht - x.gewicht || (y.alleen - x.alleen) || y.gap - x.gap);
@@ -3627,15 +3759,17 @@ function vergelijkHtml(l) {
   if (!zinnen.length) zinnen.push('In de eindtoestand doen A en B volgens je kaart hetzelfde.');
   const ook = uitk.length ? v.rijen.filter(r => r.e.t !== 'uitkomst' && r.verschil).slice(0, 3) : [];
   const oordeel = oordeelVan(l, v);
+  const tijdW = v.sa.tijd && v.sb.tijd ? 'A en B zijn' : v.sa.tijd ? 'A is' : v.sb.tijd ? 'B is' : '';
+  if (oordeel.length && tijdW) oordeel.push(`${tijdW} tijdelijk: dat effect is er zolang de ingreep loopt, daarna zakt het terug.`);
   if (oordeel.length) h += `<p class="sk-oordeel">${esc(oordeel.join(' '))}</p>`;
   else if (uitk.length) h += '<p class="sub">Duid bij je uitkomst aan of je ze meer of minder wil. Dan zegt de tool welke ingreep beter past.</p>';
   h += `<p class="sk-zin">${uitk.length ? 'Wat gebeurt er met je uitkomst?<br>' : ''}${zinnen.join('<br>')}</p>`;
   if (ook.length) h += `<p class="sub sk-ook"><span>Ook anders:</span>${ook.map(r => `<span><b>${esc(kortNaam(r.e, 32))}</b>: ${esc(r.verschil)}</span>`).join('')}</p>`;
   if (cur().ver.length >= 4 && window.__sk && window.__sk.gelijk) h += '<div class="sk-tip">Al je pijlen zijn even sterk. Dan lijken ingrepen al snel even goed. Duid aan welke verbanden sterk of zwak zijn.</div>';
   const wwk = (e, p) => (e.t === 'gedrag' ? { '↑':'vaker', '↓':'minder vaak', '↕':'onzeker' } : { '↑':'stijgt', '↓':'daalt', '↕':'onzeker' })[p];
-  const cel = (r, p, t2, z, sim) => p ? `<td><i aria-hidden="true">${p}</i><span class="sr-only">${wwk(r.e, p)}</span><small>${z ? 'schommelt' : 'vanaf ' + t2}${!z && eerstAnders(sim, r.e.id) ? ', eerst andersom' : ''}</small></td>` : '<td><small>niets</small></td>';
-  h += `<table class="sk-tab"><caption class="sr-only">Wat ingreep A en ingreep B volgens je kaart veranderen, in de eindtoestand</caption><thead><tr><th scope="col">Element</th><th scope="col">A</th><th scope="col">B</th></tr></thead><tbody>${v.rijen.slice(0, 14).map(r => `<tr${r.verschil ? ' class="anders"' : ''}><th scope="row">${esc(kortNaam(r.e, 34))}</th>${cel(r, r.a, r.ta, r.za, v.sa)}${cel(r, r.b, r.tb, r.zb, v.sb)}</tr>`).join('')}</tbody></table>`;
-  h += '<p class="sk-eerlijk">De tabel toont de eindtoestand. "Vanaf" is de stap waarop het effect in zijn eindrichting staat en zo blijft. Gaan A en B dezelfde kant op, dan vergelijkt de tool eerst hoe sterk het effect is: sterker vanaf een kwart meer, veel sterker vanaf het dubbele. Is het einde gelijk, dan kijkt ze naar de eerste zes stappen. Daarna: wie er vroeger is. Een stap is geen vaste tijd: kijk vooral naar de volgorde. Een ingreep duwt zolang hij loopt, ook als hij tijdelijk is.</p>';
+  const cel = (r, p, t2, z, sim, tijdens) => p ? `<td><i aria-hidden="true">${p}</i><span class="sr-only">${wwk(r.e, p)}</span><small>${tijdens ? 'tijdens de ingreep' : z ? 'schommelt' : 'vanaf ' + t2}${!z && !tijdens && eerstAnders(sim, r.e.id) ? ', eerst andersom' : ''}</small></td>` : '<td><small>niets</small></td>';
+  h += `<table class="sk-tab"><caption class="sr-only">Wat ingreep A en ingreep B volgens je kaart veranderen, in de eindtoestand</caption><thead><tr><th scope="col">Element</th><th scope="col">A</th><th scope="col">B</th></tr></thead><tbody>${v.rijen.slice(0, 14).map(r => `<tr${r.verschil ? ' class="anders"' : ''}><th scope="row">${esc(kortNaam(r.e, 34))}</th>${cel(r, r.a, r.ta, r.za, v.sa, r.da)}${cel(r, r.b, r.tb, r.zb, v.sb, r.db)}</tr>`).join('')}</tbody></table>`;
+  h += '<p class="sk-eerlijk">De tabel toont de eindtoestand. "Vanaf" is de stap waarop het effect in zijn eindrichting staat en zo blijft. Gaan A en B dezelfde kant op, dan vergelijkt de tool eerst hoe sterk het effect is: sterker vanaf een kwart meer, veel sterker vanaf het dubbele. Is het einde gelijk, dan kijkt ze naar de eerste zes stappen. Daarna: wie er vroeger is. Een stap is geen vaste tijd: kijk vooral naar de volgorde.' + (v.sa.tijd || v.sb.tijd ? ' Een tijdelijke ingreep stopt na ' + TIJDELIJK + ' stappen. Dan vergelijkt de tool het moment waarop hij het sterkst werkt, niet het einde.' : '') + '</p>';
   h += `<div class="sk-acties"><button type="button" class="sk-knop" data-p="stop-ab">Stop met vergelijken</button></div>`;
   return h;
 }
@@ -3651,7 +3785,7 @@ function paneelZie(l, A) {
   if (l.els.length < 3) return h + '<p class="sk-zin">Zet eerst minstens drie elementen met verbanden op de kaart.</p>';
   const B = []; const knop = (id, titel, tekst, ic) => B.push(`<li><button type="button" data-p="zie" data-id="${id}" aria-pressed="${zieKeuze === id}"><span class="ic${ic === 'g' ? ' grijs' : ''}">${ZIE_IC[ic] || ZIE_IC.H}</span><span class="t"><b>${esc(titel)}</b><small>${esc(tekst)}</small></span></button></li>`);
   A.kringen.slice(0, 5).forEach((k, i) => knop('k' + i, KRING_NAAM[k.soort] + (k.traag && k.soort === 'B' ? ', met vertraging' : ''), kringTekst(k, l) + '. ' + KRING_UIT[k.soort] + (k.traag && k.soort === 'B' ? ' Door de vertraging kan het gaan schommelen.' : ''), k.soort === '?' ? 'g' : k.soort));
-  if (A.kringen.totaal > 5) B.push(`<li><p class="sub">${A.kringen.volledig ? `In totaal ${A.kringen.totaal} kringen` : `Meer dan ${A.kringen.totaal} kringen: je kaart is erg verweven`}. Bovenaan staan de korte kringen met een gedrag of uitkomst.</p></li>`);
+  if (A.kringen.totaal > 5) B.push(`<li><p class="sub">${A.kringen.volledig ? `In totaal ${A.kringen.totaal} kringen` : `Meer dan ${A.kringen.totaal} kringen: je kaart is erg verweven`}. Bovenaan staan de kringen met een gedrag en een uitkomst, de sterkste eerst.</p></li>`);
   if (!A.kringen.length) B.push(A.lus.size ? '<li><p class="sub">Er is een kring van meer dan 8 schakels. Zo lange kringen toont de tool niet apart: maak de kaart eenvoudiger als je ze wil zien.</p></li>' : '<li><p class="sub">Nog geen kringen. Een kring is een rondje van pijlen dat terugkomt waar het begon. Die houden een probleem vaak in stand.</p></li>');
   if (A.hefbomen.length) knop('hef', 'Aandachtspunten (mogelijke hefbomen)', A.hefbomen.map(e => `${kortNaam(e, 30)} (bereikt ${e._bereik} ${e._bereik === 1 ? 'element' : 'elementen'} in twee stappen${e._lus ? ', zit in een kring' : ''}${e.st === 'ja' ? ', je kan er iets aan doen' : e.st === 'deels' ? ', je kan er een beetje aan doen' : ''})`).join('; ') + '. Zo telt de tool. Wat je zelf kan beïnvloeden, telt extra: duid dat aan bij elk element.', 'H');
   if (A.terugslag) knop('slag', 'Lijkt dit op een snelle oplossing die later terugslaat?', 'Een remmende kring lost het snel op, maar via een vertraagde versterkende kring komt het probleem terug.', 'g');
@@ -3661,7 +3795,8 @@ function paneelZie(l, A) {
   A.eenPijler.forEach((x, i) => knop('p' + i, 'Eén kant van het gedrag', `Bij "${kortNaam(x.g, 30)}" werkt alles in op ${PIJLER[x.p]}. Wat met de andere twee: ${Object.values(PIJLER).filter(p => p !== PIJLER[x.p]).join(' en ')}?`, 'g'));
   A.mismatch.slice(0, 2).forEach((x, i) => knop('m' + i, 'Past de ingreep bij de oorzaak?', `"${kortNaam(x.i, 30)}" (${x.i.ik.toLowerCase()}) werkt op "${kortNaam(x.f, 30)}" (${PIJLER[x.f.pl]}). ${x.i.ik} raakt vooral ${RAAKT[x.i.ik].map(p => PIJLER[p]).join(' en ')}.`, 'g'));
   if (A.gelijk) B.push('<li><div class="sk-tip">Al je pijlen zijn even sterk. Duid aan welke verbanden sterk of zwak zijn: dan kan Ingrijpen ingrepen beter onderscheiden.</div></li>');
-  if (A.ingZonder.length) knop('iz', 'Ingreep zonder gedrag', A.ingZonder.map(e => kortNaam(e, 30)).join(', ') + '. Je ingreep verandert factoren, maar niemand doet iets anders.', 'g');
+  if (A.ingZonder.length) knop('iz', 'Ingreep zonder gevolg op je kaart', A.ingZonder.map(e => kortNaam(e, 30)).join(', ') + '. Raakt geen gedrag en geen uitkomst. Wat moet er veranderen?', 'g');
+  if (A.nietAf.length) knop('af', 'Niets bouwt dit af', A.nietAf.map(e => kortNaam(e, 30)).join(', ') + '. Stapelt op, maar geen pijl met − haalt het weer naar beneden. Wat zorgt voor herstel?', 'g');
   if (A.alleenUitleg) B.push('<li><div class="sk-tip">Al je ingrepen leggen uit. Uitleggen alleen verandert zelden gedrag. Wat maakt het ook vlotter te doen?</div></li>');
   if (A.los.length) knop('los', 'Losse eindjes', A.los.map(e => kortNaam(e, 28)).join(', ') + '. Die hangen nog nergens aan vast.', 'g');
   if (A.tips.length) B.push(`<li><span class="sk-lbl" style="margin-top:0.5rem">Nakijken</span>${A.tips.map(t => `<div class="sk-tip">${esc(t.tekst)}${t.fix ? ` <button type="button" data-p="fix" data-id="${t.e.id}" data-fix="${esc(t.fix)}">Maak er "${esc(t.fix)}" van</button>` : ''}</div>`).join('')}</li>`);
@@ -3680,6 +3815,7 @@ function lichtVoor(id, A) {
   if (id === 'gz') return S(A.gedragZonder.map(e => e.id), []);
   if (id[0] === 'p') { const x = A.eenPijler[+id.slice(1)]; if (!x) return null; const ids = [x.g.id, ...l.ver.filter(v => v.b === x.g.id).map(v => v.a)]; return S(ids, tussen(ids)); }
   if (id === 'iz') return S(A.ingZonder.map(e => e.id), []);
+  if (id === 'af') { const ids = A.nietAf.map(e => e.id); return S(ids.concat(l.ver.filter(v => ids.includes(v.b)).map(v => v.a)), l.ver.filter(v => ids.includes(v.b)).map(v => v.id)); }
   if (id[0] === 'm') { const x = A.mismatch[+id.slice(1)]; if (!x) return null; const ids = [x.i.id, x.f.id]; return S(ids, tussen(ids)); }
   if (id === 'los') return S(A.los.map(e => e.id), []);
   return null;
@@ -3883,7 +4019,7 @@ function tikInModus(id) {
 }
 function samenvatting() { if (!SIM) return ''; const r = gevolgen(cur(), window.__sk); return r.lijst.slice(0, 4).map(x => x.tekst).join('. '); }
 function startIng(id) {
-  modus = 'ing'; paneel = 'ing'; sel = null; licht = null; stap = 99;
+  modus = 'ing'; paneel = 'ing'; sel = null; licht = null; stap = EINDE;
   if (id) { const l = cur(); toonA = false; if (l.ing[id] !== 1 || Object.keys(l.ing).length !== 1 || l.ingA) { bewaarStap(); l.ing = { [id]:1 }; delete l.ingA; save(); } }
   render(); toonPaneel();
 }
@@ -3957,7 +4093,7 @@ $('sk-paneel').addEventListener('click', e => {
     if (k === 's-nieuw') { toeTeken = v; render(); return; }
     if (k === 'w-nieuw') { toeSterkte = +v || 2; render(); return; }
     if (k === 'ab') { toonA = v === 'A'; render(); zeg(`Je bekijkt ingreep ${v}. ${samenvatting()}`); return; }
-    if (sel && sel.soort === 'el') { const el = elVan(sel.id); wijzig(() => { if (k === 'soort') { const n = schoonEl(Object.assign({}, el, { t:v }), el.id); Object.assign(el, n); if (v !== 'gedrag') delete el.wie; if (v !== 'factor') delete el.pl; if (v !== 'ingreep') delete el.ik; if (v === 'uitkomst') delete el.st; if (v !== 'gedrag' && v !== 'uitkomst') delete el.doel; twijfelId = null; } if (k === 'doel') { if (v) el.doel = v; else delete el.doel; } if (k === 'pl') { if (v) el.pl = v; else delete el.pl; } if (k === 'st') { if (v) el.st = v; else delete el.st; } }); if (k === 'soort' && !smal()) focusNaam(); return; }
+    if (sel && sel.soort === 'el') { const el = elVan(sel.id); wijzig(() => { if (k === 'soort') { const n = schoonEl(Object.assign({}, el, { t:v }), el.id); Object.assign(el, n); if (v !== 'gedrag') delete el.wie; if (v !== 'factor') delete el.pl; if (v !== 'ingreep') delete el.ik; if (v === 'uitkomst') delete el.st; if (v !== 'gedrag' && v !== 'uitkomst') delete el.doel; if (v !== 'factor') delete el.dyn; if (v !== 'ingreep') delete el.duur; twijfelId = null; } if (k === 'doel') { if (v) el.doel = v; else delete el.doel; } if (k === 'dyn') { if (v === 'stapel') el.dyn = v; else delete el.dyn; } if (k === 'duur') { if (v === 'tijdelijk') el.duur = v; else delete el.duur; } if (k === 'pl') { if (v) el.pl = v; else delete el.pl; } if (k === 'st') { if (v) el.st = v; else delete el.st; } }); if (k === 'soort' && !smal()) focusNaam(); return; }
     if (sel && sel.soort === 'ver') { const vv = verVan(sel.id); wijzig(() => { if (k === 's') { vv.s = v; if (v === '?' && !vv.z) { vv.z = true; autoZ.add(vv.id); } else if (v !== '?' && autoZ.has(vv.id)) { vv.z = false; autoZ.delete(vv.id); } } if (k === 'w') vv.w = +v; if (k === 'v') vv.v = v === '1'; if (k === 'z') vv.z = v === '1'; }); zeg(zinTekst(vv)); return; }
     return;
   }
@@ -3980,7 +4116,7 @@ $('sk-paneel').addEventListener('click', e => {
   if (p === 'imp-acties') { impActies(); return; }
   if (p === 'soort-open') { soortOpen = true; render(); const c = document.querySelector('#sk-paneel [data-k="soort"]'); if (c) { const d = c.closest('details'); if (d) d.open = true; c.focus(); } return; }
   if (p === 'fix') { const id = b.dataset.id || (sel && sel.id), el = elVan(id); if (el) { const om = NEGATIEF.test(el.n), keer = t => t === '+' ? '-' : t === '-' ? '+' : t; wijzig(l2 => { el.n = b.dataset.fix; if (om) { l2.ver.forEach(v => { if (v.a === id || v.b === id) v.s = keer(v.s); }); if (el.doel) el.doel = el.doel === 'meer' ? 'minder' : 'meer'; [l2.ing, l2.ingA].forEach(o => { if (o && o[id]) o[id] = -o[id]; }); } }); zeg(`Hernoemd naar ${b.dataset.fix}`); if (om) toast(`Hernoemd naar "${b.dataset.fix}". De pijlen en wat je wil zijn mee omgedraaid, zodat je kaart hetzelfde blijft zeggen.`); } return; }
-  if (p === 'push') { const id = b.dataset.id, v = +b.dataset.v; stap = 99; wijzig(l2 => { const o = I(l2); if (v) o[id] = v; else delete o[id]; if (l2.ingA && !Object.keys(l2.ingA).length) { if (toonA) { l2.ingA = undefined; delete l2.ingA; toonA = false; } } }); return; }   // een ingreep wijzigen: terug naar het einde; A leeg = geen vergelijking meer
+  if (p === 'push') { const id = b.dataset.id, v = +b.dataset.v; stap = EINDE; wijzig(l2 => { const o = I(l2); if (v) o[id] = v; else delete o[id]; if (l2.ingA && !Object.keys(l2.ingA).length) { if (toonA) { l2.ingA = undefined; delete l2.ingA; toonA = false; } } }); return; }   // een ingreep wijzigen: terug naar het einde; A leeg = geen vergelijking meer
   if (p === 'naar-a') { wijzig(l2 => { l2.ingA = Object.assign({}, l2.ing); l2.ing = {}; }); toonA = false; render(); zeg('Ingreep A bewaard. Stel nu ingreep B samen: tik op de kaart.'); toast('Ingreep A bewaard. Stel nu ingreep B samen.'); return; }
   if (p === 'stop-ab') { wijzig(l2 => { if (toonA) l2.ing = l2.ingA; delete l2.ingA; }); toonA = false; render(); return; }
   if (p === 'stap') { const T = SIM ? SIM.T : 1; stap = clamp(Math.min(stap, T) + +b.dataset.v, 1, T); render(); zeg(`Stap ${stap}. ${samenvatting()}`); return; }
@@ -4002,7 +4138,7 @@ $('sk-paneel').addEventListener('change', e => {
   if (t.id === 'v-a') toeVan = t.value;
   if (t.id === 'v-b') toeNaar = t.value;
   if ((t.id === 'v-a' || t.id === 'v-b') && $('v-zin')) { $('v-zin').innerHTML = toeZin(cur()); $('v-fout').hidden = true; }
-  if (t.id === 'ing-kies' && t.value) { const id = t.value; t.blur(); stap = 99; wijzig(l => { I(l)[id] = 1; }); requestAnimationFrame(() => { const x = $('ing-kies'); if (x) x.focus({ preventScroll:true }); }); zeg(`${kortNaam(elVan(id))}: meer. ${samenvatting()}`); }
+  if (t.id === 'ing-kies' && t.value) { const id = t.value; t.blur(); stap = EINDE; wijzig(l => { I(l)[id] = 1; }); requestAnimationFrame(() => { const x = $('ing-kies'); if (x) x.focus({ preventScroll:true }); }); zeg(`${kortNaam(elVan(id))}: meer. ${samenvatting()}`); }
   if (t.id === 'ing-stap') zeg(`Stap ${stap}. ${samenvatting()}`);
 });
 $('sk-paneel').addEventListener('keydown', e => {
@@ -4091,39 +4227,80 @@ function toast(msg, undo) {
 $('toast-btn').addEventListener('click', () => { if (undoFn) { const f = undoFn; undoFn = null; f(); } $('toast').classList.remove('show'); });
 const snapshot = () => { const c = JSON.parse(JSON.stringify(state)); return () => { state = c; }; };
 
-/* ---------- Voorbeeld: werkdruk, overuren en fouten ---------- */
-function voorbeeldKaart(vol) {
-  const E = [
-    ['wd', 'factor', 'Werkdruk', 0, -120, { pl:'kans' }],
-    ['ou', 'gedrag', 'maken overuren', 192, -32, { wie:'Teamleden', doel:'minder' }],
-    ['vm', 'factor', 'Vermoeidheid', 160, 136, { pl:'kunnen' }],
-    ['fo', 'factor', 'Fouten', -16, 200],
-    ['hw', 'factor', 'Herstelwerk', -184, 88],
-    ['hv', 'gedrag', 'vragen hulp aan elkaar', -224, -120, { wie:'Teamleden', doel:'meer' }],
-  ];
-  const V = [['wd', 'ou', '+'], ['ou', 'wd', '-'], ['ou', 'vm', '+', 2, true], ['vm', 'fo', '+'], ['fo', 'hw', '+'], ['hw', 'wd', '+'], ['wd', 'hv', '-'], ['hv', 'wd', '-']];
-  if (vol) {
-    E.push(['op', 'factor', 'Openheid in het team', -400, -32, { pl:'kans' }], ['tk', 'uitkomst', 'Tevreden klanten', 192, 288, { doel:'meer' }], ['in', 'ingreep', 'Kort teamoverleg elke week', -416, -200, { ik:'Omgeving aanpassen' }], ['ek', 'ingreep', 'Tijdelijke extra kracht', 232, -232, { ik:'Hindernissen wegnemen' }], ['pl', 'gedrag', 'verdelen het werk mee', -384, 176, { wie:'Teamleiders', doel:'meer' }]);
-    V.push(['op', 'hv', '+'], ['fo', 'tk', '-', 3], ['in', 'op', '+'], ['in', 'pl', '+', 1], ['pl', 'wd', '-', 2, true], ['ek', 'wd', '-', 2]);
+/* ---------- Voorbeelden ----------
+   premie: werkdruk, overuren en fouten (eerst de kern, dan volledig). De andere drie: kaarten van een systeemdenker, getoetst met de rekenkern.
+   Elementen: [sleutel, soort, naam, x, y, extra]; verbanden: [van, naar, teken, sterkte, pas na een tijd, vermoeden, waarom]. */
+const VB = {
+  toxisch: { name:'Een leidinggevende die kleineert', over:'Een leidinggevende kleineert medewerkers in overleg. Wat houdt dat in stand?',
+    E:[['g1', 'gedrag', 'kleineert medewerkers in overleg', 0, 0, { wie:'Leidinggevende', doel:'minder', st:'deels' }], ['f1', 'factor', 'Veiligheid om je uit te spreken', 0, 0, { pl:'willen' }], ['g2', 'gedrag', 'melden fouten en problemen', 0, 0, { wie:'Teamleden', doel:'meer' }],
+      ['f4', 'factor', 'Fouten die pas laat bovenkomen', 0, 0], ['u1', 'uitkomst', 'Teamresultaten', 0, 0, { doel:'meer' }], ['f5', 'factor', 'Druk van hogerop op de leidinggevende', 0, 0, { st:'nee' }],
+      ['f2', 'factor', 'Verzuim', 0, 0], ['f3', 'factor', 'Werkdruk voor wie blijft', 0, 0], ['u2', 'uitkomst', 'Verloop', 0, 0, { doel:'minder' }],
+      ['i1', 'ingreep', 'Coaching voor de leidinggevende', 0, 0, { ik:'Oefenen', st:'ja' }], ['i2', 'ingreep', "Feedback van team en collega's", 0, 0, { ik:'Uitleggen', st:'ja' }], ['i3', 'ingreep', 'Vertrouwenspersoon', 0, 0, { ik:'Hindernissen wegnemen', st:'ja' }], ['i4', 'ingreep', 'Leidinggevende vervangen', 0, 0, { ik:'Omgeving aanpassen', st:'ja' }]],
+    V:[['g1', 'f1', '-', 3, 0, 0, 'Wie gekleineerd wordt, durft minder te zeggen (Edmondson)'], ['f1', 'g2', '+', 3, 0, 0, 'Wie zich veilig voelt, meldt meer fouten (Edmondson, 1999)'], ['f1', 'f2', '-'], ['f1', 'u2', '-'], ['g1', 'u2', '+', 2, 1, 0, 'Mensen verlaten vaak hun leidinggevende, niet hun job'],
+      ['g2', 'f4', '-'], ['f4', 'u1', '-'], ['u1', 'f5', '-'], ['f5', 'g1', '+', 2, 0, 1, 'Druk van hogerop sijpelt door naar beneden'], ['f2', 'f3', '+'], ['u2', 'f3', '+'], ['f3', 'f2', '+', 2, 1], ['f3', 'u2', '+', 1, 1], ['f3', 'u1', '-'],
+      ['g2', 'f5', '?', 1, 0, 1, 'Meer meldingen maken problemen zichtbaar voor de directie: meer of minder druk?'], ['i1', 'g1', '-', 1, 1], ['i2', 'g1', '-', 1, 1], ['i3', 'g2', '+', 1], ['i4', 'g1', '-', 3]] },
+  thuis: { name:'Thuiswerken', over:'Wat doet meer thuiswerken met welzijn en kwaliteit?',
+    E:[['g1', 'gedrag', 'werken thuis', 0, 0, { wie:'Medewerkers' }], ['g2', 'gedrag', 'controleren of iemand online is', 0, 0, { wie:'Leidinggevenden', doel:'minder' }], ['f1', 'factor', 'Pendeltijd', 0, 0], ['f2', 'factor', 'Autonomie', 0, 0, { pl:'willen' }],
+      ['f3', 'factor', 'Tijd om geconcentreerd te werken', 0, 0, { pl:'kans' }], ['f4', 'factor', 'Gevoel er alleen voor te staan', 0, 0], ['f5', 'factor', 'Kennis delen tussendoor', 0, 0, { pl:'kunnen' }], ['f6', 'factor', "Inwerken van nieuwe collega's", 0, 0, { pl:'kunnen' }],
+      ['f7', 'factor', 'Vertrouwen', 0, 0], ['f8', 'factor', 'Werk dat doorloopt in de vrije tijd', 0, 0], ['f9', 'factor', "Collega's op kantoor", 0, 0, { pl:'kans' }], ['u1', 'uitkomst', 'Welzijn', 0, 0, { doel:'meer' }], ['u2', 'uitkomst', 'Kwaliteit van het werk', 0, 0, { doel:'meer' }],
+      ['i1', 'ingreep', 'Vaste teamdag op kantoor', 0, 0, { ik:'Omgeving aanpassen', st:'ja' }], ['i2', 'ingreep', 'Betere samenwerkingstools', 0, 0, { ik:'Hindernissen wegnemen', st:'ja' }], ['i3', 'ingreep', 'Afspraken over bereikbaarheid', 0, 0, { ik:'Beperken', st:'ja' }]],
+    V:[['g1', 'f1', '-', 3], ['g1', 'f2', '+'], ['g1', 'f3', '?', 2, 0, 0, 'Hangt af van de thuissituatie'], ['g1', 'f4', '+'], ['g1', 'f9', '-', 3], ['f9', 'g1', '-', 2, 0, 1, 'Op een leeg kantoor zit je alleen: dan blijf je liever thuis'], ['f9', 'f5', '+'], ['f5', 'f6', '+', 3], ['f5', 'u2', '+'], ['f6', 'u2', '+', 2, 1], ['f3', 'u2', '+'],
+      ['f1', 'u1', '-'], ['f2', 'u1', '+'], ['f4', 'u1', '-', 2, 1], ['f8', 'u1', '-', 2, 1], ['g1', 'f8', '+', 1], ['f7', 'g2', '-'], ['g2', 'f7', '-', 2, 1], ['g2', 'f2', '-'], ['g2', 'f8', '+'], ['f9', 'f7', '+', 1], ['i1', 'f9', '+'], ['i1', 'f1', '+', 1], ['i2', 'f5', '+', 1], ['i2', 'f4', '-', 1], ['i3', 'f8', '-']] },
+  werkdruk: { name:'Werkdruk en verloop', over:'Overuren, uitputting en verloop in een team',
+    E:[['g1', 'gedrag', 'maken overuren', 0, 0, { wie:'Teamleden', doel:'minder' }], ['f1', 'factor', 'Werkdruk', 0, 0], ['f2', 'factor', 'Achterstand', 0, 0, { dyn:'stapel' }], ['f3', 'factor', 'Uitputting', 0, 0], ['f4', 'factor', 'Verzuim', 0, 0], ['f5', 'factor', 'Bezetting', 0, 0],
+      ['f6', 'factor', 'Tijd kwijt aan inwerken', 0, 0], ['f7', 'factor', 'Fouten en herwerk', 0, 0], ['f8', 'factor', 'Druk om te kiezen wat voorgaat', 0, 0], ['f9', 'factor', 'Takenpakket', 0, 0, { st:'deels' }], ['u1', 'uitkomst', 'Kwaliteit van de dienstverlening', 0, 0, { doel:'meer' }], ['u2', 'uitkomst', 'Verloop', 0, 0, { doel:'minder' }],
+      ['i1', 'ingreep', 'Extra handen', 0, 0, { ik:'Omgeving aanpassen', st:'ja', duur:'tijdelijk' }], ['i2', 'ingreep', 'Samen kiezen wat voorgaat', 0, 0, { ik:'Hindernissen wegnemen', st:'ja' }], ['i3', 'ingreep', 'Taken schrappen', 0, 0, { ik:'Beperken', st:'ja' }]],
+    V:[['f1', 'g1', '+', 3], ['g1', 'f2', '-', 2, 0, 0, 'Snelle oplossing: overuren werken de achterstand weg'], ['f2', 'f1', '+'], ['g1', 'f3', '+', 2, 1, 0, 'Uitputting bouwt zich traag op'], ['f3', 'f4', '+'], ['f3', 'u2', '+', 2, 1], ['f3', 'f7', '+'], ['f7', 'f2', '+'], ['f7', 'u1', '-'], ['f4', 'f5', '-'], ['u2', 'f5', '-'], ['f5', 'f1', '-'],
+      ['u2', 'f6', '+', 2, 1, 0, 'Wie nieuw is, moet je inwerken'], ['f6', 'f1', '+'], ['f1', 'u1', '-'], ['f2', 'f8', '+'], ['f8', 'f9', '-', 2, 1, 0, 'De echte oplossing komt traag'], ['f9', 'f1', '+'], ['f9', 'f2', '+', 2, 0, 0, 'Meer taken: meer werk dat blijft liggen'], ['i1', 'f2', '-'], ['i1', 'f6', '+', 2, 0, 0, 'Ook wie tijdelijk komt helpen, moet je inwerken'], ['i2', 'f8', '+'], ['i3', 'f9', '-', 3]] },
+};
+function voorbeeldKaart(vol, id) {
+  let E, V;
+  if (id && VB[id]) { E = VB[id].E.map(r => r.slice()); V = VB[id].V; }
+  else {
+    E = [
+      ['wd', 'factor', 'Werkdruk', 0, -120, { pl:'kans' }],
+      ['ou', 'gedrag', 'maken overuren', 192, -32, { wie:'Teamleden', doel:'minder' }],
+      ['vm', 'factor', 'Vermoeidheid', 160, 136, { pl:'kunnen' }],
+      ['fo', 'factor', 'Fouten', -16, 200],
+      ['hw', 'factor', 'Herstelwerk', -184, 88],
+      ['hv', 'gedrag', 'vragen hulp aan elkaar', -224, -120, { wie:'Teamleden', doel:'meer' }],
+    ];
+    V = [['wd', 'ou', '+'], ['ou', 'wd', '-'], ['ou', 'vm', '+', 2, true], ['vm', 'fo', '+'], ['fo', 'hw', '+'], ['hw', 'wd', '+'], ['wd', 'hv', '-'], ['hv', 'wd', '-']];
+    if (vol) {
+      E.push(['op', 'factor', 'Openheid in het team', -400, -32, { pl:'kans' }], ['tk', 'uitkomst', 'Tevreden klanten', 192, 288, { doel:'meer' }], ['in', 'ingreep', 'Kort teamoverleg elke week', -416, -200, { ik:'Omgeving aanpassen' }], ['ek', 'ingreep', 'Tijdelijke extra kracht', 232, -232, { ik:'Hindernissen wegnemen', duur:'tijdelijk' }], ['pl', 'gedrag', 'verdelen het werk mee', -384, 176, { wie:'Teamleiders', doel:'meer' }]);
+      V.push(['op', 'hv', '+'], ['fo', 'tk', '-', 3], ['in', 'op', '+'], ['in', 'pl', '+', 1], ['pl', 'wd', '-', 2, true], ['ek', 'wd', '-', 2]);
+    }
   }
-  const map = {}; const els = E.map(([k, t, n, x, y, o]) => { const id = uid(); map[k] = id; return schoonEl(Object.assign({ id, t, n, x, y }, o || {})); });
-  const ver = V.map(([a, b, s, w, v]) => ({ id:uid(), a:map[a], b:map[b], s, w:w || 2, v:!!v, z:false }));
-  return { els, ver };
+  const P = id && VB_PLEK[id] || {};
+  E.forEach(r => { if (P[r[0]]) { r[3] = P[r[0]][0]; r[4] = P[r[0]][1]; } });
+  const map = {}; const els = E.map(([k, t, n, x, y, o]) => { const id2 = uid(); map[k] = id2; return schoonEl(Object.assign({ id:id2, t, n, x, y }, o || {})); });
+  const ver = V.map(([a, b, s, w, v, z, uit]) => ({ id:uid(), a:map[a], b:map[b], s, w:w || 2, v:!!v, z:!!z, uit:uit || '' }));
+  return { els, ver, name: id && VB[id] ? VB[id].name : 'Digitaal premieloket voor renovatie', over: id && VB[id] ? VB[id].over : 'Het team dossierbeheer werkt al maanden over, en de fouten stapelen zich op' };
 }
-function loadExample(vol) {
+// Plaats van de elementen in de voorbeelden (eens netjes geschikt, dan vastgelegd: zo ziet iedereen dezelfde kaart).
+const VB_PLEK = {
+  werkdruk: { i3:[-300, -180], f9:[0, -180], f8:[330, -180], i2:[660, -180], f1:[0, 40], g1:[360, 40], f3:[680, 40], f4:[980, 40], f2:[200, 220], f7:[680, 220], f5:[980, 220], i1:[-160, 420], u1:[680, 400], u2:[980, 400], f6:[330, 560] },
+  toxisch: { i1:[120, -160], i2:[420, -200], i4:[720, -160], g1:[420, 0], f1:[120, 120], f5:[720, 120], g2:[120, 360], u1:[720, 360], f4:[420, 480], f2:[-240, 80], f3:[-240, 260], u2:[-240, 460], i3:[120, 640] },
+  thuis: { f7:[0, -120], g2:[300, -120], f1:[620, -60], f2:[620, 80], u1:[950, 100], g1:[300, 200], f8:[620, 220], i3:[950, 300], f4:[620, 360], f9:[300, 440], i1:[0, 440], f3:[620, 500], u2:[950, 560], f5:[620, 640], i2:[300, 700], f6:[950, 760] },
+};
+function loadExample(vol, id) {
+  id = VB[id] ? id : 'premie';
   const bestaand = state.lists.find(x => x.voorbeeld);
   let l;
   if (bestaand) l = bestaand;
   else { l = cur(); if (l.els.length || !['Mijn project', 'Nieuw project', 'Naamloos', ocProject('')].includes(l.name)) { l = nieuweLeeg(''); state.lists.push(l); } }
-  state.current = l.id; terugVan = null;
-  const k = voorbeeldKaart(vol); Object.assign(l, { voorbeeld:true, beperkt:!vol, name:'Digitaal premieloket voor renovatie', over:'Het team dossierbeheer werkt al maanden over, en de fouten stapelen zich op', els:k.els, ver:k.ver, ing:{} });
+  state.current = l.id; terugVan = null; toonA = false; stap = EINDE;
+  const k = voorbeeldKaart(vol, id === 'premie' ? null : id); Object.assign(l, { voorbeeld:true, beperkt:id === 'premie' && !vol, vbId:id, name:k.name, over:k.over, els:k.els, ver:k.ver, ing:{} }); delete l.ingA; if (!l.beperkt) delete l.beperkt;
+  if (id !== 'premie' && !VB_PLEK[id]) { MATEN = new Map(l.els.map(e => [e.id, maat(e)])); schik(l); }   // nog geen vaste plaatsen: netjes schikken
   sel = null; paneel = 'zie'; modus = ''; licht = null; zieKeuze = null;
+  try { if (window.ocEigenZet) ocEigenZet(); } catch {}   // wat je net opende, blijft open na herladen
   save(); render(); requestAnimationFrame(() => allesInBeeld());
-  toast(vol ? 'Volledig voorbeeld, met een ingreep en een uitkomst' : 'Voorbeeld geladen: eerst de kern. Kies Volledig voorbeeld voor meer.');
+  toast(id !== 'premie' ? `Voorbeeld: ${VOORBEELDEN.find(v => v.id === id).naam}. Speel er gerust mee.` : vol ? 'Volledig voorbeeld, met een ingreep en een uitkomst' : 'Voorbeeld geladen: eerst de kern. Kies Volledig voorbeeld voor meer.');
 }
 $('ocStart').addEventListener('click', e => { if (e.target.closest('#example')) loadExample(); });
 document.addEventListener('click', e => { if (!e.target.closest('#ocStart .oc-begin')) return; begonnen = true; $('ocStart').hidden = true; render(); setTimeout(() => { svg.focus({ preventScroll:true }); document.querySelector('.sk-kaartvak').scrollIntoView({ block:'start', behavior: reduce.matches ? 'auto' : 'smooth' }); allesInBeeld(); }, 0); }, true);
 $('vb-vol').addEventListener('click', () => loadExample(true));
+{ const k = $('vb-kies'); if (k) { k.innerHTML = VOORBEELDEN.map(v => `<option value="${v.id}">${esc(v.naam)}</option>`).join(''); k.addEventListener('change', () => loadExample(false, k.value)); } }
 $('vb-wis').addEventListener('click', () => {
   const restore = snapshot(), idx = state.lists.indexOf(cur());
   state.lists = state.lists.filter(x => !x.voorbeeld);
@@ -4141,7 +4318,7 @@ $('vb-eigen').addEventListener('click', () => {
 
 /* ---------- Kaarten per project ---------- */
 function nieuweLijst() { const l = nieuweLeeg('Nieuw project'); state.lists.push(l); state.current = l.id; sel = null; paneel = 'leeg'; modus = ''; licht = null; save(); render(); allesInBeeld(); }
-function kiesLijst(id) { state.current = id; sel = null; paneel = 'leeg'; modus = ''; licht = null; zieKeuze = null; toonA = false; stap = 99; save(); render(); allesInBeeld(); }
+function kiesLijst(id) { state.current = id; sel = null; paneel = 'leeg'; modus = ''; licht = null; zieKeuze = null; toonA = false; stap = EINDE; save(); render(); allesInBeeld(); }
 function deleteList(l) {
   const restore = snapshot(), idx = state.lists.indexOf(l);
   state.lists = state.lists.filter(x => x.id !== l.id);
@@ -4162,9 +4339,9 @@ function download(blob, name) { const a = document.createElement('a'); a.href = 
 async function copy(t) { try { await navigator.clipboard.writeText(t); return true; } catch {} try { const x = document.createElement('textarea'); x.value = t; x.style.position = 'fixed'; x.style.opacity = '0'; document.body.appendChild(x); x.select(); const ok = document.execCommand('copy'); x.remove(); return ok; } catch { return false; } }
 function asText() {
   const l = cur(), A = analyse(l), R = [`Systeemkaart: ${l.name}`]; if (l.over) R.push(`Over: ${l.over}`); R.push('');
-  SOORTEN.forEach(s => { const els = l.els.filter(e => e.t === s); if (!els.length) return; R.push(SOORT[s].naam.toUpperCase()); els.forEach(e => R.push('- ' + naamVan(e) + (e.pl ? ` (werkt op: ${PIJLER[e.pl]})` : '') + (e.ik ? ` (${e.ik})` : '') + (e.st ? ` (zelf te beïnvloeden: ${e.st === 'deels' ? 'een beetje' : e.st})` : ''))); R.push(''); });
+  SOORTEN.forEach(s => { const els = l.els.filter(e => e.t === s); if (!els.length) return; R.push(SOORT[s].naam.toUpperCase()); els.forEach(e => R.push('- ' + naamVan(e) + (e.pl ? ` (werkt op: ${PIJLER[e.pl]})` : '') + (e.dyn === 'stapel' ? ' (stapelt op)' : '') + (e.ik ? ` (${e.ik})` : '') + (e.duur === 'tijdelijk' ? ' (tijdelijk)' : '') + (e.st ? ` (zelf te beïnvloeden: ${e.st === 'deels' ? 'een beetje' : e.st})` : ''))); R.push(''); });
   if (l.ver.length) { R.push('VERBANDEN'); l.ver.forEach(v => R.push('- ' + zinTekst(v, 300) + (v.w !== 2 ? ` (${STERKTE[v.w].naam})` : '') + (v.z ? ' (vermoeden)' : '') + (v.uit ? ` Waarom: ${v.uit}` : ''))); R.push(''); }
-  if (A.kringen.length) { R.push(`KRINGEN (${A.kringen.volledig ? A.kringen.totaal + ' in totaal' : 'meer dan ' + A.kringen.totaal}; eerst de korte met een gedrag of uitkomst)`); A.kringen.slice(0, 30).forEach(k => R.push(`- ${KRING_NAAM[k.soort]}${k.traag ? ' (met vertraging)' : ''}: ${kringTekst(k, l, 200)}`)); R.push(''); }
+  if (A.kringen.length) { R.push(`KRINGEN (${A.kringen.volledig ? A.kringen.totaal + ' in totaal' : 'meer dan ' + A.kringen.totaal}; eerst die met een gedrag en een uitkomst, de sterkste eerst)`); A.kringen.slice(0, 30).forEach(k => R.push(`- ${KRING_NAAM[k.soort]}${k.traag ? ' (met vertraging)' : ''}: ${kringTekst(k, l, 200)}`)); R.push(''); }
   ingTekst(l, A).forEach(r => R.push(r));
   if (A.hefbomen.length) R.push('AANDACHTSPUNTEN (MOGELIJKE HEFBOMEN): ' + A.hefbomen.map(e => `${naamVan(e)} (bereik ${e._bereik}${e._lus ? ', in een kring' : ''})`).join('; '), '');
   R.push('Een hulpmiddel om samen na te denken, geen wetenschappelijk model en geen voorspelling. Geïnspireerd door het systeemdenken en het COM-B-model van Michie, van Stralen en West (2011).', '', `Systeemkaart ${TOOL_VERSIE}, onderconstructie.app, ${vandaag()}`);
@@ -4172,7 +4349,7 @@ function asText() {
 }
 function ingTekst(l, A) {
   if (modus !== 'ing') return [];   // na Klaar toont de kaart geen ingreep meer: dan ook niet in de export
-  const R = [], blok = (titel, push) => { const vs = SIM, ta = toonA; toonA = false; const lI = Object.assign({}, l, { ing:push }); SIM = simuleer(l, push); const st = stap; stap = 99; const r = gevolgen(lI, A); stap = st; R.push(`${titel} (${plat(rustZin(l)).replace(/\.$/, '').toLowerCase()})`); r.lijst.forEach(x => R.push(`- ${x.p} ${x.tekst}${x.noot ? ' (' + x.noot + ')' : ''}`)); r.notes.forEach(n => R.push('  ' + n)); R.push(''); SIM = vs; toonA = ta; };
+  const R = [], blok = (titel, push) => { const vs = SIM, ta = toonA; toonA = false; const lI = Object.assign({}, l, { ing:push }); SIM = simuleer(l, push); const st = stap; stap = EINDE; const r = gevolgen(lI, A); stap = st; R.push(`${titel} (${plat(rustZin(l)).replace(/\.$/, '').toLowerCase()})`); r.lijst.forEach(x => R.push(`- ${x.p} ${x.tekst}${x.noot ? ' (' + x.noot + ')' : ''}`)); r.notes.forEach(n => R.push('  ' + n)); R.push(''); SIM = vs; toonA = ta; };
   if (l.ingA) blok('INGREEP A: ' + ingNaam(l.ingA), l.ingA);
   if (Object.keys(l.ing).length) blok((l.ingA ? 'INGREEP B: ' : 'INGREEP: ') + ingNaam(l.ing), l.ing);
   if (l.ingA && Object.keys(l.ing).length) { const v = vergelijk(l); R.push('A EN B VERGELEKEN (eindtoestand)'); oordeelVan(l, v).forEach(z => R.push(z)); v.rijen.forEach(r => R.push(`- ${naamVan(r.e)}: A ${r.a || 'niets'}${r.za ? ' (schommelt)' : r.ta ? ' vanaf stap ' + r.ta : ''}, B ${r.b || 'niets'}${r.zb ? ' (schommelt)' : r.tb ? ' vanaf stap ' + r.tb : ''}`)); R.push(''); }
@@ -4181,10 +4358,11 @@ function ingTekst(l, A) {
 function ocCsvVeilig(s) { s = String(s == null ? '' : s); return /^[=+\-@\t\r]/.test(s) && !/^[+-]?\d+([.,]\d+)*%?$/.test(s) ? "'" + s : s; }
 function asCSV() {
   const cell = v => { v = ocCsvVeilig(v); return /[;"\n\r]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v; }, l = cur();
-  const rows = [['Van ID', 'Van', 'Soort van', 'Pijler van', 'Effect', 'Teken', 'Naar ID', 'Naar', 'Soort naar', 'Sterkte', 'Gewicht', 'Vertraging', 'Zekerheid', 'Waarom of bron', 'Soort ingreep van', 'Wat wil je met van', 'Wat wil je met naar']];
+  const rows = [['Van ID', 'Van', 'Soort van', 'Pijler van', 'Effect', 'Teken', 'Naar ID', 'Naar', 'Soort naar', 'Sterkte', 'Gewicht', 'Vertraging', 'Zekerheid', 'Waarom of bron', 'Soort ingreep van', 'Wat wil je met van', 'Wat wil je met naar', 'Hoe verandert van', 'Hoe verandert naar', 'Hoe lang (ingreep van)']];
+  const hoe = e => e.t === 'factor' ? (e.dyn === 'stapel' ? 'stapelt op' : 'meteen') : '', lang = e => e.t === 'ingreep' ? (e.duur === 'tijdelijk' ? 'tijdelijk' : 'blijvend') : '';
   const wil = e => e.doel === 'meer' ? (e.t === 'gedrag' ? 'vaker' : 'meer') : e.doel === 'minder' ? (e.t === 'gedrag' ? 'minder vaak' : 'minder') : '';
-  l.ver.forEach(v => { const a = elVan(v.a), b = elVan(v.b); rows.push([a.id, naamVan(a), SOORT[a.t].naam, a.pl ? PIJLER[a.pl] : '', v.s === '+' ? 'meer geeft meer' : v.s === '-' ? 'meer geeft minder' : 'weet ik niet', v.s === '-' ? '-1' : v.s === '+' ? '1' : '?', b.id, naamVan(b), SOORT[b.t].naam, STERKTE[v.w].naam, String(STERKTE[v.w].w).replace('.', ','), v.v ? 'ja (twee stappen later)' : 'nee', v.z ? 'vermoeden' : 'vrij zeker', v.uit || '', a.ik || '', wil(a), wil(b)]); });
-  l.els.filter(e => !l.ver.some(v => v.a === e.id || v.b === e.id)).forEach(e => rows.push([e.id, naamVan(e), SOORT[e.t].naam, e.pl ? PIJLER[e.pl] : '', '', '', '', '', '', '', '', '', '', '', e.ik || '', wil(e), '']));
+  l.ver.forEach(v => { const a = elVan(v.a), b = elVan(v.b); rows.push([a.id, naamVan(a), SOORT[a.t].naam, a.pl ? PIJLER[a.pl] : '', v.s === '+' ? 'meer geeft meer' : v.s === '-' ? 'meer geeft minder' : 'weet ik niet', v.s === '-' ? '-1' : v.s === '+' ? '1' : '?', b.id, naamVan(b), SOORT[b.t].naam, STERKTE[v.w].naam, String(STERKTE[v.w].w).replace('.', ','), v.v ? 'ja (twee stappen later)' : 'nee', v.z ? 'vermoeden' : 'vrij zeker', v.uit || '', a.ik || '', wil(a), wil(b), hoe(a), hoe(b), lang(a)]); });
+  l.els.filter(e => !l.ver.some(v => v.a === e.id || v.b === e.id)).forEach(e => rows.push([e.id, naamVan(e), SOORT[e.t].naam, e.pl ? PIJLER[e.pl] : '', '', '', '', '', '', '', '', '', '', '', e.ik || '', wil(e), '', hoe(e), '', lang(e)]));
   rows.push([], [`Systeemkaart ${TOOL_VERSIE}, onderconstructie.app, ${vandaag()}`], ['Rekenwijze: ' + METHODE]);
   return '﻿' + rows.map(r => r.map(cell).join(';')).join('\r\n') + '\r\n';
 }
@@ -4221,7 +4399,7 @@ function buildExport() {
   if (KAART_BEELD) { const bw = Math.min(718, KAART_BEELD.w), bh = KAART_BEELD.h * bw / KAART_BEELD.w; h += `<img data-kaart alt="De systeemkaart" style="display:block;width:${bw}px;height:${bh}px;margin:0 auto;border:1px solid #e2e8f0;border-radius:12px">`; }
   const st = (svg2, t2) => `<span style="display:inline-flex;align-items:center;gap:6px"><svg width="28" height="16" viewBox="0 0 28 16">${svg2}</svg>${t2}</span>`;
   h += `<div data-oc-keep style="display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:12px;font-size:13px;color:#475569">${st('<rect x="1" y="2" width="26" height="12" rx="6" fill="#ecfdf5" stroke="#047857" stroke-width="1.5"/>', 'Gedrag')}${st('<rect x="1" y="2" width="26" height="12" rx="2" fill="#fff" stroke="#64748b" stroke-width="1.2"/>', 'Factor')}${st('<rect x="1" y="1" width="26" height="14" rx="3" fill="#fff" stroke="#047857" stroke-width="1.2"/><rect x="3.5" y="3.5" width="21" height="9" rx="2" fill="none" stroke="#047857" stroke-width="1.2"/>', 'Uitkomst')}${st('<path d="M6 2h21v12H6L1 8z" fill="#047857"/>', 'Ingreep')}${st('<path d="M1 8h22" stroke="#475569" stroke-width="1.6"/><path d="M21 4l6 4-6 4z" fill="#475569"/>', '+ meer geeft meer, − meer geeft minder')}${st('<path d="M1 8h26" stroke="#475569" stroke-width="1.6"/><path d="M11 12l3-8M15 12l3-8" stroke="#475569" stroke-width="1.6"/>', 'pas na een tijd')}${st('<path d="M1 8h26" stroke="#475569" stroke-width="1.6" stroke-dasharray="4 3"/>', 'vermoeden')}</div>`;
-  if (A.kringen.length) h += kop(`Kringen (${A.kringen.volledig ? A.kringen.totaal + ' in totaal' : 'meer dan ' + A.kringen.totaal}${A.kringen.totaal > 12 ? ', de 12 kortste' : ''})`) + A.kringen.slice(0, 12).map((k, i) => rij(`<b>${i + 1}. ${esc(KRING_NAAM[k.soort])}</b>: ${esc(kringTekst(k, l, 200))}. <span style="color:#64748b">${esc(KRING_UIT[k.soort])}</span>`)).join('');
+  if (A.kringen.length) h += kop(`Kringen (${A.kringen.volledig ? A.kringen.totaal + ' in totaal' : 'meer dan ' + A.kringen.totaal}${A.kringen.totaal > 12 ? ', de 12 belangrijkste' : ''})`) + A.kringen.slice(0, 12).map((k, i) => rij(`<b>${i + 1}. ${esc(KRING_NAAM[k.soort])}</b>: ${esc(kringTekst(k, l, 200))}. <span style="color:#64748b">${esc(KRING_UIT[k.soort])}</span>`)).join('');
   if (A.hefbomen.length) h += kop('Aandachtspunten (mogelijke hefbomen)') + A.hefbomen.map(e => rij(`${esc(naamVan(e))} <span style="color:#64748b">bereikt ${e._bereik} elementen in twee stappen${e._lus ? ', zit in een kring' : ''}${e.st === 'ja' ? ', zelf te beïnvloeden' : ''}</span>`)).join('');
   { const r = ingTekst(l, A); if (r.length) h += kop('Ingrijpen') + r.filter(x => x).map(x => /^[A-Z ]+[:(]/.test(x) ? `<div style="margin-top:10px;font-weight:700;color:#1e293b;font-size:14px">${esc(x)}</div>` : rij(esc(x.replace(/^- /, '')))).join('') + `<div style="font-size:13px;color:#64748b;margin-top:6px">De logica van de kaart, geen voorspelling. Een stap is geen vaste tijd.</div>`; }
   if (l.ver.length) h += kop('Verbanden') + l.ver.map(v => rij(esc(zinTekst(v)) + (v.z ? ' <span style="color:#64748b">(vermoeden)</span>' : '') + (v.uit ? `<br><span style="color:#64748b;font-size:12px">Waarom: ${esc(v.uit)}</span>` : ''))).join('');
@@ -4250,7 +4428,7 @@ window.addEventListener('storage', e => { if (e.key === KEY) { state = load(); s
 addEventListener('resize', () => { clearTimeout(window.__skr); window.__skr = setTimeout(() => { if (!cur().els.length) allesInBeeld(); }, 150); });
 
 ocNieuwProject();
-ocProjectVolg(() => { const voor = JSON.stringify(state); ocPickProject(state, 'lists'); ocNieuwProject(); if (JSON.stringify(state) !== voor) { sel = null; paneel = 'leeg'; modus = ''; licht = null; zieKeuze = null; toonA = false; stap = 99; save(); render(); allesInBeeld(); } });
+ocProjectVolg(() => { const voor = JSON.stringify(state); ocPickProject(state, 'lists'); ocNieuwProject(); if (JSON.stringify(state) !== voor) { sel = null; paneel = 'leeg'; modus = ''; licht = null; zieKeuze = null; toonA = false; stap = EINDE; save(); render(); allesInBeeld(); } });
 window.ocPk = ocProjectkiezer('#ocKiezer', {
   woord: 'project', meervoud: 'projecten', projectnaam: true,
   lijst: () => state.lists.map(l => ({ id: l.id, naam: l.name, voorbeeld: !!l.voorbeeld, info: !l.els.length ? 'leeg' : `${l.els.length} elementen` })),
@@ -4268,7 +4446,7 @@ if (geknipt) setTimeout(() => toast(`Je kaart had meer dan ${MAX_EL} elementen o
 try { const q = new URLSearchParams(location.search).get('kies'); if (q && ID_OK.test(q) && elVan(q)) { history.replaceState(null, '', location.pathname); setTimeout(() => { kiesEl(q); inBeeld(q); }, 120); } } catch {}
 try { document.fonts.ready.then(() => { render(); allesInBeeld(); }); } catch {}
 /* Voor tests */
-window.systeem = { _sim:simuleer, _pijl:pijlVan, _kringen:vindKringen, analyse:() => analyse(cur()), simuleer:(p) => simuleer(cur(), p || cur().ing), herken, staat:() => JSON.parse(JSON.stringify(cur())), vindKringen:() => vindKringen(cur()), view, laadVoorbeeld:loadExample, nieuwEl, maakVerband, schik:() => { schik(cur()); save(); render(); }, _zet:(id, veld, w) => { const e = elVan(id); if (e && ['pl', 'ik', 'st'].includes(veld)) { e[veld] = w; save(); render(); } } };
+window.systeem = { _sim:simuleer, _pijl:pijlVan, _kringen:vindKringen, analyse:() => analyse(cur()), simuleer:(p) => simuleer(cur(), p || cur().ing), herken, staat:() => JSON.parse(JSON.stringify(cur())), vindKringen:() => vindKringen(cur()), view, laadVoorbeeld:loadExample, voorbeelden:() => VOORBEELDEN.map(v => v.id), nieuwEl, maakVerband, schik:() => { schik(cur()); save(); render(); }, _zet:(id, veld, w) => { const e = elVan(id); if (e && ['pl', 'ik', 'st'].includes(veld)) { e[veld] = w; save(); render(); } } };
 </script>
 <script>
 /* Opnieuw beginnen: zichtbaar zodra er echt iets ingevuld is; start de eigen 'Alles wissen' van de tool.
