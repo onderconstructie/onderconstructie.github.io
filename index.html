@@ -676,6 +676,10 @@ button.pb-where:hover { background:var(--slate-50); }
 .hs-open, .hs-close { width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; color:var(--slate-600); }
 .hs-open:hover, .hs-close:hover { background:var(--slate-100); color:var(--slate-800); }
 .hs-open svg, .hs-close svg { width:20px; height:20px; }
+.hs-fase { flex:none; width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; color:var(--slate-600); }
+.hs-fase svg { width:20px; height:20px; }
+@media (hover:hover) { .hs-fase:hover { background:var(--slate-100); color:var(--slate-800); } }
+.hs-fase:focus-visible { outline:2px solid var(--ring); outline-offset:2px; }
 .hs-field { position:relative; display:none; }
 .hs-field svg { position:absolute; left:0.75rem; top:50%; transform:translateY(-50%); width:16px; height:16px; color:var(--slate-500); pointer-events:none; }
 .hs-field input { width:100%; min-height:44px; padding:0.5rem 0.75rem 0.5rem 2.25rem; border:1.5px solid var(--slate-200); border-radius:12px; background:var(--slate-50); font:inherit; font-size:16px; color:var(--slate-800); outline:none; }
@@ -1185,9 +1189,9 @@ body.searching #cycle, body.searching #vs-note { display:none !important; }
 .cycle[hidden] { display:none; }
 /* op een breed scherm: links de kring (blijft staan tijdens het scrollen), rechts de tools van de fase;
    de hulpjes zonder fase staan los daaronder, over de volle breedte: ze horen niet bij een fase */
-@media (min-width:760px) {
+@media (min-width:1000px) {
   .cycle { grid-template-columns:340px minmax(0,1fr); align-items:start; column-gap:1.5rem; row-gap:2rem; }
-  .cycle .cy-wheel { grid-column:1; grid-row:1; position:sticky; top:1rem; }
+  .cycle .cy-wheel { grid-column:1; grid-row:1; position:sticky; top:0; }
   .cy-list { grid-column:2; grid-row:1; }
   .cy-always { grid-column:1 / -1; grid-row:2; }
 }
@@ -1598,6 +1602,15 @@ body.searching #home #tabgroup { display:none !important; }
 
 .at-lijst { flex:1; min-height:0; overflow:auto; overscroll-behavior:contain; scroll-padding-top:2.25rem; padding-bottom:calc(1rem + var(--bottom)); }
 .at-lijst:focus { outline:none; }
+.at-lijst[hidden], .at-fase[hidden], .at-pillen[hidden] { display:none !important; }
+/* Per fase: de kring en eronder (breed: ernaast) de tools van de gekozen fase */
+.at-fase { flex:1; min-height:0; overflow:auto; overscroll-behavior:contain; padding:1rem max(1rem, var(--right)) calc(1.5rem + var(--bottom)) max(1rem, var(--left)); background:var(--slate-50, #f8fafc); }
+@media (min-width:640px) { .at-fase { padding:1.25rem 1.5rem 1.5rem; } }
+@media (min-width:1000px) { .at[data-modus="fase"] { width:min(66rem, calc(100% - 2rem)); } }
+.at-fase .cy-wheel { max-width:300px; }
+.cy-kop { margin:0; padding:0.75rem 1rem 0.25rem; font-size:0.75rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--slate-500); border-top:1px solid var(--slate-100); }
+.cy-kop:first-of-type { border-top:0; }
+.cy-kop small { font-weight:600; letter-spacing:0; text-transform:none; color:var(--slate-400); margin-left:0.375rem; }
 .at-letter { position:sticky; top:0; z-index:1; padding:0.3125rem max(1.25rem, var(--left)); font-size:0.8125rem; font-weight:700; line-height:1.4; color:#047857; background:rgba(248,250,252,0.96); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px); border-bottom:1px solid var(--slate-100); }
 .at-l + .at-l .at-letter { border-top:1px solid var(--slate-100); }
 .at-ul { list-style:none; }
@@ -2530,6 +2543,7 @@ window.ocProjectkiezer = function (plek, o) {
         <h1 class="site-title"><a href="/" class="hd-home" title="Naar Start">Onder Constructie</a></h1>
         <p class="site-subtitle">Minder gepraat, meer beslist</p>
       </div>
+      <button type="button" class="hs-fase" id="fase-open" aria-label="Alle tools per fase" title="Alle tools per fase"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M13.7 4.2A8 8 0 0 1 19.8 10.3"/><path d="M19.8 13.7A8 8 0 0 1 13.7 19.8" opacity=".55"/><path d="M10.3 19.8A8 8 0 0 1 4.2 13.7" opacity=".55"/><path d="M4.2 10.3A8 8 0 0 1 10.3 4.2" opacity=".55"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/></svg></button>
       <div class="hsearch" id="hsearch" role="search">
         <button type="button" class="hs-open" id="search-open" aria-label="Zoeken" title="Zoeken (/)" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button>
         <label class="hs-field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
@@ -2616,8 +2630,7 @@ window.ocProjectkiezer = function (plek, o) {
         <h2 class="section-label" id="alltools-h">Alle tools</h2>
         <!-- twee gelijkwaardige ingangen: dezelfde tools, anders geordend. De keuze wordt onthouden. -->
         <div class="viewsw" id="viewsw" role="radiogroup" aria-label="Toon de tools">
-          <button type="button" role="radio" class="vs-opt vs-plan" data-view="plan" aria-checked="false" aria-controls="plan-keuze" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h4M4 12h4M4 18h4M12 6h8M12 12h8M12 18h8"/></svg>Stappenplan</button>
-          <button type="button" role="radio" class="vs-opt" data-view="fase" aria-checked="true" aria-controls="cycle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 0 1-13.7 5.6"/><path d="M4 12a8 8 0 0 1 13.7-5.6"/><path d="M18 2.8v4h-4M6 21.2v-4h4"/></svg><span><span class="vs-per">Per </span><span class="vs-woord">fase</span></span></button>
+          <button type="button" role="radio" class="vs-opt vs-plan" data-view="plan" aria-checked="true" aria-controls="plan-keuze"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h4M4 12h4M4 18h4M12 6h8M12 12h8M12 18h8"/></svg>Stappenplan</button>
           <button type="button" role="radio" class="vs-opt" data-view="onderwerp" aria-checked="false" aria-controls="groups" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"/></svg><span><span class="vs-per">Per </span><span class="vs-woord">onderwerp</span></span></button>
         </div>
       </div>
@@ -2634,31 +2647,6 @@ window.ocProjectkiezer = function (plek, o) {
         </div>
       </div>
       <div id="groups"></div>
-      <!-- Per fase: de vier fasen als kring. Kies een fase, de tools staan ernaast of eronder. -->
-      <div class="cycle" id="cycle" hidden>
-          <div class="cy-wheel" id="cy-wheel">
-            <svg class="cy-ring" viewBox="0 0 400 400" aria-hidden="true" focusable="false">
-              <defs><radialGradient id="cy-glow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#ecfdf5"/><stop offset="1" stop-color="#ffffff"/></radialGradient></defs>
-              <circle class="cy-disc" cx="200" cy="200" r="178"/>
-              <circle class="cy-track" cx="200" cy="200" r="160"/>
-              <circle class="cy-hair" cx="200" cy="200" r="136"/>
-              <g class="cy-heads">
-                <path d="M 194 32 L 204 40 L 194 48"/>
-                <path d="M 194 32 L 204 40 L 194 48" transform="rotate(90 200 200)"/>
-                <path d="M 194 32 L 204 40 L 194 48" transform="rotate(180 200 200)"/>
-                <path d="M 194 32 L 204 40 L 194 48" transform="rotate(270 200 200)"/>
-              </g>
-              <g class="cy-sweep" id="cy-sweep">
-                <path class="cy-arc" d="M 86.86 86.86 A 160 160 0 0 1 313.14 86.86"/>
-                <path class="cy-head" d="M 194 32 L 204 40 L 194 48"/>
-              </g>
-            </svg>
-            <div class="cy-core"><p class="cy-q" id="cy-q"></p></div>
-            <div class="cy-stations" id="cy-st" role="radiogroup" aria-label="Kies een fase"></div>
-          </div>
-        <section class="group cy-list" id="cy-list" aria-labelledby="cy-list-h"></section>
-        <section class="cy-always" id="cy-always" aria-labelledby="cy-always-h"></section>
-      </div>
     </section>
   </main>
 
@@ -2823,9 +2811,36 @@ window.ocProjectkiezer = function (plek, o) {
     <button type="button" class="at-x" id="at-x" aria-label="Terug"><svg class="at-x-terug" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><svg class="at-x-dicht" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
     <div class="at-titel"><h2 id="at-h" tabindex="-1">Alle tools</h2><p class="at-n" id="at-n"></p></div>
   </div>
-  <div class="at-filter"><div class="at-modus" id="at-modus" role="group" aria-label="Filter op"><button type="button" class="at-md" data-modus="deel" aria-pressed="true">Onderdeel</button><button type="button" class="at-md" data-modus="doen" aria-pressed="false">Activiteit</button></div><div class="at-ander-w" id="at-ander"></div>
+  <div class="at-filter"><div class="at-modus" id="at-modus" role="group" aria-label="Filter op"><button type="button" class="at-md" data-modus="deel" aria-pressed="true">Onderdeel</button><button type="button" class="at-md" data-modus="fase" aria-pressed="false">Fase</button></div><div class="at-ander-w" id="at-ander"></div>
   <div class="at-pillen" id="at-pillen" role="group" aria-label="Toon tools uit"></div></div>
   <div class="at-lijst" id="at-lijst"></div>
+  <div class="at-fase" id="at-fase" hidden>
+      <!-- Per fase: de vier fasen als kring. Kies een fase, de tools staan ernaast of eronder. -->
+      <div class="cycle" id="cycle">
+          <div class="cy-wheel" id="cy-wheel">
+            <svg class="cy-ring" viewBox="0 0 400 400" aria-hidden="true" focusable="false">
+              <defs><radialGradient id="cy-glow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#ecfdf5"/><stop offset="1" stop-color="#ffffff"/></radialGradient></defs>
+              <circle class="cy-disc" cx="200" cy="200" r="178"/>
+              <circle class="cy-track" cx="200" cy="200" r="160"/>
+              <circle class="cy-hair" cx="200" cy="200" r="136"/>
+              <g class="cy-heads">
+                <path d="M 194 32 L 204 40 L 194 48"/>
+                <path d="M 194 32 L 204 40 L 194 48" transform="rotate(90 200 200)"/>
+                <path d="M 194 32 L 204 40 L 194 48" transform="rotate(180 200 200)"/>
+                <path d="M 194 32 L 204 40 L 194 48" transform="rotate(270 200 200)"/>
+              </g>
+              <g class="cy-sweep" id="cy-sweep">
+                <path class="cy-arc" d="M 86.86 86.86 A 160 160 0 0 1 313.14 86.86"/>
+                <path class="cy-head" d="M 194 32 L 204 40 L 194 48"/>
+              </g>
+            </svg>
+            <div class="cy-core"><p class="cy-q" id="cy-q"></p></div>
+            <div class="cy-stations" id="cy-st" role="radiogroup" aria-label="Kies een fase"></div>
+          </div>
+        <section class="group cy-list" id="cy-list" aria-labelledby="cy-list-h"></section>
+        <section class="cy-always" id="cy-always" aria-labelledby="cy-always-h"></section>
+      </div>
+  </div>
 </dialog>
 <!-- Je stappenplan, boven de tool: alle stappen, en wisselen tussen Kort en Uitgebreid. Sluiten met het kruisje, Esc of een tik naast het venster. -->
 <dialog class="plan-dlg" id="plan-dlg" aria-labelledby="plan-h">
@@ -3176,8 +3191,6 @@ document.addEventListener('click', e => {
 // Projecten per onderwerp: een tik op de titel doet hetzelfde voor de vier groepen
 function projAlles() {
   if (tab === 'projecten' && document.body.classList.contains('view-plan')) { planAlles(); return; }
-  // Per fase: de pijl opent "Ook handig in deze fase" en brengt die lijst in beeld (ze staat onder de cirkel)
-  if (tab === 'projecten' && document.body.classList.contains('view-fase')) { const m = $('cy-more'); if (!m) return; m.click(); if (m.getAttribute('aria-expanded') === 'true') m.scrollIntoView({ behavior: calm() ? 'auto' : 'smooth', block:'start' }); return; }
   if (tab !== 'projecten') return;
   const gs = [...document.querySelectorAll('#groups .group')].filter(g => g.offsetParent), open = gs.some(g => g.classList.contains('collapsed'));
   gs.forEach(g => setCollapsed(g.dataset.group, !open)); saveCollapsed();
@@ -3241,10 +3254,10 @@ const KERN = {
 const kernTool = x => x === 'productboom' && byId.mindmap ? Object.assign({}, byId.mindmap, { title:'Productboom', sub:'Wat lever je op?', desc:'Splits op wat je oplevert, van groot naar klein.', icon:SJ_ICON.productboom, zoek:'?sjabloon=productboom', bron:byId.mindmap }) : byId[x];
 // Fasen die een tool er in de app bij krijgt, bovenop wat de tool zelf aangeeft
 const FASE_EXTRA = { schets:['plan', 'do'], visgraat:['act'], prioriteit:['act'], beslisscore:['act'], weerstand:['act'], 'project-realisme':['check'], notities:['do'] };
-const VIEWS = ['plan', 'fase', 'onderwerp'];
+const VIEWS = ['plan', 'onderwerp'];
 // Drie gelijkwaardige ingangen: een stappenplan volgen, of de tools per fase of per onderwerp bekijken.
 // De fasen zijn de basis. Wie liever per onderwerp werkt, vindt dat de volgende keer zo terug.
-let view = store.get('view', 'fase'); if (!VIEWS.includes(view)) view = 'fase';
+let view = store.get('view', 'plan'); if (!VIEWS.includes(view)) view = 'plan';   // wie 'fase' bewaard had: de kring staat nu bij Alle tools
 let phase = store.get('phase', 'plan'); if (!PHASES.some(p => p.id === phase)) phase = 'plan';
 let sweepDeg = PHASES.findIndex(p => p.id === phase) * 90;
 let active = null;   // { kind: 'search' | 'label', value }
@@ -3252,8 +3265,14 @@ const isOn = (kind, v) => !!active && active.kind === kind && active.value === v
 const hasPhases = () => TOOLS.some(t => (t.pdca || []).length);
 const calm = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 // eerst de tools waar deze fase hun hoofdfase is, dan de tools die er ook bij passen
+/* Activiteiten horen bij een fase. Een tool zonder fase-label komt zo toch in een fase terecht als ze bij Overleggen of Vastleggen hoort.
+   Delen en Opladen horen bij geen fase: die tools staan bij "Altijd bij de hand". */
+const FASE_DOEN = { plan:['afbakenen', 'analyseren', 'inplannen', 'beslissen', 'meekrijgen'], do:['overleggen', 'vastleggen'], check:['opvolgen'], act:['terugblikken'] };
+const doenVan = t => DOEN.filter(d => d.tools.includes(t.id)).map(d => d.id);
+const inFase = (t, id) => (t.pdca || []).length ? t.pdca.includes(id) : doenVan(t).some(a => FASE_DOEN[id].includes(a));
+const geenFase = t => !PHASES.some(p => inFase(t, p.id));
 function phaseTools(id) {
-  const inP = TOOLS.filter(t => (t.pdca || []).includes(id));
+  const inP = TOOLS.filter(t => inFase(t, id));
   const kern = (KERN[id] || []).map(kernTool).filter(t => t && inP.includes(t.bron || t));
   return { main: kern, more: byOrder(inP.filter(t => !kern.includes(t))) };
 }
@@ -3263,11 +3282,7 @@ function renderFilter() {
   document.querySelectorAll('.vs-opt').forEach(b => { const on = b.dataset.view === v; b.setAttribute('aria-checked', String(on)); b.tabIndex = on ? 0 : -1; });
   document.body.classList.toggle('view-fase', v !== 'onderwerp');   // ook bij het stappenplan: geen groepen, geen knop om ze open te klappen
   document.body.classList.toggle('view-plan', v === 'plan');
-  $('cycle').hidden = v !== 'fase';
-  $('vs-note').textContent = v === 'plan' ? 'Kies een plan en volg het stap voor stap. Je bepaalt zelf het tempo.' : v === 'fase'
-    ? 'Kies waar je werk nu staat. Na bijsturen begin je weer bij plannen.'
-    : 'Kies een onderwerp. Tik op een groep om de tools te zien.';
-  if (v === 'fase') renderCycle();
+  $('vs-note').textContent = v === 'plan' ? 'Kies een plan en volg het stap voor stap. Je bepaalt zelf het tempo.' : 'Kies een onderwerp. Tik op een groep om de tools te zien.';
 }
 function renderCycle() {
   const pc = {}, pm = {}; PHASES.forEach(p => { const x = phaseTools(p.id); pc[p.id] = x.main.length; pm[p.id] = x.more.length; });
@@ -3275,37 +3290,32 @@ function renderCycle() {
   if (!st.childElementCount) st.innerHTML = PHASES.map(p => `
     <button type="button" role="radio" class="cy-st" data-phase-pick="${p.id}"><span class="cy-name">${esc(p.name)}</span><span class="cy-sub">${esc(p.sub)}</span><span class="cy-n" aria-hidden="true"></span></button>`).join('');
   st.querySelectorAll('.cy-st').forEach(b => {
-    const p = PHASES.find(x => x.id === b.dataset.phasePick), on = p.id === phase, n = pc[p.id] || 0;
+    const p = PHASES.find(x => x.id === b.dataset.phasePick), on = p.id === phase, n = (pc[p.id] || 0) + (pm[p.id] || 0);
     b.setAttribute('aria-checked', String(on)); b.tabIndex = on ? 0 : -1;
-    b.setAttribute('aria-label', `${p.name}: ${p.sub.toLowerCase()}. ${n} kerntools, ${pm[p.id]} ook handig`);
+    b.setAttribute('aria-label', `${p.name}: ${p.sub.toLowerCase()}. ${n} tools`);
     b.querySelector('.cy-n').textContent = n;
   });
   $('cy-wheel').dataset.on = phase;
   $('cy-sweep').style.transform = `rotate(${sweepDeg}deg)`;
   if ($('cy-q').textContent !== ph.q) { $('cy-q').textContent = ph.q; $('cy-q').classList.remove('cy-new'); void $('cy-q').offsetWidth; $('cy-q').classList.add('cy-new'); }
-  const { main, more } = phaseTools(phase), meer = store.get('cy-meer', false);
+  const { main, more } = phaseTools(phase);
+  // onder de kerntools: de andere tools van de fase, per activiteit: eerst de activiteiten van deze fase, dan de andere (die krijgen pas een kopje vanaf twee tools). Een tool staat één keer.
+  const rest = more.slice(), blokken = [];
+  [...FASE_DOEN[phase], ...DOEN.map(d => d.id).filter(a => !FASE_DOEN[phase].includes(a))].forEach(a => { const d = DOEN.find(x => x.id === a), ts = rest.filter(t => d.tools.includes(t.id)); if (ts.length > (FASE_DOEN[phase].includes(a) ? 0 : 1)) { blokken.push({ label:d.label, ts }); ts.forEach(t => rest.splice(rest.indexOf(t), 1)); } });
+  if (rest.length) blokken.push({ label:'Ook in deze fase', ts:rest });
   $('cy-list').innerHTML = `
-    <div class="results-head"><h3 class="results-title" id="cy-list-h">${esc(ph.name)} <span class="grp">${main.length} kerntools</span><span class="results-sub">Fase ${i + 1} van 4. Daarna: ${esc(next.name.toLowerCase())}.</span></h3></div>
-    <div class="list">${main.map(t => rowHTML(t, { phase })).join('')}</div>${more.length ? `
-    <button type="button" class="cy-more" id="cy-more" aria-expanded="${meer}" aria-controls="cy-more-list"><span>Ook handig in deze fase</span><span class="count">${more.length}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg></button>
-    <div class="list cy-more-list" id="cy-more-list"${meer ? '' : ' hidden'}>${more.map(t => rowHTML(t, { phase })).join('')}</div>` : ''}`;
+    <div class="results-head"><h3 class="results-title" id="cy-list-h">${esc(ph.name)} <span class="grp">${main.length + more.length} tools</span><span class="results-sub">Fase ${i + 1} van 4. Daarna: ${esc(next.name.toLowerCase())}.</span></h3></div>
+    <h4 class="cy-kop">Eerst nodig<small>${main.length}</small></h4><div class="list">${main.map(t => rowHTML(t, { phase })).join('')}</div>`
+    + blokken.map(b => `<h4 class="cy-kop">${esc(b.label)}<small>${b.ts.length}</small></h4><div class="list">${b.ts.map(t => rowHTML(t, { phase })).join('')}</div>`).join('');
   // tools zonder fase blijven vindbaar: per groep, als kleine knoppen
-  const loose = TOOLS.filter(t => !(t.pdca || []).length);
+  const loose = TOOLS.filter(geenFase);
   const byG = GROUPS.map(g => ({ g, tools: byOrder(loose.filter(t => t.g === g.id)) })).filter(x => x.tools.length);
   $('cy-always').hidden = !byG.length;
   $('cy-always').innerHTML = `<div class="cy-al-top"><h3 class="cy-al-h" id="cy-always-h">Altijd bij de hand</h3><p class="cy-al-note">Los van de fases: hulpjes die je op elk moment gebruikt.</p></div>`
     + `<div class="cy-al-grid">` + byG.map(({ g, tools }) => `<div class="cy-al-g"><div class="cy-al-k">${g.logo}<span><b>${esc(g.label)}</b><small>${esc(g.note)}</small></span></div><div class="cy-al-chips">${tools.map(t =>
       `<button type="button" class="chip cy-chip" data-id="${esc(t.id)}" title="${esc(t.sub)}"><span class="icon">${iconHTML(t.icon)}</span>${esc(t.title)}</button>`).join('')}</div></div>`).join('') + `</div>`;
-  // de pijl rechtsboven volgt "Ook handig"; heeft de fase geen extra tools, dan is er niets om open te klappen
-  if (!document.body.classList.contains('view-plan')) { $('proj-top').setAttribute('aria-expanded', String(!!more.length && meer)); $('proj-top').classList.toggle('geen-pijl', !more.length); }
   markLive();
 }
-document.addEventListener('click', e => {
-  const b = e.target.closest('#cy-more'); if (!b) return;
-  const open = b.getAttribute('aria-expanded') !== 'true';
-  b.setAttribute('aria-expanded', String(open)); $('cy-more-list').hidden = !open; store.set('cy-meer', open);
-  if (document.body.classList.contains('view-fase') && !document.body.classList.contains('view-plan')) $('proj-top').setAttribute('aria-expanded', String(open));
-});
 function setView(v, focus, keep = true) {
   if (!VIEWS.includes(v)) return;
   view = v; if (keep) store.set('view', v);
@@ -3319,7 +3329,7 @@ function setPhase(id, focus, tapped) {
   renderCycle();
   if (focus) $('cy-st').querySelector(`[data-phase-pick="${id}"]`).focus();
   // op een smal scherm: staat de lijst buiten beeld, schuif ze dan zacht in beeld
-  if (tapped && innerWidth < 760) { const r = $('cy-list').getBoundingClientRect(); if (r.top > innerHeight - 96) $('cy-list').scrollIntoView({ behavior: calm() ? 'auto' : 'smooth', block:'start' }); }
+  if (tapped && innerWidth < 1000) { const r = $('cy-list').getBoundingClientRect(); if (r.top > innerHeight - 96) $('cy-list').scrollIntoView({ behavior: calm() ? 'auto' : 'smooth', block:'start' }); }
 }
 // Een groep openen (vanuit "Waar begin je?" of een oud adres): dan per onderwerp tonen, zonder die keuze te onthouden.
 /* ---------- Onderdelen: Start, Projecten, Verandering, Vergaderen, Zakmes ----------
@@ -4132,7 +4142,7 @@ const DOEN = [
   { id:'opladen',    label:'Opladen',      tools:['adem', 'hier', 'hart', 'focus', 'goesting', 'energie'] }
 ];
 // Twee indelingen, elk met een eigen keuze. Samen filteren ze: bv. Projecten en Analyseren.
-let atSel = { deel:'alle', doen:'alle' }, atModus = store.get('at-modus', 'deel') === 'doen' ? 'doen' : 'deel';
+let atSel = { deel:'alle', doen:'alle' }, atModus = ['doen', 'fase'].includes(store.get('at-modus', 'deel')) ? 'fase' : 'deel';   // 'doen' (Activiteit) is opgegaan in Fase
 const atIn = (m, t, c) => c === 'alle' || (m === 'doen' ? (DOEN.find(d => d.id === c) || { tools:[] }).tools.includes(t.id) : atTabsVan(t).has(c));
 const atPast = t => atIn('deel', t, atSel.deel) && atIn('doen', t, atSel.doen);
 const atLabel = (m, c) => ((m === 'doen' ? DOEN : TABS).find(x => x.id === c) || {}).label || '';
@@ -4151,6 +4161,14 @@ function renderPillen() {
     return n || aan ? `<button type="button" class="at-pil" data-cat="${c.id}" aria-pressed="${aan}"${wis ? ' title="Tik nog eens om te wissen"' : ''}>${esc(c.label)}<span class="at-pil-n">${n}</span>${wis ? AT_WIS : ''}</button>` : ''; }).join('');
 }
 function renderAlle() {
+  const perFase = atModus === 'fase';
+  $('at').dataset.modus = atModus; $('at-fase').hidden = !perFase; $('at-lijst').hidden = perFase; $('at-pillen').hidden = perFase;
+  if (perFase) {
+    $('at-modus').querySelectorAll('.at-md').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.modus === atModus)));
+    $('at-ander').innerHTML = ''; $('at-lijst').innerHTML = '';
+    $('at-n').textContent = `${TOOLS.length} tools, per fase van je werk`;
+    renderCycle(); return;
+  }
   renderPillen();
   const usage = store.get('usage', {}), list = TOOLS.filter(atPast).sort((a, b) => a.title.localeCompare(b.title, 'nl', { sensitivity:'base' }));
   const catNaam = ['deel', 'doen'].filter(m => atSel[m] !== 'alle').map(m => ' · ' + atLabel(m, atSel[m])).join('');
@@ -4165,16 +4183,17 @@ function renderAlle() {
         + `<span class="at-body"><span class="at-t">${esc(t.title)}${usage[t.id] ? '<span class="at-dot" aria-hidden="true"></span><span class="at-sr">, al gebruikt</span>' : ''}</span>`
         + `<span class="at-s">${esc(t.sub || '')}</span>${meta ? `<span class="at-m">${meta}</span>` : ''}</span>${chevron}</button></li>`; }).join('')}</ul></section>`; }).join('');
 }
-function openAlle(fromHistory, naarId) {
+function openAlle(fromHistory, naarId, modus) {
   const d = $('at'); if (!atKan() || d.open || !TOOLS.length) return;
+  if (modus) { atModus = modus; store.set('at-modus', atModus); }
   if (!fromHistory) { atOpener = document.activeElement; atTerug = null; atSel = { deel:'alle', doen:'alle' }; history.pushState({ alle:1 }, ''); }   // vers geopend: weer alle tools
   renderAlle();
   const breed = matchMedia('(min-width:640px)').matches;
   $('at-x').setAttribute('aria-label', breed ? 'Sluit' : 'Terug'); $('at-x').title = breed ? 'Sluit (Esc)' : 'Terug';
   d.showModal(); document.documentElement.classList.add('sheet-open');
-  const r = naarId && d.querySelector(`.at-row[data-id="${CSS.escape(naarId)}"]`);
+  const r = naarId && d.querySelector(`.at-row[data-id="${CSS.escape(naarId)}"], #at-fase [data-id="${CSS.escape(naarId)}"]`);
   if (r) { r.focus({ preventScroll:true }); r.scrollIntoView({ block:'center' }); }
-  else { $('at-lijst').scrollTop = 0; $('at-h').focus(); }
+  else { $('at-lijst').scrollTop = 0; $('at-fase').scrollTop = 0; $('at-h').focus(); }
 }
 function closeAlle(fromHistory) { const d = $('at'); if (!d.open) return; atViaHist = fromHistory === true; d.close(); }
 $('at').addEventListener('close', () => {
@@ -4186,16 +4205,17 @@ $('at').addEventListener('close', () => {
   if (o && o.getClientRects().length) o.focus();
 });
 $('at-open').addEventListener('click', () => openAlle());
+$('fase-open').addEventListener('click', () => openAlle(false, null, 'fase'));
 document.addEventListener('click', e => { if (e.target.closest('[data-alle-open]')) openAlle(); });
 $('at-x').addEventListener('click', () => closeAlle());
 $('at').addEventListener('click', e => {
   if (e.target === $('at')) { closeAlle(); return; }   // een tik naast het venster
   const m = e.target.closest('.at-md');
-  if (m) { if (m.dataset.modus !== atModus) { atModus = m.dataset.modus; store.set('at-modus', atModus); renderAlle(); $('at-lijst').scrollTop = 0; $('at-pillen').scrollLeft = 0; } m.focus(); return; }
+  if (m) { if (m.dataset.modus !== atModus) { atModus = m.dataset.modus; store.set('at-modus', atModus); renderAlle(); $('at-lijst').scrollTop = 0; $('at-fase').scrollTop = 0; $('at-pillen').scrollLeft = 0; } m.focus(); return; }
   const p = e.target.closest('.at-pil');
   if (p && p.dataset.wis) { const sl = $('at-pillen').scrollLeft; atSel[p.dataset.wis] = 'alle'; renderAlle(); $('at-pillen').scrollLeft = sl; $('at-lijst').scrollTop = 0; const q = $('at-pillen').querySelector('[aria-pressed="true"]'); if (q) { q.focus({ preventScroll:true }); q.scrollIntoView({ block:'nearest', inline:'nearest' }); } return; }
   if (p) { const c = p.dataset.cat, sl = $('at-pillen').scrollLeft; atSel[atModus] = atSel[atModus] === c ? 'alle' : c; renderAlle(); $('at-pillen').scrollLeft = sl; $('at-lijst').scrollTop = 0; const q = $('at-pillen').querySelector(`[data-cat="${atSel[atModus]}"]`); if (q) { q.focus({ preventScroll:true }); q.scrollIntoView({ block:'nearest', inline:'nearest' }); } return; }
-  const r = e.target.closest('.at-row'); if (!r) return;
+  const r = e.target.closest('.at-row, #at-fase [data-id]'); if (!r) return;
   // eerst het venster dicht, daarna opent de algemene afhandeling ([data-id]) de tool zoals overal
   // zoals elke gewone lijst: zonder stappenplanbalk (die hoort bij een tool die je via een stappenplan opende)
   viaPad = false; atTerug = r.dataset.id; atNaarTool = true; $('at').close();
@@ -4205,9 +4225,10 @@ let atTyp = '', atTypT = 0;
 $('at').addEventListener('keydown', e => {
   const rows = [...$('at').querySelectorAll('.at-row')], i = rows.indexOf(document.activeElement);
   if (e.key === 'Tab') {
-    const f = [$('at-x'), ...$('at').querySelectorAll('.at-md, .at-pil'), ...rows]; if (e.shiftKey ? document.activeElement === f[0] || document.activeElement === $('at-h') : document.activeElement === f[f.length - 1]) { e.preventDefault(); f[e.shiftKey ? f.length - 1 : 0].focus(); }
+    const f = [$('at-x'), ...$('at').querySelectorAll('.at-md, .at-pil, .at-row, #at-fase button')].filter(x => x.getClientRects().length && x.tabIndex >= 0); if (e.shiftKey ? document.activeElement === f[0] || document.activeElement === $('at-h') : document.activeElement === f[f.length - 1]) { e.preventDefault(); f[e.shiftKey ? f.length - 1 : 0].focus(); }
     return;
   }
+  if (atModus === 'fase') return;   // de kring heeft eigen pijltjestoetsen
   const pil = document.activeElement && document.activeElement.closest && document.activeElement.closest('.at-pil');
   if (pil && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {   // pijltjes links en rechts door de pillen
     e.preventDefault(); const ps = [...$('at').querySelectorAll('.at-pil')], k = ps.indexOf(pil) + (e.key === 'ArrowRight' ? 1 : -1);

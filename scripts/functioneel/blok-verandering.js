@@ -61,8 +61,8 @@ const ok = (c, wat, extra) => { n++; if (!c) { fouten++; console.log('  FOUT: ' 
   await p.evaluate(() => subAlles(false)); await p.waitForTimeout(200); await p.screenshot({ path: SHOTS + '/b2-verandering-open.png', fullPage: true });
   await p.evaluate(() => { setTab('zakmes'); subAlles(true); }); await p.waitForTimeout(200); await p.screenshot({ path: SHOTS + '/b3-zakmes.png' });
 
-  // de kring per fase in Projecten toont de verandertools nog
-  const kring = await p.evaluate(async () => { setTab('projecten'); setView('fase', false, false); await new Promise(r => setTimeout(r, 200)); return [...new Set([...document.querySelectorAll('#home [data-id]')].filter(e => e.offsetParent).map(e => e.dataset.id))]; });
+  // de kring per fase (nu in Alle tools) telt de verandertools nog mee
+  const kring = await p.evaluate(async () => { setTab('projecten'); await new Promise(r => setTimeout(r, 200)); return [...new Set([...document.querySelectorAll('#home [data-id]')].filter(e => e.offsetParent).map(e => e.dataset.id))]; });
   const inKring = await p.evaluate(() => PHASES.map(f => TOOLS.filter(t => (t.pdca || []).includes(f.id)).length).join('/') + ' | impact in een fase: ' + ((byId.impact.pdca || []).length > 0));
   console.log('\nkring per fase (aantal tools per fase):', inKring);
   await p.screenshot({ path: SHOTS + '/b7-projecten-kring.png' });
