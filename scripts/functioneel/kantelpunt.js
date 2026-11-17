@@ -50,7 +50,7 @@ const ok = (c, wat, extra) => { n++; if (!c) { fouten++; console.log('  FOUT: ' 
   ok((await hoofd(p)) === 'Dit kan beide kanten op.', 'het voorbeeld ligt dicht bij het kantelpunt', await hoofd(p));
   ok(await zicht(p, 'verloop') && await zicht(p, 'export') && !(await zicht(p, 'voorbeeld')), 'met het voorbeeld: verloop en downloads zichtbaar');
   ok(/Denkmodel, geen voorspelling/.test(await uit(p)), 'de uitkomst zegt dat het een denkmodel is');
-  ok(/slaat aan (\d+ op 10|zelden) blijft halfweg (\d+ op 10|zelden) blijft hangen (\d+ op 10|zelden)/.test(await uit(p)) && /kantelpunt ligt rond \d+ voortrekkers/.test(await uit(p)), 'de legende zegt hoe vaak op tien, en het kantelpunt staat erbij', (await uit(p)).slice(0, 220));
+  ok(/slaat aan (\d+ op 10|zelden) blijft halfweg (\d+ op 10|zelden) blijft hangen (\d+ op 10|zelden)/.test(await uit(p)) && /kantelpunt ligt rond \d+ voortrekkers/.test(await uit(p)) && /(Stevig|Wankel) oordeel\./.test(await uit(p)), 'de legende zegt hoe vaak op tien; het kantelpunt en stevig of wankel staan erbij', (await uit(p)).slice(0, 220));
   ok(!/%/.test(await p.evaluate(() => [...document.querySelectorAll('#uit > :not(details)')].map(e => e.innerText).join(' '))), 'geen procenten in de uitkomst');
   const cellen = await p.evaluate(() => { const c = [...document.querySelectorAll('#uit .kp-drie i')], v = k => +(((c.find(x => x.classList.contains(k)) || {}).style || {}).flexGrow || 0); return { tot: v('aan') + v('half') + v('hangt'), aan: v('aan'), half: v('half') }; });
   ok(cellen.tot === 1000 && cellen.aan > 0 && cellen.aan < 1000, 'de balk in drie stukken telt samen alle verlopen', cellen);

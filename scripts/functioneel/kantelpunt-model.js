@@ -103,6 +103,13 @@ ok(JSON.stringify(KP.toon(r1.groepen, 'mix', r1.zaad, 2).per) === JSON.stringify
 { const s = KP.alles([g('A', 30, 'kijkt', 5), g('B', 30, 'kijkt', 2), g('C', 30, 'kijkt', 0)], 'mix').start;
   ok(s.top.filter(o => o.soort === 'groep').length === 3, 'drie gelijke groepen tellen als even goed', s.top.map(o => o.soort + (o.gi ?? '')));
   const d = KP.alles([g('A', 24, 'kijkt', 5), g('B', 40, 'kijkt', 2), g('C', 6, 'vlot', 2)], 'mix').start; ok(d.top.length >= 1 && d.top[0] === d.beste && d.keuzes.every(o => o.ver === undefined), 'de beste plaats staat altijd bij de top'); }
+// 9f. stevig of wankel: vier proeven met andere aannames, op dezelfde mensen
+{ const A1 = [g('A', 20, 'vlot', 5), g('B', 30, 'kijkt', 0), g('C', 15, 'kijkt', 0)], r = KP.alles(A1, 'mix'), r2 = KP.alles(A1, 'mix');
+  ok(r.stevig.proeven.length === 4 && JSON.stringify(r.stevig) === JSON.stringify(r2.stevig), 'vier proeven, en dezelfde invoer geeft dezelfde proeven');
+  ok(r.stevig.stevig === (r.stevig.anders.length === 0) && r.stevig.anders.every(p => p.oordeel !== KP.oordeel(r.u.deel)), 'wankel betekent: minstens één proef geeft een ander oordeel');
+  const vl = r.stevig.proeven.find(p => p.naam === 'vlotter'), tr = r.stevig.proeven.find(p => p.naam === 'trager'); ok(vl.gem >= r.u.gem - 0.02 && tr.gem <= r.u.gem + 0.02 && vl.gem > tr.gem, 'vlotter raakt verder dan trager', [vl.gem, r.u.gem, tr.gem]);
+  const zelf = KP.rekenMeer(r.groepen, ['mix'], 1000, r.zaad, 0, 0.15)[0]; ok(JSON.stringify(zelf.k) === JSON.stringify(r.u.k), 'zonder verschuiving is de proef gelijk aan de hoofduitkomst');
+  const vast = KP.alles([g('A', 50, 'vlot', 10), g('B', 50, 'vlot', 5)], 'iedereen'); ok(vast.stevig.stevig && KP.oordeel(vast.u.deel) === 'aan', 'een duidelijk geval is stevig', vast.stevig.anders); }
 // 10. snelheid: de grootste invoer blijft werkbaar
 const groot = Array.from({ length: 6 }, (_, i) => g('G' + i, 500, ['vlot', 'kijkt', 'wacht'][i % 3], 20)); const t0 = Date.now(); KP.alles(groot, 'mix'); const ms = Date.now() - t0;
 ok(ms < 1500, 'zes groepen van 500 mensen rekenen binnen anderhalve seconde', ms);
