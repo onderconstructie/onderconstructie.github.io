@@ -31,14 +31,22 @@ const ok = (c, wat, extra) => { n++; if (!c) { fouten++; console.log('  FOUT: ' 
   // ---------- 1. leeg begin
   let p = await nieuw();
   ok(await sleutel(p) === null, 'openen bewaart niets');
-  ok((await uit(p)).startsWith('Vul minstens één groep in'), 'leeg: de tool zegt wat er nodig is', (await uit(p)).slice(0, 60));
-  ok(!(await zicht(p, 'verloop')) && !(await zicht(p, 'export')) && !(await zicht(p, 'oc-wipe')) && await zicht(p, 'voorbeeld'), 'leeg: geen verloop, geen downloads, geen Opnieuw beginnen, wel Voorbeeld bekijken');
-  ok(await p.locator('#groepen .kp-g').count() === 2, 'twee lege groepen om mee te beginnen');
+  const stand = () => p.evaluate(() => document.querySelector('header[data-oc-kop]').dataset.stand);
+  ok(await zicht(p, 'start') && !(await zicht(p, 'werk')) && await stand() === 'groot', 'leeg: het startscherm van de familie, met de grote kop', await stand());
+  ok(await zicht(p, 'begin') && await zicht(p, 'voorbeeld') && await p.locator('#start [data-bestand="open"]').isVisible(), 'startscherm: Begin, Voorbeeld bekijken en Open bestand');
+  ok(!(await zicht(p, 'verloop')) && !(await zicht(p, 'export')) && !(await zicht(p, 'oc-wipe')), 'leeg: geen verloop, geen downloads, geen Opnieuw beginnen');
   await p.screenshot({ path: SHOTS + '/k1-leeg.png', fullPage: true });
+  await p.click('#begin'); await p.waitForTimeout(400);
+  ok(await zicht(p, 'werk') && !(await zicht(p, 'start')) && await stand() === 'compact' && await p.evaluate(() => document.activeElement.id) === 'gedrag', 'Begin: het werk opent met een compacte kop, de cursor staat in het eerste veld');
+  ok(await p.locator('#stepnav .sn').count() === 4 && await p.locator('#werk .card-title .stepno').count() === 5, 'stappenbalk en genummerde kaarten zoals in de familie');
+  ok((await uit(p)).startsWith('Vul minstens één groep in'), 'nog niets ingevuld: de tool zegt wat er nodig is', (await uit(p)).slice(0, 60));
+  ok(await p.locator('#groepen .kp-g').count() === 2 && await sleutel(p) === null, 'twee lege groepen om mee te beginnen, nog niets bewaard');
+  await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(400);
+  ok(await zicht(p, 'start'), 'wie niets typte, begint na herladen weer op het startscherm');
 
   // ---------- 2. voorbeeld
   await p.click('#voorbeeld'); await p.waitForTimeout(500);
-  ok(await zicht(p, 'vb') && await sleutel(p) === null, 'het voorbeeld toont een band en wordt niet bewaard');
+  ok(await zicht(p, 'vb') && await zicht(p, 'vb-wis') && await zicht(p, 'vb-eigen') && await sleutel(p) === null, 'het voorbeeld toont de band met Wis voorbeeld en Maak er mijn eigen van, en wordt niet bewaard');
   ok((await hoofd(p)) === 'Dit kan beide kanten op.', 'het voorbeeld ligt dicht bij het kantelpunt', await hoofd(p));
   ok(await zicht(p, 'verloop') && await zicht(p, 'export') && !(await zicht(p, 'voorbeeld')), 'met het voorbeeld: verloop en downloads zichtbaar');
   ok(/Dit is een denkmodel, geen voorspelling/.test(await uit(p)), 'de uitkomst zegt dat het een denkmodel is');
@@ -54,18 +62,24 @@ const ok = (c, wat, extra) => { n++; if (!c) { fouten++; console.log('  FOUT: ' 
   const kern = () => p.evaluate(() => [...document.querySelectorAll('#uit > :not(details)')].map(e => e.innerText + [...e.querySelectorAll('.kp-balk i')].map(i => i.style.width).join()).join(' | ') + document.querySelectorAll('#uit .kp-strook i.aan').length);
   const u1 = await kern(); await p.click('#blik [data-blik="team"]'); await p.waitForTimeout(400); const u2 = await kern(); await p.click('#blik [data-blik="mix"]'); await p.waitForTimeout(400);
   ok(u2 !== u1 && await kern() === u1, 'een andere blik geeft een andere uitkomst, terugzetten geeft exact dezelfde');
-  ok(await sleutel(p) !== null && !(await zicht(p, 'vb')), 'wie in het voorbeeld iets wijzigt, maakt het van zichzelf: bewaard, band weg');
+  ok(await sleutel(p) === null && await zicht(p, 'vb'), 'spelen met het voorbeeld bewaart niets: het blijft een voorbeeld');
+  await p.click('#vb-wis'); await p.waitForTimeout(400);
+  ok(await zicht(p, 'start') && await stand() === 'groot', 'Wis voorbeeld: terug naar het startscherm');
+  await p.click('#toast-btn'); await p.waitForTimeout(400);
+  ok(await zicht(p, 'vb') && (await hoofd(p)) === 'Dit kan beide kanten op.', 'Ongedaan zet het voorbeeld terug');
+  await p.click('#vb-eigen'); await p.waitForTimeout(400);
+  ok(await sleutel(p) !== null && !(await zicht(p, 'vb')), 'Maak er mijn eigen van: bewaard, band weg');
 
   // ---------- 3. alles wissen en ongedaan
   ok(await zicht(p, 'oc-wipe'), 'Opnieuw beginnen staat er zodra er werk is');
   await p.click('#oc-wipe'); await p.waitForTimeout(200); await p.click('.ocw-yes'); await p.waitForTimeout(400);
-  ok(await sleutel(p) === null && (await uit(p)).startsWith('Vul minstens') && await p.inputValue('#gedrag') === '', 'Alles wissen: leeg, en de sleutel is weg');
+  ok(await sleutel(p) === null && await zicht(p, 'start') && await p.inputValue('#gedrag') === '', 'Alles wissen: terug naar het startscherm, en de sleutel is weg');
   await p.click('#toast-btn'); await p.waitForTimeout(400);
   ok(await sleutel(p) !== null && (await hoofd(p)) !== '' && await p.inputValue('#groepen .kp-g[data-i="0"] .kp-naam') === 'Loket', 'Ongedaan zet alles terug');
   ok(p.E.length === 0, 'geen fouten (voorbeeld en wissen)', p.E.slice(0, 3)); await p.context().close();
 
   // ---------- 4. zelf invullen
-  p = await nieuw();
+  p = await nieuw(); await p.click('#begin');
   await p.fill('#gedrag', 'Elke klacht binnen de dag beantwoorden'); await vul(p, 0, 'Loket', 30, null, 'vlot');
   ok((await uit(p)).startsWith('Zet ergens minstens één voortrekker'), 'zonder voortrekkers: de tool zegt dat er iemand moet beginnen', (await uit(p)).slice(0, 60));
   await vul(p, 0, null, null, 5);
@@ -123,8 +137,8 @@ const ok = (c, wat, extra) => { n++; if (!c) { fouten++; console.log('  FOUT: ' 
 
   // ---------- 6. overnemen uit een andere tool
   p = await nieuw({ vooraf: () => { try { localStorage.setItem('oc.share.impact', JSON.stringify({ tool: 'Impactanalyse', lists: [{ name: 'Nieuw loket', items: [{ type: 'betrokkene', text: 'Loketbedienden' }, { type: 'betrokkene', text: 'Dossierbeheerders' }, { type: 'taak', text: 'Handleiding schrijven' }] }] })); } catch {} } });
-  ok(await zicht(p, 'neem'), 'ligt er iets klaar in een andere tool, dan staat Overnemen er');
-  await p.click('#neem'); await p.waitForTimeout(400);
+  ok(await zicht(p, 'neem-start'), 'ligt er iets klaar in een andere tool, dan staat Overnemen op het startscherm');
+  await p.click('#neem-start'); await p.waitForTimeout(400);
   const kies = await p.evaluate(() => { const d = document.querySelector('.ocs-back'); return d ? d.innerText.replace(/\s+/g, ' ') : ''; });
   ok(/Loketbedienden/.test(kies) && /Dossierbeheerders/.test(kies) && !/Handleiding schrijven/.test(kies), 'de kiezer toont de betrokkenen, geen taken', kies.slice(0, 200));
   await p.evaluate(() => document.querySelectorAll('.ocs-back input[type=checkbox]').forEach(c => { if (!c.checked) c.click(); })); await p.waitForTimeout(150);
@@ -138,7 +152,7 @@ const ok = (c, wat, extra) => { n++; if (!c) { fouten++; console.log('  FOUT: ' 
   p = await nieuw({ w: 1280, h: 900 });
   await p.click('#menu-btn'); await p.click('[data-bestand="bewaar"]'); await p.waitForTimeout(300);
   ok((await p.textContent('#toast-text')) === 'Er is nog niets om te bewaren.', 'leeg: Bewaar als bestand zegt dat er niets is');
-  await p.click('#voorbeeld'); await p.waitForTimeout(400); await p.fill('#gedrag', 'Mijn gedrag'); await p.waitForTimeout(400);
+  await p.click('#voorbeeld'); await p.waitForTimeout(400); await p.click('#vb-eigen'); await p.fill('#gedrag', 'Mijn gedrag'); await p.waitForTimeout(400);
   const dl = async knop => { const [d] = await Promise.all([p.waitForEvent('download', { timeout: 20000 }), knop()]); const pad = await d.path(); return { naam: d.suggestedFilename(), kb: Math.round(require('fs').statSync(pad).size / 1024), pad }; };
   const png = await dl(() => p.click('#export-png'));
   ok(/^kantelpunt-\d{4}-\d{2}-\d{2}\.png$/.test(png.naam) && png.kb > 30, 'Afbeelding: een png met de datum in de naam', png);
@@ -172,7 +186,7 @@ const ok = (c, wat, extra) => { n++; if (!c) { fouten++; console.log('  FOUT: ' 
   const f = p.frameLocator('#frames iframe:not([hidden])').first();
   await f.locator('#voorbeeld').click(); await p.waitForTimeout(500);
   ok(/Dit kan beide kanten op/.test(await f.locator('#uit').innerText()) && !(await p.evaluate(() => hasData(byId.kantelpunt))), 'in de app: het voorbeeld werkt en telt niet als eigen werk');
-  await f.locator('#gedrag').fill('Echt werk'); await p.waitForTimeout(500);
+  await f.locator('#vb-wis').click(); await p.waitForTimeout(300); await f.locator('#begin').click(); await f.locator('#gedrag').fill('Echt werk'); await p.waitForTimeout(500);
   ok(await p.evaluate(() => hasData(byId.kantelpunt)), 'in de app: na echt invullen telt de tool als begonnen');
   await p.screenshot({ path: SHOTS + '/k5-in-de-app.png' });
   await p.evaluate(() => showHome()); await p.click('#search-open'); await p.fill('#search', 'simulator'); await p.waitForTimeout(600);

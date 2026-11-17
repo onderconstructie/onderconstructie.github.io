@@ -42,6 +42,21 @@ const ok = (c, wat, extra) => { n++; if (!c) { fouten++; console.log('  FOUT: ' 
   ok(z.kopjes.some(k => /^Even pauze: adem hier hart klankkast bingo$/.test(k)), 'Zakmes: kopje Even pauze met rust en een glimlach', z.kopjes);
   ok(T.vergaderen.ids.includes('pluim') && T.vergaderen.ids.includes('bingo'), 'Vergaderen: Pluim en Buzzwordbingo staan er nog');
   ok(!z.ids.includes('pluim') && !z.ids.includes('goesting'), 'Zakmes: geen Pluim of Goestingmeter');
+  // het stappenplan Begeleid een verandering staat in de tab Verandering, niet meer bij Projecten
+  const plannen = await p.evaluate(async () => { setTab('projecten'); setView('plan', false, false); await new Promise(r => setTimeout(r, 200));
+    const pr = [...document.querySelectorAll('#plan-keuze .path')].filter(e => e.offsetParent).map(e => e.dataset.path), telt = document.getElementById('pm-nplan').textContent, noot = document.querySelector('#proj-top .th-note').textContent;
+    setTab('verandering'); await new Promise(r => setTimeout(r, 200));
+    const k = document.querySelector('#plan-tab .path'); return { pr, telt, noot, ver: k && k.offsetParent ? k.dataset.path : null, titel: k ? k.querySelector('.path-title').textContent : '', voorKopjes: !!k && !!(k.compareDocumentPosition(document.querySelector('#tabgroup .group.sub')) & 4) }; });
+  ok(plannen.pr.slice().sort().join() === 'proces,project' && plannen.telt === '2', 'Projecten, Stappenplan: twee plannen, zonder Begeleid een verandering', plannen);
+  ok(plannen.noot === 'Van opzet tot terugblik', 'de ondertitel van Projecten noemt verandering niet meer', plannen.noot);
+  ok(plannen.ver === 'verandering' && plannen.titel === 'Begeleid een verandering' && plannen.voorKopjes, 'Verandering: het stappenplan staat bovenaan, boven de groepen', plannen);
+  await p.click('#plan-tab .path-head'); await p.waitForTimeout(300);
+  ok(await p.evaluate(() => document.querySelector('#plan-tab .path').classList.contains('open') && document.activeElement.classList.contains('path-head') && !!document.activeElement.closest('#plan-tab')), 'de plankaart klapt open en de focus blijft op haar kop');
+  ok(await p.locator('#plan-tab .path .mee-k').count() === 3 && await p.locator('#plan-tab ol.steps .step-btn').count() >= 5, 'open: de strook Loopt mee en de stappen');
+  await p.screenshot({ path: SHOTS + '/b8-plan-in-verandering.png' });
+  await p.click('#plan-tab ol.steps .step-btn[data-id="stakeholders"]'); await p.waitForTimeout(1500);
+  ok(await p.evaluate(() => current === 'stakeholders' && pathCtx === 'verandering' && startedPaths().includes('verandering')), 'een stap in de plankaart start het veranderplan', await p.evaluate(() => current));
+  await p.evaluate(() => { showHome(); setTab('verandering'); const s = new Set(store.get('paths-open', [])); s.delete('verandering'); store.set('paths-open', [...s]); renderPaths(); }); await p.waitForTimeout(300);
   await p.evaluate(() => { setTab('verandering'); subAlles(true); }); await p.waitForTimeout(200); await p.screenshot({ path: SHOTS + '/b1-verandering-dicht.png' });
   await p.evaluate(() => subAlles(false)); await p.waitForTimeout(200); await p.screenshot({ path: SHOTS + '/b2-verandering-open.png', fullPage: true });
   await p.evaluate(() => { setTab('zakmes'); subAlles(true); }); await p.waitForTimeout(200); await p.screenshot({ path: SHOTS + '/b3-zakmes.png' });

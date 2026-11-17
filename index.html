@@ -205,6 +205,10 @@ body.filtering #groups, body.filtering #list-tools { display:none; }
 #home:not([data-tab="projecten"]) .plan-keuze { display:none; }
 .plan-keuze { margin:0 0 1rem; display:grid; gap:0.75rem; }
 .plan-keuze[hidden] { display:none; }
+/* Het stappenplan van een tab (Verandering): dezelfde plankaart, boven de groepen */
+.plan-tab { margin:0 0 1rem; }
+.plan-tab[hidden] { display:none; }
+.plan-tab .pt-h { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
 .plan-keuze h2 { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
 body:not(.view-plan) .plan-keuze { display:none; }
 body.view-plan .pm-fase, body:not(.view-plan) .pm-plan { display:none; }
@@ -2607,7 +2611,7 @@ window.ocProjectkiezer = function (plek, o) {
     <section class="alltools" id="alltools" aria-labelledby="alltools-h">
       <!-- Projecten: dezelfde kop als Verandering, Vergaderen en Zakmes (icoon, naam, uitleg, aantal); per onderwerp klapt een tik alles open of dicht -->
       <div class="th-wrap proj-wrap"><div class="tab-hero tg-top proj-top" id="proj-top" aria-hidden="true"><span class="th-ico"><svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="16" y="18" width="12" height="44" rx="2" fill="#cbd5e1"/><rect x="34" y="18" width="12" height="44" rx="2" fill="#cbd5e1"/><rect x="52" y="18" width="12" height="44" rx="2" fill="#cbd5e1"/><rect x="18" y="22" width="8" height="8" rx="1" fill="#10b981"/></svg></span>
-        <span class="th-txt"><span class="th-meta"><span id="proj-count"></span> tools · <span class="pm-plan"><span id="pm-nplan">3</span> plannen</span><span class="pm-fase">4 fasen</span><span class="pm-ond"><span id="proj-ngroep"></span> groepen</span></span><span class="th-title">Projecten</span><span class="th-note">Van opzet tot verandering</span></span><span class="th-hint" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10l5 5 5-5"/></svg></span></div><div class="list-tools tg-tools" id="list-tools"><button type="button" id="all-open">Alles open</button><button type="button" id="all-closed">Alles dicht</button></div></div>
+        <span class="th-txt"><span class="th-meta"><span id="proj-count"></span> tools · <span class="pm-plan"><span id="pm-nplan">2</span> plannen</span><span class="pm-fase">4 fasen</span><span class="pm-ond"><span id="proj-ngroep"></span> groepen</span></span><span class="th-title">Projecten</span><span class="th-note">Van opzet tot terugblik</span></span><span class="th-hint" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10l5 5 5-5"/></svg></span></div><div class="list-tools tg-tools" id="list-tools"><button type="button" id="all-open">Alles open</button><button type="button" id="all-closed">Alles dicht</button></div></div>
       <div class="all-head" id="all-head">
         <h2 class="section-label" id="alltools-h">Alle tools</h2>
         <!-- twee gelijkwaardige ingangen: dezelfde tools, anders geordend. De keuze wordt onthouden. -->
@@ -3094,7 +3098,7 @@ const ZAK_SUB = [
 ];
 /* Verandering: de verandertools, gedrag, en hoe het team erbij zit */
 const VER_SUB = [
-  { id:'mensen', logo:'<svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"> <circle cx="40" cy="40" r="36" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2"/> <path d="M18 54 C30 54 30 26 44 26 H56" stroke="#cbd5e1" stroke-width="6" stroke-linecap="round"/> <path d="M52 18 L62 26 L52 34" stroke="#10b981" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/> <circle cx="18" cy="54" r="5" fill="#10b981"/> </svg>', label:'Krijg mensen mee', note:'Wie moet mee, wat verandert er, en hoe vertel je het?', tools:['stakeholders', 'sponsor', 'impact', 'klimaat', 'veranderprofiel', 'communicatie', 'weerstand'] },
+  { id:'mensen', logo:'<svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M18 54 C30 54 30 26 44 26 H56" stroke="#cbd5e1" stroke-width="6" stroke-linecap="round"/> <path d="M52 18 L62 26 L52 34" stroke="#10b981" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/> <circle cx="18" cy="54" r="5" fill="#10b981"/> </svg>', label:'Krijg mensen mee', note:'Wie moet mee, wat verandert er, en hoe vertel je het?', tools:['stakeholders', 'sponsor', 'impact', 'klimaat', 'veranderprofiel', 'communicatie', 'weerstand'] },
   { id:'gedrag', logo:'<svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 56V40h14V28h14V18h20" stroke="#cbd5e1" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="23" cy="27" r="6" fill="#10b981"/></svg>', label:'Gedrag', note:'Wat houdt het in stand, wat helpt, en slaat het aan?', tools:['systeemkaart', 'gedrag', 'kantelpunt'] },
   { id:'team',   logo:'<svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="13" y="25" width="48" height="30" rx="7" stroke="#cbd5e1" stroke-width="5"/><rect x="63" y="34" width="6" height="12" rx="2.5" fill="#cbd5e1"/><rect x="21" y="33" width="24" height="14" rx="3" fill="#10b981"/></svg>', label:'Hoe zit het team erbij?', note:'Goesting en energie in het werk', tools:['goesting', 'energie'] }
 ];
@@ -3320,7 +3324,7 @@ function setPhase(id, focus, tapped) {
 // Een groep openen (vanuit "Waar begin je?" of een oud adres): dan per onderwerp tonen, zonder die keuze te onthouden.
 /* ---------- Onderdelen: Start, Projecten, Verandering, Vergaderen, Zakmes ----------
    Start = verder waar je was, onlangs gebruikt, Waar begin je?, je stappenplan en je project.
-   Projecten = de kring per fase (of per onderwerp) met de project- en verandertools.
+   Projecten = de kring per fase (of per onderwerp) met de projecttools; de kring toont ook de verandertools die in een fase passen.
    Verandering, Vergaderen en Zakmes = de tools van dat onderdeel. De app opent altijd op Start. */
 // Zelfde beeldtaal als de groepslogo's: zachte grijze vormen met één groen accent. Kleuren via --ic-a en --ic-b (CSS).
 const TAB_IC = {
@@ -3352,11 +3356,11 @@ function setTab(id, keep) {
         <span class="th-txt"><span class="th-meta">${meta}</span><h2 class="th-title" id="tabgroup-h" tabindex="-1">${esc(g.label)}</h2><span class="th-note">${esc(g.note)}</span></span>${knop ? hint : ''}</div>`;
   $('tabgroup').innerHTML = !g ? '' : TAB_SUB[id]
     ? `<div class="th-wrap">${kop(true, `${n} tools · ${TAB_SUB[id].length} groepen`)}
-        <div class="list-tools tg-tools"><button type="button" data-sub-all="open">Alles open</button><button type="button" data-sub-all="dicht">Alles dicht</button></div></div>${subRows(id)}`
+        <div class="list-tools tg-tools"><button type="button" data-sub-all="open">Alles open</button><button type="button" data-sub-all="dicht">Alles dicht</button></div></div>${PLAN_TAB[id] ? `<div class="plan-tab" id="plan-tab" data-tab="${id}" hidden></div>` : ''}${subRows(id)}`
     : `<div class="th-wrap">${kop(false, `${n} tools`)}</div><div class="group solo"><div class="list">${groupRows(id)}</div></div>`;
   $('alltools-h').textContent = id === 'projecten' ? 'Projecten' : 'Alle tools';
   if (id === 'projecten') { $('proj-count').textContent = TOOLS.filter(t => PROJ_GROUPS.includes(t.g)).length; $('proj-ngroep').textContent = PROJ_GROUPS.length; }
-  if (g) { markLive(); syncSubTools(); }
+  if (g) { markLive(); syncSubTools(); renderPlanTab(); }
   syncListTools();
   if (!keep) window.scrollTo(0, 0);
 }
@@ -5261,11 +5265,23 @@ function renderPaths() {
   $('paths-more').innerHTML = html && notStarted.length && $('start').hidden ? 'Ook: ' + notStarted.map(x => `<button type="button" class="lnk" data-id="${esc(x.first.t.id)}" data-ctx="${x.tr.id}">${esc(x.tr.title)}</button>`).join(', ') : '';
   $('paths-wrap').hidden = !html;
   renderPlanKeuze(kaarten);
+  planKaarten = kaarten; renderPlanTab();
 }
 /* Projecten, weergave Stappenplan: dezelfde plankaarten als op Start (uitklappen, stappen, kort of uitgebreid), ook voor een plan dat je nog niet begon.
    Het plan waar je mee bezig bent staat eerst (het laatst gekozen plan vooraan). De pijl rechtsboven klapt alle plannen open of dicht.
-   "Vertel een verhaal" hoort niet bij Projecten en staat alleen op Start. */
-const PLAN_KEUZE = ['project', 'proces', 'verandering'];
+   "Vertel een verhaal" hoort niet bij Projecten en staat alleen op Start. "Begeleid een verandering" staat bovenaan in de tab Verandering. */
+const PLAN_KEUZE = ['project', 'proces'];
+// Het stappenplan van een tab die geen Projecten is: dezelfde plankaart, boven de groepen van die tab
+const PLAN_TAB = { verandering:'verandering' };
+let planKaarten = {};
+function renderPlanTab() {
+  const el = $('plan-tab'); if (!el) return;
+  const id = PLAN_TAB[el.dataset.tab], h = id && planKaarten[id] ? `<h3 class="pt-h">Stappenplan</h3>${planKaarten[id]}` : '';
+  if (el.dataset.h === h) return;
+  const f = el.contains(document.activeElement) && document.activeElement.classList.contains('path-head');
+  el.innerHTML = h; el.dataset.h = h; el.hidden = !h;
+  if (f) { const k = el.querySelector('.path-head'); if (k) k.focus({ preventScroll:true }); }
+}
 function renderPlanKeuze(kaarten) {
   const el = $('plan-keuze'); if (!el || !kaarten) return;
   const st = startedPaths(), ids = PLAN_KEUZE.filter(id => kaarten[id]).sort((a, b) => (st.includes(b) - st.includes(a)) || ((b === pathCtx) - (a === pathCtx)));
@@ -5296,7 +5312,7 @@ document.addEventListener('click', e => {
   }
   else { const set = new Set(store.get('ook-open', [])); set.has(tr) ? set.delete(tr) : set.add(tr); store.set('ook-open', [...set]); renderPaths(); }
   renderPlanDlg(); if (current && !$('pathbar').hidden) { delete $('pathbar').dataset.sig; renderPathbar(current); }
-  const waar = $('plan-dlg').open ? $('plan-body') : p.closest('#plan-keuze') ? $('plan-keuze') : $('paths'), terug = waar.querySelector(`.path[data-path="${tr}"] ${sk ? '.step.next .step-btn' : rt ? '[data-route][aria-pressed="true"]' : '[data-ook]'}`); if (terug) terug.focus({ preventScroll: true });
+  const waar = $('plan-dlg').open ? $('plan-body') : p.closest('#plan-keuze, #plan-tab') || $('paths'), terug = waar.querySelector(`.path[data-path="${tr}"] ${sk ? '.step.next .step-btn' : rt ? '[data-route][aria-pressed="true"]' : '[data-ook]'}`); if (terug) terug.focus({ preventScroll: true });
 }, true);
 // Een brug beantwoorden: het plan, het venster en de balk tekenen opnieuw. Ongedaan zet het vorige antwoord terug.
 function brugKies(trId, v) {
@@ -5309,7 +5325,7 @@ document.addEventListener('click', e => {
   const b = e.target.closest('[data-brug]'), p = b && b.closest('.path[data-path]'); if (!p) return;
   e.preventDefault(); e.stopPropagation();
   const tr = p.dataset.path; brugKies(tr, b.dataset.brug);
-  const waar = $('plan-dlg').open ? $('plan-body') : p.closest('#plan-keuze') ? $('plan-keuze') : $('paths'), terug = waar.querySelector(`.path[data-path="${tr}"] [data-brug]`) || waar.querySelector(`.path[data-path="${tr}"] .step.next .step-btn`); if (terug) terug.focus({ preventScroll: true });
+  const waar = $('plan-dlg').open ? $('plan-body') : p.closest('#plan-keuze, #plan-tab') || $('paths'), terug = waar.querySelector(`.path[data-path="${tr}"] [data-brug]`) || waar.querySelector(`.path[data-path="${tr}"] .step.next .step-btn`); if (terug) terug.focus({ preventScroll: true });
 }, true);
 /* Dezelfde vraag onderweg. Wie in een tool werkt, ziet het plan niet. Daarom komt de vraag één keer als venster zodra je in een andere stap
    van het plan aankomt en de Projectopdracht iets bevat: na Volgende, na een tik op een stap, of als je een lopend project verder zet.
