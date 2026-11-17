@@ -2669,7 +2669,7 @@ window.ocProjectkiezer = function (plek, o) {
         <a class="ft-link" href="https://www.linkedin.com/in/bartel-volckaert-8a96842/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Maker</a>
         <a class="ft-link" href="/privacy/#voorwaarden" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.01"/></svg>Disclaimer</a>
       </nav>
-      <p class="ft-meta"><button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (34 seconden)" title="Bekijk de film (34 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg><span>Film</span></button><button class="ft-film ft-inst" id="ft-app" type="button" hidden aria-label="Installeer de app"><img src="/app/icon.svg" alt="" width="22" height="22"><span>Installeer</span></button><span class="ft-dot" aria-hidden="true"></span><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v16.65</span></p>
+      <p class="ft-meta"><button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (34 seconden)" title="Bekijk de film (34 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg><span>Film</span></button><button class="ft-film ft-inst" id="ft-app" type="button" hidden aria-label="Installeer de app"><img src="/app/icon.svg" alt="" width="22" height="22"><span>Installeer</span></button><span class="ft-dot" aria-hidden="true"></span><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v16.66</span></p>
     </div>
   </footer>
   <dialog class="film" id="film" aria-labelledby="film-h">
@@ -5066,6 +5066,7 @@ function renderPathbar(id) {
   const st = startedPaths(), trId = plans.includes(pathCtx) ? pathCtx : plans.find(n => st.includes(n)) || plans[0], tr = TRAJECTEN.find(x => x.id === trId);
   const steps = stepsOf(trId), fz0 = (frames.get(id) || {}).dataset || {}, i0 = steps.findIndex(s => s.t.id === id && s.t.zoek && s.t.zoek === fz0.zoek), i = i0 >= 0 ? i0 : steps.findIndex(s => s.t.id === id);
   if (steps.length < 2 || i < 0) { show(false); return; }
+  brugBijAankomst(trId, id);
   const prev = steps[i - 1], next = steps[i + 1], q = (steps[i].t.extra ? steps[i].t.sub : tr.q[id]) || t.sub || '', pr = isPrivate() ? '' : ((getProject() || {}).name || '');
   // In fasen denken, niet in 14 stappen: "Opzetten · stap 1 van 4". De dunne lijn bovenaan toont de hele weg.
   const fz = (routeVan(trId) === 'kort' ? [] : FASEN[trId] || []).map(f => ({ naam:f.naam, at:steps.findIndex(s => s.t.id === f.van) })).filter(f => f.at >= 0).sort((a, b) => a.at - b.at);
@@ -5287,28 +5288,32 @@ document.addEventListener('click', e => {
   const tr = p.dataset.path; brugKies(tr, b.dataset.brug);
   const waar = $('plan-dlg').open ? $('plan-body') : p.closest('#plan-keuze') ? $('plan-keuze') : $('paths'), terug = waar.querySelector(`.path[data-path="${tr}"] [data-brug]`) || waar.querySelector(`.path[data-path="${tr}"] .step.next .step-btn`); if (terug) terug.focus({ preventScroll: true });
 }, true);
-/* Dezelfde vraag onderweg: wie met Volgende de Projectopdracht verlaat, ziet het plan niet. Dan komt de vraag één keer als venster.
+/* Dezelfde vraag onderweg. Wie in een tool werkt, ziet het plan niet. Daarom komt de vraag één keer als venster zodra je in een andere stap
+   van het plan aankomt en de Projectopdracht iets bevat: na Volgende, na een tik op een stap, of als je een lopend project verder zet.
    Sluiten zonder antwoord mag: de vraag blijft in het plan staan, onder de stap, en komt niet meer vanzelf. */
-let brugBusy = false;
+let brugT = 0;
 const brugGevraagd = trId => ((store.get('brug-gevraagd', {}) || {})[trId] || []).includes(brugSleutel());
-document.addEventListener('click', e => {
-  const k = e.target.closest('#pathbar .pb-next[data-id], #pb-duim [data-id]'); if (!k || brugBusy || $('pathbar').hidden) return;
-  const trId = $('pathbar').dataset.path, B = BRUGGEN[trId]; if (!B || current !== B.na || ((frames.get(current) || {}).dataset || {}).zoek) return;
+function brugBijAankomst(trId, id) {
+  const B = BRUGGEN[trId]; if (!B || (id === B.na && !((frames.get(id) || {}).dataset || {}).zoek)) return;   // nog in de Projectopdracht zelf: pas vragen als je verder gaat
   if (brugVan(trId) || brugGevraagd(trId)) return;
-  const s = stepsOf(trId).find(x => brugStap(trId, x)); if (!s || !s.done) return;
-  e.preventDefault(); e.stopImmediatePropagation();
-  const o = Object.assign({}, store.get('brug-gevraagd', {})); o[trId] = [...new Set([...(o[trId] || []), brugSleutel()])]; store.set('brug-gevraagd', o);
-  const duimKnop = !!k.closest('#pb-duim');
-  brugVraag(trId, () => { const verder = document.contains(k) ? k : (duimKnop ? $('pb-duim') : $('pathbar')).querySelector('[data-id]'); if (!verder) return; brugBusy = true; try { verder.click(); } finally { brugBusy = false; } });
-}, true);
-function brugVraag(trId, then) {
-  const dlg = $('brug-dlg'), B = BRUGGEN[trId], ja = $('brug-ja'), nee = $('brug-nee');
+  const o = byId[B.na]; if (!o || !hasData(o)) return;
+  clearTimeout(brugT);
+  brugT = setTimeout(() => {
+    const bar = $('pathbar');
+    if (current !== id || bar.hidden || bar.dataset.path !== trId || brugVan(trId) || brugGevraagd(trId)) return;
+    if (document.querySelector('dialog[open]') || [...document.querySelectorAll('.app-dlg-back')].some(d => !d.hidden)) return;   // een ander venster gaat voor: de vraag komt bij de volgende stap
+    const g = Object.assign({}, store.get('brug-gevraagd', {})); g[trId] = [...new Set([...(g[trId] || []), brugSleutel()])]; store.set('brug-gevraagd', g);
+    brugVraag(trId);
+  }, 600);
+}
+function brugVraag(trId) {
+  const dlg = $('brug-dlg'), B = BRUGGEN[trId], ja = $('brug-ja'), nee = $('brug-nee'), was = document.activeElement;
   $('brug-t').textContent = B.vraag; $('brug-p').textContent = brugUitleg(trId) + ' Bij nee blijft je plan zoals het is.';
   dlg.hidden = false; ja.focus();
   const done = v => {
     dlg.hidden = true; document.removeEventListener('keydown', key, true); ja.onclick = nee.onclick = dlg.onclick = null;
     if (v) brugKies(trId, v);
-    then();
+    if (was && document.contains(was) && was.focus) try { was.focus({ preventScroll: true }); } catch {}
   };
   const key = e => {
     if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); done(''); }
