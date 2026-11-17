@@ -5,14 +5,12 @@ const fout = []; const ok = (c, m) => { console.log((c ? '  ok   ' : '  FOUT ') 
   for (const vp of [{ width:390, height:844, mob:true }, { width:1366, height:800, mob:false }]) {
     console.log('\n== ' + vp.width + ' ==');
     const c = await b.newContext({ viewport:{ width:vp.width, height:vp.height }, hasTouch:vp.mob, isMobile:vp.mob, serviceWorkers:'block', locale:'nl-BE' }); const p = await c.newPage(); const E = []; p.on('pageerror', e => E.push(String(e).slice(0, 200)));
-    await p.addInitScript(() => { localStorage.setItem('oc-app.welkom-weg', '1'); if (!sessionStorage.getItem('x')) { sessionStorage.setItem('x', '1'); localStorage.setItem('oc-app.view', '"fase"'); localStorage.setItem('oc-app.at-modus', '"doen"'); } });
+    await p.addInitScript(() => { localStorage.setItem('oc-app.welkom-weg', '1'); if (!sessionStorage.getItem('x')) { sessionStorage.setItem('x', '1'); localStorage.setItem('oc-app.view', '"plan"'); localStorage.setItem('oc-app.at-modus', '"doen"'); } });
     await p.goto(B + '/', { waitUntil:'networkidle' }); await p.waitForTimeout(800);
     // Projecten: alleen Stappenplan en Per onderwerp; een bewaarde keuze 'fase' wordt Stappenplan
     await p.click('.tab[data-tab="projecten"]'); await p.waitForTimeout(500);
-    const vs = await p.$$eval('.vs-opt', xs => xs.map(x => x.dataset.view + ':' + x.getAttribute('aria-checked')));
-    ok(vs.join() === 'plan:true,onderwerp:false', 'Projecten: twee weergaven, Stappenplan gekozen (' + vs + ')');
-    ok(await p.isVisible('#plan-keuze') && !(await p.$('#home #cycle')), 'Projecten toont de plannen, geen kring meer');
-    await p.click('.vs-opt[data-view="onderwerp"]'); await p.waitForTimeout(300); ok(await p.isVisible('#groups .group'), 'Per onderwerp werkt nog'); await p.click('.vs-opt[data-view="plan"]');
+    ok(!(await p.isVisible('#viewsw')) && await p.isVisible('#plan-keuze .path') && await p.isVisible('#groups .group') && !(await p.$('#home #cycle')), 'Projecten: geen schakelaar en geen kring; de plannen staan boven de onderwerpen');
+    const volg = await p.evaluate(() => document.querySelector('#plan-keuze').getBoundingClientRect().bottom <= document.querySelector('#groups .group').getBoundingClientRect().top); ok(volg, 'de onderwerpen staan onder de plannen');
     await p.screenshot({ path:S + '/projecten-' + vp.width + '.png' });
     // de knop naast zoeken opent Alle tools per fase
     ok(await p.isVisible('#fase-open'), 'knop Alle tools per fase staat in de kop');
