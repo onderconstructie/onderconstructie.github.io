@@ -927,6 +927,8 @@ header[data-oc-kop] .oc-deel { display:inline-flex; align-items:center; justify-
 header[data-oc-kop] .oc-deel:hover { background:rgba(100,116,139,0.12); color:#334155; }
 header[data-oc-kop] .oc-deel:focus-visible { outline:2px solid #047857; outline-offset:2px; }
 header[data-oc-kop] .oc-deel svg { width:20px; height:20px; }
+header[data-oc-kop] .oc-ster[aria-pressed="true"] { color:#047857; }
+header[data-oc-kop] .oc-ster[aria-pressed="true"] svg path { fill:#10b981; stroke:#047857; }
 .oc-deel-melding { position:fixed; left:50%; bottom:calc(1.25rem + env(safe-area-inset-bottom, 0px)); transform:translateX(-50%); z-index:10050; max-width:calc(100vw - 2rem); padding:0.75rem 1rem; border-radius:12px; background:#1e293b; color:#ffffff; font:600 0.9375rem/1.4 'DM Sans', system-ui, sans-serif; box-shadow:0 8px 24px rgba(15,23,42,0.25); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) header[data-oc-kop] .oc-deel { color:#94a3b8; } :root:not([data-theme="light"]) header[data-oc-kop] .oc-deel:hover { color:#e2e8f0; background:rgba(148,163,184,0.16); } }
 :root[data-theme="dark"] header[data-oc-kop] .oc-deel { color:#94a3b8; }
@@ -1027,8 +1029,26 @@ header[data-oc-kop][data-stand="compact"]::before { content:""; order:-1; flex:n
     var b = document.createElement('button'); b.type = 'button'; b.className = 'oc-deel'; b.setAttribute('aria-label', 'Deel deze tool'); b.title = 'Deel deze tool'; b.innerHTML = DEEL_SVG;
     b.addEventListener('click', deel); a.insertBefore(b, a.firstChild);
   }
+  /* Sterretje: los geopend (bladwijzer, gedeelde link) zet je de tool hier op je startscherm. In de app staat het sterretje al in de balk rond de tool. */
+  var STER_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.6l2.5 5.2 5.7.7-4.2 3.9 1.1 5.6L12 16.2 6.9 19l1.1-5.6-4.2-3.9 5.7-.7z"/></svg>';
+  function sterKnop() {
+    try { if (window.parent !== window && window.parent.location.origin === location.origin) return; } catch (e) {}
+    if (!kop) return; var a = kop.querySelector('.oc-kop-acties'); if (!a || a.querySelector('.oc-ster')) return;
+    var id = location.pathname.replace(/\/+$/, '').split('/').pop(); if (!id || id === 'index.html') return;
+    var lees = function () { try { var v = JSON.parse(localStorage.getItem('oc-app.favs') || '[]'); return Array.isArray(v) ? v.filter(function (x) { return typeof x === 'string'; }) : []; } catch (e) { return []; } };
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'oc-deel oc-ster'; b.innerHTML = STER_SVG;
+    var zet = function () { var aan = lees().indexOf(id) >= 0, l = aan ? 'Haal van je startscherm' : 'Zet op je startscherm'; b.setAttribute('aria-pressed', String(aan)); b.setAttribute('aria-label', l); b.title = l; };
+    b.addEventListener('click', function () {
+      var L = lees(), aan = L.indexOf(id) >= 0, nm = String(document.title || '').split(' · ')[0] || 'Deze tool';
+      L = aan ? L.filter(function (x) { return x !== id; }) : L.concat([id]).slice(-12);
+      try { localStorage.setItem('oc-app.favs', JSON.stringify(L)); } catch (e) {}
+      zet(); deelMelding(aan ? nm + ' staat niet meer op je startscherm' : nm + ' staat op je startscherm');
+    });
+    addEventListener('storage', function (e) { if (e.key === 'oc-app.favs') zet(); });
+    zet(); a.insertBefore(b, a.firstChild);
+  }
   function start() {
-    kop = kop || document.querySelector('header[data-oc-kop]'); try { breekTitel(); } catch (e) {} try { terugSpan(); } catch (e) {} try { deelKnop(); } catch (e) {}
+    kop = kop || document.querySelector('header[data-oc-kop]'); try { breekTitel(); } catch (e) {} try { terugSpan(); } catch (e) {} try { deelKnop(); } catch (e) {} try { sterKnop(); } catch (e) {}
     try { meetActies(); var a = kop && kop.querySelector('.oc-kop-acties'); if (a && window.ResizeObserver) new ResizeObserver(meetActies).observe(a); } catch (e) {}
     later();   // pas na de eigen start van de tool (ook als die op DOMContentLoaded wacht), vóór de volgende paint
     try { new MutationObserver(later).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['hidden', 'class', 'style'] }); } catch (e) {}
