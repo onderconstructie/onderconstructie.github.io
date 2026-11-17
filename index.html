@@ -1899,6 +1899,12 @@ html.oc-stil .n-puls, html.oc-stil .n-halo, html.oc-stil .n-far circle { animati
 @media (hover:hover) { .rs-o:hover { text-decoration-color:#047857; } }
 .rs-o:focus-visible { outline:2px solid #047857; outline-offset:-2px; border-radius:6px; }
 .rs-o-s { color:var(--slate-400); }
+.rs-o-x { margin-left:auto; display:grid; place-items:center; width:44px; height:44px; border:0; border-radius:12px; background:none; color:var(--slate-400); cursor:pointer; }
+.rs-o-x svg { width:16px; height:16px; }
+@media (hover:hover) { .rs-o-x:hover { background:var(--slate-100); color:var(--slate-700); } }
+.rs-o-x:focus-visible { outline:2px solid #047857; outline-offset:-2px; }
+.plan-stop { display:flex; flex-wrap:wrap; align-items:center; gap:0.25rem 0.625rem; margin:0.25rem 0 0; padding:0.5rem 1rem 0.75rem; font-size:0.8125rem; color:var(--slate-500); }
+.plan-stop .lnk { min-height:44px; color:var(--slate-600); }
 /* Onlangs: op de gsm en op een aanraakscherm de naam onder het icoon, klein maar leesbaar (12 px, 7,5:1) */
 .rc-nm { display:none; }
 @media (max-width:699.98px), (hover:none) {
@@ -3758,14 +3764,15 @@ function renderRecent() {
   resumePath = hero && hero.path ? hero.path.id : null;
   $('resume').innerHTML = hero ? resumeHTML(hero) : '';
   // Een rustige regel met de stappen die nog open staan: één tik opent de stap
-  const open = hero && hero.path ? hero.open : [];
+  const open = hero && hero.path && !store.get('rs-open-weg', []).includes(hero.path.id) ? hero.open : [];   // weggetikt met het kruisje: voor dit plan niet meer tonen
   $('rs-open').hidden = !open.length;
   // twee stappen op een breed scherm, één op een gsm (CSS: .rs-2 en .rs-n1/.rs-n2); de rest als een getal
   const rsKnop = (s, c) => `<button type="button" class="rs-o${c}" data-id="${esc(s.t.id)}"${zoekAttr(s.t)} data-ctx="${esc(hero.path.id)}">${esc(s.t.title)}</button>`;
   $('rs-open').innerHTML = !open.length ? '' : '<span class="rs-o-k">Nog open:</span>' + rsKnop(open[0], '')
     + (open[1] ? '<span class="rs-o-s rs-2" aria-hidden="true">·</span>' + rsKnop(open[1], ' rs-2') : '')
     + (open.length > 1 ? `<span class="rs-o-k rs-o-n rs-n1">en nog ${open.length - 1}</span>` : '')
-    + (open.length > 2 ? `<span class="rs-o-k rs-o-n rs-n2">en nog ${open.length - 2}</span>` : '');
+    + (open.length > 2 ? `<span class="rs-o-k rs-o-n rs-n2">en nog ${open.length - 2}</span>` : '')
+    + `<button type="button" class="rs-o-x" data-rs-weg="${esc(hero.path.id)}" aria-label="Verberg deze regel" title="Verberg deze regel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>`;
   // Onlangs: alleen het icoon van de laatste vijf tools (de naam bij hover en voor schermlezers)
   const rest = items.filter(x => !hero || x.t.id !== hero.t.id).slice(0, 5);
   $('recent-row').hidden = !rest.length;
@@ -3776,6 +3783,7 @@ function renderRecent() {
   renderStart();
   syncData();
 }
+document.addEventListener('click', e => { const x = e.target.closest('[data-rs-weg]'); if (!x) return; store.set('rs-open-weg', [...new Set([...store.get('rs-open-weg', []), x.dataset.rsWeg])]); renderRecent(); const k = document.querySelector('#resume button, #resume a'); if (k) k.focus({ preventScroll:true }); });
 let resumePath = null;   // stappenplan waarvan de volgende stap nu de grote knop is (dan niet nog eens in de stappenplankaart)
 function pickResume(items) {
   if (!items.length) return null;
@@ -4515,7 +4523,7 @@ function fullExit() {
   });
 }
 // Wat de app zelf bijhoudt (toollijst, tellers) is geen werk van jou: die sleutels alleen tellen niet als "iets bewaard".
-const APP_QUIET = ['oc-app.tools-cache', 'oc-app.paths-started', 'oc-app.data-since', 'oc-app.route'];   // route: kort of uitgebreid per plan, een instelling en geen werk
+const APP_QUIET = ['oc-app.tools-cache', 'oc-app.paths-started', 'oc-app.data-since', 'oc-app.route', 'oc-app.rs-open-weg'];   // route: kort of uitgebreid per plan, een instelling en geen werk
 function exitEntries() { return dataEntries().filter(e => e.t.id !== '__app' || e.keys.some(k => !APP_QUIET.includes(k))); }
 let exitList = [], exitOpener = null;
 let exitMode = 'all';
@@ -5023,7 +5031,7 @@ function startedPaths() {
   }
   return st;
 }
-function markStarted(id) { const st = startedPaths(); if (st.includes(id)) return; store.set('paths-started', [...st, id]); const o = new Set(store.get('paths-open', [])); o.add(id); store.set('paths-open', [...o]); }   // een nieuw plan staat op Start meteen open: je ziet de stappen en de keuze Kort of Uitgebreid
+function markStarted(id) { const st = startedPaths(); if (st.includes(id)) return; store.set('rs-open-weg', store.get('rs-open-weg', []).filter(x => x !== id)); store.set('paths-started', [...st, id]); const o = new Set(store.get('paths-open', [])); o.add(id); store.set('paths-open', [...o]); }   // een nieuw plan staat op Start meteen open: je ziet de stappen en de keuze Kort of Uitgebreid
 // Overgang: een plan dat al liep voor de korte route bestond, blijft volledig. Zo verdwijnt er geen stap waar je mee bezig was.
 (function () { if (store.get('route', null)) return; const r = {}; startedPaths().forEach(id => { if (ROUTE_KERN[id]) r[id] = 'vol'; }); store.set('route', r); })();
 /* Start van een stappenplan zonder projectnaam: één keer rustig vragen hoe het project heet (overslaan mag).
@@ -5213,8 +5221,20 @@ function planBinnen(tr, alle, steps, rest, next, kort, over, ookOpen) {
             <span class="step-dot">${s.done ? checkIcon : '+'}</span><span class="icon">${iconHTML(s.t.icon)}</span>
             <span><span class="step-name">${esc(s.t.title)}</span><span class="step-q">${esc((s.t.extra ? '' : tr.q[s.t.id]) || s.t.sub)}</span></span>
             <span class="step-st">${over.includes(stapSleutel(s)) ? 'overgeslagen' : s.done ? 'begonnen' : 'neem erbij'}</span>
-          </button></li>`).join('')}</ul></div>` : ''}`;
+          </button></li>`).join('')}</ul></div>` : ''}
+      ${startedPaths().includes(tr.id) ? `<p class="plan-stop"><button type="button" class="lnk" data-plan-stop="${esc(tr.id)}">Stop met dit plan</button><span>Je gegevens blijven staan.</span></p>` : ''}`;
 }
+// Stop met een plan: het telt niet meer als begonnen (geen "Verder waar je was" of "Nog open" meer voor dit plan). Wat je invulde blijft.
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-plan-stop]'); if (!b) return;
+  const id = b.dataset.planStop;
+  store.set('paths-started', startedPaths().filter(x => x !== id));
+  store.set('paths-open', store.get('paths-open', []).filter(x => x !== id));
+  store.set('rs-open-weg', store.get('rs-open-weg', []).filter(x => x !== id));
+  if (pathCtx === id) { pathCtx = null; store.set('path-ctx', null); viaPad = false; }
+  if ($('plan-dlg').open) $('plan-dlg').close();
+  renderRecent(); renderPaths(); if (typeof current !== 'undefined' && current) renderPathbar(current);
+});
 // De strook Loopt mee, de vraag van een brug onder haar stap, en na het antwoord één rustige regel om het terug te draaien
 function meeHTML(trId) {
   const L = meeVan(trId); if (!L.length) return '';
