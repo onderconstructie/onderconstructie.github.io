@@ -8,8 +8,10 @@ const TEKST = ['Nieuw digitaal loket voor premies', 'Burgers vragen hun premie o
   await p.click('#wz-form button[type=submit]'); await p.waitForTimeout(300); await (await p.$('#wiz .wz-scherm[data-scherm="4"] .wz-go')).click(); await p.waitForTimeout(1600);
   const fr = async () => { const hs = await p.$$('iframe'); for (const h of hs) { if (await h.isVisible().catch(() => false)) return await h.contentFrame(); } return null; };
   for (let i = 0; i < 16; i++) { const f = await fr(); if (!f) { console.log('GEEN TOOL'); break; } await p.waitForTimeout(700);
+    // de brugvraag ("Verandert dit project iemands werk?") komt één keer als venster: de reis antwoordt Nee en gaat verder
+    const brug = await p.evaluate(() => { const d = document.getElementById('brug-dlg'); return d && !d.hidden ? document.getElementById('brug-t').textContent : ''; }); if (brug) { await p.click('#brug-nee'); await p.waitForTimeout(300); }
     const balk = await p.evaluate(() => { const w = document.querySelector('#pathbar .pb-where'); return w ? w.getAttribute('aria-label').replace(/^.*Nu: /, '') : 'GEEN BALK'; });
-    const info = { stap: balk, tool: f.url().replace(B, '').split('?')[0] };
+    const info = { stap: balk, tool: f.url().replace(B, '').split('?')[0] }; if (brug) info.brug = brug + ' -> Nee';
     info.start = await f.evaluate(() => { const s = [...document.querySelectorAll('.oc-start')].find(e => e.getClientRects().length); return s ? s.innerText.replace(/\s+/g, ' ').slice(0, 110) : ''; });
     await p.screenshot({ path: `reis/${PLAN}-${ROUTE}-${String(i).padStart(2, '0')}a.png` });
     const begin = await f.$('.oc-start .oc-begin:visible, .oc-start [data-oc-begin]:visible'); if (begin) { await begin.click().catch(() => {}); await p.waitForTimeout(700); }
