@@ -14,7 +14,7 @@ const A = [g('Loket', 20, 'vlot', 3), g('Backoffice', 40, 'kijkt', 0), g('Leidin
 const r1 = KP.alles(A, 'mix'), r2 = KP.alles(JSON.parse(JSON.stringify(A)), 'mix');
 ok(r1.klaar && JSON.stringify(r1.u.k) === JSON.stringify(r2.u.k) && JSON.stringify(r1.u.per) === JSON.stringify(r2.u.per), 'dezelfde invoer geeft dezelfde uitkomst', [r1.u.k, r2.u.k]);
 ok(JSON.stringify(r1.start.keuzes.map(k => k.gem)) === JSON.stringify(r2.start.keuzes.map(k => k.gem)), 'ook de startkeuzes zijn vast');
-ok(KP.alles(A, 'team').zaad !== r1.zaad, 'een andere blik is een andere berekening');
+ok(KP.alles(A, 'team').zaad === r1.zaad && JSON.stringify(KP.alles(A, 'team').u.k) !== JSON.stringify(r1.u.k), 'een andere blik rekent met dezelfde mensen, maar geeft een andere uitkomst');
 
 // 2. grenzen: zonder voortrekkers gebeurt er niets, met iedereen als voortrekker valt er niets te rekenen
 ok(KP.alles([g('A', 30, 'vlot', 0)], 'mix').reden === 'start', 'zonder voortrekkers: geen uitkomst, wel de reden');
@@ -74,15 +74,37 @@ ok(KP.schoon(Array.from({ length: 12 }, (_, i) => g('G' + i, 5, 'vlot', 1))).len
 // 8. woorden en klassen
 ok(['bijna altijd', 'meestal', 'soms', 'zelden', 'bijna nooit'].join() === [0.95, 0.7, 0.5, 0.2, 0.05].map(KP.vaak).join(), 'de woorden volgen de frequentie');
 ok(KP.klasse(80, 100, 5) === 'aan' && KP.klasse(10, 100, 5) === 'hangt' && KP.klasse(50, 100, 5) === 'half' && KP.klasse(5, 100, 5) === 'hangt', 'de drie uitkomsten');
-ok(r1.u.k.aan + r1.u.k.half + r1.u.k.hangt === r1.u.runs && r1.u.uit.length === r1.u.runs, 'elk verloop valt in precies één uitkomst');
+ok(r1.u.k.aan + r1.u.k.half + r1.u.k.hangt === r1.u.runs && r1.u.ver.length === r1.u.runs && r1.u.runs === 1000, 'elk verloop valt in precies één uitkomst');
 
 // 9. het getoonde verloop past bij de vaakste uitkomst
 const vk = Object.keys(r1.u.k).sort((x, y) => r1.u.k[y] - r1.u.k[x])[0], t = KP.toon(r1.groepen, 'mix', r1.zaad, 0, vk);
 ok(t.klasse === vk && t.wanneer && t.rondes.length >= 1, 'het eerste getoonde verloop heeft de vaakste uitkomst', [vk, t.klasse]);
 ok(JSON.stringify(KP.toon(r1.groepen, 'mix', r1.zaad, 2).per) === JSON.stringify(KP.toon(r1.groepen, 'mix', r1.zaad, 2).per), 'een getoond verloop is te herhalen');
 
+// 9b. het snelle verloop geeft exact hetzelfde als het verloop persoon per persoon (1500 willekeurige gevallen)
+{ const R = KP.rng(12345), H = ['vlot', 'kijkt', 'wacht'], B = ['team', 'mix', 'iedereen']; let anders = 0;
+  for (let i = 0; i < 1500; i++) { const G = 1 + Math.floor(R() * 6), gr = []; for (let j = 0; j < G; j++) { const nn = 1 + Math.floor(R() * (i % 10 ? 60 : 500)); gr.push({ naam: '', n: nn, start: Math.floor(R() * R() * (nn + 1)), houding: H[Math.floor(R() * 3)] }); }
+    const z = Math.floor(R() * 2 ** 32), a = KP.verloop(gr, B[i % 3], KP.rng(z)).per, s = KP.maakSnel(gr); s.trek(KP.rng(z)); if (a.join() !== s.loop(B[i % 3]).join()) anders++; }
+  ok(anders === 0, 'snel en traag verloop geven exact dezelfde eindstand', anders); }
+// 9c. narekenen met de wiskunde: één grote groep waar iedereen iedereen ziet eindigt in het kleinste vaste punt van x = s + (1-s)·F(x)
+{ const erf = x => { const t = 1 / (1 + 0.3275911 * Math.abs(x)), y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x); return x >= 0 ? y : -y; };
+  const F = (x, mu) => x < 0.02 ? 0 : x >= 0.98 ? 1 : 0.5 * (1 + erf((x - mu) / 0.15 / Math.SQRT2)); let grootste = 0;
+  for (const [h, s] of [['vlot', 0.02], ['kijkt', 0.05], ['kijkt', 0.15], ['wacht', 0.3], ['wacht', 0.45]]) { let x = s; for (let i = 0; i < 5000; i++) x = s + (1 - s) * F(x, KP.HOUDING[h]);
+    const u = KP.reken(Array.from({ length: 4 }, () => ({ naam: '', n: 500, start: Math.round(500 * s), houding: h })), 'iedereen', 300, 99); grootste = Math.max(grootste, Math.abs(u.gem - x)); }
+  ok(grootste < 0.01, 'het model komt uit waar de wiskunde het zegt (grootste afwijking onder 1 procentpunt)', grootste); }
+// 9d. het kantelpunt: zoeken in twee helften vindt hetzelfde als alle aantallen aflopen, en eronder slaat het niet meestal aan
+{ const gr = KP.schoon([g('A', 20, 'vlot', 5), g('B', 30, 'kijkt', 0), g('C', 15, 'kijkt', 0)]); let allesOk = true;
+  for (const blik of ['team', 'mix', 'iedereen']) { const k = KP.kantel(gr, blik, 4242); let eerste = -1;
+    for (let T = 1; T < 65 && eerste < 0; T++) if (KP.reken(gr.map((x, i, a) => Object.assign({}, x, { start: KP.verdeel(a, T)[i] })), blik, 400, 4242).deel.aan >= KP.MEESTAL) eerste = T;
+    if (k.nodig !== eerste || k.start.reduce((a, b) => a + b, 0) !== k.nodig || k.start.some((x, i) => x > gr[i].n)) allesOk = false; }
+  ok(allesOk, 'het kantelpunt klopt met het aflopen van alle aantallen, en de verdeling past in de groepen');
+  ok(KP.verdeel(gr, 5).join() === '5,0,0' && KP.verdeel(gr, 25).join() === '20,3,2' && KP.verdeel(gr, 999).join() === '20,30,15', 'verdelen: eerst zoals nu, dan naar grootte, nooit meer dan er mensen zijn', [KP.verdeel(gr, 25), KP.verdeel(gr, 999)]); }
+// 9e. gelijke groepen: geen valse winnaar. Drie dezelfde groepen staan samen bovenaan.
+{ const s = KP.alles([g('A', 30, 'kijkt', 5), g('B', 30, 'kijkt', 2), g('C', 30, 'kijkt', 0)], 'mix').start;
+  ok(s.top.filter(o => o.soort === 'groep').length === 3, 'drie gelijke groepen tellen als even goed', s.top.map(o => o.soort + (o.gi ?? '')));
+  const d = KP.alles([g('A', 24, 'kijkt', 5), g('B', 40, 'kijkt', 2), g('C', 6, 'vlot', 2)], 'mix').start; ok(d.top.length >= 1 && d.top[0] === d.beste && d.keuzes.every(o => o.ver === undefined), 'de beste plaats staat altijd bij de top'); }
 // 10. snelheid: de grootste invoer blijft werkbaar
 const groot = Array.from({ length: 6 }, (_, i) => g('G' + i, 500, ['vlot', 'kijkt', 'wacht'][i % 3], 20)); const t0 = Date.now(); KP.alles(groot, 'mix'); const ms = Date.now() - t0;
-ok(ms < 4000, 'zes groepen van 500 mensen rekenen binnen enkele seconden', ms);
+ok(ms < 1500, 'zes groepen van 500 mensen rekenen binnen anderhalve seconde', ms);
 console.log(`${fouten ? 'FOUT' : 'ok  '} Kantelpunt-model: ${n} controles, ${fouten} fouten (grootste invoer: ${ms} ms)`);
 process.exit(fouten ? 1 : 0);
