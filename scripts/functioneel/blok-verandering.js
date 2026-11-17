@@ -48,7 +48,7 @@ const ok = (c, wat, extra) => { n++; if (!c) { fouten++; console.log('  FOUT: ' 
     setTab('verandering'); await new Promise(r => setTimeout(r, 200));
     const k = document.querySelector('#plan-tab .path'); return { pr, telt, noot, ver: k && k.offsetParent ? k.dataset.path : null, titel: k ? k.querySelector('.path-title').textContent : '', voorKopjes: !!k && !!(k.compareDocumentPosition(document.querySelector('#tabgroup .group.sub')) & 4) }; });
   ok(plannen.pr.slice().sort().join() === 'proces,project' && plannen.telt === '2', 'Projecten, Stappenplan: twee plannen, zonder Begeleid een verandering', plannen);
-  ok(plannen.noot === 'Van opzet tot terugblik', 'de ondertitel van Projecten noemt verandering niet meer', plannen.noot);
+  ok(!/verander/i.test(plannen.noot) && plannen.noot.length > 10, 'de ondertitel van Projecten noemt verandering niet meer', plannen.noot);
   ok(plannen.ver === 'verandering' && plannen.titel === 'Begeleid een verandering' && plannen.voorKopjes, 'Verandering: het stappenplan staat bovenaan, boven de groepen', plannen);
   await p.click('#plan-tab .path-head'); await p.waitForTimeout(300);
   ok(await p.evaluate(() => document.querySelector('#plan-tab .path').classList.contains('open') && document.activeElement.classList.contains('path-head') && !!document.activeElement.closest('#plan-tab')), 'de plankaart klapt open en de focus blijft op haar kop');
