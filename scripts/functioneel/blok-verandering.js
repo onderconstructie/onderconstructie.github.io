@@ -34,7 +34,7 @@ const ok = (c, wat, extra) => { n++; if (!c) { fouten++; console.log('  FOUT: ' 
   const v = T.verandering;
   ok(v.kop === 'Verandering' && v.kopjes.length === 3, 'Verandering: drie kopjes', v.kopjes.map(k => k.split(':')[0]));
   ok(['stakeholders', 'sponsor', 'impact', 'klimaat', 'veranderprofiel', 'communicatie', 'weerstand', 'gedrag', 'goesting', 'energie'].every(id => v.ids.includes(id)), 'Verandering: de acht verandertools plus Goestingmeter en Energiekaart', v.ids);
-  ok(/^Gedrag: gedrag kantelpunt$/.test(v.kopjes[1]), 'kopje Gedrag bevat Gedragsverandering en Kantelpunt', v.kopjes[1]);
+  ok(/^Gedrag: systeemkaart gedrag kantelpunt$/.test(v.kopjes[1]), 'kopje Gedrag bevat Systeemkaart, Gedragsverandering en Kantelpunt', v.kopjes[1]);
   ok(v.meta.startsWith(v.ids.length + ' tools'), 'de teller in de kop klopt', v.meta);
   ok(!T.projecten.ids.some(id => ['impact', 'weerstand', 'gedrag'].includes(id)) && T.projecten.kopjes.length === 4, 'Projecten: vier groepen, zonder de verandertools', T.projecten.kopjes.map(k => k.split(':')[0]));
   ok(await p.evaluate(() => { setTab('projecten'); return document.getElementById('proj-ngroep').textContent; }) === '4', 'Projecten zegt 4 groepen');

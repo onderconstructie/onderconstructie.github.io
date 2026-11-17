@@ -165,7 +165,7 @@ const ok = (c, wat, extra) => { n++; if (!c) { fouten++; console.log('  FOUT: ' 
   // ---------- 9. in de app
   p = await nieuw({ pad: '/', vooraf: () => { try { localStorage.setItem('oc-app.welkom-weg', 'true'); } catch {} } });
   const inApp = await p.evaluate(async () => { setTab('verandering'); subAlles(false); await new Promise(r => setTimeout(r, 200)); const k = document.querySelector('#tabgroup .group.sub[data-group="sub-gedrag"]'); return { ids: [...k.querySelectorAll('.row[data-id]')].map(r => r.dataset.id), g: byId.kantelpunt && byId.kantelpunt.g, begonnen: hasData(byId.kantelpunt) }; });
-  ok(inApp.ids.join() === 'gedrag,kantelpunt' && inApp.g === 'verandering', 'in de app: Kantelpunt staat onder Verandering, kopje Gedrag', inApp);
+  ok(inApp.ids.join() === 'systeemkaart,gedrag,kantelpunt' && inApp.g === 'verandering', 'in de app: Kantelpunt staat onder Verandering, kopje Gedrag', inApp);
   ok(!inApp.begonnen, 'in de app: een ongebruikte tool telt niet als begonnen');
   await p.click('#tabgroup .row[data-id="kantelpunt"]'); await p.waitForTimeout(1500);
   ok(await p.evaluate(() => current === 'kantelpunt' && document.getElementById('pathbar').hidden), 'de tool opent in de app, zonder stappenbalk', await p.evaluate(() => current));
