@@ -38,7 +38,7 @@ const ok = (c, wat, extra) => { n++; if (!c) { fouten++; console.log('  FOUT: ' 
   await p.screenshot({ path: SHOTS + '/k1-leeg.png', fullPage: true });
   await p.click('#begin'); await p.waitForTimeout(400);
   ok(await zicht(p, 'werk') && !(await zicht(p, 'start')) && await stand() === 'compact' && await p.evaluate(() => document.activeElement.id) === 'gedrag', 'Begin: het werk opent met een compacte kop, de cursor staat in het eerste veld');
-  ok(await p.locator('#stepnav .sn').count() === 4 && await p.locator('#werk .card-title .stepno').count() === 5, 'stappenbalk en genummerde kaarten zoals in de familie');
+  ok(await p.locator('#stepnav .sn').count() === 4 && await p.locator('#werk .card-title .stepno').count() === 6, 'stappenbalk en genummerde kaarten zoals in de familie');
   ok((await uit(p)).startsWith('Vul minstens één groep in'), 'nog niets ingevuld: de tool zegt wat er nodig is', (await uit(p)).slice(0, 60));
   ok(await p.locator('#groepen .kp-g').count() === 2 && await sleutel(p) === null, 'twee lege groepen om mee te beginnen, nog niets bewaard');
   await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(400);
@@ -49,7 +49,8 @@ const ok = (c, wat, extra) => { n++; if (!c) { fouten++; console.log('  FOUT: ' 
   ok(await zicht(p, 'vb') && await zicht(p, 'vb-wis') && await zicht(p, 'vb-eigen') && await sleutel(p) === null, 'het voorbeeld toont de band met Wis voorbeeld en Maak er mijn eigen van, en wordt niet bewaard');
   ok((await hoofd(p)) === 'Dit kan beide kanten op.', 'het voorbeeld ligt dicht bij het kantelpunt', await hoofd(p));
   ok(await zicht(p, 'verloop') && await zicht(p, 'export') && !(await zicht(p, 'voorbeeld')), 'met het voorbeeld: verloop en downloads zichtbaar');
-  ok(/Dit is een denkmodel, geen voorspelling/.test(await uit(p)), 'de uitkomst zegt dat het een denkmodel is');
+  ok(/Denkmodel, geen voorspelling/.test(await uit(p)), 'de uitkomst zegt dat het een denkmodel is');
+  ok(/slaat aan \d+× blijft halfweg \d+× blijft hangen \d+× 300 keer doorgerekend/.test(await uit(p)), 'de legende telt de verlopen', (await uit(p)).slice(0, 220));
   ok(!/%/.test(await p.evaluate(() => [...document.querySelectorAll('#uit > :not(details)')].map(e => e.innerText).join(' '))), 'geen procenten in de uitkomst');
   const cellen = await p.evaluate(() => { const c = [...document.querySelectorAll('#uit .kp-strook i')]; return { tot: c.length, aan: c.filter(x => x.classList.contains('aan')).length, half: c.filter(x => x.classList.contains('half')).length }; });
   ok(cellen.tot === 300 && cellen.aan > 0 && cellen.aan < 300, 'de strook toont elk verloop als één vakje', cellen);
@@ -86,9 +87,11 @@ const ok = (c, wat, extra) => { n++; if (!c) { fouten++; console.log('  FOUT: ' 
   ok(/^Dit slaat (bijna altijd|meestal) aan\.$/.test(await hoofd(p)), 'een vlotte groep met voortrekkers slaat aan', await hoofd(p));
   await vul(p, 0, null, null, null, 'wacht');
   ok(/^Dit blijft (bijna altijd|meestal) hangen\.$/.test(await hoofd(p)), 'dezelfde groep afwachtend: blijft hangen', await hoofd(p));
-  ok(!/Waar zoek je je voortrekkers/.test(await uit(p)), 'met één groep: geen vraag waar je voortrekkers zoekt');
+  ok(!(await zicht(p, 's5')), 'met één groep: geen kaart Waar zoek je je voortrekkers');
+  ok((await p.locator('#stepnav .sn').last().innerText()).trim() === 'Blijft hangen', 'de stappenbalk zegt het oordeel, ook als de uitkomst onder de vouw staat', await p.locator('#stepnav .sn').last().innerText());
+  ok((await p.textContent('#tel')) === '30 mensen · 5 voortrekkers', 'de kop van de groepen telt mensen en voortrekkers', await p.textContent('#tel'));
   await vul(p, 1, 'Backoffice', 20, 0, 'vlot');
-  ok(/Waar zoek je je voortrekkers\?/.test(await uit(p)) && await p.locator('#uit .kp-rij.nu').count() === 1, 'met twee groepen: de keuzes staan er, de huidige is gemarkeerd');
+  ok(await zicht(p, 's5') && await p.locator('#waar .kp-rij').count() === 3 && await p.locator('#waar .kp-rij.nu').count() === 1, 'met twee groepen: de kaart met de keuzes staat er, de huidige is gemarkeerd');
   ok(/Per groep Loket .* mee Backoffice .* mee/.test(await uit(p)), 'per groep staat er in woorden hoe vaak ze meegaat', (await uit(p)).slice(0, 160));
   // grenzen
   await vul(p, 0, null, 10, 25);
@@ -173,6 +176,9 @@ const ok = (c, wat, extra) => { n++; if (!c) { fouten++; console.log('  FOUT: ' 
     ok(m.sw <= m.iw, `${w}px: geen horizontale overloop`, m);
     ok(m.klein.length === 0, `${w}px: elk tikdoel minstens 44 px`, m.klein);
     ok(m.cv > 200 && m.cv < m.kaart, `${w}px: het verloop past in zijn kaart`, [m.cv, m.kaart]);
+    const opb = await p.evaluate(() => { const r = id => document.getElementById(id).getBoundingClientRect(); return { s2r: Math.round(r('s2').right), s4l: Math.round(r('s4').left), s4t: Math.round(r('s4').top + scrollY), groep: Math.round(document.querySelector('.kp-g').getBoundingClientRect().height), main: Math.round(document.querySelector('main').getBoundingClientRect().width), nav: !!document.getElementById('stepnav').offsetParent, wl: Math.round(r('s5').left), vl: Math.round(r('verloop').left) }; });
+    if (w >= 1000) ok(opb.main === 1200 && opb.s4l > opb.s2r && opb.s4t < 300 && !opb.nav && opb.vl > opb.wl, `${w}px: twee kolommen op familiebreedte, de uitkomst rechts op het eerste scherm, voortrekkers en verloop naast elkaar`, opb);
+    else ok(opb.s4l < opb.s2r && opb.nav && opb.groep <= (w < 380 ? 200 : 175), `${w}px: één kolom met de stappenbalk, een groep is compact`, opb);
     await p.context().close();
   }
 
