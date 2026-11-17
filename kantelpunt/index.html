@@ -417,6 +417,9 @@ header[data-oc-kop] .oc-kop-acties .menu button { white-space:normal; }
 .kp-drie i { flex:1 1 0; min-width:6px; border-radius:5px; background:var(--slate-300); }
 .kp-drie i.aan { background:var(--accent); }
 .kp-drie i.half { background:#f59e0b; }
+.kp-stevig { margin:0.75rem 0 0; font-size:0.9375rem; line-height:1.45; color:var(--slate-700); }
+.kp-stevig b { color:var(--accent-dark); }
+.kp-stevig.nee b { color:#b45309; }
 .kp-kantel { display:flex; gap:0.75rem; align-items:flex-start; margin:1rem 0 0; padding:0.75rem 0.875rem; border-radius:14px; background:#fffbeb; box-shadow:inset 0 0 0 1px #fde68a; color:var(--slate-800); font-size:0.9375rem; line-height:1.45; }
 .kp-kantel.over { background:var(--accent-light); box-shadow:inset 0 0 0 1px #a7f3d0; }
 .kp-kantel b { font-size:1.0625rem; font-variant-numeric:tabular-nums; }
@@ -1729,10 +1732,11 @@ const KP = (() => {
   function klasse(tot, N, S) { const rest = N - S, bij = rest > 0 ? (tot - S) / rest : 1; return tot / N >= 0.8 ? 'aan' : bij < 0.15 ? 'hangt' : 'half'; }
   /* Hetzelfde verloop, snel: alleen de eindstand per groep. Per groep staan de drempels van wie nog niet meedoet gesorteerd;
      omdat wat mensen zien alleen kan stijgen, schuift per groep één wijzer op. Geeft exact dezelfde uitkomst als verloop(). */
-  function maakSnel(groepen) {
+  function maakSnel(groepen, schuif, spreid) {
+    schuif = schuif || 0; spreid = spreid || SPREIDING;
     const G = groepen.length, N = som(groepen.map(g => g.n));
     const dr = new Float32Array(N + 1), van = [], tot_ = [], mu = [], st = [], nn = [], deel = [];
-    let p = 0; groepen.forEach((g, gi) => { van[gi] = p + g.start; tot_[gi] = p + g.n; mu[gi] = HOUDING[g.houding]; st[gi] = g.start; nn[gi] = g.n; deel[gi] = dr.subarray(p + g.start, p + g.n); p += g.n; });
+    let p = 0; groepen.forEach((g, gi) => { van[gi] = p + g.start; tot_[gi] = p + g.n; mu[gi] = HOUDING[g.houding] + schuif; st[gi] = g.start; nn[gi] = g.n; deel[gi] = dr.subarray(p + g.start, p + g.n); p += g.n; });
     const c = new Array(G), wijzer = new Array(G), zicht = new Array(G);
     /* Sorteren in twee stappen, veel sneller dan de ingebouwde sortering voor getallen tussen 0 en 1:
        eerst in 128 vakjes volgens grootte, dan binnen die bijna-gesorteerde rij de buren op hun plaats schuiven. Zelfde volgorde, exact. */
@@ -1748,7 +1752,7 @@ const KP = (() => {
       for (let i = a + 1; i < b; i++) { const x = dr[i]; let j = i - 1; while (j >= a && dr[j] > x) { dr[j + 1] = dr[j]; j--; } dr[j + 1] = x; }
     }
     // nieuwe mensen: voor iedereen een drempel, in dezelfde volgorde en met dezelfde trekkingen als verloop()
-    function trek(r) { let q = 0; for (let gi = 0; gi < G; gi++) { const m = mu[gi], e = tot_[gi]; for (; q < e; q++) dr[q] = klem(m + SPREIDING * normaal(r), 0.02, 0.98); sorteer(van[gi], e); } }
+    function trek(r) { let q = 0; for (let gi = 0; gi < G; gi++) { const m = mu[gi], e = tot_[gi]; for (; q < e; q++) dr[q] = klem(m + spreid * normaal(r), 0.02, 0.98); sorteer(van[gi], e); } }
     // het verloop op die mensen, voor één manier van kijken
     function loop(blik) {
       const w = BLIK[blik] != null ? BLIK[blik] : 0.5;
@@ -1765,8 +1769,8 @@ const KP = (() => {
     return { trek, loop };
   }
   // Het verloop een aantal keer, telkens met andere drempels. Meer dan één blik: dezelfde mensen, anders gekeken.
-  function rekenMeer(groepen, blikken, runs, zaad) {
-    const r = rng(zaad), G = groepen.length, N = som(groepen.map(g => g.n)), S = som(groepen.map(g => g.start)), snel = maakSnel(groepen);
+  function rekenMeer(groepen, blikken, runs, zaad, schuif, spreid) {
+    const r = rng(zaad), G = groepen.length, N = som(groepen.map(g => g.n)), S = som(groepen.map(g => g.start)), snel = maakSnel(groepen, schuif, spreid);
     const T = blikken.map(() => ({ k: { aan: 0, half: 0, hangt: 0 }, per: new Array(G).fill(0), mee: new Array(G).fill(0), ver: new Float32Array(runs) }));
     for (let i = 0; i < runs; i++) {
       snel.trek(r);
@@ -1837,6 +1841,18 @@ const KP = (() => {
     while (hoog - laag > 1) { const m = (laag + hoog) >> 1; if (aan(m) >= MEESTAL) hoog = m; else laag = m; }
     return { nodig: hoog, nu: S, start: verdeel(groepen, hoog) };
   }
+  // Het oordeel in één woord, met dezelfde grens als de zin bovenaan de uitkomst
+  const oordeel = d => d.aan >= MEESTAL ? 'aan' : d.hangt >= MEESTAL ? 'hangt' : d.half >= MEESTAL ? 'half' : 'beide';
+  /* Hoe stevig is het oordeel? De drempels zijn een inschatting. Daarom rekent het model alles nog vier keer door, met dezelfde
+     mensen maar andere aannames: iedereen wat vlotter, iedereen wat trager, mensen meer gelijk, mensen meer verschillend.
+     Blijft het oordeel telkens hetzelfde, dan is het stevig. Anders zegt het model welke aanname het doet omslaan. */
+  const PROEVEN = [['vlotter', -0.05, 0], ['trager', 0.05, 0], ['gelijker', 0, 0.10], ['verschillender', 0, 0.20]];
+  function stevig(groepen, blik, zaad, basis) {
+    const N = som(groepen.map(g => g.n)), runs = Math.min(400, aantalRuns(N));
+    const proeven = PROEVEN.map(([naam, schuif, spreid]) => { const u = rekenMeer(groepen, [blik], runs, zaad, schuif, spreid)[0]; return { naam, oordeel: oordeel(u.deel), aan: u.deel.aan, gem: u.gem }; });
+    const anders = proeven.filter(p => p.oordeel !== basis);
+    return { stevig: !anders.length, proeven, anders };
+  }
   // In woorden, nooit in procenten: hoe vaak iets gebeurt over alle verlopen
   const vaak = f => f >= 0.9 ? 'bijna altijd' : f >= 0.65 ? 'meestal' : f > 0.35 ? 'soms' : f > 0.1 ? 'zelden' : 'bijna nooit';
   // Alles in één keer, voor de tool
@@ -1848,7 +1864,7 @@ const KP = (() => {
     // één toevalsreeks voor alles: de drie blikken en alle startplaatsen rekenen met dezelfde mensen
     const zaad = hash(JSON.stringify(groepen.map(g => [g.n, g.houding]))), namen = Object.keys(BLIK), U = rekenMeer(groepen, namen, aantalRuns(N), zaad);
     const u = U[Math.max(0, namen.indexOf(blik))], blik3 = {}; namen.forEach((b, i) => { blik3[b] = { aan: U[i].deel.aan, gem: U[i].gem }; });
-    return { klaar: true, groepen, N, S, blik, zaad, u, start: startKeuzes(groepen, blik, zaad, u), blik3, kantel: kantel(groepen, blik, zaad) };
+    return { klaar: true, groepen, N, S, blik, zaad, u, start: startKeuzes(groepen, blik, zaad, u), blik3, kantel: kantel(groepen, blik, zaad), stevig: stevig(groepen, blik, zaad, oordeel(u.deel)) };
   }
   // Eén verloop om te tonen: nummer 0 is een verloop dat past bij de vaakste uitkomst, de volgende nummers zijn andere verlopen
   function toon(groepen, blik, zaad, nummer, vaakste) {
@@ -1859,7 +1875,7 @@ const KP = (() => {
     }
     return verloop(groepen, blik, rng(zaad + nummer), true);
   }
-  return { HOUDING, BLIK, MAX_GROEPEN, MAX_MENSEN, MEESTAL, maakSnel, rekenMeer, verschil, verdeel, kantel, rng, hash, schoon, zaadVan, verloop, klasse, reken, aantalRuns, startKeuzes, blikken, vaak, alles, toon };
+  return { HOUDING, BLIK, MAX_GROEPEN, MAX_MENSEN, MEESTAL, maakSnel, rekenMeer, verschil, verdeel, kantel, oordeel, stevig, PROEVEN, rng, hash, schoon, zaadVan, verloop, klasse, reken, aantalRuns, startKeuzes, blikken, vaak, alles, toon };
 })();
 /* kantelpunt-model einde */
 
@@ -1990,6 +2006,13 @@ function startTekst(R) {
   const waar = s.top.length === 1 ? `als je ze ${plek(s.top[0])}` : s.top.length === 2 ? `als je ze ${plek(s.top[0])} of ${plek(s.top[1])}` : 'op een andere plaats; welke maakt weinig uit';
   return beter ? `Met dezelfde ${s.S} ${s.S === 1 ? 'voortrekker' : 'voortrekkers'} raakt het verder ${waar}.` : 'Je voortrekkers staan goed. Ze elders zoeken verandert weinig.';
 }
+// Hoe stevig is het oordeel: vaste zinnen bij de vier proeven van het model
+const PROEF_ALS = { vlotter: 'als mensen wat vlotter volgen dan je schat', trager: 'als mensen wat trager volgen dan je schat', gelijker: 'als mensen binnen een groep meer op elkaar lijken', verschillender: 'als mensen binnen een groep meer verschillen' };
+const OORDEEL_KORT = { aan: 'slaat het meestal aan', hangt: 'blijft het meestal hangen', half: 'blijft het meestal halfweg', beide: 'kan het beide kanten op' };
+function stevigTekst(s) {
+  if (s.stevig) return 'Het blijft hetzelfde als mensen wat vlotter of trager volgen dan je schat, of meer of minder van elkaar verschillen.';
+  const a = s.anders[0]; return `Het hangt af van je inschatting: ${PROEF_ALS[a.naam]}, ${OORDEEL_KORT[a.oordeel]}.${s.anders.length > 1 ? ` Ook ${s.anders.length - 1 === 1 ? 'één andere aanname' : (s.anders.length - 1) + ' andere aannames'} ${s.anders.length - 1 === 1 ? 'doet' : 'doen'} het omslaan.` : ''}`;
+}
 // Van elke tien keer: hele getallen die samen tien zijn (grootste resten eerst)
 function opTien(d) {
   const k = ['aan', 'half', 'hangt'], ruw = k.map(x => d[x] * 10), uit = ruw.map(Math.floor); let over = 10 - uit.reduce((a, b) => a + b, 0);
@@ -2012,12 +2035,14 @@ function tekenUit(R) {
   el.innerHTML = `<p class="kp-hoofd ${h.k}">${h.html}</p><p class="kp-sub">${h.sub}</p>
     <div class="kp-drie" role="img" aria-label="Van elke tien keer: ${t10.aan} keer slaat het aan, ${t10.half} keer blijft het halfweg, ${t10.hangt} keer blijft het hangen">${['aan', 'half', 'hangt'].map(k => u.k[k] ? `<i class="${k}" style="flex-grow:${u.k[k]}"></i>` : '').join('')}</div>
     <ul class="kp-leg">${[['aan', 'slaat aan'], ['half', 'blijft halfweg'], ['hangt', 'blijft hangen']].map(([k, w]) => `<li class="${k}"><i></i>${w} <b>${t10[k] === 0 && u.k[k] ? 'zelden' : t10[k] + ' op 10'}</b></li>`).join('')}</ul>
+    <p class="kp-stevig ${R.stevig.stevig ? 'ja' : 'nee'}"><b>${R.stevig.stevig ? 'Stevig oordeel.' : 'Wankel oordeel.'}</b> ${esc(stevigTekst(R.stevig))}</p>
     <p class="kp-kantel ${K.nodig <= K.nu ? 'over' : ''}"><span class="kp-kantel-i" aria-hidden="true">${ICO_UIT}</span><span>${kant}<small>Voortrekkers verdeeld zoals nu.</small></span></p>`
     + (iz.length ? `<ul class="kp-inzicht">${iz.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '')
     + `<h3 class="kp-h3">Per groep</h3><ul class="kp-rijen">${G.map((g, i) => `<li class="kp-rij"><span class="kp-rij-n">${esc(gnaam(g, i))}</span><span class="kp-rij-w">${KP.vaak(u.mee[i])} mee</span><span class="kp-balk" aria-hidden="true"><i style="width:${Math.round(u.per[i] * 100)}%"></i></span></li>`).join('')}</ul>
     <p class="kp-noot"><b>Denkmodel, geen voorspelling.</b> De uitkomst volgt uit jouw inschatting van de groepen.</p>
     <details class="kp-hoe"><summary>Zo is dit berekend</summary>
       <p>Het model speelde dit ${u.runs} keer af, telkens met andere drempels per persoon. ${u.k.aan} keer sloeg het aan (minstens vier op de vijf doen mee), ${u.k.half} keer bleef het halfweg en ${u.k.hangt} keer bleef het hangen bij de voortrekkers.</p>
+      <p>Stevig of wankel: het model rekende alles nog vier keer door met andere aannames (drempels vijf punten lager of hoger, mensen meer gelijk of meer verschillend). Verandert het oordeel daarbij niet, dan is het stevig.</p>
       <p>Het kantelpunt is het kleinste aantal voortrekkers waarbij het minstens 65 keer op 100 aanslaat. De startplaatsen zijn vergeleken op telkens dezelfde mensen, zodat het verschil van de plaats komt en niet van het toeval.</p>
       <p>${R.N} mensen, waarvan ${R.S} ${R.S === 1 ? 'voortrekker' : 'voortrekkers'}. Dezelfde invoer geeft altijd dezelfde uitkomst.</p>
       <p>Gebruik de uitkomst om te zien waar het kan kantelen, en praat erover met je team.</p></details>`;
