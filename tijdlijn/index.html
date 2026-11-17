@@ -1664,7 +1664,7 @@ window.ocProjectkiezer = function (plek, o) {
     <p class="count-line" id="count-line" hidden></p>
     <div class="empty oc-start" id="empty" hidden></div>
 
-    <div class="tl-kies" id="tl-kies" role="group" aria-label="Weergave van de tijdlijn" hidden><button type="button" data-weergave="schema" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 12h18"/><circle cx="6" cy="12" r="2.2" fill="currentColor"/><circle cx="12" cy="12" r="2.2" fill="currentColor"/><circle cx="18" cy="12" r="2.2" fill="currentColor"/></svg>Lijn</button><button type="button" data-weergave="maanden" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h9M9 12h10M6 17h7"/></svg>Maanden</button><button type="button" data-weergave="schaal" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 12h18M5 9v6M10 10v4M14 10v4M19 9v6"/></svg>Op schaal</button></div>
+    <div class="tl-kies" id="tl-kies" role="group" aria-label="Weergave van de tijdlijn" hidden><button type="button" data-weergave="schema" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 12h18"/><circle cx="6" cy="12" r="2.2" fill="currentColor"/><circle cx="12" cy="12" r="2.2" fill="currentColor"/><circle cx="18" cy="12" r="2.2" fill="currentColor"/></svg>Lijn</button><button type="button" data-weergave="maanden" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h9M9 12h10M6 17h7"/></svg>Maanden</button><button type="button" data-weergave="schaal" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 12h18M5 9v6M10 10v4M14 10v4M19 9v6"/></svg>Op schaal</button></div>
     <div class="tl" id="tl" hidden></div>
 
     <div class="pl-kies" id="pl-kies" role="group" aria-label="Hoe plan je je mijlpalen?"><button type="button" data-plan="vooruit" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h15M14 7l5 5-5 5"/></svg>Plan vooruit</button><button type="button" data-plan="achteruit" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12H5M10 7l-5 5 5 5"/></svg>Plan achteruit</button></div>
@@ -2618,7 +2618,7 @@ function load() {
       const tg = tgNorm(l.terug); if (tg) n.terug = tg;   // het ontwerp van Plan achteruit (oude tijdlijnen: geen)
       return n;
     });
-    if (lists.length) return { lists, current: lists.some(l => l.id === d.current) ? d.current : lists[0].id, ...(d.weergave === 'schaal' || d.weergave === 'maanden' ? { weergave:d.weergave } : {}), ...(d.plan === 'achteruit' ? { plan:'achteruit' } : {}), ...(typeof d.ocSince === 'string' ? { ocSince:d.ocSince } : {}) };
+    if (lists.length) return { lists, current: lists.some(l => l.id === d.current) ? d.current : lists[0].id, ...(d.weergave === 'schaal' || d.weergave === 'schema' ? { weergave:d.weergave } : {}), ...(d.plan === 'achteruit' ? { plan:'achteruit' } : {}), ...(typeof d.ocSince === 'string' ? { ocSince:d.ocSince } : {}) };
   } } catch {}
   ocKapot(KEY);   // de tool kan niet gebruiken wat er staat: een kopie apart (niets als er niets staat)
   const first = { id:uid(), name:ocProject('Mijn project'), items:[] };
@@ -3023,11 +3023,13 @@ function schuifRand(sc) {
   sc.classList.toggle('kan-r', max > 4 && sc.scrollLeft < max - 4);
 }
 
+// De weergave: Maanden, tenzij je zelf Lijn (schema) of Op schaal koos
+const weergaveNu = () => state.weergave === 'schema' || state.weergave === 'schaal' ? state.weergave : 'maanden';
 function renderChart() {
   const el = $('tl'), l = cur(), heeft = l.items.some(i => i.date);
   // Schema op elk scherm; "Op schaal" kan alleen als er plaats is
   const W0 = $('card').clientWidth - 2 - 36, smal = W0 < 520;
-  const view = state.weergave === 'maanden' ? 'maanden' : smal || state.weergave !== 'schaal' ? 'schema' : 'schaal';
+  const w = weergaveNu(), view = w === 'schaal' && smal ? 'schema' : w;
   $('tl-kies').hidden = !heeft;
   const ks = document.querySelector('#tl-kies [data-weergave="schaal"]'); if (ks) ks.hidden = smal;   // "Op schaal" kan alleen als er plaats is
   document.querySelectorAll('#tl-kies [data-weergave]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.weergave === view)));
@@ -3081,7 +3083,7 @@ try { document.fonts.ready.then(renderChart); } catch {}
 
 $('tl-kies').addEventListener('click', e => {
   const b = e.target.closest('[data-weergave]'); if (!b) return;
-  if (b.dataset.weergave === 'schaal' || b.dataset.weergave === 'maanden') state.weergave = b.dataset.weergave; else delete state.weergave;
+  if (b.dataset.weergave === 'schaal' || b.dataset.weergave === 'schema') state.weergave = b.dataset.weergave; else delete state.weergave;   // Maanden is de standaard: die keuze hoeft niet bewaard
   ocSchrijf(KEY, JSON.stringify(state));
   renderChart();
 });
@@ -3521,7 +3523,7 @@ async function download(act) {
 // Exportweergave: de tijdlijn zelf en daaronder elke mijlpaal op een rij. Zonder knoppen of velden.
 function buildExport(l) {
   const W = 1038, node = document.createElement('div'), its = sorted(l.items), t = telling(l);
-  const c = state.weergave === 'maanden' && its.some(i => i.date) ? { html:`<div class="mnd-scroll" style="padding:4px 0">${maandenHTML(l, true, W)}</div>` } : state.weergave === 'schaal' ? chartHTML(l, W, true) : (its.some(i => i.date) ? { html:`<div class="sch-scroll rijen" style="padding:4px 0">${schemaHTML(l, true, 7)}</div>` } : { html:'' });
+  const c = weergaveNu() === 'maanden' && its.some(i => i.date) ? { html:`<div class="mnd-scroll" style="padding:4px 0">${maandenHTML(l, true, W)}</div>` } : state.weergave === 'schaal' ? chartHTML(l, W, true) : (its.some(i => i.date) ? { html:`<div class="sch-scroll rijen" style="padding:4px 0">${schemaHTML(l, true, 7)}</div>` } : { html:'' });
   const C = { text:'#1e293b', soft:'#475569', muted:'#64748b', line:'#e2e8f0' };
   const pil = it => {
     const [tx, col, bg, rand] = it.status === 'gehaald' ? ['Gehaald', '#047857', '#ecfdf5', '#a7f3d0'] : it.status === 'verschoven' ? ['Verschoven', '#92400e', '#fffbeb', '#fde68a']
