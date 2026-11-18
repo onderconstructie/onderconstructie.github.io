@@ -1,4 +1,4 @@
-// Meldbalk bovenaan: korte boodschap, oproep tot feedback, weg na het kruisje
+// Meldbalk bovenaan het startscherm: korte boodschap, oproep tot feedback, altijd zichtbaar; de hele balk is de knop
 const { chromium } = require('playwright'); const B = process.env.BASE || 'http://127.0.0.1:' + (process.env.PORT || 9281); const S = process.env.SHOTS || 'shots';
 const fout = []; const ok = (c, m) => { console.log((c ? '  ok   ' : '  FOUT ') + m); if (!c) fout.push(m); };
 (async () => { const b = await chromium.launch();
@@ -7,10 +7,12 @@ const fout = []; const ok = (c, m) => { console.log((c ? '  ok   ' : '  FOUT ') 
     await p.evaluate(() => { localStorage.setItem('oc-app.welkom-weg', '1'); }); await p.reload({ waitUntil:'networkidle' }); await p.waitForTimeout(700);
     const m = await p.evaluate(() => { const r = document.getElementById('meld').getBoundingClientRect(), h = document.querySelector('.header').getBoundingClientRect(); return { top:r.top, h:r.height, b:r.bottom, kop:h.top, breed:document.documentElement.scrollWidth <= innerWidth, tekst:document.getElementById('meld').innerText.replace(/\s+/g, ' ').trim() }; });
     console.log('  ', w, 'hoogte', m.h, '|', m.tekst);
-    ok(m.top === 0 && Math.abs(m.b - m.kop) < 1 && m.breed, w + ': de balk staat helemaal bovenaan, de kop sluit eronder aan, niets loopt over'); ok(m.h <= (w < 360 ? 70 : 48), w + ': de balk blijft laag (' + m.h + 'px)');
+    ok(m.top === 0 && Math.abs(m.b - m.kop) < 1 && m.breed, w + ': de balk staat helemaal bovenaan, de kop sluit eronder aan, niets loopt over'); ok(m.h >= 44 && m.h <= (w < 360 ? 64 : 46), w + ': de balk blijft laag (' + m.h + 'px)');
     ok(/bijgeschaafd|schaven nog bij/.test(m.tekst) && /Meld een fout of idee/.test(m.tekst), w + ': boodschap en oproep staan erin'); await p.screenshot({ path:S + '/meld-' + w + '.png', clip:{ x:0, y:0, width:w, height:300 } });
-    await p.click('#meld-fb'); await p.waitForTimeout(400); ok(await p.isVisible('#fb-sheet'), w + ': Meld een fout of idee opent het venster Suggestie of fout'); await p.keyboard.press('Escape'); await p.waitForTimeout(300); if (await p.isVisible('#fb-sheet')) await p.click('#fb-sheet [data-fb-close], #fb-close').catch(() => {});
+    await p.click('#meld'); await p.waitForTimeout(400); ok(await p.isVisible('#fb-sheet'), w + ': Meld een fout of idee opent het venster Suggestie of fout'); await p.keyboard.press('Escape'); await p.waitForTimeout(300); if (await p.isVisible('#fb-sheet')) await p.click('#fb-sheet [data-fb-close], #fb-close').catch(() => {});
     await p.waitForTimeout(200); ok(!(await p.isVisible('#fb-sheet')), w + ': het venster sluit weer');
-    await p.click('#meld-x'); await p.waitForTimeout(200); ok(!(await p.isVisible('#meld')), w + ': kruisje sluit de balk'); await p.reload({ waitUntil:'networkidle' }); await p.waitForTimeout(500); ok(!(await p.isVisible('#meld')), w + ': ze blijft weg na herladen');
+    ok(!(await p.$('#meld-x')), w + ': geen kruisje: de balk blijft staan'); for (const t of ['projecten', 'zakmes', 'start']) { await p.click(`.tab[data-tab="${t}"]`); await p.waitForTimeout(250); } ok(await p.isVisible('#meld'), w + ': ook in de andere tabs en na herhaald wisselen');
+    await p.reload({ waitUntil:'networkidle' }); await p.waitForTimeout(500); ok(await p.isVisible('#meld'), w + ': ze staat er na herladen nog');
+    const kl = await p.evaluate(() => { const lum = c => { const v = c.match(/[\d.]+/g).slice(0, 3).map(x => { x /= 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }); return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]; }; const m = document.getElementById('meld'), bg = lum(getComputedStyle(m).backgroundColor); return [m, m.querySelector('b')].map(e => { const f = lum(getComputedStyle(e).color); return (Math.max(f, bg) + 0.05) / (Math.min(f, bg) + 0.05); }); }); ok(kl.every(k => k >= 4.5), w + ': tekst en oproep zijn goed leesbaar (contrast ' + kl.map(k => k.toFixed(1)) + ')');
     ok(!E.length, w + ': geen paginafouten ' + E); await c.close(); }
   console.log(fout.length ? fout.length + ' FOUT' : 'alles ok'); await b.close(); process.exit(fout.length ? 1 : 0); })().catch(e => { console.error('CRASH', e); process.exit(2); });

@@ -60,18 +60,18 @@ a { color:inherit; }
   padding:calc(var(--top) + 1.75rem) 1.25rem 1.5rem;
 }
 .header-inner { max-width:760px; margin:0 auto; display:flex; align-items:center; gap:1rem; }
-/* Meldbalk helemaal bovenaan. Ze neemt de ruimte van de statusbalk over, zodat de kop eronder niet dubbel opschuift. */
-.meld { display:flex; align-items:center; justify-content:center; gap:0.25rem; padding:calc(var(--top) + 0.125rem) max(0.25rem, var(--right)) 0.125rem max(1rem, var(--left)); background:#065f46; color:#ecfdf5; font-size:0.875rem; line-height:1.35; }
-.meld[hidden] { display:none; }
-.meld:not([hidden]) + .header { --top:0px; }
-.meld-t { margin:0; padding:0.375rem 0; text-align:center; text-wrap:balance; }
+/* Meldbalk helemaal bovenaan, altijd zichtbaar en daarom rustig: licht, één regel, de hele balk is de knop.
+   Ze neemt de ruimte van de statusbalk over, zodat de kop eronder niet dubbel opschuift. */
+.meld { display:flex; align-items:center; justify-content:center; gap:0.5rem; width:100%; min-height:calc(var(--top) + 44px); padding:calc(var(--top) + 0.25rem) max(1rem, var(--right)) 0.25rem max(1rem, var(--left)); border:0; border-bottom:1px solid #a7f3d0; border-radius:0; background:var(--accent-light, #ecfdf5); color:var(--slate-700); font:inherit; font-size:0.875rem; line-height:1.3; text-align:left; cursor:pointer; }
+.meld + .header { --top:0px; }
+.meld b { color:var(--accent-dark); font-weight:700; }
 .meld-kort { display:none; }
 @media (max-width:599.98px) { .meld-lang { display:none; } .meld-kort { display:inline; } }
-.meld-fb { padding:0; border:0; background:none; color:#fff; font:inherit; font-weight:700; text-decoration:underline; text-underline-offset:3px; cursor:pointer; padding:0.375rem 0; }
-.meld-x { flex:none; display:grid; place-items:center; width:44px; height:44px; border:0; border-radius:12px; background:none; color:#a7f3d0; cursor:pointer; }
-.meld-x svg { width:16px; height:16px; }
-@media (hover:hover) { .meld-x:hover { background:rgba(255,255,255,0.12); color:#fff; } .meld-fb:hover { text-decoration-thickness:2px; } }
-.meld-fb:focus-visible, .meld-x:focus-visible { outline:2px solid #fff; outline-offset:2px; border-radius:6px; }
+.meld-punt { flex:none; width:8px; height:8px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 4px rgba(16,185,129,0.18); }
+.meld-pijl { flex:none; width:14px; height:14px; color:var(--accent-dark); transition:transform 0.15s; }
+@media (hover:hover) { .meld:hover { background:#d1fae5; } .meld:hover b { text-decoration:underline; text-underline-offset:3px; } .meld:hover .meld-pijl { transform:translateX(2px); } }
+.meld:focus-visible { outline:2px solid #047857; outline-offset:-3px; }
+@media (prefers-reduced-motion:reduce) { .meld-pijl { transition:none; } }
 .header svg { width:52px; height:52px; flex-shrink:0; }
 .site-title { font-size:1.5rem; font-weight:700; color:var(--slate-800); letter-spacing:-0.03em; line-height:1.2; }
 .site-subtitle { font-size:0.9375rem; color:var(--slate-500); }
@@ -2536,11 +2536,12 @@ window.ocProjectkiezer = function (plek, o) {
 <body>
 
 <div class="home" id="home">
-  <!-- Meldbalk: de app is in volle ontwikkeling, met een oproep tot feedback. Weg na het kruisje (oc-app.meld-weg). -->
-  <div class="meld" id="meld" role="region" aria-label="Melding" hidden>
-    <p class="meld-t"><span class="meld-lang">Deze app wordt nog voortdurend bijgeschaafd.</span><span class="meld-kort">We schaven nog bij.</span> <button type="button" class="meld-fb" id="meld-fb" aria-haspopup="dialog">Meld een fout of idee</button></p>
-    <button type="button" class="meld-x" id="meld-x" aria-label="Sluit deze melding" title="Sluit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
-  </div>
+  <!-- Meldbalk: staat altijd bovenaan het startscherm. De hele balk is één knop naar Suggestie of fout. -->
+  <button type="button" class="meld" id="meld" aria-haspopup="dialog">
+    <span class="meld-punt" aria-hidden="true"></span>
+    <span class="meld-t"><span class="meld-lang">Deze app wordt nog voortdurend bijgeschaafd.</span><span class="meld-kort">We schaven nog bij.</span> <b>Meld een fout of idee</b></span>
+    <svg class="meld-pijl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+  </button>
   <header class="header">
     <svg class="hd-net" viewBox="0 0 420 140" preserveAspectRatio="xMaxYMid slice" aria-hidden="true" focusable="false">
       <g class="n-far"><path d="M40 30L95 70L150 22L180 60L205 95L270 80L300 110M95 70L120 120L205 95M180 60L250 40M340 58L395 25M340 58L385 100M150 22L250 40M300 110L385 100"/>
@@ -4540,7 +4541,7 @@ function fullExit() {
   });
 }
 // Wat de app zelf bijhoudt (toollijst, tellers) is geen werk van jou: die sleutels alleen tellen niet als "iets bewaard".
-const APP_QUIET = ['oc-app.meld-weg', 'oc-app.tools-cache', 'oc-app.paths-started', 'oc-app.data-since', 'oc-app.route', 'oc-app.rs-open-weg'];   // route: kort of uitgebreid per plan, een instelling en geen werk
+const APP_QUIET = ['oc-app.tools-cache', 'oc-app.paths-started', 'oc-app.data-since', 'oc-app.route', 'oc-app.rs-open-weg'];   // route: kort of uitgebreid per plan, een instelling en geen werk
 function exitEntries() { return dataEntries().filter(e => e.t.id !== '__app' || e.keys.some(k => !APP_QUIET.includes(k))); }
 let exitList = [], exitOpener = null;
 let exitMode = 'all';
@@ -4698,10 +4699,8 @@ function closeFb(fromHistory) {
   if (fbOpener && fbOpener.isConnected) fbOpener.focus();
 }
 $('fb-open').addEventListener('click', () => openFb());
-// Meldbalk bovenaan: zichtbaar tot je ze sluit
-$('meld').hidden = !!store.get('meld-weg', false);
-$('meld-fb').addEventListener('click', () => openFb());
-$('meld-x').addEventListener('click', () => { store.set('meld-weg', true); $('meld').hidden = true; const k = document.querySelector('.header a, .header button'); if (k) k.focus({ preventScroll:true }); });
+// Meldbalk bovenaan het startscherm: altijd zichtbaar, de hele balk opent Suggestie of fout
+$('meld').addEventListener('click', () => openFb());
 $('fb-tool-btn').addEventListener('click', () => openFb(current));
 $('fb-close').addEventListener('click', closeFb);
 $('fb-sheet').addEventListener('click', e => { if (e.target === $('fb-sheet')) closeFb(); });
