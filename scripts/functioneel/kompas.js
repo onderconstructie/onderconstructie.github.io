@@ -1,6 +1,8 @@
 const { chromium } = require('playwright'); const B = (process.env.BASE || 'http://127.0.0.1:' + (process.env.PORT || 8904));
 (async () => { const b = await chromium.launch(); let fout = 0; const chk = (ok, wat, extra) => { if (!ok) fout++; console.log((ok ? 'ok   ' : 'FOUT ') + wat + (extra != null ? ' → ' + extra : '')); };
   for (const [w, h, mob] of [[390, 844, true], [1280, 800, false]]) { const c = await b.newContext({ viewport: { width: w, height: h }, hasTouch: mob, isMobile: mob, serviceWorkers: 'block' }); const p = await c.newPage(), E = [], X = []; p.on('pageerror', e => E.push(String(e).slice(0, 140))); p.on('console', m => { if (m.type() === 'error') E.push('c:' + m.text().slice(0, 120)); }); p.on('request', r => { if (!r.url().startsWith(B) && !/^(data|blob):/.test(r.url())) X.push(r.url()); });
+    // de testbrowser weigert de bewegingssensor zonder vraag; op een echt toestel antwoordt de gebruiker. Hier: toegestaan.
+    await p.addInitScript(() => { try { if (window.DeviceOrientationEvent) DeviceOrientationEvent.requestPermission = async () => 'granted'; } catch (e) {} });
     await p.goto(B + '/zakmes/kompas/', { waitUntil: 'networkidle' }); await p.waitForTimeout(400);
     const zicht = () => p.evaluate(() => ['kp-start', 'kp-aan', 'kp-geen'].filter(id => !document.getElementById(id).hidden).join(','));
     chk(await zicht() === 'kp-start', w + ': opent met de startkaart'); chk(await p.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), w + ': niet te breed'); await p.screenshot({ path: require('os').tmpdir() + `/oc-kp-${w}-1.png` });

@@ -11,7 +11,8 @@ const fout = []; const ok = (c, m) => { console.log((c ? '  ok   ' : '  FOUT ') 
   await p.click('#wz-form button[type=submit]'); await p.waitForTimeout(300); await (await p.$('#wiz .wz-scherm[data-scherm="4"] .wz-go')).click(); await p.waitForTimeout(1600);
   const fr = async () => { for (const h of await p.$$('iframe')) if (await h.isVisible().catch(() => false)) return await h.contentFrame(); return null; };
   const balk = async () => (await p.textContent('#pathbar')).replace(/\s+/g, ' ').trim().slice(0, 90);
-  const volgende = async () => { await p.click('#pathbar .pb-next'); await p.waitForTimeout(1500); return await fr(); };
+  // de brugvraag ("Verandert dit project iemands werk?") komt één keer als venster: deze test antwoordt Nee en gaat verder
+  const volgende = async () => { await p.click('#pathbar .pb-next'); await p.waitForTimeout(1500); if (await p.evaluate(() => { const d = document.getElementById('brug-dlg'); return !!d && !d.hidden; })) { await p.click('#brug-nee'); await p.waitForTimeout(400); } return await fr(); };
   const meet = f => f.evaluate(() => { const zicht = e => e.offsetParent !== null; const v = [...document.querySelectorAll('#form textarea, #form input, #teken-wrap input')].filter(zicht);
     const cut = v.filter(e => e.tagName === 'TEXTAREA' && !e.value && e.placeholder).filter(e => { const h = e.clientHeight; e.value = e.placeholder; const s = e.scrollHeight; e.value = ''; return s > h + 1; }).length;
     return { velden: v.length, hoog: document.documentElement.scrollHeight, schermen: +(document.documentElement.scrollHeight / innerHeight).toFixed(1), afgesneden: cut, breed: document.documentElement.scrollWidth > innerWidth + 1 }; });

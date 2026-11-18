@@ -1007,7 +1007,13 @@ body:not(.ready) .main, body:not(.ready) .footer { visibility:hidden; }
 .start:not(.compact) .stile:not(.stile-drie) .st-body > small.st-cta:not(.verder):not(.st-binnenkort) { width:36px; height:36px; padding:0; justify-content:center; gap:0; position:relative; }
 .start:not(.compact) .stile:not(.stile-drie) .st-woord { display:none; }
 .start:not(.compact) .stile:not(.stile-drie) .st-body > small.st-cta:not(.verder):not(.st-binnenkort) svg { width:16px; height:16px; }
-.start:not(.compact) .stile:not(.stile-drie) .st-body > small.st-cta.verder { grid-column:1 / -1; grid-row:auto; justify-self:start; margin-top:0.5rem; }
+/* een begonnen plan: in de ronde knop staat waar je bent, bijvoorbeeld 2/5 (stap 2 van 5). Licht, zodat je het verschil met "begin" ziet. */
+.st-deel { display:none; }
+.start:not(.compact) .stile:not(.stile-drie) .st-body > small.st-cta.verder { min-width:36px; height:36px; padding:0 0.5rem; justify-content:center; gap:0; position:relative; background:#ecfdf5; color:var(--accent-dark); box-shadow:inset 0 0 0 1.5px #6ee7b7; font-size:0.8125rem; font-weight:700; font-variant-numeric:tabular-nums; letter-spacing:-0.01em; }
+.start:not(.compact) .stile:not(.stile-drie) .st-body > small.st-cta.verder svg { display:none; }
+.start:not(.compact) .stile:not(.stile-drie) .st-cta.verder .st-deel { display:inline; }
+.start:not(.compact) .stile:not(.stile-drie) .st-cta.verder .st-woord { display:block; position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+.stile:hover small.st-cta.verder { background:#d1fae5; }
 .start:not(.compact) .stile:not(.stile-binnenkort) > .icon { background:linear-gradient(160deg, #d1fae5 0%, #f0fdf4 55%, #fff 100%); box-shadow:inset 0 0 0 1px #a7f3d0; }
 .start:not(.compact) .stile { min-height:76px; }
 .start:not(.compact) #start-h { font-size:1.375rem; font-weight:700; letter-spacing:-0.02em; text-transform:none; color:var(--slate-900, #0f172a); line-height:1.2; }
@@ -3007,7 +3013,7 @@ const iconHTML = svg => typeof svg === 'string' && /^\s*<svg[\s>]/i.test(svg)
 const esc = v => String(v).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
 // Lange samengestelde namen breken netjes af op een woordgrens (Hart-meditatie), nooit midden in een woorddeel.
 // Een zacht afbreekstreepje is onzichtbaar tot de regel echt te kort is. Een nieuwe tool krijgt dit vanzelf.
-const DELEN = ['verandering', 'meditatie', 'opdracht', 'budget', 'notities', 'planning', 'kaartjes', 'klimaat', 'profiel', 'diagram', 'dossier', 'paradox', 'analyse', 'teller', 'matrix', 'punten', 'tabel', 'radar', 'score', 'meter', 'kaart', 'schap', 'licht', 'dagen', 'graat', 'bingo', 'stand', 'miles', 'boek', 'bord', 'lijn', 'kast', 'kost', 'plan', 'wolk', 'bank', 'log'];
+const DELEN = ['verandering', 'meditatie', 'opdracht', 'budget', 'notities', 'planning', 'kaartjes', 'klimaat', 'profiel', 'diagram', 'dossier', 'paradox', 'analyse', 'teller', 'matrix', 'punten', 'tabel', 'radar', 'score', 'meter', 'kaart', 'schap', 'licht', 'dagen', 'graat', 'bingo', 'stand', 'miles', 'boek', 'bord', 'lijn', 'kast', 'kost', 'plan', 'punt', 'wolk', 'bank', 'log'];
 // Lange woorddelen die op een smal scherm niet passen, met hun lettergreep
 const STAM = { communicatie:7, betrokkenen:6, afstemmings:6, informatie:7, prioriteren:6, beslissings:6, schildpad:6, strategie:4, vergader:5, verander:5, gedrags:2 };
 // Lange slotdelen krijgen ook een lettergreep: Gedrags-veran-dering, Project-op-dracht
@@ -5206,7 +5212,7 @@ function startTileHTML(st, all) {
     const steps = stepsOf(st.path, all), first = steps[0]; if (!first) return '';
     const begun = startedPaths().includes(st.path), next = begun && (steps.find(x => !x.done) || first);
     const go = next || first;
-    return `<button type="button" class="stile" data-id="${esc(go.t.id)}"${zoekAttr(go.t)} data-ctx="${st.path}" data-start="${st.path}"><span class="icon">${st.logo ? bare(st.logo) : iconHTML(first.t.icon)}</span><span class="st-body"><b>${esc(st.title)}</b><span>${esc(st.sub)}</span><small class="st-cta${begun ? ' verder' : ''}">${begun ? `Verder: stap ${steps.indexOf(go) + 1} van ${steps.length}` : '<span class="st-woord">Begin</span>'}${PIJL_CTA}</small></span></button>`; }
+    return `<button type="button" class="stile" data-id="${esc(go.t.id)}"${zoekAttr(go.t)} data-ctx="${st.path}" data-start="${st.path}"><span class="icon">${st.logo ? bare(st.logo) : iconHTML(first.t.icon)}</span><span class="st-body"><b>${esc(st.title)}</b><span>${esc(st.sub)}</span><small class="st-cta${begun ? ' verder' : ''}">${begun ? `<span class="st-woord">Verder: stap ${steps.indexOf(go) + 1} van ${steps.length}</span><span class="st-deel" aria-hidden="true">${steps.indexOf(go) + 1}/${steps.length}</span>` : '<span class="st-woord">Begin</span>'}${PIJL_CTA}</small></span></button>`; }
   const g = GROUPS.find(x => x.id === st.group); if (!g) return '';
   return `<button type="button" class="stile" data-group-open="${g.id}"${st.kopje ? ` data-kopje="${st.kopje}"` : ''} data-start="${esc(stKey(st))}"><span class="icon g">${bare(st.logo || g.logo)}</span><span class="st-body"><b>${esc(st.title)}</b><span>${esc(st.sub)}</span><small class="st-cta licht"><span class="st-woord">Open</span>${PIJL_CTA}</small></span></button>`;
 }
