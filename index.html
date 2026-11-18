@@ -998,6 +998,21 @@ body:not(.ready) .main, body:not(.ready) .footer { visibility:hidden; }
 .start.compact .st-body small { font-weight:500; color:var(--slate-500); margin-top:0; }
 .start.compact .stiles { gap:0.375rem; }
 @media (min-width:700px) { .start.compact .stiles { grid-template-columns:1fr; } }
+/* Start, strakker: een ronde pijl rechts naast titel en uitleg in plaats van een knop eronder. Zo passen de zes doelen op één gsm-scherm.
+   Een lange knoptekst ("Verder: stap 3 van 7") blijft eronder staan. De tegel van het icoon krijgt een zachte groene tint. */
+.start:not(.compact) .stile:not(.stile-drie) .st-body { display:grid; grid-template-columns:minmax(0,1fr) auto; column-gap:0.75rem; row-gap:0.125rem; align-items:center; }
+.start:not(.compact) .stile:not(.stile-drie) .st-body > b, .start:not(.compact) .stile:not(.stile-drie) .st-body > span { grid-column:1; }
+.start:not(.compact) .stile:not(.stile-drie) .st-body > small.st-cta { grid-column:2; grid-row:1 / span 2; align-self:center; margin-top:0; white-space:nowrap; }
+/* de knop is een ronde pijl; de tegel heet voor schermlezers naar zijn titel en uitleg. De tekst krijgt de volle breedte. */
+.start:not(.compact) .stile:not(.stile-drie) .st-body > small.st-cta:not(.verder):not(.st-binnenkort) { width:36px; height:36px; padding:0; justify-content:center; gap:0; position:relative; }
+.start:not(.compact) .stile:not(.stile-drie) .st-woord { display:none; }
+.start:not(.compact) .stile:not(.stile-drie) .st-body > small.st-cta:not(.verder):not(.st-binnenkort) svg { width:16px; height:16px; }
+.start:not(.compact) .stile:not(.stile-drie) .st-body > small.st-cta.verder { grid-column:1 / -1; grid-row:auto; justify-self:start; margin-top:0.5rem; }
+.start:not(.compact) .stile:not(.stile-binnenkort) > .icon { background:linear-gradient(160deg, #d1fae5 0%, #f0fdf4 55%, #fff 100%); box-shadow:inset 0 0 0 1px #a7f3d0; }
+.start:not(.compact) .stile { min-height:76px; }
+.start:not(.compact) #start-h { font-size:1.375rem; font-weight:700; letter-spacing:-0.02em; text-transform:none; color:var(--slate-900, #0f172a); line-height:1.2; }
+.start:not(.compact) .start-lead { margin-top:0; margin-bottom:1rem; }
+@media (min-width:700px) { .start:not(.compact) #start-h { font-size:1.625rem; } }
 /* één groene hoofdknop per scherm: staat "Verder" er, dan zijn de knoppen in meldingen lichtgroen */
 body.returning .install .btn, body.returning .nudge .btn { background:#0c8660; color:#fff; }
 body.returning .install .btn:hover, body.returning .nudge .btn:hover, body.returning .install .btn:active, body.returning .nudge .btn:active { background:#047857; color:#fff; }
@@ -5189,9 +5204,9 @@ function startTileHTML(st, all) {
     const steps = stepsOf(st.path, all), first = steps[0]; if (!first) return '';
     const begun = startedPaths().includes(st.path), next = begun && (steps.find(x => !x.done) || first);
     const go = next || first;
-    return `<button type="button" class="stile" data-id="${esc(go.t.id)}"${zoekAttr(go.t)} data-ctx="${st.path}" data-start="${st.path}"><span class="icon">${st.logo ? bare(st.logo) : iconHTML(first.t.icon)}</span><span class="st-body"><b>${esc(st.title)}</b><span>${esc(st.sub)}</span><small class="st-cta">${begun ? `Verder: stap ${steps.indexOf(go) + 1} van ${steps.length}` : 'Begin'}${PIJL_CTA}</small></span></button>`; }
+    return `<button type="button" class="stile" data-id="${esc(go.t.id)}"${zoekAttr(go.t)} data-ctx="${st.path}" data-start="${st.path}"><span class="icon">${st.logo ? bare(st.logo) : iconHTML(first.t.icon)}</span><span class="st-body"><b>${esc(st.title)}</b><span>${esc(st.sub)}</span><small class="st-cta${begun ? ' verder' : ''}">${begun ? `Verder: stap ${steps.indexOf(go) + 1} van ${steps.length}` : '<span class="st-woord">Begin</span>'}${PIJL_CTA}</small></span></button>`; }
   const g = GROUPS.find(x => x.id === st.group); if (!g) return '';
-  return `<button type="button" class="stile" data-group-open="${g.id}"${st.kopje ? ` data-kopje="${st.kopje}"` : ''} data-start="${esc(stKey(st))}"><span class="icon g">${bare(st.logo || g.logo)}</span><span class="st-body"><b>${esc(st.title)}</b><span>${esc(st.sub)}</span><small class="st-cta licht">Open${PIJL_CTA}</small></span></button>`;
+  return `<button type="button" class="stile" data-group-open="${g.id}"${st.kopje ? ` data-kopje="${st.kopje}"` : ''} data-start="${esc(stKey(st))}"><span class="icon g">${bare(st.logo || g.logo)}</span><span class="st-body"><b>${esc(st.title)}</b><span>${esc(st.sub)}</span><small class="st-cta licht"><span class="st-woord">Open</span>${PIJL_CTA}</small></span></button>`;
 }
 /* De eerste ingang bundelt de drie stappenplannen: één tegel, drie rustige keuzes. Zo blijft Start bij vier doelen. */
 function faseTekst(trId, steps, i) {
