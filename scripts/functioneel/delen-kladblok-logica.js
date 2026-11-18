@@ -29,11 +29,11 @@ const MERK = /\b(Word|LibreOffice|Google Docs)\b/;
         // inhoud: het voorbeeld laden waar dat kan, en de app-projectnaam Geheim
         await p.evaluate(() => localStorage.setItem('oc.project', JSON.stringify({ name:'Geheim', since:Date.now() })));
         for (const s of VB) { const l = p.locator(s + ':visible').first(); if (await l.count()) { await l.click().catch(() => {}); await p.waitForTimeout(600); break; } }
-        const k = await p.evaluate(() => { const e = document.querySelector('header[data-oc-kop] .oc-kop-acties .oc-deel'); if (!e) return null; const r = e.getBoundingClientRect();
+        const k = await p.evaluate(() => { const e = document.querySelector('header[data-oc-kop] .oc-kop-acties .oc-deel:not(.oc-ster)'); if (!e) return null; const r = e.getBoundingClientRect();
           return { w:r.width, h:r.height, label:e.getAttribute('aria-label'), zicht:!!e.getClientRects().length }; });
         ok(k && k.zicht && k.w >= 44 && k.h >= 44 && k.label === 'Deel deze tool', `${tag}: deel-icoon in de kop, ${k ? Math.round(k.w) + 'x' + Math.round(k.h) : 'ontbreekt'}`);
         if (k) {
-          await p.click('header[data-oc-kop] .oc-deel'); await p.waitForTimeout(400);
+          await p.click('header[data-oc-kop] .oc-deel:not(.oc-ster)'); await p.waitForTimeout(400);
           const r = await p.evaluate(() => ({ g:window.__gedeeld, k:window.__klembord, melding:[...document.querySelectorAll('.oc-deel-melding')].map(e => e.textContent).join(' '),
             og:(document.querySelector('meta[property="og:title"]') || {}).content || '', d:(document.querySelector('meta[name="description"]') || {}).content || '', url:location.origin + location.pathname }));
           const alles = JSON.stringify([r.g, r.k]);

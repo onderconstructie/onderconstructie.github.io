@@ -24,3 +24,9 @@ Ze draaien met Node en Playwright tegen een lokale kopie van de hele site (app e
 
 Elk script eindigt met een telling. `proces.js`, `projectkeuze.js`, `ideeenkaart.js`, `brug-en-loopt-mee.js`, `blok-verandering.js`, `kantelpunt.js` en `kantelpunt-model.js` moeten op `fouten: 0` uitkomen.
 Ze draaien nog niet mee in de automatische test: daarvoor moeten alle tools onder één lokaal adres staan.
+
+## De hele reeks draaien (november 2026)
+
+- De tests laden alle tools uit `tools.json`. Staan de aparte repo's (zakmes, kanban, risico, stakeholders, project-radar, project-realisme, mixer, fortuna, check-in, qr, focus, paradox, hier, adem, hart) niet naast deze repo op de testserver, dan falen `bestandsnaam-logica`, `sterretje-los-logica` en de tests hieronder zonder dat er iets stuk is.
+- Vijf tests lopen alle tools af en duren 5 tot 13 minuten elk: `robuust`, `bestand-en-veiligheid`, `delen-kladblok-logica`, `voorbeeld-eigen-logica`, `voorbeeld-herladen-logica`. Geef ze geen korte tijdslimiet; `robuust` schrijft pas op het einde iets uit.
+- De testbrowser weigert de bewegingssensor zonder te vragen; `kompas` zet daarom zelf de toestemming op toegestaan.

@@ -19,6 +19,7 @@ const EXTRA = {
 const VB = '#example, #vb-load, #vb-show, [data-act="example"], #vbLoad, [data-vb="start"], #exampleBtn, #example-btn';
 const EIG = '#vb-eigen, [data-act="vb-eigen"], #vbEigen, [data-vb="eigen"]';
 const fout = []; const ok = (c, m) => { console.log((c ? '  ok   ' : '  FOUT ') + m); if (!c) fout.push(m); };
+// vbId telt niet mee in de vergelijking: dat is het merkje "dit kwam uit voorbeeld X", dat de Systeemkaart zelf opruimt zodra de lijst van jou is. Geen werk.
 const init = (proj) => {
   let k; Object.defineProperty(window, 'ocKop', { configurable: true, get: () => k, set: v => { k = v; const o = v.vooraf; v.vooraf = function (x) { window.__vo = x; return o.apply(this, arguments); }; } });
   if (!localStorage.getItem('oc.welkom')) { localStorage.setItem('oc.welkom', '1'); if (proj) { localStorage.setItem('oc.project', JSON.stringify({ name: proj, since: 1 })); localStorage.setItem('oc-app.projects', JSON.stringify([proj, 'Fietsplan'])); } }
@@ -30,7 +31,7 @@ const stand = (xVan, xLeeg, xLijst) => { const o = window.__vo || {}; let d = nu
   let app = ''; try { app = JSON.parse(localStorage.getItem('oc.project')).name; } catch (e) {}
   const t = [...document.querySelectorAll('.oc-toast, .toast, #toast')].map(e => e.textContent.replace(/\s+/g, ' ').trim()).filter(Boolean).join(' / ');
   return { app, toast: t, start: !![...document.querySelectorAll('.oc-start')].find(e => e.getClientRects().length && !e.closest('[hidden]')),
-    cur: d && (d.current || null), L: arr.map(u => ({ id: u.id, p: String(van(u) || ''), naam: String(u.name || u.naam || ''), vb: !!u.voorbeeld, leeg: !!leeg(u), json: JSON.stringify(u).length })) }; };
+    cur: d && (d.current || null), L: arr.map(u => ({ id: u.id, p: String(van(u) || ''), naam: String(u.name || u.naam || ''), vb: !!u.voorbeeld, leeg: !!leeg(u), json: JSON.stringify(u, (k, v) => k === 'vbId' ? undefined : v).length })) }; };
 (async () => {
   const b = await chromium.launch();
   for (const t of TOOLS) {
