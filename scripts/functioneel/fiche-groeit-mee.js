@@ -41,12 +41,10 @@ const fout = []; const ok = (c, m) => { console.log((c ? '  ok   ' : '  FOUT ') 
   f = await volgende(); console.log('balk:', await balk());
   await f.evaluate(() => { addRoles('Sara\nJonas\nLeen'); }); await p.waitForTimeout(500);
   console.log('  raci rollen:', await p.evaluate(() => JSON.parse(localStorage.getItem('raci.v1')).mats.map(m => m.name + ': ' + m.roles.map(r => r.name).join(',')).join(' | ')));
-  // ---- stap 5: Takenbord
-  f = await volgende(); console.log('balk:', await balk());
-  // ---- stap 6: slotstap
-  ok(/Kijk na en laat aftekenen/.test(await p.textContent('#pathbar .pb-next')), 'volgende knop na het Takenbord: ' + (await p.textContent('#pathbar .pb-next')).replace(/\s+/g, ' ').trim());
+  // ---- stap 5: de opdracht aftekenen, na de planning en vóór het Takenbord
+  ok(/Opdracht: aftekenen/.test(await p.textContent('#pathbar .pb-next')), 'volgende knop na de RACI-matrix: ' + (await p.textContent('#pathbar .pb-next')).replace(/\s+/g, ' ').trim());
   f = await volgende(); await p.waitForTimeout(800); f = await fr(); console.log('balk:', await balk());
-  ok(/6 van 7/.test(await balk()), 'slotstap is stap 6 van 7');
+  ok(/5 van 7/.test(await balk()), 'aftekenen is stap 5 van 7');
   ok(/toon=alles/.test(f.url()), 'fiche opent met alle vakken: ' + f.url());
   await shot('5-slot-boven');
   const st = await f.evaluate(() => { const o = cur(); return { vol: o.vol, ms: o.mijlpalen.map(x => x.text + ' ' + x.date), team: o.kernteam, od: (document.querySelector('[data-onderdelen]') || {}).textContent, status: document.getElementById('status-row').textContent.trim(), bronMs: (document.querySelector('[data-bron="mijlpalen"]') || {}).textContent, bronT: (document.querySelector('[data-bron="kernteam"]') || {}).textContent }; });

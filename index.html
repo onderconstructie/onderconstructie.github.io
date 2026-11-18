@@ -4932,7 +4932,7 @@ const TRAJECTEN = [
     foot:'Betrokkenen, sponsor, impact en klimaat voeden samen het Veranderprofiel.',
     q:{} },   // geen aparte vragen: de stappen tonen de ondertitel van de tool zelf, zo staat er overal hetzelfde
   { id:'project', title:'Start een project', note:'Van vertrekpunt tot terugblik',
-    q:{ opdracht:'Wat is de opdracht?', gap:'Waar staan we, waar willen we heen?', meetplan:'Hoe weet je dat het lukt?', prioriteit:'Wat eerst?', raci:'Wie doet wat?', 'project-realisme':'Is het haalbaar?', projectbudget:'Wat kost het?',
+    q:{ opdracht:'Vijf vragen. De rest volgt vanzelf.', gap:'Waar staan we, waar willen we heen?', meetplan:'Hoe weet je dat het lukt?', prioriteit:'Wat eerst?', raci:'Wie doet wat?', 'project-realisme':'Is het haalbaar?', projectbudget:'Wat kost het?',
         sprint:'Wat past er in deze sprint?',
         kanban:'Het werk zelf', 'project-radar':'Hoe staat het project ervoor?', dossier:'Wat leg je voor aan de stuurgroep?', retro:'Wat nemen we mee?', cockpit:'Alles op één bord' } },
   { id:'proces', title:'Verbeter een proces', note:'Van hoe het nu loopt naar hoe het beter kan',
@@ -4976,7 +4976,7 @@ const STAP_EXTRA = {
     { na:'verhaal', id:'schets', zoek:'?sjabloon=moodbord', title:'Moodbord', sub:'Welke sfeer heeft je verhaal?', icon:SJ_ICON.moodbord, klaar:() => heeftSchets('moodbord', true), gevuld:() => heeftSchets('moodbord', true), open:() => heeftSchets('moodbord', false, true) },
     { na:'schets', id:'schets', zoek:'?sjabloon=storyboard', title:'Storyboard', sub:'Zes beelden, je verhaal staat er al onder', icon:SJ_ICON.storyboard, klaar:() => heeftSchets('storyboard', true), gevuld:() => heeftSchets('storyboard', true), open:() => heeftSchets('storyboard', false, true) }
   ],
-  project: [{ na:'kanban', id:'opdracht', zoek:'?toon=alles', title:'Kijk na en laat aftekenen', sub:'Je fiche is aangevuld. Klopt alles?', klaarTekst:'afgetekend', klaar:() => ficheAfgetekend(), gevuld:() => ficheAfgetekend() },
+  project: [{ na:'project-realisme', id:'opdracht', zoek:'?toon=alles', title:'Opdracht: aftekenen', sub:'Je fiche is aangevuld. Kijk na en laat aftekenen.', klaarTekst:'afgetekend', klaar:() => ficheAfgetekend(), gevuld:() => ficheAfgetekend() },
     { na:'opdracht', id:'mindmap', zoek:'?sjabloon=productboom', title:'Productboom', sub:'Wat lever je op?', icon:SJ_ICON.productboom, klaar:() => heeftSjabloon('productboom'), gevuld:() => heeftSjabloon('productboom', true), open:() => heeftSjabloon('productboom', false, true) }]
 };
 /* Brug: één ja/nee-vraag op één moment in een plan. Ja neemt stappen uit een ander plan erbij; nee wordt onthouden en de vraag verdwijnt.
@@ -4998,9 +4998,14 @@ const MEE = ['cockpit', 'beslissingen', 'risico'];
 const LOOPT_MEE = { project:MEE, proces:MEE, verandering:MEE };
 const meeVan = trId => (LOOPT_MEE[trId] || []).map(id => byId[id]).filter(Boolean);
 // De stappen van een plan: de tools met oc:traject, aangevuld met de extra stappen hierboven en met de stappen van een brug waarop je ja zei
+/* In een plan kan een stap anders heten dan de tool. De Projectopdracht komt twee keer voor: eerst alleen de kern (vijf vragen),
+   na de planning (productboom, tijdlijn, rollen, en in het uitgebreide plan ook budget en haalbaarheid) de hele fiche om na te kijken en af te tekenen, vóór het werk begint.
+   De namen zeggen dat, zodat het geen herhaling lijkt. */
+const STAP_NAAM = { project: { opdracht: { title:'Opdracht: de kern' } } };
 function trajectStappen(trId) {
   const mee = LOOPT_MEE[trId] || [];
-  const st = TOOLS.flatMap(t => (t.traject || []).filter(x => x.naam === trId).map(x => ({ t, n: x.stap }))).filter(s => !mee.includes(s.t.id)).sort((a, b) => a.n - b.n);
+  const naam = STAP_NAAM[trId] || {};
+  const st = TOOLS.flatMap(t => (t.traject || []).filter(x => x.naam === trId).map(x => ({ t: naam[t.id] ? Object.assign({}, t, naam[t.id]) : t, n: x.stap }))).filter(s => !mee.includes(s.t.id)).sort((a, b) => a.n - b.n);
   (STAP_EXTRA[trId] || []).forEach(x => {
     const b = byId[x.id], i = st.findIndex(s => s.t.id === x.na); if (!b || i < 0) return;
     st.splice(i + 1, 0, { t: Object.assign({}, b, { title:x.title, sub:x.sub, desc:x.sub, icon:x.icon || b.icon, zoek:x.zoek, extra:x }), n: st[i].n });
