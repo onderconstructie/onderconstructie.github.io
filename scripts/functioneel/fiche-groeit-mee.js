@@ -23,7 +23,7 @@ const fout = []; const ok = (c, m) => { console.log((c ? '  ok   ' : '  FOUT ') 
   if (await f.isVisible('#begin-btn')) { await f.click('#begin-btn'); await p.waitForTimeout(700); } await f.evaluate(() => document.activeElement && document.activeElement.blur()); await shot('2-kern-leeg');
   let m = await meet(f); console.log('kern leeg:', JSON.stringify(m));
   ok(m.velden === 5, 'kern toont 5 vakken (was 20): ' + m.velden); ok(m.afgesneden === 0, 'geen afgesneden voorbeeldtekst'); ok(!m.breed, 'geen zijwaarts scrollen'); ok(m.schermen <= 2.2, 'kern past in ruim 2 schermen: ' + m.schermen);
-  ok(!(await f.isVisible('#secnav')) && !(await f.isVisible('#controle')) && !(await f.isVisible('#s-teken')), 'kern: geen nummers, geen controle, geen aftekenen');
+  ok(!(await f.isVisible('#slot-intro')) && !(await f.isVisible('#secnav')) && !(await f.isVisible('#controle')) && !(await f.isVisible('#s-teken')), 'kern: geen nummers, geen controle, geen aftekenen');
   await f.fill('#f-waarom', 'Aanvragers wachten nu drie weken op een beslissing.'); await f.fill('[data-list="doelen"] [data-i="0"]', 'Een beslissing binnen 10 werkdagen'); await f.fill('#f-opleveren', 'Een online loket voor premies'); await f.fill('#f-opdrachtgever', 'An Peeters, directeur'); await f.fill('#f-einddatum', '2027-06-30');
   await p.waitForTimeout(500); ok(await f.isVisible('[data-kern-ok]'), 'melding: de kern staat erin'); await f.evaluate(() => scrollTo(0, 0)); await shot('3-kern-vol');
   await f.evaluate(() => scrollTo(0, 99999)); await p.waitForTimeout(200); await shot('4-kern-rest');
@@ -46,6 +46,8 @@ const fout = []; const ok = (c, m) => { console.log((c ? '  ok   ' : '  FOUT ') 
   f = await volgende(); await p.waitForTimeout(800); f = await fr(); console.log('balk:', await balk());
   ok(/5 van 7/.test(await balk()), 'aftekenen is stap 5 van 7');
   ok(/toon=alles/.test(f.url()), 'fiche opent met alle vakken: ' + f.url());
+  ok(await f.isVisible('#slot-intro') && /Je hoeft niets opnieuw in te vullen/.test(await f.textContent('#slot-intro')), 'bovenaan staat dat dit nakijken is, geen tweede keer invullen');
+  await f.click('#slot-naar'); await p.waitForTimeout(900); ok(await f.evaluate(() => { const r = document.getElementById('s-teken').getBoundingClientRect(); return r.top < innerHeight && r.bottom > 0; }), 'de knop brengt je naar het vak Aftekenen'); await f.evaluate(() => scrollTo(0, 0)); await p.waitForTimeout(300);
   await shot('5-slot-boven');
   const st = await f.evaluate(() => { const o = cur(); return { vol: o.vol, ms: o.mijlpalen.map(x => x.text + ' ' + x.date), team: o.kernteam, od: (document.querySelector('[data-onderdelen]') || {}).textContent, status: document.getElementById('status-row').textContent.trim(), bronMs: (document.querySelector('[data-bron="mijlpalen"]') || {}).textContent, bronT: (document.querySelector('[data-bron="kernteam"]') || {}).textContent }; });
   console.log('  fiche:', JSON.stringify(st));

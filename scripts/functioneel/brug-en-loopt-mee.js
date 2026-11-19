@@ -139,13 +139,14 @@ const ok = (c, wat, extra) => { n++; if (!c) { fouten++; console.log('  FOUT: ' 
   await vulNu('Onderweg'); await p.waitForTimeout(900);
   ok(!(await dlgOpen()), 'in de Projectopdracht zelf komt de vraag nog niet');
   await p.click('#pathbar .pb-next'); await p.waitForTimeout(1500);
-  ok(await dlgOpen(), 'ingevulde Projectopdracht: de vraag komt bij aankomst in de volgende stap');
-  ok(await p.evaluate(() => current) === 'mindmap', 'je staat dan al in de Productboom', await p.evaluate(() => current));
+  ok(await dlgOpen(), 'ingevulde Projectopdracht: de vraag komt als je op Volgende tikt');
+  ok(await p.evaluate(() => current) === 'opdracht' && /Nog één vraag bij je opdracht/.test(await p.textContent('#brug-dlg')), 'je staat dan nog in de Projectopdracht: de vraag hoort bij de opdracht', await p.evaluate(() => current));
   ok(await p.evaluate(() => document.activeElement.id) === 'brug-ja', 'focus staat in het venster');
   await p.screenshot({ path: SHOTS + '/7-vraag-onderweg.png' });
   await p.keyboard.press('Tab'); ok(await p.evaluate(() => document.activeElement.id) === 'brug-nee', 'Tab blijft in het venster');
   await p.click('#brug-ja'); await p.waitForTimeout(600);
   ok(!(await dlgOpen()), 'na Ja sluit het venster');
+  await p.waitForTimeout(1200); ok(await p.evaluate(() => current) === 'mindmap', 'na het antwoord ga je door naar de Productboom', await p.evaluate(() => current));
   ok(/van 8/.test(await p.evaluate(() => document.getElementById('pathbar').innerText)), 'de balk telt de Impactanalyse mee', await p.evaluate(() => document.getElementById('pathbar').innerText.replace(/\s+/g, ' ')));
   await p.click('#pathbar .pb-next'); await p.waitForTimeout(1500);
   ok(await p.evaluate(() => current) === 'impact', 'na de Productboom komt de Impactanalyse', await p.evaluate(() => current));
@@ -175,9 +176,11 @@ const ok = (c, wat, extra) => { n++; if (!c) { fouten++; console.log('  FOUT: ' 
     localStorage.setItem('oc.share.opdracht', JSON.stringify({ lists: [{ name: 'Lopend', items: [{ text: 'Doel' }] }] })); renderPaths(); showHome(); });
   await p.waitForTimeout(300);
   await p.click('#paths .path[data-path="project"] ol.steps .step-btn[data-id="tijdlijn"]'); await p.waitForTimeout(1800);
-  ok(await p.evaluate(() => current) === 'tijdlijn' && await dlgOpen(), 'lopend project: de vraag komt als je een latere stap opent', await p.evaluate(() => current));
-  await p.click('#brug-nee'); await p.waitForTimeout(400);
-  ok(!(await dlgOpen()) && await p.evaluate(() => brugVan('project')) === 'nee', 'lopend project: Nee wordt onthouden');
+  ok(await p.evaluate(() => current) === 'tijdlijn' && !(await dlgOpen()), 'lopend project: een latere stap openen geeft geen venster', await p.evaluate(() => current));
+  await p.evaluate(() => { showHome(); renderPaths(); }); await p.waitForTimeout(400);
+  ok(await p.isVisible('#paths .path[data-path="project"] .brug'), 'lopend project: de vraag staat in het plan, onder stap 1');
+  await p.click('#paths .path[data-path="project"] .brug [data-brug="nee"]'); await p.waitForTimeout(400);
+  ok(await p.evaluate(() => brugVan('project')) === 'nee', 'lopend project: Nee wordt onthouden');
   // een los geopende tool hoort niet bij het plan: geen vraag
   await p.evaluate(() => { zetProject('Los'); showHome(); renderPaths(); }); await p.waitForTimeout(300);
   await p.evaluate(() => { const k = document.querySelector('#view-fase [data-id="tijdlijn"], #alle [data-id="tijdlijn"], [data-id="tijdlijn"]:not(.step-btn)'); if (k) k.click(); }); await p.waitForTimeout(1500);
