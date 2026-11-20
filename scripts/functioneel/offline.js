@@ -8,12 +8,14 @@ const tools = JSON.parse(fs.readFileSync(process.env.TOOLS || require('path').jo
   await p.goto(B + '/', { waitUntil: 'networkidle' });
   let n = 0, tot = tools.length; const t0 = Date.now();
   for (let i = 0; i < 90; i++) { n = await p.evaluate(async (paths) => { const ks = await caches.keys(); let n = 0; for (const k of ks) { const c = await caches.open(k); for (const u of paths) if (await c.match(u)) n++; } return n; }, tools.map(t => t.path)); if (n >= tot) break; await p.waitForTimeout(1500); }
+  // wacht tot de service worker de pagina ook bestuurt: pas dan kan ze zonder internet herladen (anders meet je de timing van de test, niet de app)
+  for (let i = 0; i < 20 && !(await p.evaluate(() => !!navigator.serviceWorker.controller)); i++) await p.waitForTimeout(500);
   const sec = Math.round((Date.now() - t0) / 1000);
   const groot = await p.evaluate(async () => { let b = 0, n = 0; for (const k of await caches.keys()) { const c = await caches.open(k); for (const r of await c.keys()) { const x = await c.match(r); const bl = await x.blob(); b += bl.size; n++; } } return { mb: Math.round(b / 104857.6) / 10, n, sw: !!navigator.serviceWorker.controller }; });
   console.log(`bewaard: ${n}/${tot} tools na ${sec}s; cache ${groot.mb} MB in ${groot.n} bestanden; sw actief: ${groot.sw}`);
   await c.setOffline(true); const R = {};
   // de app zelf offline
-  await p.reload({ waitUntil: 'load' }).catch(e => console.log('app offline FOUT', String(e).slice(0, 80))); await p.waitForTimeout(600);
+  let appFout = 0; await p.reload({ waitUntil: 'load' }).catch(e => { appFout = 1; console.log('app offline FOUT', String(e).slice(0, 80)); }); await p.waitForTimeout(600);
   console.log('app offline: tegels', await p.evaluate(() => document.querySelectorAll('.stile').length));
   for (const t of tools) { const q = await c.newPage(), N = [], E = []; q.on('requestfailed', r => N.push(r.url().replace(B, '').slice(0, 70))); q.on('pageerror', e => E.push(String(e).slice(0, 90)));
     let ok = false; try { await q.goto(B + t.path, { waitUntil: 'load', timeout: 12000 }); await q.waitForTimeout(500); ok = await q.evaluate(() => !!document.querySelector('h1') && document.body.innerText.length > 40);
@@ -22,5 +24,5 @@ const tools = JSON.parse(fs.readFileSync(process.env.TOOLS || require('path').jo
     } catch (e) { E.push('LAAD ' + String(e).slice(0, 80)); }
     if (!ok || N.length || E.length) R[t.id] = { ok, N: [...new Set(N)].slice(0, 5), E: E.slice(0, 3) }; await q.close(); }
   console.log('offline problemen:', Object.keys(R).length); Object.entries(R).forEach(([k, r]) => console.log(' ', k, JSON.stringify(r)));
-  fs.writeFileSync('offline.json', JSON.stringify(R)); await b.close();
+  fs.writeFileSync('offline.json', JSON.stringify(R)); await b.close(); process.exit(appFout || Object.keys(R).length ? 1 : 0);
 })();
