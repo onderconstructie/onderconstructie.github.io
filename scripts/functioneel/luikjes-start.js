@@ -7,8 +7,8 @@ const fout = []; const ok = (c, m) => { console.log((c ? '  ok   ' : '  FOUT ') 
     await p.goto(B + '/', { waitUntil:'networkidle' }); await p.waitForTimeout(800);
     const zicht = sel => p.isVisible(sel), stand = () => p.evaluate(() => ['mywork', 'onlangs', 'favs'].map(i => document.getElementById(i + '-luik').getAttribute('aria-expanded')).join());
     const pijlen = () => p.evaluate(() => [...document.querySelectorAll('.luik-k')].filter(e => e.getClientRects().length).map(e => { const r = e.getBoundingClientRect(); return Math.round(r.left) + '/' + Math.round(r.width) + 'x' + Math.round(r.height); }));
-    // vanaf 1200 px staan je favorieten in de tweede kolom: daar staat hun pijltje aan de rechterrand van die kolom, de andere staan gelijk
-    const zelfdeX = a => a.length && a.every(x => /\/44x44$/.test(x)) && (w < 1200 ? a.every(x => x === a[0]) : a.slice(0, -1).every(x => x === a[0]) && parseInt(a[a.length - 1]) > parseInt(a[0]));
+    // vanaf 1000 px staan je favorieten in de tweede kolom: daar staat hun pijltje aan de rechterrand van die kolom, de andere staan gelijk
+    const zelfdeX = a => a.length && a.every(x => /\/44x44$/.test(x)) && (w < 1000 ? a.every(x => x === a[0]) : a.slice(0, -1).every(x => x === a[0]) && parseInt(a[a.length - 1]) > parseInt(a[0]));
     // standaard: alles open, behalve Onlangs op een gsm
     ok(await stand() === (w < 700 ? 'true,false,true' : 'true,true,true'), w + ': standaard ' + (w < 700 ? 'alleen Onlangs dicht' : 'alles open') + ' (' + await stand() + ')');
     ok(await zicht('#resume') && await zicht('#fav-grid .fav-tile'), w + ': de grote knop en de favorieten staan er');

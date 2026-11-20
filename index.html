@@ -2091,22 +2091,16 @@ html.oc-stil .n-puls, html.oc-stil .n-halo, html.oc-stil .n-far circle { animati
    Geen vaste sprong: de inhoud neemt een vast deel van het scherm, met een bovengrens. Hoe breder, hoe meer naast elkaar. */
 @media (min-width:900px) {
   .header-inner, .main { max-width:min(92vw, 1160px); }
+  .ft { max-width:calc(min(92vw, 1160px) - 2.5rem); }   /* de voetlijn loopt even breed als de inhoud */
   #results, .results { max-width:760px; margin-left:auto; margin-right:auto; }   /* zoekresultaten blijven op leesbreedte */
 }
-@media (min-width:1000px) {
-  /* stappenplannen naast elkaar, groepen in twee kolommen */
-  .plan-keuze { grid-template-columns:repeat(2, minmax(0, 1fr)); align-items:start; }
-  #groups { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); column-gap:1rem; align-items:start; }
-  body.filtering #groups { display:none; }
-  .tabgroup:not([hidden]) { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); column-gap:1rem; align-items:start; }
-  .tabgroup > :not(.group) { grid-column:1 / -1; }
+/* Tablet (vanaf 700 px): de stappenplannen staan naast elkaar. */
+@media (min-width:700px) {
+  .plan-keuze { grid-template-columns:repeat(2, minmax(0, 1fr)); align-items:stretch; }
 }
-/* Twee kolommen en een oneven aantal groepen: de laatste neemt de volle breedte, geen gat ernaast. */
-@media (min-width:1000px) and (max-width:1199.98px) { #home[data-tab="projecten"] #groups > .g-laatste { grid-column:1 / -1; } }
-@media (min-width:1200px) {
-  .start:not(.compact) .stiles { grid-template-columns:repeat(3, minmax(0, 1fr)); gap:0.75rem; }
-  /* Drie groepen: drie naast elkaar, zodat er geen alleen op een tweede rij hangt. */
-  #home[data-tab="projecten"] #groups[data-n="3"] { grid-template-columns:repeat(3, minmax(0, 1fr)); }
+/* Vanaf 1000 px (iPad liggend, grote iPad staand, laptop) krijgt Start twee kolommen die van boven tot onder doorlopen.
+   Smaller dan dat wordt de kaart "Verder" te krap: daar blijft alles onder elkaar. */
+@media (min-width:1000px) {
   /* Start voor wie al werk of favorieten heeft: alles in twee kolommen, van boven naar onder. Eerst waar je was naast je favorieten,
      daaronder de doelen, twee per rij. Eén leesrichting, dezelfde twee kolommen over de hele pagina. */
   #home[data-tab="start"] .main:has(> #mywork:not([hidden]), > #favs:not([hidden])) { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); column-gap:0.75rem; align-items:start; align-content:start; }
@@ -2116,6 +2110,27 @@ html.oc-stil .n-puls, html.oc-stil .n-halo, html.oc-stil .n-far circle { animati
   /* de twee koppen op één lijn, de kaart en de favorieten ook */
   #home[data-tab="start"] .main:has(> #mywork:not([hidden])):has(> #favs:not([hidden])) > #favs .favs-head { margin:-2px 0 2px; }
   #home[data-tab="start"] .main:has(> #mywork:not([hidden]), > #favs:not([hidden])) .start:not(.compact) .stiles { grid-template-columns:repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width:1000px) {
+  /* groepen in twee kolommen */
+  #groups { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); column-gap:1rem; align-items:start; }
+  body.filtering #groups { display:none; }
+  .tabgroup:not([hidden]) { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); column-gap:1rem; align-items:start; }
+  .tabgroup > :not(.group) { grid-column:1 / -1; }
+}
+/* Twee kolommen en een oneven aantal groepen: de laatste neemt de volle breedte, geen gat ernaast. */
+@media (min-width:1000px) and (max-width:1199.98px) { #home[data-tab="projecten"] #groups > .g-laatste { grid-column:1 / -1; } }
+@media (min-width:1000px) and (max-width:1599.98px) { .tabgroup:not([hidden]) > .group:nth-child(odd of .group):nth-last-child(1 of .group) { grid-column:1 / -1; } }
+/* Staan alle groepen dicht, dan zijn de kaarten in één rij even hoog. Open je er één, dan groeit alleen die. */
+@media (min-width:1000px) {
+  #groups:not(:has(> .group:not(.collapsed))), .tabgroup:not([hidden]):not(:has(> .group:not(.collapsed))) { align-items:stretch; }
+  .group.collapsed { display:flex; flex-direction:column; }
+  .group.collapsed > .group-head { flex:1 1 auto; }
+}
+@media (min-width:1200px) {
+  .start:not(.compact) .stiles { grid-template-columns:repeat(3, minmax(0, 1fr)); gap:0.75rem; }
+  /* Drie groepen: drie naast elkaar, zodat er geen alleen op een tweede rij hangt. */
+  #home[data-tab="projecten"] #groups[data-n="3"] { grid-template-columns:repeat(3, minmax(0, 1fr)); }
 }
 /* Twee delen naast elkaar: links is een rustige zijkolom. De kop rechts roept niet harder dan nodig, en wat je zelden nodig hebt
    (Reservekopie staat ook onderaan, leegmaken is een kruisje) verschijnt pas als je dat deel aanwijst of er met Tab in komt. */
