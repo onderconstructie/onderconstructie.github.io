@@ -36,8 +36,8 @@ const ok = (c, wat, extra) => { n++; if (!c) { fouten++; console.log('  FOUT: ' 
   ok(['stakeholders', 'sponsor', 'impact', 'klimaat', 'veranderprofiel', 'communicatie', 'weerstand', 'gedrag', 'goesting', 'energie'].every(id => v.ids.includes(id)), 'Verandering: de acht verandertools plus Goestingmeter en Energiekaart', v.ids);
   ok(/^Gedrag: systeemkaart gedrag kantelpunt$/.test(v.kopjes[1]), 'kopje Gedrag bevat Systeemkaart, Gedragsverandering en Kantelpunt', v.kopjes[1]);
   ok(v.meta.startsWith(v.ids.length + ' tools'), 'de teller in de kop klopt', v.meta);
-  ok(!T.projecten.ids.some(id => ['impact', 'weerstand', 'gedrag'].includes(id)) && T.projecten.kopjes.length === 4, 'Projecten: vier groepen, zonder de verandertools', T.projecten.kopjes.map(k => k.split(':')[0]));
-  ok(await p.evaluate(() => { setTab('projecten'); return document.getElementById('proj-ngroep').textContent; }) === '4', 'Projecten zegt 4 groepen');
+  ok(!T.projecten.ids.some(id => ['impact', 'weerstand', 'gedrag'].includes(id)) && T.projecten.kopjes.length === 3, 'Projecten: drie groepen, zonder de verandertools', T.projecten.kopjes.map(k => k.split(':')[0]));
+  ok(await p.evaluate(() => { setTab('projecten'); return document.getElementById('proj-ngroep').textContent; }) === '3', 'Projecten zegt 3 groepen');
   const z = T.zakmes;
   ok(z.kopjes.some(k => /^Even pauze: adem hier hart klankkast bingo$/.test(k)), 'Zakmes: kopje Even pauze met rust en een glimlach', z.kopjes);
   ok(T.vergaderen.ids.includes('pluim') && T.vergaderen.ids.includes('bingo'), 'Vergaderen: Pluim en Buzzwordbingo staan er nog');
