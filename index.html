@@ -2031,6 +2031,40 @@ html.oc-stil .n-puls, html.oc-stil .n-halo, html.oc-stil .n-far circle { animati
 @keyframes pb-vink { to { stroke-dashoffset:0; } }
 @media (prefers-reduced-motion:reduce) { .pb-vink path { animation:none; stroke-dashoffset:0; } }
 @media (min-width:700px) { .pb-duim { display:none !important; } }
+/* ===== Luikjes op Start: "Verder waar je was" en "Je favorieten" klap je dicht met een tik op de titel =====
+   Dicht blijft er één rustige regel over: de titel, wat erin zit, en een pijltje. De keuze wordt onthouden. */
+.luik { display:inline-flex; align-items:center; gap:0.5rem; max-width:100%; min-height:44px; margin:-0.5rem 0 -0.5rem -0.5rem; padding:0 0.5rem; border:0; border-radius:12px; background:none; font:inherit; color:inherit; letter-spacing:inherit; text-transform:inherit; text-align:left; cursor:pointer; }
+.luik > span:first-child { white-space:nowrap; }
+.luik-pijl { flex:none; width:16px; height:16px; color:var(--slate-400); transition:transform 0.18s; }
+.luik[aria-expanded="false"] .luik-pijl { transform:rotate(-90deg); }
+.luik-som { display:none; font-size:0.875rem; font-weight:500; letter-spacing:0; text-transform:none; color:var(--slate-500); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+@media (hover:hover) { .luik:hover { background:var(--slate-100); } .luik:hover .luik-pijl { color:var(--slate-600); } }
+.luik:focus-visible { outline:2px solid #047857; outline-offset:2px; }
+@media (prefers-reduced-motion:reduce) { .luik-pijl { transition:none; } }
+/* dicht: alles onder de titel weg, de titel wordt een kaartje over de hele breedte */
+.mywork.dicht > :not(.mw-h), .favs.dicht .fav-grid, .favs.dicht .favs-edit, .favs.dicht .favs-alle { display:none !important; }
+.mywork.dicht, .favs.dicht { margin-bottom:0.625rem; }
+.mywork.dicht > .mw-h, .favs.dicht .favs-head .section-label { grid-column:1 / -1; flex:1; min-width:0; padding:0; white-space:normal; }
+.favs.dicht .favs-head { margin-bottom:0; }
+.dicht .luik { display:flex; width:100%; margin:0; padding:0 0.875rem 0 1rem; min-height:52px; border-radius:16px; background:var(--wit); box-shadow:inset 0 0 0 1px var(--slate-200); }
+.dicht .luik > span:first-child { flex:none; }
+.dicht .luik .luik-som { display:block; flex:1; text-align:right; }
+.dicht .luik .luik-pijl { margin-left:0.125rem; }
+@media (hover:hover) { .dicht .luik:hover { background:var(--wit); box-shadow:inset 0 0 0 1px var(--slate-300), 0 2px 8px -4px rgba(15,23,42,0.18); } }
+.favs.dicht + .fav-hint { display:none; }
+.favs.dicht { margin-bottom:1.5rem; }
+.mywork.dicht:has(+ .favs[hidden]) { margin-bottom:1.5rem; }
+/* Onlangs: de lijst in één keer leegmaken (je werk blijft staan), en terugzetten */
+.cont-leeg, .favs-alle { min-height:44px; padding:0 0.5rem; border:0; border-radius:10px; background:none; font:inherit; font-size:0.8125rem; font-weight:600; color:var(--slate-500); cursor:pointer; }
+.favs-alle { color:#b91c1c; font-size:0.875rem; margin-left:auto; }
+.favs-alle[hidden] { display:none; }
+.recent-row .cont-leeg { order:3; margin-left:auto; }
+@media (hover:hover) { .cont-leeg:hover { background:var(--slate-100); color:var(--slate-700); } .favs-alle:hover { background:#fef2f2; } }
+.cont-leeg:focus-visible, .favs-alle:focus-visible, .cont-terug button:focus-visible { outline:2px solid #047857; outline-offset:2px; }
+@media (max-width:699.98px), (hover:none) { .recent-row .cont-h { flex:1 1 0; } .recent-row .cont-leeg { order:0; margin:-0.75rem -0.25rem -0.5rem auto; } .recent-row .cont { order:1; } }
+.cont-terug { margin:0.75rem 0.25rem 0; font-size:0.875rem; color:var(--slate-600); }
+.cont-terug[hidden] { display:none; }
+.cont-terug button { min-height:44px; padding:0 0.375rem; border:0; background:none; font:inherit; font-weight:700; color:var(--accent-dark); text-decoration:underline; text-underline-offset:3px; cursor:pointer; }
 /* ===== Breed scherm (vanaf 1200px): de breedte benutten ===== */
 @media (min-width:1200px) {
   .header-inner, .main { max-width:1160px; }
@@ -2644,10 +2678,11 @@ window.ocProjectkiezer = function (plek, o) {
 
     <!-- 1. Verder waar je was: één grote knop naar je laatste tool of volgende stap, daaronder wat je onlangs gebruikte (verschijnt zodra er iets is) -->
     <section class="mywork" id="mywork" hidden aria-labelledby="mywork-h">
-      <h2 class="section-label mw-h" id="mywork-h">Verder waar je was</h2>
+      <h2 class="section-label mw-h"><button type="button" class="luik" id="mywork-luik" data-luik="mywork" aria-expanded="true"><span id="mywork-h">Verder waar je was</span><small class="luik-som" id="mywork-som"></small><svg class="luik-pijl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></h2>
       <div class="resume-wrap" id="resume"></div>
       <p class="rs-open" id="rs-open" hidden></p>
-      <div class="recent-row" id="recent-row" hidden><h3 class="cont-h" id="cont-h">Onlangs</h3><div class="cont" id="cont" aria-labelledby="cont-h"></div></div>
+      <div class="recent-row" id="recent-row" hidden><h3 class="cont-h" id="cont-h">Onlangs</h3><button type="button" class="cont-leeg" id="cont-leeg" title="Haalt de lijst van Start. Je werk blijft staan.">Maak leeg</button><div class="cont" id="cont" aria-labelledby="cont-h"></div></div>
+      <p class="cont-terug" id="cont-terug" hidden>Lijst leeggemaakt. Je werk blijft staan. <button type="button" id="cont-terug-k">Zet terug</button></p>
       <!-- in de broncode na het werk (eerst je werk met Tab), op het scherm rechts naast de kop -->
       <span class="mw-btns"><button type="button" class="manage" id="manage" aria-haspopup="dialog" title="Reservekopie maken of terugzetten">Reservekopie</button>
         <button type="button" class="exit-btn" id="exit-mw" aria-haspopup="dialog" aria-label="Wissen: kies wat je van dit toestel wist" title="Wissen: kies wat je van dit toestel wist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg></button></span>
@@ -2655,7 +2690,7 @@ window.ocProjectkiezer = function (plek, o) {
 
     <!-- Je favorieten: vastgezet met het sterretje bovenaan een tool -->
     <section class="favs" id="favs" hidden aria-labelledby="favs-h">
-      <div class="favs-head"><h2 class="section-label" id="favs-h">Je favorieten</h2><button type="button" class="favs-edit" id="favs-edit" aria-pressed="false">Bewerk</button></div>
+      <div class="favs-head"><h2 class="section-label"><button type="button" class="luik" id="favs-luik" data-luik="favs" aria-expanded="true"><span id="favs-h">Je favorieten</span><small class="luik-som" id="favs-som"></small><svg class="luik-pijl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></h2><button type="button" class="favs-alle" id="favs-alle" hidden>Alle weg</button><button type="button" class="favs-edit" id="favs-edit" aria-pressed="false">Bewerk</button></div>
       <div class="fav-grid" id="fav-grid"></div>
     </section>
     <p class="fav-hint" id="fav-hint" hidden><span>Zet je favoriete tools hier vast: open een tool en tik bovenaan op het sterretje.</span><button type="button" class="fav-hint-x" id="fav-hint-x" aria-label="Verberg deze tip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></p>
@@ -3763,6 +3798,10 @@ let bordActief = '';   // het bord dat open staat in de Cockpit (de Cockpit meld
 const favKey = () => current === 'cockpit' && bordActief && bordVan(bordActief) ? 'cockpit#' + bordActief : current;
 const favs = () => (store.get('favs', []) || []).filter(id => byId[favBasis(id)] && (!favBord(id) || bordVan(favBord(id))));
 function setFavs(a) { store.set('favs', a); renderFavs(); syncFavBtn(); }
+// In Bewerk: alle favorieten in één keer losmaken. Twee tikken: de knop vraagt eerst "Zeker?".
+document.addEventListener('click', e => { const k = e.target.closest('#favs-alle'); if (!k) { const b = $('favs-alle'); if (b && b.dataset.zeker) { delete b.dataset.zeker; b.textContent = 'Alle weg'; } return; }
+  if (!k.dataset.zeker) { k.dataset.zeker = '1'; k.textContent = 'Zeker? Tik nog eens'; return; }
+  delete k.dataset.zeker; k.textContent = 'Alle weg'; favsEdit = false; setFavs([]); });
 function toggleFav(id) {
   if (!byId[favBasis(id)]) return;
   const voor = favs(), aan = voor.includes(id), nm = favTitel(id);
@@ -3774,12 +3813,26 @@ function syncFavBtn() {
   const aan = favs().includes(favKey()), lbl = (aan ? 'Haal van je startscherm' : 'Zet op je startscherm') + (favKey() !== current ? ': ' + favTitel(favKey()) : '');
   b.setAttribute('aria-pressed', String(aan)); b.setAttribute('aria-label', lbl); b.title = lbl;
 }
+/* Luikjes op Start: dicht of open, onthouden per toestel. De samenvatting naast de titel zegt wat erin zit. */
+const luikDicht = id => store.get('luik-dicht', []).includes(id);
+function syncLuik() {
+  for (const id of ['mywork', 'favs']) { const d = luikDicht(id); $(id).classList.toggle('dicht', d); $(id + '-luik').setAttribute('aria-expanded', String(!d)); }
+  const f = favs().length; $('favs-som').textContent = f === 1 ? '1 tool' : f + ' tools';
+}
+document.addEventListener('click', e => {
+  const k = e.target.closest('.luik[data-luik]'); if (!k) return;
+  const id = k.dataset.luik, a = store.get('luik-dicht', []);
+  store.set('luik-dicht', a.includes(id) ? a.filter(x => x !== id) : [...a, id]);
+  if (id === 'favs' && favsEdit) { favsEdit = false; renderFavs(); }
+  syncLuik();
+});
 function renderFavs() {
   const a = favs(), returning = document.body.classList.contains('returning');
   $('favs').hidden = !a.length;
   $('fav-hint').hidden = !!a.length || !returning || store.get('fav-hint-weg', false);
   if (!a.length) { favsEdit = false; $('fav-grid').innerHTML = ''; return; }
   $('favs-edit').textContent = favsEdit ? 'Klaar' : 'Bewerk'; $('favs-edit').setAttribute('aria-pressed', String(favsEdit));
+  $('favs-alle').hidden = !favsEdit || a.length < 2; syncLuik();
   $('favs').classList.toggle('bewerk', favsEdit);
   $('fav-grid').innerHTML = a.map((id, i) => { const t = byId[favBasis(id)], bd = favBord(id), nm = bd ? esc(afbreek(favTitel(id))) : naam(t), tl = favTitel(id), z = bd ? ` data-zoek="?bord=${esc(encodeURIComponent(bd))}"` : '';
     return favsEdit
@@ -3805,18 +3858,28 @@ function syncMywork() {
   $('mywork').classList.toggle('mw-leeg', !mwItems);
   $('mywork-h').textContent = mwItems ? 'Verder waar je was' : 'Je werk op dit toestel';
 }
+// Onlangs leegmaken: haalt de lijst van Start, niet je werk. "Zet terug" kan zolang je op Start blijft.
+let onlangsVorig = null;
+document.addEventListener('click', e => {
+  if (e.target.closest('#cont-leeg')) { onlangsVorig = store.get('onlangs-sinds', 0); store.set('onlangs-sinds', Date.now()); renderRecent(); const k = $('cont-terug-k'); if (k && !$('cont-terug').hidden) k.focus({ preventScroll:true }); }
+  else if (e.target.closest('#cont-terug-k')) { store.set('onlangs-sinds', onlangsVorig || 0); onlangsVorig = null; renderRecent(); const k = $('cont-leeg'); if (k) k.focus({ preventScroll:true }); }
+});
 function renderRecent() {
   const all = lsKeys(), usage = store.get('usage', {});
   // Erin: tools met jouw gegevens, en tools zonder opslag (timer, ademhaling…) die je de laatste twee weken opende.
   // Niet: een tool die je alleen even bekeek. Daar valt niets verder te doen.
+  const sinds = store.get('onlangs-sinds', 0);
   const now = Date.now(), ids = new Set(), gestart = startedPaths(), inPad = t => (t.traject || []).some(x => gestart.includes(x.naam));
   TOOLS.forEach(t => { const d = hasData(t, all), at = (usage[t.id] || {}).t || 0;
     if (busy.has(t.id) || d || ((d === null || inPad(t)) && at && now - at < 14 * 864e5)) ids.add(t.id); });
   const items = [...ids].map(id => ({ t: byId[id], at: (usage[id] || {}).t || 0, data: hasData(byId[id], all) }))
+    .filter(x => busy.has(x.t.id) || x.at > sinds)   // "Maak leeg": wat je daarvoor gebruikte, staat niet meer op Start tot je het weer opent
     .sort((a, b) => busy.has(b.t.id) - busy.has(a.t.id) || b.at - a.at).slice(0, 6);
   // Bovenaan Start: Reservekopie en Wissen staan er zodra er iets op het toestel staat, altijd op dezelfde plek.
   // "Verder waar je was" (de grote knop en Onlangs) verschijnt eronder zodra er een recente tool is.
   mwItems = items.length; syncMywork();
+  $('cont-terug').hidden = !(onlangsVorig !== null && !items.length);
+  $('mywork-som').textContent = items.length ? items[0].t.title + (items.length > 1 ? ' en ' + (items.length - 1) + ' meer' : '') : ''; syncLuik();
   $('myproj').hidden = !items.length;
   document.body.classList.toggle('returning', items.length > 0);
   // Eén grote knop: de volgende stap van je stappenplan (als je daar laatst mee bezig was), anders je laatste tool.
@@ -3835,7 +3898,7 @@ function renderRecent() {
     + `<button type="button" class="rs-o-x" data-rs-weg="${esc(hero.path.id)}" aria-label="Verberg deze regel" title="Verberg deze regel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>`;
   // Onlangs: alleen het icoon van de laatste vijf tools (de naam bij hover en voor schermlezers)
   const rest = items.filter(x => !hero || x.t.id !== hero.t.id).slice(0, 5);
-  $('recent-row').hidden = !rest.length;
+  $('recent-row').hidden = !items.length; $('cont-h').hidden = !rest.length;   // "Maak leeg" staat er zodra er iets op Start staat, ook als er alleen de grote knop is
   $('cont').innerHTML = rest.map(({ t, at }) => `<button class="rc-ic" data-id="${esc(t.id)}" data-tip="${esc(t.title)}${at ? ' · ' + ago(at) : ''}" aria-label="${esc(t.title)}${at ? ', ' + ago(at) : ''}"><span class="icon">${iconHTML(t.icon)}</span><span class="rc-nm" aria-hidden="true">${naam(t)}</span><span class="live-dot" aria-hidden="true"></span></button>`).join('');
   renderFavs();
   if (!projEdit) renderProject();
@@ -4583,7 +4646,7 @@ function fullExit() {
   });
 }
 // Wat de app zelf bijhoudt (toollijst, tellers) is geen werk van jou: die sleutels alleen tellen niet als "iets bewaard".
-const APP_QUIET = ['oc-app.tools-cache', 'oc-app.paths-started', 'oc-app.data-since', 'oc-app.route', 'oc-app.rs-open-weg'];   // route: kort of uitgebreid per plan, een instelling en geen werk
+const APP_QUIET = ['oc-app.luik-dicht', 'oc-app.onlangs-sinds', 'oc-app.tools-cache', 'oc-app.paths-started', 'oc-app.data-since', 'oc-app.route', 'oc-app.rs-open-weg'];   // route: kort of uitgebreid per plan, een instelling en geen werk
 function exitEntries() { return dataEntries().filter(e => e.t.id !== '__app' || e.keys.some(k => !APP_QUIET.includes(k))); }
 let exitList = [], exitOpener = null;
 let exitMode = 'all';
