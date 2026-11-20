@@ -2031,42 +2031,48 @@ html.oc-stil .n-puls, html.oc-stil .n-halo, html.oc-stil .n-far circle { animati
 @keyframes pb-vink { to { stroke-dashoffset:0; } }
 @media (prefers-reduced-motion:reduce) { .pb-vink path { animation:none; stroke-dashoffset:0; } }
 @media (min-width:700px) { .pb-duim { display:none !important; } }
-/* ===== Luikjes op Start: "Verder waar je was" en "Je favorieten" klap je dicht met een tik op de titel =====
-   Dicht blijft er één rustige regel over: de titel, wat erin zit, en een pijltje. De keuze wordt onthouden. */
-.luik { display:inline-flex; align-items:center; gap:0.5rem; max-width:100%; min-height:44px; margin:-0.5rem 0 -0.5rem -0.5rem; padding:0 0.5rem; border:0; border-radius:12px; background:none; font:inherit; color:inherit; letter-spacing:inherit; text-transform:inherit; text-align:left; cursor:pointer; }
+/* ===== Luikjes op Start: één logica, overal dezelfde =====
+   - In- of uitklappen: tik op de titel, of op het pijltje. Dat pijltje staat bij elk luikje helemaal rechts, op dezelfde plek,
+     open of dicht: je duim blijft op één plaats. Dicht blijft alleen de titel staan, met ernaast wat erin zit. Geen kader: zo licht mogelijk.
+   - Een kruisje: van Start halen (zoals bij de privacyregel, "Nog open" en de tip). Er verschijnt een regel "Zet terug".
+   - Het vuilbakje: echt wissen van het toestel. Dat is iets anders, en blijft alleen bij "Verder waar je was" staan. */
+.luik { display:inline-flex; align-items:center; gap:0.375rem; max-width:100%; min-height:44px; margin:-0.5rem 0 -0.5rem -0.5rem; padding:0 0.5rem; border:0; border-radius:12px; background:none; font:inherit; color:inherit; letter-spacing:inherit; text-transform:inherit; text-align:left; cursor:pointer; }
 .luik > span:first-child { white-space:nowrap; }
-.luik-pijl { flex:none; width:16px; height:16px; color:var(--slate-400); transition:transform 0.18s; }
-.luik[aria-expanded="false"] .luik-pijl { transform:rotate(-90deg); }
-.luik-som { display:none; font-size:0.875rem; font-weight:500; letter-spacing:0; text-transform:none; color:var(--slate-500); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
-@media (hover:hover) { .luik:hover { background:var(--slate-100); } .luik:hover .luik-pijl { color:var(--slate-600); } }
-.luik:focus-visible { outline:2px solid #047857; outline-offset:2px; }
+.luik-k { flex:none; display:grid; place-items:center; width:44px; height:44px; margin:-0.5rem -0.75rem -0.5rem 0; padding:0; border:0; border-radius:12px; background:none; color:var(--slate-400); cursor:pointer; }
+.luik-pijl { width:18px; height:18px; transition:transform 0.18s; }
+.dicht .luik-pijl { transform:rotate(-90deg); }
+@media (hover:hover) { .luik-k:hover { background:var(--slate-100); color:var(--slate-700); } }
+.luik-som { display:none; margin-left:0.25rem; font-size:0.875rem; font-weight:500; letter-spacing:0; text-transform:none; color:var(--slate-500); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+.dicht .luik .luik-som { display:block; }
+@media (hover:hover) { .luik:hover { background:var(--slate-100); } }
+.luik:focus-visible, .luik-x:focus-visible, .cont-terug button:focus-visible { outline:2px solid #047857; outline-offset:2px; }
 @media (prefers-reduced-motion:reduce) { .luik-pijl { transition:none; } }
-/* dicht: alles onder de titel weg, de titel wordt een kaartje over de hele breedte */
-.mywork.dicht > :not(.mw-h), .recent-row.dicht .cont, .recent-row.dicht .cont-leeg, .favs.dicht .fav-grid, .favs.dicht .favs-edit, .favs.dicht .favs-alle { display:none !important; }
-.mywork.dicht, .favs.dicht { margin-bottom:0.625rem; }
-.mywork.dicht > .mw-h, .favs.dicht .favs-head .section-label { grid-column:1 / -1; flex:1; min-width:0; padding:0; white-space:normal; }
-.favs.dicht .favs-head { margin-bottom:0; }
+/* dicht: alles onder de titel weg, verder verandert er niets aan de titel */
+.mywork.dicht > :not(.mw-h):not(.mw-btns), .mywork.dicht > .mw-btns > :not(.luik-k), .recent-row.dicht .cont, .recent-row.dicht .cont-leeg, .favs.dicht .fav-grid, .favs.dicht .favs-edit, .favs.dicht .favs-alle { display:none !important; }
+.mywork.dicht, .favs.dicht { margin-bottom:0.5rem; }
+.favs.dicht .favs-head { margin-bottom:0; min-height:44px; }
+.favs.dicht + .cont-terug + .fav-hint { display:none; }
 .recent-row .cont-h .luik { font-size:inherit; font-weight:inherit; color:inherit; }
-.recent-row.dicht { display:block; margin-top:0.625rem; }
-.mywork:has(> .recent-row.dicht) { margin-bottom:0.625rem; }
-.recent-row.dicht .cont-h { margin:0; font-size:1.0625rem; font-weight:700; color:var(--slate-900, #0f172a); }
-.dicht .luik { display:flex; width:100%; margin:0; padding:0 0.875rem 0 1rem; min-height:52px; border-radius:16px; background:var(--wit); box-shadow:inset 0 0 0 1px var(--slate-200); }
-.dicht .luik > span:first-child { flex:none; }
-.dicht .luik .luik-som { display:block; flex:1; text-align:right; }
-.dicht .luik .luik-pijl { margin-left:0.125rem; }
-@media (hover:hover) { .dicht .luik:hover { background:var(--wit); box-shadow:inset 0 0 0 1px var(--slate-300), 0 2px 8px -4px rgba(15,23,42,0.18); } }
-.favs.dicht + .fav-hint { display:none; }
-.favs.dicht { margin-bottom:1.5rem; }
-.mywork.dicht:has(+ .favs[hidden]) { margin-bottom:1.5rem; }
-/* Onlangs: de lijst in één keer leegmaken (je werk blijft staan), en terugzetten */
-.cont-leeg, .favs-alle { min-height:44px; padding:0 0.5rem; border:0; border-radius:10px; background:none; font:inherit; font-size:0.8125rem; font-weight:600; color:var(--slate-500); cursor:pointer; }
-.favs-alle { color:#b91c1c; font-size:0.875rem; margin-left:auto; }
-.favs-alle[hidden] { display:none; }
-.recent-row .cont-leeg { order:3; margin-left:auto; }
-@media (hover:hover) { .cont-leeg:hover { background:var(--slate-100); color:var(--slate-700); } .favs-alle:hover { background:#fef2f2; } }
-.cont-leeg:focus-visible, .favs-alle:focus-visible, .cont-terug button:focus-visible { outline:2px solid #047857; outline-offset:2px; }
-@media (max-width:699.98px), (hover:none) { .recent-row .cont-h { flex:1 1 0; } .recent-row .cont-leeg { order:0; margin:-0.75rem -0.25rem -0.5rem auto; } .recent-row .cont { order:1; } }
-.cont-terug { margin:0.75rem 0.25rem 0; font-size:0.875rem; color:var(--slate-600); }
+.mywork:has(> .recent-row.dicht) { margin-bottom:0.5rem; }
+.mywork:has(> .recent-row.dicht) + .favs.dicht, .mywork.dicht + .favs.dicht { margin-top:-0.25rem; }
+.favs.dicht, .mywork.dicht:has(+ .favs[hidden]), .mywork:has(> .recent-row.dicht):has(+ .favs[hidden]) { margin-bottom:1.25rem; }
+/* het kruisje: zelfde vorm en kleur als de andere kruisjes op Start */
+.luik-x { flex:none; display:grid; place-items:center; width:44px; height:44px; padding:0; border:0; border-radius:12px; background:none; color:var(--slate-400); cursor:pointer; }
+.luik-x svg { width:16px; height:16px; }
+.luik-x[hidden] { display:none; }
+@media (hover:hover) { .luik-x:hover { background:var(--slate-100); color:var(--slate-700); } }
+.recent-row .cont-leeg { order:3; margin:-0.5rem 0 -0.5rem auto; }
+.recent-row .luik-k { order:4; }
+.recent-row.dicht .luik-k { margin-left:auto; }
+.recent-row { column-gap:0.25rem; }
+.favs-head { gap:0.25rem; }
+.favs-head .section-label { flex:1 1 auto; min-width:0; margin-right:auto; padding-left:0.25rem; }
+.recent-row .cont-h { padding-left:0.25rem; }
+.favs-head .luik, .mw-h .luik { max-width:100%; }
+.favs-head .favs-alle { order:0; }
+@media (max-width:699.98px), (hover:none) { .recent-row .cont-h { flex:1 1 0; } .recent-row .cont-leeg { order:0; margin:-0.5rem 0; } .recent-row .luik-k { order:0; margin-top:-0.5rem; margin-bottom:-0.5rem; } .recent-row .cont { order:1; } }
+.cont-terug { margin:0.5rem 0.25rem 0; font-size:0.875rem; color:var(--slate-600); }
+.favs-terug { margin:0 0.25rem 1.25rem; }
 .cont-terug[hidden] { display:none; }
 .cont-terug button { min-height:44px; padding:0 0.375rem; border:0; background:none; font:inherit; font-weight:700; color:var(--accent-dark); text-decoration:underline; text-underline-offset:3px; cursor:pointer; }
 /* ===== Grotere schermen: de indeling groeit mee met het scherm =====
@@ -2698,21 +2704,22 @@ window.ocProjectkiezer = function (plek, o) {
 
     <!-- 1. Verder waar je was: één grote knop naar je laatste tool of volgende stap, daaronder wat je onlangs gebruikte (verschijnt zodra er iets is) -->
     <section class="mywork" id="mywork" hidden aria-labelledby="mywork-h">
-      <h2 class="section-label mw-h"><button type="button" class="luik" id="mywork-luik" data-luik="mywork" aria-expanded="true"><span id="mywork-h">Verder waar je was</span><small class="luik-som" id="mywork-som"></small><svg class="luik-pijl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></h2>
+      <h2 class="section-label mw-h"><button type="button" class="luik" id="mywork-luik" data-luik="mywork" aria-expanded="true"><span id="mywork-h">Verder waar je was</span><small class="luik-som" id="mywork-som"></small></button></h2>
       <div class="resume-wrap" id="resume"></div>
       <p class="rs-open" id="rs-open" hidden></p>
-      <div class="recent-row" id="recent-row" hidden><h3 class="cont-h" id="cont-h"><button type="button" class="luik" id="onlangs-luik" data-luik="onlangs" aria-expanded="true"><span>Onlangs</span><small class="luik-som" id="onlangs-som"></small><svg class="luik-pijl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></h3><button type="button" class="cont-leeg" id="cont-leeg" title="Haalt de lijst van Start. Je werk blijft staan.">Maak leeg</button><div class="cont" id="cont" aria-labelledby="cont-h"></div></div>
+      <div class="recent-row" id="recent-row" hidden><h3 class="cont-h" id="cont-h"><button type="button" class="luik" id="onlangs-luik" data-luik="onlangs" aria-expanded="true"><span>Onlangs</span><small class="luik-som" id="onlangs-som"></small></button></h3><button type="button" class="luik-x cont-leeg" id="cont-leeg" aria-label="Haal Onlangs van Start. Je werk blijft staan." title="Haal van Start. Je werk blijft staan."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button><button type="button" class="luik-k" data-luik="onlangs" tabindex="-1" aria-hidden="true"><svg class="luik-pijl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div class="cont" id="cont" aria-labelledby="cont-h"></div></div>
       <p class="cont-terug" id="cont-terug" hidden>Lijst leeggemaakt. Je werk blijft staan. <button type="button" id="cont-terug-k">Zet terug</button></p>
       <!-- in de broncode na het werk (eerst je werk met Tab), op het scherm rechts naast de kop -->
       <span class="mw-btns"><button type="button" class="manage" id="manage" aria-haspopup="dialog" title="Reservekopie maken of terugzetten">Reservekopie</button>
-        <button type="button" class="exit-btn" id="exit-mw" aria-haspopup="dialog" aria-label="Wissen: kies wat je van dit toestel wist" title="Wissen: kies wat je van dit toestel wist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg></button></span>
+        <button type="button" class="exit-btn" id="exit-mw" aria-haspopup="dialog" aria-label="Wissen: kies wat je van dit toestel wist" title="Wissen: kies wat je van dit toestel wist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg></button><button type="button" class="luik-k" data-luik="mywork" tabindex="-1" aria-hidden="true"><svg class="luik-pijl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></span>
     </section>
 
     <!-- Je favorieten: vastgezet met het sterretje bovenaan een tool -->
     <section class="favs" id="favs" hidden aria-labelledby="favs-h">
-      <div class="favs-head"><h2 class="section-label"><button type="button" class="luik" id="favs-luik" data-luik="favs" aria-expanded="true"><span id="favs-h">Je favorieten</span><small class="luik-som" id="favs-som"></small><svg class="luik-pijl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></h2><button type="button" class="favs-alle" id="favs-alle" hidden>Alle weg</button><button type="button" class="favs-edit" id="favs-edit" aria-pressed="false">Bewerk</button></div>
+      <div class="favs-head"><h2 class="section-label"><button type="button" class="luik" id="favs-luik" data-luik="favs" aria-expanded="true"><span id="favs-h">Je favorieten</span><small class="luik-som" id="favs-som"></small></button></h2><button type="button" class="luik-x favs-alle" id="favs-alle" hidden aria-label="Haal alle favorieten van Start" title="Haal alle favorieten van Start"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button><button type="button" class="favs-edit" id="favs-edit" aria-pressed="false">Bewerk</button><button type="button" class="luik-k" data-luik="favs" tabindex="-1" aria-hidden="true"><svg class="luik-pijl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></div>
       <div class="fav-grid" id="fav-grid"></div>
     </section>
+    <p class="cont-terug favs-terug" id="favs-terug" hidden>Favorieten weggehaald. <button type="button" id="favs-terug-k">Zet terug</button></p>
     <p class="fav-hint" id="fav-hint" hidden><span>Zet je favoriete tools hier vast: open een tool en tik bovenaan op het sterretje.</span><button type="button" class="fav-hint-x" id="fav-hint-x" aria-label="Verberg deze tip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></p>
 
     <!-- 2. Waar begin je? Altijd zichtbaar: de vier ingangen -->
@@ -3818,10 +3825,12 @@ let bordActief = '';   // het bord dat open staat in de Cockpit (de Cockpit meld
 const favKey = () => current === 'cockpit' && bordActief && bordVan(bordActief) ? 'cockpit#' + bordActief : current;
 const favs = () => (store.get('favs', []) || []).filter(id => byId[favBasis(id)] && (!favBord(id) || bordVan(favBord(id))));
 function setFavs(a) { store.set('favs', a); renderFavs(); syncFavBtn(); }
-// In Bewerk: alle favorieten in één keer losmaken. Twee tikken: de knop vraagt eerst "Zeker?".
-document.addEventListener('click', e => { const k = e.target.closest('#favs-alle'); if (!k) { const b = $('favs-alle'); if (b && b.dataset.zeker) { delete b.dataset.zeker; b.textContent = 'Alle weg'; } return; }
-  if (!k.dataset.zeker) { k.dataset.zeker = '1'; k.textContent = 'Zeker? Tik nog eens'; return; }
-  delete k.dataset.zeker; k.textContent = 'Alle weg'; favsEdit = false; setFavs([]); });
+// In Bewerk: het kruisje in de kop haalt alle favorieten in één keer van Start. "Zet terug" kan zolang je op Start blijft.
+let favsVorig = null;
+document.addEventListener('click', e => {
+  if (e.target.closest('#favs-alle')) { favsVorig = favs().slice(); favsEdit = false; setFavs([]); const k = $('favs-terug-k'); if (k) k.focus({ preventScroll:true }); }
+  else if (e.target.closest('#favs-terug-k')) { const a = favsVorig || []; favsVorig = null; setFavs(a); const k = $('favs-luik'); if (k) k.focus({ preventScroll:true }); }
+});
 function toggleFav(id) {
   if (!byId[favBasis(id)]) return;
   const voor = favs(), aan = voor.includes(id), nm = favTitel(id);
@@ -3834,27 +3843,27 @@ function syncFavBtn() {
   b.setAttribute('aria-pressed', String(aan)); b.setAttribute('aria-label', lbl); b.title = lbl;
 }
 /* Luikjes op Start: "Verder waar je was", "Onlangs" en "Je favorieten". Een tik op de titel klapt ze dicht of open; je keuze wordt onthouden.
-   Zolang je niets koos: "Verder waar je was" staat open, en op een gsm staan Onlangs en Je favorieten dicht, zodat de doelen meteen in beeld staan. */
+   Zolang je niets koos staat alles open, behalve Onlangs op een gsm: zo blijft het startscherm daar kort. */
 const LUIK = { mywork:'mywork', onlangs:'recent-row', favs:'favs' }, luikSmal = matchMedia('(max-width:699.98px)');
-const luikDicht = id => { const k = store.get('luik', {})[id]; return k ? k === 'dicht' : id !== 'mywork' && luikSmal.matches; };
+const luikDicht = id => { const k = store.get('luik', {})[id]; return k ? k === 'dicht' : id === 'onlangs' && luikSmal.matches; };
 function syncLuik() {
   for (const id of Object.keys(LUIK)) { const d = luikDicht(id); $(LUIK[id]).classList.toggle('dicht', d); $(id + '-luik').setAttribute('aria-expanded', String(!d)); }
   const f = favs().length; $('favs-som').textContent = f === 1 ? '1 tool' : f + ' tools';
 }
 try { luikSmal.addEventListener('change', syncLuik); } catch {}
 document.addEventListener('click', e => {
-  const k = e.target.closest('.luik[data-luik]'); if (!k) return;
+  const k = e.target.closest('.luik[data-luik], .luik-k[data-luik]'); if (!k) return;
   const id = k.dataset.luik, a = Object.assign({}, store.get('luik', {})); a[id] = luikDicht(id) ? 'open' : 'dicht'; store.set('luik', a);
   if (id === 'favs' && favsEdit) { favsEdit = false; renderFavs(); }
   syncLuik();
 });
 function renderFavs() {
   const a = favs(), returning = document.body.classList.contains('returning');
-  $('favs').hidden = !a.length;
+  $('favs').hidden = !a.length; if (a.length) favsVorig = null; $('favs-terug').hidden = !(favsVorig && !a.length);
   $('fav-hint').hidden = !!a.length || !returning || store.get('fav-hint-weg', false);
   if (!a.length) { favsEdit = false; $('fav-grid').innerHTML = ''; return; }
   $('favs-edit').textContent = favsEdit ? 'Klaar' : 'Bewerk'; $('favs-edit').setAttribute('aria-pressed', String(favsEdit));
-  $('favs-alle').hidden = !favsEdit || a.length < 2; syncLuik();
+  $('favs-alle').hidden = !favsEdit; syncLuik();
   $('favs').classList.toggle('bewerk', favsEdit);
   $('fav-grid').innerHTML = a.map((id, i) => { const t = byId[favBasis(id)], bd = favBord(id), nm = bd ? esc(afbreek(favTitel(id))) : naam(t), tl = favTitel(id), z = bd ? ` data-zoek="?bord=${esc(encodeURIComponent(bd))}"` : '';
     return favsEdit
