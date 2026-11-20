@@ -222,8 +222,17 @@ body.filtering #groups, body.filtering #list-tools { display:none; }
 /* Het stappenplan van een tab (Verandering): dezelfde plankaart, boven de groepen */
 .plan-tab { margin:0 0 1rem; }
 .plan-tab[hidden] { display:none; }
-.plan-tab .pt-h { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
-.plan-keuze h2 { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+.plan-tab .pt-h { margin-bottom:0.625rem; }
+.plan-tab .blok-los { margin-bottom:0; }
+.blok-kop { display:flex; align-items:center; flex-wrap:wrap; gap:0.125rem 0.5rem; margin:0 0.25rem 0.125rem; font-size:0.8125rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--slate-600); position:static; width:auto; height:auto; overflow:visible; clip-path:none; white-space:normal; }
+.blok-kop svg { flex:none; width:16px; height:16px; color:var(--accent-dark); }
+.blok-kop small { font-size:0.8125rem; font-weight:500; letter-spacing:0; text-transform:none; color:var(--slate-500); }
+.blok-los { margin-top:1.5rem; margin-bottom:0.625rem; }
+.blok-los svg { color:var(--slate-500); }
+.plan-keuze > .blok-kop { grid-column:1 / -1; }
+body.searching .blok-kop, body.filtering .blok-kop, #home:not([data-tab="projecten"]) #groups-kop { display:none; }
+/* het stappenplan zelf: zacht groen, zodat het geen gewone groep lijkt */
+.plan-keuze .path, .plan-tab .path { background:linear-gradient(180deg, #f3fcf8 0%, var(--wit) 72px); border-color:#bfe6d6; }
 body.searching .plan-keuze { display:none; }
 .pm-fase, .pm-plan { display:none; }
 @media (max-width:699.98px) {
@@ -2102,6 +2111,8 @@ html.oc-stil .n-puls, html.oc-stil .n-halo, html.oc-stil .n-far circle { animati
   .header-inner, .main { max-width:min(88vw, 1640px); }
   .ft { max-width:calc(min(88vw, 1640px) - 2.5rem); }
   #groups, .tabgroup:not([hidden]) { grid-template-columns:repeat(3, minmax(0, 1fr)); }
+  /* Vier groepen: twee op twee, in lijn met de plannen erboven. Geen weesje op een tweede rij. */
+  #home[data-tab="projecten"] #groups[data-n="4"] { grid-template-columns:repeat(2, minmax(0, 1fr)); }
   .start:not(.compact) .stiles { gap:1rem; }
   #home[data-tab="start"] .main:has(> #mywork:not([hidden]), > #favs:not([hidden])) { grid-template-columns:minmax(0, 4fr) minmax(0, 8fr); column-gap:3rem; }
   #home[data-tab="start"] .main:has(> #mywork:not([hidden]), > #favs:not([hidden])) .start:not(.compact) .stiles { grid-template-columns:repeat(3, minmax(0, 1fr)); }
@@ -2762,6 +2773,7 @@ window.ocProjectkiezer = function (plek, o) {
       <p class="vs-note" id="vs-note" hidden></p>
       <!-- Weergave Stappenplan: de plannen onder de schakelaar, zoals de fasen en de onderwerpen -->
       <section class="plan-keuze" id="plan-keuze" aria-labelledby="pk-h" hidden></section>
+      <p class="blok-kop blok-los" id="groups-kop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></svg><span>Losse tools</span><small>Kies er zelf één, per onderwerp</small></p>
       <div class="results" id="results" hidden aria-live="polite">
         <div class="group results-card">
           <div class="results-head">
@@ -3494,7 +3506,7 @@ function setTab(id, keep) {
         <div class="list-tools tg-tools"><button type="button" data-sub-all="open">Alles open</button><button type="button" data-sub-all="dicht">Alles dicht</button></div></div>${PLAN_TAB[id] ? `<div class="plan-tab" id="plan-tab" data-tab="${id}" hidden></div>` : ''}${subRows(id)}`
     : `<div class="th-wrap">${kop(false, `${n} tools`)}</div><div class="group solo"><div class="list">${groupRows(id)}</div></div>`;
   $('alltools-h').textContent = id === 'projecten' ? 'Projecten' : 'Alle tools';
-  if (id === 'projecten') { $('proj-count').textContent = TOOLS.filter(t => PROJ_GROUPS.includes(t.g)).length; $('proj-ngroep').textContent = PROJ_GROUPS.length; }
+  if (id === 'projecten') { $('proj-count').textContent = TOOLS.filter(t => PROJ_GROUPS.includes(t.g)).length; $('proj-ngroep').textContent = PROJ_GROUPS.length; $('groups').dataset.n = PROJ_GROUPS.length; }
   if (g) { markLive(); syncSubTools(); renderPlanTab(); }
   syncListTools();
   if (!keep) window.scrollTo(0, 0);
@@ -5476,17 +5488,20 @@ const PLAN_TAB = { verandering:'verandering' };
 let planKaarten = {};
 function renderPlanTab() {
   const el = $('plan-tab'); if (!el) return;
-  const id = PLAN_TAB[el.dataset.tab], h = id && planKaarten[id] ? `<h3 class="pt-h">Stappenplan</h3>${planKaarten[id]}` : '';
+  const id = PLAN_TAB[el.dataset.tab], h = id && planKaarten[id] ? `<h3 class="blok-kop pt-h">${BLOK_PLAN}<span>Stap voor stap</span><small>Een plan van begin tot einde</small></h3>${planKaarten[id]}<p class="blok-kop blok-los">${BLOK_LOS}<span>Losse tools</span><small>Kies er zelf één, per onderwerp</small></p>` : '';
   if (el.dataset.h === h) return;
   const f = el.contains(document.activeElement) && document.activeElement.classList.contains('path-head');
   el.innerHTML = h; el.dataset.h = h; el.hidden = !h;
   if (f) { const k = el.querySelector('.path-head'); if (k) k.focus({ preventScroll:true }); }
 }
+/* Twee soorten blokken op Projecten en Verandering: een stappenplan (een route, in een zacht groen kader) en losse tools per onderwerp (wit).
+   Een kopje met een eigen icoontje zegt telkens wat het is. */
+const BLOK_PLAN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="5" r="2.5"/><path d="M8.5 19H15a3.5 3.5 0 0 0 0-7H9a3.5 3.5 0 0 1 0-7h6.5"/></svg>', BLOK_LOS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></svg>';
 function renderPlanKeuze(kaarten) {
   const el = $('plan-keuze'); if (!el || !kaarten) return;
   const st = startedPaths(), ids = PLAN_KEUZE.filter(id => kaarten[id]).sort((a, b) => (st.includes(b) - st.includes(a)) || ((b === pathCtx) - (a === pathCtx)));
   if (!ids.length) { el.hidden = true; el.innerHTML = ''; return; }
-  const h = `<h2 id="pk-h">Stappenplannen</h2>${ids.map(id => kaarten[id]).join('')}`;
+  const h = `<h2 class="blok-kop" id="pk-h">${BLOK_PLAN}<span>Stap voor stap</span><small>Een plan van begin tot einde</small></h2>${ids.map(id => kaarten[id]).join('')}`;
   if (el.dataset.h !== h) { const f = el.contains(document.activeElement) && document.activeElement.closest('.path'), was = f && f.dataset.path, kop = f && document.activeElement.classList.contains('path-head');
     el.innerHTML = h; el.dataset.h = h; if (was && kop) { const k = el.querySelector(`.path[data-path="${was}"] .path-head`); if (k) k.focus({ preventScroll:true }); } }
   el.hidden = false; $('pm-nplan').textContent = ids.length;
