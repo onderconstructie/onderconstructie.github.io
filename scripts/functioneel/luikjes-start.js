@@ -7,8 +7,9 @@ const fout = []; const ok = (c, m) => { console.log((c ? '  ok   ' : '  FOUT ') 
     await p.goto(B + '/', { waitUntil:'networkidle' }); await p.waitForTimeout(800);
     const zicht = sel => p.isVisible(sel), stand = () => p.evaluate(() => ['mywork', 'onlangs', 'favs'].map(i => document.getElementById(i + '-luik').getAttribute('aria-expanded')).join());
     const pijlen = () => p.evaluate(() => [...document.querySelectorAll('.luik-k')].filter(e => e.getClientRects().length).map(e => { const r = e.getBoundingClientRect(); return Math.round(r.left) + '/' + Math.round(r.width) + 'x' + Math.round(r.height); }));
-    // vanaf 1000 px staan je favorieten in de tweede kolom: daar staat hun pijltje aan de rechterrand van die kolom, de andere staan gelijk
-    const zelfdeX = a => a.length && a.every(x => /\/44x44$/.test(x)) && (w < 1000 ? a.every(x => x === a[0]) : a.slice(0, -1).every(x => x === a[0]) && parseInt(a[a.length - 1]) > parseInt(a[0]));
+    // vanaf 1000 px staat Onlangs rechts naast je werk en staan de favorieten eronder: het pijltje van je werk staat aan het eind van de linkerkolom,
+    // de andere aan de rechterrand, op dezelfde plek. Open of dicht: elk pijltje blijft waar het stond.
+    const zelfdeX = a => a.length && a.every(x => /\/44x44$/.test(x)) && (w < 1000 ? a.every(x => x === a[0]) : (() => { const r = a[a.length - 1], l = a.filter(x => x !== r); return l.length === 1 && parseInt(l[0]) < parseInt(r); })());
     // standaard: alles open, behalve Onlangs op een gsm
     ok(await stand() === (w < 700 ? 'true,false,true' : 'true,true,true'), w + ': standaard ' + (w < 700 ? 'alleen Onlangs dicht' : 'alles open') + ' (' + await stand() + ')');
     ok(await zicht('#resume') && await zicht('#fav-grid .fav-tile'), w + ': de grote knop en de favorieten staan er');
@@ -17,7 +18,7 @@ const fout = []; const ok = (c, m) => { console.log((c ? '  ok   ' : '  FOUT ') 
     // het pijltje staat bij elk luikje op dezelfde plek, open én dicht
     const open = await pijlen(); ok(open.length === 3 && zelfdeX(open), w + ': drie pijltjes, zelfde plek en 44 px groot (' + open.join(' ') + ')');
     for (const i of ['onlangs', 'favs', 'mywork']) { await p.click(`.luik-k[data-luik="${i}"]`); await p.waitForTimeout(150); }
-    const dicht = await pijlen(); ok(dicht.length === 2 && zelfdeX(dicht) && dicht[0] === open[0] && dicht[1] === open[2], w + ': dicht staan de pijltjes nog op dezelfde plek (' + dicht.join(' ') + ')');
+    const dicht = await pijlen(); ok(dicht.length === 2 && zelfdeX(dicht) && dicht[0] === open[w < 1000 ? 0 : 1] && dicht[1] === open[2], w + ': dicht staan de pijltjes nog op dezelfde plek (' + dicht.join(' ') + ')');
     ok(await stand() === 'false,false,false' && !(await zicht('#resume')) && !(await zicht('#fav-grid')) && !(await zicht('#favs-edit')) && !(await zicht('#manage')) && !(await zicht('#exit-mw')), w + ': dicht: alleen de titels en hun pijltje');
     ok(/Afstemmingsparadox en 4 meer/.test(await p.textContent('#mywork-som')) && await p.textContent('#favs-som') === '4 tools' && await zicht('#favs-som'), w + ': de samenvatting zegt wat erin zit');
     const licht = await p.evaluate(() => ['mywork-luik', 'favs-luik'].every(i => { const c = getComputedStyle(document.getElementById(i)); return c.boxShadow === 'none' && /rgba\(0, 0, 0, 0\)|transparent/.test(c.backgroundColor); })); ok(licht, w + ': dicht is licht: geen kader, geen achtergrond');

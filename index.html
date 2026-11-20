@@ -2098,18 +2098,43 @@ html.oc-stil .n-puls, html.oc-stil .n-halo, html.oc-stil .n-far circle { animati
 @media (min-width:700px) {
   .plan-keuze { grid-template-columns:repeat(2, minmax(0, 1fr)); align-items:stretch; }
 }
-/* Vanaf 1000 px (iPad liggend, grote iPad staand, laptop) krijgt Start twee kolommen die van boven tot onder doorlopen.
-   Smaller dan dat wordt de kaart "Verder" te krap: daar blijft alles onder elkaar. */
+/* Vanaf 1000 px (iPad liggend, grote iPad staand, laptop) leest Start van boven naar onder in twee kolommen.
+   Rij 1: links "Verder waar je was" met "Nog open" eronder, rechts "Onlangs gebruikt".
+   Rij 2: je favorieten, gecentreerd over de twee kolommen: ze groeien vanuit het midden.
+   Rij 3: de doelen, twee per rij. Smaller dan 1000 px wordt de kaart "Verder" te krap: daar blijft alles onder elkaar. */
+.cont-h-lang { display:none; }
+/* alleen de grote kaart en verder niets recent: dan hoort er ook geen los pijltje onder */
+.recent-row:has(> .cont-h[hidden]) > .luik-k { display:none; }
 @media (min-width:1000px) {
-  /* Start voor wie al werk of favorieten heeft: alles in twee kolommen, van boven naar onder. Eerst waar je was naast je favorieten,
-     daaronder de doelen, twee per rij. Eén leesrichting, dezelfde twee kolommen over de hele pagina. */
   #home[data-tab="start"] .main:has(> #mywork:not([hidden]), > #favs:not([hidden])) { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); column-gap:0.75rem; align-items:start; align-content:start; }
   #home[data-tab="start"] .main:has(> #mywork:not([hidden]), > #favs:not([hidden])) > * { grid-column:1 / -1; }
-  #home[data-tab="start"] .main:has(> #mywork:not([hidden])):has(> #favs:not([hidden])) > #mywork { grid-column:1; }
-  #home[data-tab="start"] .main:has(> #mywork:not([hidden])):has(> #favs:not([hidden])) > #favs { grid-column:2; }
-  /* de twee koppen op één lijn, de kaart en de favorieten ook */
-  #home[data-tab="start"] .main:has(> #mywork:not([hidden])):has(> #favs:not([hidden])) > #favs .favs-head { margin:-2px 0 2px; }
   #home[data-tab="start"] .main:has(> #mywork:not([hidden]), > #favs:not([hidden])) .start:not(.compact) .stiles { grid-template-columns:repeat(2, minmax(0, 1fr)); }
+  /* rij 1: het werk links, Onlangs rechts; de rechterhelft is exact even breed als de kolom eronder */
+  #home[data-tab="start"] .main:has(> #mywork:not([hidden]), > #favs:not([hidden])) > #mywork:has(#cont-h:not([hidden])) { grid-template-columns:minmax(0, 1fr) auto 0.75rem calc(50% - 0.375rem); align-items:start; }
+  #home[data-tab="start"] .main:has(> #mywork:not([hidden]), > #favs:not([hidden])) > #mywork:has(#cont-h:not([hidden])) > * { grid-column:1 / 3; }
+  #home[data-tab="start"] .main:has(> #mywork:not([hidden]), > #favs:not([hidden])) > #mywork:has(#cont-h:not([hidden])) > .mw-h { grid-column:1; }
+  #home[data-tab="start"] .main:has(> #mywork:not([hidden]), > #favs:not([hidden])) > #mywork:has(#cont-h:not([hidden])) > .mw-btns { grid-column:2; }
+  #home[data-tab="start"] .main:has(> #mywork:not([hidden]), > #favs:not([hidden])) > #mywork:has(#cont-h:not([hidden])) > #recent-row { grid-column:4; grid-row:1 / span 4; margin-top:-2px; flex-wrap:wrap; gap:0.25rem; align-self:start; }
+  #home[data-tab="start"] .main:has(> #mywork:not([hidden]), > #favs:not([hidden])) > #mywork:has(#cont-h:not([hidden])) > #recent-row .cont-h { flex:1 1 0; font-size:1.0625rem; font-weight:700; letter-spacing:-0.015em; line-height:1.3; color:var(--slate-800); min-height:44px; display:flex; align-items:center; }
+  #home[data-tab="start"] .main:has(> #mywork:not([hidden]), > #favs:not([hidden])) > #mywork:has(#cont-h:not([hidden])) > #recent-row .cont-h-lang { display:inline; }
+  #home[data-tab="start"] .main:has(> #mywork:not([hidden]), > #favs:not([hidden])) > #mywork:has(#cont-h:not([hidden])) > #recent-row .cont-leeg { order:0; margin:0; }
+  #home[data-tab="start"] .main:has(> #mywork:not([hidden]), > #favs:not([hidden])) > #mywork:has(#cont-h:not([hidden])) > #recent-row .luik-k { order:0; margin-top:0; margin-bottom:0; }
+  #home[data-tab="start"] .main:has(> #mywork:not([hidden]), > #favs:not([hidden])) > #mywork:has(#cont-h:not([hidden])) > #recent-row .cont { order:1; display:grid; grid-template-columns:repeat(5, minmax(0, 1fr)); gap:0.5rem; width:100%; margin-top:calc(2px - 0.25rem); }
+  #home[data-tab="start"] .main:has(> #mywork:not([hidden]), > #favs:not([hidden])) > #mywork:has(#cont-h:not([hidden])) > #recent-row .rc-ic { width:auto; height:auto; min-height:90px; padding:0.75rem 0.25rem 0.625rem; grid-template-rows:36px auto; gap:0.375rem; align-content:start; border-radius:16px; background:var(--wit); border:1px solid var(--slate-200); }
+  #home[data-tab="start"] .main:has(> #mywork:not([hidden]), > #favs:not([hidden])) > #mywork:has(#cont-h:not([hidden])) > #recent-row .rc-ic:hover { border-color:var(--accent); }
+  #home[data-tab="start"] .main:has(> #mywork:not([hidden]), > #favs:not([hidden])) > #mywork:has(#cont-h:not([hidden])) > #recent-row .rc-nm { display:-webkit-box; max-width:100%; font-size:0.8125rem; font-weight:600; line-height:1.2; color:var(--slate-700); text-align:center; -webkit-hyphens:manual; hyphens:manual; overflow-wrap:break-word; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  #home[data-tab="start"] .main:has(> #mywork:not([hidden]), > #favs:not([hidden])) > #mywork:has(#cont-h:not([hidden])) > #recent-row .rc-ic[data-tip]::after { display:none; }
+  #home[data-tab="start"] .main:has(> #mywork:not([hidden]), > #favs:not([hidden])) > #mywork:has(#cont-h:not([hidden])) > #recent-row .rc-ic .live-dot { top:8px; right:14px; }
+  /* rij 2: de favorieten in het midden; de kop staat mee in het midden, Bewerk en het pijltje blijven rechts */
+  #home[data-tab="start"] .main:has(> #mywork:not([hidden]), > #favs:not([hidden])) > #favs .fav-grid { display:flex; flex-wrap:wrap; justify-content:center; gap:0.5rem; }
+  #home[data-tab="start"] .main:has(> #mywork:not([hidden]), > #favs:not([hidden])) > #favs .fav-tile { flex:0 0 6.75rem; }
+  #home[data-tab="start"] .main:has(> #mywork:not([hidden]), > #favs:not([hidden])) > #favs .favs-head { position:relative; justify-content:center; min-height:44px; }
+  #home[data-tab="start"] .main:has(> #mywork:not([hidden]), > #favs:not([hidden])) > #favs .favs-head .section-label { flex:0 1 auto; margin:0; padding:0; }
+  #home[data-tab="start"] .main:has(> #mywork:not([hidden]), > #favs:not([hidden])) > #favs .favs-head .luik { margin-left:0; margin-right:0; }
+  #home[data-tab="start"] .main:has(> #mywork:not([hidden]), > #favs:not([hidden])) > #favs .favs-head > :not(.section-label) { position:absolute; top:0; }
+  #home[data-tab="start"] .main:has(> #mywork:not([hidden]), > #favs:not([hidden])) > #favs .favs-head > .luik-k { right:0; margin:0 -0.75rem 0 0; }
+  #home[data-tab="start"] .main:has(> #mywork:not([hidden]), > #favs:not([hidden])) > #favs .favs-head > .favs-edit { right:2rem; }
+  #home[data-tab="start"] .main:has(> #mywork:not([hidden]), > #favs:not([hidden])) > #favs .favs-head > .favs-alle { right:6.75rem; }
 }
 @media (min-width:1000px) {
   /* groepen in twee kolommen */
@@ -2754,7 +2779,7 @@ window.ocProjectkiezer = function (plek, o) {
       <h2 class="section-label mw-h"><button type="button" class="luik" id="mywork-luik" data-luik="mywork" aria-expanded="true"><span id="mywork-h">Verder waar je was</span><small class="luik-som" id="mywork-som"></small></button></h2>
       <div class="resume-wrap" id="resume"></div>
       <p class="rs-open" id="rs-open" hidden></p>
-      <div class="recent-row" id="recent-row" hidden><h3 class="cont-h" id="cont-h"><button type="button" class="luik" id="onlangs-luik" data-luik="onlangs" aria-expanded="true"><span>Onlangs</span><small class="luik-som" id="onlangs-som"></small></button></h3><button type="button" class="luik-x cont-leeg" id="cont-leeg" aria-label="Haal Onlangs van Start. Je werk blijft staan." title="Haal van Start. Je werk blijft staan."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button><button type="button" class="luik-k" data-luik="onlangs" tabindex="-1" aria-hidden="true"><svg class="luik-pijl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div class="cont" id="cont" aria-labelledby="cont-h"></div></div>
+      <div class="recent-row" id="recent-row" hidden><h3 class="cont-h" id="cont-h"><button type="button" class="luik" id="onlangs-luik" data-luik="onlangs" aria-expanded="true"><span>Onlangs<span class="cont-h-lang"> gebruikt</span></span><small class="luik-som" id="onlangs-som"></small></button></h3><button type="button" class="luik-x cont-leeg" id="cont-leeg" aria-label="Haal Onlangs van Start. Je werk blijft staan." title="Haal van Start. Je werk blijft staan."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button><button type="button" class="luik-k" data-luik="onlangs" tabindex="-1" aria-hidden="true"><svg class="luik-pijl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div class="cont" id="cont" aria-labelledby="cont-h"></div></div>
       <p class="cont-terug" id="cont-terug" hidden>Lijst leeggemaakt. Je werk blijft staan. <button type="button" id="cont-terug-k">Zet terug</button></p>
       <!-- in de broncode na het werk (eerst je werk met Tab), op het scherm rechts naast de kop -->
       <span class="mw-btns"><button type="button" class="manage" id="manage" aria-haspopup="dialog" title="Reservekopie maken of terugzetten">Reservekopie</button>
