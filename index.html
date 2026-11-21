@@ -1998,6 +1998,10 @@ html.oc-stil .n-puls, html.oc-stil .n-halo, html.oc-stil .n-far circle { animati
 @media (hover:hover) { .rs-o:hover { text-decoration-color:#047857; } }
 .rs-o:focus-visible { outline:2px solid #047857; outline-offset:-2px; border-radius:6px; }
 .rs-o-s { color:var(--slate-400); }
+.rs-o-meer { font-weight:500; color:var(--slate-600); text-decoration-color:var(--slate-300); }
+#rs-lijst { column-gap:0.5rem; } #rs-lijst .rs-o-l { max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.rs-m-smal { display:none; }
+@media (max-width:429.98px) { .rs-l3, .rs-m-breed { display:none; } .rs-m-smal { display:inline; } }
 .rs-o-x { margin-left:auto; display:grid; place-items:center; width:44px; height:44px; border:0; border-radius:12px; background:none; color:var(--slate-400); cursor:pointer; }
 .rs-o-x svg { width:16px; height:16px; }
 @media (hover:hover) { .rs-o-x:hover { background:var(--slate-100); color:var(--slate-700); } }
@@ -2897,6 +2901,7 @@ window.ocProjectkiezer = function (plek, o) {
       <h2 class="section-label mw-h"><button type="button" class="luik" id="mywork-luik" data-luik="mywork" aria-expanded="true"><span id="mywork-h">Verder waar je was</span><small class="luik-som" id="mywork-som"></small></button></h2>
       <div class="resume-wrap" id="resume"></div>
       <p class="rs-open" id="rs-open" hidden></p>
+      <p class="rs-open" id="rs-lijst" hidden></p>
       <div class="recent-row" id="recent-row" hidden><h3 class="cont-h" id="cont-h"><button type="button" class="luik" id="onlangs-luik" data-luik="onlangs" aria-expanded="true"><span>Onlangs<span class="cont-h-lang"> gebruikt</span></span><small class="luik-som" id="onlangs-som"></small></button></h3><button type="button" class="luik-x cont-leeg" id="cont-leeg" aria-label="Haal Onlangs van Start. Je werk blijft staan." title="Haal van Start. Je werk blijft staan."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button><button type="button" class="luik-k" data-luik="onlangs" tabindex="-1" aria-hidden="true"><svg class="luik-pijl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div class="cont" id="cont" aria-labelledby="cont-h"></div></div>
       <p class="cont-terug" id="cont-terug" hidden>Lijst leeggemaakt. Je werk blijft staan. <button type="button" id="cont-terug-k">Zet terug</button></p>
       <!-- in de broncode na het werk (eerst je werk met Tab), op het scherm rechts naast de kop -->
@@ -4124,7 +4129,14 @@ function renderRecent() {
   // Eén grote knop: de volgende stap van je stappenplan (als je daar laatst mee bezig was), anders je laatste tool.
   const hero = pickResume(items);
   resumePath = hero && hero.path ? hero.path.id : null;
+  if (hero && !hero.path) hero.lijsten = lijstenVan(hero.t, all);
   $('resume').innerHTML = hero ? resumeHTML(hero) : '';
+  // Meer dan één lijst in die tool: een rustige regel om er een te kiezen (drie namen, de rest via de kiezer in de tool)
+  { const L = hero && hero.lijsten || [], tid = hero ? esc(hero.t.id) : '', toon = L.filter(x => !x.nu).slice(0, 3), meer = L.length - toon.length - (L.some(x => x.nu) ? 1 : 0);
+    $('rs-lijst').hidden = !toon.length;
+    $('rs-lijst').innerHTML = !toon.length ? '' : '<span class="rs-o-k">Of open:</span>' + toon.map((x, i) => `<button type="button" class="rs-o rs-o-l${i === 2 ? ' rs-l3' : ''}" data-lijst-tool="${tid}" data-lijst="${esc(x.id)}">${esc(x.naam)}</button>`).join('')
+      + (meer > 0 ? `<button type="button" class="rs-o rs-o-meer rs-m-breed" data-lijst-tool="${tid}" data-lijst-meer>en nog ${meer}</button>` : '')
+      + (toon.length > 2 ? `<button type="button" class="rs-o rs-o-meer rs-m-smal" data-lijst-tool="${tid}" data-lijst-meer>en nog ${meer + 1}</button>` : ''); }
   // Een rustige regel met de stappen die nog open staan: één tik opent de stap
   const open = hero && hero.path && !store.get('rs-open-weg', []).includes(hero.path.id) ? hero.open : [];   // weggetikt met het kruisje: voor dit plan niet meer tonen
   $('rs-open').hidden = !open.length;
@@ -4161,12 +4173,45 @@ function pickResume(items) {
   }
   return { t: top.t, at: top.at, data: top.data };
 }
+/* Een tool met meer dan één lijst of project (Vinkje, RACI, Agenda…): onder de grote knop kies je welke je opent.
+   De namen komen van de kiezer in de tool zelf (ocPk), niet van een gok: de app leest ze zolang de tool open ligt en onthoudt ze
+   (oc-app.lijsten) voor na een herlading. Een voorbeeld telt niet mee. */
+function lijstenLees(id) {
+  try {
+    const f = frames.get(id), w = f && f.dataset.loaded && f.contentWindow; if (!w || !w.ocPk) return null;
+    return [...w.document.querySelectorAll('.oc-pk-item[data-pk="kies"][data-id]')].map(b => ({ id:b.dataset.id, naam:((b.querySelector('.oc-pk-i-naam') || {}).textContent || '').trim().slice(0, 80), nu:b.getAttribute('aria-checked') === 'true', vb:!!b.querySelector('.oc-pk-vb') })).filter(x => x.naam);
+  } catch { return null; }
+}
+function lijstenOnthoud(id) { const L = lijstenLees(id); if (!L) return; const a = store.get('lijsten', {}) || {}; if (L.length > 1) a[id] = L; else delete a[id]; store.set('lijsten', a); }
+function lijstenVan(t, all) {
+  if (isPrivate() || !hasData(t, all)) return [];
+  const L = lijstenLees(t.id) || (store.get('lijsten', {}) || {})[t.id] || [];
+  const eigen = (Array.isArray(L) ? L : []).filter(x => x && x.id && x.naam && !x.vb);
+  return eigen.length > 1 ? eigen : [];
+}
+// Open de tool op die lijst. Is de lijst intussen weg, dan opent de tool gewoon zoals ze was. menu: open de kiezer zelf (voor "en nog 3").
+function openLijst(id, lid, menu) {
+  openTool(id);
+  let n = 0;
+  const doe = () => {
+    let klaar = false;
+    try {
+      const f = frames.get(id), w = f && f.dataset.loaded && f.contentWindow;
+      if (w && w.ocPk) { klaar = true;
+        if (menu) w.ocPk.knop.click();
+        else if ([...w.document.querySelectorAll('.oc-pk-item[data-pk="kies"]')].some(b => b.dataset.id === lid)) w.ocPk.kies(lid); }
+    } catch { klaar = true; }
+    if (!klaar && current === id && ++n < 40) setTimeout(doe, 100);
+  };
+  doe();
+}
+document.addEventListener('click', e => { const b = e.target.closest('[data-lijst-tool]'); if (!b) return; e.preventDefault(); e.stopPropagation(); openLijst(b.dataset.lijstTool, b.dataset.lijst || '', b.hasAttribute('data-lijst-meer')); }, true);
 function resumeHTML(h) {
   const t = h.t, pr = getProject();
   let k, sub;
   if (h.path) { k = `Stap ${h.n} van ${h.of}${h.at ? ' · ' + ago(h.at) : ''}`; sub = h.path.q[t.id] || t.sub; }
   else {
-    const pv0 = h.data ? preview(t) : '', pv = pr && pv0 === pr.name ? '' : pv0;
+    const nu = (h.lijsten || []).find(x => x.nu), pv0 = nu ? nu.naam : h.data ? preview(t) : '', pv = pr && pv0 === pr.name ? '' : pv0;
     k = busy.has(t.id) ? 'Loopt nu' : `Laatst gebruikt${h.at ? ' · ' + ago(h.at) : ''}`; sub = pv || t.sub;
   }
   return `<button type="button" class="resume" data-id="${esc(t.id)}"${h.path ? ` data-ctx="${esc(h.path.id)}"` + zoekAttr(t) : ''} title="${esc(t.desc)}">
@@ -4252,6 +4297,7 @@ function openTool(id, fromHistory, van, zoek, stap) {
   else if (f.dataset.zoek === '?toon=alles') delete f.dataset.zoek;   // de Projectopdracht zelf openen is weer stap 1, niet de slotstap
   setLoading(!f.dataset.loaded);
   frames.set(id, f);
+  if (current && current !== id) lijstenOnthoud(current);
   if (current && current !== id && current !== van && byId[current] && !byId[current].keep) autoDrop(current);
   trimFrames(id);
   current = id;
@@ -4333,6 +4379,7 @@ window.addEventListener('message', e => {
 function showHome(fromHistory) {
   if (!$('app-dlg').hidden) $('app-dlg-no').click();   // een open wisvraag hoort bij de tool die je verlaat
   const was = current;
+  if (current) lijstenOnthoud(current);
   if (current && byId[current] && !byId[current].keep) autoDrop(current);
   current = null;
   dropPre();
@@ -4885,7 +4932,7 @@ function fullExit() {
   });
 }
 // Wat de app zelf bijhoudt (toollijst, tellers) is geen werk van jou: die sleutels alleen tellen niet als "iets bewaard".
-const APP_QUIET = ['oc-app.luik', 'oc-app.onlangs-sinds', 'oc-app.tools-cache', 'oc-app.paths-started', 'oc-app.data-since', 'oc-app.route', 'oc-app.rs-open-weg'];   // route: kort of uitgebreid per plan, een instelling en geen werk
+const APP_QUIET = ['oc-app.lijsten', 'oc-app.luik', 'oc-app.onlangs-sinds', 'oc-app.tools-cache', 'oc-app.paths-started', 'oc-app.data-since', 'oc-app.route', 'oc-app.rs-open-weg'];   // route: kort of uitgebreid per plan, een instelling en geen werk
 function exitEntries() { return dataEntries().filter(e => e.t.id !== '__app' || e.keys.some(k => !APP_QUIET.includes(k))); }
 let exitList = [], exitOpener = null;
 let exitMode = 'all';
