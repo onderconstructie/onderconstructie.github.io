@@ -10,17 +10,23 @@ let fout = 0; const ok = (c, m) => { console.log((c ? 'ok   ' : 'FOUT ') + m); i
   await p.addInitScript(() => localStorage.setItem('oc-app.welkom-weg', '1'));
   await p.goto(B + '/', { waitUntil: 'networkidle' }); await p.waitForTimeout(600);
   const stappen = () => p.evaluate(() => stepsOf('vergadering').map(s => s.t.id).join());
-  ok(await stappen() === 'vergaderkost,agenda,check-in,notities,check-out', 'gewone vergadering, kort: vijf stappen (' + await stappen() + ')');
+  ok(await stappen() === 'agenda,check-in,notities,check-out', 'gewone vergadering, kort: vier stappen (' + await stappen() + ')');
   const vol = await p.evaluate(() => trajectStappen('vergadering').map(s => s.t.id).join());
-  ok(vol === 'vergaderkost,paradox,agenda,check-in,notities,beslissingen,check-out', 'uitgebreid: Afstemmingsparadox en Beslissingslog erbij, het Takenbord niet (' + vol + ')');
+  ok(vol === 'vergaderkost,paradox,agenda,check-in,notities,beslissingen,check-out', 'uitgebreid: Vergaderkost, Afstemmingsparadox en Beslissingslog erbij, het Takenbord niet (' + vol + ')');
   // de tegel vraagt eerst wat voor vergadering het wordt
   await p.click('.stile[data-start="vergadering"]'); await p.waitForTimeout(400);
-  ok(await p.isVisible('#vg-dlg') && await p.locator('#vg-dlg [data-vg]').count() === 2 && !(await p.isVisible('#vg-nieuw')), 'eerste start: de keuze gewone vergadering of stand-up');
+  ok(await p.isVisible('#vg-dlg') && await p.locator('#vg-dlg [data-vg]').count() === 3 && !(await p.isVisible('#vg-nieuw')), 'eerste start: moet het wel een vergadering zijn? Drie keuzes');
+  ok(/Samen 6 uur werktijd/.test(await p.innerText('#vg-uit')), 'de som: 6 mensen, een uur, samen 6 uur (' + await p.innerText('#vg-uit') + ')');
+  await p.click('#vg-plus'); await p.click('#vg-plus'); await p.selectOption('#vg-duur', '90');
+  ok(/Samen 12 uur werktijd\. Dat is 1,6 werkdagen/.test(await p.innerText('#vg-uit')), '8 mensen, anderhalf uur: 12 uur, 1,6 werkdagen (' + await p.innerText('#vg-uit') + ')');
+  await p.click('#vg-dlg [data-vg="bericht"]'); await p.waitForTimeout(200);
+  ok(await p.isVisible('#vg-bericht') && /spaar je samen 12 uur/.test(await p.innerText('#vg-bp')) && await p.evaluate(() => !startedPaths().length), '"Iets meedelen": stuur een bericht, en er start geen plan');
+  await p.click('#vg-toch'); await p.waitForTimeout(200); ok(await p.isVisible('#vg-kies'), '"Toch vergaderen" brengt je terug naar de keuze');
   await p.keyboard.press('Escape'); await p.waitForTimeout(200);
   ok(!(await p.isVisible('#vg-dlg')) && await p.evaluate(() => !startedPaths().length), 'Escape sluit de keuze en start niets');
   await p.click('.stile[data-start="vergadering"]'); await p.waitForTimeout(300); await p.click('#vg-dlg [data-vg="gewoon"]'); await p.waitForTimeout(1500);
   const s1 = await p.evaluate(() => ({ dlg: !$('vg-dlg').hidden || !$('pn-dlg').hidden, started: startedPaths().join(), bar: (document.querySelector('#pathbar') || {}).innerText || '', proj: getProject(), cur: current }));
-  ok(!s1.dlg && s1.started === 'vergadering' && s1.cur === 'vergaderkost' && /Stap 1 van 5/.test(s1.bar), 'gewone vergadering: stap 1 opent met de balk (' + JSON.stringify(s1) + ')');
+  ok(!s1.dlg && s1.started === 'vergadering' && s1.cur === 'agenda' && /Stap 1 van 4/.test(s1.bar), 'gewone vergadering: de agenda opent als stap 1, met de balk (' + JSON.stringify(s1) + ')');
   ok(!s1.proj, 'een vergadering vraagt geen projectnaam en zet er geen');
   await p.goto(B + '/', { waitUntil: 'networkidle' }); await p.waitForTimeout(400);
   // vul een agenda, een overleg en een check-out, in de vorm die de tools zelf bewaren
