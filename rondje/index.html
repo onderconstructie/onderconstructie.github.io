@@ -25,6 +25,7 @@
 <meta name="oc:pdca" content="do">
 <meta name="oc:kort" content="Eén vraag, ieders antwoord op een rij">
 <meta name="oc:volgorde" content="83">
+<meta name="oc:traject" content="vergadering:4">
 <meta name="oc:opslag" content="rondje.v1, rondje.v1.kapot*">
 <meta name="oc:titel" content="Rondje">
 <meta name="theme-color" content="#ffffff">
@@ -261,6 +262,23 @@ kbd { font:inherit; font-size:0.8125rem; font-weight:600; padding:0 0.375rem; bo
 .ov-rondje .wat { color:var(--slate-800); overflow-wrap:anywhere; }
 .ov-rondje .stil { color:var(--slate-500); }
 .input { width:100%; min-height:44px; }
+/* Rondje of stand-up: dezelfde tweekeuze als Kort en Uitgebreid in de app */
+.rd-soort { display:grid; grid-template-columns:1fr 1fr; gap:0.25rem; padding:0.25rem; margin-bottom:1rem; background:var(--slate-100); border-radius:14px; }
+.rd-soort button { min-height:52px; padding:0.375rem 0.5rem; border-radius:11px; text-align:center; line-height:1.25; color:var(--slate-600); }
+.rd-soort button b { display:block; font-size:0.9375rem; font-weight:700; }
+.rd-soort button span { display:block; font-size:0.8125rem; }
+.rd-soort button[aria-pressed="true"] { background:#fff; color:var(--accent-dark); box-shadow:0 1px 2px rgba(15,23,42,0.08), 0 0 0 1px var(--mint); }
+.su-uitleg { padding:0.75rem 0.875rem; border-radius:12px; background:var(--slate-50); font-size:0.9375rem; color:var(--slate-600); text-wrap:pretty; }
+.su-velden { margin-top:0.5rem; text-align:left; }
+.su-velden label { display:block; margin:0.75rem 0 0.25rem; font-size:0.875rem; font-weight:700; color:var(--slate-800); }
+.rd-kaart .su-velden .input { margin-top:0; }
+.su-r { display:grid; grid-template-columns:5.25rem minmax(0, 1fr); column-gap:0.5rem; align-items:baseline; } .su-r + .su-r { margin-top:0.25rem; }
+.su-r i { font-style:normal; font-size:0.8125rem; font-weight:600; color:var(--slate-500); }
+.su-r.blok i { color:#b45309; }
+.ov-blokkades { margin-top:0.75rem; padding:0.75rem 0.875rem; border-radius:12px; background:#fffbeb; box-shadow:inset 0 0 0 1px #fde68a; }
+.ov-blokkades h3 { font-size:0.875rem; font-weight:700; color:#92400e; }
+.ov-blokkades ul { list-style:none; margin-top:0.25rem; }
+.ov-blokkades li { padding:0.25rem 0; font-size:0.9375rem; color:var(--slate-800); overflow-wrap:anywhere; }
 @media (max-width:480px) { .rd-nu { font-size:1.75rem; } .rd-knoppen .btn { padding:0 0.875rem; } .btn-groot { min-width:0; } }
 
 /* Hoe werkt dit? Zonder JavaScript een gewone uitklapper; het gedeelde blok hieronder maakt er een kaart van. */
@@ -1483,8 +1501,15 @@ window.ocProjectkiezer = function (plek, o) {
                 <p class="sr-only" id="live" role="status" aria-live="polite"></p>
 
                 <form id="zet" novalidate autocomplete="off">
-                    <label class="rd-lbl" for="rd-vraag">Welke vraag stel je?</label>
-                    <textarea class="input" id="rd-vraag" rows="1" maxlength="200" enterkeyhint="next" autocapitalize="sentences" placeholder="Bijvoorbeeld: wat vind jij van dit voorstel?"></textarea>
+                    <div class="rd-soort" role="group" aria-label="Soort rondje">
+                        <button type="button" id="soort-gewoon" aria-pressed="true"><b>Rondje</b><span>Eén vraag</span></button>
+                        <button type="button" id="soort-standup" aria-pressed="false"><b>Stand-up</b><span>Drie vaste vragen</span></button>
+                    </div>
+                    <div id="vraag-blok">
+                        <label class="rd-lbl" for="rd-vraag">Welke vraag stel je?</label>
+                        <textarea class="input" id="rd-vraag" rows="1" maxlength="200" enterkeyhint="next" autocapitalize="sentences" placeholder="Bijvoorbeeld: wat vind jij van dit voorstel?"></textarea>
+                    </div>
+                    <p class="su-uitleg" id="su-uitleg" hidden>Iedereen zegt kort: wat deed je, wat ga je doen, wat houdt je tegen? Rechtstaand, hooguit een kwartier.</p>
                     <label class="rd-lbl" for="rd-naam">Wie doet mee?</label>
                     <div class="rd-toe">
                         <input class="input" id="rd-naam" type="text" maxlength="200" enterkeyhint="done" autocapitalize="words" placeholder="Bijvoorbeeld: An, Bert">
@@ -1507,8 +1532,15 @@ window.ocProjectkiezer = function (plek, o) {
                         <p class="rd-tel" id="rd-tel"></p>
                         <p class="rd-nu" id="rd-nu"></p>
                         <p class="rd-nu-sub" id="rd-nu-sub"></p>
-                        <label class="sr-only" for="rd-regel" id="rd-regel-lbl">Wat zegt deze persoon?</label>
-                        <textarea class="input" id="rd-regel" rows="1" maxlength="300" enterkeyhint="done" autocapitalize="sentences" placeholder="Eén regel: wat onthoud je?"></textarea>
+                        <div id="rd-regel-blok">
+                            <label class="sr-only" for="rd-regel" id="rd-regel-lbl">Wat zegt deze persoon?</label>
+                            <textarea class="input" id="rd-regel" rows="1" maxlength="300" enterkeyhint="done" autocapitalize="sentences" placeholder="Eén regel: wat onthoud je?"></textarea>
+                        </div>
+                        <div class="su-velden" id="su-velden" hidden>
+                            <label for="su-d">Wat deed je?</label><textarea class="input" id="su-d" rows="1" maxlength="300" enterkeyhint="next" autocapitalize="sentences"></textarea>
+                            <label for="su-n">Wat ga je doen?</label><textarea class="input" id="su-n" rows="1" maxlength="300" enterkeyhint="next" autocapitalize="sentences"></textarea>
+                            <label for="su-b">Wat houdt je tegen?</label><textarea class="input" id="su-b" rows="1" maxlength="300" enterkeyhint="done" autocapitalize="sentences" placeholder="Niets? Laat leeg."></textarea>
+                        </div>
                         <div class="rd-knoppen">
                             <button type="button" class="btn btn-soft" id="rd-pas">Ik pas</button>
                             <button type="button" class="btn btn-primary btn-groot" id="rd-volgende">Volgende</button>
@@ -1519,7 +1551,7 @@ window.ocProjectkiezer = function (plek, o) {
                 </div>
 
                 <div id="rond" class="rd-rond" hidden>
-                    <b>Het rondje is rond</b>
+                    <b id="rond-titel">Het rondje is rond</b>
                     <p id="rond-sub"></p>
                     <div class="rd-knoppen">
                         <button type="button" class="btn btn-primary btn-groot" id="rd-toon">Bekijk het overzicht</button>
@@ -1550,6 +1582,7 @@ window.ocProjectkiezer = function (plek, o) {
               <li><b>Start het rondje.</b> Je ziet één naam groot in beeld. Noteer in één regel wat je onthoudt en kies Volgende.</li>
               <li><b>Passen mag.</b> Wie Ik pas kiest, komt op het einde nog één keer aan de beurt.</li>
               <li><b>Bekijk het overzicht.</b> Wat iedereen zei, onder elkaar. Kopieer het als tekst voor het verslag.</li>
+              <li><b>Een stand-up?</b> Kies bovenaan Stand-up. Dan krijgt iedereen drie korte vragen: wat deed je, wat ga je doen, wat houdt je tegen? De blokkades staan in het overzicht bovenaan.</li>
             </ul>
             <p>Tip: spreek vooraf af dat reageren pas na het rondje komt. Wil je weten hoe iedereen erbij zit? Gebruik dan <a href="/check-in/">Check-in</a>. Afspraken noteer je in <a href="/notities/">Vergadernotities</a>.</p>
           </div>
@@ -2042,7 +2075,9 @@ const meervoud = (n, een, veel) => n + ' ' + (n === 1 ? een : veel);
    fase 'zet' = klaarzetten, 'bezig' = het rondje loopt, 'rond' = iedereen is geweest.
    rij = wie nog moet, in volgorde (id's). gepast = wie al één keer paste en dus achteraan staat.
    beurten = wat genoteerd is: { wie, tekst, pas } in de volgorde waarin het gebeurde. */
-function nieuweSessie(mensen) { const d = vandaag(); return { id:'s' + uid(), naam:standaardNaam(d), datum:d, vraag:'', mensen:(mensen || []).map(m => ({ id:'m' + uid(), naam:m.naam })), fase:'zet', rij:[], gepast:[], log:[], beurten:[], concept:'', invoer:'' }; }
+const SU = [{ k:'d', t:'Wat deed je?', kort:'Gedaan' }, { k:'n', t:'Wat ga je doen?', kort:'Gaat doen' }, { k:'b', t:'Wat houdt je tegen?', kort:'Houdt tegen' }];   // de drie vragen van een stand-up
+const leegSU = () => ({ d:'', n:'', b:'' });
+function nieuweSessie(mensen, soort) { const d = vandaag(); return { id:'s' + uid(), naam:standaardNaam(d), datum:d, soort:soort === 'standup' ? 'standup' : 'gewoon', conceptS:leegSU(), vraag:'', mensen:(mensen || []).map(m => ({ id:'m' + uid(), naam:m.naam })), fase:'zet', rij:[], gepast:[], log:[], beurten:[], concept:'', invoer:'' }; }
 function leeg() { const s = nieuweSessie(); return { huidig:s.id, view:'vul', sessies:[s] }; }
 const okId = v => typeof v === 'string' && /^[\w-]{1,40}$/.test(v);
 function load() {
@@ -2058,7 +2093,7 @@ function load() {
       const mensen = (Array.isArray(s.mensen) ? s.mensen : []).filter(m => m && typeof m === 'object' && eenRegel(m.naam, MAX_N)).slice(0, MAX_M).map(m => {
         const mid = okId(m.id) && !mids.has(m.id) ? m.id : 'm' + uid(); mids.add(mid); return { id:mid, naam:eenRegel(m.naam, MAX_N) };
       });
-      const beurten = (Array.isArray(s.beurten) ? s.beurten : []).filter(b => b && typeof b === 'object' && mids.has(b.wie)).slice(0, MAX_M).map(b => ({ wie:b.wie, tekst:eenRegel(b.tekst, MAX_T), pas:b.pas === true }));
+      const beurten = (Array.isArray(s.beurten) ? s.beurten : []).filter(b => b && typeof b === 'object' && mids.has(b.wie)).slice(0, MAX_M).map(b => ({ wie:b.wie, tekst:eenRegel(b.tekst, MAX_T), d:eenRegel(b.d, MAX_T), n:eenRegel(b.n, MAX_T), b:eenRegel(b.b, MAX_T), pas:b.pas === true }));
       const geweest = new Set(beurten.map(b => b.wie));
       let fase = s.fase === 'bezig' || s.fase === 'rond' ? s.fase : 'zet';
       let rij = fase === 'bezig' ? [...new Set((Array.isArray(s.rij) ? s.rij : []).filter(x => mids.has(x) && !geweest.has(x)))] : [];
@@ -2066,7 +2101,8 @@ function load() {
       if (fase === 'bezig' && !rij.length) fase = beurten.length ? 'rond' : 'zet';
       if (fase === 'rond' && !beurten.length) fase = 'zet';
       const gepast = fase === 'bezig' ? (Array.isArray(s.gepast) ? s.gepast : []).filter(x => rij.includes(x)) : [];
-      return { id, naam:eenRegel(s.naam, 60) || standaardNaam(datum), datum, vraag:eenRegel(s.vraag, MAX_V), mensen, fase, rij, gepast, log: fase === 'bezig' ? (Array.isArray(s.log) ? s.log : []).filter(l => l && (l.a === 'b' || l.a === 'p')).slice(-200).map(l => ({ a:l.a, g:l.g === true })) : [], beurten: fase === 'zet' ? [] : beurten, concept:tekst(s.concept, MAX_T), invoer:tekst(s.invoer, 200) };
+      const cs = s.conceptS && typeof s.conceptS === 'object' ? s.conceptS : {};
+      return { id, naam:eenRegel(s.naam, 60) || standaardNaam(datum), datum, soort:s.soort === 'standup' ? 'standup' : 'gewoon', conceptS:{ d:tekst(cs.d, MAX_T), n:tekst(cs.n, MAX_T), b:tekst(cs.b, MAX_T) }, vraag:eenRegel(s.vraag, MAX_V), mensen, fase, rij, gepast, log: fase === 'bezig' ? (Array.isArray(s.log) ? s.log : []).filter(l => l && (l.a === 'b' || l.a === 'p')).slice(-200).map(l => ({ a:l.a, g:l.g === true })) : [], beurten: fase === 'zet' ? [] : beurten, concept:tekst(s.concept, MAX_T), invoer:tekst(s.invoer, 200) };
     });
     if (!sessies.length) { ocKapot(KEY); return leeg(); }
     return { huidig:sessies.some(s => s.id === d.huidig) ? d.huidig : sessies[sessies.length - 1].id, view:d.view === 'ov' ? 'ov' : 'vul', sessies };
@@ -2085,10 +2121,12 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) nuBew
 
 const cur = () => st.sessies.find(s => s.id === st.huidig) || st.sessies[0];
 const sessieLeeg = s => !(s.vraag || s.mensen.length || s.beurten.length || s.invoer.trim());
+const isSU = s => s.soort === 'standup';
+const beurtTekst = b => b.pas ? '' : b.tekst || [b.d, b.n, b.b].filter(Boolean).join(' · ');
 const heeftWerk = () => st.sessies.length > 1 || st.sessies.some(s => !sessieLeeg(s) || s.naam !== standaardNaam(s.datum));
 window.ocHeeftWerk = heeftWerk;   // het blok oc-kop toont "Alles wissen" alleen als dit true is
 const mens = (s, id) => s.mensen.find(m => m.id === id);
-const gezegd = s => s.beurten.filter(b => !b.pas && b.tekst).length;
+const blokkades = s => s.beurten.filter(b => !b.pas && b.b);
 
 /* ---------- Tekenen ---------- */
 function render() {
@@ -2112,42 +2150,63 @@ function zetWaarde(el, v) { if (el !== document.activeElement && el.value !== v)
 function tekenZet() {
   const s = cur();
   zetWaarde($('rd-vraag'), s.vraag); zetWaarde($('rd-naam'), s.invoer);
+  const su = isSU(s);
+  $('soort-gewoon').setAttribute('aria-pressed', String(!su)); $('soort-standup').setAttribute('aria-pressed', String(su));
+  $('vraag-blok').hidden = su; $('su-uitleg').hidden = !su;
+  $('rd-start').textContent = su ? 'Start de stand-up' : 'Start het rondje';
   $('rd-mensen').innerHTML = s.mensen.map((m, i) => `<li class="rd-mens"><span class="nr" aria-hidden="true">${i + 1}</span><span>${esc(m.naam)}</span><button type="button" data-weg="${escA(m.id)}" aria-label="${escA('Haal ' + m.naam + ' uit het rondje')}">${KRUIS}</button></li>`).join('');
   $('rd-rij').hidden = s.mensen.length < 2;
 }
 function tekenBezig() {
   const s = cur(), nu = mens(s, s.rij[0]); if (!nu) return;
   const tot = s.mensen.length, klaar = s.beurten.length, terug = s.gepast.includes(nu.id);
-  $('rd-vraag-toon').textContent = s.vraag;
+  const su = isSU(s);
+  $('rd-vraag-toon').textContent = su ? 'Stand-up' : s.vraag;
+  $('rd-regel-blok').hidden = su; $('su-velden').hidden = !su;
+  if (su) SU.forEach(v => zetWaarde($('su-' + v.k), s.conceptS[v.k]));
   $('rd-tel').textContent = 'Beurt ' + Math.min(klaar + 1, tot) + ' van ' + tot;
   $('rd-nu').textContent = nu.naam;
   $('rd-nu-sub').textContent = terug ? 'Paste daarnet. Nu toch iets?' : '';
   $('rd-regel-lbl').textContent = 'Wat zegt ' + nu.naam + '?';
   zetWaarde($('rd-regel'), s.concept);
   $('rd-pas').textContent = terug ? 'Past opnieuw' : 'Ik pas';
-  $('rd-volgende').textContent = s.rij.length === 1 ? 'Rond het rondje af' : 'Volgende';
+  $('rd-volgende').textContent = s.rij.length === 1 ? (su ? 'Rond de stand-up af' : 'Rond het rondje af') : 'Volgende';
   const straks = s.rij.slice(1, 4).map(id => (mens(s, id) || {}).naam).filter(Boolean), meer = s.rij.length - 1 - straks.length;
   $('rd-straks').innerHTML = straks.length ? 'Straks: <b>' + straks.map(esc).join('</b>, <b>') + '</b>' + (meer > 0 ? ' en nog ' + meer : '') : 'Dit is de laatste.';
   $('rd-terug').textContent = s.beurten.length || s.log.length ? 'Eén terug' : 'Terug naar de namen';
 }
 function tekenRond() {
-  const s = cur(), g = gezegd(s), p = s.beurten.filter(b => b.pas).length;
-  $('rond-sub').textContent = meervoud(s.mensen.length, 'persoon kwam', 'mensen kwamen') + ' aan de beurt' + (p ? ', ' + p + ' paste' + (p === 1 ? '' : 'n') : '') + '.';
+  const s = cur(), p = s.beurten.filter(b => b.pas).length, nb = blokkades(s).length;
+  $('rond-titel').textContent = isSU(s) ? 'De stand-up is rond' : 'Het rondje is rond';
+  $('rd-nog').textContent = isSU(s) ? 'Nieuwe stand-up met dezelfde mensen' : 'Nog een rondje met dezelfde mensen';
+  $('rond-sub').textContent = (isSU(s) && nb ? meervoud(nb, 'blokkade', 'blokkades') + ' om op te lossen. ' : '') + meervoud(s.mensen.length, 'persoon kwam', 'mensen kwamen') + ' aan de beurt' + (p ? ', ' + p + ' paste' + (p === 1 ? '' : 'n') : '') + '.';
 }
 
 function renderOverzicht() {
   const s = cur(), B = s.beurten;
   $('ov-acties').hidden = !B.length;
   if (!B.length) { $('ov').innerHTML = '<div class="ov-leeg"><b>Nog niemand aan het woord</b>Stel een vraag, zet de namen erin en start het rondje.</div>'; return; }
-  const rij = b => { const m = mens(s, b.wie); return `<li><span class="wie">${esc(m ? m.naam : '')}</span><span class="wat${b.pas || !b.tekst ? ' stil' : ''}">${b.pas ? 'Paste' : b.tekst ? esc(b.tekst) : 'Kwam aan het woord'}</span></li>`; };
   const nog = s.fase === 'bezig' ? s.rij.map(id => mens(s, id)).filter(Boolean) : [];
-  $('ov').innerHTML = `<h2 class="ov-vraag">${esc(s.vraag || 'Rondje zonder vraag')}<small>${meervoud(B.length, 'beurt', 'beurten')}${nog.length ? ', nog ' + nog.length + ' te gaan' : ''}</small></h2>`
-    + `<ul class="ov-rondje">${B.map(rij).join('')}${nog.map(m => `<li><span class="wie">${esc(m.naam)}</span><span class="wat stil">Nog niet aan de beurt</span></li>`).join('')}</ul>`;
+  const nogLi = nog.map(m => `<li><span class="wie">${esc(m.naam)}</span><span class="wat stil">Nog niet aan de beurt</span></li>`).join('');
+  const sub = `<small>${meervoud(B.length, 'beurt', 'beurten')}${nog.length ? ', nog ' + nog.length + ' te gaan' : ''}</small>`;
+  if (isSU(s)) {
+    const bl = blokkades(s);
+    const rijS = b => { const m = mens(s, b.wie), leeg = !(b.d || b.n || b.b); return `<li><span class="wie">${esc(m ? m.naam : '')}</span><span class="wat${b.pas || leeg ? ' stil' : ''}">${b.pas ? 'Paste' : leeg ? 'Kwam aan het woord' : SU.filter(v => b[v.k]).map(v => `<span class="su-r${v.k === 'b' ? ' blok' : ''}"><i>${v.kort}</i>${esc(b[v.k])}</span>`).join('')}</span></li>`; };
+    $('ov').innerHTML = `<h2 class="ov-vraag">Stand-up${sub}</h2>`
+      + (bl.length ? `<div class="ov-blokkades"><h3>${meervoud(bl.length, 'blokkade', 'blokkades')}</h3><ul>${bl.map(b => `<li><b>${esc((mens(s, b.wie) || {}).naam || '')}</b> ${esc(b.b)}</li>`).join('')}</ul></div>` : '')
+      + `<ul class="ov-rondje">${B.map(rijS).join('')}${nogLi}</ul>`;
+    return;
+  }
+  const rij = b => { const m = mens(s, b.wie); return `<li><span class="wie">${esc(m ? m.naam : '')}</span><span class="wat${b.pas || !b.tekst ? ' stil' : ''}">${b.pas ? 'Paste' : b.tekst ? esc(b.tekst) : 'Kwam aan het woord'}</span></li>`; };
+  $('ov').innerHTML = `<h2 class="ov-vraag">${esc(s.vraag || 'Rondje zonder vraag')}${sub}</h2><ul class="ov-rondje">${B.map(rij).join('')}${nogLi}</ul>`;
 }
 
 /* ---------- Klaarzetten: de vraag en de namen ---------- */
 function status(t, ok) { const p = $('status'); p.className = 'status' + (ok ? ' ok' : ''); p.textContent = ''; if (t) setTimeout(() => { p.textContent = t; }, 40); }
 function zeg(t) { const l = $('live'); l.textContent = ''; setTimeout(() => { l.textContent = t; }, 60); }
+function zetSoort(su) { const s = cur(); if (s.fase !== 'zet' || isSU(s) === su) return; s.soort = su ? 'standup' : 'gewoon'; save(); render(); zeg(su ? 'Stand-up: drie vragen per persoon.' : 'Gewoon rondje: één vraag.'); }
+$('soort-gewoon').addEventListener('click', () => zetSoort(false));
+$('soort-standup').addEventListener('click', () => zetSoort(true));
 $('rd-vraag').addEventListener('input', e => { cur().vraag = eenRegel(e.target.value, MAX_V); groei(e.target); status(''); saveLater(); $('oc-restart-row').hidden = !heeftWerk(); });
 $('rd-vraag').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); $('rd-naam').focus(); } });
 $('rd-naam').addEventListener('input', e => { cur().invoer = e.target.value.slice(0, 200); status(''); saveLater(); $('oc-restart-row').hidden = !heeftWerk(); });
@@ -2187,26 +2246,30 @@ function start() {
   if ($('rd-naam').value.trim()) voegToe();
   if (s.mensen.length < 2) { status(s.mensen.length ? 'Voeg nog iemand toe: een rondje maak je met minstens twee.' : 'Zet eerst de namen erin.', false); $('rd-naam').focus(); return; }
   clearTimeout(saveT); saveT = null;
-  s.fase = 'bezig'; s.rij = s.mensen.map(m => m.id); s.gepast = []; s.log = []; s.beurten = []; s.concept = '';
+  s.fase = 'bezig'; s.rij = s.mensen.map(m => m.id); s.gepast = []; s.log = []; s.beurten = []; s.concept = ''; s.conceptS = leegSU();
   save(); render(); status('');
   zeg(s.mensen[0].naam + ' begint.');
-  if (!kort()) $('rd-regel').focus();
+  if (!kort()) eersteVeld().focus();
 }
+const eersteVeld = () => isSU(cur()) ? $('su-d') : $('rd-regel');
 
 /* ---------- Het rondje ---------- */
 $('rd-regel').addEventListener('input', e => { cur().concept = e.target.value.slice(0, MAX_T); groei(e.target); saveLater(); });
 $('rd-regel').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); volgende(); } });
+SU.forEach((v, i) => { const el = $('su-' + v.k);
+  el.addEventListener('input', () => { cur().conceptS[v.k] = el.value.slice(0, MAX_T); groei(el); saveLater(); });
+  el.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); if (i < SU.length - 1) $('su-' + SU[i + 1].k).focus(); else volgende(); } }); });
 function naBeurt(s) {
-  s.concept = '';
+  s.concept = ''; s.conceptS = leegSU();
   if (!s.rij.length) { s.fase = 'rond'; s.gepast = []; s.log = []; }
-  clearTimeout(saveT); saveT = null; save(); $('rd-regel').value = ''; render();
+  clearTimeout(saveT); saveT = null; save(); $('rd-regel').value = ''; SU.forEach(v => { $('su-' + v.k).value = ''; }); render();
   if (s.fase === 'rond') { zeg('Het rondje is rond.'); $('rd-toon').focus({ preventScroll:true }); }
-  else { const nu = mens(s, s.rij[0]); zeg((nu ? nu.naam : '') + ' is aan de beurt.'); if (!kort()) $('rd-regel').focus(); }
+  else { const nu = mens(s, s.rij[0]); zeg((nu ? nu.naam : '') + ' is aan de beurt.'); if (!kort()) eersteVeld().focus(); }
 }
 function volgende() {
   const s = cur(), id = s.rij[0]; if (s.fase !== 'bezig' || !id) return;
   s.log.push({ a:'b', g:s.gepast.includes(id) });
-  s.beurten.push({ wie:id, tekst:eenRegel(s.concept, MAX_T), pas:false });
+  s.beurten.push(isSU(s) ? { wie:id, tekst:'', d:eenRegel(s.conceptS.d, MAX_T), n:eenRegel(s.conceptS.n, MAX_T), b:eenRegel(s.conceptS.b, MAX_T), pas:false } : { wie:id, tekst:eenRegel(s.concept, MAX_T), d:'', n:'', b:'', pas:false });
   s.rij.shift(); s.gepast = s.gepast.filter(x => x !== id);
   naBeurt(s);
 }
@@ -2214,7 +2277,7 @@ function volgende() {
 function pas() {
   const s = cur(), id = s.rij[0]; if (s.fase !== 'bezig' || !id) return;
   s.rij.shift();
-  if (s.gepast.includes(id)) { s.log.push({ a:'b', g:true }); s.gepast = s.gepast.filter(x => x !== id); s.beurten.push({ wie:id, tekst:'', pas:true }); }
+  if (s.gepast.includes(id)) { s.log.push({ a:'b', g:true }); s.gepast = s.gepast.filter(x => x !== id); s.beurten.push({ wie:id, tekst:'', d:'', n:'', b:'', pas:true }); }
   else { s.log.push({ a:'p' }); s.gepast.push(id); s.rij.push(id); }
   naBeurt(s);
 }
@@ -2222,11 +2285,11 @@ function pas() {
 function terug() {
   const s = cur(); if (s.fase !== 'bezig') return;
   const l = s.log.pop();
-  if (l && l.a === 'p' && s.rij.length) { const id = s.rij.pop(); s.rij.unshift(id); s.gepast = s.gepast.filter(x => x !== id); s.concept = ''; }
-  else if (s.beurten.length) { const b = s.beurten.pop(); s.rij.unshift(b.wie); if (l && l.g && !s.gepast.includes(b.wie)) s.gepast.push(b.wie); s.concept = b.pas ? '' : b.tekst; }
+  if (l && l.a === 'p' && s.rij.length) { const id = s.rij.pop(); s.rij.unshift(id); s.gepast = s.gepast.filter(x => x !== id); s.concept = ''; s.conceptS = leegSU(); }
+  else if (s.beurten.length) { const b = s.beurten.pop(); s.rij.unshift(b.wie); if (l && l.g && !s.gepast.includes(b.wie)) s.gepast.push(b.wie); s.concept = b.pas ? '' : b.tekst; s.conceptS = b.pas ? leegSU() : { d:b.d || '', n:b.n || '', b:b.b || '' }; }
   else { s.fase = 'zet'; s.rij = []; s.gepast = []; s.log = []; s.concept = ''; }
-  clearTimeout(saveT); saveT = null; save(); $('rd-regel').value = s.concept; render();
-  if (s.fase === 'bezig') { const nu = mens(s, s.rij[0]); zeg('Terug bij ' + (nu ? nu.naam : '') + '.'); if (!kort()) $('rd-regel').focus(); } else $('rd-vraag').focus();
+  clearTimeout(saveT); saveT = null; save(); $('rd-regel').value = s.concept; SU.forEach(v => { $('su-' + v.k).value = s.conceptS[v.k]; }); render();
+  if (s.fase === 'bezig') { const nu = mens(s, s.rij[0]); zeg('Terug bij ' + (nu ? nu.naam : '') + '.'); if (!kort()) eersteVeld().focus(); } else $('rd-vraag').focus();
 }
 $('rd-volgende').addEventListener('click', volgende);
 $('rd-pas').addEventListener('click', pas);
@@ -2254,12 +2317,12 @@ function kiesSessie(id) {
   nuBewaren(); st.huidig = id; status(''); save(); render();
 }
 /* Een nieuw rondje. metMensen: dezelfde namen in dezelfde volgorde, met een lege vraag. */
-function nieuwRondje(metMensen) {
+function nieuwRondje(metMensen, soort) {
   nuBewaren();
-  const s = nieuweSessie(metMensen ? cur().mensen : []); st.sessies.push(s); st.huidig = s.id; st.view = 'vul';
+  const s = nieuweSessie(metMensen ? cur().mensen : [], soort || (metMensen ? cur().soort : 'gewoon')); st.sessies.push(s); st.huidig = s.id; st.view = 'vul';
   if (st.sessies.length > 100) st.sessies.shift();
   status(''); save(); render();
-  if (metMensen) $('rd-vraag').focus();
+  if (metMensen && !isSU(s)) $('rd-vraag').focus();
 }
 function verwijderSessie() {
   nuBewaren();
@@ -2275,12 +2338,15 @@ function verwijderSessie() {
 function hernoemSessie(n) { const s = cur(); s.naam = n.replace(/\s+/g, ' ').trim().slice(0, 60) || standaardNaam(s.datum); clearTimeout(saveT); saveT = null; save(); render(); }
 
 /* ---------- Kopieer als tekst (voor het verslag) ---------- */
-function titelVan(s) { return s.naam === standaardNaam(s.datum) ? 'Rondje' : 'Rondje: ' + s.naam; }
+function titelVan(s) { const w = isSU(s) ? 'Stand-up' : 'Rondje'; return s.naam === standaardNaam(s.datum) ? w : w + ': ' + s.naam; }
 function alsTekst(s) {
   s = s || cur();
   const r = [titelVan(s), langDatum(s.datum), ''];
-  if (s.vraag) r.push('Vraag: ' + s.vraag, '');
-  s.beurten.forEach(b => { const m = mens(s, b.wie); r.push('- ' + (m ? m.naam : '') + ': ' + (b.pas ? 'paste' : b.tekst || 'kwam aan het woord')); });
+  if (s.vraag && !isSU(s)) r.push('Vraag: ' + s.vraag, '');
+  if (isSU(s)) { const bl = blokkades(s); if (bl.length) { r.push('Blokkades:'); bl.forEach(b => r.push('- ' + ((mens(s, b.wie) || {}).naam || '') + ': ' + b.b)); r.push(''); } }
+  s.beurten.forEach(b => { const m = mens(s, b.wie), n = m ? m.naam : '';
+    if (isSU(s) && !b.pas && (b.d || b.n || b.b)) { r.push('- ' + n); SU.forEach(v => { if (b[v.k]) r.push('  ' + v.kort + ': ' + b[v.k]); }); }
+    else r.push('- ' + n + ': ' + (b.pas ? 'paste' : b.tekst || 'kwam aan het woord')); });
   if (s.fase === 'bezig') s.rij.forEach(id => { const m = mens(s, id); if (m) r.push('- ' + m.naam + ': nog niet aan de beurt'); });
   return r.join('\n').trim() + '\n';
 }
@@ -2303,11 +2369,11 @@ $('kopieer').addEventListener('click', kopieer);
 /* ---------- Download als PDF of afbeelding ---------- */
 function exportView(s) {
   const e = esc;
-  const rij = b => { const m = mens(s, b.wie), stil = b.pas || !b.tekst; return `<div data-oc-keep style="display:flex;align-items:flex-start;gap:14px;padding:9px 0;border-top:1px solid #f1f5f9;font-size:14px;line-height:1.45"><span style="flex:none;width:30%;font-weight:700;color:#1e293b">${e(m ? m.naam : '')}</span><span style="flex:1;color:${stil ? '#64748b' : '#1e293b'}">${b.pas ? 'Paste' : b.tekst ? e(b.tekst) : 'Kwam aan het woord'}</span></div>`; };
+  const rij = b => { const m = mens(s, b.wie), bt = isSU(s) ? SU.filter(v => b[v.k]).map(v => v.kort + ': ' + b[v.k]).join('\n') : b.tekst, stil = b.pas || !bt; return `<div data-oc-keep style="display:flex;align-items:flex-start;gap:14px;padding:9px 0;border-top:1px solid #f1f5f9;font-size:14px;line-height:1.45"><span style="flex:none;width:30%;font-weight:700;color:#1e293b">${e(m ? m.naam : '')}</span><span style="flex:1;white-space:pre-line;color:${stil ? '#64748b' : '#1e293b'}">${b.pas ? 'Paste' : bt ? e(bt) : 'Kwam aan het woord'}</span></div>`; };
   const node = document.createElement('div');
-  node.innerHTML = (s.vraag ? `<div style="margin:0 0 10px;font-size:17px;font-weight:700;color:#1e293b;line-height:1.35">${e(s.vraag)}</div>` : '') + s.beurten.map(rij).join('');
+  node.innerHTML = (s.vraag && !isSU(s) ? `<div style="margin:0 0 10px;font-size:17px;font-weight:700;color:#1e293b;line-height:1.35">${e(s.vraag)}</div>` : '') + s.beurten.map(rij).join('');
   const own = s.naam === standaardNaam(s.datum) ? '' : s.naam + ' · ';
-  return { node, title:'Rondje', subtitle:own + meervoud(s.beurten.length, 'beurt', 'beurten') };   // de datum staat al rechts in de kop
+  return { node, title:isSU(s) ? 'Stand-up' : 'Rondje', subtitle:own + meervoud(s.beurten.length, 'beurt', 'beurten') };   // de datum staat al rechts in de kop
 }
 /* Bestandsnaam: tool-naam-datum (JJJJ-MM-DD), zonder dubbele datum of dubbele toolnaam */
 function ocFileName(tool, project) {
@@ -2393,7 +2459,7 @@ addEventListener('storage', e => { if (e.key === KEY) { st = load(); render(); }
 /* Eén kiezer (blok oc-projectkiezer): wisselen, nieuw rondje, hernoemen en verwijderen met Ongedaan. */
 window.ocPk = ocProjectkiezer('#ocKiezer', {
   woord: 'rondje', meervoud: 'rondjes', lidwoord: 'het', projectnaam: false,
-  lijst: () => st.sessies.map(s => ({ id: s.id, naam: s.naam, info: (s.naam.includes(kortDatum(s.datum)) ? '' : dagMaand(s.datum) + ' · ') + (s.vraag ? s.vraag.slice(0, 40) : meervoud(s.mensen.length, 'deelnemer', 'deelnemers')) })),
+  lijst: () => st.sessies.map(s => ({ id: s.id, naam: s.naam, info: (s.naam.includes(kortDatum(s.datum)) ? '' : dagMaand(s.datum) + ' · ') + (isSU(s) ? 'Stand-up · ' + meervoud(s.mensen.length, 'deelnemer', 'deelnemers') : s.vraag ? s.vraag.slice(0, 40) : meervoud(s.mensen.length, 'deelnemer', 'deelnemers')) })),
   actief: () => cur().id,
   kies: id => kiesSessie(id),
   nieuw: () => nieuwRondje(false),
@@ -2401,13 +2467,21 @@ window.ocPk = ocProjectkiezer('#ocKiezer', {
   verwijder: () => verwijderSessie(),
   magWeg: () => true
 });
+/* ?soort=standup (zo opent de stap in het plan "Leid een vergadering"): een leeg of afgerond rondje wordt een stand-up. Een lopend rondje blijft wat het is. */
+(function () {
+  let q = ''; try { q = new URLSearchParams(location.search).get('soort') || ''; } catch (e) {}
+  if (q !== 'standup') return;
+  const c = cur(); if (isSU(c)) return;
+  if (c.fase === 'zet' && !c.vraag) { c.soort = 'standup'; save(); }
+  else if (c.fase === 'rond') { const s = nieuweSessie(c.mensen, 'standup'); st.sessies.push(s); st.huidig = s.id; st.view = 'vul'; save(); }
+})();
 render();
 /* Vanuit een stappenplan in de app: "Nieuwe vergadering" begint hier een nieuw rondje. Wat er stond, blijft in je lijst. */
 (function () {
   const K = 'oc.plan.nieuw.rondje';
   function kijk() {
     try { if (localStorage.getItem(K) == null) return; localStorage.removeItem(K); } catch (e) { return; }
-    try { const c = cur(); if (c && c.beurten && c.beurten.length) nieuwRondje(false); } catch (e) {}
+    try { const c = cur(); if (c && c.beurten && c.beurten.length) nieuwRondje(isSU(c)); } catch (e) {}   // een stand-up houdt dezelfde mensen
   }
   kijk(); window.addEventListener('storage', e => { if (e.key === K && e.newValue != null) kijk(); });
 })();

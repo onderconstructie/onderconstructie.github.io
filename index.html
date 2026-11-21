@@ -5321,7 +5321,7 @@ const TRAJECTEN = [
   { id:'vergadering', title:'Leid een vergadering', get note() { return vergSoort() === 'standup' ? 'Stand-up: een rondje, het bord, de blokkades' : 'Van agenda tot wie wat doet'; },
     get foot() { return vergSoort() === 'standup' ? 'Een stand-up: rechtstaand, hooguit een kwartier. Wat meer tijd vraagt, bespreek je daarna met wie het aangaat.' : 'Is de vergadering voorbij, tik dan op "Nieuwe vergadering": je kiest opnieuw en begint met een leeg blad.'; },
     get q() { return vergSoort() === 'standup'
-      ? { 'check-in':'Wat deed je, wat doe je, wat houdt je tegen?', kanban:'Het bord erbij: wat schuift er op?', notities:'Blokkades en afspraken: wie lost wat op?', vergaderkost:'Wat kost dit kwartier?', agenda:'Is er toch een punt te bespreken?', 'check-out':'Wat neemt iedereen mee?', paradox:'Waarom minder mensen sneller gaat', beslissingen:'Wat is beslist, en waarom?' }
+      ? { rondje:'Wat deed je, wat ga je doen, wat houdt je tegen?', kanban:'Het bord erbij: wat schuift er op?', notities:'Blokkades en afspraken: wie lost wat op?', vergaderkost:'Wat kost dit kwartier?', agenda:'Is er toch een punt te bespreken?', 'check-out':'Wat neemt iedereen mee?', paradox:'Waarom minder mensen sneller gaat', beslissingen:'Wat is beslist, en waarom?' }
       : { vergaderkost:'De teller loopt: wat kost ze aan werktijd?', paradox:'Waarom minder mensen sneller gaat', agenda:'Welke vraag moet beantwoord zijn?', 'check-in':'Iedereen even aan het woord', notities:'Noteer, en haal er acties en besluiten uit', beslissingen:'Wat is beslist, en waarom?', 'check-out':'Wat neemt iedereen mee?' }; } },
   { id:'verhaal', title:'Vertel een verhaal', note:'Van één heldere boodschap tot een verhaal dat blijft hangen',
     foot:'De Verhaalkaart voedt het storyboard en je spiekbriefje. Wat je invult, staat telkens al klaar.',
@@ -5389,8 +5389,9 @@ const meeVan = trId => (LOOPT_MEE[trId] || []).map(id => byId[id]).filter(Boolea
 const STAP_NAAM = { project: { opdracht: { title:'Opdracht: de kern' } } };
 function trajectStappen(trId) {
   const mee = LOOPT_MEE[trId] || [];
-  const naam = STAP_NAAM[trId] || {};
-  const st = TOOLS.flatMap(t => (t.traject || []).filter(x => x.naam === trId).map(x => ({ t: naam[t.id] ? Object.assign({}, t, naam[t.id]) : t, n: x.stap }))).filter(s => !mee.includes(s.t.id) && !(trId === 'vergadering' && s.t.id === 'kanban' && vergSoort() !== 'standup')).sort((a, b) => a.n - b.n);
+  const sta = trId === 'vergadering' && vergSoort() === 'standup';
+  const naam = sta ? Object.assign({ rondje:{ zoek:'?soort=standup' } }, STAP_NAAM[trId]) : STAP_NAAM[trId] || {};
+  const st = TOOLS.flatMap(t => (t.traject || []).filter(x => x.naam === trId).map(x => ({ t: naam[t.id] ? Object.assign({}, t, naam[t.id]) : t, n: x.stap }))).filter(s => !mee.includes(s.t.id) && !(trId === 'vergadering' && (sta ? s.t.id === 'check-in' : s.t.id === 'kanban' || s.t.id === 'rondje'))).sort((a, b) => a.n - b.n);
   (STAP_EXTRA[trId] || []).forEach(x => {
     const b = byId[x.id], i = st.findIndex(s => s.t.id === x.na); if (!b || i < 0) return;
     st.splice(i + 1, 0, { t: Object.assign({}, b, { title:x.title, sub:x.sub, desc:x.sub, icon:x.icon || b.icon, zoek:x.zoek, extra:x }), n: st[i].n });
@@ -5413,7 +5414,7 @@ const klaarSinds = (trId, s, done) => { const t0 = planSinds(trId); if (!done ||
    Vaste regels, niets geraden: in de route zit de kern, wat je erbij nam, en nooit wat je oversloeg. */
 /* Een vergadering heeft twee soorten: de gewone (vijf stappen) en de stand-up (drie stappen: rondje, bord, blokkades).
    De stand-up is een eigen kern binnen hetzelfde plan; het Takenbord is alleen daar een stap. */
-const VERG_STA = ['check-in', 'kanban', 'notities'];
+const VERG_STA = ['rondje', 'kanban', 'notities'];   // het rondje is de tool Rondje in stand-upmodus; Check-in hoort bij de gewone vergadering
 const vergSoort = () => store.get('verg-soort', 'gewoon') === 'standup' ? 'standup' : 'gewoon';
 const isStaPlan = trId => trId === 'vergadering' && vergSoort() === 'standup';
 const kernVan = trId => isStaPlan(trId) ? VERG_STA : ROUTE_KERN[trId];
@@ -5424,7 +5425,7 @@ const KLAAR_ALS = {
     impact:'je per groep weet wat er verandert', stakeholders:'je weet wie mee moet en wie kan blokkeren', communicatie:'elke groep weet wat, wanneer en van wie', weerstand:'je per groep één eerste stap hebt' },
   proces:{ systeemkaart:'je ziet welke kring het probleem in stand houdt', stroom:'iemand die het proces uitvoert zegt: zo loopt het', schildpad:'je weet wat erin gaat, wat eruit komt en welke regels gelden', visgraat:'je de drie waarschijnlijkste oorzaken hebt aangeduid', prioriteit:'je weet wat je eerst aanpakt', kanban:'elke verbetering een eigenaar en een datum heeft', retro:'je weet of het proces beter loopt' },
   verandering:{ systeemkaart:'je ziet welke kring het gedrag in stand houdt', stakeholders:'je weet wie mee moet en wie kan blokkeren', sponsor:'je sponsor weet wat jij van hem nodig hebt', impact:'je per groep weet wat er verandert', communicatie:'elke groep weet wat, wanneer en van wie', weerstand:'je per groep één eerste stap hebt' },
-  vergadering:{ vergaderkost:'je weet wie er echt bij moet zijn', paradox:'de groep klein genoeg is om te beslissen', agenda:'elk punt een vraag en een tijd heeft', 'check-in':'iedereen één keer aan het woord kwam', notities:'elke actie een naam en een datum heeft', beslissingen:'elk besluit genoteerd staat, met het waarom', 'check-out':'iedereen weet wat hij meeneemt', kanban:'elke kaart van vandaag een naam heeft' }
+  vergadering:{ rondje:'iedereen zijn drie regels gaf', vergaderkost:'je weet wie er echt bij moet zijn', paradox:'de groep klein genoeg is om te beslissen', agenda:'elk punt een vraag en een tijd heeft', 'check-in':'iedereen één keer aan het woord kwam', notities:'elke actie een naam en een datum heeft', beslissingen:'elk besluit genoteerd staat, met het waarom', 'check-out':'iedereen weet wat hij meeneemt', kanban:'elke kaart van vandaag een naam heeft' }
 };
 const kernAantal = trId => trajectStappen(trId).filter(s => kernVan(trId).includes(s.t.id)).length;
 const klaarAls = (trId, s) => { const K = KLAAR_ALS[trId] || {}; return K[stapSleutel(s)] || K[s.t.id] || ''; };
@@ -5706,7 +5707,7 @@ function planBinnen(tr, alle, steps, rest, next, kort, over, ookOpen) {
 /* "Leid een vergadering" vraagt eerst wat voor vergadering het wordt: bij de eerste start en bij elke "Nieuwe vergadering".
    Bij een nieuwe vergadering staan de stappen weer open en krijgen Agenda, Vergadernotities en Check-out een seintje
    (oc.plan.nieuw.<tool>): ze beginnen met een leeg blad en houden het vorige in hun lijst. Er wordt niets gewist. */
-const VERG_BLAD = ['agenda', 'notities', 'check-out'];
+const VERG_BLAD = ['agenda', 'notities', 'check-out', 'rondje'];
 /* De som in de keuze: mensen maal duur, in gewone woorden en met een knipoog. Een werkdag is 7,6 uur. */
 function vergSom(n, min) {
   const u = n * min / 60, uur = u < 1 ? `${n * min} minuten` : `${String(Math.round(u * 10) / 10).replace('.', ',')} uur`;
