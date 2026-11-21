@@ -1967,6 +1967,9 @@ html.oc-stil .n-puls, html.oc-stil .n-halo, html.oc-stil .n-far circle { animati
 .rs-o-x:focus-visible { outline:2px solid #047857; outline-offset:-2px; }
 .plan-stop { display:flex; flex-wrap:wrap; align-items:center; gap:0.25rem 0.625rem; margin:0.25rem 0 0; padding:0.5rem 1rem 0.75rem; font-size:0.8125rem; color:var(--slate-500); }
 .plan-stop .lnk { min-height:44px; color:var(--slate-600); }
+.plan-opnieuw { padding-bottom:0; }
+.plan-opnieuw + .plan-stop { margin-top:0; padding-top:0; }
+.plan-opnieuw .lnk { color:var(--accent-dark); font-weight:600; }
 /* Onlangs: op de gsm en op een aanraakscherm de naam onder het icoon, klein maar leesbaar (12 px, 7,5:1) */
 .rc-nm { display:none; }
 @media (max-width:699.98px), (hover:none) {
@@ -3313,11 +3316,11 @@ function groepTools(gid) {
 const groupRows = gid => groepTools(gid).map(t => rowHTML(t)).join('');
 /* Vergaderen: veel tools, dus per moment in de vergadering een kort tussenkopje */
 const MEET_SUB = [
-  { id:'starten',   logo:'<svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="26" cy="38" r="7" fill="#cbd5e1"/><path d="M14 62c0-8 5-13 12-13s12 5 12 13z" fill="#cbd5e1"/><circle cx="54" cy="38" r="7" fill="#cbd5e1"/><path d="M42 62c0-8 5-13 12-13s12 5 12 13z" fill="#cbd5e1"/><path d="M32 12h16a4 4 0 0 1 4 4v7a4 4 0 0 1-4 4h-9l-5 5v-5h-2a4 4 0 0 1-4-4v-7a4 4 0 0 1 4-4z" fill="#10b981"/></svg>', label:'Starten',             note:'Een agenda, en iedereen aan het woord', tools:['agenda', 'ijsbreker', 'check-in', 'fortuna', 'mixer'] },
-  { id:'nadenken',  logo:'<svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M40 14a15 15 0 0 0-9 27v6h18v-6a15 15 0 0 0-9-27z" fill="#cbd5e1"/><rect x="32" y="51" width="16" height="5" rx="2.5" fill="#cbd5e1"/><rect x="35" y="59" width="10" height="4" rx="2" fill="#cbd5e1"/><path d="M40 24v12" stroke="#10b981" stroke-width="5" stroke-linecap="round"/></svg>', label:'Samen nadenken',      note:'Sterke vragen en ideeën op tafel', tools:['kaartjes', 'schets'] },
-  { id:'vastleggen',logo:'<svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="20" y="15" width="34" height="50" rx="4" fill="#cbd5e1"/><rect x="27" y="25" width="20" height="4" rx="2" fill="#fff"/><rect x="27" y="34" width="20" height="4" rx="2" fill="#fff"/><rect x="27" y="43" width="12" height="4" rx="2" fill="#fff"/><path d="M48 60 L62 40" stroke="#10b981" stroke-width="6" stroke-linecap="round"/></svg>', label:'Vastleggen',          note:'Notities, beslissingen en lijstjes', tools:['notities', 'beslissingen', 'vinkje'] },
-  { id:'afsluiten', logo:'<svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="18" y="15" width="26" height="50" rx="3" fill="#cbd5e1"/><circle cx="38" cy="41" r="2.5" fill="#fff"/><path d="M48 40h15M56 33l7 7-7 7" stroke="#10b981" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>', label:'Afsluiten',           note:'Terugblikken en goed eindigen', tools:['check-out', 'retro', 'pluim'] },
-  { id:'slimmer',   logo:'<svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M25 15h30M25 65h30" stroke="#cbd5e1" stroke-width="5" stroke-linecap="round"/><path d="M29 17c0 12 22 14 22 23s-22 11-22 23M51 17c0 12-22 14-22 23s22 11 22 23" stroke="#cbd5e1" stroke-width="4" fill="none"/><path d="M32 60c3-6 13-6 16 0z" fill="#10b981"/></svg>', label:'Slimmer vergaderen',  note:'Wie moet erbij, wat kost het, en spreken we gewone taal?', tools:['vergaderkost', 'paradox', 'bingo'] }
+  { id:'voorbereiden', logo:'<svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="26" cy="38" r="7" fill="#cbd5e1"/><path d="M14 62c0-8 5-13 12-13s12 5 12 13z" fill="#cbd5e1"/><circle cx="54" cy="38" r="7" fill="#cbd5e1"/><path d="M42 62c0-8 5-13 12-13s12 5 12 13z" fill="#cbd5e1"/><path d="M32 12h16a4 4 0 0 1 4 4v7a4 4 0 0 1-4 4h-9l-5 5v-5h-2a4 4 0 0 1-4-4v-7a4 4 0 0 1 4-4z" fill="#10b981"/></svg>', label:'Voorbereiden', note:'Is ze nodig, wie moet erbij, en wat breng je?', tools:['agenda', 'vergaderkost', 'paradox', 'verhaal', 'oefen'] },
+  { id:'faciliteren', logo:'<svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M40 14a15 15 0 0 0-9 27v6h18v-6a15 15 0 0 0-9-27z" fill="#cbd5e1"/><rect x="32" y="51" width="16" height="5" rx="2.5" fill="#cbd5e1"/><rect x="35" y="59" width="10" height="4" rx="2" fill="#cbd5e1"/><path d="M40 24v12" stroke="#10b981" stroke-width="5" stroke-linecap="round"/></svg>', label:'Faciliteer', note:'Iedereen aan het woord, en samen verder komen', tools:['check-in', 'ijsbreker', 'fortuna', 'mixer', 'kaartjes'] },
+  { id:'vastleggen', logo:'<svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="20" y="15" width="34" height="50" rx="4" fill="#cbd5e1"/><rect x="27" y="25" width="20" height="4" rx="2" fill="#fff"/><rect x="27" y="34" width="20" height="4" rx="2" fill="#fff"/><rect x="27" y="43" width="12" height="4" rx="2" fill="#fff"/><path d="M48 60 L62 40" stroke="#10b981" stroke-width="6" stroke-linecap="round"/></svg>', label:'Vastleggen', note:'Notities, beslissingen, lijstjes en schetsen', tools:['notities', 'beslissingen', 'vinkje', 'schets'] },
+  { id:'afsluiten', logo:'<svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="18" y="15" width="26" height="50" rx="3" fill="#cbd5e1"/><circle cx="38" cy="41" r="2.5" fill="#fff"/><path d="M48 40h15M56 33l7 7-7 7" stroke="#10b981" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>', label:'Afsluiten', note:'Terugblikken en goed eindigen', tools:['check-out', 'retro'] },
+  { id:'knipoog', logo:'<svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="40" r="25" fill="#cbd5e1"/><circle cx="31" cy="35" r="3" fill="#fff"/><path d="M44 35h8" stroke="#fff" stroke-width="4" stroke-linecap="round"/><path d="M30 46c3 5 7 7 10 7s7-2 10-7" stroke="#10b981" stroke-width="5" stroke-linecap="round" fill="none"/></svg>', label:'Met een knipoog', note:'Een compliment, en een beetje humor', tools:['pluim', 'bingo'] }
 ];
 /* Zakmes: kleine hulpjes, in vier soorten (slim werken, vastleggen en delen, onderweg, even pauze) */
 const ZAK_SUB = [
@@ -3335,8 +3338,8 @@ const VER_SUB = [
 const TAB_SUB = { verandering:VER_SUB, vergaderen:MEET_SUB, zakmes:ZAK_SUB };
 function subRows(gid) {
   const SUB = TAB_SUB[gid], all = byOrder(TOOLS.filter(t => inGroup(t, gid)));
-  // een nieuwe tool zonder vaste plaats: bij Vergaderen terugblikken = afsluiten, anders samen nadenken; bij Verandering en Zakmes in de eerste groep
-  const val = t => gid === 'vergaderen' ? (['check', 'act'].includes((t.pdca || [])[0]) ? 'afsluiten' : 'nadenken') : SUB[0].id;
+  // een nieuwe tool zonder vaste plaats: bij Vergaderen terugblikken = afsluiten, anders faciliteren; bij Verandering en Zakmes in de eerste groep
+  const val = t => gid === 'vergaderen' ? (['check', 'act'].includes((t.pdca || [])[0]) ? 'afsluiten' : 'faciliteren') : SUB[0].id;
   const plek = t => (SUB.find(m => m.tools.includes(t.id)) || SUB.find(m => m.id === val(t))).id;
   const open = store.get('sub-open', []);
   return SUB.map(m => {
@@ -5139,6 +5142,9 @@ const TRAJECTEN = [
     foot:'Stroom en Schildpad tonen het proces, de Visgraat de oorzaken. Gap, Prioriteren en Meetplan maken er een plan van.',
     q:{ stroom:'Hoe loopt het nu?', schildpad:'Wat gaat erin, wat komt eruit?', visgraat:'Waar zit de oorzaak?', systeemkaart:'Wat houdt het in stand?', gap:'Van nu naar beter', prioriteit:'Wat pak je eerst aan?',
         meetplan:'Hoe weet je dat het beter is?', raci:'Wie doet wat in het nieuwe proces?', kanban:'De verbeteringen uitvoeren', retro:'Wat werkt, wat niet?', leerpunten:'Wat hou je vast?', cockpit:'Alles op één bord' } },
+  { id:'vergadering', title:'Leid een vergadering', note:'Van "is ze nodig?" tot wie wat doet',
+    foot:'Vijf stappen voor elke vergadering. Is ze voorbij, tik dan op "Nieuwe vergadering" en je begint weer bij stap 1.',
+    q:{ vergaderkost:'Is ze nodig, en wie moet erbij?', paradox:'Waarom minder mensen sneller gaat', agenda:'Welke vraag moet beantwoord zijn?', 'check-in':'Iedereen even aan het woord', notities:'Noteer, en haal er acties en besluiten uit', beslissingen:'Wat is beslist, en waarom?', 'check-out':'Wat neemt iedereen mee?' } },
   { id:'verhaal', title:'Vertel een verhaal', note:'Van één heldere boodschap tot een verhaal dat blijft hangen',
     foot:'De Verhaalkaart voedt het storyboard en je spiekbriefje. Wat je invult, staat telkens al klaar.',
     q:{ verhaal:'Wat wil je vertellen, en waarom?', oefen:'Oefen het luidop, met je spiekbriefje erbij' } }
@@ -5220,14 +5226,21 @@ function trajectStappen(trId) {
   return st;
 }
 const stapKlaar = (s, all) => s.t.extra ? s.t.extra.klaar() : hasData(s.t, all);
+/* Een plan dat terugkomt: een vergadering leid je elke week. Met "Nieuwe vergadering" begin je weer bij stap 1.
+   Wat je invulde blijft staan; een stap telt daarna pas als gedaan wanneer je de tool sindsdien opnieuw opende. */
+const HERHAAL = { vergadering:'Nieuwe vergadering' };
+const planSinds = trId => (HERHAAL[trId] && (store.get('plan-sinds', {}) || {})[trId]) || 0;
+const klaarSinds = (trId, s, done) => { const t0 = planSinds(trId); if (!done || !t0) return done; const u = (store.get('usage', {}) || {})[s.t.id]; return !!(u && u.t >= t0); };
 /* Korte route: per plan een kern van vijf tot zeven stappen. De rest staat onder "Ook handig" en neem je erbij met één tik.
    Vaste regels, niets geraden: in de route zit de kern, wat je erbij nam, en nooit wat je oversloeg. */
-const ROUTE_KERN = { project:['opdracht', 'mindmap', 'tijdlijn', 'raci', 'kanban', 'retro'], proces:['stroom', 'schildpad', 'visgraat', 'prioriteit', 'kanban', 'retro'], verandering:['stakeholders', 'sponsor', 'impact', 'communicatie', 'weerstand'] };
+const ROUTE_KERN = { project:['opdracht', 'mindmap', 'tijdlijn', 'raci', 'kanban', 'retro'], proces:['stroom', 'schildpad', 'visgraat', 'prioriteit', 'kanban', 'retro'], verandering:['stakeholders', 'sponsor', 'impact', 'communicatie', 'weerstand'],
+  vergadering:['vergaderkost', 'agenda', 'check-in', 'notities', 'check-out'] };
 const KLAAR_ALS = {
   project:{ opdracht:'je opdrachtgever het doel in één zin herkent', projectbudget:'je weet wat het kost, ook de jaren na de start', 'opdracht?toon=alles':'je opdrachtgever heeft afgetekend', mindmap:'je elk onderdeel kunt aanwijzen dat je oplevert', tijdlijn:'elke mijlpaal een datum heeft', raci:'elke taak precies één eigenaar heeft', kanban:'het werk van deze week op het bord staat', retro:'je één ding kiest dat je anders doet. Doe dit ook na elke mijlpaal',
     impact:'je per groep weet wat er verandert', stakeholders:'je weet wie mee moet en wie kan blokkeren', communicatie:'elke groep weet wat, wanneer en van wie', weerstand:'je per groep één eerste stap hebt' },
   proces:{ systeemkaart:'je ziet welke kring het probleem in stand houdt', stroom:'iemand die het proces uitvoert zegt: zo loopt het', schildpad:'je weet wat erin gaat, wat eruit komt en welke regels gelden', visgraat:'je de drie waarschijnlijkste oorzaken hebt aangeduid', prioriteit:'je weet wat je eerst aanpakt', kanban:'elke verbetering een eigenaar en een datum heeft', retro:'je weet of het proces beter loopt' },
-  verandering:{ systeemkaart:'je ziet welke kring het gedrag in stand houdt', stakeholders:'je weet wie mee moet en wie kan blokkeren', sponsor:'je sponsor weet wat jij van hem nodig hebt', impact:'je per groep weet wat er verandert', communicatie:'elke groep weet wat, wanneer en van wie', weerstand:'je per groep één eerste stap hebt' }
+  verandering:{ systeemkaart:'je ziet welke kring het gedrag in stand houdt', stakeholders:'je weet wie mee moet en wie kan blokkeren', sponsor:'je sponsor weet wat jij van hem nodig hebt', impact:'je per groep weet wat er verandert', communicatie:'elke groep weet wat, wanneer en van wie', weerstand:'je per groep één eerste stap hebt' },
+  vergadering:{ vergaderkost:'je weet wie er echt bij moet zijn', paradox:'de groep klein genoeg is om te beslissen', agenda:'elk punt een vraag en een tijd heeft', 'check-in':'iedereen één keer aan het woord kwam', notities:'elke actie een naam en een datum heeft', beslissingen:'elk besluit genoteerd staat, met het waarom', 'check-out':'iedereen weet wat hij meeneemt' }
 };
 const kernAantal = trId => trajectStappen(trId).filter(s => ROUTE_KERN[trId].includes(s.t.id)).length;
 const klaarAls = (trId, s) => { const K = KLAAR_ALS[trId] || {}; return K[stapSleutel(s)] || K[s.t.id] || ''; };
@@ -5268,7 +5281,7 @@ function hasData(t, all) {
   } catch { return false; }
 }
 function stepsOf(trId, all = lsKeys()) {
-  return trajectStappen(trId).filter(s => inRoute(s, trId)).map(s => Object.assign(s, { done: stapKlaar(s, all) }));
+  return trajectStappen(trId).filter(s => inRoute(s, trId)).map(s => Object.assign(s, { done: klaarSinds(trId, s, stapKlaar(s, all)) }));
 }
 /* Een stappenplan is pas "begonnen" als je het zelf startte via een stappenplantegel of -knop (data-ctx).
    Gegevens in een tool die ook los gebruikt wordt (bv. Retro), starten geen plan. Bewaard in oc-app.paths-started. */
@@ -5292,7 +5305,7 @@ let pnBusy = false;
 document.addEventListener('click', e => {
   const c = e.target.closest('[data-ctx]'); if (!c || pnBusy) return;
   const id = c.dataset.ctx, asked = store.get('proj-asked', []);
-  if (getProject() || startedPaths().includes(id) || asked.includes(id) || isPrivate()) return;
+  if (getProject() || startedPaths().includes(id) || asked.includes(id) || isPrivate() || GEEN_NAAM.includes(id)) return;
   e.preventDefault(); e.stopImmediatePropagation();
   store.set('proj-asked', [...asked, id]);
   askProjectName(() => { pnBusy = true; try { c.click(); } finally { pnBusy = false; } }, id);
@@ -5304,6 +5317,8 @@ function zetProject(name) {
   dropPre(); renderProject();
 }
 // Dezelfde vraag, in de woorden van het stappenplan
+/* Een vergadering is geen project: dat plan vraagt geen naam, anders zou "Teamoverleg" je projectnaam overschrijven. */
+const GEEN_NAAM = ['vergadering'];
 const NAAMVRAAG = { verhaal:['Waarover vertel je?', 'Bv. Het nieuwe premieloket'], proces:['Welk proces wil je verbeteren?', 'Bv. Aanvragen behandelen'], verandering:['Hoe heet de verandering?', 'Bv. Nieuwe manier van werken'] };
 const naamVraag = tr => NAAMVRAAG[tr] || ['Hoe heet je project?', 'Bv. Digitaal premieloket'];
 function askProjectName(then, tr) {
@@ -5406,10 +5421,12 @@ const STARTS = [
   { path:'proces', title:'Verbeter een proces', sub:'Van hoe het loopt naar beter', kort:'Een proces', kortSub:'Beter, sneller, eenvoudiger' },
   { path:'verandering', title:'Begeleid een verandering', sub:'Wie moet mee, en hoe?', kort:'Een verandering', kortSub:'Wie moet mee, en hoe?' },
   { path:'verhaal', title:'Vertel een verhaal', sub:'Een boodschap die blijft hangen', kort:'Een verhaal', kortSub:'Dat blijft hangen' },
-  { group:'vergaderen', title:'Leid een vergadering', sub:'Agenda, groepjes, een rondje' },
+  { path:'vergadering', oud:'vergaderen', logo:(GROUPS.find(g => g.id === 'vergaderen') || {}).logo, title:'Leid een vergadering', sub:'Van agenda tot afspraken', kort:'Een vergadering', kortSub:'Van agenda tot afspraken' },
   { group:'zakmes', kopje:'pauze', sleutel:'reset', logo:RUST_LOGO, title:'Kom even tot rust', sub:'Ademen, aarden, opladen' }   // sleutel reset: de snelkoppeling /app/?start=reset en wat al bewaard is
 ];
 const stKey = st => st.sleutel || st.path || st.group;
+// Een tegel die vroeger een groep opende en nu een plan start, blijft vindbaar onder haar oude sleutel (snelkoppeling ?start=, zoektips).
+const stVan = key => STARTS.find(s => stKey(s) === key) || STARTS.find(s => s.oud === key);
 const PIJL_CTA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
 function startTileHTML(st, all) {
   if (!st) return '';
@@ -5474,8 +5491,14 @@ function planBinnen(tr, alle, steps, rest, next, kort, over, ookOpen) {
             <span><span class="step-name">${esc(s.t.title)}</span><span class="step-q">${esc((s.t.extra ? '' : tr.q[s.t.id]) || s.t.sub)}</span></span>
             <span class="step-st">${over.includes(stapSleutel(s)) ? 'overgeslagen' : s.done ? 'begonnen' : 'neem erbij'}</span>
           </button></li>`).join('')}</ul></div>` : ''}
-      ${startedPaths().includes(tr.id) ? `<p class="plan-stop"><button type="button" class="lnk" data-plan-stop="${esc(tr.id)}">Stop met dit plan</button><span>Je gegevens blijven staan.</span></p>` : ''}`;
+      ${startedPaths().includes(tr.id) ? `${HERHAAL[tr.id] ? `<p class="plan-stop plan-opnieuw"><button type="button" class="lnk" data-plan-opnieuw="${esc(tr.id)}">${HERHAAL[tr.id]}</button><span>Je begint weer bij stap 1. Wat je invulde, blijft staan.</span></p>` : ''}<p class="plan-stop"><button type="button" class="lnk" data-plan-stop="${esc(tr.id)}">Stop met dit plan</button><span>Je gegevens blijven staan.</span></p>` : ''}`;
 }
+// Opnieuw beginnen met een plan dat terugkomt: de stappen staan weer open, je gegevens blijven
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-plan-opnieuw]'); if (!b) return;
+  const id = b.dataset.planOpnieuw, m = store.get('plan-sinds', {}) || {}; m[id] = Date.now(); store.set('plan-sinds', m);
+  renderRecent(); renderPaths(); if ($('plan-dlg').open) renderPlanDlg(); if (typeof current !== 'undefined' && current) renderPathbar(current);
+});
 // Stop met een plan: het telt niet meer als begonnen (geen "Verder waar je was" of "Nog open" meer voor dit plan). Wat je invulde blijft.
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-plan-stop]'); if (!b) return;
@@ -5506,7 +5529,7 @@ function brugStand(trId) {
   return `<p class="brug-st">${v === 'ja' ? `Met ${esc(B.label)}.` : `Zonder ${esc(B.label)}.`} <button type="button" class="lnk" data-brug="${v === 'ja' ? 'nee' : 'ja'}">${v === 'ja' ? 'Weglaten' : 'Toch erbij nemen'}</button></p>`;
 }
 function planDelen(tr, all) {
-  const alle = trajectStappen(tr.id); alle.forEach(s => s.done = stapKlaar(s, all));
+  const alle = trajectStappen(tr.id); alle.forEach(s => s.done = klaarSinds(tr.id, s, stapKlaar(s, all)));
   const steps = alle.filter(s => inRoute(s, tr.id)), rest = alle.filter(s => !inRoute(s, tr.id));
   return { alle, steps, rest, next: steps.find(s => s.done === false) || null, kort: routeVan(tr.id) === 'kort', over: stapLijst('stap-over', tr.id), ookOpen: store.get('ook-open', []).includes(tr.id) };
 }
@@ -5530,7 +5553,7 @@ function renderPaths() {
   const html = TRAJECTEN.map(tr => {
     const alle = trajectStappen(tr.id);
     if (alle.length < 2) return '';
-    alle.forEach(s => s.done = stapKlaar(s, all));
+    alle.forEach(s => s.done = klaarSinds(tr.id, s, stapKlaar(s, all)));
     const steps = alle.filter(s => inRoute(s, tr.id)), rest = alle.filter(s => !inRoute(s, tr.id)), kort = routeVan(tr.id) === 'kort', over = stapLijst('stap-over', tr.id), ookOpen = store.get('ook-open', []).includes(tr.id);
     if (!steps.length) return '';
     const next = steps.find(s => s.done === false) || null;
@@ -5562,7 +5585,7 @@ function renderPaths() {
    "Vertel een verhaal" hoort niet bij Projecten en staat alleen op Start. "Begeleid een verandering" staat bovenaan in de tab Verandering. */
 const PLAN_KEUZE = ['project', 'proces'];
 // Het stappenplan van een tab die geen Projecten is: dezelfde plankaart, boven de groepen van die tab
-const PLAN_TAB = { verandering:'verandering' };
+const PLAN_TAB = { verandering:'verandering', vergaderen:'vergadering' };
 let planKaarten = {};
 function renderPlanTab() {
   const el = $('plan-tab'); if (!el) return;
@@ -5853,7 +5876,7 @@ const SUGGEST = [
 ];
 function suggestHTML(q) {
   const f = fold(q), hit = SUGGEST.filter(s => s.re.test(f)), pick = hit.length ? hit : SUGGEST;
-  const html = pick.map(s => s.path ? (STARTS.find(x => x.path === s.path) && startTileHTML(STARTS.find(x => x.path === s.path), lsKeys())) : startTileHTML(STARTS.find(x => stKey(x) === s.group), lsKeys())).filter(Boolean).join('');
+  const html = pick.map(s => s.path ? (STARTS.find(x => x.path === s.path) && startTileHTML(STARTS.find(x => x.path === s.path), lsKeys())) : startTileHTML(stVan(s.group), lsKeys())).filter(Boolean).join('');
   return html ? `<div class="res-tip"><p>${hit.length ? 'Misschien helpt dit:' : 'Of begin hier:'}</p>${html}</div>` : '';
 }
 
@@ -6126,7 +6149,7 @@ function refreshTools() {
 }
 // Snelkoppelingen op het beginscherm (manifest): /app/?start=project, verandering, vergaderen of reset (reset = even tot rust, in het Zakmes)
 function openStart(key) {
-  const st = STARTS.find(s => stKey(s) === key); if (!st) return;
+  const st = stVan(key); if (!st) return;
   const u = store.get('start-used', []); if (!u.includes(key)) store.set('start-used', [...u, key]);
   if (st.path) {
     const steps = stepsOf(st.path); if (!steps.length) return;
@@ -6148,7 +6171,8 @@ const FASEN = {
   project: [{ naam:'Opzetten', van:'opdracht' }, { naam:'Plannen', van:'prioriteit' }, { naam:'Uitvoeren', van:'kanban' }],
   verandering: [{ naam:'Verkennen', van:'stakeholders' }, { naam:'Plannen', van:'veranderprofiel' }, { naam:'Begeleiden', van:'weerstand' }],
   proces: [{ naam:'Begrijpen', van:'stroom' }, { naam:'Verbeteren', van:'gap' }, { naam:'Borgen', van:'raci' }],
-  verhaal: [{ naam:'Bedenken', van:'verhaal' }, { naam:'Verbeelden', van:'schets' }, { naam:'Brengen', van:'oefen' }]
+  verhaal: [{ naam:'Bedenken', van:'verhaal' }, { naam:'Verbeelden', van:'schets' }, { naam:'Brengen', van:'oefen' }],
+  vergadering: [{ naam:'Vooraf', van:'vergaderkost' }, { naam:'Tijdens', van:'check-in' }, { naam:'Afsluiten', van:'check-out' }]
 };
 /* Idee 3: na de wizard opent de eerste stap (de Projectopdracht) meteen met Begin aangetikt: de naam staat er al, de cursor in het eerste veld.
    Alleen als de tool nog leeg is (een zichtbare startkaart); anders gebeurt er niets. */
@@ -6239,7 +6263,7 @@ $('wz-keuzes').addEventListener('click', e => {
   const b = e.target.closest('[data-doel]'); if (!b) return;
   WZ.doel = b.dataset.doel;
   document.querySelectorAll('#wz-keuzes .wz-keuze').forEach(x => x.classList.toggle('gekozen', x === b));
-  if (wzSt(WZ.doel).path) {
+  if (wzSt(WZ.doel).path && !GEEN_NAAM.includes(WZ.doel)) {
     const i = $('wz-naam'); i.value = WZ.naam;
     const [vr, vb] = naamVraag(WZ.doel); i.placeholder = vb; document.querySelector('label[for="wz-naam"]').textContent = vr;
     // Kort of uitgebreid: dezelfde keuze als in de vraag op Start
