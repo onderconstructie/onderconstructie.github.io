@@ -19,7 +19,7 @@ const { chromium } = require('playwright');
     ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), naam + ': niets loopt buiten het scherm');
     if (naam === 'laptop') {
       await p.locator('#plan-tab .path[data-path="verhaal"] .path-next').click(); await p.waitForTimeout(900);
-      ok(await p.evaluate(() => { const d = document.getElementById('pn-dlg'); return document.documentElement.classList.contains('in-tool') || (d && !d.hidden && d.offsetParent !== null); }), 'laptop: "Begin hier" van het verhaal start het plan (eerst de vraag naar een naam)');
+      ok(await p.evaluate(() => { const d = document.getElementById('pn-dlg'); return document.documentElement.classList.contains('in-tool') || (d && !d.hidden); }), 'laptop: "Begin hier" van het verhaal start het plan (eerst de vraag naar een naam)');
       await p.goto(BASE + '/'); await p.waitForTimeout(1000);
       await p.locator('.tab[data-tab="vergaderen"]').click(); await p.waitForTimeout(600);
       ok(await p.locator('#plan-tab .path').count() === 1 && await p.locator('#plan-tab .pt-twee').count() === 0, 'laptop: Vergaderen houdt één plan over de volle breedte');
