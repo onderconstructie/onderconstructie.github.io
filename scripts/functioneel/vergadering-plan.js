@@ -12,12 +12,12 @@ let fout = 0; const ok = (c, m) => { console.log((c ? 'ok   ' : 'FOUT ') + m); i
   const stappen = () => p.evaluate(() => stepsOf('vergadering').map(s => s.t.id).join());
   ok(await stappen() === 'agenda,check-in,notities,check-out', 'gewone vergadering, kort: vier stappen (' + await stappen() + ')');
   const vol = await p.evaluate(() => trajectStappen('vergadering').map(s => s.t.id).join());
-  ok(vol === 'vergaderkost,paradox,agenda,check-in,notities,beslissingen,check-out', 'uitgebreid: Vergaderkost, Afstemmingsparadox en Beslissingslog erbij, het Takenbord niet (' + vol + ')');
+  ok(vol === 'agenda,check-in,notities,beslissingen,check-out', 'uitgebreid: alleen het Beslissingslog erbij; de som en de afstemmingslijnen staan in de eerste vraag, niet als stap (' + vol + ')');
   // de tegel vraagt eerst wat voor vergadering het wordt
   await p.click('.stile[data-start="vergadering"]'); await p.waitForTimeout(400);
   ok(await p.isVisible('#vg-dlg') && await p.locator('#vg-dlg [data-vg]').count() === 3 && !(await p.isVisible('#vg-nieuw')), 'eerste start: moet het wel een vergadering zijn? Drie keuzes');
-  ok(/Samen 6 uur werktijd/.test(await p.innerText('#vg-uit')), 'de som: 6 mensen, een uur, samen 6 uur (' + await p.innerText('#vg-uit') + ')');
-  await p.click('#vg-plus'); await p.click('#vg-plus'); await p.selectOption('#vg-duur', '90');
+  ok(/Samen 6 uur werktijd/.test(await p.innerText('#vg-uit')) && /En 15 lijnen om af te stemmen/.test(await p.innerText('#vg-lijn')), 'de som: 6 mensen, een uur, samen 6 uur en 15 lijnen (' + await p.innerText('#vg-uit') + ' ' + await p.innerText('#vg-lijn') + ')');
+  await p.selectOption('#vg-n', '8'); await p.selectOption('#vg-duur', '90');
   ok(/Samen 12 uur werktijd\. Dat is 1,6 werkdagen/.test(await p.innerText('#vg-uit')), '8 mensen, anderhalf uur: 12 uur, 1,6 werkdagen (' + await p.innerText('#vg-uit') + ')');
   await p.click('#vg-dlg [data-vg="bericht"]'); await p.waitForTimeout(200);
   ok(await p.isVisible('#vg-bericht') && /spaar je samen 12 uur/.test(await p.innerText('#vg-bp')) && await p.evaluate(() => !startedPaths().length), '"Iets meedelen": stuur een bericht, en er start geen plan');
@@ -29,6 +29,14 @@ let fout = 0; const ok = (c, m) => { console.log((c ? 'ok   ' : 'FOUT ') + m); i
   ok(!s1.dlg && s1.started === 'vergadering' && s1.cur === 'agenda' && /Stap 1 van 4/.test(s1.bar), 'gewone vergadering: de agenda opent als stap 1, met de balk (' + JSON.stringify(s1) + ')');
   ok(!s1.proj, 'een vergadering vraagt geen projectnaam en zet er geen');
   await p.goto(B + '/', { waitUntil: 'networkidle' }); await p.waitForTimeout(400);
+  // de tegel opnieuw aantikken terwijl de vergadering loopt: verder, of een nieuwe?
+  await p.click('.stile[data-start="vergadering"]'); await p.waitForTimeout(300);
+  ok(await p.isVisible('#vg-verder') && /Stap 1 van 4: Agenda/.test(await p.innerText('#vg-vs')), 'tegel opnieuw aangetikt: verder of een nieuwe vergadering (' + await p.innerText('#vg-vs') + ')');
+  await p.click('#vg-verder [data-vv="verder"]'); await p.waitForTimeout(1200);
+  ok(await p.evaluate(() => current === 'agenda' && $('vg-dlg').hidden), '"Verder waar ik was" opent de stap waar je was');
+  await p.goto(B + '/', { waitUntil: 'networkidle' }); await p.waitForTimeout(400);
+  await p.click('.stile[data-start="vergadering"]'); await p.waitForTimeout(300); await p.click('#vg-verder [data-vv="nieuw"]'); await p.waitForTimeout(300);
+  ok(await p.isVisible('#vg-kies') && await p.isVisible('#vg-nieuw'), '"Nieuwe vergadering" brengt je naar de eerste vraag'); await p.keyboard.press('Escape'); await p.waitForTimeout(200);
   // vul een agenda, een overleg en een check-out, in de vorm die de tools zelf bewaren
   const vul = async (pad, doe) => { const q = await c.newPage(); await q.goto(B + pad, { waitUntil: 'networkidle' }); await q.waitForTimeout(500); await q.evaluate(doe); await q.waitForTimeout(300); await q.close(); };
   await vul('/agenda/', () => { nieuweAgendaMaken(); const a = cur(); a.name = 'Teamoverleg'; a.punten.push(nieuwPunt('Budget')); save(); });
