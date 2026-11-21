@@ -296,7 +296,9 @@ body.searching .plan-keuze { display:none; }
 .step-st { font-size:0.8125rem; font-weight:600; color:var(--slate-500); white-space:nowrap; }
 .step.done .step-st { color:var(--accent-dark); }
 .step.next .step-st { color:var(--accent-dark); }
-.path-foot { font-size:0.8125rem; color:var(--slate-500); padding:0 1rem 0.875rem 1rem; }
+.path-foot { display:flex; align-items:flex-start; gap:0.5rem; margin:0.25rem 1rem 1rem; padding:0.625rem 0.75rem; border-radius:12px; background:var(--slate-50); font-size:0.8125rem; line-height:1.45; color:var(--slate-600, #475569); }
+.path-foot svg { flex:none; width:16px; height:16px; margin-top:0.125rem; color:var(--slate-400); }
+.ook + .path-foot { margin-top:0; }
 /* Loopt mee: drie tools naast het plan. Brug: een ja/nee-vraag onder een stap */
 .mee, .brug-st { display:none; }
 .path.open .mee { display:block; margin:0 1rem 0.75rem; }
@@ -323,10 +325,10 @@ body.searching .plan-keuze { display:none; }
 .step-hulp .lnk { min-height:32px; margin-left:0.125rem; }
 .ook, .route-keuze { display:none; }
 .path.open .ook { display:block; border-top:1px solid var(--slate-100); }
-.ook-kop { display:flex; align-items:center; gap:0.5rem; width:100%; min-height:48px; padding:0 1rem; text-align:left; font-size:0.875rem; font-weight:600; color:var(--slate-700, #334155); }
+.ook-kop { display:flex; align-items:baseline; gap:0.5rem; width:100%; min-height:48px; padding:0.875rem 1rem; text-align:left; font-size:0.8125rem; font-weight:600; color:var(--slate-500); }
 .ook-kop:hover { background:var(--slate-50); }
-.ook-n { min-width:1.5rem; height:1.5rem; padding:0 0.375rem; border-radius:999px; background:var(--slate-100); color:var(--slate-600, #475569); font-size:0.8125rem; font-weight:700; display:inline-flex; align-items:center; justify-content:center; }
-.ook-kop .toggle { margin-left:auto; } .ook:not(.open) .ook-kop .toggle { transform:rotate(-90deg); }
+.ook-n { font-size:0.8125rem; font-weight:500; color:var(--slate-500); }
+.ook-kop .toggle { margin-left:auto; align-self:center; } .ook:not(.open) .ook-kop .toggle { transform:rotate(-90deg); }
 .path.open .ook .ook-lijst { display:none; border-top:0; padding-top:0; animation:none; } .path.open .ook.open .ook-lijst { display:block; }
 .ook-stap::before { display:none; }
 .ook-stap .step-dot { border-style:dashed; font-size:1rem; font-weight:600; }
@@ -5245,14 +5247,14 @@ $('restore-yes').addEventListener('click', () => {
    De app toont per plan de stappen, welke al gegevens hebben, en wat de volgende stap is. */
 const TRAJECTEN = [
   { id:'verandering', title:'Begeleid een verandering', note:'Van wie er mee moet tot hoe mensen meegaan',
-    foot:'Betrokkenen, sponsor, impact en klimaat voeden samen het Veranderprofiel.',
+    foot:'Betrokkenen, sponsor, impact en klimaat voeden samen het Veranderprofiel.', footKort:'Betrokkenen, sponsor en impact voeden samen het Veranderprofiel.',
     q:{} },   // geen aparte vragen: de stappen tonen de ondertitel van de tool zelf, zo staat er overal hetzelfde
   { id:'project', title:'Start een project', note:'Van vertrekpunt tot terugblik',
     q:{ opdracht:'Vijf vragen. De rest volgt vanzelf.', gap:'Waar staan we, waar willen we heen?', meetplan:'Hoe weet je dat het lukt?', prioriteit:'Wat eerst?', raci:'Wie doet wat?', 'project-realisme':'Is het haalbaar?', projectbudget:'Wat kost het?',
         sprint:'Wat past er in deze sprint?',
         kanban:'Het werk zelf', 'project-radar':'Hoe staat het project ervoor?', dossier:'Wat leg je voor aan de stuurgroep?', retro:'Wat nemen we mee?', cockpit:'Alles op één bord' } },
   { id:'proces', title:'Verbeter een proces', note:'Van hoe het nu loopt naar hoe het beter kan',
-    foot:'Stroom en Schildpad tonen het proces, de Visgraat de oorzaken. Gap, Prioriteren en Meetplan maken er een plan van.',
+    foot:'Stroom en Schildpad tonen het proces, de Visgraat de oorzaken. Gap, Prioriteren en Meetplan maken er een plan van.', footKort:'Stroom en Schildpad tonen het proces, de Visgraat de oorzaken. Met Prioriteren kies je wat je eerst aanpakt.',
     q:{ stroom:'Hoe loopt het nu?', schildpad:'Wat gaat erin, wat komt eruit?', visgraat:'Waar zit de oorzaak?', systeemkaart:'Wat houdt het in stand?', gap:'Van nu naar beter', prioriteit:'Wat pak je eerst aan?',
         meetplan:'Hoe weet je dat het beter is?', raci:'Wie doet wat in het nieuwe proces?', kanban:'De verbeteringen uitvoeren', retro:'Wat werkt, wat niet?', leerpunten:'Wat hou je vast?', cockpit:'Alles op één bord' } },
   { id:'vergadering', title:'Leid een vergadering', get note() { return vergSoort() === 'standup' ? 'Stand-up: een rondje, het bord, de blokkades' : 'Van agenda tot wie wat doet'; },
@@ -5631,7 +5633,7 @@ function planBinnen(tr, alle, steps, rest, next, kort, over, ookOpen) {
         </button>${s === next ? `<p class="step-hulp">${klaarAls(tr.id, s) ? `<span>Klaar als ${esc(klaarAls(tr.id, s))}.</span> ` : ''}${steps.length > 1 ? `<button type="button" class="lnk" data-skip="${esc(stapSleutel(s))}">Sla over</button>` : ''}</p>` : ''}${brugStap(tr.id, s) && s.done && !brugVan(tr.id) ? brugHTML(tr.id) : ''}</li>`).join('')}</ol>
       ${brugStand(tr.id)}
       ${rest.length ? `<div class="ook${ookOpen ? ' open' : ''}">
-        <button type="button" class="ook-kop" data-ook aria-expanded="${ookOpen}"><span>${kort || rest.some(s => !over.includes(stapSleutel(s))) ? 'Ook handig' : 'Overgeslagen'}</span><span class="ook-n">${rest.length}</span>${toggleIcon}</button>
+        <button type="button" class="ook-kop" data-ook aria-expanded="${ookOpen}"><span>${kort || rest.some(s => !over.includes(stapSleutel(s))) ? 'Ook handig' : 'Overgeslagen'}</span><span class="ook-n">${rest.length === 1 ? '1 stap' : rest.length + ' stappen'}</span>${toggleIcon}</button>
         <ul class="steps ook-lijst">${rest.map(s => `<li class="step ook-stap${s.done ? ' done' : ''}">
           <button class="step-btn" data-id="${esc(s.t.id)}"${zoekAttr(s.t)} data-erbij="${esc(stapSleutel(s))}" title="${esc(s.t.desc)}">
             <span class="step-dot">${s.done ? checkIcon : '+'}</span><span class="icon">${iconHTML(s.t.icon)}</span>
@@ -5744,6 +5746,9 @@ function brugStand(trId) {
   const B = BRUGGEN[trId], v = B && brugVan(trId); if (!v) return '';
   return `<p class="brug-st">${v === 'ja' ? `Met ${esc(B.label)}.` : `Zonder ${esc(B.label)}.`} <button type="button" class="lnk" data-brug="${v === 'ja' ? 'nee' : 'ja'}">${v === 'ja' ? 'Weglaten' : 'Toch erbij nemen'}</button></p>`;
 }
+// De uitleg onder een plan noemt alleen tools die in de gekozen route staan: de korte route krijgt haar eigen zin.
+const INFO_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>';
+function voetVan(tr, kort) { return (kort && tr.footKort) || tr.foot || ''; }
 function planDelen(tr, all) {
   const alle = trajectStappen(tr.id); alle.forEach(s => s.done = klaarSinds(tr.id, s, stapKlaar(s, all)));
   const steps = alle.filter(s => inRoute(s, tr.id)), rest = alle.filter(s => !inRoute(s, tr.id));
@@ -5784,7 +5789,7 @@ function renderPaths() {
  ${next && knop ? `<button class="path-next" data-id="${esc(next.t.id)}"${zoekAttr(next.t)} data-ctx="${tr.id}"><span class="icon">${iconHTML(next.t.icon)}</span>
         <span><small>${nDone ? 'Volgende stap' : 'Begin hier'}</small><b>${esc(next.t.title)}</b></span>${chevron}</button>` : ''}
       ${planBinnen(tr, alle, steps, rest, next, kort, over, ookOpen)}
-      ${isOpen && tr.foot ? `<p class="path-foot">${esc(tr.foot)} Een vinkje betekent dat er iets bewaard is op dit toestel.</p>` : ''}
+      ${isOpen && voetVan(tr, kort) ? `<p class="path-foot">${INFO_ICO}<span>${esc(voetVan(tr, kort))}${nDone ? ' Een vinkje betekent dat er iets bewaard is op dit toestel.' : ''}</span></p>` : ''}
     </section>`;
     kaarten[tr.id] = kaart(true);   // ook voor Projecten, weergave Stappenplan: daar staat elk plan, begonnen of niet
     if (!startedPaths().includes(tr.id)) { notStarted.push({ tr, first: steps[0] }); return ''; }
