@@ -56,7 +56,7 @@ let fout = 0; const ok = (c, m) => { console.log((c ? 'ok   ' : 'FOUT ') + m); i
   await p.locator('[data-plan-opnieuw]:visible').click(); await p.waitForTimeout(300);
   ok(await p.isVisible('#vg-dlg') && await p.isVisible('#vg-nieuw'), '"Nieuwe vergadering" vraagt opnieuw de soort en zegt dat je met een leeg blad begint');
   await p.click('#vg-dlg [data-vg="standup"]'); await p.waitForTimeout(500);
-  ok(await stappen() === 'check-in,kanban,notities', 'stand-up: drie stappen, rondje, bord en blokkades (' + await stappen() + ')');
+  ok(await stappen() === 'rondje,kanban,notities', 'stand-up: drie stappen, rondje, bord en blokkades (' + await stappen() + ')');
   ok(await klaar() === '000', 'na "Nieuwe vergadering" staan alle stappen weer open (' + await klaar() + ')');
   const sein = await p.evaluate(() => ['agenda', 'notities', 'check-out'].map(k => localStorage.getItem('oc.plan.nieuw.' + k) ? 1 : 0).join(''));
   ok(sein === '111', 'de drie tools krijgen een seintje voor een leeg blad (' + sein + ')');

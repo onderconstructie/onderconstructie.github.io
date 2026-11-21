@@ -1,0 +1,43 @@
+// Rondje, stand-up: drie vaste vragen per persoon, de blokkades bovenaan in het overzicht, en ?soort=standup vanuit het plan.
+const { chromium } = require('playwright');
+(async () => {
+  const BASE = process.env.BASE || 'http://127.0.0.1:8970', SHOTS = process.env.SHOTS || '/tmp', b = await chromium.launch(); let fout = 0;
+  const ok = (c, m) => { console.log((c ? 'ok   ' : 'FOUT ') + m); if (!c) fout++; };
+  const c = await b.newContext({ viewport:{ width:390, height:844 }, serviceWorkers:'block', hasTouch:true, deviceScaleFactor:2 }), p = await c.newPage();
+  p.on('pageerror', e => { console.log('FOUT paginafout: ' + e.message); fout++; });
+  const st = () => p.evaluate(() => { const s = rondje.staat(); return s.sessies.find(x => x.id === s.huidig); });
+  await p.goto(BASE + '/rondje/', { waitUntil:'networkidle' }); await p.waitForTimeout(400);
+  await p.click('#soort-standup'); await p.waitForTimeout(100);
+  ok((await st()).soort === 'standup' && await p.isHidden('#vraag-blok') && await p.isVisible('#su-uitleg') && /stand-up/.test(await p.textContent('#rd-start')), 'Stand-up kiezen: geen eigen vraag, wel de uitleg en de juiste knop');
+  await p.fill('#rd-naam', 'An, Bert, Chris'); await p.click('#rd-plus');
+  await p.screenshot({ path:SHOTS + '/standup-zet.png' });
+  await p.click('#rd-start'); await p.waitForTimeout(200);
+  ok(await p.isVisible('#su-velden') && await p.isHidden('#rd-regel-blok') && await p.textContent('#rd-nu') === 'An', 'het rondje toont drie velden in plaats van één regel');
+  await p.fill('#su-d', 'Offerte verstuurd'); await p.fill('#su-n', 'Planning afwerken'); await p.fill('#su-b', 'Wacht op cijfers van finance');
+  await p.screenshot({ path:SHOTS + '/standup-bezig.png' });
+  ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'de stand-up past in de breedte');
+  await p.click('#rd-volgende'); await p.waitForTimeout(150);
+  ok(await p.textContent('#rd-nu') === 'Bert' && await p.inputValue('#su-d') === '' && await p.inputValue('#su-b') === '', 'Volgende bewaart de drie regels en maakt de velden leeg');
+  await p.click('#rd-terug'); await p.waitForTimeout(150);
+  ok(await p.inputValue('#su-b') === 'Wacht op cijfers van finance', 'Eén terug brengt de drie regels terug');
+  await p.click('#rd-volgende'); await p.fill('#su-d', 'Test geschreven'); await p.press('#su-d', 'Enter'); await p.press('#su-n', 'Enter'); await p.press('#su-b', 'Enter'); await p.waitForTimeout(150);
+  ok(await p.textContent('#rd-nu') === 'Chris', 'Enter loopt door de drie velden en gaat dan naar de volgende');
+  await p.click('#rd-pas'); await p.click('#rd-pas'); await p.waitForTimeout(200);
+  const s = await st(); ok(s.fase === 'rond' && /stand-up is rond/.test(await p.textContent('#rond-titel')) && /1 blokkade/.test(await p.textContent('#rond-sub')), 'de stand-up is rond en noemt het aantal blokkades');
+  await p.click('#rd-toon'); await p.waitForTimeout(200);
+  const ov = await p.textContent('#ov');
+  ok(/1 blokkade/.test(ov) && /Wacht op cijfers van finance/.test(ov) && /Offerte verstuurd/.test(ov) && /Paste/.test(ov), 'het overzicht zet de blokkades bovenaan en toont per persoon de drie regels');
+  await p.screenshot({ path:SHOTS + '/standup-overzicht.png', fullPage:false });
+  const t = await p.evaluate(() => rondje.tekst());
+  ok(/^Stand-up/.test(t) && /Blokkades:\n- An: Wacht op cijfers/.test(t) && /Gedaan: Offerte verstuurd/.test(t), 'kopieer als tekst: blokkades eerst, dan per persoon');
+  // vanuit het plan: ?soort=standup
+  await p.goto(BASE + '/rondje/?soort=standup', { waitUntil:'networkidle' }); await p.waitForTimeout(300);
+  ok((await st()).soort === 'standup', 'een stand-up blijft een stand-up');
+  await p.evaluate(() => localStorage.clear()); await p.goto(BASE + '/rondje/?soort=standup', { waitUntil:'networkidle' }); await p.waitForTimeout(300);
+  ok((await st()).soort === 'standup' && await p.isVisible('#su-uitleg'), '?soort=standup opent een leeg rondje als stand-up');
+  await p.evaluate(() => localStorage.clear()); await p.goto(BASE + '/rondje/', { waitUntil:'networkidle' });
+  await p.fill('#rd-vraag', 'Akkoord?'); await p.fill('#rd-naam', 'An, Bert'); await p.click('#rd-start'); await p.waitForTimeout(150);
+  await p.goto(BASE + '/rondje/?soort=standup', { waitUntil:'networkidle' }); await p.waitForTimeout(300);
+  ok((await st()).soort === 'gewoon' && (await st()).fase === 'bezig', 'een lopend gewoon rondje wordt niet omgegooid');
+  await b.close(); console.log('fouten: ' + fout); process.exit(fout ? 1 : 0);
+})();
