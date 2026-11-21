@@ -17,6 +17,8 @@ let fout = 0; const ok = (c, m) => { console.log((c ? 'ok   ' : 'FOUT ') + m); i
   await p.click('.stile[data-start="vergadering"]'); await p.waitForTimeout(400);
   ok(await p.isVisible('#vg-dlg') && await p.locator('#vg-dlg [data-vg]').count() === 3 && !(await p.isVisible('#vg-nieuw')), 'eerste start: moet het wel een vergadering zijn? Drie keuzes');
   ok(/Samen 6 uur werktijd/.test(await p.innerText('#vg-uit')) && /En 15 lijnen om af te stemmen/.test(await p.innerText('#vg-lijn')), 'de som: 6 mensen, een uur, samen 6 uur en 15 lijnen (' + await p.innerText('#vg-uit') + ' ' + await p.innerText('#vg-lijn') + ')');
+  ok(await p.isVisible('#vg-mixer') && /Afstemmingsparadox/.test(await p.innerText('#vg-mixer')), 'onder de som: een link naar de Afstemmingsparadox, als tip');
+  await p.selectOption('#vg-n', '12'); ok(/66 lijnen/.test(await p.innerText('#vg-lijn')) && /Dat gaat traag/.test(await p.innerText('#vg-lijn')), 'met twaalf mensen: 66 lijnen, dat gaat traag');
   await p.selectOption('#vg-n', '8'); await p.selectOption('#vg-duur', '90');
   ok(/Samen 12 uur werktijd\. Dat is 1,6 werkdagen/.test(await p.innerText('#vg-uit')), '8 mensen, anderhalf uur: 12 uur, 1,6 werkdagen (' + await p.innerText('#vg-uit') + ')');
   await p.click('#vg-dlg [data-vg="bericht"]'); await p.waitForTimeout(200);
