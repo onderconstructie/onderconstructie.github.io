@@ -4451,7 +4451,9 @@ function wire(f, id) {
     const p = norm(u.pathname);
     if (HUBS.includes(p)) { e.preventDefault(); showHome(); return; }
     const t = toolForPath(p);
-    if (t && t.id !== id) { e.preventDefault(); openTool(t.id, false, id, /[?&](van|sjabloon|plan)=/.test(u.search) ? u.search : ''); }
+    if (t && t.id !== id) { e.preventDefault(); openTool(t.id, false, id, /[?&](van|sjabloon|plan)=/.test(u.search) ? u.search : '');
+      // De uitspraak onderaan een tool wijst naar Citaten (#bib:<woorden>): geef dat anker door zodra Citaten geladen is
+      if (/^#bib/.test(u.hash)) { const anker = u.hash, doel = t.id; (function zet(n) { try { const fr = frames.get(doel), w = fr && fr.dataset.loaded && fr.contentWindow; if (w) { w.location.hash = anker; return; } } catch {} if (n < 50 && current === doel) setTimeout(() => zet(n + 1), 100); })(0); } }
   }, true);
 }
 
