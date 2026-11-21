@@ -327,7 +327,13 @@ body.searching .plan-keuze { display:none; }
 .step.next .step-btn { padding-inline:0.5rem; border-radius:14px; }
 .step.next .step-btn:hover { background:#dcfce7; }
 .step-hulp { position:relative; display:flex; align-items:flex-end; gap:0.75rem; margin:0 0.625rem 0 calc(0.5rem + 28px + 0.625rem); padding-bottom:0.625rem; font-size:0.8125rem; line-height:1.45; color:var(--slate-600, #475569); }
-.step-hulp p { flex:1; min-width:0; margin:0; }
+.step-hulp p { flex:1; min-width:0; margin:0; text-wrap:balance; }
+/* Rechts dezelfde lichte ronde pijl als op Start; het woord blijft er voor wie voorleest */
+.step-woord { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+.step-go { display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:50%; background:var(--wit); color:var(--accent-dark); box-shadow:inset 0 0 0 1px #a7f3d0; }
+.step-go svg { width:16px; height:16px; transition:transform .15s var(--ease-out); }
+@media (hover:hover) { .step.next .step-btn:hover .step-go { background:var(--accent-dark); color:#fff; box-shadow:none; } .step.next .step-btn:hover .step-go svg { transform:translateX(2px); } }
+@media (max-width:480px) { .step-skip { min-height:32px; padding:0 0.625rem; } }
 .step-skip { flex:none; margin-left:auto; min-height:36px; padding:0 0.75rem; border-radius:999px; background:var(--wit); box-shadow:inset 0 0 0 1px var(--slate-200); font-size:0.8125rem; font-weight:600; color:var(--slate-600, #475569); white-space:nowrap; }
 .step-skip:hover { background:var(--slate-50); color:var(--slate-800); }
 .step-skip:focus-visible { outline:2px solid #047857; outline-offset:2px; }
@@ -2007,7 +2013,7 @@ html.oc-stil .n-puls, html.oc-stil .n-halo, html.oc-stil .n-far circle { animati
 .rs-o:focus-visible { outline:2px solid #047857; outline-offset:-2px; border-radius:6px; }
 .rs-o-s { color:var(--slate-400); }
 .rs-o-meer { font-weight:500; color:var(--slate-600); text-decoration-color:var(--slate-300); }
-#rs-lijst { column-gap:0.5rem; } #rs-lijst .rs-o-l { max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#rs-lijst { column-gap:0.5rem; flex-wrap:nowrap; } #rs-lijst .rs-o-l { flex:0 1 auto; min-width:2.5rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } #rs-lijst .rs-o-k, #rs-lijst .rs-o-meer { flex:none; white-space:nowrap; }
 .rs-m-smal { display:none; }
 @media (max-width:429.98px) { .rs-l3, .rs-m-breed { display:none; } .rs-m-smal { display:inline; } }
 .rs-o-x { margin-left:auto; display:grid; place-items:center; width:44px; height:44px; border:0; border-radius:12px; background:none; color:var(--slate-400); cursor:pointer; }
@@ -5684,7 +5690,7 @@ function planBinnen(tr, alle, steps, rest, next, kort, over, ookOpen) {
         <button class="step-btn" data-id="${esc(s.t.id)}"${zoekAttr(s.t)} title="${esc(s.t.desc)}">
           <span class="step-dot">${s.done ? checkIcon : i + 1}</span><span class="icon">${iconHTML(s.t.icon)}</span>
           <span><span class="step-name">${esc(s.t.title)}</span><span class="step-q">${esc((s.t.extra ? '' : tr.q[s.t.id]) || s.t.sub)}</span></span>
-          <span class="step-st">${s.done ? (s.t.extra && s.t.extra.klaarTekst) || 'begonnen' : s === next ? 'volgende' : ''}</span>
+          <span class="step-st">${s.done ? (s.t.extra && s.t.extra.klaarTekst) || 'begonnen' : s === next ? `<span class="step-woord">volgende</span><span class="step-go" aria-hidden="true">${PIJL_CTA}</span>` : ''}</span>
         </button>${s === next ? `<div class="step-hulp">${klaarAls(tr.id, s) ? `<p>Klaar als ${esc(klaarAls(tr.id, s))}.</p>` : ''}${steps.length > 1 ? `<button type="button" class="step-skip" data-skip="${esc(stapSleutel(s))}">Sla over</button>` : ''}</div>` : ''}${brugStap(tr.id, s) && s.done && !brugVan(tr.id) ? brugHTML(tr.id) : ''}</li>`).join('')}</ol>
       ${brugStand(tr.id)}
       ${rest.length ? `<div class="ook${ookOpen ? ' open' : ''}">
