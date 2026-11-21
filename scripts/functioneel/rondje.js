@@ -1,0 +1,65 @@
+// Rondje: klaarzetten, het rondje lopen, passen, één terug, het overzicht en een nieuw rondje.
+const { chromium } = require('playwright');
+(async () => {
+  const BASE = process.env.BASE || 'http://127.0.0.1:8970', SHOTS = process.env.SHOTS || '/tmp', b = await chromium.launch(); let fout = 0;
+  const ok = (c, m) => { console.log((c ? 'ok   ' : 'FOUT ') + m); if (!c) fout++; };
+  for (const vp of [{ width:390, height:844 }, { width:1280, height:900 }]) {
+    const c = await b.newContext({ viewport:vp, serviceWorkers:'block', hasTouch:vp.width < 500, deviceScaleFactor:2 }), p = await c.newPage();
+    p.on('pageerror', e => { console.log('FOUT paginafout: ' + e.message); fout++; });
+    await p.goto(BASE + '/rondje/', { waitUntil:'networkidle' }); await p.waitForTimeout(500);
+    const st = () => p.evaluate(() => { const s = rondje.staat(); return s.sessies.find(x => x.id === s.huidig); });
+    const breed = () => p.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1);
+    await p.screenshot({ path:SHOTS + '/rondje-leeg-' + vp.width + '.png' });
+    await p.click('#rd-start'); await p.waitForTimeout(150);
+    ok((await st()).fase === 'zet' && /namen/.test(await p.textContent('#status')), 'zonder namen start het rondje niet, met een duidelijke melding');
+    await p.fill('#rd-vraag', 'Wat vind jij van dit voorstel?');
+    await p.fill('#rd-naam', 'An, Bert; Chris'); await p.click('#rd-plus');
+    await p.fill('#rd-naam', 'an'); await p.press('#rd-naam', 'Enter'); await p.waitForTimeout(150);
+    ok((await st()).mensen.map(m => m.naam).join() === 'An,Bert,Chris', 'namen met komma of puntkomma komen erin, een dubbele niet');
+    await p.fill('#rd-naam', 'Dina'); await p.press('#rd-naam', 'Enter');
+    await p.screenshot({ path:SHOTS + '/rondje-zet-' + vp.width + '.png' });
+    ok(await breed(), 'klaarzetten past in de breedte');
+    await p.click('#rd-start'); await p.waitForTimeout(200);
+    let s = await st();
+    ok(s.fase === 'bezig' && await p.textContent('#rd-nu') === 'An' && /Beurt 1 van 4/.test(await p.textContent('#rd-tel')), 'het rondje start bij de eerste naam');
+    ok(/Bert/.test(await p.textContent('#rd-straks')), 'je ziet wie straks komt');
+    await p.fill('#rd-regel', 'Goed idee, maar te duur.'); await p.screenshot({ path:SHOTS + '/rondje-bezig-' + vp.width + '.png' });
+    ok(await breed(), 'het rondje past in de breedte');
+    await p.click('#rd-volgende'); await p.waitForTimeout(150);
+    ok(await p.textContent('#rd-nu') === 'Bert' && await p.inputValue('#rd-regel') === '', 'Volgende bewaart de regel en toont de volgende naam met een leeg veld');
+    await p.click('#rd-pas'); await p.waitForTimeout(150);
+    s = await st(); ok(await p.textContent('#rd-nu') === 'Chris' && s.rij.length === 3 && s.gepast.length === 1, 'Ik pas schuift Bert naar het einde');
+    await p.click('#rd-terug'); await p.waitForTimeout(150);
+    s = await st(); ok(await p.textContent('#rd-nu') === 'Bert' && !s.gepast.length, 'Eén terug maakt het passen ongedaan');
+    await p.click('#rd-pas'); await p.fill('#rd-regel', 'Akkoord.'); await p.press('#rd-regel', 'Enter'); await p.waitForTimeout(150);
+    ok(await p.textContent('#rd-nu') === 'Dina', 'Enter in de regel gaat naar de volgende');
+    await p.click('#rd-terug'); await p.waitForTimeout(150);
+    ok(await p.textContent('#rd-nu') === 'Chris' && await p.inputValue('#rd-regel') === 'Akkoord.', 'Eén terug brengt de regel van Chris terug');
+    await p.click('#rd-volgende'); await p.click('#rd-volgende'); await p.waitForTimeout(150);
+    ok(await p.textContent('#rd-nu') === 'Bert' && /Paste daarnet/.test(await p.textContent('#rd-nu-sub')) && /Rond het rondje af/.test(await p.textContent('#rd-volgende')), 'wie paste komt op het einde terug, en dat is de laatste');
+    await p.reload({ waitUntil:'networkidle' }); await p.waitForTimeout(300);
+    ok(await p.textContent('#rd-nu') === 'Bert' && (await st()).beurten.length === 3, 'na herladen staat het rondje waar het was');
+    await p.click('#rd-pas'); await p.waitForTimeout(200);
+    s = await st(); ok(s.fase === 'rond' && s.beurten.length === 4 && s.beurten[3].pas === true, 'wie twee keer past staat als "paste", en het rondje is rond');
+    await p.screenshot({ path:SHOTS + '/rondje-rond-' + vp.width + '.png' });
+    await p.click('#rd-toon'); await p.waitForTimeout(200);
+    const ov = await p.textContent('#ov');
+    ok(/Wat vind jij/.test(ov) && /Goed idee, maar te duur/.test(ov) && /Paste/.test(ov) && /Kwam aan het woord/.test(ov), 'het overzicht toont de vraag, de regels, wie paste en wie niets liet noteren');
+    ok(await breed(), 'het overzicht past in de breedte');
+    await p.screenshot({ path:SHOTS + '/rondje-overzicht-' + vp.width + '.png' });
+    const t = await p.evaluate(() => rondje.tekst());
+    ok(/Vraag: Wat vind jij/.test(t) && /- An: Goed idee/.test(t) && /- Bert: paste/.test(t), 'kopieer als tekst geeft de vraag en één regel per persoon');
+    await p.click('#tab-vul'); await p.click('#rd-nog'); await p.waitForTimeout(200);
+    s = await st(); ok(s.fase === 'zet' && s.mensen.length === 4 && !s.vraag && (await p.evaluate(() => rondje.staat().sessies.length)) === 2, 'nog een rondje: dezelfde mensen, een lege vraag, het vorige blijft bewaard');
+    await p.click('[data-weg]'); await p.waitForTimeout(150); ok((await st()).mensen.length === 3, 'een naam weghalen werkt');
+    await p.click('#toast-btn'); await p.waitForTimeout(150); ok((await st()).mensen.length === 4, 'en dat kan je ongedaan maken');
+    const voor = (await st()).mensen.map(m => m.naam).join(); await p.click('#rd-schud'); await p.waitForTimeout(100);
+    ok((await st()).mensen.map(m => m.naam).join() !== voor, 'schudden verandert de volgorde');
+    // kapotte opslag: de tool start leeg en zonder fout
+    await p.evaluate(() => localStorage.setItem('rondje.v1', '{"sessies":[{"id":"x","fase":"bezig","mensen":[{"id":"a","naam":"<img src=x onerror=window.__x=1>"}],"rij":["a","zz"],"beurten":[{"wie":"zz","tekst":"spook"}]}],"huidig":"x"}'));
+    await p.reload({ waitUntil:'networkidle' }); await p.waitForTimeout(300);
+    s = await st(); ok(s.fase === 'bezig' && s.rij.join() === 'a' && !s.beurten.length && !(await p.evaluate(() => window.__x)), 'vreemde opslag wordt opgeschoond en niets wordt uitgevoerd');
+    await c.close();
+  }
+  await b.close(); console.log('fouten: ' + fout); process.exit(fout ? 1 : 0);
+})();
