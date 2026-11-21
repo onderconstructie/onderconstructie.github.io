@@ -3371,6 +3371,17 @@ window.ocPk = ocProjectkiezer('#ocKiezer', {
 });
 render();
 toonImport();
+
+/* Vanuit het plan "Leid een vergadering" in de app: tik je daar op "Nieuwe vergadering", dan begin je hier met een nieuwe agenda.
+   Wat er stond blijft in je lijst. De app zet daarvoor een seintje klaar (oc.plan.nieuw.agenda); er wordt niets gewist. */
+(function () {
+  const K = 'oc.plan.nieuw.agenda';
+  function kijk() {
+    try { if (localStorage.getItem(K) == null) return; localStorage.removeItem(K); } catch (e) { return; }
+    try { const c = cur(); if (c && !c.voorbeeld && c.punten && c.punten.length) nieuweAgendaMaken(); } catch (e) {}
+  }
+  kijk(); window.addEventListener('storage', e => { if (e.key === K && e.newValue != null) kijk(); });
+})();
 setTimeout(() => { try { ocPublish(); } catch {} }, 0);
 ocOpenOvernemen();
 </script>

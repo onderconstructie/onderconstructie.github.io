@@ -25,7 +25,7 @@
 <meta name="oc:pdca" content="check">
 <meta name="oc:kort" content="Sluit je sessie af in één minuut">
 <meta name="oc:volgorde" content="86">
-<meta name="oc:traject" content="vergadering:7">
+<meta name="oc:traject" content="vergadering:8">
 <meta name="oc:opslag" content="check-out.v1, check-out.v1.kapot*">
 <meta name="oc:titel" content="Check-out">
 <meta name="theme-color" content="#ffffff">
@@ -2385,6 +2385,16 @@ window.ocPk = ocProjectkiezer('#ocKiezer', {
 });
 render();
 tekenMinuut(DUUR);
+/* Vanuit het plan "Leid een vergadering" in de app: tik je daar op "Nieuwe vergadering", dan begin je hier met een nieuwe check-out.
+   Wat er stond blijft in je lijst. De app zet daarvoor een seintje klaar (oc.plan.nieuw.check-out); er wordt niets gewist. */
+(function () {
+  const K = 'oc.plan.nieuw.check-out';
+  function kijk() {
+    try { if (localStorage.getItem(K) == null) return; localStorage.removeItem(K); } catch (e) { return; }
+    try { const c = cur(); if (c && !c.voorbeeld && c.antwoorden && c.antwoorden.length) nieuweCheckout(); } catch (e) {}
+  }
+  kijk(); window.addEventListener('storage', e => { if (e.key === K && e.newValue != null) kijk(); });
+})();
 /* Voor tests: window.checkout */
 window.checkout = { VRAGEN, staat:() => JSON.parse(JSON.stringify(st)), tekst:() => alsTekst(), woorden:() => telWoorden(cur().antwoorden), minuut:() => ({ ...mt }) };
 </script>

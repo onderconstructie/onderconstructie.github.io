@@ -24,7 +24,7 @@
 <meta name="oc:labels" content="vergaderen">
 <meta name="oc:kort" content="Noteer de vergadering. Acties en besluiten haal je er zo uit.">
 <meta name="oc:volgorde" content="106">
-<meta name="oc:traject" content="vergadering:5">
+<meta name="oc:traject" content="vergadering:6">
 <meta name="oc:opslag" content="notities.v1, notities.v1.kapot*, oc.share.notities">
 <meta name="theme-color" content="#ffffff">
 <meta name="color-scheme" content="light">
@@ -5524,6 +5524,16 @@ window.ocPk = ocProjectkiezer('#ocKiezer', {
 window.ocNotities = { herken, zetVandaag: iso => { NU = okIso(iso) ? iso : ''; }, staat: () => state, tekst: () => cur() && verslagTekst(cur()), onderwerp: () => cur() && onderwerp(cur()) };
 
 render();
+/* Vanuit het plan "Leid een vergadering" in de app: tik je daar op "Nieuwe vergadering", dan begin je hier met een nieuw overleg in dezelfde reeks (dezelfde mensen).
+   Wat er stond blijft in je lijst. De app zet daarvoor een seintje klaar (oc.plan.nieuw.notities); er wordt niets gewist. */
+(function () {
+  const K = 'oc.plan.nieuw.notities';
+  function kijk() {
+    try { if (localStorage.getItem(K) == null) return; localStorage.removeItem(K); } catch (e) { return; }
+    try { const c = cur(); if (c && !c.voorbeeld && c.regels && c.regels.some(r => r.t && String(r.t).trim())) maakOverleg(c); } catch (e) {}
+  }
+  kijk(); window.addEventListener('storage', e => { if (e.key === K && e.newValue != null) kijk(); });
+})();
 // Geopend vanuit de Agenda (?van=agenda): meteen kiezen welke punten de kopjes worden
 try {
   if (new URLSearchParams(location.search).get('van') === 'agenda' && agBronnen().length) {
