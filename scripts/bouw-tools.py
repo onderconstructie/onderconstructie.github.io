@@ -18,11 +18,12 @@ Elke tool beschrijft zichzelf in zijn <head>:
 Een nieuwe tool toevoegen: die tags in de tool zetten en zijn pad hieronder in PADEN.
 
 Gebruik:
-    python3 scripts/bouw-tools.py                     haalt alles op van de live site
+    python3 scripts/bouw-tools.py                     leest de tools van deze repo uit de repo, de andere van de live site
     python3 scripts/bouw-tools.py --lokaal map=pad    leest lokale bestanden (om te testen)
 """
 import html
 import json
+import os
 import re
 import sys
 import urllib.error
@@ -81,6 +82,11 @@ def lees(pad, lokaal):
                 bestand = map_ + pad[len(prefix):] + 'index.html'
                 return open(bestand, encoding='utf-8').read()
         raise FileNotFoundError(pad)
+    # Een tool die in deze repo zelf staat, lezen we uit de repo. Zo klopt tools.json met wat er net gepusht is,
+    # ook als de site nog niet bijgewerkt is. De tools uit de andere repo's komen van de live site.
+    eigen = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), pad.strip('/'), 'index.html')
+    if os.path.isfile(eigen):
+        return open(eigen, encoding='utf-8').read()
     with urllib.request.urlopen(SITE + pad, timeout=30) as r:
         return r.read().decode('utf-8')
 
