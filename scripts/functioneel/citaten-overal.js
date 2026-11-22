@@ -341,6 +341,11 @@ const LIJST = [
   "zakmes/klankkast",
   "Lach niet te veel, niet om alles, en niet uitbundig.",
   "Epictetus"
+ ],
+ [
+  "zakmes/looplicht",
+  "Wat het licht niet doorlaat, berooft zichzelf van de glans.",
+  "Marcus Aurelius"
  ]
 ];
 (async () => {
