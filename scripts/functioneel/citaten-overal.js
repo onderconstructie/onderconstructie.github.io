@@ -346,6 +346,11 @@ const LIJST = [
   "zakmes/looplicht",
   "Wat het licht niet doorlaat, berooft zichzelf van de glans.",
   "Marcus Aurelius"
+ ],
+ [
+  "eerst-alleen",
+  "Niets is belangrijker dan dat we niet als schapen de kudde voor ons volgen: gaan waar men gaat, niet waar we heen moeten.",
+  "Seneca"
  ]
 ];
 (async () => {
