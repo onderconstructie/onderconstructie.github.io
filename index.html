@@ -1690,12 +1690,9 @@ body.searching #home #tabgroup { display:none !important; }
 .ver::backdrop { background:rgba(15,23,42,0.45); }
 .ver-kop { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:0.5rem; }
 .ver-kop h2 { margin:0; font-size:1.25rem; }
-.ver-nu { margin:0 0 1rem; padding:1rem 1.125rem; border-radius:14px; background:#ecfdf5; border:1px solid #a7f3d0; }
-.ver-nu b, .ver-rij b { display:block; font-size:0.8125rem; color:#047857; font-variant-numeric:tabular-nums; margin-bottom:0.125rem; }
-.ver-nu p, .ver-rij p { margin:0; line-height:1.5; }
-.ver-eerder { margin:1.25rem 0 0.25rem; font-size:0.875rem; font-weight:600; color:var(--slate-500); }
-.ver-rij { padding:0.75rem 0; border-top:1px solid var(--slate-200); font-size:0.9375rem; color:var(--slate-600); }
-.ver-rij b { color:var(--slate-500); }
+.ver-nu { margin:0; padding:1rem 1.125rem; border-radius:14px; background:#ecfdf5; border:1px solid #a7f3d0; }
+.ver-nu b { display:block; font-size:0.8125rem; color:#047857; font-variant-numeric:tabular-nums; margin-bottom:0.125rem; }
+.ver-nu p { margin:0; line-height:1.5; }
 .ver-leeg { margin:0; color:var(--slate-600); line-height:1.5; }
 .at::backdrop { background:rgba(15,23,42,0.45); }
 @media (min-width:640px) { .at { inset:0; margin:auto; width:min(40rem, calc(100% - 2rem)); height:min(52rem, calc(100vh - 3rem)); height:min(52rem, calc(100dvh - 3rem)); border-radius:24px; box-shadow:0 24px 60px rgba(15,23,42,0.25); } }
@@ -4857,7 +4854,7 @@ async function toonNieuw() {
     el.hidden = false; el.dataset.klaar = '1';
   } catch {}
 }
-/* Tik op het versienummer: wat er nieuw is in de versie die je nu gebruikt, en daaronder de vier versies ervoor.
+/* Tik op het versienummer: wat er nieuw is in de versie die je nu gebruikt. Alleen die: geen lijst van eerdere versies.
    De lijst staat buiten de service worker: zonder verbinding zeggen we dat eerlijk. */
 async function openVer() {
   const d = $('ver'), el = $('ver-in'), nuT = (document.querySelector('.app-version').textContent || '').trim(), nu = versieNr(nuT);
@@ -4865,10 +4862,9 @@ async function openVer() {
   try {
     const r = await fetch('/nieuw.json', { cache:'no-store' }); if (!r.ok) throw 0;
     const lijst = (await r.json()).filter(x => x && typeof x.v === 'string' && typeof x.t === 'string');
-    const i = lijst.findIndex(x => versieNr(x.v) === nu), mijn = lijst[i], eerder = lijst.filter(x => versieNr(x.v) < nu).slice(0, 4), nieuwer = lijst.find(x => versieNr(x.v) > nu);
+    const i = lijst.findIndex(x => versieNr(x.v) === nu), mijn = lijst[i], nieuwer = lijst.find(x => versieNr(x.v) > nu);
     el.innerHTML = (mijn ? `<div class="ver-nu"><b>Je gebruikt v${esc(mijn.v)}</b><p>${esc(mijn.t)}</p></div>` : `<p class="ver-leeg">Je gebruikt ${esc(nuT)}. Over deze versie staat er geen nota.</p>`)
-      + (nieuwer ? `<p class="ver-leeg">Er staat een nieuwere versie klaar: v${esc(nieuwer.v)}. Sluit de app en open ze opnieuw.</p>` : '')
-      + (eerder.length ? `<h3 class="ver-eerder">Eerder</h3>` + eerder.map(x => `<div class="ver-rij"><b>v${esc(x.v)}</b><p>${esc(x.t)}</p></div>`).join('') : '');
+      + (nieuwer ? `<p class="ver-leeg">Er staat een nieuwere versie klaar: v${esc(nieuwer.v)}. Sluit de app en open ze opnieuw.</p>` : '');
   } catch { el.innerHTML = `<p class="ver-leeg">Je gebruikt ${esc(nuT)}. De nota's ophalen lukt nu niet: daarvoor heb je verbinding nodig.</p>`; }
 }
 $('ver-open').addEventListener('click', openVer);

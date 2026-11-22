@@ -9,7 +9,7 @@ const { chromium } = require('playwright'); const B = process.env.BASE || 'http:
     ok(lijst[0].v === v.replace('v', ''), w + ': de bovenste nota hoort bij de versie in de voet (' + v + ')');
     await p.click('#ver-open'); await p.waitForSelector('.ver-nu');
     ok((await p.textContent('.ver-nu')).includes(lijst[0].t), w + ': het venster toont de nota van deze versie');
-    ok(await p.locator('.ver-rij').count() === 4 && (await p.textContent('.ver-rij >> nth=0')).includes(lijst[1].v), w + ': daaronder de vier versies ervoor');
+    ok(await p.locator('.ver-rij').count() === 0 && !/Eerder/.test(await p.textContent('#ver')) && lijst.length === 1, w + ': alleen de laatste versie, geen eerdere, ook niet in het bestand');
     ok(await p.evaluate(() => { const r = document.getElementById('ver').getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth && r.bottom <= innerHeight; }), w + ': het venster past op het scherm');
     await p.screenshot({ path:S + '/versie-' + w + '.png' });
     await p.keyboard.press('Escape'); await p.waitForTimeout(200); ok(!(await p.evaluate(() => document.getElementById('ver').open)), w + ': Escape sluit');
