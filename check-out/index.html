@@ -217,6 +217,20 @@ kbd { font:inherit; font-size:0.8125rem; font-weight:600; padding:0 0.375rem; bo
 .mono a { display:inline-flex; align-items:center; min-height:44px; padding:0 0.375rem; color:var(--accent-dark); font-weight:600; text-decoration:underline; text-decoration-color:var(--mint); text-underline-offset:3px; border-radius:8px; }
 .mono a:hover { background:var(--accent-50); }
 
+/* Laptop (vanaf 1100 px): invullen en overzicht staan naast elkaar. De tabs verdwijnen; het overzicht rechts groeit mee terwijl je links werkt. */
+@media (min-width:1100px) {
+  main.main { max-width:1120px; }
+  section.card:has(> #p-ov) { display:grid; grid-template-columns:minmax(0, 11fr) minmax(0, 9fr); column-gap:2.5rem; align-items:start; }
+  section.card:has(> #p-ov) > * { grid-column:1 / -1; }
+  section.card:has(> #p-ov) > .wissel { display:none; }
+  section.card:has(> #p-ov) > #p-vul, section.card:has(> #p-ov) > #p-ov { display:block !important; padding-top:0.5rem; }
+  section.card:has(> #p-ov) > #p-vul { grid-column:1; }
+  section.card:has(> #p-ov) > #p-ov { grid-column:2; align-self:stretch; padding-left:2.5rem; border-left:1px solid var(--slate-200); min-height:16rem; }
+  section.card:has(> #p-ov) #ov-acties { display:flex; flex-wrap:wrap; justify-content:flex-start; gap:0.5rem; }
+  section.card:has(> #p-ov) #ov-acties .btn { flex:0 0 auto; width:auto; }
+  .bewaar-rij { justify-content:flex-start; }
+  .main > .mono, .main > details.explain, .main > .explain { max-width:720px; }
+}
 /* Hoe werkt dit? Zonder JavaScript een gewone uitklapper; het gedeelde blok hieronder maakt er een kaart van. */
 .explain { margin-top:1.5rem; background:#ffffff; border:1px solid #e2e8f0; border-radius:16px; }
 .explain summary { min-height:44px; padding:0.875rem 1.125rem; font-weight:600; color:#334155; cursor:pointer; }
@@ -2063,7 +2077,7 @@ function render() {
   $('tab-vul').tabIndex = ov ? -1 : 0; $('tab-ov').tabIndex = ov ? 0 : -1;
   $('p-vul').hidden = ov; $('p-ov').hidden = !ov;
   vulVelden();
-  if (ov) renderOverzicht();
+  if (ov || breed()) renderOverzicht();   // op een breed scherm staat het overzicht er altijd naast
   $('oc-restart-row').hidden = !heeftWerk();
 }
 function renderSessies() {
@@ -2079,6 +2093,8 @@ function vulVelden() {
     if (el.tagName === 'TEXTAREA') groei(el);
   });
 }
+const breed = () => !!(window.matchMedia && matchMedia('(min-width:1100px)').matches);
+try { matchMedia('(min-width:1100px)').addEventListener('change', () => render()); } catch (e) {}
 function groei(t) { t.style.height = 'auto'; t.style.height = Math.max(44, t.scrollHeight + 3) + 'px'; }
 
 /* De drie woorden tellen: hoofdletters en spaties gelijk, leestekens aan de rand weg */

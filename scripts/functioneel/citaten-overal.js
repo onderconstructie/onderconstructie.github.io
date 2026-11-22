@@ -359,7 +359,7 @@ const LIJST = [
  ],
  [
   "zakmes/relaxroulette",
-  "Gun je geest ontspanning: uitgerust staat hij beter en scherper op.",
+  "Hou je geest niet altijd even gespannen: roep hem ook naar het spel.",
   "Seneca"
  ]
 ];
