@@ -1659,12 +1659,25 @@ body.searching #home #tabgroup { display:none !important; }
 .at-titel h2 { font-size:1.25rem; font-weight:700; line-height:1.2; letter-spacing:-0.02em; color:var(--slate-900); }
 .at-titel h2:focus { outline:none; }
 .at-n { margin-top:0.125rem; font-size:0.875rem; color:var(--slate-500); font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }   /* één regel: de kop springt niet als je filtert */
+.at-zk { flex:none; margin-left:auto; display:grid; place-items:center; width:44px; height:44px; border-radius:12px; color:var(--slate-600); }
+.at-zk svg { width:22px; height:22px; }
+.at-zk[aria-expanded="true"] { background:#ecfdf5; color:#047857; }
+.at-zoek { display:none; position:relative; flex:1 0 100%; margin:0.5rem 0 0 0.625rem; padding:0; }
+.at.zoekt .at-zoek { display:block; }
+.at-zoek svg { position:absolute; left:0.75rem; top:50%; width:18px; height:18px; transform:translateY(-50%); color:var(--slate-500); pointer-events:none; }
+.at-zoek input { display:block; width:100%; margin:0; height:44px; -webkit-appearance:none; appearance:none; padding:0 0.75rem 0 2.5rem; border:1px solid var(--slate-400); border-radius:12px; background:var(--slate-50, #f8fafc); font:inherit; font-size:1rem; color:var(--slate-900); }
+.at-zoek input:focus { outline:none; border-color:#047857; box-shadow:0 0 0 3px rgba(4,120,87,0.18); background:var(--wit); }
+.at-zoek input::-webkit-search-cancel-button { -webkit-appearance:none; appearance:none; width:20px; height:20px; cursor:pointer; background:center / 14px no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.6' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6 6 18'/%3E%3C/svg%3E"); }
+.at-kop { flex-wrap:wrap; }
 .at-leg { white-space:nowrap; }
 .at-leg::before { content:'·'; margin:0 0.4375rem; color:var(--slate-400); }
 .at-dot { display:inline-block; width:7px; height:7px; margin:0 0.375rem 0 0; border-radius:50%; background:#059669; vertical-align:1px; }
 @media (min-width:640px) {
   .at-kop { padding:0.875rem 0.625rem 0.75rem 1.5rem; }
-  .at-x { order:2; margin-left:auto; }
+  .at-x { order:3; }
+  .at-zk { display:none; }
+  .at-zoek, .at.zoekt .at-zoek { display:block; order:2; flex:0 1 15rem; margin:0 0.375rem 0 auto; padding:0; }
+  .at-kop { flex-wrap:nowrap; }
   .at-x .at-x-terug { display:none; } .at-x .at-x-dicht { display:block; }
 }
 /* Pillen: kies een onderdeel. Gekozen = de hoofdkleur, de rest rustig. Op de gsm schuif je ze opzij. */
@@ -1767,9 +1780,11 @@ body.searching #home #tabgroup { display:none !important; }
 .wz-film-b img { width:100%; height:100%; object-fit:cover; opacity:0.55; display:block; }
 .wz-film-b svg { position:absolute; inset:0; margin:auto; width:22px; height:22px; filter:drop-shadow(0 1px 2px rgba(0,0,0,.35)); }
 .wz-punten { list-style:none; margin:1.25rem 0 0; padding:0; display:grid; gap:0.875rem; text-align:left; }
-.wz-punten li { display:grid; grid-template-columns:36px minmax(0,1fr); gap:0.75rem; align-items:start; font-size:0.9375rem; line-height:1.45; color:var(--slate-600); }
-.wz-punten li > svg { width:36px; height:36px; padding:8px; border-radius:12px; background:#ecfdf5; color:#0c8660; }
-.wz-punten li > span { padding-top:0.4375rem; }   /* de eerste regel staat op dezelfde hoogte als het midden van het logo */
+.wz-punten li { display:grid; grid-template-columns:48px minmax(0,1fr); gap:0.875rem; align-items:center; font-size:0.9375rem; line-height:1.45; color:var(--slate-600); }
+.wz-punten li > svg { width:48px; height:48px; padding:3px; border-radius:15px; background:linear-gradient(160deg, #ecfdf5, #fff 85%); box-shadow:inset 0 0 0 1px #d1fae5; }
+@media (prefers-reduced-motion:no-preference) { .wz-puls { transform-origin:24px 24px; animation:wz-puls 2.4s ease-in-out infinite; } }
+@keyframes wz-puls { 0%, 100% { transform:scale(0.8); opacity:0.22; } 50% { transform:scale(1.08); opacity:0.1; } }
+.wz-punten li > span { padding:0; }   /* de eerste regel staat op dezelfde hoogte als het midden van het logo */
 .wz-punten b { color:var(--slate-800); font-weight:700; }
 .wz-punten a { padding:12px 0; margin:-12px 0; font-weight:600; color:#047857; text-decoration:underline; text-decoration-color:#a7f3d0; text-underline-offset:3px; white-space:nowrap; }
 .wz-plan[hidden] { display:none; }
@@ -3148,6 +3163,9 @@ window.ocProjectkiezer = function (plek, o) {
   <div class="at-kop">
     <button type="button" class="at-x" id="at-x" aria-label="Terug"><svg class="at-x-terug" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><svg class="at-x-dicht" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
     <div class="at-titel"><h2 id="at-h" tabindex="-1">Alle tools</h2><p class="at-n" id="at-n"></p></div>
+    <!-- Zoeken staat rechtsboven, op dezelfde plek als op Start: op de gsm een loep die een veld opent, breder meteen het veld. -->
+    <button type="button" class="at-zk" id="at-zk" aria-label="Zoek in alle tools" aria-expanded="false" aria-controls="at-zoek"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
+    <label class="at-zoek" id="at-zoek"><span class="at-sr">Zoek in alle tools</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input type="search" id="at-q" placeholder="Zoek in tools" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search"></label>
   </div>
   <div class="at-filter"><div class="at-modus" id="at-modus" role="group" aria-label="Filter op"><button type="button" class="at-md" data-modus="deel" aria-pressed="true">Onderdeel</button><button type="button" class="at-md" data-modus="fase" aria-pressed="false">Fase</button></div><div class="at-ander-w" id="at-ander"></div>
   <div class="at-pillen" id="at-pillen" role="group" aria-label="Toon tools uit"></div></div>
@@ -3194,11 +3212,11 @@ window.ocProjectkiezer = function (plek, o) {
     <div class="wz-in">
       <span class="wz-hero" aria-hidden="true"><svg viewBox="0 0 80 80" fill="none"><g stroke="#e2e8f0" stroke-width="1.5"><path d="M20 28 32 40 28 56M32 40l16-8 12-8M48 32l8 12-4 14M56 44l8 8M32 40l8 12 12 6M20 48l8 8M48 32l-4-12M28 56l12-4"/></g><g fill="#cbd5e1"><circle cx="20" cy="28" r="3"/><circle cx="60" cy="24" r="3"/><circle cx="20" cy="48" r="3"/><circle cx="64" cy="52" r="3"/><circle cx="44" cy="20" r="3"/><circle cx="28" cy="56" r="3"/><circle cx="52" cy="58" r="3"/></g><g fill="#10b981"><circle cx="32" cy="40" r="4"/><circle cx="48" cy="32" r="4"/><circle cx="56" cy="44" r="3"/><circle cx="40" cy="52" r="3"/></g></svg></span>
       <h2 id="wz-h1" tabindex="-1"><span class="wz-sr wz-stap"></span>Welkom bij Onder Constructie</h2>
-      <p class="wz-p">Gratis tools om een project in goede banen te leiden.</p>
+      <p class="wz-p">Gratis tools die houvast geven aan wie projectmatig werkt.</p>
       <ul class="wz-punten">
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg><span><b>Stap voor stap.</b> Je weet altijd wat er nu komt.</span></li>
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><path d="m9 13 2 2 4-4"/></svg><span><b>Alles hangt samen.</b> Wat je invult, gaat mee naar de volgende stap.</span></li>
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 5 6v5c0 4.5 3 8.2 7 10 4-1.8 7-5.5 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></svg><span><b>Geen account, geen cookies.</b> Alles blijft op je toestel. <a class="wz-priv" href="/privacy/">Privacy</a></span></li>
+        <li><svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M8 37c9 0 8-13 16-13s7-12 16-12" stroke="#cbd5e1" stroke-width="2.6" stroke-linecap="round"/><path d="M8 37c9 0 8-13 16-13" stroke="#10b981" stroke-width="2.6" stroke-linecap="round"/><circle cx="8" cy="37" r="3.4" fill="#10b981"/><circle class="wz-puls" cx="24" cy="24" r="9.5" fill="#10b981" opacity=".16"/><circle cx="24" cy="24" r="5.2" fill="#0c8660"/><circle cx="40" cy="12" r="4" fill="#fff" stroke="#94a3b8" stroke-width="2.2"/></svg><span><b>Stap voor stap.</b> Je weet wat er nu komt, en wat je invult gaat mee.</span></li>
+        <li><svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M19.500 20 24.500 9.500 29.500 20Z" fill="#e2e8f0" stroke="#94a3b8" stroke-width="2.2" stroke-linejoin="round"/><path d="M12 20h24l-3.500 11.500L24 41l-7-9.500Z" fill="#d1fae5" stroke="#10b981" stroke-width="2.2" stroke-linejoin="round"/><path d="M5 20h5M38 20h5" stroke="#94a3b8" stroke-width="2.2" stroke-linecap="round"/><circle cx="24" cy="29" r="2.6" fill="#0c8660"/></svg><span><b>Scherper nadenken.</b> Elke tool stelt de vraag die je anders overslaat.</span></li>
+        <li><svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><rect x="13" y="5" width="22" height="38" rx="5.500" fill="#fff" stroke="#94a3b8" stroke-width="2.2"/><path d="M19 27 24.500 17 30 29Z" stroke="#a7f3d0" stroke-width="1.8" stroke-linejoin="round"/><circle cx="19" cy="27" r="2.6" fill="#10b981"/><circle cx="24.500" cy="17" r="3.2" fill="#0c8660"/><circle cx="30" cy="29" r="2.6" fill="#10b981"/><path d="M21 37.500h6" stroke="#94a3b8" stroke-width="2.2" stroke-linecap="round"/></svg><span><b>Alleen van jou.</b> Geen account, geen cookies: alles blijft op je toestel. <a class="wz-priv" href="/privacy/">Privacy</a></span></li>
       </ul>
       <button type="button" class="wz-film" id="wz-film" aria-haspopup="dialog"><span class="wz-film-b" aria-hidden="true"><img src="/video/onderconstructie.jpg?v=2" alt="" width="36" height="45" loading="lazy" decoding="async"><svg viewBox="0 0 24 24"><path d="M9 7.5v9l7.5-4.5z" fill="#fff"/></svg></span><span>Bekijk in 34 seconden wat de app doet</span></button>
     </div>
@@ -4576,7 +4594,9 @@ const DOEN = [
 // Twee indelingen, elk met een eigen keuze. Samen filteren ze: bv. Projecten en Analyseren.
 let atSel = { deel:'alle', doen:'alle' }, atModus = ['doen', 'fase'].includes(store.get('at-modus', 'deel')) ? 'fase' : 'deel';   // 'doen' (Activiteit) is opgegaan in Fase
 const atIn = (m, t, c) => c === 'alle' || (m === 'doen' ? (DOEN.find(d => d.id === c) || { tools:[] }).tools.includes(t.id) : atTabsVan(t).has(c));
-const atPast = t => atIn('deel', t, atSel.deel) && atIn('doen', t, atSel.doen);
+let atGevonden = new Set();
+let atQ = '';   // wat je in Alle tools intikt: zoekt in naam en uitleg, binnen de gekozen pillen
+const atPast = t => atIn('deel', t, atSel.deel) && atIn('doen', t, atSel.doen) && (!atQ || atGevonden.has(t.id));
 const atLabel = (m, c) => ((m === 'doen' ? DOEN : TABS).find(x => x.id === c) || {}).label || '';
 const AT_WIS = '<svg class="at-pil-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>';
 const atTabsVan = t => new Set([tabOf(t.g), ...(ALSO_IN[t.id] || []).map(tabOf)]);
@@ -4585,7 +4605,7 @@ function renderPillen() {
   $('at-modus').querySelectorAll('.at-md').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.modus === atModus)));
   const cats = atModus === 'doen' ? [{ id:'alle', label:'Alle' }, ...DOEN] : AT_CATS();
   $('at-pillen').setAttribute('aria-label', atModus === 'doen' ? 'Toon tools per activiteit' : 'Toon tools uit');
-  const ander = atModus === 'doen' ? 'deel' : 'doen', cur = atSel[atModus], basis = TOOLS.filter(t => atIn(ander, t, atSel[ander]));
+  const ander = atModus === 'doen' ? 'deel' : 'doen', cur = atSel[atModus], basis = TOOLS.filter(t => atIn(ander, t, atSel[ander]) && (!atQ || atGevonden.has(t.id)));
   // De keuze uit de andere indeling blijft zichtbaar, met een kruisje om ze te wissen
   const chip = atSel[ander] === 'alle' ? '' : `<button type="button" class="at-pil at-ander" data-wis="${ander}" aria-label="${esc((ander === 'doen' ? 'Activiteit ' : 'Onderdeel ') + atLabel(ander, atSel[ander]))}, wis deze keuze" title="Wis deze keuze"><span class="at-ander-t">${esc(atLabel(ander, atSel[ander]))}</span>${AT_WIS}</button>`;
   $('at-ander').innerHTML = chip;
@@ -4607,18 +4627,29 @@ function renderAlle() {
   const groups = [];
   list.forEach(t => { const L = atLetter(t), g = groups[groups.length - 1]; if (g && g.L === L) g.ts.push(t); else groups.push({ L, ts:[t] }); });
   const ooit = list.some(t => usage[t.id]), sep = '<span aria-hidden="true"> · </span>';
-  $('at-n').innerHTML = `${list.length} tools${catNaam || ', van A tot Z'}${ooit ? '<span class="at-leg"><span class="at-dot" aria-hidden="true"></span>al gebruikt</span>' : ''}`;
-  $('at-lijst').innerHTML = !list.length ? '<p class="at-leeg">Geen tool past bij allebei. Wis een van de twee keuzes.</p>' : groups.map(g => { const lid = 'at-l-' + (g.L === '#' ? 'x' : g.L);
+  $('at-n').innerHTML = `${list.length} ${list.length === 1 ? 'tool' : 'tools'}${atQ ? ' gevonden' + catNaam : catNaam || ', van A tot Z'}${ooit ? '<span class="at-leg"><span class="at-dot" aria-hidden="true"></span>al gebruikt</span>' : ''}`;
+  $('at-lijst').innerHTML = !list.length ? (atQ ? `<p class="at-leeg">Geen tool gevonden voor “${esc($('at-q').value.trim())}”. Probeer een ander woord.</p>` : '<p class="at-leeg">Geen tool past bij allebei. Wis een van de twee keuzes.</p>') : groups.map(g => { const lid = 'at-l-' + (g.L === '#' ? 'x' : g.L);
     return `<section class="at-l" aria-labelledby="${lid}"><h3 class="at-letter" id="${lid}">${g.L}</h3><ul class="at-ul">${g.ts.map(t => {
       const meta = [esc(atOnderdelen(t).join(', ')), esc(atFasen(t)), atInPlan(t) ? 'Stappenplan' : ''].filter(Boolean).join(sep);
       return `<li><button type="button" class="at-row" data-id="${esc(t.id)}" data-k="${esc(fold(t.title))}" title="${esc(t.desc || t.sub || '')}"><span class="icon">${iconHTML(t.icon)}</span>`
         + `<span class="at-body"><span class="at-t">${esc(t.title)}${usage[t.id] ? '<span class="at-dot" aria-hidden="true"></span><span class="at-sr">, al gebruikt</span>' : ''}</span>`
         + `<span class="at-s">${esc(t.sub || '')}</span>${meta ? `<span class="at-m">${meta}</span>` : ''}</span>${chevron}</button></li>`; }).join('')}</ul></section>`; }).join('');
 }
+// Zoeken in Alle tools. Op de gsm opent de loep het veld; breder staat het veld er altijd.
+function atZoek(open, wis) {
+  const d = $('at'), q = $('at-q');
+  if (wis) { q.value = ''; atQ = ''; }
+  d.classList.toggle('zoekt', !!open); $('at-zk').setAttribute('aria-expanded', String(!!open));
+}
+$('at-zk').addEventListener('click', () => { const open = !$('at').classList.contains('zoekt'); atZoek(open, !open); if (open) $('at-q').focus(); else { renderAlle(); $('at-zk').focus(); } });
+$('at-q').addEventListener('input', () => { atQ = fold($('at-q').value.trim()); atGevonden = new Set(atQ ? searchTools(atQ).map(t => t.id) : []);   // dezelfde zoeklogica als op Start
+  if (atQ && atModus === 'fase') atModus = 'deel';   // wie zoekt, krijgt de lijst
+  renderAlle(); $('at-lijst').scrollTop = 0; });
+$('at-q').addEventListener('keydown', e => { if (e.key === 'Escape' && $('at-q').value) { e.preventDefault(); e.stopPropagation(); $('at-q').value = ''; atQ = ''; renderAlle(); } });
 function openAlle(fromHistory, naarId, modus) {
   const d = $('at'); if (!atKan() || d.open || !TOOLS.length) return;
   if (modus) { atModus = modus; store.set('at-modus', atModus); }
-  if (!fromHistory) { atOpener = document.activeElement; atTerug = null; atSel = { deel:'alle', doen:'alle' }; history.pushState({ alle:1 }, ''); }   // vers geopend: weer alle tools
+  if (!fromHistory) { atOpener = document.activeElement; atTerug = null; atSel = { deel:'alle', doen:'alle' }; atZoek(false, true); history.pushState({ alle:1 }, ''); }   // vers geopend: weer alle tools
   renderAlle();
   const breed = matchMedia('(min-width:640px)').matches;
   $('at-x').setAttribute('aria-label', breed ? 'Sluit' : 'Terug'); $('at-x').title = breed ? 'Sluit (Esc)' : 'Terug';

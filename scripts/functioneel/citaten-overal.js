@@ -43,6 +43,11 @@ const LIJST = [
   "Seneca"
  ],
  [
+  "project-radar",
+  "Sommige dingen hangen van ons af, andere niet.",
+  "Epictetus"
+ ],
+ [
   "beslissingen",
   "Zeg eerst tegen jezelf wie je wil zijn. Doe daarna wat je doet.",
   "Epictetus"
@@ -163,6 +168,16 @@ const LIJST = [
   "Seneca"
  ],
  [
+  "adem",
+  "Nergens trekt een mens zich rustiger en ongestoorder terug dan in zijn eigen ziel.",
+  "Marcus Aurelius"
+ ],
+ [
+  "hart",
+  "Vriendelijkheid is onoverwinnelijk, als ze echt is.",
+  "Marcus Aurelius"
+ ],
+ [
   "pluim",
   "Een weldaad zit niet in wat je geeft, maar in de gezindheid waarmee je geeft.",
   "Seneca"
@@ -176,6 +191,11 @@ const LIJST = [
   "weerstand",
   "Wat de daad hindert, helpt haar vooruit. Wat in de weg staat, helpt je op weg.",
   "Marcus Aurelius"
+ ],
+ [
+  "focus",
+  "Niets is zo nuttig dat het in het voorbijgaan al helpt.",
+  "Seneca"
  ],
  [
   "stroom",
@@ -273,6 +293,11 @@ const LIJST = [
   "Seneca"
  ],
  [
+  "hier",
+  "Ieder leeft alleen dit ogenblik.",
+  "Marcus Aurelius"
+ ],
+ [
   "zakmes/kompas",
   "Neem altijd de korte weg: dat is de natuurlijke.",
   "Marcus Aurelius"
@@ -303,6 +328,11 @@ const LIJST = [
   "Seneca"
  ],
  [
+  "qr",
+  "Zeg tegen elke harde indruk: je bent een indruk, en helemaal niet wat je lijkt.",
+  "Epictetus"
+ ],
+ [
   "zakmes/pdf",
   "Laat het oordeel los, en het gevoel 'ik ben gekwetst' verdwijnt. Laat dat gevoel los, en de kwetsuur is weg.",
   "Marcus Aurelius"
@@ -317,6 +347,8 @@ const LIJST = [
   const BASE = process.env.BASE || 'http://127.0.0.1:8970', b = await chromium.launch(); let fout = 0, goed = 0;
   const mis = m => { console.log('FOUT ' + m); fout++; };
   const c = await b.newContext({ viewport:{ width:390, height:844 }, serviceWorkers:'block', hasTouch:true }), p = await c.newPage();
+  // Deze test speelt iemand die Citaten al kent: die komt recht in de bibliotheek. De eerste keer staat in citaten-eerste-keer.js.
+  await p.addInitScript(() => { try { localStorage.setItem('citaten.gezien', '1'); } catch {} });
   let nu = ''; p.on('pageerror', e => mis(nu + ': paginafout ' + e.message));
   for (const [map, zin, wie] of LIJST) {
     nu = map;

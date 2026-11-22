@@ -4,6 +4,7 @@ const { chromium } = require('playwright');
   const BASE = process.env.BASE || 'http://127.0.0.1:8970', SHOTS = process.env.SHOTS || '/tmp', b = await chromium.launch(); let fout = 0;
   const ok = (c, m) => { console.log((c ? 'ok   ' : 'FOUT ') + m); if (!c) fout++; };
   const c = await b.newContext({ viewport:{ width:390, height:844 }, serviceWorkers:'block', hasTouch:true, deviceScaleFactor:2 }), p = await c.newPage();
+  await p.addInitScript(() => { try { localStorage.setItem('citaten.gezien', '1'); } catch {} });   // iemand die Citaten al kent; de eerste keer staat in citaten-eerste-keer.js
   p.on('pageerror', e => { console.log('FOUT paginafout: ' + e.message); fout++; });
   for (const [tool, zin, wie] of [['rondje', 'twee oren en één mond', 'Zeno'], ['kanban', 'Wie overal is, is nergens', 'Seneca']]) {
     await p.goto(BASE + '/' + tool + '/', { waitUntil:'networkidle' }); await p.waitForTimeout(500);
