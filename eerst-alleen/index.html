@@ -25,7 +25,7 @@
 <meta name="oc:pdca" content="do">
 <meta name="oc:kort" content="Eerst stil nadenken, dan pas delen">
 <meta name="oc:volgorde" content="84">
-<meta name="oc:opslag" content="eerst-alleen.v1, eerst-alleen.v1.kapot*">
+<meta name="oc:opslag" content="eerst-alleen.v1, eerst-alleen.v1.kapot*, oc.share.eerst-alleen">
 <meta name="oc:titel" content="Eerst alleen">
 <meta name="theme-color" content="#ffffff">
 <meta name="color-scheme" content="light">
@@ -1552,7 +1552,7 @@ window.ocProjectkiezer = function (plek, o) {
             </div>
         </section>
 
-        <p class="mono">Daarna kiezen wat eerst komt? <a href="/prioriteit/">Open Prioriteren</a></p>
+        <p class="mono">Daarna kiezen wat eerst komt? Je ideeën liggen klaar: <a href="/prioriteit/">open Prioriteren</a> en kies Overnemen.</p>
 
         <details class="explain" id="hoe-werkt-dit">
           <summary>Hoe werkt dit?</summary>
@@ -2130,7 +2130,7 @@ function render() {
   if (s.fase === 'zet') tekenZet(); else if (s.fase === 'stil') tekenStil(); else if (s.fase === 'verzamel') tekenVerzamel(); else tekenRond();
   if (ov) renderOverzicht();
   $('oc-restart-row').hidden = !heeftWerk();
-  klok();
+  klok(); deel();
 }
 function groei(t) { t.style.height = 'auto'; t.style.height = Math.max(44, t.scrollHeight + 3) + 'px'; }
 function zetWaarde(el, v) { if (el !== document.activeElement && el.value !== v) el.value = v; if (el.tagName === 'TEXTAREA') groei(el); }
@@ -2289,6 +2289,19 @@ function verwijderSessie() {
 // De naam van een ronde hernoem je in de kiezer (nooit leeg)
 function hernoemSessie(n) { const s = cur(); s.naam = n.replace(/\s+/g, ' ').trim().slice(0, 60) || standaardNaam(s.datum); clearTimeout(saveT); saveT = null; save(); render(); }
 
+/* De ideeën liggen klaar voor Prioriteren ("Overnemen"): elke ronde is een lijst, met de vraag als naam.
+   Ze gaan mee als taken; hoe vaak een idee genoemd is, staat in de notitie. */
+const DEEL = 'oc.share.eerst-alleen';
+function deel() {
+  try {
+    const lists = st.sessies.filter(s => s.ideeen.length && s.fase !== 'zet' && s.fase !== 'stil').map(s => ({ name:(s.vraag || s.naam).slice(0, 80), project:'', items:gerangschikt(s).map(i => ({ type:'taak', text:i.tekst, note:i.n > 1 ? i.n + ' keer genoemd' : undefined, ref:i.id })) }));
+    if (!lists.length) { localStorage.removeItem(DEEL); return; }
+    let v = null; try { v = JSON.parse(localStorage.getItem(DEEL)); } catch (e) {}
+    if (v && JSON.stringify(v.lists) === JSON.stringify(lists)) return;
+    localStorage.setItem(DEEL, JSON.stringify({ id:'eerst-alleen', tool:'Eerst alleen', updated:Date.now(), lists }));
+  } catch (e) {}
+}
+
 /* ---------- Kopieer als tekst (voor het verslag) ---------- */
 function titelVan(s) { return s.naam === standaardNaam(s.datum) ? 'Eerst alleen' : 'Eerst alleen: ' + s.naam; }
 function alsTekst(s) {
@@ -2353,7 +2366,7 @@ async function ocWipeAll() {
   if (!await ocConfirm(`Alles wissen in ${OC_TOOL}?`, 'Alle rondes verdwijnen, met de vragen en de ideeën. Je kan dit nog ongedaan maken tot je iets anders doet.', 'Alles wissen')) return;
   nuBewaren();
   const copy = JSON.parse(JSON.stringify(st));
-  try { localStorage.removeItem(KEY); } catch {}
+  try { localStorage.removeItem(KEY); localStorage.removeItem(DEEL); } catch {}
   st = leeg(); status('');
   render();
   $('menu-btn').focus({ preventScroll:true });

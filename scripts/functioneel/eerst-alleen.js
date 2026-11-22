@@ -46,6 +46,8 @@ const { chromium } = require('playwright');
   await p.locator('#toast-btn').click(); await p.waitForTimeout(250);
   ok((await S()).ideeen.length === 3, 'ongedaan maken zet het terug');
   await p.locator('#ea-klaar').click(); await p.waitForTimeout(250);
+  const dl = JSON.parse(await p.evaluate(() => localStorage.getItem('oc.share.eerst-alleen')));
+  ok(dl && dl.tool === 'Eerst alleen' && dl.lists[0].name === 'Wat houdt ons het meest tegen?' && dl.lists[0].items.length === 3 && dl.lists[0].items[0].type === 'taak' && dl.lists[0].items[0].text === 'Geen tijd' && dl.lists[0].items[0].note === '3 keer genoemd', 'de ideeën liggen klaar voor Prioriteren: de vraag als lijst, het vaakst genoemde eerst');
   ok((await S()).fase === 'rond' && (await p.locator('#rond-sub').innerText()).includes('3 ideeën') && (await p.locator('#rond-sub').innerText()).includes('Geen tijd'), 'klaar: drie ideeën, en het vaakst genoemde staat erbij');
   await p.locator('#ea-toon').click(); await p.waitForTimeout(300);
   const rij = await p.locator('.ov-ideeen li .wat').allInnerTexts();
@@ -73,6 +75,9 @@ const { chromium } = require('playwright');
   ok(await q.evaluate(() => searchTools('stil nadenken').some(t => t.id === 'eerst-alleen')), 'app: zoeken op "stil nadenken" vindt de tool');
   await q.evaluate(() => openTool('eerst-alleen')); await q.waitForTimeout(1500);
   ok(await q.frameLocator('iframe[title="Eerst alleen"]').locator('h1.title').innerText() === 'Eerst alleen', 'app: de tool opent in het kader');
+  await q.evaluate(() => localStorage.setItem('oc.share.eerst-alleen', JSON.stringify({ id:'eerst-alleen', tool:'Eerst alleen', updated:Date.now(), lists:[{ name:'Wat houdt ons tegen?', project:'', items:[{ type:'taak', text:'Geen tijd', note:'3 keer genoemd', ref:'i1' }] }] })));
+  await q.goto(BASE + '/prioriteit/'); await q.waitForTimeout(1200);
+  ok(await q.evaluate(() => JSON.stringify(ocShare.sources(['taak'], 'prioriteit')).includes('Geen tijd')), 'Prioriteren ziet de ideeën klaarliggen bij Overnemen');
   await q.goto(BASE + '/eerst-alleen/'); await q.waitForTimeout(700); await q.locator('footer a.oc-citaat').click();
   try { await q.waitForFunction(() => { const x = document.getElementById('bib'); return x && x.open && x.innerText.includes('als schapen de kudde'); }, null, { timeout:6000 }); ok(true, 'de uitspraak opent in Citaten'); } catch { ok(false, 'de uitspraak opent in Citaten'); }
   ok(await q.evaluate(() => [...document.querySelectorAll('#bib-lijst .bib-praktijk')].some(a => a.getAttribute('href') === '/eerst-alleen/')), 'Citaten wijst bij die uitspraak terug naar Eerst alleen');

@@ -39,7 +39,7 @@ const ok = (c, wat, extra) => { n++; if (!c) { fouten++; console.log('  FOUT: ' 
   ok(!T.projecten.ids.some(id => ['impact', 'weerstand', 'gedrag'].includes(id)) && T.projecten.kopjes.length === 3, 'Projecten: drie groepen, zonder de verandertools', T.projecten.kopjes.map(k => k.split(':')[0]));
   ok(await p.evaluate(() => { setTab('projecten'); return document.getElementById('proj-ngroep').textContent; }) === '3', 'Projecten zegt 3 groepen');
   const z = T.zakmes;
-  ok(z.kopjes.some(k => /^Even pauze: adem hier hart klankkast bingo$/.test(k)), 'Zakmes: kopje Even pauze met rust en een glimlach', z.kopjes);
+  ok(z.kopjes.some(k => /^Even pauze: adem hier hart relaxroulette klankkast bingo$/.test(k)), 'Zakmes: kopje Even pauze met rust en een glimlach', z.kopjes);
   ok(T.vergaderen.ids.includes('pluim') && T.vergaderen.ids.includes('bingo'), 'Vergaderen: Pluim en Buzzwordbingo staan er nog');
   ok(!z.ids.includes('pluim') && !z.ids.includes('goesting'), 'Zakmes: geen Pluim of Goestingmeter');
   // het stappenplan Begeleid een verandering staat in de tab Verandering, niet meer bij Projecten

@@ -351,6 +351,16 @@ const LIJST = [
   "eerst-alleen",
   "Niets is belangrijker dan dat we niet als schapen de kudde voor ons volgen: gaan waar men gaat, niet waar we heen moeten.",
   "Seneca"
+ ],
+ [
+  "samen-beslissen",
+  "Wie beslist zonder de andere kant te horen, was niet billijk, ook al besliste hij juist.",
+  "Seneca"
+ ],
+ [
+  "zakmes/relaxroulette",
+  "Gun je geest ontspanning: uitgerust staat hij beter en scherper op.",
+  "Seneca"
  ]
 ];
 (async () => {
