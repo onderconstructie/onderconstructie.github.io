@@ -212,13 +212,6 @@ html:has(.ocw-back) { overflow:hidden; }
 .beeld-knop img { display:block; width:100%; height:auto; max-height:22rem; object-fit:cover; }
 
 /* Video: eerst een kaart, pas na een tik laden */
-.video { position:relative; margin-top:0.5rem; aspect-ratio:16 / 9; border-radius:10px; overflow:hidden; background:linear-gradient(150deg, #1e293b, #334155); }
-.video iframe, .video video { position:absolute; inset:0; width:100%; height:100%; border:0; background:#000; }
-.speel { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.5rem; color:#fff; padding:0.75rem; text-align:center; }
-.speel .rond { width:56px; height:56px; border-radius:50%; background:#fff; color:var(--accent-dark); display:grid; place-items:center; box-shadow:0 8px 24px rgba(0,0,0,0.3); transition:transform 0.15s; }
-.speel:hover .rond { transform:scale(1.06); }
-.speel .rond svg { width:24px; height:24px; margin-left:3px; }
-.speel .waar { font-size:0.8125rem; color:#e2e8f0; line-height:1.35; }
 .video-link { display:inline-flex; align-items:center; gap:0.375rem; margin-top:0.375rem; min-height:36px; font-size:0.8125rem; font-weight:600; color:var(--slate-600); text-decoration:none; }
 .video-link:hover { color:var(--accent-dark); }
 .video-link svg { width:14px; height:14px; }
@@ -1579,7 +1572,7 @@ window.ocProjectkiezer = function (plek, o) {
               <li><b>Tools op je bord.</b> Kies een tool en een project. Je ziet de kern van die tool, en met een tik opent ze meteen met dat project.</li>
               <li><b>Klaar in één tik.</b> Werkte je al in tools voor een project? Dan stelt de Cockpit een bord voor met al die tools, per fase.</li>
             </ul>
-            <p>Video's en berichten laden pas iets van hun site als jij op Afspelen tikt. Tot dan blijft alles op dit toestel.</p>
+            <p>Een video of bericht is een link: die opent in een nieuw venster, op de site waar ze staat. Op je bord zelf laadt niets van buiten.</p>
             <p>Tip: neem je bord mee naar een ander toestel met Bewaar als bestand in het menu.</p>
           </div>
         </details>
@@ -1649,7 +1642,10 @@ footer .oc-citaat-wie { display:block; margin-top:0.125rem; font-size:0.8125rem;
 </style>
     <footer class="footer oc-footer">
         <a class="oc-citaat" href="/zakmes/citaten/#bib:kijk%20van%20bovenaf" aria-label="Kijk van bovenaf. Marcus Aurelius. Open in Citaten"><span class="oc-citaat-ico"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="20" cy="20" r="18" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.5"/><path d="M14.5 10.5v-.5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12.5a2 2 0 0 1-2 2h-.5" stroke="#cbd5e1"/><rect x="9.5" y="12.5" width="18" height="18" rx="2.5" fill="#f8fafc" stroke="#64748b"/><path d="M13.4 20.6c0-2.2.9-3.6 2.6-4.3M18.6 20.6c0-2.2.9-3.6 2.6-4.3" stroke="#10b981"/><circle cx="14.7" cy="20.9" r="1.7" fill="#10b981"/><circle cx="19.9" cy="20.9" r="1.7" fill="#10b981"/><path d="M13.5 26.5h9.5" stroke="#cbd5e1"/></svg></span><span class="oc-citaat-b"><span class="quote oc-quote">“Kijk van bovenaf.”</span><span class="oc-citaat-wie">Marcus Aurelius</span></span></a>
-    </footer>
+    
+  <p class="oc-voorw"><a href="/privacy/" target="_blank" rel="noopener">Privacy en disclaimer</a></p>
+  <style>footer:has(> .oc-voorw){flex-wrap:wrap}.oc-voorw{flex:0 0 100%;width:100%;margin:0.25rem 0 0;text-align:center;font-size:0.8125rem;line-height:1.4}.oc-voorw a{display:inline-block;padding:0.375rem 0.75rem;color:#64748b;text-decoration:underline;text-decoration-color:#cbd5e1;text-underline-offset:3px;border-radius:8px}.oc-voorw a:hover{color:#047857}.oc-voorw a:focus-visible{outline:2px solid #047857;outline-offset:2px}@media print{.oc-voorw{display:none}}</style>
+</footer>
 
     <div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-text"></span><button id="toast-btn" type="button" hidden>Ongedaan</button></div>
     <!-- Merkteken voor Bewaar als bestand en Open bestand: zichtbaar (niet hidden) zodra er eigen werk is. Geen knop. -->
@@ -1702,7 +1698,7 @@ function ocUndoable(restore) {
 /* ==========================================================================
    Cockpit: je startpagina voor een project of thema. Borden met kolommen en blokjes:
    tekst, link, afbeelding, video, aftelling en tool. (Oude berichten blijven werken.) Alles blijft op dit toestel.
-   Video's en berichten laden pas iets van buiten als je zelf op Afspelen tikt.
+   Video's en berichten zijn links naar buiten: op het bord zelf laadt niets van een andere site.
    ========================================================================== */
 const $ = id => document.getElementById(id);
 const KEY = 'cockpit.v1';
@@ -1747,8 +1743,8 @@ function videoVan(u) {
   let id = null;
   if (h === 'youtu.be') id = u.pathname.slice(1).split('/')[0];
   else if (/(^|\.)youtube(-nocookie)?\.com$/.test(h)) id = u.searchParams.get('v') || (u.pathname.match(/^\/(?:shorts|embed|live)\/([\w-]{6,})/) || [])[1];
-  if (id && /^[\w-]{6,20}$/.test(id)) return { soort:'yt', id, src:'https://www.youtube-nocookie.com/embed/' + id + '?autoplay=1&rel=0', waar:'youtube-nocookie.com' };
-  if (/(^|\.)vimeo\.com$/.test(h)) { const m = u.pathname.match(/\/(\d{5,})/); if (m) return { soort:'vimeo', id:m[1], src:'https://player.vimeo.com/video/' + m[1] + '?autoplay=1&dnt=1', waar:'player.vimeo.com' }; }
+  if (id && /^[\w-]{6,20}$/.test(id)) return { soort:'yt', id, waar:'youtube.com' };
+  if (/(^|\.)vimeo\.com$/.test(h)) { const m = u.pathname.match(/\/(\d{5,})/); if (m) return { soort:'vimeo', id:m[1], waar:'vimeo.com' }; }
   if (/\.(mp4|webm|ogg|mov)$/i.test(u.pathname)) return { soort:'bestand', src:u.href, waar:h };
   return null;
 }
@@ -1869,7 +1865,6 @@ function blokHTML(b, ki, bi, n) {
   } else if (b.soort === 'video') {
     const u = urlVan(b.url), v = videoVan(u), d = u ? host(u) : '';
     lijf = kop(ico('video'), b.titel || 'Video', !b.titel)
-      + (v ? `<div class="video"><button type="button" class="speel" data-speel><span class="rond">${SVG(I.speel)}</span><span class="waar">Afspelen laadt de video van ${esc(v.waar)}</span></button></div>` : '')
       + `<a class="video-link" href="${esc(b.url)}" target="_blank" rel="noopener noreferrer">${SVG(I.uit)}Bekijk op ${esc(d)}<span class="sr-only"> (opent in een nieuw venster)</span></a>`;
   } else if (b.soort === 'bericht') {
     const u = urlVan(b.url), d = u ? host(u) : '';
@@ -2206,7 +2201,6 @@ $('bord').addEventListener('click', e => {
   const bm = t.closest('[data-blokmenu]'); if (bm) { blokMenu(bm); return; }
   const km = t.closest('[data-kolmenu]'); if (km) { kolMenu(km); return; }
   const g = t.closest('[data-groot]'); if (g) { const img = g.querySelector('img'); $('groot-img').src = img.src; $('groot-img').alt = img.alt; $('groot').showModal(); return; }
-  const sp = t.closest('[data-speel]'); if (sp) { speel(sp); return; }
   const m = t.closest('[data-meer]'); if (m) { const x = m.closest('.blok').querySelector('.blok-tekst.lang'); if (x) x.classList.remove('lang'); m.remove(); return; }
   const tl = t.closest('[data-open-tool]'); if (tl) {
     const p = vind(tl.dataset.openTool); if (!p) return;
@@ -2215,14 +2209,6 @@ $('bord').addEventListener('click', e => {
   }
 });
 $('bord').addEventListener('dblclick', e => { const k = e.target.closest('.kol-naam'); if (k) hernoemKolom(k.closest('.kol').dataset.kol); });
-function speel(knop) {
-  const blok = knop.closest('.blok'), p = vind(blok.dataset.id); if (!p) return;
-  const v = videoVan(urlVan(p.b.url)); if (!v) return;
-  const doos = knop.parentElement;
-  if (v.soort === 'bestand') { doos.innerHTML = `<video src="${esc(v.src)}" controls autoplay playsinline></video>`; }
-  else doos.innerHTML = `<iframe src="${esc(v.src)}" title="${esc(p.b.titel || 'Video')}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
-  const x = doos.firstElementChild; x && x.focus && x.focus();
-}
 $('groot-x').addEventListener('click', () => $('groot').close());
 $('groot').addEventListener('click', e => { if (e.target === $('groot')) $('groot').close(); });
 
