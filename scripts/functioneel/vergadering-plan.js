@@ -15,15 +15,9 @@ let fout = 0; const ok = (c, m) => { console.log((c ? 'ok   ' : 'FOUT ') + m); i
   ok(vol === 'agenda,check-in,notities,beslissingen,check-out', 'uitgebreid: alleen het Beslissingslog erbij; de som en de afstemmingslijnen staan in de eerste vraag, niet als stap (' + vol + ')');
   // de tegel vraagt eerst wat voor vergadering het wordt
   await p.click('.stile[data-start="vergadering"]'); await p.waitForTimeout(400);
-  ok(await p.isVisible('#vg-dlg') && await p.locator('#vg-dlg [data-vg]').count() === 3 && !(await p.isVisible('#vg-nieuw')), 'eerste start: moet het wel een vergadering zijn? Drie keuzes');
-  ok(/Samen 4 uur werktijd/.test(await p.innerText('#vg-uit')) && /En 6 communicatielijnen/.test(await p.innerText('#vg-lijn')), 'de som: standaard 4 mensen, een uur, samen 4 uur en 6 communicatielijnen (' + await p.innerText('#vg-uit') + ' ' + await p.innerText('#vg-lijn') + ')');
-  ok(await p.isVisible('#vg-mixer') && /Afstemmingsparadox/.test(await p.innerText('#vg-mixer')), 'onder de som: een link naar de Afstemmingsparadox, als tip');
-  await p.selectOption('#vg-n', '12'); ok(/66 communicatielijnen/.test(await p.innerText('#vg-lijn')) && /Dat gaat traag/.test(await p.innerText('#vg-lijn')), 'met twaalf mensen: 66 lijnen, dat gaat traag');
-  await p.selectOption('#vg-n', '8'); await p.selectOption('#vg-duur', '90');
-  ok(/Samen 12 uur werktijd\. Dat is 1,6 werkdagen/.test(await p.innerText('#vg-uit')), '8 mensen, anderhalf uur: 12 uur, 1,6 werkdagen (' + await p.innerText('#vg-uit') + ')');
-  await p.click('#vg-dlg [data-vg="bericht"]'); await p.waitForTimeout(200);
-  ok(await p.isVisible('#vg-bericht') && /spaar je samen 12 uur/.test(await p.innerText('#vg-bp')) && await p.evaluate(() => !startedPaths().length), '"Iets meedelen": stuur een bericht, en er start geen plan');
-  await p.click('#vg-toch'); await p.waitForTimeout(200); ok(await p.isVisible('#vg-kies'), '"Toch vergaderen" brengt je terug naar de keuze');
+  ok(await p.isVisible('#vg-dlg') && await p.locator('#vg-dlg [data-vg]').count() === 2 && !(await p.isVisible('#vg-nieuw')), 'eerste start: twee keuzes, stand-up of gewone vergadering');
+  ok(/Welke vergadering/.test(await p.innerText('#vg-t')) && !(await p.isVisible('.vg-som')) && !/Moet het wel|Geen vergadering nodig/.test(await p.innerText('#vg-dlg')), 'geen belerende vraag en geen rekensom meer in dit venster');
+  await p.keyboard.press('Tab'); await p.keyboard.press('Tab'); await p.keyboard.press('Tab'); ok(await p.evaluate(() => !!document.activeElement.closest('#vg-dlg') && document.activeElement.getClientRects().length > 0), 'Tab blijft in het venster, op iets zichtbaars');
   await p.keyboard.press('Escape'); await p.waitForTimeout(200);
   ok(!(await p.isVisible('#vg-dlg')) && await p.evaluate(() => !startedPaths().length), 'Escape sluit de keuze en start niets');
   await p.click('.stile[data-start="vergadering"]'); await p.waitForTimeout(300); await p.click('#vg-dlg [data-vg="gewoon"]'); await p.waitForTimeout(1500);
