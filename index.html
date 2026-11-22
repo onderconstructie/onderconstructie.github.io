@@ -797,6 +797,38 @@ button.pb-where:hover { background:var(--slate-50); }
 .cont[hidden] { display:none; }
 /* Waar begin je? */
 .start { margin-bottom:1.5rem; }
+.rk { display:none; }
+/* Laptop (vanaf 1100 px): Start in twee zones. Links de vraag en de zes doelen als rustige rijen; rechts de route van het doel waar je op staat.
+   Eén ding mag opvallen: de draad met knooppunten. De rest houdt zich stil. */
+@media (min-width:1100px) {
+  #home[data-tab="start"] .start:not(.compact) { display:grid; grid-template-columns:minmax(0, 11fr) minmax(0, 9fr); column-gap:3.5rem; align-items:start; margin-top:1.25rem; }
+  #home[data-tab="start"] .start:not(.compact) > * { grid-column:1; }
+  #home[data-tab="start"] .start:not(.compact) #start-h { font-size:2.5rem; line-height:1.08; letter-spacing:-0.035em; }
+  #home[data-tab="start"] .start:not(.compact) .start-lead { margin:0.625rem 0 1.5rem; font-size:1.0625rem; color:var(--slate-600); }
+  #home[data-tab="start"] .start:not(.compact) .stiles { grid-template-columns:1fr; gap:0; border-top:1px solid var(--slate-200); }
+  #home[data-tab="start"] .start:not(.compact) .stile { min-height:68px; padding:0.75rem 0.5rem 0.75rem 0.75rem; border:0; border-bottom:1px solid var(--slate-200); border-radius:0; background:none; box-shadow:none; transform:none; }
+  #home[data-tab="start"] .start:not(.compact) .stile.kijkt { background:var(--wit); box-shadow:inset 3px 0 0 #10b981; }
+  #home[data-tab="start"] .start:not(.compact) .stile b { font-size:1.0625rem; }
+  #home[data-tab="start"] .start:not(.compact) > .rk:not([hidden]) { display:block; grid-column:2; grid-row:1 / span 6; position:sticky; top:1.5rem; padding:1.5rem 1.5rem 1.375rem; border-radius:20px; background:var(--wit); border:1px solid var(--slate-200); }
+  .rk h3 { font-size:1.375rem; font-weight:700; letter-spacing:-0.02em; line-height:1.2; color:var(--slate-900); }
+  .rk-zin { margin-top:0.25rem; font-size:0.9375rem; font-weight:400; color:var(--slate-600); }
+  .rk-draad, .rk-los { list-style:none; margin:1.25rem 0 0; }
+  .rk-draad li { position:relative; display:grid; grid-template-columns:20px minmax(0, 1fr); gap:0.875rem; align-items:start; padding-bottom:0.875rem; }
+  .rk-draad li::before { content:''; position:absolute; left:9px; top:14px; bottom:-6px; width:2px; background:var(--slate-200); }
+  .rk-draad li.af::before { background:#10b981; }
+  .rk-draad li:last-child { padding-bottom:0; } .rk-draad li:last-child::before { display:none; }
+  .rk-punt { position:relative; z-index:1; width:12px; height:12px; margin:5px 4px 0; border-radius:50%; background:var(--wit); box-shadow:0 0 0 2px var(--slate-300); }
+  .rk-draad li.af .rk-punt { background:#10b981; box-shadow:0 0 0 2px #10b981; }
+  .rk-draad li.nu .rk-punt { background:#10b981; box-shadow:0 0 0 2px #10b981, 0 0 0 6px #d1fae5; }
+  .rk-st b { display:block; font-size:0.9375rem; font-weight:600; line-height:1.3; color:var(--slate-800); }
+  .rk-st small { display:block; font-size:0.8125rem; line-height:1.35; color:var(--slate-500); }
+  .rk-draad li.nu .rk-st b { color:var(--accent-dark); }
+  .rk-los li { display:grid; grid-template-columns:32px minmax(0, 1fr); gap:0.75rem; align-items:center; padding:0.375rem 0; }
+  .rk-los .icon, .rk-los .icon svg, .rk-los .icon img { width:32px; height:32px; }
+  .rk-go { display:inline-flex; align-items:center; min-height:48px; margin-top:1.25rem; padding:0 1.25rem; border-radius:12px; background:#0c8660; color:#fff; font-size:1rem; font-weight:700; }
+  .rk-go:hover { background:#047857; } .rk-go:focus-visible { outline:2px solid #047857; outline-offset:3px; }
+  .rk-sr { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+}
 .start .section-label { display:block; padding:0 0.25rem; margin-bottom:0.625rem; }
 .stiles { display:grid; grid-template-columns:1fr; gap:0.5rem; }
 @media (min-width:700px) { .stiles { grid-template-columns:1fr 1fr; } }
@@ -2959,6 +2991,8 @@ window.ocProjectkiezer = function (plek, o) {
       <div class="proj-recent" id="proj-recent" role="group" aria-label="Wissel naar een ander project" hidden></div>
       <p class="start-lead">Kies je doel. De app neemt je stap voor stap mee.</p>
       <div class="stiles" id="stiles"></div>
+      <!-- Breed scherm: rechts de route van het doel waar je op staat. Je ziet wat er komt voor je begint. -->
+      <aside class="rk" id="rk" aria-labelledby="rk-h" hidden></aside>
     </section>
 
     <!-- 2. Stappenplannen waar je mee bezig bent -->
@@ -5736,7 +5770,36 @@ function renderStart() {
   $('start-h').textContent = 'Wat wil je doen?';
   $('stiles').innerHTML = STARTS.map(st => startTileHTML(st, all)).join('');
   $('at-open').hidden = !atKan() || !TOOLS.length; $('at-open').title = `Alle ${TOOLS.length} tools, van A tot Z`;
+  routeKijk();
 }
+/* De route naast de doelen (alleen op een breed scherm, zie de stijl bij .rk).
+   Ze toont de stappen van het doel waar je met de muis of met Tab op staat: een draad met knooppunten, zoals het plan zelf.
+   Wat al gedaan is, is groen; de stap die nu komt, heeft een ring. De knop doet precies wat de tegel doet. */
+let rkDoel = null;
+function routeKijk(sleutel) {
+  const el = $('rk'); if (!el) return;
+  const st = STARTS.find(x => stKey(x) === (sleutel || rkDoel)) || STARTS.find(x => x.path && x.path === pathCtx && startedPaths().includes(x.path)) || STARTS[0];
+  rkDoel = stKey(st);
+  document.querySelectorAll('#stiles .stile').forEach(t => t.classList.toggle('kijkt', (t.dataset.start || t.dataset.groupOpen) === (st.path || st.group)));
+  let lijst = '', zin = '', knop = '';
+  if (st.path) {
+    const S = stepsOf(st.path), nu = S.findIndex(x => !x.done), bezig = startedPaths().includes(st.path), kern = !!ROUTE_KERN[st.path] && routeVan(st.path) === 'kort';
+    zin = bezig ? (nu < 0 ? 'Alle stappen zijn gedaan.' : `Je bent aan stap ${nu + 1} van ${S.length}.`) : `${S.length} stappen${kern ? ' in de korte route' : ''}. Je werk gaat mee van stap naar stap.`;
+    lijst = `<ol class="rk-draad">${S.map((x, i) => `<li class="${x.done ? 'af' : i === (nu < 0 ? -1 : nu) ? 'nu' : ''}"><span class="rk-punt" aria-hidden="true"></span><span class="rk-st"><b>${esc(x.t.title)}</b><small>${esc(x.t.sub || '')}</small></span>${x.done ? '<span class="rk-sr">, gedaan</span>' : ''}</li>`).join('')}</ol>`;
+    const eerst = S[nu < 0 ? 0 : nu]; knop = bezig ? 'Ga verder' : eerst ? 'Begin met ' + eerst.t.title : 'Begin';
+  } else {
+    const g = (TAB_SUB[st.group] || []).find(x => x.id === st.kopje), T = g ? g.tools.map(id => byId[id]).filter(Boolean) : [];
+    zin = 'Geen plan, wel een paar minuten voor jezelf. Kies er één.';
+    lijst = `<ul class="rk-los">${T.map(t => `<li><span class="icon">${iconHTML(t.icon)}</span><span class="rk-st"><b>${esc(t.title)}</b><small>${esc(t.sub || '')}</small></span></li>`).join('')}</ul>`;
+    knop = 'Open Even pauze';
+  }
+  const h = `<h3 id="rk-h">${esc(st.title)}</h3><p class="rk-zin">${esc(zin)}</p>${lijst}<button type="button" class="rk-go" data-rk-go="${esc(rkDoel)}">${esc(knop)}</button>`;
+  if (el.dataset.h !== h) { el.innerHTML = h; el.dataset.h = h; }
+  el.hidden = false;
+}
+document.addEventListener('pointerover', e => { const t = e.target.closest && e.target.closest('#stiles .stile'); if (t && matchMedia('(hover:hover)').matches) { const st = STARTS.find(x => (x.path || x.group) === (t.dataset.start || t.dataset.groupOpen)); if (st && stKey(st) !== rkDoel) routeKijk(stKey(st)); } });
+document.addEventListener('focusin', e => { const t = e.target.closest && e.target.closest('#stiles .stile'); if (t) { const st = STARTS.find(x => (x.path || x.group) === (t.dataset.start || t.dataset.groupOpen)); if (st && stKey(st) !== rkDoel) routeKijk(stKey(st)); } });
+document.addEventListener('click', e => { const b = e.target.closest('[data-rk-go]'); if (!b) return; const st = STARTS.find(x => stKey(x) === b.dataset.rkGo), t = st && [...document.querySelectorAll('#stiles .stile')].find(x => (x.dataset.start || x.dataset.groupOpen) === (st.path || st.group)); if (t) t.click(); });
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-group-open]'); if (!b) return;
   goGroup(b.dataset.groupOpen, true, b.dataset.kopje);
