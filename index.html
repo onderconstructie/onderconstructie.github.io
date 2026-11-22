@@ -226,6 +226,7 @@ body.filtering #groups, body.filtering #list-tools { display:none; }
 .plan-tab .blok-los { margin-bottom:0; }
 .pt-rij { display:grid; gap:0.75rem; }
 .pt-rij > .path { margin:0; }
+.pt-naast { display:none; }
 .blok-kop { display:flex; align-items:center; flex-wrap:wrap; gap:0.125rem 0.5rem; margin:0 0.25rem 0.125rem; font-size:0.8125rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--slate-600); position:static; width:auto; height:auto; overflow:visible; clip-path:none; white-space:normal; }
 .blok-kop svg { flex:none; width:16px; height:16px; color:var(--accent-dark); }
 .blok-kop small { font-size:0.8125rem; font-weight:500; letter-spacing:0; text-transform:none; color:var(--slate-500); }
@@ -2235,7 +2236,15 @@ html.oc-stil .n-puls, html.oc-stil .n-halo, html.oc-stil .n-far circle { animati
 }
 /* Tablet (vanaf 700 px): de stappenplannen staan naast elkaar. */
 @media (min-width:700px) {
-  .plan-keuze, .pt-twee { grid-template-columns:repeat(2, minmax(0, 1fr)); align-items:stretch; }
+  .plan-keuze, .pt-twee, .pt-een { grid-template-columns:repeat(2, minmax(0, 1fr)); align-items:stretch; }
+  /* Geen uitgerokken kaders: staat er een plan open, dan houdt het andere kaartje zijn eigen hoogte.
+     Eén plan alleen (Vergaderen) vult één kolom, nooit de volle breedte; ernaast staat zonder kader hoe een plan werkt. */
+  .plan-keuze:has(.path.open), .pt-twee:has(.path.open), .pt-een { align-items:start; }
+  .pt-naast { display:block; padding:1.125rem 0.5rem 0 1rem; color:var(--slate-600); font-size:0.9375rem; line-height:1.5; }
+  .pt-naast h4 { margin:0 0 0.5rem; font-size:0.9375rem; color:var(--slate-800); }
+  .pt-naast ul { margin:0; padding:0; list-style:none; }
+  .pt-naast li { position:relative; padding:0.25rem 0 0.25rem 1.25rem; }
+  .pt-naast li::before { content:""; position:absolute; left:0.125rem; top:0.8em; width:7px; height:7px; border-radius:50%; background:#10b981; }
 }
 /* Vanaf 1000 px (iPad liggend, grote iPad staand, laptop) leest Start van boven naar onder in twee kolommen.
    Rij 1: links "Verder waar je was" met "Nog open" eronder, rechts "Onlangs gebruikt".
@@ -3060,7 +3069,7 @@ window.ocProjectkiezer = function (plek, o) {
         <a class="ft-link" href="https://www.linkedin.com/in/bartel-volckaert-8a96842/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Maker</a>
         <a class="ft-link" href="/privacy/#voorwaarden" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.01"/></svg>Disclaimer</a>
       </nav>
-      <p class="ft-meta"><button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (34 seconden)" title="Bekijk de film (34 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg><span>Film</span></button><button class="ft-film ft-inst" id="ft-app" type="button" hidden aria-label="Installeer de app"><img src="/app/icon.svg" alt="" width="22" height="22"><span>Installeer</span></button><span class="ft-dot" aria-hidden="true"></span><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><button type="button" class="app-version" id="ver-open" aria-haspopup="dialog" title="Lees wat er nieuw is in deze versie">v17.12</button></p>
+      <p class="ft-meta"><button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (34 seconden)" title="Bekijk de film (34 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg><span>Film</span></button><button class="ft-film ft-inst" id="ft-app" type="button" hidden aria-label="Installeer de app"><img src="/app/icon.svg" alt="" width="22" height="22"><span>Installeer</span></button><span class="ft-dot" aria-hidden="true"></span><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><button type="button" class="app-version" id="ver-open" aria-haspopup="dialog" title="Lees wat er nieuw is in deze versie">v17.13</button></p>
     </div>
   </footer>
   <dialog class="film" id="film" aria-labelledby="film-h">
@@ -6031,7 +6040,7 @@ const PLAN_TAB = { verandering:['verandering', 'verhaal'], vergaderen:['vergader
 let planKaarten = {};
 function renderPlanTab() {
   const el = $('plan-tab'); if (!el) return;
-  const ids = (PLAN_TAB[el.dataset.tab] || []).filter(id => planKaarten[id]), h = ids.length ? `<h3 class="blok-kop pt-h">${BLOK_PLAN}<span>Stap voor stap</span><small>Een plan van begin tot einde</small></h3><div class="pt-rij${ids.length > 1 ? ' pt-twee' : ''}">${ids.map(id => planKaarten[id]).join('')}</div><p class="blok-kop blok-los">${BLOK_LOS}<span>Losse tools</span><small>Kies er zelf één, per onderwerp</small></p>` : '';
+  const ids = (PLAN_TAB[el.dataset.tab] || []).filter(id => planKaarten[id]), h = ids.length ? `<h3 class="blok-kop pt-h">${BLOK_PLAN}<span>Stap voor stap</span><small>Een plan van begin tot einde</small></h3><div class="pt-rij${ids.length > 1 ? ' pt-twee' : ' pt-een'}">${ids.map(id => planKaarten[id]).join('')}${ids.length > 1 ? '' : '<aside class="pt-naast" aria-label="Zo werkt een plan"><h4>Zo werkt een plan</h4><ul><li>Het zet de tools in volgorde.</li><li>Je werk gaat mee van stap naar stap.</li><li>Een stap die je niet nodig hebt, sla je over.</li></ul></aside>'}</div><p class="blok-kop blok-los">${BLOK_LOS}<span>Losse tools</span><small>Kies er zelf één, per onderwerp</small></p>` : '';
   if (el.dataset.h === h) return;
   const f = el.contains(document.activeElement) && document.activeElement.classList.contains('path-head'), was = f && document.activeElement.closest('.path').dataset.path;
   el.innerHTML = h; el.dataset.h = h; el.hidden = !h;
