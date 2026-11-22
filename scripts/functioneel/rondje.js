@@ -49,7 +49,7 @@ const { chromium } = require('playwright');
     await p.screenshot({ path:SHOTS + '/rondje-overzicht-' + vp.width + '.png' });
     const t = await p.evaluate(() => rondje.tekst());
     ok(/Vraag: Wat vind jij/.test(t) && /- An: Goed idee/.test(t) && /- Bert: paste/.test(t), 'kopieer als tekst geeft de vraag en één regel per persoon');
-    await p.click('#tab-vul'); await p.click('#rd-nog'); await p.waitForTimeout(200);
+    if (await p.isVisible('#tab-vul')) await p.click('#tab-vul'); await p.click('#rd-nog'); await p.waitForTimeout(200);
     s = await st(); ok(s.fase === 'zet' && s.mensen.length === 4 && !s.vraag && (await p.evaluate(() => rondje.staat().sessies.length)) === 2, 'nog een rondje: dezelfde mensen, een lege vraag, het vorige blijft bewaard');
     await p.click('[data-weg]'); await p.waitForTimeout(150); ok((await st()).mensen.length === 3, 'een naam weghalen werkt');
     await p.click('#toast-btn'); await p.waitForTimeout(150); ok((await st()).mensen.length === 4, 'en dat kan je ongedaan maken');

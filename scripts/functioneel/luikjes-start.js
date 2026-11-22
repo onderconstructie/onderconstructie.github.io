@@ -27,12 +27,9 @@ const fout = []; const ok = (c, m) => { console.log((c ? '  ok   ' : '  FOUT ') 
     // weer open: met het toetsenbord op de titel, en met een tik op de titel
     await p.focus('#mywork-luik'); await p.keyboard.press('Enter'); await p.focus('#favs-luik'); await p.keyboard.press('Space'); await p.click('#onlangs-luik'); await p.waitForTimeout(300); ok(await stand() === 'true,true,true' && await zicht('#cont .rc-ic'), w + ': de titel klapt ook open (Enter, spatie, tik)');
     ok(await p.evaluate(() => [...document.querySelectorAll('.luik-k')].every(e => e.tabIndex === -1 && e.getAttribute('aria-hidden') === 'true')), w + ': het pijltje is een extra tikdoel; met Tab kom je op de titel, één keer');
-    // Onlangs: het kruisje haalt de lijst van Start, het werk blijft
-    await p.click('#cont-leeg'); await p.waitForTimeout(300);
-    ok(!(await zicht('#resume')) && !(await zicht('#cont .rc-ic')) && await zicht('#cont-terug'), w + ': kruisje bij Onlangs: lijst weg, met een regel Zet terug');
+    // Onlangs: geen kruisje meer; het pijltje klapt dicht, wissen doe je via de voet
+    ok(!(await p.$('#cont-leeg')) && !(await p.$('#exit-mw')) && !(await p.$('#mywork .luik-x')), w + ': geen kruisje en geen vuilbakje meer bij Verder waar je was en Onlangs');
     ok(await p.evaluate(() => localStorage.getItem('raci.v1')) === '{"proef":1}', w + ': je werk staat er nog');
-    await p.click('#cont-terug-k'); await p.waitForTimeout(300); ok(await zicht('#resume') && await zicht('#cont .rc-ic') && !(await zicht('#cont-terug')), w + ': Zet terug herstelt de lijst');
-    await p.click('#cont-leeg'); await p.reload({ waitUntil:'networkidle' }); await p.waitForTimeout(600); ok(!(await zicht('#resume')) && !(await zicht('#cont-terug')), w + ': weg blijft weg na herladen');
     await p.waitForTimeout(50); await p.evaluate(() => { logUse('adem'); renderRecent(); }); await p.waitForTimeout(200); ok(await zicht('#resume'), w + ': wat je daarna weer gebruikt, komt terug');
     // favorieten: het kruisje in Bewerk haalt ze allemaal weg, met Zet terug
     ok(!(await zicht('#favs-alle')), w + ': het kruisje voor alle favorieten staat er niet buiten Bewerk'); await p.click('#favs-edit'); await p.waitForTimeout(200); ok(await zicht('#favs-alle'), w + ': in Bewerk staat het er');

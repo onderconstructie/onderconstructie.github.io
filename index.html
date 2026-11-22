@@ -407,6 +407,8 @@ body.searching .plan-keuze { display:none; }
 .drow-wipe:hover { background:#fef2f2; }
 .data-empty { padding:1.25rem; text-align:center; color:var(--slate-500); font-size:0.9375rem; }
 .data-sum { font-size:0.9375rem; color:var(--slate-700); font-weight:600; margin-bottom:0.25rem; }
+.ft-kort { display:none; }
+@media (max-width:699.98px) { .ft-kort { display:inline; } .ft-lang { display:none; } }
 .data-wipe-p { text-align:center; margin-top:0.25rem; }
 .data-wipe-link { min-height:44px; padding:0 0.75rem; border-radius:10px; font-size:0.875rem; font-weight:600; color:var(--slate-600); text-decoration:underline; text-underline-offset:3px; }
 .data-wipe-link:hover { background:var(--slate-100); color:var(--slate-800); }
@@ -960,8 +962,6 @@ body.filtering .list-tools { visibility:hidden; }
 .exit-btn svg { width:16px; height:16px; }
 .exit-btn:hover { background:var(--slate-100); color:var(--slate-800); }
 /* Wissen naast Verder waar je was: alleen het vuilbakje, zoals in de tools (de naam als tooltip en voor een schermlezer) */
-#exit-mw { width:44px; padding:0; justify-content:center; }
-#exit-mw svg { width:18px; height:18px; }
 .start-head { display:flex; align-items:center; gap:0.5rem; margin-bottom:0.625rem; }
 .start .start-head .section-label { flex:1; margin-bottom:0; }
 .start-hide { min-height:44px; padding:0 0.625rem; border-radius:10px; font-size:0.8125rem; font-weight:600; color:var(--slate-600); }
@@ -1682,6 +1682,21 @@ body.searching #home #tabgroup { display:none !important; }
 /* Het venster. Gsm: volledig scherm. Vanaf 640px: gecentreerd. */
 .at { position:fixed; inset:0; margin:0; padding:0; border:0; width:100%; height:100%; max-width:none; max-height:none; background:var(--wit); color:var(--slate-700); overflow:hidden; overscroll-behavior:contain; }
 .at[open] { display:flex; flex-direction:column; }
+/* Wat is nieuw: het versienummer in de voet is een knop */
+.app-version { min-height:44px; padding:0 0.5rem; margin:0 -0.5rem; border:0; background:none; border-radius:10px; font:inherit; color:inherit; cursor:pointer; text-decoration:underline; text-decoration-color:var(--slate-300); text-underline-offset:3px; }
+@media (hover:hover) { .app-version:hover { background:var(--slate-100); color:var(--slate-800); } }
+.app-version:focus-visible { outline:2px solid #047857; outline-offset:2px; }
+.ver { width:min(34rem, calc(100vw - 2rem)); max-height:min(80vh, 40rem); max-height:min(80dvh, 40rem); margin:auto; padding:1.25rem 1.5rem 1.5rem; border:0; border-radius:20px; background:var(--wit); color:var(--slate-800); box-shadow:0 24px 60px -20px rgba(15,23,42,0.45); overflow:auto; overscroll-behavior:contain; }
+.ver::backdrop { background:rgba(15,23,42,0.45); }
+.ver-kop { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:0.5rem; }
+.ver-kop h2 { margin:0; font-size:1.25rem; }
+.ver-nu { margin:0 0 1rem; padding:1rem 1.125rem; border-radius:14px; background:#ecfdf5; border:1px solid #a7f3d0; }
+.ver-nu b, .ver-rij b { display:block; font-size:0.8125rem; color:#047857; font-variant-numeric:tabular-nums; margin-bottom:0.125rem; }
+.ver-nu p, .ver-rij p { margin:0; line-height:1.5; }
+.ver-eerder { margin:1.25rem 0 0.25rem; font-size:0.875rem; font-weight:600; color:var(--slate-500); }
+.ver-rij { padding:0.75rem 0; border-top:1px solid var(--slate-200); font-size:0.9375rem; color:var(--slate-600); }
+.ver-rij b { color:var(--slate-500); }
+.ver-leeg { margin:0; color:var(--slate-600); line-height:1.5; }
 .at::backdrop { background:rgba(15,23,42,0.45); }
 @media (min-width:640px) { .at { inset:0; margin:auto; width:min(40rem, calc(100% - 2rem)); height:min(52rem, calc(100vh - 3rem)); height:min(52rem, calc(100dvh - 3rem)); border-radius:24px; box-shadow:0 24px 60px rgba(15,23,42,0.25); } }
 @media (prefers-reduced-motion:no-preference) {
@@ -2082,11 +2097,6 @@ html.oc-stil .n-puls, html.oc-stil .n-halo, html.oc-stil .n-far circle { animati
 /* Een begonnen plan stop je met het kruisje in de kop van de kaart, zoals overal op Start. Het pijltje blijft uiterst rechts.
    In het planvenster van een tool is er geen kop: daar blijft de tekstknop staan. */
 .path { position:relative; }
-.path-x { position:absolute; top:0.5rem; right:2.75rem; width:44px; height:44px; display:grid; place-items:center; border-radius:999px; color:var(--slate-500); }
-.path-x:hover, .path-x:focus-visible { color:var(--slate-800); background:var(--slate-100); }
-.path.kan-stop > .path-head { column-gap:3.5rem; align-items:start; }   /* ruimte voor het kruisje, links van het pijltje; beide bovenaan op één lijn */
-.path.kan-stop > .path-head > svg.toggle, .paths .path.kan-stop > .path-head > svg.toggle.toggle.toggle { align-self:start; margin-top:0.25rem; }
-.path .plan-stop:not(.plan-opnieuw) { display:none; }
 .plan-opnieuw { padding-bottom:0; }
 .plan-opnieuw + .plan-stop { margin-top:0; padding-top:0; }
 .plan-opnieuw .lnk { color:var(--accent-dark); font-weight:600; }
@@ -2973,11 +2983,10 @@ window.ocProjectkiezer = function (plek, o) {
       <div class="resume-wrap" id="resume"></div>
       <p class="rs-open" id="rs-open" hidden></p>
       <p class="rs-open" id="rs-lijst" hidden></p>
-      <div class="recent-row" id="recent-row" hidden><h3 class="cont-h" id="cont-h"><button type="button" class="luik" id="onlangs-luik" data-luik="onlangs" aria-expanded="true"><span>Onlangs<span class="cont-h-lang"> gebruikt</span></span><small class="luik-som" id="onlangs-som"></small></button></h3><button type="button" class="luik-x cont-leeg" id="cont-leeg" aria-label="Haal Onlangs van Start. Je werk blijft staan." title="Haal van Start. Je werk blijft staan."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button><button type="button" class="luik-k" data-luik="onlangs" tabindex="-1" aria-hidden="true"><svg class="luik-pijl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div class="cont" id="cont" aria-labelledby="cont-h"></div></div>
+      <div class="recent-row" id="recent-row" hidden><h3 class="cont-h" id="cont-h"><button type="button" class="luik" id="onlangs-luik" data-luik="onlangs" aria-expanded="true"><span>Onlangs<span class="cont-h-lang"> gebruikt</span></span><small class="luik-som" id="onlangs-som"></small></button></h3><button type="button" class="luik-k" data-luik="onlangs" tabindex="-1" aria-hidden="true"><svg class="luik-pijl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div class="cont" id="cont" aria-labelledby="cont-h"></div></div>
       <p class="cont-terug" id="cont-terug" hidden>Lijst leeggemaakt. Je werk blijft staan. <button type="button" id="cont-terug-k">Zet terug</button></p>
       <!-- in de broncode na het werk (eerst je werk met Tab), op het scherm rechts naast de kop -->
-      <span class="mw-btns"><button type="button" class="manage" id="manage" aria-haspopup="dialog" title="Reservekopie maken of terugzetten">Reservekopie</button>
-        <button type="button" class="exit-btn" id="exit-mw" aria-haspopup="dialog" aria-label="Wissen: kies wat je van dit toestel wist" title="Wissen: kies wat je van dit toestel wist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg></button><button type="button" class="luik-k" data-luik="mywork" tabindex="-1" aria-hidden="true"><svg class="luik-pijl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></span>
+      <span class="mw-btns"><button type="button" class="manage" id="manage" aria-haspopup="dialog" title="Reservekopie maken of terugzetten">Reservekopie</button><button type="button" class="luik-k" data-luik="mywork" tabindex="-1" aria-hidden="true"><svg class="luik-pijl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></span>
     </section>
 
     <!-- Je favorieten: vastgezet met het sterretje bovenaan een tool -->
@@ -3051,12 +3060,12 @@ window.ocProjectkiezer = function (plek, o) {
       <nav class="ft-links" aria-label="Over de app">
         <button class="ft-link" id="at-open" type="button" aria-haspopup="dialog" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h7"/><circle cx="4.5" cy="6" r="1.2" fill="currentColor" stroke="none"/><circle cx="4.5" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="4.5" cy="18" r="1.2" fill="currentColor" stroke="none"/></svg>Alle tools</button>
         <button class="ft-link" id="fb-open" type="button" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/></svg>Suggestie</button>
-        <button class="ft-link" id="data-open" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v10"/><path d="m8 10 4 4 4-4"/><path d="M5 16v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/></svg>Reservekopie</button>
+        <button class="ft-link" id="data-open" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v10"/><path d="m8 10 4 4 4-4"/><path d="M5 16v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/></svg><span class="ft-kort">Je gegevens</span><span class="ft-lang">Reservekopie en wissen</span></button>
         <a class="ft-link" href="/privacy/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 5 6v5c0 4.5 3 8.2 7 10 4-1.8 7-5.5 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></svg>Privacy</a>
         <a class="ft-link" href="https://www.linkedin.com/in/bartel-volckaert-8a96842/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Maker</a>
         <a class="ft-link" href="/privacy/#voorwaarden" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.01"/></svg>Disclaimer</a>
       </nav>
-      <p class="ft-meta"><button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (34 seconden)" title="Bekijk de film (34 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg><span>Film</span></button><button class="ft-film ft-inst" id="ft-app" type="button" hidden aria-label="Installeer de app"><img src="/app/icon.svg" alt="" width="22" height="22"><span>Installeer</span></button><span class="ft-dot" aria-hidden="true"></span><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><span class="app-version" title="Versie van de app">v17.10</span></p>
+      <p class="ft-meta"><button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (34 seconden)" title="Bekijk de film (34 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg><span>Film</span></button><button class="ft-film ft-inst" id="ft-app" type="button" hidden aria-label="Installeer de app"><img src="/app/icon.svg" alt="" width="22" height="22"><span>Installeer</span></button><span class="ft-dot" aria-hidden="true"></span><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><button type="button" class="app-version" id="ver-open" aria-haspopup="dialog" title="Lees wat er nieuw is in deze versie">v17.11</button></p>
     </div>
   </footer>
   <dialog class="film" id="film" aria-labelledby="film-h">
@@ -3090,7 +3099,7 @@ window.ocProjectkiezer = function (plek, o) {
       <label class="dbtn dl-restore" for="data-restore-file">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V9m-5 5 5-5 5 5M5 3h14"/></svg>Reservekopie terugzetten</label>
       <input type="file" id="data-restore-file" accept="application/json,.json" hidden>
-      <p class="data-wipe-p"><button type="button" class="data-wipe-link" id="shared-exit" aria-haspopup="dialog">Iets wissen?</button></p>
+      <p class="data-wipe-p"><button type="button" class="data-wipe-link" id="shared-exit" aria-haspopup="dialog">Iets van dit toestel wissen</button></p>
     </div>
     <div class="restore" id="restore" hidden role="group" aria-labelledby="restore-h">
       <h3 id="restore-h">Reservekopie terugzetten</h3>
@@ -3107,7 +3116,7 @@ window.ocProjectkiezer = function (plek, o) {
           <li>De dienst die deze site host, bewaart om veiligheidsredenen wel het IP-adres van bezoekers. Alles over privacy en de voorwaarden lees je op <a href="/privacy/" target="_blank" rel="noopener">de privacypagina</a>.</li>
           <li>De app haalt niets bij andere websites: lettertypes en hulpprogramma's (voor PDF, afbeeldingen, grafieken en scancodes) staan op deze site zelf.</li>
           <li>Een reservekopie, PDF of afbeelding is een gewoon bestand met wat je invulde. Bewaar het zoals een vertrouwelijk document.</li>
-          <li>Iemand anders die deze browser gebruikt, ziet wat jij invulde. Werk je op een gedeelde computer, wis dan alles met de knop Wissen op het startscherm.</li>
+          <li>Iemand anders die deze browser gebruikt, ziet wat jij invulde. Werk je op een gedeelde computer, wis dan alles: helemaal onderaan het startscherm, bij je gegevens.</li>
         </ul>
         <label class="priv-toggle"><input type="checkbox" id="priv-hide"><span>Verberg namen op het startscherm<small>Dit is geen beveiliging. Wie een tool opent, ziet nog alles. De namen van je lijsten en projecten staan dan niet op het startscherm, en zoeken in je gegevens staat uit.</small></span></label>
       </div>
@@ -3201,6 +3210,12 @@ window.ocProjectkiezer = function (plek, o) {
 
 <!-- Allereerste bezoek: een korte wizard (hooguit vier schermen). Overslaan, Esc of de laatste knop: daarna nooit meer (oc-app.welkom-weg). -->
 <!-- Alle tools, van A tot Z. Terug, Esc of de terugknop van de browser sluiten het. Een tool die je hier opent, brengt je met "Tools" hier terug. -->
+<!-- Wat is nieuw: tik op het versienummer in de voet -->
+<dialog class="ver" id="ver" aria-labelledby="ver-h">
+  <div class="ver-kop"><h2 id="ver-h">Wat is nieuw</h2><button type="button" class="tb-btn" id="ver-dicht" aria-label="Sluit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div id="ver-in" aria-live="polite"></div>
+</dialog>
+
 <dialog class="at" id="at" aria-labelledby="at-h" aria-describedby="at-n">
   <div class="at-kop">
     <button type="button" class="at-x" id="at-x" aria-label="Terug"><svg class="at-x-terug" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><svg class="at-x-dicht" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
@@ -4183,8 +4198,7 @@ function syncMywork() {
 // Onlangs leegmaken: haalt de lijst van Start, niet je werk. "Zet terug" kan zolang je op Start blijft.
 let onlangsVorig = null;
 document.addEventListener('click', e => {
-  if (e.target.closest('#cont-leeg')) { onlangsVorig = store.get('onlangs-sinds', 0); store.set('onlangs-sinds', Date.now()); renderRecent(); const k = $('cont-terug-k'); if (k && !$('cont-terug').hidden) k.focus({ preventScroll:true }); }
-  else if (e.target.closest('#cont-terug-k')) { store.set('onlangs-sinds', onlangsVorig || 0); onlangsVorig = null; renderRecent(); const k = $('cont-leeg'); if (k) k.focus({ preventScroll:true }); }
+  if (e.target.closest('#cont-terug-k')) { store.set('onlangs-sinds', onlangsVorig || 0); onlangsVorig = null; renderRecent(); }
 });
 function renderRecent() {
   const all = lsKeys(), usage = store.get('usage', {});
@@ -4224,7 +4238,7 @@ function renderRecent() {
     + (open[1] ? '<span class="rs-o-s rs-2" aria-hidden="true">·</span>' + rsKnop(open[1], ' rs-2') : '')
     + (open.length > 1 ? `<span class="rs-o-k rs-o-n rs-n1">en nog ${open.length - 1}</span>` : '')
     + (open.length > 2 ? `<span class="rs-o-k rs-o-n rs-n2">en nog ${open.length - 2}</span>` : '')
-    + `<button type="button" class="rs-o-x" data-rs-weg="${esc(hero.path.id)}" aria-label="Verberg deze regel" title="Verberg deze regel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>`;
+    + ``;
   // Onlangs: alleen het icoon van de laatste vijf tools (de naam bij hover en voor schermlezers)
   const rest = items.filter(x => !hero || x.t.id !== hero.t.id).slice(0, 5);
   $('recent-row').hidden = !items.length; $('cont-h').hidden = !rest.length; $('onlangs-som').textContent = rest.length === 1 ? '1 tool' : rest.length + ' tools';   // "Maak leeg" staat er zodra er iets op Start staat, ook als er alleen de grote knop is
@@ -4843,6 +4857,23 @@ async function toonNieuw() {
     el.hidden = false; el.dataset.klaar = '1';
   } catch {}
 }
+/* Tik op het versienummer: wat er nieuw is in de versie die je nu gebruikt, en daaronder de vier versies ervoor.
+   De lijst staat buiten de service worker: zonder verbinding zeggen we dat eerlijk. */
+async function openVer() {
+  const d = $('ver'), el = $('ver-in'), nuT = (document.querySelector('.app-version').textContent || '').trim(), nu = versieNr(nuT);
+  el.innerHTML = '<p class="ver-leeg">Even ophalen…</p>'; if (!d.open) d.showModal();
+  try {
+    const r = await fetch('/nieuw.json', { cache:'no-store' }); if (!r.ok) throw 0;
+    const lijst = (await r.json()).filter(x => x && typeof x.v === 'string' && typeof x.t === 'string');
+    const i = lijst.findIndex(x => versieNr(x.v) === nu), mijn = lijst[i], eerder = lijst.filter(x => versieNr(x.v) < nu).slice(0, 4), nieuwer = lijst.find(x => versieNr(x.v) > nu);
+    el.innerHTML = (mijn ? `<div class="ver-nu"><b>Je gebruikt v${esc(mijn.v)}</b><p>${esc(mijn.t)}</p></div>` : `<p class="ver-leeg">Je gebruikt ${esc(nuT)}. Over deze versie staat er geen nota.</p>`)
+      + (nieuwer ? `<p class="ver-leeg">Er staat een nieuwere versie klaar: v${esc(nieuwer.v)}. Sluit de app en open ze opnieuw.</p>` : '')
+      + (eerder.length ? `<h3 class="ver-eerder">Eerder</h3>` + eerder.map(x => `<div class="ver-rij"><b>v${esc(x.v)}</b><p>${esc(x.t)}</p></div>`).join('') : '');
+  } catch { el.innerHTML = `<p class="ver-leeg">Je gebruikt ${esc(nuT)}. De nota's ophalen lukt nu niet: daarvoor heb je verbinding nodig.</p>`; }
+}
+$('ver-open').addEventListener('click', openVer);
+$('ver-dicht').addEventListener('click', () => $('ver').close());
+$('ver').addEventListener('click', e => { if (e.target === $('ver')) $('ver').close(); });
 function syncUpdate() { $('update').hidden = !updateReady || !!current; }
 $('update-btn').addEventListener('click', async () => {
   const run = [...busy.keys()].map(id => byId[id] && byId[id].title).filter(Boolean);
@@ -5211,7 +5242,6 @@ $('fb-sheet').addEventListener('keydown', e => {
 });
 
 $('shared-exit').addEventListener('click', openExit);
-$('exit-mw').addEventListener('click', openExit);
 $('manage').addEventListener('click', openData);
 $('data-close').addEventListener('click', closeData);
 $('data-sheet').addEventListener('click', e => { if (e.target === $('data-sheet')) closeData(); });
@@ -5982,7 +6012,7 @@ function renderPaths() {
           <span class="path-note">${!next && nDone ? 'Alle stappen begonnen' : nDone ? `${nDone} van ${steps.length} stappen begonnen` : document.body.classList.contains('returning') && next ? `${esc(tr.note)}. Begin met ${esc(next.t.title)}.` : esc(tr.note)}</span>
           <span class="path-bar" aria-hidden="true">${steps.map(s => `<span class="${s.done ? 'done' : ''}"></span>`).join('')}</span></span>
         ${toggleIcon}
-      </button>${startedPaths().includes(tr.id) ? `<button type="button" class="path-x" data-plan-stop="${esc(tr.id)}" aria-label="Stop met dit plan: ${esc(tr.title)}" title="Stop met dit plan"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>` : ''}
+      </button>
  ${next && knop ? `<button class="path-next" data-id="${esc(next.t.id)}"${zoekAttr(next.t)} data-ctx="${tr.id}"><span class="icon">${iconHTML(next.t.icon)}</span>
         <span><small>${nDone ? 'Volgende stap' : 'Begin hier'}</small><b>${esc(next.t.title)}</b></span>${chevron}</button>` : ''}
       ${planBinnen(tr, alle, steps, rest, next, kort, over, ookOpen)}

@@ -10,12 +10,11 @@ const fout = []; const ok = (c, m) => { console.log((c ? '  ok   ' : '  FOUT ') 
   const zichtbaar = () => p.isVisible('#rs-open'); console.log('   eerste stap:', stap, '| regel:', (await p.textContent('#rs-open')).trim().slice(0, 80));
   if (!(await zichtbaar())) { console.log('   (regel niet zichtbaar in deze opstelling: de grote knop is geen planstap)'); }
   ok(await zichtbaar() && /Nog open:/.test(await p.textContent('#rs-open')), 'de regel Nog open staat er'); await p.screenshot({ path:S + '/nog-open.png', clip:{ x:0, y:0, width:390, height:520 } });
-  ok(await p.isVisible('#rs-open .rs-o-x'), 'met een kruisje'); await p.tap('#rs-open .rs-o-x'); await p.waitForTimeout(300);
-  ok(!(await zichtbaar()), 'kruisje: de regel is weg'); await p.evaluate(() => renderRecent()); ok(!(await zichtbaar()) && await p.evaluate(() => startedPaths().includes('proces')), 'ze blijft weg, het plan loopt nog');
-  await p.reload({ waitUntil:'networkidle' }); await p.waitForTimeout(600); await p.evaluate(() => renderRecent()); ok(!(await zichtbaar()), 'ook na herladen blijft ze weg');
+  ok(!(await p.$('#rs-open .rs-o-x')), 'zonder kruisje: de regel verdwijnt als je het plan afwerkt of stopt');
   // Stop met dit plan, in de plankaart
   await p.tap('.tab[data-tab="projecten"]'); await p.waitForTimeout(500); await p.evaluate(() => { store.set('paths-open', ['proces']); renderPaths(); }); await p.waitForTimeout(300);
   ok(await p.isVisible('#plan-keuze .path[data-path="proces"] [data-plan-stop]') && !(await p.$('#plan-keuze .path[data-path="project"] [data-plan-stop]')), 'Stop met dit plan staat alleen in het begonnen plan'); await p.screenshot({ path:S + '/plan-stop.png', fullPage:true });
+  ok(!(await p.$('.path-x')) && /Stop met dit plan/.test(await p.textContent('#plan-keuze .path[data-path="proces"] .plan-stop:not(.plan-opnieuw)')) && await p.isVisible('#plan-keuze .path[data-path="proces"] .plan-stop:not(.plan-opnieuw) button'), 'als knop met woorden onderaan het plan, geen kruisje');
   await p.evaluate(() => localStorage.setItem('testgegevens', 'x')); const voor = await p.evaluate(() => Object.keys(localStorage).filter(k => !k.startsWith('oc-app.')).sort().join());
   await p.evaluate(() => document.querySelector('#plan-keuze [data-plan-stop="proces"]').click()); await p.waitForTimeout(400);
   ok(await p.evaluate(() => !startedPaths().includes('proces') && pathCtx === null) && !(await p.$('[data-plan-stop="proces"]')), 'gestopt: het plan telt niet meer als begonnen');
