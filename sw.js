@@ -12,7 +12,7 @@
   - Een nieuwe versie van de service worker wacht. De app toont "Nieuwe versie klaar" met Vernieuwen;
     pas dan wisselt hij. Nooit stil wisselen terwijl je werkt.
 */
-const VERSION = 'oc-app-v17.24';   // in de app getoond als v16.50
+const VERSION = 'oc-app-v17.25';   // in de app getoond als v16.50
 // Lettertypes en bibliotheken hebben vaste bestandsnamen (met versienummer): die bewaren we apart,
 // zodat een nieuwe versie van de app ze niet opnieuw moet downloaden.
 const STATIC = 'oc-static-1';
@@ -24,7 +24,8 @@ const SHELL = [
 // Losse pagina's die ook offline moeten werken: privacy en de overzichtspagina's.
 const PAGES = ['/privacy/', '/', '/projectmanagement/', '/zakmes/', '/reset/'];
 const FONTS = ['dm-sans-latin-400', 'dm-sans-latin-ext-400', 'dm-sans-latin-500', 'dm-sans-latin-ext-500', 'dm-sans-latin-600', 'dm-sans-latin-ext-600',
-  'dm-sans-latin-700', 'dm-sans-latin-ext-700', 'jetbrains-mono-latin-400', 'jetbrains-mono-latin-500', 'jetbrains-mono-latin-600', 'jetbrains-mono-latin-700']
+  'dm-sans-latin-700', 'dm-sans-latin-ext-700', 'jetbrains-mono-latin-400', 'jetbrains-mono-latin-500', 'jetbrains-mono-latin-600', 'jetbrains-mono-latin-700',
+  'bricolage-grotesque-latin-600', 'bricolage-grotesque-latin-700', 'bricolage-grotesque-latin-ext-600', 'bricolage-grotesque-latin-ext-700']
   .map(f => `/fonts/${f}-normal.woff2`);
 // Bibliotheken staan op de eigen site (geen verkeer naar externe servers).
 const LIBS = ['/lib/html2canvas-1.4.1.min.js', '/lib/jspdf-4.2.1.umd.min.js', '/lib/chart-4.4.1.umd.js', '/lib/qrcode-generator-1.4.4.js',
