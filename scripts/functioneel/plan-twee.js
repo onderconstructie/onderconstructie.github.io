@@ -1,5 +1,5 @@
 // Verandering toont twee stappenplannen: 'Begeleid een verandering' en 'Vertel een verhaal'.
-// Breed staan ze naast elkaar (zoals op Projecten), op een gsm onder elkaar. Vergaderen houdt één plan.
+// Breed staan ze naast elkaar (zoals op Projecten), op een gsm onder elkaar. Vergaderen toont er ook twee: vergadering en stand-up.
 const { chromium } = require('playwright');
 (async () => {
   const BASE = process.env.BASE || 'http://127.0.0.1:8970', b = await chromium.launch(); let fout = 0;
@@ -22,7 +22,7 @@ const { chromium } = require('playwright');
       ok(await p.evaluate(() => { const d = document.getElementById('pn-dlg'); return document.documentElement.classList.contains('in-tool') || (d && !d.hidden); }), 'laptop: "Begin hier" van het verhaal start het plan (eerst de vraag naar een naam)');
       await p.goto(BASE + '/'); await p.waitForTimeout(1000);
       await p.locator('.tab[data-tab="vergaderen"]').click(); await p.waitForTimeout(600);
-      ok(await p.locator('#plan-tab .path').count() === 1 && await p.locator('#plan-tab .pt-twee').count() === 0, 'laptop: Vergaderen houdt één plan over de volle breedte');
+      ok(await p.locator('#plan-tab .path').count() === 2 && await p.locator('#plan-tab .pt-twee').count() === 1, 'laptop: Vergaderen toont twee plannen naast elkaar: vergadering en stand-up');
     }
     await c.close();
   }

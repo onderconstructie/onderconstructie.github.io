@@ -45,13 +45,13 @@ let fout = 0; const ok = (c, m) => { console.log((c ? 'ok   ' : 'FOUT ') + m); i
   ok(/1/.test(await klaar()), 'ingevulde stappen tellen als gedaan (' + await klaar() + ')');
   await p.click('.tab[data-tab="vergaderen"]'); await p.waitForTimeout(500);
   const tab = await p.evaluate(() => ({ plan: document.querySelectorAll('.tabgroup:not([hidden]) .plan-tab .path').length, n: document.querySelectorAll('.tabgroup:not([hidden]) > .group').length }));
-  ok(tab.plan === 1 && tab.n === 5, 'Vergaderen: het plan bovenaan en vijf groepen losse tools (' + JSON.stringify(tab) + ')');
-  // nieuwe vergadering, nu als stand-up
+  ok(tab.plan === 2 && tab.n === 5, 'Vergaderen: twee plannen bovenaan (vergadering en stand-up) en vijf groepen losse tools (' + JSON.stringify(tab) + ')');
+  // nieuwe vergadering (de stand-up is een eigen plan: zie standup-plan.js)
   await p.locator('[data-plan-opnieuw]:visible').click(); await p.waitForTimeout(300);
   ok(await p.isVisible('#vg-dlg') && await p.isVisible('#vg-nieuw'), '"Nieuwe vergadering" vraagt opnieuw de soort en zegt dat je met een leeg blad begint');
-  await p.click('#vg-dlg [data-vg="standup"]'); await p.waitForTimeout(500);
-  ok(await stappen() === 'rondje,kanban,notities', 'stand-up: drie stappen, rondje, bord en blokkades (' + await stappen() + ')');
-  ok(await klaar() === '000', 'na "Nieuwe vergadering" staan alle stappen weer open (' + await klaar() + ')');
+  await p.click('#vg-dlg [data-vg="gewoon"]'); await p.waitForTimeout(500);
+  ok(await stappen() === 'agenda,check-in,notities,check-out', 'de vergadering houdt haar vier stappen (' + await stappen() + ')');
+  ok(await klaar() === '0000', 'na "Nieuwe vergadering" staan alle stappen weer open (' + await klaar() + ')');
   const sein = await p.evaluate(() => ['agenda', 'notities', 'check-out'].map(k => localStorage.getItem('oc.plan.nieuw.' + k) ? 1 : 0).join(''));
   ok(sein === '111', 'de drie tools krijgen een seintje voor een leeg blad (' + sein + ')');
   // de tools beginnen met een leeg blad en houden het vorige
