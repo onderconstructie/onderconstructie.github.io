@@ -37,7 +37,7 @@ const ok = (c, wat, extra) => { n++; if (!c) { fouten++; console.log('  FOUT: ' 
   const vulOpdracht = () => { localStorage.setItem('oc.share.opdracht', JSON.stringify({ lists: [{ name: 'Testproject', items: [{ text: 'Doel' }] }] })); renderPaths(); };
   await p.evaluate(vulOpdracht); await p.waitForTimeout(200);
   ok(await p.locator('#paths .path[data-path="project"] .brug').count() === 1, 'vraag verschijnt onder de Projectopdracht zodra die iets bevat');
-  ok((await p.locator('#paths .brug b').textContent()) === 'Verandert dit project iemands werk?', 'tekst van de vraag');
+  ok((await p.locator('#paths .brug b').textContent()) === 'Moeten mensen anders gaan werken door dit project?', 'tekst van de vraag');
   await p.locator('#paths .brug').scrollIntoViewIfNeeded();
   await p.screenshot({ path: SHOTS + '/2-vraag-in-plan.png' });
 
@@ -47,12 +47,10 @@ const ok = (c, wat, extra) => { n++; if (!c) { fouten++; console.log('  FOUT: ' 
   ok(JSON.stringify(await stappen(p, 'project')) === JSON.stringify(s), 'na Nee is het plan ongewijzigd');
   ok((await p.locator('#paths .path[data-path="project"] .brug-st').textContent()).includes('Toch erbij nemen'), 'na Nee staat er één regel om het terug te draaien');
   ok(await p.evaluate(() => document.activeElement && document.activeElement.closest('.path[data-path="project"]') !== null), 'focus blijft in het plan');
-  // Ongedaan
-  await p.click('#app-toast-btn'); await p.waitForTimeout(250);
-  ok(await p.locator('#paths .brug').count() === 1, 'Ongedaan zet de vraag terug');
+  ok(!(await p.evaluate(() => document.getElementById('app-toast').classList.contains('show'))), 'na Nee komt er geen melding: de regel in het plan volstaat');
 
-  // Ja (kort): alleen de Impactanalyse erbij
-  await p.click('#paths .brug [data-brug="ja"]'); await p.waitForTimeout(250);
+  // Ja (kort), via "Toch erbij nemen": alleen de Impactanalyse erbij
+  await p.click('#paths .path[data-path="project"] .brug-st [data-brug="ja"]'); await p.waitForTimeout(250);
   let s2 = await stappen(p, 'project');
   console.log('== kort, na Ja:', s2.join(' > '));
   ok(s2.length === s.length + 1 && s2[s2.indexOf('Productboom') + 1] === 'Impactanalyse', 'na Ja staat de Impactanalyse na de Productboom', s2);

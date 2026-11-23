@@ -137,6 +137,8 @@ html { scroll-padding-top:calc(var(--top) + 52px); }   /* waar de pagina naartoe
 }
 .group.collapsed .group-body { grid-template-rows:0fr; }
 .group-body > .list { min-height:0; overflow:hidden; }
+/* Ingeklapt: de rijen zijn onzichtbaar, dus ook niet met Tab bereikbaar (pas na het dichtklappen, zodat de beweging blijft) */
+.group.collapsed .group-body > .list { visibility:hidden; transition:visibility 0s linear .24s; }
 .list { border-top:1px solid var(--slate-200); }
 .group.collapsed .list { border-top-color:transparent; }
 .group.collapsed { border-color:var(--slate-200); }
@@ -950,6 +952,9 @@ body.searching .proj { display:none; }
 /* Tijdens zoeken: alleen de resultaten. Tijdens filteren: geen groepen. */
 body.searching #mywork, body.searching #myproj, body.searching #start, body.searching .paths-wrap, body.searching #filter, body.searching #all-head,
 body.searching #groups, body.searching #backup-nudge { display:none !important; }
+/* Zoeken op laptop: het routepaneel van de lege Start gaat weg, anders beginnen de resultaten pas onder de vouw */
+body.searching .rtk { display:none !important; }
+body.searching #results { grid-column:1 / -1; }
 body.filtering #groups { display:none; }
 body.filtering .list-tools { visibility:hidden; }
 
@@ -5485,7 +5490,7 @@ const STAP_EXTRA = {
    Korte route: eerst alleen de stap met eerst:true. De rest staat onder "Ook handig" en schuift in het plan zodra die eerste stap iets bevat.
    Uitgebreid: alle stappen meteen. Vaste regels, niets geraden. */
 const BRUGGEN = {
-  project: { na:'opdracht', vraag:'Verandert dit project iemands werk?', label:'de stappen over wie het raakt',
+  project: { na:'opdracht', vraag:'Moeten mensen anders gaan werken door dit project?', label:'de stappen over wie het raakt',
     stappen:[{ na:'mindmap', id:'impact', eerst:true }, { na:'impact', id:'stakeholders' }, { na:'raci', id:'communicatie' }, { na:'kanban', id:'weerstand' }] }
 };
 const brugSleutel = () => isPrivate() ? '' : String((getProject() || {}).name || '').trim().toLowerCase();
@@ -5714,6 +5719,8 @@ document.addEventListener('click', e => {
   const c = e.target.closest('[data-ctx]'), p = e.target.closest('.path[data-path], .pathbar[data-path]');
   const id = c ? c.dataset.ctx : p && !e.target.closest('.mee') && e.target.closest('[data-id]') ? p.dataset.path : null;   // een tool uit de strook Loopt mee start geen plan
   if (id) { pathCtx = id; store.set('path-ctx', pathCtx); markStarted(id); }
+  // Uit een plan land je meteen in het formulier (zoals na de welkomstgids), niet eerst op de lege startkaart. Alleen bij een lege tool.
+  if (id) { const k = e.target.closest('[data-id]'), t = k && byId[k.dataset.id]; if (t) { let leeg = false; try { leeg = !hasData(t); } catch {} if (leeg) wzBegin = t.id; } }
   // De stappenplanbalk alleen als je de tool via een stappenplan opende; vanuit Vergaderen of Zakmes blijft de balk gewoon
   if (e.target.closest('#home [data-id], .pathbar [data-id]')) viaPad = !!id;
   const so = e.target.closest('[data-start]');
@@ -5972,11 +5979,11 @@ document.addEventListener('click', e => {
 function meeHTML(trId) {
   const L = meeVan(trId); if (!L.length) return '';
   const all = lsKeys();
-  return `<div class="mee" role="group" aria-label="Loopt mee tijdens het hele plan"><span class="mee-t">Loopt mee</span><div class="mee-rij">${L.map(t => `<button type="button" class="mee-k${hasData(t, all) ? ' done' : ''}" data-id="${esc(t.id)}" title="${esc(t.desc)}"><span class="icon">${iconHTML(t.icon)}</span><span class="mee-n">${esc(t.title)}</span></button>`).join('')}</div></div>`;
+  return `<div class="mee" role="group" aria-label="Loopt mee tijdens het hele plan"><span class="mee-t">Loopt mee tijdens het hele plan</span><div class="mee-rij">${L.map(t => `<button type="button" class="mee-k${hasData(t, all) ? ' done' : ''}" data-id="${esc(t.id)}" title="${esc(t.desc)}"><span class="icon">${iconHTML(t.icon)}</span><span class="mee-n">${esc(t.title)}</span></button>`).join('')}</div></div>`;
 }
 function brugUitleg(trId) {
   const e = brugEerst(trId), B = BRUGGEN[trId], n = B.stappen.filter(x => byId[x.id]).length;
-  return routeVan(trId) === 'kort' && e ? `Bij ja komt de ${e.title} in je plan. De rest volgt pas als je die hebt ingevuld.` : `Bij ja komen er ${n} stappen bij over wie het raakt en hoe je hen meekrijgt.`;
+  return routeVan(trId) === 'kort' && e ? `Bij ja komt de ${e.title} in je plan: wie raakt het, en hoe?` : `Bij ja komen er ${n} stappen bij over wie het raakt en hoe je hen meekrijgt.`;
 }
 function brugHTML(trId) {
   const B = BRUGGEN[trId];
@@ -6097,7 +6104,8 @@ function brugKies(trId, v) {
   const was = brugVan(trId), B = BRUGGEN[trId], e = brugEerst(trId);
   const teken = () => { renderPaths(); renderPlanDlg(); if (current && !$('pathbar').hidden) { delete $('pathbar').dataset.sig; renderPathbar(current); } };
   brugZet(trId, v); teken();
-  appToast(v === 'ja' ? (routeVan(trId) === 'kort' && e ? `${e.title} staat in je plan` : `${B.stappen.filter(x => byId[x.id]).length} stappen staan in je plan`) : 'Je plan blijft zoals het is', () => { brugZet(trId, was); teken(); });
+  // Na Nee geen melding: in het plan staat al de regel "Toch erbij nemen"
+  if (v === 'ja') appToast((routeVan(trId) === 'kort' && e ? `${e.title} staat in je plan` : `${B.stappen.filter(x => byId[x.id]).length} stappen staan in je plan`), () => { brugZet(trId, was); teken(); });
 }
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-brug]'), p = b && b.closest('.path[data-path]'); if (!p) return;
