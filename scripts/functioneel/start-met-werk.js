@@ -18,6 +18,6 @@ const { chromium } = require('playwright'); const B = process.env.BASE || 'http:
       if (m.vert) ok(Math.abs(m.vert[0]) <= 2 && Math.abs(m.vert[1]) <= 2, w + ': de kaders staan ook verticaal op één lijn met Verder waar je was en Onlangs (' + m.vert.join(', ') + ' px)');
       ok(m.kaart <= 620 && m.tegel <= 640, w + ': plankaart (' + Math.round(m.kaart) + ') en doelkaarten (' + Math.round(m.tegel) + ') zijn niet uitgerokken');
       ok(await p.evaluate(() => { const g = document.querySelector('#favs .fav-grid').getBoundingClientRect(), k = [...document.querySelectorAll('#favs .fav-tile')].map(e => e.getBoundingClientRect()), m = document.querySelector('.main').getBoundingClientRect(); const mid = (k[0].left + k[k.length - 1].right) / 2; return Math.abs(mid - (m.left + m.right) / 2) < 12; }), w + ': favorieten staan in het midden');
-      ok(await p.evaluate(() => !document.querySelector('#mywork .manage') || !document.querySelector('#mywork .manage').getClientRects().length), w + ': geen Reservekopie-knop meer bovenaan'); }
+      ok(await p.evaluate(() => { const k = document.querySelector('#mywork .manage'); return !k || getComputedStyle(k).visibility === 'hidden' || !k.getClientRects().length; }), w + ': geen Reservekopie-knop meer bovenaan'); }
     await p.screenshot({ path:S + '/start-werk-' + w + '.png', fullPage:true }); await c.close(); }
   console.log(fout.length ? fout.length + ' FOUT' : 'alles ok'); await b.close(); process.exit(fout.length ? 1 : 0); })();

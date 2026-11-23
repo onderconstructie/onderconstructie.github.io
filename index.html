@@ -851,6 +851,11 @@ button.pb-where:hover { background:var(--slate-50); }
   #home[data-tab="start"] .main:has(> .start:not(.compact):not([hidden])):not(:has(> #mywork:not([hidden]), > #favs:not([hidden]))) .start .stile { min-height:68px; padding:0.75rem 0.5rem 0.75rem 0.75rem; border:0; border-bottom:1px solid var(--slate-200); border-radius:0; background:none; box-shadow:none; transform:none; }
   #home[data-tab="start"] .main:has(> .start:not(.compact):not([hidden])):not(:has(> #mywork:not([hidden]), > #favs:not([hidden]))) .start .stile.kijkt { background:var(--wit); box-shadow:inset 3px 0 0 #10b981; }
   #home[data-tab="start"] .main:has(> .start:not(.compact):not([hidden])):not(:has(> #mywork:not([hidden]), > #favs:not([hidden]))) .start .stile b { font-size:1.0625rem; }
+  /* De knop onder de route bestaat alleen bij aanraking: met een muis is het doel zelf de knop */
+  .rk-go { display:none; }
+  .rtk.aanraak .rk-go { display:inline-flex; align-items:center; gap:0.5rem; margin-top:1.25rem; min-height:48px; padding:0 1.125rem; border:0; border-radius:12px; background:#ecfdf5; box-shadow:inset 0 0 0 1.5px #6ee7b7; color:var(--accent-dark); font:inherit; font-weight:700; font-size:1rem; cursor:pointer; }
+  .rtk.aanraak .rk-go svg { width:18px; height:18px; }
+  .rtk.aanraak .rk-go:focus-visible { outline:2px solid #047857; outline-offset:2px; }
   .rtk h3 { font-size:1.375rem; font-weight:700; letter-spacing:-0.02em; line-height:1.2; color:var(--slate-900); }
   .rk-zin { margin-top:0.25rem; font-size:0.9375rem; font-weight:400; color:var(--slate-600); }
   .rk-draad, .rk-los { list-style:none; margin:1.25rem 0 0; }
@@ -5946,10 +5951,22 @@ function routeKijk(sleutel) {
     lijst = `<ul class="rk-los">${T.map(t => `<li><span class="icon">${iconHTML(t.icon)}</span><span class="rk-st"><b>${esc(t.title)}</b><small>${esc(t.sub || '')}</small></span></li>`).join('')}</ul>`;
     knop = 'Open Even pauze';
   }
-  const h = `<h3 id="rk-h">${esc(st.title)}</h3><p class="rk-zin">${esc(zin)}</p>${lijst}`;
+  const h = `<h3 id="rk-h">${esc(st.title)}</h3><p class="rk-zin">${esc(zin)}</p>${lijst}<button type="button" class="rk-go" data-rk-go="${esc(stKey(st))}">${esc(knop)}${PIJL_CTA}</button>`;
   if (el.dataset.h !== h) { el.innerHTML = h; el.dataset.h = h; }
   el.hidden = false;
 }
+/* Met de vinger (iPad): er is geen muis die over een doel kan zweven, dus een tik zou je meteen wegsturen zonder dat je de route zag.
+   Daarom toont de eerste tik op een doel de route rechts; een tweede tik op dat doel, of de knop onder de route, begint echt.
+   Alleen als het routepaneel zichtbaar is (lege Start op een breed scherm) en alleen bij aanraking: met een muis verandert er niets. */
+let rkTik = null, rkDoor = false;
+document.addEventListener('pointerdown', e => { const t = e.target.closest && e.target.closest('#stiles .stile'); rkTik = t ? { t, aan:e.pointerType === 'touch' || e.pointerType === 'pen', al:t.classList.contains('kijkt') } : null; if (rkTik && rkTik.aan) $('rk').classList.add('aanraak'); }, true);
+// op het venster, in de vangfase: zo zijn we er vóór de luisteraars die het plan al starten
+window.addEventListener('click', e => {
+  const t = e.target.closest && e.target.closest('#stiles .stile'); if (!t || rkDoor || !rkTik || rkTik.t !== t || !rkTik.aan || rkTik.al) return;
+  const rk = $('rk'); if (!rk || rk.hidden || !rk.getClientRects().length) return;
+  e.preventDefault(); e.stopImmediatePropagation(); rkTik = null; routeKijk(t.dataset.start);
+}, true);
+document.addEventListener('click', e => { const k = e.target.closest && e.target.closest('[data-rk-go]'); if (!k) return; const t = document.querySelector('#stiles .stile[data-start="' + k.dataset.rkGo + '"]'); if (!t) return; rkDoor = true; try { t.click(); } finally { rkDoor = false; } });
 document.addEventListener('pointerover', e => { const t = e.target.closest && e.target.closest('#stiles .stile'); if (t && matchMedia('(hover:hover)').matches) { const st = STARTS.find(x => stKey(x) === t.dataset.start); if (st && stKey(st) !== rkDoel) routeKijk(stKey(st)); } });
 document.addEventListener('focusin', e => { const t = e.target.closest && e.target.closest('#stiles .stile'); if (t) { const st = STARTS.find(x => stKey(x) === t.dataset.start); if (st && stKey(st) !== rkDoel) routeKijk(stKey(st)); } });
 document.addEventListener('click', e => {

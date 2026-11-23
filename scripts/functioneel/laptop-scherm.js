@@ -15,7 +15,7 @@ const { chromium } = require('playwright');
   ok(await p.locator('#rk h3').innerText() === 'Leid een vergadering' && await p.locator('#rk .rk-draad li').count() === 4 && await p.locator('.stile.kijkt').count() === 1, 'met de muis op een ander doel wisselt de route mee');
   await p.locator('.stile').nth(5).focus(); await p.waitForTimeout(250);
   ok(await p.locator('#rk h3').innerText() === 'Kom even tot rust' && await p.locator('#rk .rk-los li').count() >= 5 && await p.locator('#rk .rk-draad').count() === 0, 'met Tab ook; een doel zonder plan toont zijn tools zonder draad');
-  await p.locator('.stile').nth(1).hover(); await p.waitForTimeout(200); if (await p.locator('#rk .rk-go, #rk button').count()) throw new Error('er staat nog een knop in de uitleg'); await p.locator('.stile').nth(1).click(); await p.waitForTimeout(800);
+  await p.locator('.stile').nth(1).hover(); await p.waitForTimeout(200); if (await p.locator('#rk button:visible').count()) throw new Error('met de muis hoort er geen knop zichtbaar te zijn in de uitleg'); await p.locator('.stile').nth(1).click(); await p.waitForTimeout(800);
   ok(await p.evaluate(() => { const d = document.getElementById('pn-dlg'); return (d && !d.hidden) || document.documentElement.classList.contains('in-tool') || !!current; }), 'de knop in de route doet wat de tegel doet: het plan begint');
   // met lopend werk: de bestaande indeling, geen route ernaast
   await p.evaluate(() => { store.set('favs', ['risico', 'rondje']); }); await p.goto(BASE + '/'); await p.waitForTimeout(1300);

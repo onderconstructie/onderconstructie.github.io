@@ -1,0 +1,24 @@
+// iPad liggend met de vinger: de eerste tik op een doel toont de route rechts, pas de tweede tik of de knop onder de route begint. Met de muis: één klik begint, zoals altijd.
+const { chromium } = require('playwright'); const B = process.env.BASE || 'http://127.0.0.1:8970', S = process.env.SHOTS || '.';
+(async () => { const b = await chromium.launch(); const fout = []; const ok = (v, t) => { console.log((v ? '  ok  ' : '  FOUT ') + t); if (!v) fout.push(t); };
+  const start = async extra => { const c = await b.newContext(Object.assign({ viewport:{ width:1180, height:820 }, serviceWorkers:'block' }, extra)); const p = await c.newPage(); await p.addInitScript(() => localStorage.setItem('oc-app.welkom-weg', '1')); await p.goto(B + '/', { waitUntil:'networkidle' }); await p.waitForTimeout(500); return p; };
+  let p = await start({ hasTouch:true });
+  ok(await p.isVisible('#rk') && /Start een project/.test(await p.innerText('#rk-h')), 'iPad liggend: het routepaneel staat er, eerst op Start een project');
+  await p.tap('.stile[data-start="verandering"]'); await p.waitForTimeout(500);
+  ok(await p.evaluate(() => !document.getElementById('viewer').classList.contains('open') && !document.querySelector('.app-dlg-back:not([hidden])')) && /Begeleid een verandering/.test(await p.innerText('#rk-h')), 'eerste tik op een ander doel: de route verschijnt rechts, je blijft op Start');
+  ok(await p.isVisible('#rk .rk-go') && /Begin/.test(await p.innerText('#rk .rk-go')), 'onder de route staat nu een knop om te beginnen'); await p.screenshot({ path:S + '/tik-route.png' });
+  await p.tap('#rk .rk-go'); await p.waitForTimeout(700);
+  ok(await p.evaluate(() => !!document.querySelector('.app-dlg-back:not([hidden])') || document.getElementById('viewer').classList.contains('open')), 'de knop begint het plan (naamvraag of de eerste tool)');
+  await p.context().close();
+  p = await start({ hasTouch:true }); await p.tap('.stile[data-start="proces"]'); await p.waitForTimeout(400); await p.tap('.stile[data-start="proces"]'); await p.waitForTimeout(700);
+  ok(await p.evaluate(() => !!document.querySelector('.app-dlg-back:not([hidden])') || document.getElementById('viewer').classList.contains('open')), 'een tweede tik op hetzelfde doel begint ook');
+  await p.context().close();
+  p = await start({ hasTouch:true }); await p.tap('.stile[data-start="project"]'); await p.waitForTimeout(700);
+  ok(await p.evaluate(() => !!document.querySelector('.app-dlg-back:not([hidden])') || document.getElementById('viewer').classList.contains('open')), 'het doel waarvan de route al open staat, begint met één tik');
+  await p.context().close();
+  p = await start({}); await p.click('.stile[data-start="verandering"]'); await p.waitForTimeout(700);
+  ok(await p.evaluate(() => !!document.querySelector('.app-dlg-back:not([hidden])') || document.getElementById('viewer').classList.contains('open')) , 'met de muis: één klik begint, zoals altijd');
+  await p.context().close();
+  p = await start({ hasTouch:true, viewport:{ width:390, height:844 } }); await p.tap('.stile[data-start="verandering"]'); await p.waitForTimeout(700);
+  ok(await p.evaluate(() => !!document.querySelector('.app-dlg-back:not([hidden])') || document.getElementById('viewer').classList.contains('open')), 'gsm (geen routepaneel): één tik begint');
+  console.log(fout.length ? fout.length + ' FOUT' : 'alles ok'); await b.close(); process.exit(fout.length ? 1 : 0); })();
