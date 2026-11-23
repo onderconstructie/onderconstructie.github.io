@@ -1580,9 +1580,13 @@ html { scrollbar-gutter:stable; }
 /* ---------- Onderdelen (tabbalk) ---------- */
 .tabbar { display:flex; }
 .tab { flex:1 1 0; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; min-height:56px; padding:0.25rem 0.125rem;
-  font:inherit; font-size:0.6875rem; font-weight:600; color:var(--slate-500); background:none; border:0; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  font:inherit; font-size:0.75rem; letter-spacing:-0.01em; font-weight:600; color:var(--slate-500); background:none; border:0; cursor:pointer; -webkit-tap-highlight-color:transparent; }
 .tab .tab-ic { display:flex; align-items:center; justify-content:center; width:52px; height:30px; border-radius:999px; transition:background .15s; }
 .tab svg { width:24px; height:24px; stroke-linecap:round; stroke-linejoin:round; }
+/* Skiplink: de eerste Tab brengt je naar de inhoud, voorbij de kop en de tabs. Alleen zichtbaar met focus. */
+.skip { position:fixed; left:0.75rem; top:0.75rem; z-index:1000; padding:0.75rem 1rem; border-radius:12px; background:#0f172a; color:#fff; font-weight:600; text-decoration:none; transform:translateY(-200%); }
+.skip:focus { transform:none; outline:2px solid #6ee7b7; outline-offset:2px; }
+#inhoud:focus { outline:none; }
 .tab { --ic-a:#cbd5e1; --ic-b:#10b981; }
 .tab[aria-current="true"] { --ic-a:#94a3b8; --ic-b:#059669; }
 .tab svg .a { stroke:var(--ic-a); } .tab svg .af { fill:var(--ic-a); } .tab svg .b { stroke:var(--ic-b); } .tab svg .bf { fill:var(--ic-b); }
@@ -2197,7 +2201,8 @@ html.oc-stil .n-puls, html.oc-stil .n-halo, html.oc-stil .n-far circle { animati
   .pb-tel2 { display:block; flex:none; font-size:0.8125rem; font-weight:600; line-height:1; color:var(--slate-500); font-variant-numeric:tabular-nums; white-space:nowrap; }
   .pb-bol { flex:0 1 auto; }
 }
-@media (max-width:339.98px) { .topbar.has-path .pb-prev { display:none; } .tab-lbl { font-size:0.625rem; letter-spacing:-0.01em; } }   /* heel smal: Vergaderen past op één regel */
+@media (max-width:379.98px) { .tab-lbl { font-size:0.6875rem; } }   /* smalle gsm: op 12 px breekt Verandering af, dus hier blijft het 11 px */
+@media (max-width:339.98px) { .topbar.has-path .pb-prev { display:none; } .tab-lbl { font-size:0.625rem; letter-spacing:-0.045em; } .tab { padding-left:0; padding-right:0; } }   /* heel smal: Verandering en Vergaderen passen op één regel */
 /* Idee 1: "Klaar? Volgende: …" onderaan, in je duim. Pas als de stap iets bevat, niet terwijl je typt. Alleen op een smal scherm. */
 .pb-duim { flex:none; border-top:1px solid #a7f3d0; background:#ecfdf5; padding:0 0 var(--bottom); }
 .pb-duim[hidden], .pb-duim.typt { display:none; }
@@ -2889,6 +2894,7 @@ window.ocProjectkiezer = function (plek, o) {
 </script>
 </head>
 <body>
+<a class="skip" id="skip" href="#inhoud">Naar de inhoud</a>
 
 <div class="home" id="home">
   <!-- Meldbalk: staat altijd bovenaan het startscherm. De hele balk is één knop naar Suggestie of fout. -->
@@ -2991,7 +2997,7 @@ window.ocProjectkiezer = function (plek, o) {
   <!-- Onderdelen: op een gsm onderaan (duim), breder bovenaan. Start = je werk en "Waar begin je?" -->
   <nav class="tabbar" id="tabbar" aria-label="Onderdelen"></nav>
 
-  <main class="main">
+  <main class="main" id="inhoud" tabindex="-1">
     <div class="install update" id="update" hidden role="status">
       <p><strong>Nieuwe versie klaar.</strong> Vernieuw om ze te gebruiken.<span class="upd-nieuw" id="upd-nieuw" hidden></span></p>
       <button type="button" class="btn" id="update-btn">Vernieuwen</button>
@@ -3102,7 +3108,7 @@ window.ocProjectkiezer = function (plek, o) {
         <a class="ft-link" href="https://www.linkedin.com/in/bartel-volckaert-8a96842/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Maker</a>
         <a class="ft-link" href="/privacy/#voorwaarden" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.01"/></svg>Disclaimer</a>
       </nav>
-      <p class="ft-meta"><button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (34 seconden)" title="Bekijk de film (34 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg><span>Film</span></button><button class="ft-film ft-inst" id="ft-app" type="button" hidden aria-label="Installeer de app"><img src="/app/icon.svg" alt="" width="22" height="22"><span>Installeer</span></button><span class="ft-dot" aria-hidden="true"></span><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><button type="button" class="app-version" id="ver-open" aria-haspopup="dialog" title="Lees wat er nieuw is in deze versie">v17.18</button></p>
+      <p class="ft-meta"><button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (34 seconden)" title="Bekijk de film (34 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg><span>Film</span></button><button class="ft-film ft-inst" id="ft-app" type="button" hidden aria-label="Installeer de app"><img src="/app/icon.svg" alt="" width="22" height="22"><span>Installeer</span></button><span class="ft-dot" aria-hidden="true"></span><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><button type="button" class="app-version" id="ver-open" aria-haspopup="dialog" title="Lees wat er nieuw is in deze versie">v17.19</button></p>
     </div>
   </footer>
   <dialog class="film" id="film" aria-labelledby="film-h">
@@ -4941,6 +4947,8 @@ async function openVer() {
 $('ver-open').addEventListener('click', openVer);
 $('ver-dicht').addEventListener('click', () => $('ver').close());
 $('ver').addEventListener('click', e => { if (e.target === $('ver')) $('ver').close(); });
+// Skiplink: focus naar de inhoud, zonder het adres te veranderen (een # in het adres opent anders een tool)
+$('skip').addEventListener('click', e => { e.preventDefault(); const m = $('viewer').classList.contains('open') ? (frames.get(current) || $('inhoud')) : $('inhoud'); try { m.focus(); } catch {} });
 function syncUpdate() { $('update').hidden = !updateReady || !!current; }
 $('update-btn').addEventListener('click', async () => {
   const run = [...busy.keys()].map(id => byId[id] && byId[id].title).filter(Boolean);
