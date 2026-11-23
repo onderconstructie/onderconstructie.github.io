@@ -27,7 +27,7 @@ const { chromium } = require('playwright');
   await p.evaluate(() => openTool('notities', false, null, '', false)); await p.waitForTimeout(2600);
   await thuis();
   ok(await stappen() === 'agenda,check-in,notities,check-out', 'alleen openen telt niet: alle stappen staan nog open (' + await stappen() + ')');
-  ok((await tegel().innerText()).includes('stap 1 van 4'), 'de tegel op Start zegt stap 1 van 4');
+  ok((await tegel().getAttribute('data-id')) === 'agenda' && /Verder/.test(await tegel().innerText()), 'de tegel op Start zegt Verder en wijst naar stap 1, de Agenda');
   await tegel().click(); await p.waitForTimeout(600); await p.locator('#vg-dlg [data-vv="verder"]').click(); await p.waitForTimeout(2600);
   ok(await p.evaluate(() => current) === 'agenda', '"Verder waar ik was" brengt je naar de Agenda, niet naar de Check-out');
   await typAgenda('Nieuw punt van vandaag'); await thuis();
