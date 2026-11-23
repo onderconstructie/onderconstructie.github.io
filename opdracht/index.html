@@ -98,6 +98,9 @@ button { background:none; border:0; cursor:pointer; }
   .layout > .content { grid-column:1; grid-row:1; }
   .layout > .teken-wrap { grid-column:1; grid-row:2; }
   .layout > .aside { grid-column:2; grid-row:1 / span 2; position:sticky; top:1rem; }
+  /* Zonder zijkolom (De kern): één kolom in het midden, en de uitleg eronder even breed. Zo staat alles op één as. */
+  .layout:has(> .aside[hidden]) { grid-template-columns:minmax(0, 792px); justify-content:center; }
+  body:has(.layout > .aside[hidden]) .main > details.explain { max-width:792px; margin-left:auto; margin-right:auto; }
 }
 
 .card { background:var(--wit); border:1px solid var(--slate-200); border-radius:16px; box-shadow:0 1px 2px rgba(15,23,42,0.04); }
@@ -1623,6 +1626,7 @@ window.ocProjectkiezer = function (plek, o) {
 };
 /* oc-projectkiezer v1 einde */
 </script>
+<style id="oc-ctrlz">@media (hover:hover) and (pointer:fine){#toast-btn::after,#ocToastBtn::after{content:" (Ctrl+Z)";font-weight:400;opacity:.8}}</style>
 </head>
 <body>
 
@@ -4623,7 +4627,7 @@ function toast(msg, undo, ms) {
   $('toast-btn').hidden = !undo;
   $('toast').classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(function ocT() { const w = window.ocWacht ? ocWacht($('toast')) : 0; if (w) { toastTimer = setTimeout(ocT, w); return; } $('toast').classList.remove('show'); undoFn = null; }, ms || (undo ? 6000 : 2600));
+  toastTimer = setTimeout(function ocT() { const w = window.ocWacht ? ocWacht($('toast')) : 0; if (w) { toastTimer = setTimeout(ocT, w); return; } $('toast').classList.remove('show'); undoFn = null; }, ms || (undo ? 10000 : 4000));
 }
 $('toast-btn').addEventListener('click', () => {
   if (undoFn && version === undoVersion) { undoFn(); undoFn = null; save(); render(); }

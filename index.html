@@ -2177,6 +2177,8 @@ html.oc-stil .n-puls, html.oc-stil .n-halo, html.oc-stil .n-far circle { animati
   .pb-next { padding:0 0.25rem 0 0.625rem; gap:0.125rem; }
   .topbar.has-path #fav-tool, .topbar.has-path #fb-tool-btn, .topbar.has-path #ext { display:none; }
   .topbar.has-path #tb-meer { display:flex; }
+  /* Eén menu met drie puntjes: heeft de tool een eigen menu, dan staan de drie app-acties daarin en verdwijnt de knop van de app */
+  .topbar.has-path.een-menu #tb-meer { display:none; }
 }
 .pb-rij { display:flex; align-items:center; gap:6px; min-width:0; }
 .pb-tel2 { display:none; }
@@ -3091,7 +3093,7 @@ window.ocProjectkiezer = function (plek, o) {
         <a class="ft-link" href="https://www.linkedin.com/in/bartel-volckaert-8a96842/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Maker</a>
         <a class="ft-link" href="/privacy/#voorwaarden" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.01"/></svg>Disclaimer</a>
       </nav>
-      <p class="ft-meta"><button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (34 seconden)" title="Bekijk de film (34 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg><span>Film</span></button><button class="ft-film ft-inst" id="ft-app" type="button" hidden aria-label="Installeer de app"><img src="/app/icon.svg" alt="" width="22" height="22"><span>Installeer</span></button><span class="ft-dot" aria-hidden="true"></span><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><button type="button" class="app-version" id="ver-open" aria-haspopup="dialog" title="Lees wat er nieuw is in deze versie">v17.17</button></p>
+      <p class="ft-meta"><button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (34 seconden)" title="Bekijk de film (34 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg><span>Film</span></button><button class="ft-film ft-inst" id="ft-app" type="button" hidden aria-label="Installeer de app"><img src="/app/icon.svg" alt="" width="22" height="22"><span>Installeer</span></button><span class="ft-dot" aria-hidden="true"></span><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><button type="button" class="app-version" id="ver-open" aria-haspopup="dialog" title="Lees wat er nieuw is in deze versie">v17.18</button></p>
     </div>
   </footer>
   <dialog class="film" id="film" aria-labelledby="film-h">
@@ -4524,10 +4526,41 @@ function showHome(fromHistory) {
 }
 
 /* Links binnen een tool: terug naar een overzicht = terug naar de app, andere tool = in de app openen */
+/* Eén menu in plaats van twee. Op een gsm stond in een stappenplan het menu van de app (drie puntjes) pal boven het menu van de tool (ook drie puntjes).
+   Heeft de tool een eigen menu, dan zetten we de drie app-acties onderaan in dat menu en verbergen we de knop van de app. Alleen in een plan en op een smal scherm:
+   daarbuiten staan de app-acties gewoon als knoppen in de balk. De tool zelf verandert niet: dit gebeurt van buitenaf, in haar geladen pagina. */
+const EEN_MENU_ICO = { fav:'<path d="M12 3.6l2.5 5.2 5.7.7-4.2 3.9 1.1 5.6L12 16.2 6.9 19l1.1-5.6-4.2-3.9 5.7-.7z"/>', fb:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/>', ext:'<path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/>' };
+function eenMenu(f, doc) {
+  delete f.dataset.eenMenu;
+  const knop = doc.querySelector('button[aria-label="Meer acties"]'), menu = knop && knop.nextElementSibling;
+  if (!menu || menu.getAttribute('role') !== 'menu') return;
+  if (!doc.getElementById('oc-een-menu-css')) { const st = doc.createElement('style'); st.id = 'oc-een-menu-css';
+    st.textContent = '[data-oc-app]{display:none !important}@media (max-width:699.98px){html[data-oc-plan] button[data-oc-app]{display:flex !important}html[data-oc-plan] div[data-oc-app]{display:block !important;height:1px;margin:0.375rem 0.25rem;background:#e2e8f0}}'; doc.head.appendChild(st); }
+  const tekst = { fav:() => $('fav-tool').getAttribute('aria-pressed') === 'true' ? 'Haal van je startscherm' : 'Zet op je startscherm', fb:() => 'Suggestie of fout', ext:() => 'Open in de browser' }, doel = { fav:'fav-tool', fb:'fb-tool-btn', ext:'ext' };
+  const vul = () => {
+    if (menu.querySelector('[data-oc-app]')) return;
+    const lijn = doc.createElement('div'); lijn.setAttribute('data-oc-app', 'lijn'); menu.appendChild(lijn);
+    Object.keys(doel).forEach(k => { const b = doc.createElement('button'); b.type = 'button'; b.setAttribute('role', 'menuitem'); b.setAttribute('data-oc-app', k);
+      b.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${EEN_MENU_ICO[k]}</svg><span></span>`; b.lastChild.textContent = tekst[k]();
+      b.addEventListener('click', e => { e.stopPropagation(); if (knop.getAttribute('aria-expanded') === 'true') knop.click(); $(doel[k]).click(); });
+      menu.appendChild(b); });
+  };
+  vul();
+  try { new MutationObserver(vul).observe(menu, { childList:true }); } catch {}
+  knop.addEventListener('click', () => menu.querySelectorAll('button[data-oc-app]').forEach(b => { b.lastChild.textContent = tekst[b.dataset.ocApp](); }), true);
+  f.dataset.eenMenu = '1'; eenMenuSync();
+}
+// De stand volgt de balk: in een plan krijgt de open tool het kenmerk waarop de drie acties zichtbaar worden, en de app verbergt haar eigen knop
+function eenMenuSync() {
+  const inPlan = $('topbar').classList.contains('has-path'), f = typeof frames !== 'undefined' && typeof current !== 'undefined' && current ? frames.get(current) : null;
+  if (typeof frames !== 'undefined') frames.forEach(x => { try { x.contentDocument.documentElement.toggleAttribute('data-oc-plan', inPlan && x === f); } catch {} });
+  $('topbar').classList.toggle('een-menu', !!(inPlan && f && f.dataset.eenMenu));
+}
 function wire(f, id) {
   let doc;
   try { doc = f.contentDocument; } catch { return; }
   if (!doc) return;
+  eenMenu(f, doc);
   // Een eigen installeerknop in een tool is binnen de app overbodig en verwarrend.
   // Plaats voor de schuifbalk altijd vrijhouden: zo verspringt een tool niet opzij als ze langer of korter wordt, of als je van tool wisselt
   try { const st = doc.createElement('style'); st.textContent = '#installChip{display:none!important} html{scrollbar-gutter:stable}'; doc.head.appendChild(st); } catch {}
@@ -5755,7 +5788,7 @@ function ocVolgPlan(plan, id) {
 function renderPathbar(id) {
   const t = byId[id], bar = $('pathbar'), plans = (t && t.traject || []).map(x => x.naam).concat(Object.keys(STAP_EXTRA).filter(n => STAP_EXTRA[n].some(x => x.id === id)), Object.keys(BRUGGEN).filter(n => brugVan(n) === 'ja' && BRUGGEN[n].stappen.some(x => x.id === id))).filter((n, k, a) => a.indexOf(n) === k && TRAJECTEN.some(tr => tr.id === n));
   // Zichtbaar = #pathbar zonder hidden (tools zoals Communicatieplan kijken daarnaar om hun eigen teller te verbergen)
-  const show = on => { bar.hidden = !on; if (!on) { bar.innerHTML = ''; delete bar.dataset.sig; duim(null); tbMenu(false); } $('topbar').classList.toggle('has-path', on); };
+  const show = on => { bar.hidden = !on; if (!on) { bar.innerHTML = ''; delete bar.dataset.sig; duim(null); tbMenu(false); } $('topbar').classList.toggle('has-path', on); eenMenuSync(); };
   if (!plans.length || !viaPad) { show(false); return; }
   const st = startedPaths(), trId = plans.includes(pathCtx) ? pathCtx : plans.find(n => st.includes(n)) || plans[0], tr = TRAJECTEN.find(x => x.id === trId);
   const steps = stepsOf(trId), fz0 = (frames.get(id) || {}).dataset || {}, i0 = steps.findIndex(s => s.t.id === id && s.t.zoek && s.t.zoek === fz0.zoek), i = i0 >= 0 ? i0 : steps.findIndex(s => s.t.id === id);
@@ -6181,7 +6214,7 @@ function appToast(msg, undo) {
   appUndo = undo || null;
   $('app-toast-text').textContent = msg; $('app-toast-btn').hidden = !undo;
   $('app-toast').classList.add('show'); clearTimeout(appToastT);
-  appToastT = setTimeout(function ocT() { const w = window.ocWacht ? ocWacht($('app-toast')) : 0; if (w) { appToastT = setTimeout(ocT, w); return; } $('app-toast').classList.remove('show'); appUndo = null; }, undo ? 8000 : 2600);
+  appToastT = setTimeout(function ocT() { const w = window.ocWacht ? ocWacht($('app-toast')) : 0; if (w) { appToastT = setTimeout(ocT, w); return; } $('app-toast').classList.remove('show'); appUndo = null; }, undo ? 10000 : 4000);
 }
 $('app-toast-btn').addEventListener('click', () => { const f = appUndo; appUndo = null; $('app-toast').classList.remove('show'); f && f(); });
 // Ctrl/Cmd+Z doet hetzelfde als "Ongedaan" zolang die melding zichtbaar is (niet in een tekstveld: daar ongedaan de browser het typen)

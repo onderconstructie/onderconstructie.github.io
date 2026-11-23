@@ -228,7 +228,9 @@ kbd { font:inherit; font-size:0.8125rem; font-weight:600; padding:0 0.375rem; bo
   section.card:has(> #p-ov) #ov-acties { display:flex; flex-wrap:wrap; justify-content:flex-start; gap:0.5rem; }
   section.card:has(> #p-ov) #ov-acties .btn { flex:0 0 auto; width:auto; }
   .bewaar-rij { justify-content:flex-start; }
-  .main > .mono, .main > details.explain, .main > .explain { max-width:720px; }
+  .main > .mono, .main > details.explain, .main > .explain { max-width:720px; margin-left:auto; margin-right:auto; }
+  /* Lege tool: de startkaart blijft smal en in het midden, niet uitgerokken over de werkbreedte */
+  body:has(.oc-start:not([hidden])) main.main { max-width:720px; }
 }
 /* Eerst alleen: de vraag, de stilte met een klok, en dan de ideeën één voor één */
 .rd-lbl { display:block; margin:1rem 0 0.375rem; font-size:0.9375rem; font-weight:700; color:var(--slate-800); }
@@ -292,7 +294,9 @@ kbd { font:inherit; font-size:0.8125rem; font-weight:600; padding:0 0.375rem; bo
   section.card:has(> #p-ov) #ov-acties { display:flex; flex-wrap:wrap; justify-content:flex-start; gap:0.5rem; }
   section.card:has(> #p-ov) #ov-acties .btn { flex:0 0 auto; width:auto; }
   .bewaar-rij { justify-content:flex-start; }
-  .main > .mono, .main > details.explain, .main > .explain { max-width:720px; }
+  .main > .mono, .main > details.explain, .main > .explain { max-width:720px; margin-left:auto; margin-right:auto; }
+  /* Lege tool: de startkaart blijft smal en in het midden, niet uitgerokken over de werkbreedte */
+  body:has(.oc-start:not([hidden])) main.main { max-width:720px; }
 }
 @media (max-width:480px) { .ea-klok { font-size:3.5rem; } .rd-knoppen .btn { padding:0 0.875rem; } .btn-groot { min-width:0; } }
 
@@ -1467,6 +1471,7 @@ window.ocProjectkiezer = function (plek, o) {
 };
 /* oc-projectkiezer v1 einde */
 </script>
+<style id="oc-ctrlz">@media (hover:hover) and (pointer:fine){#toast-btn::after,#ocToastBtn::after{content:" (Ctrl+Z)";font-weight:400;opacity:.8}}</style>
 </head>
 <body>
     <header class="header oc-head" data-oc-kop data-stand="compact"><script>ocKop.groot(false);</script>
@@ -2415,7 +2420,7 @@ function toast(msg, undo) {
   $('toast-btn').hidden = !undo;
   $('toast').classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(function ocT() { const w = window.ocWacht ? ocWacht($('toast')) : 0; if (w) { toastTimer = setTimeout(ocT, w); return; } $('toast').classList.remove('show'); undoFn = null; }, undo ? 6000 : (msg.length > 60 ? 4500 : 2600));
+  toastTimer = setTimeout(function ocT() { const w = window.ocWacht ? ocWacht($('toast')) : 0; if (w) { toastTimer = setTimeout(ocT, w); return; } $('toast').classList.remove('show'); undoFn = null; }, undo ? 10000 : (msg.length > 60 ? 6000 : 4000));
 }
 $('toast-btn').addEventListener('click', () => {
   if (undoFn) { const f = undoFn; undoFn = null; f(); }
