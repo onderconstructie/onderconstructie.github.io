@@ -173,6 +173,8 @@ html { scroll-padding-top:calc(var(--top) + 52px); }   /* waar de pagina naartoe
 .filter { margin-bottom:1.25rem; }
 .filter-head { display:flex; align-items:baseline; gap:0.625rem; margin-bottom:0.5rem; padding:0 0.25rem; }
 .filter-hint { font-size:0.8125rem; color:var(--slate-500); }
+/* Het kopje breekt nooit in twee ("Je / stappenplan" op de gsm): is er geen plaats, dan zakt de toelichting naar de regel eronder (v17.34) */
+.filter-head { flex-wrap:wrap; row-gap:0.125rem; } .filter-head > h2 { white-space:nowrap; }
 .filter-chips { display:flex; gap:0.375rem; overflow-x:auto; scrollbar-width:none; margin:0 -1.25rem; padding:0.125rem 1.25rem 0.25rem; }
 .filter-chips::-webkit-scrollbar { display:none; }
 .filter-chips { -webkit-mask-image:linear-gradient(to right, #000 calc(100% - 2.5rem), transparent); mask-image:linear-gradient(to right, #000 calc(100% - 2.5rem), transparent); }
@@ -2158,14 +2160,20 @@ html.oc-stil .n-puls, html.oc-stil .n-halo, html.oc-stil .n-far circle { animati
 .rs-o-x svg { width:16px; height:16px; }
 @media (hover:hover) { .rs-o-x:hover { background:var(--slate-100); color:var(--slate-700); } }
 .rs-o-x:focus-visible { outline:2px solid #047857; outline-offset:-2px; }
-.plan-stop { display:flex; flex-wrap:wrap; align-items:center; gap:0.25rem 0.625rem; margin:0.25rem 0 0; padding:0.5rem 1rem 0.75rem; font-size:0.8125rem; color:var(--slate-500); }
-.plan-stop .lnk { min-height:44px; color:var(--slate-600); }
-/* Een begonnen plan stop je met het kruisje in de kop van de kaart, zoals overal op Start. Het pijltje blijft uiterst rechts.
-   In het planvenster van een tool is er geen kop: daar blijft de tekstknop staan. */
+/* Stoppen met een plan (v17.34): geen losse onderstreepte link meer onderaan de lijst, maar een eigen strook onder de stappen,
+   met een rustige knop en in gewone woorden wat er gebeurt. Niets is weg: het plan verdwijnt van je startscherm, je werk blijft. */
+.plan-stop { display:flex; flex-wrap:wrap; align-items:center; gap:0.375rem 0.75rem; margin:0.75rem 0 0; padding:0.75rem 1rem 0.875rem; border-top:1px solid var(--slate-200); background:var(--slate-50); border-radius:0 0 15px 15px; font-size:0.8125rem; line-height:1.4; color:var(--slate-500); }
+.plan-stop > span { flex:1 1 12rem; min-width:0; }
+.ps-knop { flex:none; display:inline-flex; align-items:center; gap:0.5rem; min-height:44px; padding:0 0.9375rem 0 0.75rem; border-radius:999px; border:1.5px solid var(--slate-300); background:var(--wit); color:var(--slate-700); font:inherit; font-size:0.875rem; font-weight:600; cursor:pointer; transition:border-color .15s, background .15s, color .15s; }
+.ps-knop svg { flex:none; width:18px; height:18px; color:var(--slate-500); }
+.ps-knop:hover { border-color:var(--slate-400); background:var(--slate-100); }
+.ps-knop:active { background:var(--slate-200); }
+.ps-knop:focus-visible { outline:2px solid var(--accent-dark); outline-offset:2px; }
 .path { position:relative; }
-.plan-opnieuw { padding-bottom:0; }
-.plan-opnieuw + .plan-stop { margin-top:0; padding-top:0; }
-.plan-opnieuw .lnk { color:var(--accent-dark); font-weight:600; }
+.plan-opnieuw { padding-bottom:0.375rem; border-radius:0; }
+.plan-opnieuw + .plan-stop { margin-top:0; padding-top:0.375rem; border-top:0; }
+.plan-opnieuw .ps-knop { border-color:#6ee7b7; color:var(--accent-dark); background:#ecfdf5; } .plan-opnieuw .ps-knop svg { color:var(--accent-dark); }
+.plan-opnieuw .ps-knop:hover { background:#d1fae5; border-color:#34d399; }
 /* Onlangs: op de gsm en op een aanraakscherm de naam onder het icoon, klein maar leesbaar (12 px, 7,5:1) */
 .rc-nm { display:none; }
 @media (max-width:699.98px), (hover:none) {
@@ -2273,6 +2281,7 @@ html.oc-stil .n-puls, html.oc-stil .n-halo, html.oc-stil .n-far circle { animati
 @keyframes knoop-langs { 0% { background:#fff; box-shadow:inset 0 0 0 1.5px #cbd5e1, 0 0 0 0 #d1fae5; } 30% { background:#10b981; box-shadow:inset 0 0 0 1.5px #10b981, 0 0 0 5px #d1fae5; } 100% { background:#fff; box-shadow:inset 0 0 0 1.5px #6ee7b7, 0 0 0 0 rgba(209,250,229,0); } }
 @keyframes knoop-hier { 0% { background:#fff; box-shadow:inset 0 0 0 1.5px #cbd5e1, 0 0 0 0 #d1fae5; transform:scale(.7); } 40% { background:#10b981; box-shadow:inset 0 0 0 1.5px #10b981, 0 0 0 8px #d1fae5; transform:scale(1.15); } 100% { background:#10b981; box-shadow:inset 0 0 0 1.5px #10b981, 0 0 0 3.5px #d1fae5; transform:none; } }
 @keyframes knoop-adem { 0%, 100% { box-shadow:0 0 0 3.5px #d1fae5; } 50% { box-shadow:0 0 0 6.5px rgba(209,250,229,.45); } }
+.pb-dots span.stil::before, .pb-bol span.stil::before, .path-bar span.stil::before, .pb-dots span.stil::after, .pb-bol span.stil::after, .path-bar span.stil::after { animation:none !important; }   /* dit stuk was er al: het speelt niet opnieuw */
 @media (prefers-reduced-motion:reduce) { .pb-dots span::before, .pb-bol span::before, .path-bar span::before, .pb-dots span::after, .pb-bol span::after, .path-bar span::after { animation:none !important; } }
 /* Start op de gsm (v17.33): de doelen zijn geen losse witte kaarten meer maar rustige rijen. Zo passen alle zes in één scherm
    en voeren de namen het woord. Het pijltje is fijn en grijs; een rij die je aanraakt kleurt lichtgroen. Bewust geen draad tussen de iconen:
@@ -3186,7 +3195,7 @@ window.ocProjectkiezer = function (plek, o) {
         <a class="ft-link" href="https://www.linkedin.com/in/bartel-volckaert-8a96842/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Maker</a>
         <a class="ft-link" href="/privacy/#voorwaarden" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.01"/></svg>Disclaimer</a>
       </nav>
-      <p class="ft-meta"><button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (34 seconden)" title="Bekijk de film (34 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg><span>Film</span></button><button class="ft-film ft-inst" id="ft-app" type="button" hidden aria-label="Installeer de app"><img src="/app/icon.svg" alt="" width="22" height="22"><span>Installeer</span></button><span class="ft-dot" aria-hidden="true"></span><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><button type="button" class="app-version" id="ver-open" aria-haspopup="dialog" title="Lees wat er nieuw is in deze versie">v17.33</button></p>
+      <p class="ft-meta"><button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (34 seconden)" title="Bekijk de film (34 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg><span>Film</span></button><button class="ft-film ft-inst" id="ft-app" type="button" hidden aria-label="Installeer de app"><img src="/app/icon.svg" alt="" width="22" height="22"><span>Installeer</span></button><span class="ft-dot" aria-hidden="true"></span><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><button type="button" class="app-version" id="ver-open" aria-haspopup="dialog" title="Lees wat er nieuw is in deze versie">v17.34</button></p>
     </div>
   </footer>
   <dialog class="film" id="film" aria-labelledby="film-h">
@@ -5919,10 +5928,20 @@ function ocVolgPlan(plan, id) {
   pathCtx = plan; store.set('path-ctx', pathCtx); markStarted(plan); viaPad = true;
   if (typeof current !== 'undefined' && current === id) renderPathbar(id); else openTool(id);
 }
+let barStand = null;   // waar de draad in de balk stond, om alleen het nieuwe stuk te laten oplichten
+/* Zelfde regel voor de kaarten van de plannen: de eerste keer loopt de vonk over de hele weg, daarna alleen over wat erbij kwam.
+   Een plan staat soms twee keer op de pagina en wordt dan in dezelfde beurt twee keer getekend: beide krijgen dezelfde start. */
+const kaartStand = new Map();
+function kaartVan(id, hier, n) {
+  const o = kaartStand.get(id), nu = Date.now();
+  if (o && o.hier === hier && nu - o.t < 120) return o.van;
+  const van = o ? (hier > o.hier ? Math.max(o.hier, -1) : n) : -1;
+  kaartStand.set(id, { hier, van, t:nu }); return van;
+}
 function renderPathbar(id) {
   const t = byId[id], bar = $('pathbar'), plans = (t && t.traject || []).map(x => x.naam).concat(Object.keys(STAP_EXTRA).filter(n => STAP_EXTRA[n].some(x => x.id === id)), Object.keys(BRUGGEN).filter(n => brugVan(n) === 'ja' && BRUGGEN[n].stappen.some(x => x.id === id))).filter((n, k, a) => a.indexOf(n) === k && TRAJECTEN.some(tr => tr.id === n));
   // Zichtbaar = #pathbar zonder hidden (tools zoals Communicatieplan kijken daarnaar om hun eigen teller te verbergen)
-  const show = on => { bar.hidden = !on; if (!on) { bar.innerHTML = ''; delete bar.dataset.sig; duim(null); tbMenu(false); } $('topbar').classList.toggle('has-path', on); eenMenuSync(); };
+  const show = on => { bar.hidden = !on; if (!on) { bar.innerHTML = ''; delete bar.dataset.sig; barStand = null; duim(null); tbMenu(false); } $('topbar').classList.toggle('has-path', on); eenMenuSync(); };
   if (!plans.length || !viaPad) { show(false); return; }
   const st = startedPaths(), trId = plans.includes(pathCtx) ? pathCtx : plans.find(n => st.includes(n)) || plans[0], tr = TRAJECTEN.find(x => x.id === trId);
   const steps = stepsOf(trId), fz0 = (frames.get(id) || {}).dataset || {}, i0 = steps.findIndex(s => s.t.id === id && s.t.zoek && s.t.zoek === fz0.zoek), i = i0 >= 0 ? i0 : steps.findIndex(s => s.t.id === id);
@@ -5936,9 +5955,13 @@ function renderPathbar(id) {
   const fNaam = fi >= 0 ? fz[fi].naam : '', fNr = i - fa + 1, fTot = fb - fa;
   const n = (fNaam ? (fTot > 1 ? `${fNaam} · stap ${fNr} van ${fTot}` : fNaam) : `stap ${i + 1} van ${steps.length}`) + (pr ? ' · ' + pr : '');
   const arrow = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
-  const bolKl = (s, k) => k === i ? 'here' : (s.done ? 'done' : '') + (k < i ? ' voor' : '');   // voor: de draad is al tot hier gekomen, ook als de stap leeg bleef
-  const bol = steps.map((s, k) => `<span class="${bolKl(s, k)}" style="--i:${k}"></span>`).join('');
-  const bolFase = fNaam ? steps.slice(fa, fb).map((s, k) => `<span class="${bolKl(s, fa + k)}" style="--i:${k}"></span>`).join('') : bol;
+  // De vonk reist alleen over wat nieuw is (v17.34). Verschijnt de balk, dan over de hele weg. Ga je een stap verder, dan van de vorige knoop naar de nieuwe.
+  // Verandert alleen een vinkje, of ga je terug, dan staat alles stil: de draad speelt niet opnieuw terwijl je werkt.
+  const van = (!bar.hidden && barStand && barStand.plan === trId) ? (i > barStand.i ? barStand.i : steps.length) : -1;
+  barStand = { plan:trId, i };
+  const bolKl = (s, k) => (k === i ? 'here' : (s.done ? 'done' : '') + (k < i ? ' voor' : '')) + (k <= van ? ' stil' : '');   // voor: de draad is al tot hier gekomen, ook als de stap leeg bleef
+  const bol = steps.map((s, k) => `<span class="${bolKl(s, k)}" style="--i:${Math.max(0, k - van - 1)}"></span>`).join('');
+  const bolFase = fNaam ? steps.slice(fa, fb).map((s, k) => `<span class="${bolKl(s, fa + k)}" style="--i:${Math.max(0, fa + k - Math.max(van + 1, fa))}"></span>`).join('') : bol;
   // Niets veranderd (zelfde stap, zelfde vinkjes, zelfde project): niet opnieuw tekenen, dan blijft de focus op Vorige of Volgende staan
   const sig = [trId, i, steps.map(s => s.done ? 1 : 0).join(''), pr].join('|');
   duim(next && gevuld(steps[i]) ? { next, trId } : null);
@@ -6115,7 +6138,7 @@ function planBinnen(tr, alle, steps, rest, next, kort, over, ookOpen) {
             <span><span class="step-name">${esc(s.t.title)}</span><span class="step-q">${esc((s.t.extra ? '' : tr.q[s.t.id]) || s.t.sub)}</span></span>
             <span class="step-st">${over.includes(stapSleutel(s)) ? 'overgeslagen' : s.done ? 'begonnen' : 'neem erbij'}</span>
           </button></li>`).join('')}</ul></div>` : ''}
-      ${startedPaths().includes(tr.id) ? `${HERHAAL[tr.id] ? `<p class="plan-stop plan-opnieuw"><button type="button" class="lnk" data-plan-opnieuw="${esc(tr.id)}">${HERHAAL[tr.id]}</button><span>Kies opnieuw: gewone vergadering of stand-up. Je begint met een leeg blad.</span></p>` : ''}<p class="plan-stop"><button type="button" class="lnk" data-plan-stop="${esc(tr.id)}">Stop met dit plan</button><span>Je gegevens blijven staan.</span></p>` : ''}`;
+      ${startedPaths().includes(tr.id) ? `${HERHAAL[tr.id] ? `<p class="plan-stop plan-opnieuw"><button type="button" class="ps-knop" data-plan-opnieuw="${esc(tr.id)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>${HERHAAL[tr.id]}</button><span>Kies opnieuw: gewone vergadering of stand-up. Je begint met een leeg blad.</span></p>` : ''}<p class="plan-stop"><button type="button" class="ps-knop" data-plan-stop="${esc(tr.id)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><rect x="9" y="9" width="6" height="6" rx="1" fill="currentColor" stroke="none"/></svg>Stop met dit plan</button><span>Het plan gaat van je startscherm. Wat je invulde, blijft staan.</span></p>` : ''}`;
 }
 /* "Leid een vergadering" vraagt eerst wat voor vergadering het wordt: bij de eerste start en bij elke "Nieuwe vergadering".
    Bij een nieuwe vergadering staan de stappen weer open en krijgen Agenda, Vergadernotities en Check-out een seintje
@@ -6266,7 +6289,7 @@ function renderPaths() {
       <button class="path-head" aria-expanded="${isOpen}">
         <span><span class="path-title" role="heading" aria-level="2">${esc(tr.title)}</span>
           <span class="path-note">${!next && nDone ? 'Alle stappen begonnen' : nDone ? `Stap ${steps.indexOf(next) + 1} van ${steps.length}` : document.body.classList.contains('returning') && next ? `${esc(tr.note)}. Begin met ${esc(next.t.title)}.` : esc(tr.note)}</span>
-          <span class="path-bar" aria-hidden="true">${steps.map((s, k) => `<span class="${nDone && s === next ? 'here' : (s.done ? 'done' : '') + (nDone && next && k < steps.indexOf(next) ? ' voor' : '')}" style="--i:${k}"></span>`).join('')}</span></span>
+          <span class="path-bar" aria-hidden="true">${(() => { const van = kaartVan(tr.id, nDone ? (next ? steps.indexOf(next) : steps.length) : -1, steps.length); return steps.map((s, k) => `<span class="${(nDone && s === next ? 'here' : (s.done ? 'done' : '') + (nDone && next && k < steps.indexOf(next) ? ' voor' : '')) + (k <= van ? ' stil' : '')}" style="--i:${Math.max(0, k - van - 1)}"></span>`).join(''); })()}</span></span>
         ${toggleIcon}
       </button>
  ${next && knop ? `<button class="path-next" data-id="${esc(next.t.id)}"${zoekAttr(next.t)} data-ctx="${tr.id}"><span class="icon">${iconHTML(next.t.icon)}</span>
