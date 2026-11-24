@@ -1538,6 +1538,19 @@ window.ocProjectkiezer = function (plek, o) {
 /* oc-projectkiezer v1 einde */
 </script>
 <style id="oc-ctrlz">@media (hover:hover) and (pointer:fine){#toast-btn::after,#ocToastBtn::after{content:" (Ctrl+Z)";font-weight:400;opacity:.8}}</style>
+<style id="oc-volgplan-css">
+/* Wijzer naar het plan (v17.31): alleen als de tool los open staat. Zelfde vorm als in de Projectopdracht. */
+.oc-volgplan { display:flex; align-items:center; gap:0.75rem; max-width:34rem; margin:0 auto 1rem; padding:0.625rem 0.875rem; border-radius:14px; background:#ecfdf5; border:1px solid #a7f3d0; color:#065f46; text-decoration:none; }
+.oc-volgplan[hidden] { display:none; }
+.oc-volgplan:hover { background:#d1fae5; }
+.oc-volgplan:focus-visible { outline:2px solid #047857; outline-offset:2px; }
+.oc-volgplan .oc-vp-d { flex:none; width:2rem; height:1.125rem; }
+.oc-volgplan .oc-vp-t { flex:1; min-width:0; line-height:1.3; }
+.oc-volgplan .oc-vp-t b { display:block; font-size:0.9375rem; }
+.oc-volgplan .oc-vp-t small { font-size:0.8125rem; color:#047857; }
+.oc-volgplan > svg:last-child { flex:none; width:1.125rem; height:1.125rem; }
+@media print { .oc-volgplan { display:none !important; } }
+</style>
 </head>
 <body>
 
@@ -1574,6 +1587,13 @@ window.ocProjectkiezer = function (plek, o) {
 </header>
 
 <main class="main">
+
+  <!-- Los geopend (rechtstreekse link, zoeken, Alle tools): toon dat deze tool een stap van een plan is. In het plan zelf staat de balk met Volgende er al. -->
+  <a class="oc-volgplan" id="oc-volgplan" href="/?plan=project#raci" data-tool="raci" data-plannen="project,proces" hidden>
+    <svg class="oc-vp-d" viewBox="0 0 32 18" fill="none" aria-hidden="true"><path d="M2 9h28" stroke="#6ee7b7" stroke-width="1.6"/><circle cx="6" cy="9" r="3" fill="#fff" stroke="#6ee7b7" stroke-width="1.6"/><circle cx="16" cy="9" r="4.2" fill="#10b981"/><circle cx="26" cy="9" r="3" fill="#fff" stroke="#cbd5e1" stroke-width="1.6"/></svg>
+    <span class="oc-vp-t"><b id="oc-vp-b">Een stap van Start een project</b><small>Volg het plan: Volgende wijst telkens de weg.</small></span>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+  </a>
   <div class="empty oc-start" id="ocStart" hidden><strong>Nog leeg</strong>Zet de taken onder elkaar en de mensen of rollen ernaast. Of bekijk eerst een uitgewerkt voorbeeld.<div class="oc-start-btns"><button type="button" class="oc-begin" id="first-task">Begin met een taak</button><button type="button" class="oc-vb" id="example">Voorbeeld bekijken</button></div><div class="oc-imp-rij"><button type="button" class="oc-import" data-oc-types="taak,actie" data-oc-target="tasks" aria-label="Taken overnemen uit andere tools" title="Taken overnemen uit andere tools" hidden>Overnemen uit andere tools</button><button type="button" class="oc-import" data-oc-types="betrokkene" data-oc-target="roles" aria-label="Rollen overnemen uit andere tools" title="Rollen overnemen uit andere tools" hidden>Overnemen uit andere tools</button></div><p class="oc-open-row"><button type="button" class="oc-open-link" data-bestand="open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 16v-5M9.5 13.5 12 11l2.5 2.5"/></svg>Open bestand</button></p></div>
   <div id="kpPlek" hidden></div>
 
@@ -5030,6 +5050,26 @@ document.addEventListener('click', e => {
   vanAdres(false);
 })();
 /* oc-uitleg v1 einde */
+</script>
+<script>
+/* Wijzer naar het plan: alleen als de tool los open staat. In de app kijken we naar de stappenbalk (#pathbar) en volgen we die.
+   Hoort de tool bij meer plannen, dan wijst de wijzer naar het plan dat je al begon, anders naar het eerste. */
+(function () {
+  var el = document.getElementById('oc-volgplan'); if (!el) return;
+  var NAAM = { project:'Start een project', proces:'Verbeter een proces', verandering:'Begeleid een verandering' };
+  var plannen = (el.getAttribute('data-plannen') || '').split(','), tool = el.getAttribute('data-tool'), plan = plannen[0];
+  try { var st = JSON.parse(localStorage.getItem('oc-app.paths-started') || '[]'); if (Array.isArray(st)) { var p = plannen.filter(function (x) { return st.indexOf(x) >= 0; })[0]; if (p) plan = p; } } catch (e) {}
+  el.setAttribute('href', '/?plan=' + plan + '#' + tool); var b = document.getElementById('oc-vp-b'); if (b && NAAM[plan]) b.textContent = 'Een stap van ' + NAAM[plan];
+  var balk = null; try { balk = window.frameElement && window.parent.document.getElementById('pathbar'); } catch (e) {}
+  function zet() { el.hidden = !!(balk && !balk.hidden); }
+  zet();
+  if (balk) { try { new MutationObserver(zet).observe(balk, { attributes:true, attributeFilter:['hidden'] }); } catch (e) {} }
+  // In de app: voor de app de link zelf opvangt (die zou naar het startscherm gaan), dus in de vangfase op het venster
+  window.addEventListener('click', function (e) {
+    if (!e.target.closest || !e.target.closest('#oc-volgplan')) return;
+    try { if (window.frameElement && typeof window.parent.ocVolgPlan === 'function') { e.preventDefault(); e.stopImmediatePropagation(); window.parent.ocVolgPlan(plan, tool); } } catch (x) {}
+  }, true);
+})();
 </script>
 </body>
 </html>
