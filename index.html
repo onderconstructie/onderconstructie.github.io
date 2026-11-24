@@ -3191,7 +3191,7 @@ window.ocProjectkiezer = function (plek, o) {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
       </button>
     </div>
-    <p class="sheet-intro">Alles wat je in de apps invult, blijft op dit toestel, in deze browser. Niets gaat naar een server. Met een reservekopie bewaar je het in een bestand. Zo zet je het later of op een ander toestel terug. Tekeningen uit Schets zitten daar niet in: die bewaar je in Schets zelf.</p>
+    <p class="sheet-intro">Alles wat je in de apps invult, blijft op dit toestel, in deze browser. Niets gaat naar een server. Met een reservekopie bewaar je het in een bestand. Zo zet je het later of op een ander toestel terug. Ook je tekeningen uit Schets zitten erin.</p>
     <p class="data-sum" id="data-list"></p>
     <div class="data-actions" id="data-actions">
       <div class="dl" id="dl">
@@ -5324,16 +5324,16 @@ function wipeChosen(ch, saved) {
   appToast((saved ? 'Reservekopie gedownload. ' : '') + (ch.length === 1 ? `${ch[0].t.title} gewist` : n === ch.length ? `${n} apps gewist` : `${n} ${n === 1 ? 'app' : 'apps'} en de instellingen gewist`),
     async () => { if (!await restore()) return; ids.forEach(dropFrame); signalWipe(); renderHome(); syncData(); autoSoon(); appToast('Teruggezet'); });
 }
-$('exit-go').addEventListener('click', () => {
+$('exit-go').addEventListener('click', async () => {
   if (!exitList.length) { closeExit(); return; }
   const pre = $('exit-pre').checked;
   if (exitMode === 'all') {
     // eerst een kopie van precies wat er gewist wordt, dan pas wissen
-    if (pre) backup(allBackupKeys());
+    if (pre) await backup(allBackupKeys());   // wacht: de tekeningen van Schets moeten gelezen zijn voor er iets gewist wordt
     $('exit-sheet').hidden = true; fullExit(); return;
   }
   const ch = exitChosen(); if (!ch.length) return;
-  if (pre) backup(ch.flatMap(e => e.keys), partName(ch));
+  if (pre) await backup(ch.flatMap(e => e.keys), partName(ch));
   closeExit(); wipeChosen(ch, pre);
 });
 $('exit-close').addEventListener('click', closeExit);
@@ -5424,8 +5424,15 @@ function backupData(keys) {
   return data;
 }
 const backupJSON = data => JSON.stringify({ app:'Onder Constructie', version:1, created:new Date().toISOString(), data }, null, 1);
-function backup(keys, part) {
-  const blob = new Blob([backupJSON(backupData(keys))], { type:'application/json' });
+/* De tekeningen van Schets staan in IndexedDB (te groot voor localStorage). Sinds v17.29 gaan ze mee in de reservekopie,
+   onder de sleutel 'schets.bladen' (de naam die Schets zelf gebruikt als terugval). Terugzetten schrijft ze weer naar IndexedDB.
+   Alleen als er een anker 'schets.v1' in de kopie zit: zonder anker is er geen werk in Schets. */
+const schetsDb = () => new Promise((ok, fail) => { let r; try { r = indexedDB.open('oc-schets', 1); } catch (e) { fail(e); return; } r.onupgradeneeded = () => { if (!r.result.objectStoreNames.contains('bladen')) r.result.createObjectStore('bladen', { keyPath:'id' }); }; r.onsuccess = () => ok(r.result); r.onerror = r.onblocked = () => fail(r.error || new Error('idb')); });
+async function schetsLees() { try { const db = await schetsDb(); const l = await new Promise((ok, fail) => { const q = db.transaction('bladen').objectStore('bladen').getAll(); q.onsuccess = () => ok(q.result || []); q.onerror = () => fail(q.error); }); db.close(); return l; } catch { return []; } }
+async function schetsZet(lijst) { const db = await schetsDb(); try { await new Promise((ok, fail) => { const t = db.transaction('bladen', 'readwrite'), st = t.objectStore('bladen'); st.clear(); lijst.forEach(b => st.put(b)); t.oncomplete = ok; t.onerror = t.onabort = () => fail(t.error || new Error('idb')); }); } finally { db.close(); } }
+async function metSchets(data) { if (data['schets.v1'] != null && data['schets.bladen'] == null) { const l = await schetsLees(); if (l.length) data['schets.bladen'] = JSON.stringify(l); } return data; }
+async function backup(keys, part) {
+  const blob = new Blob([backupJSON(await metSchets(backupData(keys)))], { type:'application/json' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
   a.download = `onderconstructie-reservekopie-${new Date().toISOString().slice(0, 10)}${part ? '-' + part : ''}.json`;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
@@ -5541,7 +5548,7 @@ function syncRestoreBtn() {
 }
 $('restore-list').addEventListener('change', e => chooserToggle('rs', e, syncRestoreBtn));
 $('restore-no').addEventListener('click', () => { showRestore(false); $('data-backup').offsetParent ? $('data-backup').focus() : $('data-close').focus(); });
-$('restore-yes').addEventListener('click', () => {
+$('restore-yes').addEventListener('click', async () => {
   const ch = chosenRestore(); if (!ch.length || !pendingRestore) return;
   const when = pendingRestore.when, put = ch.flatMap(g => g.put);
   // Een oudere kopie zonder lege toestanden: '{}' = "niet gekend", dan telt wat erin staat als werk.
@@ -5553,7 +5560,10 @@ $('restore-yes').addEventListener('click', () => {
   const before = Object.fromEntries(put.map(([k]) => [k, cur(k)]).concat(oudWeg.map(o => [o, cur(o)])));
   // Veilig: schrijven en nalezen. Lukt dat niet (opslag vol), dan alles terug zoals het was, met een melding. Pas daarna oude namen weg.
   let mislukt = false;
-  for (const [k, v] of put) { try { localStorage.setItem(k, v); if (localStorage.getItem(k) !== v) throw new Error('nalezen'); } catch { mislukt = true; break; } }
+  // De tekeningen van Schets gaan naar IndexedDB, niet naar localStorage (daar passen ze niet altijd in)
+  const sb = put.find(([k]) => k === 'schets.bladen'); let schetsOud = null;
+  for (const [k, v] of put) { if (sb && k === 'schets.bladen') continue; try { localStorage.setItem(k, v); if (localStorage.getItem(k) !== v) throw new Error('nalezen'); } catch { mislukt = true; break; } }
+  if (sb && !mislukt) { try { const l = JSON.parse(sb[1]); if (!Array.isArray(l)) throw new Error('vorm'); schetsOud = await schetsLees(); await schetsZet(l); try { localStorage.removeItem('schets.bladen'); } catch {} } catch { mislukt = true; if (schetsOud) { try { await schetsZet(schetsOud); } catch {} } } }
   if (mislukt) {
     const mis = [];
     Object.entries(before).forEach(([k, v]) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch { mis.push(k); } });
@@ -5571,6 +5581,7 @@ $('restore-yes').addEventListener('click', () => {
   $('data-close').focus();
   appToast('Reservekopie teruggezet', () => {
     Object.entries(before).forEach(([k, v]) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} });
+    if (schetsOud) schetsZet(schetsOud).catch(() => {}).then(() => { refresh(); signalWipe(); });
     refresh(); signalWipe(); autoSoon(true); dataMsg('Terugzetten ongedaan gemaakt.', false); appToast('Zoals voordien');
   });
 });
@@ -6712,7 +6723,7 @@ async function autoSave(force) {
     if (!force && !AUTO.mag && vorig > 4096 && werk < vorig / 2) { autoPause('kleiner'); return; }
     if (await AUTO.h.queryPermission({ mode:'readwrite' }) !== 'granted') { autoPause('toestemming'); return; }
     const w = await AUTO.h.createWritable();
-    try { await w.write(backupJSON(JSON.parse(body))); await w.close(); } catch (e) { try { await w.abort(); } catch {} throw e; }
+    try { await w.write(backupJSON(await metSchets(JSON.parse(body)))); await w.close(); } catch (e) { try { await w.abort(); } catch {} throw e; }
     const now = Date.now();
     store.set('auto-sig', sig); store.set('auto-size', werk); store.set('auto-at', now);
     store.set('backup-at', now); store.set('backup-snooze', 0);   // telt als reservekopie: geen herinnering nodig
@@ -7061,7 +7072,7 @@ async function verhuisNodig() {
 async function verhuisUit() {
   const keys = allBackupKeys();
   if (!keys.length) { location.href = VERHUIS_NAAR; return; }
-  const json = backupJSON(backupData(keys));
+  const json = backupJSON(await metSchets(backupData(keys)));
   let code = null; try { if ('CompressionStream' in window) code = await verhuisInpak(json); } catch {}
   if (code && code.length < 1500000) { location.href = VERHUIS_NAAR + '#verhuis=' + code; return; }
   backup(keys);
