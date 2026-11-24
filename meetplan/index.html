@@ -25,7 +25,7 @@
     <meta name="oc:pdca" content="plan, check">
     <meta name="oc:kort" content="Hoe weet je dat het gelukt is?">
     <meta name="oc:volgorde" content="34">
-    <meta name="oc:traject" content="project:3, proces:6">
+    <meta name="oc:traject" content="project:3, proces:6, verandering:9">
     <meta name="oc:opslag" content="meetplan.v1, meetplan.v1.kapot*, oc.share.meetplan">
 <meta name="theme-color" content="#ffffff">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40' fill='none' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='20' cy='20' r='18' fill='%23f8fafc' stroke='%23e2e8f0' stroke-width='1.5'/%3E%3Cpath d='M9 12.5h22' stroke='%23cbd5e1' stroke-dasharray='2.5 3'/%3E%3Cpath d='M13 25.2l5.2-4.4 4.3 2.7 5.8-9.2' stroke='%2310b981'/%3E%3Ccircle cx='11' cy='27' r='2.4' fill='%23f8fafc' stroke='%2364748b'/%3E%3Ccircle cx='29.2' cy='12.5' r='2.6' fill='%2310b981'/%3E%3C/svg%3E">
@@ -3792,13 +3792,13 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
 const str = (v, n = 300) => String(v == null ? '' : v).slice(0, n);
 const newInd = () => ({ id:uid(), name:'', soort:'', vorm:'', def:'', teller:'', noemer:'', n:'', eenheid:'', bron:'', bronNaam:'', beheerder:'',
-  nul:{ v:'', d:'' }, streef:{ v:'', d:'' }, richting:'', freq:'', wie:'', metingen:[] });
+  nul:{ v:'', d:'' }, streef:{ v:'', d:'' }, richting:'', freq:'', wie:'', actie:'', metingen:[] });
 const newDoel = text => ({ id:uid(), text:text || '', open:true, fresh:true, inds:[newInd()] });
 const newPlan = name => ({ id:uid(), name, doelen:[] });
 // Alles wat binnenkomt (opslag, bestand, ander tabblad) netjes in de verwachte vorm zetten.
 function normInd(i) {
   const o = Object.assign(newInd(), i && typeof i === 'object' ? i : {});
-  ['id', 'name', 'soort', 'vorm', 'def', 'teller', 'noemer', 'n', 'eenheid', 'bron', 'bronNaam', 'beheerder', 'richting', 'freq', 'wie'].forEach(k => o[k] = str(o[k]));
+  ['id', 'name', 'soort', 'vorm', 'def', 'teller', 'noemer', 'n', 'eenheid', 'bron', 'bronNaam', 'beheerder', 'richting', 'freq', 'wie', 'actie'].forEach(k => o[k] = str(o[k]));
   if (!o.id) o.id = uid();
   ['nul', 'streef'].forEach(k => { const v = o[k] && typeof o[k] === 'object' ? o[k] : {}; o[k] = { v:str(v.v, 20), d:str(v.d, 10) }; });
   o.metingen = Array.isArray(o.metingen) ? o.metingen.filter(m => m && typeof m === 'object').map(m => ({ id:str(m.id) || uid(), d:str(m.d, 10), v:str(m.v, 20) })) : [];
@@ -3958,7 +3958,7 @@ function cautions(i, c = calc(i)) {
 
 /* ---------- Meedenken: signalen, elk met een sprong naar het vak ---------- */
 const indBegun = i => !!(i.name.trim() || i.soort || i.vorm || i.def.trim() || i.teller.trim() || i.noemer.trim() || i.bron || i.bronNaam.trim() || i.beheerder.trim()
-  || i.nul.v.trim() || i.streef.v.trim() || i.freq || i.wie.trim() || i.metingen.length);
+  || i.nul.v.trim() || i.streef.v.trim() || i.freq || i.wie.trim() || i.actie.trim() || i.metingen.length);
 function doelSignals(d) {
   const s = [], named = d.inds.filter(i => i.name.trim());
   const begun = d.inds.some(indBegun);
@@ -4185,6 +4185,7 @@ function indHTML(d, i, k) {
       <div class="sec wide"><span class="sec-label"><span class="nr" aria-hidden="true">7</span>Wanneer meet je, en wie meet?</span>
         <div class="row2"><div><label class="mini" for="${escA(L('freq'))}">Hoe vaak?</label><select class="field" id="${escA(L('freq'))}" data-f="freq"><option value="">Kies…</option>${FREQ.map(f => `<option value="${escA(f.id)}"${f.id === i.freq ? ' selected' : ''}>${esc(f.name)}</option>`).join('')}</select></div>
           <div>${fld('wie', 'Wie meet?', i.wie, 'Naam', 'maxlength="60"')}</div></div>
+        <div style="margin-top:0.625rem">${fld('actie', 'Zakt het terug? Dan…', i.actie, 'Bv. we bekijken samen waarom en sturen bij', 'maxlength="160"')}</div>
         <div data-next>${nextHTML(i)}</div>
       </div>
       <div class="sec wide"><span class="sec-label"><span class="nr" aria-hidden="true">8</span>Metingen <span class="hint">optioneel: vul ze in als je gemeten hebt</span></span>
@@ -4534,7 +4535,7 @@ function indPairs(i) {
   const b = BRON.find(x => x.id === i.bron); add('Bron', [b ? b.name : '', i.bronNaam.trim()].filter(Boolean).join(': ')); add('Beheerd door', i.beheerder);
   add('Nulmeting', v(shownV(i, i.nul.v, c.nul), i.nul.d));
   add('Streefwaarde', c.hasStreef ? shownV(i, i.streef.v, c.streef) + (okDate(i.streef.d) ? ` tegen ${fmtDate(i.streef.d)}` : '') + (c.streef != null && c.dir ? ` (${c.dir} is beter)` : '') : '');
-  const f = FREQ.find(x => x.id === i.freq); add('Meten', [f ? f.name.toLowerCase() : '', i.wie.trim() ? 'door ' + i.wie.trim() : ''].filter(Boolean).join(', '));
+  const f = FREQ.find(x => x.id === i.freq); add('Meten', [f ? f.name.toLowerCase() : '', i.wie.trim() ? 'door ' + i.wie.trim() : ''].filter(Boolean).join(', ')); add('Zakt het terug', i.actie.trim());
   const nx = nextMeting(i, c); if (nx) add(nx.date < isoToday() ? 'Nog open' : nx.eind ? 'Eindmeting' : 'Volgende meting', (nx.date < isoToday() ? 'meting van ' : '') + fmtMonth(nx.date));
   const ms = i.metingen.filter(m => okDate(m.d) && has(m.v)).slice().sort(byDate);
   if (ms.length) add('Metingen', ms.map(m => `${fmtDate(m.d)}: ${shownV(i, m.v, num(m.v))}`).join(' · '));
@@ -4654,7 +4655,7 @@ render();
   function ind(i, H) {
     const s = (k, n) => H.str(i[k], n || 300), w = x => { const o = x && typeof x === 'object' ? x : {}; return { v:H.str(o.v, 20), d:datum(H.str(o.d, 10)) }; };
     return { id:H.sid(i.id), name:s('name'), soort:een(i.soort, SOORT), vorm:een(i.vorm, VORM), def:s('def'), teller:s('teller'), noemer:s('noemer'), n:s('n'), eenheid:s('eenheid'),
-      bron:een(i.bron, BRON), bronNaam:s('bronNaam'), beheerder:s('beheerder'), nul:w(i.nul), streef:w(i.streef), richting:een(i.richting, RICHTING), freq:een(i.freq, FREQ), wie:s('wie'),
+      bron:een(i.bron, BRON), bronNaam:s('bronNaam'), beheerder:s('beheerder'), nul:w(i.nul), streef:w(i.streef), richting:een(i.richting, RICHTING), freq:een(i.freq, FREQ), wie:s('wie'), actie:s('actie'),
       metingen:(Array.isArray(i.metingen) ? i.metingen : []).filter(m => m && typeof m === 'object' && H.sid(m.id)).slice(0, 500).map(m => ({ id:H.sid(m.id), d:datum(H.str(m.d, 10)), v:H.str(m.v, 20) })) };
   }
   // open of dicht: van dit toestel. Vlak voor het samenvoegen onthouden, daarna terugzetten.
