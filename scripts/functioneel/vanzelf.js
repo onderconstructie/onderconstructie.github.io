@@ -74,7 +74,14 @@ const NB = 'Nieuwe bib', ZW = 'Zwembad';
   ok(t.includes('Sleutel-overdracht') && !t.includes('Opening in juni'), 'Tijdlijn met eigen werk: alleen wat later bijkomt, gaat vanzelf mee');
   await c.close();
 
-  // 4. Geopend vanuit een andere tool (?van=) of zonder actief project: niets vanzelf
+  // 4. Geopend vanuit een andere tool (?van=) of zonder actief project: niets vanzelf (met actief project en zonder ?van= wel: zie 1)
+  for (const [tool, sleutel, data, verwacht] of PADEN) {
+    const van = Object.keys(data)[0].replace('oc.share.', ''), c = await nieuw(), p = await pagina(c);
+    await open(p, '/privacy/'); await zet(p, { ...basis, ...data });
+    await open(p, `/${tool}/?van=${van}`); const t = await tekst(p, sleutel), m = await melding(p);
+    ok(!verwacht.some(x => t.includes(x)) && !/^Vanzelf overgenomen/.test(m), `${tool} geopend met ?van=${van}: niets vanzelf, je kiest zelf`);
+    await c.close();
+  }
   c = await nieuw(); p = await pagina(c); await open(p, '/privacy/');
   await zet(p, { 'oc.share.opdracht':share('opdracht', 'Projectopdracht', [MP('Opening in juni')]) });
   await open(p, '/tijdlijn/'); ok(!(await tekst(p, 'tijdlijn.v1')).includes('Opening in juni'), 'zonder actief project: niets vanzelf');
