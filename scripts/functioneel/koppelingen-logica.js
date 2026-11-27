@@ -23,7 +23,7 @@ const RE = { retros:[{ id:'rt1', name:'Retro Nieuwe bib sprint 1', date:'2026-11
 
 (async () => { const b = await chromium.launch(); const PE = [];
   const nieuw = async () => { const c = await b.newContext({ viewport:{ width:1280, height:900 }, serviceWorkers:'block', locale:'nl-BE', timezoneId:'Europe/Brussels' });
-    await c.addInitScript(() => { try { localStorage.setItem('oc.welkom', '1'); } catch (e) {} }); return c; };
+    await c.addInitScript(() => { try { localStorage.setItem('oc.welkom', '1'); localStorage.setItem('oc.vanzelf', '0'); } catch (e) {} }); return c; };   // deze test gaat over de kiezer: vanzelf overnemen staat uit (zie vanzelf.js)
   const pagina = async c => { const p = await c.newPage(); p.on('pageerror', e => PE.push(p.url().replace(B, '') + ': ' + String(e).slice(0, 160))); p.on('dialog', d => d.accept()); return p; };
   const open = async (p, u) => { await p.goto(B + u, { waitUntil:'networkidle' }); await p.waitForTimeout(700); };
   const zet = (p, o) => p.evaluate(o => { Object.entries(o).forEach(([k, v]) => localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v))); }, o);

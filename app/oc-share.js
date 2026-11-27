@@ -203,12 +203,27 @@ window.ocShare = (() => {
       .ocs-cancel{background:#ecfdf5;color:#047857;box-shadow:inset 0 0 0 1px #a7f3d0}.ocs-cancel:hover{background:#d1fae5}
       .ocs-ok{background:#0c8660;color:#fff}.ocs-ok:hover{background:#047857}
       .ocs-ok:disabled{background:#cbd5e1;color:#334155;cursor:default}
-      .ocs-back :focus-visible{outline:2px solid #047857;outline-offset:2px}`;
+      .ocs-back :focus-visible{outline:2px solid #047857;outline-offset:2px}
+      .ocs-vz{margin-top:1rem;padding:.75rem;border-radius:12px;background:#ecfdf5;display:flex;flex-wrap:wrap;align-items:center;gap:.25rem .75rem;font-size:.9375rem;line-height:1.4}
+      .ocs-vz label{display:flex;gap:.625rem;align-items:flex-start;flex:1 1 16rem;min-height:44px;cursor:pointer}
+      .ocs-vz input{width:18px;height:18px;margin-top:.125rem;accent-color:#10b981;flex:none}
+      .ocs-vz small{display:block;font-size:.8125rem;color:#475569}
+      .ocs-vz p{margin:0;flex:1 1 12rem;color:#1e293b}
+      .ocs-vz-knop{font:inherit;font-size:.8125rem;font-weight:600;color:#047857;background:none;border:0;cursor:pointer;min-height:44px;padding:.25rem .5rem;border-radius:8px}
+      .ocs-vz-knop:hover{background:#d1fae5}`;
     document.head.appendChild(s);
   }
 
   function pick({ types, self, title, intro, have, vink, notes }) {
     style();
+    // Vanzelf overnemen (zie vanzelf hieronder): de tool vroeg zelf om een overname, en de keuze ligt al klaar. Geen venster.
+    if (wachtAuto && wachtAuto.tool === self && Date.now() < wachtAuto.tot) {
+      const W = wachtAuto; wachtAuto = null;
+      const h = new Set((have || []).map(norm)), items = W.items.filter(it => types.includes(it.type) && !h.has(norm(it.text))).map(({ _k, ...it }) => it);
+      try { const R = register(self) || { e:[], z:{} }; R.a = [...new Set((R.a || []).concat(W.items.map(x => x._k)))].slice(-2000); bewaarRegister(self, R); onthoud(self, items); } catch {}
+      if (items.length) setTimeout(() => meldVanzelf(self, items), 80);
+      return Promise.resolve(items);
+    }
     return new Promise(resolve => {
       let van = window.ocVan || ''; try { van = van || new URLSearchParams(location.search).get('van') || ''; } catch {}
       // Eerst je eigen project (v3: het veld project; oude gegevens zonder project: de lijstnaam, ook onder een vorige naam)
@@ -249,9 +264,21 @@ window.ocShare = (() => {
           back.querySelector('.ocs-body').appendChild(d);
         }
       } catch {}
+      // De schakelaar voor vanzelf overnemen, in de tools die dat kunnen (zie vanzelf)
+      if (AUTO && AUTO.tool === self) {
+        const bron = [...new Set(AUTO.paden.map(p => bronNaam(p.v)))].join(', ').replace(/, ([^,]*)$/, ' en $1'), overalUit = (() => { try { return localStorage.getItem('oc.vanzelf') === '0'; } catch { return false; } })();
+        const r = document.createElement('div'); r.className = 'ocs-vz';
+        r.innerHTML = overalUit ? `<p>Vanzelf overnemen staat uit, in alle tools.</p><button type="button" class="ocs-vz-knop" data-vz="overal-aan">Zet weer aan</button>`
+          : `<label><input type="checkbox" id="ocs-vz"${vanzelfAan(self) ? ' checked' : ''}><span>Neem vanzelf over uit ${esc(bron)}<small>Wat er nieuw bijkomt in je project, staat er dan meteen. Je kan het altijd ongedaan maken.</small></span></label>
+            <button type="button" class="ocs-vz-knop" data-vz="overal-uit">In alle tools uitzetten</button>`;
+        back.querySelector('.ocs-body').appendChild(r);
+        r.addEventListener('change', e => { if (e.target.id === 'ocs-vz') zetVanzelf(self, e.target.checked); });
+        r.addEventListener('click', e => { const k = e.target.closest('[data-vz]'); if (!k) return;
+          zetVanzelf(null, k.dataset.vz === 'overal-aan'); r.innerHTML = k.dataset.vz === 'overal-aan' ? '<p>Vanzelf overnemen staat weer aan.</p>' : '<p>Vanzelf overnemen staat nu uit, in alle tools. Hier zet je het weer aan.</p>'; });
+      }
       requestAnimationFrame(() => back.classList.add('open'));
       const ok = back.querySelector('.ocs-ok'), hint = back.querySelector('.ocs-hint');
-      const boxes = () => [...back.querySelectorAll('input[type=checkbox]:not(:disabled)')];
+      const boxes = () => [...back.querySelectorAll('input[type=checkbox][data-s]:not(:disabled)')];
       // Grijze knop: er staat bij wat je eerst doet. Is er niets om aan te vinken, dan zegt het venster dat al zelf.
       const sync = () => { const n = boxes().filter(b => b.checked).length; ok.disabled = !n; ok.textContent = n ? `Neem ${n} over` : 'Neem over'; hint.hidden = !!n || !boxes().length; };
       // Geopend vanuit een tool (?van=<tool>): alleen die bron aanvinken, en daarin de lijst van het actieve project als die er is.
@@ -365,11 +392,11 @@ window.ocShare = (() => {
       if (!nu) { const k = K.find(k => k.l === e.l && k.y === e.y && norm(k.t) === norm(e.t)); if (k) nu = { t:e.t, af:true }; }
       if (!nu && !e.r && l) {   // zonder ref: dezelfde plaats, even lange lijst, en de tekst daar is echt nieuw
         const vorig = (R.z[e.v] || {})[e.l + '|' + e.y], x = L[e.i];
-        if (x && Array.isArray(vorig) && vorig.length === L.length && !vorig.includes(norm(x.text)) && !R.e.some(y => y !== e && y.v === e.v && norm(y.t) === norm(x.text))) nu = { t:x.text, i:e.i };
+        if (x && Array.isArray(vorig) && vorig.length === L.length && !vorig.includes(norm(x.text)) && !R.e.some(y => y !== e && y.v === e.v && norm(y.t) === norm(x.text))) nu = { t:x.text, i:e.i, gok:true };
       }
       if (!nu) { if (!e.w) uit.weg.push({ t:e.t, bron:String(d.tool || e.v) }); e.w = 1; return; }
       delete e.w; if (nu.i != null && nu.i >= 0) e.i = nu.i;
-      if (norm(nu.t) !== norm(e.t)) { if (zelfde(e.t) === 1) ren.push({ v:e.v, oud:e.t, nieuw:nu.t, bron:String(d.tool || e.v) }); e.t = nu.t; }
+      if (norm(nu.t) !== norm(e.t)) { if (zelfde(e.t) === 1) ren.push({ v:e.v, oud:e.t, nieuw:nu.t, bron:String(d.tool || e.v), e, gok:nu.gok }); e.t = nu.t; }
       const k = !!nu.af; if (k !== !!e.k) { if (zelfde(e.t) === 1) kl.push({ v:e.v, t:e.t, af:k, e, bron:String(d.tool || e.v) }); if (k) e.k = 1; else delete e.k; }
     });
     Object.values(zag).forEach(z => { (R.z[z.v] = R.z[z.v] || {})[z.k] = z.LN; });
@@ -392,19 +419,67 @@ window.ocShare = (() => {
       loop(x.obj);
       if (n) schrijf(x.k, JSON.stringify(x.obj));
     });
+    // Een gok (zonder ref) die nergens paste (de kopie is weg of door jou gewijzigd): niet onthouden. Wis + nieuw in de bron is geen hernoeming.
+    ren.forEach(c => { if (c.gok && !c.gedaan) c.e.t = c.oud; });
     bewaarRegister(tool, R);
     uit.hernoemd = ren.filter(c => c.gedaan); uit.klaar = kl.filter(c => c.gedaan).map(c => ({ t:c.t, af:c.af, bron:c.bron }));
     return uit;
   }
+  /* ---------- Vanzelf overnemen (v4.1) ----------
+     Op een paar vaste paden (bv. Projectopdracht naar Tijdlijn: mijlpalen) neemt een tool vanzelf over wat nieuw is in je project.
+     Het gaat langs dezelfde weg als je klik: we klikken de knop "Overnemen" van de tool, en pick() geeft meteen de keuze terug.
+     Zo werken de eigen regels van de tool (geen dubbels, project, melding met Ongedaan) precies zoals altijd.
+     Regels: alleen met een actief project in de app, alleen lijsten van dat project, nooit vanuit een voorbeeld (dan staat de knop er niet),
+     en wat er al stond toen je dit voor het eerst opende, blijft je eigen keuze: alleen wat later bijkomt, gaat vanzelf mee.
+     Wat ooit vanzelf werd aangeboden, komt nooit een tweede keer (ook niet als je het wiste of ongedaan maakte).
+     Uitzetten: per tool (oc.vanzelf.<tool> = '0') of overal (oc.vanzelf = '0'), in de melding of in de kiezer. */
+  let AUTO = null, wachtAuto = null;
+  const vanzelfAan = tool => { try { return localStorage.getItem('oc.vanzelf') !== '0' && localStorage.getItem('oc.vanzelf.' + tool) !== '0'; } catch { return false; } };
+  function zetVanzelf(tool, aan) { try { const k = tool ? 'oc.vanzelf.' + tool : 'oc.vanzelf'; if (aan) localStorage.removeItem(k); else localStorage.setItem(k, '0'); } catch {} }
+  const bronNaam = id => { const d = lees(PREFIX + id); return String((d && d.tool) || ({ opdracht:'Projectopdracht', retro:'Retro', beslissingen:'Beslissingslog', notities:'Vergadernotities' })[id] || id); };
+  function instel(cfg) { AUTO = cfg && cfg.tool && cfg.paden && cfg.paden.length ? cfg : null; }
+  function vanzelf() {
+    if (!AUTO || !vanzelfAan(AUTO.tool) || document.hidden) return 0;
+    try { if (window.ocVan || new URLSearchParams(location.search).get('van')) return 0; } catch {}
+    const A = actief(); if (!A.naam) return 0;
+    const knop = String(AUTO.knop || '').split(',').map(x => { try { return document.querySelector(x.trim()); } catch { return null; } }).find(b => b && !b.hidden && !b.disabled && b.offsetParent !== null);
+    if (!knop) return 0;
+    const types = [...new Set(AUTO.paden.map(p => p.y))], P = [A.naam].concat(A.oud).filter(Boolean), proj = norm(A.naam);
+    const eigen = s => s.project != null ? P.some(p => norm(p) === norm(s.project)) : P.some(p => past(s.list, p));
+    const R = register(AUTO.tool) || { e:[], z:{} }; R.a = R.a || []; R.b = R.b || {};
+    let have = []; try { have = (window.ocHave && window.ocHave(types)) || []; } catch {}
+    const H = new Set(have.map(norm)), al = new Set(R.a), genomen = new Set(R.e.map(e => e.v + '|' + e.y + '|' + norm(e.t))), kand = [];
+    sources(types, AUTO.tool).filter(s => AUTO.paden.some(p => p.v === s.id) && eigen(s)).forEach(s => s.items.forEach(it => {
+      if (AUTO.paden.some(p => p.v === s.id && p.y === it.type)) kand.push({ ...it, source:s.tool, bronId:s.id, list:s.list, project:s.project, _k:s.id + '|' + it.type + '|' + norm(it.text) + '|' + proj }); }));
+    if (!R.b[proj]) {   // de eerste keer voor dit project: staat er al iets in de tool, dan blijft wat er nu klaarligt je eigen keuze
+      R.b[proj] = 1;
+      if (H.size) { kand.forEach(k => al.add(k._k)); R.a = [...al].slice(-2000); bewaarRegister(AUTO.tool, R); return 0; }
+      bewaarRegister(AUTO.tool, R);
+    }
+    const nieuw = kand.filter(k => !al.has(k._k) && !H.has(norm(k.text)) && !genomen.has(k.bronId + '|' + k.type + '|' + norm(k.text)));
+    if (!nieuw.length) return 0;
+    wachtAuto = { tool:AUTO.tool, items:nieuw, tot:Date.now() + 4000 };
+    knop.click();
+    setTimeout(() => { if (wachtAuto && wachtAuto.items === nieuw) wachtAuto = null; }, 4000);
+    return nieuw.length;
+  }
+  function meldVanzelf(tool, items) {
+    const bron = [...new Set(items.map(i => i.source || bronNaam(i.bronId)))].join(', ').replace(/, ([^,]*)$/, ' en $1');
+    melding(`Vanzelf overgenomen uit ${bron}.`, 9000, { hoog:true, knop:'Niet meer vanzelf', doe:m => { zetVanzelf(tool, false);
+      m.querySelector('span').textContent = 'Deze tool neemt niet meer vanzelf over. Weer aanzetten kan onder ‘Overnemen uit andere tools’.'; } });
+  }
   // Eén rustige melding onderaan, in de stijl van de tools. Ze neemt de focus niet over.
-  function melding(tekst, ms) {
+  // o.hoog: boven de eigen melding van de tool (die meldt hoeveel er overkwam, met Ongedaan). o.knop + o.doe: een tweede knop.
+  function melding(tekst, ms, o) {
     const toon = () => {
       style(); let m = document.getElementById('ocs-melding');
       if (!m) { m = document.createElement('div'); m.id = 'ocs-melding'; m.setAttribute('role', 'status'); m.setAttribute('aria-live', 'polite');
-        m.style.cssText = 'position:fixed;left:50%;bottom:calc(1rem + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:9999;max-width:min(92vw,560px);display:flex;align-items:flex-start;gap:.75rem;padding:.75rem .75rem .75rem 1rem;background:#fff;color:#1e293b;border:1px solid #a7f3d0;border-radius:14px;box-shadow:0 12px 32px rgba(15,23,42,.18);font:500 .9375rem/1.45 "DM Sans",system-ui,sans-serif';
+        m.style.cssText = 'position:fixed;left:50%;bottom:calc(' + (o && o.hoog ? '6.5rem' : '1rem') + ' + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:9999;max-width:min(92vw,560px);display:flex;align-items:flex-start;gap:.75rem;padding:.75rem .75rem .75rem 1rem;background:#fff;color:#1e293b;border:1px solid #a7f3d0;border-radius:14px;box-shadow:0 12px 32px rgba(15,23,42,.18);font:500 .9375rem/1.45 "DM Sans",system-ui,sans-serif';
         document.body.appendChild(m); }
-      m.innerHTML = `<span style="flex:1;min-width:0;overflow-wrap:anywhere">${esc(tekst)}</span><button type="button" class="ocs-btn ocs-cancel" style="flex:none">Oké</button>`;
-      m.querySelector('button').onclick = () => m.remove();
+      m.style.bottom = 'calc(' + (o && o.hoog ? '6.5rem' : '1rem') + ' + env(safe-area-inset-bottom,0px))';
+      m.innerHTML = `<span style="flex:1;min-width:0;overflow-wrap:anywhere;align-self:center">${esc(tekst)}</span>${o && o.knop ? `<button type="button" class="ocs-btn ocs-cancel" data-m="knop" style="flex:none">${esc(o.knop)}</button>` : ''}<button type="button" class="ocs-btn ocs-cancel" data-m="ok" style="flex:none">Oké</button>`;
+      m.querySelector('[data-m="ok"]').onclick = () => m.remove();
+      const k = m.querySelector('[data-m="knop"]'); if (k) k.onclick = () => { k.remove(); o.doe(m); clearTimeout(m._t); m._t = setTimeout(() => m.remove(), 8000); };
       clearTimeout(m._t); m._t = setTimeout(() => m.remove(), ms || 8000);
     };
     if (document.body) toon(); else document.addEventListener('DOMContentLoaded', () => setTimeout(toon, 500), { once:true });
@@ -423,7 +498,7 @@ window.ocShare = (() => {
   }
 
 
-  return { publish, clear, pick, count, sources, refs, esc, volg, melding, meld };
+  return { publish, clear, pick, count, sources, refs, esc, volg, melding, meld, instel, vanzelf };
 })();
 
 // Bij het laden, nog voor de tool haar gegevens leest: de kopieën van deze tool lopen mee met hun bron.
@@ -432,4 +507,9 @@ window.ocShare = (() => {
   const me = document.currentScript; if (!me || !me.dataset.tool) return;
   try { const u = ocShare.volg(me.dataset.tool, String(me.dataset.opslag || '').split(',').map(s => s.trim()).filter(Boolean), me.dataset.af);
     if (u.hernoemd.length || u.klaar.length || u.weg.length) ocShare.meld ? ocShare.meld(u) : null; } catch (e) {}
+  // data-vanzelf="opdracht:mijlpaal,retro:actie" en data-vanzelf-knop="#oc-imp,#oc-imp-start": vanzelf overnemen op die paden
+  const paden = String(me.dataset.vanzelf || '').split(',').map(x => x.trim().split(':')).filter(x => x.length === 2 && x[0] && x[1]).map(([v, y]) => ({ v, y }));
+  if (paden.length) { ocShare.instel({ tool: me.dataset.tool, paden, knop: me.dataset.vanzelfKnop || '' });
+    const probeer = () => setTimeout(() => { try { ocShare.vanzelf(); } catch (e) {} }, 900);
+    if (document.readyState === 'complete') probeer(); else window.addEventListener('load', probeer, { once:true }); }
 })();

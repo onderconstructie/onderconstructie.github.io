@@ -106,7 +106,7 @@ const NB = 'Nieuwe bib';
   // B3 Projectopdracht (bron, nagebootst met ref) -> Tijdlijn (kopie): een mijlpaal die je hernoemt
   c = await nieuw(); p = await pagina(c); await open(p, '/privacy/');
   await zet(p, { 'oc.project':{ name:NB, since:1 }, 'oc-app.projects':[NB], 'oc.share.opdracht':{ id:'opdracht', tool:'Projectopdracht', updated:1, lists:[{ name:NB, project:NB, items:[{ type:'mijlpaal', text:'Opening in juni', when:'2027-06-01', ref:'m1' }] }] } });
-  await open(p, '/tijdlijn/'); await p.click('[data-oc-types]:visible'); await kies(p, ['Opening in juni']);
+  await open(p, '/tijdlijn/'); await p.waitForTimeout(1500);   // v4.1: de Tijdlijn neemt mijlpalen uit de Projectopdracht vanzelf over
   const lijn = async () => ((await lees(p, 'tijdlijn.v1')) || { lists:[] }).lists.filter(l => !l.voorbeeld).flatMap(l => l.items.map(i => i.text + ':' + (i.status || '')));
   ok((await lijn()).some(x => x.startsWith('Opening in juni')), 'Tijdlijn: mijlpaal overgenomen (' + (await lijn()).join(', ') + ')');
   await zet(p, { 'oc.share.opdracht':{ id:'opdracht', tool:'Projectopdracht', updated:2, lists:[{ name:NB, project:NB, items:[{ type:'mijlpaal', text:'Opening in september', when:'2027-09-01', ref:'m1' }] }] } });
