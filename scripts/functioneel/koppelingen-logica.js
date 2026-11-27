@@ -78,9 +78,13 @@ const RE = { retros:[{ id:'rt1', name:'Retro Nieuwe bib sprint 1', date:'2026-11
   await open(p, '/stakeholders/'); await open(p, '/raci/');
   const signaal = await p.evaluate(() => [...document.querySelectorAll('th[data-role]')].map(th => th.querySelector('.name').textContent.trim() + (th.querySelector('.oc-weg') ? ' [' + th.querySelector('.oc-weg').textContent.trim() + ']' : '')));
   ok(signaal.some(s => /^Scholen \[staat niet meer in Betrokkenenradar\]$/.test(s)) && signaal.filter(s => /staat niet meer/.test(s)).length === 1, 'RACI: Scholen (gewist in de bron) krijgt een zacht signaal; Bibliotheekteam (hernoemd, ligt nog klaar) niet (' + signaal.join(' | ') + ')');
-  await klik(p, 'button[data-oc-types="betrokkene"]'); await kiezer(p); await kies(p, ['Team bibliotheek']);
+  // v4 (meelopen): de hernoemde rol liep bij het openen al mee. In de kiezer staat ze als "staat er al"; niets dubbel.
+  await klik(p, 'button[data-oc-types="betrokkene"]'); k = await kiezer(p);
+  const tb = k.flatMap(s => s.items).find(i => i.t === 'Team bibliotheek');
+  ok(!tb || tb.al, 'RACI: na hernoemen in de bron biedt de kiezer Team bibliotheek niet meer als nieuw aan (meegelopen)');
+  await p.click('.ocs-cancel'); await p.waitForTimeout(200);
   const na = await rollen();
-  ok(na.join() === 'Schepen van cultuur,Team bibliotheek,Vrijwilligers,Scholen', 'RACI: overnemen na hernoemen werkt de rol bij, geen dubbele rol; Scholen blijft staan (' + na.join(', ') + ')');
+  ok(na.join() === 'Schepen van cultuur,Team bibliotheek,Vrijwilligers,Scholen', 'RACI: de hernoemde rol liep mee, geen dubbele rol; Scholen blijft staan (' + na.join(', ') + ')');
   await c.close();
 
   // 4. "Maak er mijn eigen van": met een actief project blijft het project van de app staan, en het werk hoort bij dat project

@@ -19,6 +19,7 @@ Ze draaien met Node en Playwright tegen een lokale kopie van de hele site (app e
 | `kantelpunt.js` | De tool Kantelpunt: leeg begin, voorbeeld (niet bewaard), zelf invullen, grenzen, uitkomst in woorden zonder procenten, één verloop (ook met minder beweging), wissen en ongedaan, overnemen, downloads, schermbreedtes en de plaats in de app. |
 | `kantelpunt-model.js` | Het denkmodel achter Kantelpunt, zonder browser (`node scripts/functioneel/kantelpunt-model.js`): vaste uitkomst bij dezelfde invoer, grenzen, 400 willekeurige verlopen, de kantelzone, het effect van naar wie mensen kijken en van waar de voortrekkers zitten. |
 | `blok-verandering.js` | Het tabblad Verandering met zijn drie kopjes, Reset als Even pauze in het Zakmes, elke tool onder minstens één tabblad, en de oude ingangen (Kom even tot rust, `?start=reset`, `?groep=reset`, zoeken, welkomstgids). |
+| `meelopen.js` | Een overgenomen kopie loopt mee met haar bron (/app/oc-share.js): hernoemen en afvinken lopen mee, je eigen wijziging blijft, gewist in de bron geeft één signaal, bij twijfel gebeurt er niets; echte tools: Vinkje naar Takenbord, Retro naar Vinkje, Projectopdracht naar Tijdlijn, prio uit Project Radar. |
 | `brug-en-loopt-mee.js` | De vraag na de Projectopdracht (ja, nee, later, terugdraaien, per project), de extra stappen in de korte en de uitgebreide route, en de strook Loopt mee. |
 | `kompas.js` | Kompas: nagebootste metingen van de sensor (Android en iPhone), de korte weg over het noorden, de melding zonder sensor, geen verkeer naar buiten. |
 

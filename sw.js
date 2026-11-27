@@ -12,13 +12,13 @@
   - Een nieuwe versie van de service worker wacht. De app toont "Nieuwe versie klaar" met Vernieuwen;
     pas dan wisselt hij. Nooit stil wisselen terwijl je werkt.
 */
-const VERSION = 'oc-app-v17.36';   // in de app getoond als v16.50
+const VERSION = 'oc-app-v17.37';   // in de app getoond als v16.50
 // Lettertypes en bibliotheken hebben vaste bestandsnamen (met versienummer): die bewaren we apart,
 // zodat een nieuwe versie van de app ze niet opnieuw moet downloaden.
 const STATIC = 'oc-static-1';
 
 const SHELL = [
-  '/', '/tools.json', '/app/manifest.webmanifest', '/app/icon.svg',
+  '/', '/tools.json', '/app/oc-share.js', '/app/manifest.webmanifest', '/app/icon.svg',
   '/app/icon-180.png', '/app/icon-192.png', '/app/icon-512.png', '/app/icon-maskable.png', '/fonts/fonts.css', '/fonts/caveat-latin-600.woff'
 ];
 // Losse pagina's die ook offline moeten werken: privacy en de overzichtspagina's.
