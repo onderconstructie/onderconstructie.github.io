@@ -35,6 +35,12 @@ const NB = 'Nieuwe bib', ZW = 'Zwembad';
     await c.close();
   }
 
+  // 1b. Op een gsm: de melding is breed genoeg om te lezen (v17.40: met left:50% werd de tekst één letter breed)
+  { const c = await b.newContext({ viewport:{ width:390, height:780 }, serviceWorkers:'block', locale:'nl-BE' }); await c.addInitScript(() => { try { localStorage.setItem('oc.welkom', '1'); } catch (e) {} });
+    const p = await pagina(c); await open(p, '/privacy/'); await zet(p, { ...basis, ...PADEN[0][2] }); await open(p, '/tijdlijn/');
+    const w = await p.evaluate(() => { const m = document.getElementById('ocs-melding'), t = m && m.querySelector('span'); return t ? Math.round(t.getBoundingClientRect().width) : 0; });
+    ok(w >= 200, 'gsm: de tekst van de melding is ' + w + ' px breed'); await c.close(); }
+
   // 2. Tijdlijn in detail: nieuw bijkomend, gewist blijft gewist, ander project nooit, een eerste keer met eigen werk
   let c = await nieuw(), p = await pagina(c); await open(p, '/privacy/');
   await zet(p, { ...basis, 'oc.share.opdracht':{ id:'opdracht', tool:'Projectopdracht', updated:1, lists:[{ name:NB, project:NB, items:[MP('Opening in juni')] }, { name:ZW, project:ZW, items:[MP('Zwembad open')] }] } });

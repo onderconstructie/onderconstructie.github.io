@@ -27,9 +27,11 @@ const { chromium } = require('playwright');
   await p.evaluate(() => openTool('notities', false, null, '', false)); await p.waitForTimeout(2600);
   await thuis();
   ok(await stappen() === 'agenda,check-in,notities,check-out', 'alleen openen telt niet: alle stappen staan nog open (' + await stappen() + ')');
-  ok((await tegel().getAttribute('data-id')) === 'agenda' && /Verder/.test(await tegel().innerText()), 'de tegel op Start zegt Verder en wijst naar stap 1, de Agenda');
+  // v17.40: één plek in het plan. In deze nieuwe vergadering opende je laatst de Notities: daar ga je verder (de Check-out van de vorige vergadering telt niet meer).
+  ok((await tegel().getAttribute('data-id')) === 'notities' && /Verder/.test(await tegel().innerText()), 'de tegel op Start zegt Verder en wijst naar waar je in deze vergadering was, de Notities');
   await tegel().click(); await p.waitForTimeout(600); await p.locator('#vg-dlg [data-vv="verder"]').click(); await p.waitForTimeout(2600);
-  ok(await p.evaluate(() => current) === 'agenda', '"Verder waar ik was" brengt je naar de Agenda, niet naar de Check-out');
+  ok(await p.evaluate(() => current) === 'notities', '"Verder waar ik was" brengt je naar de Notities, niet naar de Check-out van de vorige vergadering');
+  await p.evaluate(() => openTool('agenda', false, null, '', false)); await p.waitForTimeout(1800);
   await typAgenda('Nieuw punt van vandaag'); await thuis();
   ok((await stappen()).startsWith('agenda✓,check-in,notities,'), 'iets invullen telt wel: de Agenda is gedaan (' + await stappen() + ')');
   // "Nieuwe vergadering" in het plan, terwijl je in de Check-out staat

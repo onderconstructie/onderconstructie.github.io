@@ -2864,12 +2864,30 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Tab') { const f = [...g.querySelectorAll('button')]; const a = f[0], z = f[f.length - 1];
     if (e.shiftKey && document.activeElement === a) { e.preventDefault(); z.focus(); } else if (!e.shiftKey && document.activeElement === z) { e.preventDefault(); a.focus(); } }
 });
+/* v17.40: wat je in de Projectopdracht bij "Wat leveren we op?" schreef (één resultaat per regel), wordt de eerste takken van een nieuwe
+   productboom van dat project. Ze lopen mee met de opdracht (meelopen, oc.volg.mindmap): pas je de regel daar aan, dan ook hier,
+   zolang je de tak hier niet zelf anders noemde. Zonder zulke regels: het gewone sjabloon met de vragen. */
+function opdrachtDelen(p) {
+  if (!p) return [];
+  try { const d = JSON.parse(localStorage.getItem('oc.share.opdracht') || 'null'), n = v => String(v || '').trim().toLowerCase();
+    const l = d && Array.isArray(d.lists) ? d.lists.find(x => x && n(x.project || x.name) === n(p)) : null;
+    return l && Array.isArray(l.items) ? l.items.filter(i => i && i.type === 'onderdeel' && typeof i.text === 'string' && i.text.trim()).map(i => ({ text:i.text.trim().slice(0, 120), list:l.name, project:typeof l.project === 'string' ? l.project : undefined })).slice(0, 6) : [];
+  } catch { return []; }
+}
 function fromTemplate(key) {
-  const tp = TEMPLATES[key]; if (!tp) return;
+  const tp0 = TEMPLATES[key]; if (!tp0) return;
+  const delen = key === 'productboom' ? opdrachtDelen(ocProject('')) : [];
+  const tp = delen.length ? { ...tp0, lines:delen.map(x => `${x.text.replace(/\n/g, ' ')}\n  Welke delen horen erbij?\n  Waaraan zie je dat het af is?`).join('\n') + '\nWat krijg je van buiten?\n  Wat levert een andere dienst aan?\n  Wat levert een partner of leverancier?' } : tp0;
   const nodes = tplNodes(tp, tp.root ? tp.root(ocProject('')).slice(0, 160) : ocProject(tp.name));
+  // van: overgenomen, nog geen eigen werk (de stap Productboom telt pas als gedaan als je zelf iets toevoegt of aanpast)
+  if (delen.length) { const T = new Set(delen.map(x => x.text)); nodes.forEach(n => { if (n.level === 1 && T.has(n.text)) { delete n.hint; n.van = 'opdracht'; } }); }
   if (tp.vorm !== 'boom') nodes.forEach((n, i) => { if (n.level === 1 && hasKids(nodes, i)) n.collapsed = true; });   // eerst een overzicht van de hoofdtakken
   const x = { id:uid(), name:tp.name, ...(tp.vorm === 'boom' ? { vorm:'boom' } : {}), sjabloon:key, proj:ocProject(''), nodes };
   state.maps.push(x); state.current = x.id; state.view = 'draw'; save(); render();
+  if (delen.length) {
+    try { ocShare.onthoud('mindmap', delen.map(d => ({ bronId:'opdracht', type:'onderdeel', text:d.text, list:d.list, project:d.project }))); } catch {}
+    toast(`${tp.name} klaar, met ${delen.length === 1 ? 'het resultaat' : 'de ' + delen.length + ' resultaten'} uit je Projectopdracht. Typ onder elk deel wat erbij hoort.`); return;
+  }
   if (tp.plaats === 'blad') { toast(tp.name + ' klaar. Klap een tak open en typ je antwoord over een vraag heen.'); return; }
   if (tp.plaats) { toast(tp.name + ' klaar. Kies een vraag en typ er het deel overheen dat af moet zijn.'); return; }
   toast(nodes.some(n => n.collapsed) ? 'Sjabloon klaar. Klap een tak open; onder elke vraag zet je je antwoord met Enter of +.' : 'Sjabloon klaar. Onder elke vraag zet je je antwoord met Enter of +.');

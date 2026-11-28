@@ -53,7 +53,7 @@
 */
 window.ocShare = (() => {
   const PREFIX = 'oc.share.';
-  const LABEL = { betrokkene:'betrokkenen', taak:'taken', actie:'acties', risico:"risico's", besluit:'besluiten', doel:'doelen', mijlpaal:'mijlpalen', agendapunt:'agendapunten', leerpunt:'leerpunten', omgevingsfactor:'omgevingsfactoren' };
+  const LABEL = { betrokkene:'betrokkenen', taak:'taken', actie:'acties', risico:"risico's", besluit:'besluiten', doel:'doelen', mijlpaal:'mijlpalen', agendapunt:'agendapunten', leerpunt:'leerpunten', omgevingsfactor:'omgevingsfactoren', onderdeel:'onderdelen' };
   const esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
   // Een datum als JJJJ-MM-DD tonen we zoals in de tools: 15 februari 2027. Andere tekst blijft zoals ze is.
   const datum = v => { const s = String(v || '').trim(), d = /^\d{4}-\d{2}-\d{2}$/.test(s) ? new Date(s + 'T12:00:00') : null;
@@ -332,7 +332,7 @@ window.ocShare = (() => {
      en passen we de kopieën aan in de opslag van de tool. Een voorbeeld raken we nooit aan.
      Hernoemen herkennen we aan de vaste ref van de bron; zonder ref aan de plaats in de lijst, maar alleen als de lijst even lang
      bleef en de nieuwe tekst echt nieuw is. Bij twijfel doen we niets. */
-  const VOLG = 'oc.volg.', TEKST = ['text', 'name', 'title', 'titel', 'naam', 'tekst', 'label', 'wat', 'what', 't'], AF = ['done', 'af', 'klaar', 'afgevinkt'];
+  const VOLG = 'oc.volg.', DATUM = ['date', 'when', 'datum', 'due', 'deadline'], TEKST = ['text', 'name', 'title', 'titel', 'naam', 'tekst', 'label', 'wat', 'what', 't'], AF = ['done', 'af', 'klaar', 'afgevinkt'];
   const lees = k => { try { const v = JSON.parse(localStorage.getItem(k)); return v && typeof v === 'object' ? v : null; } catch { return null; } };
   const lijstVan = (d, naam, project) => d && Array.isArray(d.lists) ? d.lists.find(l => l && l.name === naam && (project == null || typeof l.project !== 'string' || norm(l.project) === norm(project))) : null;
   const vanSoort = (l, y) => l && Array.isArray(l.items) ? l.items.filter(i => i && i.type === y && typeof i.text === 'string') : [];
@@ -346,7 +346,8 @@ window.ocShare = (() => {
       if (!g || !g.bronId || !g.type || typeof g.text !== 'string') return;
       const d = lees(PREFIX + g.bronId), l = lijstVan(d, g.list, g.project), L = vanSoort(l, g.type), i = L.findIndex(x => norm(x.text) === norm(g.text));
       R.e = R.e.filter(x => !(x.v === g.bronId && x.y === g.type && norm(x.t) === norm(g.text) && x.l === g.list));
-      R.e.push({ v:g.bronId, l:g.list, p:typeof g.project === 'string' ? g.project : undefined, y:g.type, t:g.text, i, r:g.ref || undefined, at:Date.now() });
+      const w = L[i] && typeof L[i].when === 'string' && L[i].when ? L[i].when : undefined;
+      R.e.push({ v:g.bronId, l:g.list, p:typeof g.project === 'string' ? g.project : undefined, y:g.type, t:g.text, i, r:g.ref || undefined, d:w, at:Date.now() });
       (R.z[g.bronId] = R.z[g.bronId] || {})[g.list + '|' + g.type] = L.map(x => norm(x.text));
     });
     bewaarRegister(tool, R);
@@ -362,7 +363,7 @@ window.ocShare = (() => {
       const d = v && v !== tool ? lees(PREFIX + v) : null;
       if (d && Array.isArray(d.lists)) TEKST.forEach(f => { if (typeof o[f] !== 'string' || !o[f].trim()) return;
         d.lists.some(l => (l.items || []).some((x, j) => { if (!x || norm(x.text) !== norm(o[f])) return false;
-          const L = vanSoort(l, x.type); R.e.push({ v, l:l.name, p:typeof l.project === 'string' ? l.project : undefined, y:x.type, t:x.text, i:L.indexOf(x), r:x.ref || undefined, at:Date.now() });
+          const L = vanSoort(l, x.type); R.e.push({ v, l:l.name, p:typeof l.project === 'string' ? l.project : undefined, y:x.type, t:x.text, i:L.indexOf(x), r:x.ref || undefined, d:typeof x.when === 'string' && x.when ? x.when : undefined, at:Date.now() });
           (R.z[v] = R.z[v] || {})[l.name + '|' + x.type] = L.map(y => norm(y.text)); return true; })); });
       Object.keys(o).forEach(k => { const w = o[k]; if (w && typeof w === 'object') loop(w); });
     };
@@ -375,7 +376,7 @@ window.ocShare = (() => {
   // Verandert de bron, dan komt er één signaal per versie (gewijzigd), met de keuze om bij te werken: dat zet e.bij, en bij de volgende
   // opening (voor de tool leest) loopt het dan toch mee. Een gok zonder ref telt in die modus niet: daar zou je een vastlegging op baseren.
   function volg(tool, sleutels, af, modus) {
-    const uit = { hernoemd:[], klaar:[], weg:[], gewijzigd:[] }, sig = modus === 'signaal';
+    const uit = { hernoemd:[], klaar:[], weg:[], gewijzigd:[], datum:[] }, sig = modus === 'signaal';
     if (!tool) return uit;
     const data = (sleutels || []).map(k => { try { const raw = localStorage.getItem(k); return raw ? { k, obj:JSON.parse(raw) } : null; } catch { return null; } }).filter(x => x && x.obj && typeof x.obj === 'object');
     let R = register(tool);
@@ -384,14 +385,14 @@ window.ocShare = (() => {
     const D = {}, bron = v => (v in D ? D[v] : (D[v] = lees(PREFIX + v)));
     const [afVeld, afWaarde] = String(af || '').split('=');
     const zelfde = t => R.e.filter(x => norm(x.t) === norm(t)).length;
-    const ren = [], kl = [], zag = {};
+    const ren = [], kl = [], dat = [], zag = {};
     R.e.forEach(e => {
       const d = bron(e.v); if (!d || !Array.isArray(d.lists)) return;   // de bron legt niets klaar (nog niet geopend, of gewist): niets doen
       const l = lijstVan(d, e.l, e.p), L = vanSoort(l, e.y), LN = L.map(x => norm(x.text)), K = Array.isArray(d.klaar) ? d.klaar : [];
       const sl = e.v + '|' + e.l + '|' + e.y; if (l) zag[sl] = { v:e.v, k:e.l + '|' + e.y, LN };
       let nu = null;
-      if (e.r) { const x = L.find(x => x.ref === e.r); if (x) nu = { t:x.text, i:L.indexOf(x) }; else { const k = K.find(k => k.r === e.r && k.y === e.y); if (k) nu = { t:k.t, af:true }; } }
-      if (!nu) { const j = LN.indexOf(norm(e.t)); if (j >= 0) nu = { t:L[j].text, i:j }; }
+      if (e.r) { const x = L.find(x => x.ref === e.r); if (x) nu = { t:x.text, i:L.indexOf(x), d:x.when }; else { const k = K.find(k => k.r === e.r && k.y === e.y); if (k) nu = { t:k.t, af:true }; } }
+      if (!nu) { const j = LN.indexOf(norm(e.t)); if (j >= 0) nu = { t:L[j].text, i:j, d:L[j].when }; }
       if (!nu) { const k = K.find(k => k.l === e.l && k.y === e.y && norm(k.t) === norm(e.t)); if (k) nu = { t:e.t, af:true }; }
       if (!nu && !e.r && l) {   // zonder ref: dezelfde plaats, even lange lijst, en de tekst daar is echt nieuw
         const vorig = (R.z[e.v] || {})[e.l + '|' + e.y], x = L[e.i];
@@ -408,11 +409,13 @@ window.ocShare = (() => {
       }
       delete e.bij; delete e.n;
       if (norm(nu.t) !== norm(e.t)) { if (zelfde(e.t) === 1) ren.push({ v:e.v, oud:e.t, nieuw:nu.t, bron:String(d.tool || e.v), e, gok:nu.gok }); e.t = nu.t; }
+      // v4.3: een datum loopt mee (bv. de einddatum van de Projectopdracht als mijlpaal in de Tijdlijn), zolang de kopie nog de vorige datum draagt
+      if (typeof nu.d === 'string' && nu.d) { if (e.d && e.d !== nu.d) dat.push({ v:e.v, t:e.t, oud:e.d, nieuw:nu.d, bron:String(d.tool || e.v) }); e.d = nu.d; }
       const k = !!nu.af; if (k !== !!e.k) { if (zelfde(e.t) === 1) kl.push({ v:e.v, t:e.t, af:k, e, bron:String(d.tool || e.v) }); if (k) e.k = 1; else delete e.k; }
     });
     Object.values(zag).forEach(z => { (R.z[z.v] = R.z[z.v] || {})[z.k] = z.LN; });
     // Toepassen in de opslag van de tool: alleen velden die nog precies de tekst van de bron dragen (wat je zelf wijzigde, blijft van jou)
-    if (ren.length || kl.length) data.forEach(x => {
+    if (ren.length || kl.length || dat.length) data.forEach(x => {
       let n = 0; const geraakt = new Map();
       const raak = (o, f) => { if (!geraakt.has(o)) geraakt.set(o, new Set()); geraakt.get(o).add(f); };
       const eigenBron = (o, v) => { const b = typeof o.van === 'string' ? o.van : typeof o.bronId === 'string' ? o.bronId : null; return !b || b === v; };
@@ -426,6 +429,10 @@ window.ocShare = (() => {
             if (c.af && o[afVeld] !== afWaarde) { c.e.s = o[afVeld]; o[afVeld] = afWaarde; n++; c.gedaan = 1; raak(o, afVeld); }
             else if (!c.af && o[afVeld] === afWaarde && c.e.s) { o[afVeld] = c.e.s; delete c.e.s; n++; c.gedaan = 1; raak(o, afVeld); }
           } });
+        dat.forEach(c => { if (!TEKST.some(f => typeof o[f] === 'string' && norm(o[f]) === norm(c.t)) || !eigenBron(o, c.v)) return;
+          DATUM.forEach(f => { if (o[f] === c.oud) { o[f] = c.nieuw; n++; c.gedaan = 1; raak(o, f);
+            // een tool die onthoudt wat binnenkwam (Tijdlijn: vanWas = 'status|datum'), moet dit niet als eigen werk zien
+            if (typeof o.vanWas === 'string' && o.vanWas.includes(c.oud)) o.vanWas = o.vanWas.split(c.oud).join(c.nieuw); } }); });
         Object.keys(o).forEach(k => { const w = o[k]; if (w && typeof w === 'object') loop(w); });
       };
       loop(x.obj);
@@ -441,7 +448,7 @@ window.ocShare = (() => {
     // Een gok (zonder ref) die nergens paste (de kopie is weg of door jou gewijzigd): niet onthouden. Wis + nieuw in de bron is geen hernoeming.
     ren.forEach(c => { if (c.gok && !c.gedaan) c.e.t = c.oud; });
     bewaarRegister(tool, R);
-    uit.hernoemd = ren.filter(c => c.gedaan); uit.klaar = kl.filter(c => c.gedaan).map(c => ({ t:c.t, af:c.af, bron:c.bron }));
+    uit.hernoemd = ren.filter(c => c.gedaan); uit.datum = dat.filter(c => c.gedaan).map(c => ({ t:c.t, nieuw:c.nieuw, bron:c.bron })); uit.klaar = kl.filter(c => c.gedaan).map(c => ({ t:c.t, af:c.af, bron:c.bron }));
     return uit;
   }
   /* ---------- Vanzelf overnemen (v4.1) ----------
@@ -505,15 +512,17 @@ window.ocShare = (() => {
       m.querySelector('span').textContent = 'Deze tool neemt niet meer vanzelf over. Weer aanzetten kan onder ‘Overnemen uit andere tools’.'; } });
   }
   // Eén rustige melding onderaan, in de stijl van de tools. Ze neemt de focus niet over.
+  // v4.3: gecentreerd zonder translate (left:50% gaf de melding maar de halve schermbreedte: op een gsm werd de tekst één letter breed);
+  // is er te weinig plaats, dan schuiven de knoppen onder de tekst.
   // o.hoog: boven de eigen melding van de tool (die meldt hoeveel er overkwam, met Ongedaan). o.knop + o.doe: een tweede knop.
   function melding(tekst, ms, o) {
     const toon = () => {
       style(); let m = document.getElementById('ocs-melding');
       if (!m) { m = document.createElement('div'); m.id = 'ocs-melding'; m.setAttribute('role', 'status'); m.setAttribute('aria-live', 'polite');
-        m.style.cssText = 'position:fixed;left:50%;bottom:calc(' + (o && o.hoog ? '6.5rem' : '1rem') + ' + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:9999;max-width:min(92vw,560px);display:flex;align-items:flex-start;gap:.75rem;padding:.75rem .75rem .75rem 1rem;background:#fff;color:#1e293b;border:1px solid #a7f3d0;border-radius:14px;box-shadow:0 12px 32px rgba(15,23,42,.18);font:500 .9375rem/1.45 "DM Sans",system-ui,sans-serif';
+        m.style.cssText = 'position:fixed;left:0;right:0;margin:0 auto;width:fit-content;bottom:calc(' + (o && o.hoog ? '6.5rem' : '1rem') + ' + env(safe-area-inset-bottom,0px));z-index:9999;max-width:min(92vw,560px);box-sizing:border-box;display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:flex-start;gap:.5rem .75rem;padding:.75rem .75rem .75rem 1rem;background:#fff;color:#1e293b;border:1px solid #a7f3d0;border-radius:14px;box-shadow:0 12px 32px rgba(15,23,42,.18);font:500 .9375rem/1.45 "DM Sans",system-ui,sans-serif';
         document.body.appendChild(m); }
       m.style.bottom = 'calc(' + (o && o.hoog ? '6.5rem' : '1rem') + ' + env(safe-area-inset-bottom,0px))';
-      m.innerHTML = `<span style="flex:1;min-width:0;overflow-wrap:anywhere;align-self:center">${esc(tekst)}</span>${o && o.knop ? `<button type="button" class="ocs-btn ocs-cancel" data-m="knop" style="flex:none">${esc(o.knop)}</button>` : ''}<button type="button" class="ocs-btn ocs-cancel" data-m="ok" style="flex:none">Oké</button>`;
+      m.innerHTML = `<span style="flex:1 1 12rem;min-width:0;overflow-wrap:break-word;align-self:center">${esc(tekst)}</span>${o && o.knop ? `<button type="button" class="ocs-btn ocs-cancel" data-m="knop" style="flex:none">${esc(o.knop)}</button>` : ''}<button type="button" class="ocs-btn ocs-cancel" data-m="ok" style="flex:none">Oké</button>`;
       m.querySelector('[data-m="ok"]').onclick = () => m.remove();
       const k = m.querySelector('[data-m="knop"]'); if (k) k.onclick = () => { k.remove(); o.doe(m); clearTimeout(m._t); m._t = setTimeout(() => m.remove(), 8000); };
       clearTimeout(m._t); m._t = setTimeout(() => m.remove(), ms || 8000);
@@ -522,12 +531,13 @@ window.ocShare = (() => {
   }
   const kort = t => '‘' + (t.length > 60 ? t.slice(0, 57).trim() + '…' : t) + '’';
   function meld(u, tool) {
-    const z = [], H = u.hernoemd, A = u.klaar.filter(x => x.af), O = u.klaar.filter(x => !x.af), G = u.gewijzigd || [], bronnen = [...new Set(H.concat(u.klaar).map(x => x.bron))];
+    const z = [], H = u.hernoemd, A = u.klaar.filter(x => x.af), O = u.klaar.filter(x => !x.af), G = u.gewijzigd || [], DT = u.datum || [], bronnen = [...new Set(H.concat(u.klaar, DT).map(x => x.bron))];
     const uit = bronnen.length === 1 ? 'uit ' + bronnen[0] : 'uit andere tools';
     if (H.length === 1 && !u.klaar.length) z.push(`Meegelopen ${uit}: ${kort(H[0].oud)} heet nu ${kort(H[0].nieuw)}.`);
     else if (A.length === 1 && !H.length && !O.length) z.push(`Meegelopen ${uit}: ${kort(A[0].t)} is afgevinkt.`);
     else if (O.length === 1 && !H.length && !A.length) z.push(`Meegelopen ${uit}: ${kort(O[0].t)} staat weer open.`);
-    else if (H.length || u.klaar.length) z.push(`Meegelopen ${uit}: ` + [H.length && `${H.length} ${H.length === 1 ? 'naam' : 'namen'} aangepast`, A.length && `${A.length} afgevinkt`, O.length && `${O.length} weer open`].filter(Boolean).join(', ') + '.');
+    else if (DT.length === 1 && !H.length && !u.klaar.length) z.push(`Meegelopen ${uit}: ${kort(DT[0].t)} staat nu op ${datum(DT[0].nieuw)}.`);
+    else if (H.length || u.klaar.length || DT.length) z.push(`Meegelopen ${uit}: ` + [H.length && `${H.length} ${H.length === 1 ? 'naam' : 'namen'} aangepast`, DT.length && `${DT.length} ${DT.length === 1 ? 'datum' : 'datums'} aangepast`, A.length && `${A.length} afgevinkt`, O.length && `${O.length} weer open`].filter(Boolean).join(', ') + '.');
     // Vastgelegd (modus signaal): wat in de bron veranderde, blijft hier zoals het was, tot je kiest om bij te werken
     if (G.length === 1) { const g = G[0];
       z.push(g.nieuw != null ? `In ${g.bron} veranderde ${kort(g.oud)} intussen in ${kort(g.nieuw)}.` : `In ${g.bron} is ${kort(g.oud)} intussen ${g.af ? 'afgevinkt' : 'weer open'}.`);
@@ -545,7 +555,33 @@ window.ocShare = (() => {
 
 
 
-  return { publish, clear, pick, count, sources, refs, esc, volg, melding, meld, instel, vanzelf };
+  /* ---------- Wat je zelf deed, per project (v4.3) ----------
+     De app toont een stap van een plan als gedaan voor het project dat nu open staat. Daarvoor houdt elke tool bij voor welk project
+     jij er zelf iets in veranderde (oc-app.werk-pp: { _t:{ <tool>:1 }, <tool>:[<project>, ...] }). Wat vanzelf binnenkwam of meeliep,
+     telt niet: alleen een wijziging na een tik of toets van jou. _t zegt dat de tool dit bijhoudt; staat ze er niet in, dan telt de app zoals vroeger. */
+  const WERK = 'oc-app.werk-pp';
+  function werk(tool, opslag) {
+    const sl = (opslag || []).filter(k => k && !k.startsWith(PREFIX) && !k.startsWith(VOLG));
+    if (!tool || !sl.length) return;
+    const leesW = () => lees(WERK) || {}, zetW = w => schrijf(WERK, JSON.stringify(w));
+    const projectNu = () => { const p = lees('oc.project'); return p && typeof p.name === 'string' ? p.name.trim() : ''; };
+    const heeftIets = () => sl.some(k => { try { const v = localStorage.getItem(k); return v != null && v !== '' && v !== 'null' && v !== '{}' && v !== '[]'; } catch { return false; } });
+    { const w = leesW(); if (!w._t || !w._t[tool]) {
+      // eerste keer met deze versie: wat er al stond, telt zoals vroeger voor het project dat nu open staat
+      w._t = Object.assign({}, w._t, { [tool]:1 }); const p = projectNu() || '*';   // '*': zonder project, telt voor elk project
+      if (!Array.isArray(w[tool]) && heeftIets()) w[tool] = [p];
+      zetW(w); } }
+    const vingerafdruk = () => sl.map(k => { let v = ''; try { v = localStorage.getItem(k) || ''; } catch {} let h = 2166136261; const s = v.length > 400000 ? v.slice(0, 200000) + v.slice(-200000) : v; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return v.length + ':' + (h >>> 0); }).join('|');
+    let basis = null, tik = 0;
+    const kijk = () => { if (basis == null) return; const nu = vingerafdruk(); if (nu === basis) return; basis = nu;
+      const p = projectNu() || '*'; const w = leesW(), L = Array.isArray(w[tool]) ? w[tool] : [];
+      if (!L.includes(p)) { w[tool] = L.concat(p).slice(-200); zetW(w); } };
+    const actie = () => { if (basis == null) basis = vingerafdruk(); clearTimeout(tik); tik = setTimeout(kijk, 1200); };
+    ['pointerdown', 'keydown', 'beforeinput'].forEach(t => document.addEventListener(t, actie, true));
+    addEventListener('pagehide', kijk); document.addEventListener('visibilitychange', () => { if (document.hidden) kijk(); });
+  }
+
+  return { publish, clear, pick, count, sources, refs, esc, volg, melding, meld, instel, vanzelf, onthoud, werk };
 })();
 
 // Bij het laden, nog voor de tool haar gegevens leest: de kopieën van deze tool lopen mee met hun bron.
@@ -554,7 +590,8 @@ window.ocShare = (() => {
   const me = document.currentScript; if (!me || !me.dataset.tool) return;
   const opslag = String(me.dataset.opslag || '').split(',').map(s => s.trim()).filter(Boolean);
   try { const u = ocShare.volg(me.dataset.tool, opslag, me.dataset.af, me.dataset.volg);
-    if (u.hernoemd.length || u.klaar.length || u.weg.length || u.gewijzigd.length) ocShare.meld(u, me.dataset.tool); } catch (e) {}
+    if (u.hernoemd.length || u.klaar.length || u.weg.length || u.gewijzigd.length || u.datum.length) ocShare.meld(u, me.dataset.tool); } catch (e) {}
+  try { ocShare.werk(me.dataset.tool, opslag); } catch (e) {}
   // data-vanzelf="opdracht:mijlpaal,retro:actie" en data-vanzelf-knop="#oc-imp,#oc-imp-start": vanzelf overnemen op die paden
   const paden = String(me.dataset.vanzelf || '').split(',').map(x => x.trim().split(':')).filter(x => x.length === 2 && x[0] && x[1]).map(([v, y]) => ({ v, y }));
   if (paden.length) { ocShare.instel({ tool: me.dataset.tool, paden, knop: me.dataset.vanzelfKnop || '', opslag });

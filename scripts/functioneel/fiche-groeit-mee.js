@@ -31,7 +31,10 @@ const fout = []; const ok = (c, m) => { console.log((c ? '  ok   ' : '  FOUT ') 
 
   // ---- stap 2: Productboom
   f = await volgende(); console.log('balk:', await balk());
-  for (const [oud, nieuw] of [['Eerste deelresultaat', 'Website'], ['Tweede deelresultaat', 'Handleiding'], ['Derde deelresultaat', 'Opleiding']]) { const g = f.locator('#canvas g[data-node]', { hasText: oud }).first(); await g.scrollIntoViewIfNeeded().catch(() => {}); await g.tap().catch(() => console.log('  tik mislukt', oud)); await p.waitForTimeout(350); await g.tap().catch(() => {}); await p.waitForTimeout(350); await p.keyboard.press('Control+A'); await p.keyboard.type(nieuw); await p.keyboard.press('Enter'); await p.waitForTimeout(400); await f.locator('#canvas').tap({ position: { x: 5, y: 5 } }).catch(() => {}); }
+  // v17.40: wat je bij "Wat leveren we op?" schreef, is de eerste tak. Daaronder zet je de delen (hier via de kaart zelf, zoals bij de Tijdlijn).
+  ok(await f.evaluate(() => { const m = cur(); return m.sjabloon === 'productboom' && m.nodes[1] && m.nodes[1].level === 1 && m.nodes[1].text === 'Een online loket voor premies' && m.nodes[1].van === 'opdracht'; }), 'Productboom: de eerste tak is wat je oplevert, uit de opdracht');
+  await f.evaluate(() => { const m = cur(), i = m.nodes.findIndex(n => n.text === 'Een online loket voor premies'); let j = i + 1; while (j < m.nodes.length && m.nodes[j].level > 1) j++;
+    m.nodes.splice(i + 1, j - i - 1, ...['Website', 'Handleiding', 'Opleiding'].map(t => idea(t, 2))); save(); render(); });
   await p.waitForTimeout(600);
   // ---- stap 3: Tijdlijn (mijlpalen via de tool zelf)
   f = await volgende(); console.log('balk:', await balk());
@@ -60,18 +63,18 @@ const fout = []; const ok = (c, m) => { console.log((c ? '  ok   ' : '  FOUT ') 
   ok(/Onderdelen: Website, Handleiding, Opleiding/.test(await f.evaluate(() => alsTekst())), 'export als tekst bevat de onderdelen');
 
   // ---- de bron verandert: onaangeroerd volgt, eigen werk wordt gevraagd
-  await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('tijdlijn.v1')); d.lists[0].items[0].date = '2027-02-01'; localStorage.setItem('tijdlijn.v1', JSON.stringify(d)); });
+  await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('tijdlijn.v1')); d.lists[0].items.find(x => x.text === 'Ontwerp goedgekeurd').date = '2027-02-01'; localStorage.setItem('tijdlijn.v1', JSON.stringify(d)); });
   await f.evaluate(() => groeiNu()); await p.waitForTimeout(300);
   ok(await f.evaluate(() => cur().mijlpalen[0].date === '2027-02-01'), 'datum gewijzigd in de Tijdlijn: de fiche volgt');
   await f.fill('[data-ms] [data-msf="text"]', 'Ontwerp afgeklopt'); await p.waitForTimeout(400);
-  await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('tijdlijn.v1')); d.lists[0].items[1].date = '2027-04-10'; localStorage.setItem('tijdlijn.v1', JSON.stringify(d)); });
+  await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('tijdlijn.v1')); d.lists[0].items.find(x => x.text === 'Loket getest').date = '2027-04-10'; localStorage.setItem('tijdlijn.v1', JSON.stringify(d)); });
   await f.evaluate(() => { document.activeElement.blur(); groeiNu(); }); await p.waitForTimeout(300);
   ok(await f.evaluate(() => cur().mijlpalen[0].text === 'Ontwerp afgeklopt') && /heeft iets anders/.test(await f.textContent('[data-bron="mijlpalen"]')), 'zelf gewijzigd: niet overschreven, wel een vraag');
   await f.evaluate(() => document.querySelector('[data-bron="mijlpalen"]').scrollIntoView({ block: 'center' })); await p.waitForTimeout(200); await shot('8-vraag');
   await f.click('[data-bron-laat="mijlpalen"]'); await p.waitForTimeout(300);
   ok(await f.evaluate(() => document.querySelector('[data-bron="mijlpalen"]').hidden && cur().mijlpalen[0].text === 'Ontwerp afgeklopt'), 'Laat zo: de vraag verdwijnt, je tekst blijft');
   await f.evaluate(() => groeiNu()); ok(await f.evaluate(() => document.querySelector('[data-bron="mijlpalen"]').hidden), 'Laat zo: de vraag komt niet terug zolang de bron gelijk blijft');
-  await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('tijdlijn.v1')); d.lists[0].items[2].date = '2027-06-20'; localStorage.setItem('tijdlijn.v1', JSON.stringify(d)); });
+  await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('tijdlijn.v1')); d.lists[0].items.find(x => x.text === 'Loket online').date = '2027-06-20'; localStorage.setItem('tijdlijn.v1', JSON.stringify(d)); });
   await f.evaluate(() => groeiNu()); await p.waitForTimeout(200); await f.click('[data-bron-neem="mijlpalen"]'); await p.waitForTimeout(400);
   ok(await f.evaluate(() => cur().mijlpalen[0].text === 'Ontwerp goedgekeurd' && cur().mijlpalen[2].date === '2027-06-20'), 'Werk bij: de fiche neemt de Tijdlijn over');
 
@@ -85,7 +88,7 @@ const fout = []; const ok = (c, m) => { console.log((c ? '  ok   ' : '  FOUT ') 
   await f.fill('#f-tnaam', 'An Peeters'); await f.fill('#f-tdatum', '2026-11-14'); await p.waitForTimeout(600);
   ok(await p.evaluate(() => ficheAfgetekend()), 'afgetekend: de slotstap telt als klaar');
   // afgetekend en de bron verandert: nooit vanzelf
-  await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('tijdlijn.v1')); d.lists[0].items[0].date = '2027-02-10'; localStorage.setItem('tijdlijn.v1', JSON.stringify(d)); });
+  await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('tijdlijn.v1')); d.lists[0].items.find(x => x.text === 'Ontwerp goedgekeurd').date = '2027-02-10'; localStorage.setItem('tijdlijn.v1', JSON.stringify(d)); });
   await f.evaluate(() => { document.activeElement.blur(); groeiNu(); }); await p.waitForTimeout(300);
   ok(await f.evaluate(() => cur().mijlpalen[0].date === '2027-02-01') && /heeft iets anders/.test(await f.textContent('[data-bron="mijlpalen"]')), 'afgetekend: de fiche verandert niet vanzelf, er komt een vraag');
 

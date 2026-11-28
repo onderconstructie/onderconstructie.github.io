@@ -3053,7 +3053,12 @@ function ocUndoable(restore) {
      { type:'taak',       text:'Mijlpaal: <resultaat>', when:'JJJJ-MM-DD' }                           voor het Takenbord
      { type:'risico',     text:'<risico of aanname>' }
      { type:'betrokkene', text:'<naam>', note:'Opdrachtgever' of 'Moet akkoord geven' }              voor de Betrokkenenradar
+     { type:'mijlpaal',   text:'Project klaar', when:'<einddatum>', ref:'einde' }                     v17.40: de einddatum als mijlpaal in de Tijdlijn
+     { type:'onderdeel',  text:'<een regel uit Wat leveren we op?>' }                                 v17.40: de eerste takken van de Productboom
    Het type 'doel' staat in het gedeelde blok (LABEL: doelen). */
+// v17.40: de einddatum gaat als mijlpaal naar de Tijdlijn (en komt van daar niet terug als tussentijdse mijlpaal: zie BRON.mijlpalen); wat je oplevert (één resultaat per regel) wordt de eerste takken van de Productboom
+const EINDE = 'Project klaar';
+const leverRegels = o => String(o.opleveren || '').split(/\n+/).map(r => r.replace(/^[\s•*·-]+/, '').trim()).filter(Boolean).map(r => r.slice(0, 120)).slice(0, 6);
 function ocPublish() {
   ocShare.publish(OC_ID, OC_TOOL, state.opdrachten.filter(o => !o.voorbeeld).map(o => {
     // Het project is klaar tegen de einddatum; het effect komt vaak later. Daarom geen 'tegen' bij het doel zelf.
@@ -3064,6 +3069,8 @@ function ocPublish() {
       ...o.mijlpalen.filter(m => m.text.trim()).map(m => ({ type:'taak', text:'Mijlpaal: ' + m.text.trim(), when:m.date || undefined, ref:m.id })),
       // Ook als mijlpaal (met de datum): zo zet de Tijdlijn ze op de lijn. De taken hierboven blijven voor het Takenbord.
       ...o.mijlpalen.filter(m => m.text.trim()).map(m => ({ type:'mijlpaal', text:m.text.trim(), when:m.date || undefined, ref:m.id })),
+      ...(o.einddatum && !raarJaar(o.einddatum) ? [{ type:'mijlpaal', text:EINDE, when:o.einddatum, ref:'einde' }] : []),
+      ...leverRegels(o).map(t => ({ type:'onderdeel', text:t })),
       ...vol(o.risicos).map(t => ({ type:'risico', text:t })),
       ...(o.opdrachtgever.trim() ? [{ type:'betrokkene', text:o.opdrachtgever.trim(), note:'Opdrachtgever' }] : []),
       ...vol(o.akkoord).map(t => ({ type:'betrokkene', text:t, note:'Moet akkoord geven' })) ] };
@@ -4246,7 +4253,7 @@ const BRON = {
   mijlpalen: { tool:'Tijdlijn', href:'../tijdlijn/',
     lees(o) {
       const d = ocRuw('tijdlijn.v1'), l = bronLijst(d && d.lists, o.name); if (!l || !Array.isArray(l.items)) return null;
-      const ms = l.items.filter(i => i && typeof i.text === 'string' && i.text.trim()).map(i => ({ text:i.text.trim().slice(0, 120), date:datumOk(i.date) }))
+      const ms = l.items.filter(i => i && typeof i.text === 'string' && i.text.trim() && i.text.trim() !== EINDE).map(i => ({ text:i.text.trim().slice(0, 120), date:datumOk(i.date) }))
         .sort((a, b) => (a.date || '9999') < (b.date || '9999') ? -1 : (a.date || '9999') > (b.date || '9999') ? 1 : 0).slice(0, MAX_MS);
       return ms.length ? ms : null;
     },

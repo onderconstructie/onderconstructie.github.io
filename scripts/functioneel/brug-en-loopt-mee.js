@@ -127,7 +127,8 @@ const ok = (c, wat, extra) => { n++; if (!c) { fouten++; console.log('  FOUT: ' 
   // ---------- 3. De vraag onderweg (v17.28): geen venster meer, de vraag staat onderaan in de Projectopdracht zelf
   const dlgOpen = () => p.evaluate(() => !!document.querySelector('.app-dlg-back:not([hidden])'));   // geen enkel venster van de schil
   const inTool = () => p.frames().find(f => f !== p.mainFrame() && /\/opdracht\//.test(f.url()));
-  const vulNu = naam => p.evaluate(naam => { localStorage.setItem('oc.share.opdracht', JSON.stringify({ lists: [{ name: naam, items: [{ text: 'Doel' }] }] })); delete document.getElementById('pathbar').dataset.sig; renderPathbar(current); }, naam);
+  // v17.40: een stap telt per project, en alleen voor wat je zelf deed (oc-app.werk-pp, bijgehouden door de tool): dat zetten we hier mee
+  const vulNu = naam => p.evaluate(naam => { localStorage.setItem('oc.share.opdracht', JSON.stringify({ lists: [{ name: naam, items: [{ text: 'Doel' }] }] })); const w = JSON.parse(localStorage.getItem('oc-app.werk-pp') || '{}'); w.opdracht = [...new Set([...(w.opdracht || []), naam])]; localStorage.setItem('oc-app.werk-pp', JSON.stringify(w)); delete document.getElementById('pathbar').dataset.sig; renderPathbar(current); }, naam);
   p = await nieuw();
   await p.evaluate(() => { zetProject('Onderweg'); store.set('route', { project: 'kort' }); store.set('proj-asked', ['project']); renderPaths(); });
   await p.click('.sd-k[data-start="project"], .stile[data-start="project"]'); await p.waitForTimeout(1800);
@@ -213,7 +214,7 @@ const ok = (c, wat, extra) => { n++; if (!c) { fouten++; console.log('  FOUT: ' 
   p = await nieuw();
   await p.evaluate(() => { zetProject('Venster'); store.set('route', { project: 'kort' }); store.set('proj-asked', ['project']); renderPaths(); });
   await p.click('.sd-k[data-start="project"], .stile[data-start="project"]'); await p.waitForTimeout(1500);
-  await p.evaluate(() => { localStorage.setItem('oc.share.opdracht', JSON.stringify({ lists: [{ name: 'Venster', items: [{ text: 'Doel' }] }] })); });
+  await p.evaluate(() => { localStorage.setItem('oc.share.opdracht', JSON.stringify({ lists: [{ name: 'Venster', items: [{ text: 'Doel' }] }] })); const w = JSON.parse(localStorage.getItem('oc-app.werk-pp') || '{}'); w.opdracht = ['Venster']; localStorage.setItem('oc-app.werk-pp', JSON.stringify(w)); });   // v17.40: zelf ingevuld, voor dit project
   await p.click('#pathbar [data-pb-plan]'); await p.waitForTimeout(400);
   ok(await p.locator('#plan-body .mee-k').count() === 3, 'venster: strook Loopt mee');
   ok(await p.locator('#plan-body .brug').count() === 1, 'venster: de vraag onder de Projectopdracht');

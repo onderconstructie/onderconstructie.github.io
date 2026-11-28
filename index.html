@@ -3214,10 +3214,10 @@ window.ocProjectkiezer = function (plek, o) {
         <button class="ft-link" id="fb-open" type="button" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/></svg>Suggestie</button>
         <button class="ft-link" id="data-open" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v10"/><path d="m8 10 4 4 4-4"/><path d="M5 16v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/></svg><span class="ft-kort">Je gegevens</span><span class="ft-lang">Reservekopie en wissen</span></button>
         <a class="ft-link" href="/privacy/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 5 6v5c0 4.5 3 8.2 7 10 4-1.8 7-5.5 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></svg>Privacy</a>
-        <a class="ft-link" href="https://www.linkedin.com/in/bartel-volckaert-8a96842/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Maker</a>
+        <a class="ft-link" href="https://www.linkedin.com/in/bartel-volckaert-8a96842/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Bedenker</a>
         <a class="ft-link" href="/privacy/#voorwaarden" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.01"/></svg>Disclaimer</a>
       </nav>
-      <p class="ft-meta"><button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (34 seconden)" title="Bekijk de film (34 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg><span>Film</span></button><button class="ft-film ft-inst" id="ft-app" type="button" hidden aria-label="Installeer de app"><img src="/app/icon.svg" alt="" width="22" height="22"><span>Installeer</span></button><span class="ft-dot" aria-hidden="true"></span><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><button type="button" class="app-version" id="ver-open" aria-haspopup="dialog" title="Lees wat er nieuw is in deze versie">v17.39</button></p>
+      <p class="ft-meta"><button class="ft-film" id="film-open" type="button" aria-haspopup="dialog" aria-label="Bekijk de film (34 seconden)" title="Bekijk de film (34 s)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5Z" fill="#059669"/></svg><span>Film</span></button><button class="ft-film ft-inst" id="ft-app" type="button" hidden aria-label="Installeer de app"><img src="/app/icon.svg" alt="" width="22" height="22"><span>Installeer</span></button><span class="ft-dot" aria-hidden="true"></span><span class="status" id="status"><span class="dot"></span><span id="status-text">Alleen online</span></span><span class="ft-dot" aria-hidden="true"></span><button type="button" class="app-version" id="ver-open" aria-haspopup="dialog" title="Lees wat er nieuw is in deze versie">v17.40</button></p>
     </div>
   </footer>
   <dialog class="film" id="film" aria-labelledby="film-h">
@@ -4415,7 +4415,9 @@ function pickResume(items) {
   const inPlan = id => TRAJECTEN.filter(tr => st.includes(tr.id) && ((byId[id].traject || []).some(x => x.naam === tr.id) || (STAP_EXTRA[tr.id] || []).some(x => x.id === id && x.open && x.open())));
   const cand = inPlan(top.t.id), tr = cand.find(x => x.id === pathCtx) || cand[0];
   if (tr) {
-    const steps = stepsOf(tr.id), i = steps.findIndex(x => x.t.id === top.t.id && (!x.t.extra || (x.t.extra.open && x.t.extra.open())));
+    // v17.40: per project. Je plek in dit project; nog geen plek hier maar wel in een ander project: de eerste open stap van dit project.
+    const steps = stepsOf(tr.id), k = planPos(tr.id), ip = k ? steps.findIndex(x => stapSleutel(x) === k) : -1;
+    const i = ip >= 0 ? ip : planPosElders(tr.id) ? Math.max(0, steps.indexOf(volgendeStap(tr.id, steps))) : steps.findIndex(x => x.t.id === top.t.id && (!x.t.extra || (x.t.extra.open && x.t.extra.open())));
     if (i >= 0 && steps.length > 1) return { t: steps[i].t, at: top.at, data: top.data, path: tr, n: i + 1, of: steps.length, open: steps.filter((x, k) => !x.done && k !== i) };
   }
   return { t: top.t, at: top.at, data: top.data };
@@ -5667,7 +5669,9 @@ const SJ_ICON = {
   productboom:"<svg viewBox='0 0 40 40' fill='none' xmlns='http://www.w3.org/2000/svg'><circle cx='20' cy='20' r='18' fill='#f8fafc' stroke='#e2e8f0' stroke-width='1.5'/><rect x='14' y='8' width='12' height='7.5' rx='2' fill='#10b981'/><path d='M20 15.5v4M11 19.5h18M11 19.5v4M29 19.5v4' stroke='#94a3b8' stroke-width='2' stroke-linecap='round'/><rect x='5.5' y='23.5' width='11' height='7.5' rx='2' fill='#94a3b8'/><rect x='23.5' y='23.5' width='11' height='7.5' rx='2' fill='#94a3b8'/></svg>", projectkaart:"<svg viewBox='0 0 40 40' fill='none' xmlns='http://www.w3.org/2000/svg'><circle cx='20' cy='20' r='18' fill='#f8fafc' stroke='#e2e8f0' stroke-width='1.5'/><path d='M20 20L9.5 11.5M20 20L30.5 11.5M20 20L9.5 28.5M20 20L30.5 28.5' stroke='#94a3b8' stroke-width='2' stroke-linecap='round'/><circle cx='9.5' cy='11.5' r='3' fill='#94a3b8'/><circle cx='30.5' cy='11.5' r='3' fill='#94a3b8'/><circle cx='9.5' cy='28.5' r='3' fill='#94a3b8'/><circle cx='30.5' cy='28.5' r='3' fill='#94a3b8'/><rect x='12.5' y='16' width='15' height='8' rx='4' fill='#10b981'/></svg>" };
 function heeftSjabloon(k, eigen, open) {
   try { const d = JSON.parse(localStorage.getItem('mindmap.v1') || 'null');
-    const is = m => m && !m.voorbeeld && (m.sjabloon === k || (k === 'productboom' && m.vorm === 'boom' && m.name === 'Productboom'));
+    // v17.40: per project (een kaart zonder project, van vroeger, telt voor elk project)
+    const pr = projNu().toLowerCase(), vanProj = m => !pr || !m.proj || String(m.proj).toLowerCase() === pr;
+    const is = m => m && !m.voorbeeld && (m.sjabloon === k || (k === 'productboom' && m.vorm === 'boom' && m.name === 'Productboom')) && vanProj(m);
     const vol = m => !eigen || (Array.isArray(m.nodes) && m.nodes.some((n, i) => i > 0 && n && !n.hint && !n.van && String(n.text || '').trim()));
     if (open) { const m = d && Array.isArray(d.maps) && d.maps.find(x => x && x.id === d.current); return !!(is(m) && vol(m)); }   // de kaart die nu open staat
     return !!(d && Array.isArray(d.maps) && d.maps.some(m => is(m) && vol(m))); } catch { return false; }
@@ -5734,7 +5738,30 @@ function trajectStappen(trId) {
   });
   return st;
 }
-const stapKlaar = (s, all) => s.t.extra ? s.t.extra.klaar() : hasData(s.t, all);
+const stapKlaar = (s, all) => s.t.extra ? s.t.extra.klaar() : hasDataP(s.t, all);
+/* v17.40: een stap is gedaan voor het project dat nu open staat. De tools houden bij voor welk project je er zelf iets in veranderde
+   (oc-app.werk-pp, via /app/oc-share.js). Wat vanzelf binnenkwam of meeliep, telt niet. Een tool die dit (nog) niet bijhoudt, telt zoals vroeger. */
+const projNu = () => isPrivate() ? '' : ((getProject() || {}).name || '');
+function hasDataP(t, all) {
+  const g = hasData(t, all); if (!g) return g;
+  const p = projNu(); if (!p) return g;
+  const w = store.get('werk-pp', null) || {}, L = w[t.id];
+  if (Array.isArray(L)) return L.some(x => x === '*' || String(x).toLowerCase() === p.toLowerCase());   // '*': gedaan zonder project, telt overal
+  return w._t && w._t[t.id] ? false : g;
+}
+/* Waar je bent in een plan, per project: de stap die je laatst opende met de planbalk erbij (oc-app.plan-pos: { <project>: { <plan>: <stap> } }).
+   De knop Verder, het stappenplan en de draad volgen die ene plek. De volgende stap is de eerste open stap vanaf daar;
+   wat je voorbijging zonder iets te doen, blijft open (Nog open). Is er na je plek niets meer open, dan de eerste open stap. */
+const planPosAlle = () => { const a = store.get('plan-pos', {}); return a && typeof a === 'object' ? a : {}; };
+// { s:<stap>, t:<tijd> }. Een plan dat terugkomt (een nieuwe vergadering) begint opnieuw: een plek van vóór die nieuwe start telt niet.
+const planPosVan = (p, trId) => { const v = (planPosAlle()[p] || {})[trId]; if (!v || typeof v !== 'object' || typeof v.s !== 'string') return null; const t0 = planSinds(trId); return t0 && !(v.t >= t0) ? null : v.s; };
+const planPos = trId => planPosVan(projNu(), trId);
+const planPosElders = trId => Object.keys(planPosAlle()).some(p => p !== projNu() && planPosVan(p, trId));
+function planPosZet(trId, s) { const a = planPosAlle(), p = projNu(), v = (a[p] || {})[trId]; if (v && v.s === stapSleutel(s) && planPos(trId)) return; a[p] = Object.assign({}, a[p], { [trId]:{ s:stapSleutel(s), t:Date.now() } }); store.set('plan-pos', a); }
+function volgendeStap(trId, steps) {
+  const k = planPos(trId), i = k ? steps.findIndex(s => stapSleutel(s) === k) : -1;
+  return (i >= 0 && steps.slice(i).find(s => !s.done)) || steps.find(s => !s.done) || null;
+}
 /* Een plan dat terugkomt: een vergadering leid je elke week. Met "Nieuwe vergadering" begin je weer bij stap 1.
    Wat je invulde blijft staan. Een stap telt daarna pas als gedaan wanneer je er sindsdien iets in veranderde:
    alleen openen is niet genoeg, want de tool bewaart je vorige vergadering nog. Daarom onthoudt de app per stap hoe de
@@ -5964,10 +5991,11 @@ function renderPathbar(id) {
   const t = byId[id], bar = $('pathbar'), plans = (t && t.traject || []).map(x => x.naam).concat(Object.keys(STAP_EXTRA).filter(n => STAP_EXTRA[n].some(x => x.id === id)), Object.keys(BRUGGEN).filter(n => brugVan(n) === 'ja' && BRUGGEN[n].stappen.some(x => x.id === id))).filter((n, k, a) => a.indexOf(n) === k && TRAJECTEN.some(tr => tr.id === n));
   // Zichtbaar = #pathbar zonder hidden (tools zoals Communicatieplan kijken daarnaar om hun eigen teller te verbergen)
   const show = on => { bar.hidden = !on; if (!on) { bar.innerHTML = ''; delete bar.dataset.sig; barStand = null; duim(null); tbMenu(false); } $('topbar').classList.toggle('has-path', on); eenMenuSync(); };
-  if (!plans.length || !viaPad) { show(false); return; }
+  if (!plans.length || !viaPad) { if (id && store.get('via-pad', null) === id) store.set('via-pad', null); show(false); return; }
   const st = startedPaths(), trId = plans.includes(pathCtx) ? pathCtx : plans.find(n => st.includes(n)) || plans[0], tr = TRAJECTEN.find(x => x.id === trId);
   const steps = stepsOf(trId), fz0 = (frames.get(id) || {}).dataset || {}, i0 = steps.findIndex(s => s.t.id === id && s.t.zoek && s.t.zoek === fz0.zoek), i = i0 >= 0 ? i0 : steps.findIndex(s => s.t.id === id);
   if (steps.length < 2 || i < 0) { show(false); return; }
+  planPosZet(trId, steps[i]); if (store.get('via-pad', null) !== id) store.set('via-pad', id);   // v17.40: je plek in het plan, en na herladen weer met de balk
   brugBijAankomst(trId, id);
   const prev = steps[i - 1], next = steps[i + 1], q = (steps[i].t.extra ? steps[i].t.sub : tr.q[id]) || t.sub || '', pr = isPrivate() ? '' : ((getProject() || {}).name || '');
   // In fasen denken, niet in 14 stappen: "Opzetten · stap 1 van 4". De dunne lijn bovenaan toont de hele weg.
@@ -6023,7 +6051,7 @@ function startTileHTML(st, all) {
   if (st.binnenkort) return `<div class="stile stile-binnenkort" aria-disabled="true"><span class="icon">${st.logo}</span><span class="st-body"><b>${esc(st.title)}</b><span>${esc(st.sub)}</span><small class="st-cta st-binnenkort">Binnenkort</small></span></div>`;
   if (st.path) {
     const steps = stepsOf(st.path, all), first = steps[0]; if (!first) return '';
-    const begun = startedPaths().includes(st.path), next = begun && (steps.find(x => !x.done) || first);
+    const begun = startedPaths().includes(st.path), next = begun && (volgendeStap(st.path, steps) || first);
     const go = next || first;
     return `<button type="button" class="stile" data-id="${esc(go.t.id)}"${zoekAttr(go.t)} data-ctx="${st.path}" data-start="${st.path}"><span class="icon">${st.logo ? bare(st.logo) : iconHTML(first.t.icon)}</span><span class="st-body"><b>${esc(st.title)}</b><span>${esc(st.sub)}</span><small class="st-cta${begun ? ' verder' : ''}">${begun ? `<span class="st-woord">Verder</span><span class="st-deel" aria-hidden="true">Verder</span>` : '<span class="st-woord">Begin</span>'}${PIJL_CTA}</small></span></button>`; }
   const g = GROUPS.find(x => x.id === st.group); if (!g) return '';
@@ -6039,7 +6067,7 @@ function faseTekst(trId, steps, i) {
 function drieHTML(all) {
   const rijen = STARTS.filter(st => st.path).map(st => {
     const steps = stepsOf(st.path, all), first = steps[0]; if (!first) return '';
-    const begun = startedPaths().includes(st.path), go = (begun && (steps.find(x => !x.done) || first)) || first;
+    const begun = startedPaths().includes(st.path), go = (begun && (volgendeStap(st.path, steps) || first)) || first;
     return `<button type="button" class="sd-k" data-id="${esc(go.t.id)}"${zoekAttr(go.t)} data-ctx="${st.path}" data-start="${st.path}"><span class="icon">${iconHTML(first.t.icon)}</span>
       <span class="sd-t"><b>${esc(st.kort)}</b><span>${begun ? 'Verder: ' + esc(faseTekst(st.path, steps, steps.indexOf(go))) : esc(st.kortSub)}</span></span>
       <span class="sd-cta${begun ? '' : ' licht'}">${begun ? 'Verder' : 'Begin'}${PIJL_CTA}</span></button>`;
@@ -6106,7 +6134,7 @@ function routeKijk(sleutel) {
   kaartNet();
   let lijst = '', zin = '', knop = '';
   if (st.path) {
-    const S = stepsOf(st.path), nu = S.findIndex(x => !x.done), bezig = startedPaths().includes(st.path), kern = !!ROUTE_KERN[st.path] && routeVan(st.path) === 'kort';
+    const S = stepsOf(st.path), nu = S.indexOf(volgendeStap(st.path, S)), bezig = startedPaths().includes(st.path), kern = !!ROUTE_KERN[st.path] && routeVan(st.path) === 'kort';
     zin = bezig ? (nu < 0 ? 'Alle stappen zijn gedaan.' : `Je bent aan stap ${nu + 1} van ${S.length}.`) : `${S.length} stappen${kern ? ' in de korte route' : ''}. Je werk gaat mee van stap naar stap.`;
     lijst = `<ol class="rk-draad">${S.map((x, i) => `<li class="${x.done ? 'af' : i === (nu < 0 ? -1 : nu) ? 'nu' : ''}"><span class="rk-punt" aria-hidden="true"></span><span class="rk-st"><b>${esc(x.t.title)}</b><small>${esc(x.t.sub || '')}</small></span>${x.done ? '<span class="rk-sr">, gedaan</span>' : ''}</li>`).join('')}</ol>`;
     const eerst = S[nu < 0 ? 0 : nu]; knop = bezig ? 'Ga verder' : eerst ? 'Begin met ' + eerst.t.title : 'Begin';
@@ -6215,7 +6243,7 @@ function vraagVergadering(nieuw, then) {
 // Verder met de vergadering die openstaat, of een nieuwe beginnen
 function vraagVerder(then) {
   const dlg = $('vg-dlg'), kn = [...dlg.querySelectorAll('[data-vv]')], weg = $('vg-vweg'), back = document.activeElement;
-  const st = stepsOf('vergadering'), i = Math.max(0, st.findIndex(s => !s.done)), nu = st[i];
+  const st = stepsOf('vergadering'), i = Math.max(0, st.indexOf(volgendeStap('vergadering', st))), nu = st[i];
   $('vg-vs').textContent = nu ? `Stap ${i + 1} van ${st.length}: ${nu.t.title}` : '';
   $('vg-kies').hidden = $('vg-bericht').hidden = true; $('vg-verder').hidden = false; dlg.hidden = false; kn[0].focus();
   const sluit = keuze => {
@@ -6280,7 +6308,7 @@ function voetVan(tr, kort) { return (kort && tr.footKort) || tr.foot || ''; }
 function planDelen(tr, all) {
   const alle = trajectStappen(tr.id); alle.forEach(s => s.done = klaarSinds(tr.id, s, stapKlaar(s, all)));
   const steps = alle.filter(s => inRoute(s, tr.id)), rest = alle.filter(s => !inRoute(s, tr.id));
-  return { alle, steps, rest, next: steps.find(s => s.done === false) || null, kort: routeVan(tr.id) === 'kort', over: stapLijst('stap-over', tr.id), ookOpen: store.get('ook-open', []).includes(tr.id) };
+  return { alle, steps, rest, next: volgendeStap(tr.id, steps), kort: routeVan(tr.id) === 'kort', over: stapLijst('stap-over', tr.id), ookOpen: store.get('ook-open', []).includes(tr.id) };
 }
 /* Venster "Je stappenplan" in een tool: tik op "Stap 2 van 6". Wisselen tussen Kort en Uitgebreid, naar een andere stap springen,
    een stap overslaan of erbij nemen, zonder de tool te verlaten. */
@@ -6305,17 +6333,19 @@ function renderPaths() {
     alle.forEach(s => s.done = klaarSinds(tr.id, s, stapKlaar(s, all)));
     const steps = alle.filter(s => inRoute(s, tr.id)), rest = alle.filter(s => !inRoute(s, tr.id)), kort = routeVan(tr.id) === 'kort', over = stapLijst('stap-over', tr.id), ookOpen = store.get('ook-open', []).includes(tr.id);
     if (!steps.length) return '';
-    const next = steps.find(s => s.done === false) || null;
+    const next = volgendeStap(tr.id, steps);
     const nDone = steps.filter(s => s.done).length, isOpen = openSet.includes(tr.id);
+    // bezig: je deed al iets, of je ging al stappen voorbij (dan staat je plek verder dan stap 1)
+    const bezig = nDone > 0 || (startedPaths().includes(tr.id) && !!planPos(tr.id) && !!next && steps.indexOf(next) > 0);
     const kaart = knop => `<section class="path${isOpen ? ' open' : ''}${startedPaths().includes(tr.id) ? ' kan-stop' : ''}" data-path="${tr.id}">
       <button class="path-head" aria-expanded="${isOpen}">
         <span><span class="path-title" role="heading" aria-level="2">${esc(tr.title)}</span>
-          <span class="path-note">${!next && nDone ? 'Alle stappen begonnen' : nDone ? `Stap ${steps.indexOf(next) + 1} van ${steps.length}` : document.body.classList.contains('returning') && next ? `${esc(tr.note)}. Begin met ${esc(next.t.title)}.` : esc(tr.note)}</span>
-          <span class="path-bar" aria-hidden="true">${(() => { const van = kaartVan(tr.id, nDone ? (next ? steps.indexOf(next) : steps.length) : -1, steps.length); return steps.map((s, k) => `<span class="${(nDone && s === next ? 'here' : (s.done ? 'done' : '') + (nDone && next && k < steps.indexOf(next) ? ' voor' : '')) + (k <= van ? ' stil' : '')}" style="--i:${Math.max(0, k - van - 1)}"></span>`).join(''); })()}</span></span>
+          <span class="path-note">${!next && nDone ? 'Alle stappen begonnen' : bezig ? `Stap ${steps.indexOf(next) + 1} van ${steps.length}` : document.body.classList.contains('returning') && next ? `${esc(tr.note)}. Begin met ${esc(next.t.title)}.` : esc(tr.note)}</span>
+          <span class="path-bar" aria-hidden="true">${(() => { const van = kaartVan(tr.id, bezig ? (next ? steps.indexOf(next) : steps.length) : -1, steps.length); return steps.map((s, k) => `<span class="${(bezig && s === next ? 'here' : (s.done ? 'done' : '') + (bezig && next && k < steps.indexOf(next) ? ' voor' : '')) + (k <= van ? ' stil' : '')}" style="--i:${Math.max(0, k - van - 1)}"></span>`).join(''); })()}</span></span>
         ${toggleIcon}
       </button>
  ${next && knop ? `<button class="path-next" data-id="${esc(next.t.id)}"${zoekAttr(next.t)} data-ctx="${tr.id}"><span class="icon">${iconHTML(next.t.icon)}</span>
-        <span><small>${nDone ? 'Volgende stap' : 'Begin hier'}</small><b>${esc(next.t.title)}</b></span>${chevron}</button>` : ''}
+        <span><small>${bezig ? 'Volgende stap' : 'Begin hier'}</small><b>${esc(next.t.title)}</b></span>${chevron}</button>` : ''}
       ${planBinnen(tr, alle, steps, rest, next, kort, over, ookOpen)}
       ${isOpen && voetVan(tr, kort) ? `<p class="path-foot">${INFO_ICO}<span>${esc(voetVan(tr, kort))}${nDone ? ' Een vinkje betekent dat er iets bewaard is op dit toestel.' : ''}</span></p>` : ''}
     </section>`;
@@ -6930,7 +6960,7 @@ function openStart(key) {
   const u = store.get('start-used', []); if (!u.includes(key)) store.set('start-used', [...u, key]);
   if (st.path) {
     const steps = stepsOf(st.path); if (!steps.length) return;
-    const go = (startedPaths().includes(st.path) && steps.find(x => !x.done)) || steps[0];
+    const go = (startedPaths().includes(st.path) && volgendeStap(st.path, steps)) || steps[0];
     pathCtx = st.path; store.set('path-ctx', pathCtx); markStarted(st.path);
     renderStart(); openTool(go.t.id);
   } else {
@@ -7100,7 +7130,7 @@ function start() {
   document.body.classList.add('ready');
   const q = new URLSearchParams(location.search), first = location.hash.slice(1) || q.get('tool'), st = q.get('start');
   if (location.hash.startsWith('#verhuis=')) { const code = location.hash.slice(9); history.replaceState(null, '', location.pathname); verhuisIn(code); }
-  else if (byId[first]) { const pl = q.get('plan'); history.replaceState(null, '', location.pathname); if (pl) ocVolgPlan(pl, first); else openTool(first); }   // ?plan=project#opdracht: de tool als stap van dat plan
+  else if (byId[first]) { const pl = q.get('plan') || (store.get('via-pad', null) === first && pathCtx && startedPaths().includes(pathCtx) ? pathCtx : null); history.replaceState(null, '', location.pathname); if (pl) ocVolgPlan(pl, first); else openTool(first); }   // ?plan=project#opdracht: de tool als stap van dat plan
   else if (st) { history.replaceState(null, '', location.pathname); openStart(st); }
   else if (q.get('groep') === 'projecten' || q.get('groep') === 'reset' || GROUPS.some(g => g.id === q.get('groep'))) {   // oude overzichtspagina's (projectmanagement, reset, zakmes) sturen naar hun groep
     const id = q.get('groep'); history.replaceState(null, '', location.pathname);
