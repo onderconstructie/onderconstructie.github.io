@@ -5753,7 +5753,14 @@ function hasDataP(t, all) {
   const N = projNamen().map(x => x.toLowerCase()); if (!N.length) return g;
   const w = store.get('werk-pp', null) || {}, L = w[t.id];
   if (Array.isArray(L)) return L.some(x => x === '*' || N.includes(String(x).toLowerCase()));   // '*': gedaan zonder project, telt overal
-  return w._t && w._t[t.id] ? false : g;
+  if (w._t && w._t[t.id]) return false;
+  // Nog niet geopend met deze versie: dezelfde regel als de tool bij haar eerste keer (/app/oc-share.js werk): het gedeelde blok, anders de kiezer
+  try { const d = JSON.parse(localStorage.getItem('oc.share.' + t.id) || 'null'), reg = store.get('projecten-tools', {}) || {}, namen = [];
+    if (d && Array.isArray(d.lists)) d.lists.forEach(l => { if (l && Array.isArray(l.items) && l.items.length && typeof (l.project || l.name) === 'string') namen.push(String(l.project || l.name).trim().toLowerCase()); });
+    else if (Array.isArray(reg[t.path])) reg[t.path].forEach(n => { if (typeof n === 'string') namen.push(n.trim().toLowerCase()); });
+    if (namen.length) return namen.some(x => N.includes(x));
+  } catch {}
+  return g;
 }
 /* Waar je bent in een plan, per project: de stap die je laatst opende met de planbalk erbij (oc-app.plan-pos: { <project>: { <plan>: <stap> } }).
    De knop Verder, het stappenplan en de draad volgen die ene plek. De volgende stap is de eerste open stap vanaf daar;

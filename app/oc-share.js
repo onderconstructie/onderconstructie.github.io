@@ -575,27 +575,38 @@ window.ocShare = (() => {
       w._t = Object.assign({}, w._t, { [tool]:1 });
       if (!Array.isArray(w[tool]) && heeftIets()) {
         const namen = new Set(), d = lees(PREFIX + tool), reg = lees('oc-app.projecten-tools');
+        // het gedeelde blok zegt waar echt iets in staat; alleen een tool zonder gedeeld blok valt terug op de namen in haar kiezer
         if (d && Array.isArray(d.lists)) d.lists.forEach(l => { if (l && Array.isArray(l.items) && l.items.length && typeof (l.project || l.name) === 'string') namen.add(String(l.project || l.name).trim()); });
-        if (reg && Array.isArray(reg[location.pathname])) reg[location.pathname].forEach(n => { if (typeof n === 'string' && n.trim()) namen.add(n.trim()); });
+        else if (reg && Array.isArray(reg[location.pathname])) reg[location.pathname].forEach(n => { if (typeof n === 'string' && n.trim()) namen.add(n.trim()); });
         w[tool] = namen.size ? [...namen].slice(0, 200) : ['*'];
       }
       zetW(w); } }
-    // Een vingerafdruk van de eigen opslag. Tot 3 MB volledig; daarboven het begin, het midden en het einde.
-    const vingerafdruk = () => sl.map(k => { let v = ''; try { v = localStorage.getItem(k) || ''; } catch {} let h = 2166136261;
+    // Een vingerafdruk van de eigen opslag, zonder wat alleen de weergave onthoudt (een andere weergave kiezen, een tak dichtklappen,
+    // een andere lijst openen, een tijdstempel van bewaren): dat is geen werk. Tot 3 MB volledig; daarboven het begin, het midden en het einde.
+    const WEERGAVE = new Set(['vol', 'view', 'views', 'zicht', 'tab', 'tabs', 'open', 'collapsed', 'current', 'zoom', 'mode', 'sort', 'filter', 'ui', 'scroll', 'layout', 'weergave', 'toon', 'vorm', 'dicht', 'actief', 'selected', 'gewijzigd', 'updated', 'ocSince', 'kopT', 'bron']);
+    const zonderWeergave = v => { if (v.length > 3e6) return v; try { return JSON.stringify(JSON.parse(v), (k, x) => WEERGAVE.has(k) ? undefined : x); } catch { return v; } };
+    const vingerafdruk = () => sl.map(k => { let v = ''; try { v = zonderWeergave(localStorage.getItem(k) || ''); } catch {} let h = 2166136261;
       const s = v.length > 3e6 ? v.slice(0, 1e6) + v.slice(v.length / 2 - 5e5, v.length / 2 + 5e5) + v.slice(-1e6) : v;
       for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return v.length + ':' + (h >>> 0); }).join('|');
-    // Alleen wat je typt of kiest (een veld, een vinkje, een keuzelijst, een bestand), en wat de tool kort daarna bewaart.
-    // Een tik, een ander project kiezen of iets dat de tool zelf op de achtergrond bewaart, telt niet.
+    // Alleen wat je typt of kiest (een veld, een vinkje, een keuzelijst, een bestand, een knop in de tool, slepen), en wat de tool kort daarna bewaart,
+    // in hetzelfde project. Een tik ernaast, een ander project kiezen of iets dat de tool zelf op de achtergrond bewaart, telt niet.
     // Snel kijken (na 0,6 s), zodat de app meteen weet dat de stap gedaan is; bewaart de tool later, dan nog eens, tot 5 s na je laatste invoer.
-    let basis = null, tik = 0, laatst = 0;
+    let basis = null, tik = 0, laatst = 0, bij = '';   // bij: het project op het moment van je invoer
     const kijk = slot => { clearTimeout(tik); tik = 0; if (basis == null) return;
+      if ((projectNu() || '*') !== bij) { basis = null; return; }   // intussen een ander project: wat nu bewaard wordt, is niet jouw werk daar
       if (vingerafdruk() === basis) { if (!slot && Date.now() - laatst < 5000) tik = setTimeout(kijk, 600); else basis = null; return; }
-      basis = null; const p = projectNu() || '*'; const w = leesW(), L = Array.isArray(w[tool]) ? w[tool] : [];
+      basis = null; const p = bij; const w = leesW(), L = Array.isArray(w[tool]) ? w[tool] : [];
       if (!L.includes(p)) { w[tool] = L.concat(p).slice(-200); zetW(w); } };
     const actie = e => { if (!e.isTrusted) return;
-      try { if (e.target && e.target.closest && e.target.closest('[class*="oc-pk"], [id^="ocpk"]')) return; } catch {}   // de projectkiezer (een project maken of hernoemen) is geen werk in de tool
-      if (basis == null) basis = vingerafdruk(); laatst = Date.now(); clearTimeout(tik); tik = setTimeout(kijk, 600); };
-    ['beforeinput', 'input', 'change'].forEach(t => document.addEventListener(t, actie, true));
+      try { const t = e.target && e.target.closest ? e.target : null;
+        if (t && t.closest('[class*="oc-pk"], [id^="ocpk"]')) return;   // de projectkiezer (een project maken of hernoemen) is geen werk in de tool
+        // een klik telt als hij iets doet in de tool zelf (een cel in de RACI, Maak er mijn eigen van, een knop van het bord); niet in de kop, de uitleg of een melding
+        if (e.type === 'click' && (!t || !t.closest('button, [role="button"], [data-act], input[type="checkbox"], input[type="radio"]') || t.closest('header, .header, [data-oc-kop], details.explain, #ocs-melding, a[href], [data-zicht], [role="tab"]')
+          // het lege begin en een voorbeeld bekijken zijn nog geen werk (Maak er mijn eigen van wel)
+          || t.closest('.oc-start-btns, .oc-begin, #begin-btn, #begin, #first-task, #first-group, [data-act="new"], [data-act="new-flow"], .oc-vb, #example, #vb-show, #vb-load, [data-act="example"]'))) return;
+      } catch {}
+      if (basis == null) { basis = vingerafdruk(); bij = projectNu() || '*'; } laatst = Date.now(); clearTimeout(tik); tik = setTimeout(kijk, 600); };
+    ['beforeinput', 'input', 'change', 'click', 'drop'].forEach(t => document.addEventListener(t, actie, true));
     addEventListener('pagehide', () => { if (tik) kijk(true); }); document.addEventListener('visibilitychange', () => { if (document.hidden && tik) kijk(true); });
   }
 

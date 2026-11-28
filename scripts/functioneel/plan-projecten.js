@@ -66,6 +66,27 @@ const fout = []; let n = 0; const ok = (c, m) => { n++; console.log((c ? '  ok  
   await project('Gamma'); await thuis(); await projecten();
   ok(/^✓Opdracht: de kern/.test(await plan()), 'overgang: Gamma is ook gedaan (' + await plan() + ')');
 
+  // 6. Snel na je laatste invoer een nieuw project maken (na de tweede controle): het nieuwe project krijgt geen vinkje
+  await project('Alfa Mechelen'); await stap('Opdracht: de kern');
+  { const f = frame(/\/opdracht\//); await f.click('#f-opdrachtgever'); await f.fill('#f-opdrachtgever', 'Schepen van cultuur'); await wacht(300); }
+  await thuis(); await project('Epsilon'); await stap('Opdracht: de kern'); await wacht(3000);
+  await thuis(); await projecten(); ok(/^>Opdracht: de kern/.test(await plan()), 'Epsilon, kort na werk in Alfa gemaakt: geen vinkje (' + await plan() + ')');
+
+  // 7. Werk met alleen knoppen telt ook (na de tweede controle): RACI, Maak er mijn eigen van, een cel aanduiden
+  { const q = await c.newPage(); await q.goto(B + '/raci/', { waitUntil:'networkidle' }); await q.waitForTimeout(1000);
+    await q.click('text=Voorbeeld bekijken'); await q.waitForTimeout(800);
+    const eigen = q.locator('button:visible:has-text("Maak er mijn eigen van")'); if (await eigen.count()) { await eigen.first().click(); await q.waitForTimeout(2000); }
+    await q.locator('button.cell:visible').nth(1).click(); await q.waitForTimeout(500);
+    const k = q.locator('button.kies-o:visible').first(); if (await k.count()) await k.click(); await q.waitForTimeout(2500);
+    const w = await q.evaluate(() => JSON.parse(localStorage.getItem('oc-app.werk-pp') || '{}').raci || []);
+    ok(w.includes('Epsilon'), 'RACI: werk met alleen knoppen telt voor het project (' + JSON.stringify(w) + ')'); await q.close(); }
+
+  // 8. Een andere weergave kiezen is geen werk (na de derde controle): Alle vakken in een nieuwe opdracht
+  await project('Zeta'); await stap('Opdracht: de kern');
+  { const f = frame(/\/opdracht\//); await begin(f); await f.click('[data-zicht="alles"]'); await wacht(2500); }
+  await thuis(); await projecten(); ok(/^>Opdracht: de kern/.test(await plan()), 'Zeta: Alle vakken kiezen geeft geen vinkje (' + await plan() + ')');
+
+  if (process.env.DEBUG) console.log('WERK', await p.evaluate(() => localStorage.getItem('oc-app.werk-pp')), '\nREG', await p.evaluate(() => localStorage.getItem('oc-app.projecten-tools')));
   ok(!PE.length, 'geen paginafouten' + (PE.length ? ': ' + PE.slice(0, 3).join(' | ') : ''));
   console.log(`\n${n} controles, fouten: ${fout.length}`); await b.close(); process.exit(fout.length ? 1 : 0);
 })();

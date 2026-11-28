@@ -34,7 +34,8 @@ const ok = (c, wat, extra) => { n++; if (!c) { fouten++; console.log('  FOUT: ' 
   await p.screenshot({ path: SHOTS + '/1-kort-strook.png' });
 
   // de Projectopdracht krijgt inhoud (zoals de tool het zelf klaarlegt)
-  const vulOpdracht = () => { localStorage.setItem('oc.share.opdracht', JSON.stringify({ lists: [{ name: 'Testproject', items: [{ text: 'Doel' }] }] })); renderPaths(); };
+  // v17.40: de opdracht van het project dat open staat (voortgang per project)
+  const vulOpdracht = () => { const naam = (getProject() || {}).name || 'Testproject'; localStorage.setItem('oc.share.opdracht', JSON.stringify({ lists: [{ name: naam, items: [{ text: 'Doel' }] }] })); renderPaths(); };
   await p.evaluate(vulOpdracht); await p.waitForTimeout(200);
   ok(await p.locator('#paths .path[data-path="project"] .brug').count() === 1, 'vraag verschijnt onder de Projectopdracht zodra die iets bevat');
   ok((await p.locator('#paths .brug b').textContent()) === 'Moeten mensen anders gaan werken door dit project?', 'tekst van de vraag');
@@ -83,7 +84,9 @@ const ok = (c, wat, extra) => { n++; if (!c) { fouten++; console.log('  FOUT: ' 
   ok((await stappen(p, 'project')).length === s.length + 4, 'Toch erbij nemen zet ze terug');
 
   // Het antwoord hoort bij het project
-  await p.evaluate(() => { zetProject('Ander project'); renderPaths(); }); await p.waitForTimeout(250);
+  // v17.40: de vraag komt zodra de opdracht van dat project iets bevat (voortgang per project)
+  await p.evaluate(() => { zetProject('Ander project'); const d = JSON.parse(localStorage.getItem('oc.share.opdracht') || '{"lists":[]}'); d.lists = (d.lists || []).concat({ name:'Ander project', items:[{ text:'Doel' }] }); localStorage.setItem('oc.share.opdracht', JSON.stringify(d));
+    const w = JSON.parse(localStorage.getItem('oc-app.werk-pp') || '{}'); w.opdracht = [...new Set([...(w.opdracht || []), 'Ander project'])]; localStorage.setItem('oc-app.werk-pp', JSON.stringify(w)); renderPaths(); }); await p.waitForTimeout(250);
   ok(await p.locator('#paths .path[data-path="project"] .brug').count() === 1, 'een ander project krijgt de vraag opnieuw');
   ok(JSON.stringify(await stappen(p, 'project')) === JSON.stringify(s), 'een ander project begint zonder de brugstappen');
   await p.evaluate(() => { zetProject('Testproject'); renderPaths(); }); await p.waitForTimeout(250);
