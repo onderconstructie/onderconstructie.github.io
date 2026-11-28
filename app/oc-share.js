@@ -410,7 +410,7 @@ window.ocShare = (() => {
       delete e.bij; delete e.n;
       if (norm(nu.t) !== norm(e.t)) { if (zelfde(e.t) === 1) ren.push({ v:e.v, oud:e.t, nieuw:nu.t, bron:String(d.tool || e.v), e, gok:nu.gok }); e.t = nu.t; }
       // v4.3: een datum loopt mee (bv. de einddatum van de Projectopdracht als mijlpaal in de Tijdlijn), zolang de kopie nog de vorige datum draagt
-      if (typeof nu.d === 'string' && nu.d) { if (e.d && e.d !== nu.d) dat.push({ v:e.v, t:e.t, oud:e.d, nieuw:nu.d, bron:String(d.tool || e.v) }); e.d = nu.d; }
+      if (typeof nu.d === 'string' && nu.d) { if (e.d && e.d !== nu.d) dat.push({ v:e.v, t:e.t, oud:e.d, nieuw:nu.d, l:e.l, p:e.p, bron:String(d.tool || e.v) }); e.d = nu.d; }
       const k = !!nu.af; if (k !== !!e.k) { if (zelfde(e.t) === 1) kl.push({ v:e.v, t:e.t, af:k, e, bron:String(d.tool || e.v) }); if (k) e.k = 1; else delete e.k; }
     });
     Object.values(zag).forEach(z => { (R.z[z.v] = R.z[z.v] || {})[z.k] = z.LN; });
@@ -419,8 +419,9 @@ window.ocShare = (() => {
       let n = 0; const geraakt = new Map();
       const raak = (o, f) => { if (!geraakt.has(o)) geraakt.set(o, new Set()); geraakt.get(o).add(f); };
       const eigenBron = (o, v) => { const b = typeof o.van === 'string' ? o.van : typeof o.bronId === 'string' ? o.bronId : null; return !b || b === v; };
-      const loop = o => {
-        if (Array.isArray(o)) { o.forEach(loop); return; }
+      // ctx: de naam van de lijst of het project waar dit item in zit (een datum loopt alleen mee binnen het project van de bron)
+      const loop = (o, ctx) => {
+        if (Array.isArray(o)) { o.forEach(x => loop(x, ctx)); return; }
         if (!o || typeof o !== 'object' || o.voorbeeld === true) return;
         ren.forEach(c => TEKST.forEach(f => { if (typeof o[f] === 'string' && norm(o[f]) === norm(c.oud) && eigenBron(o, c.v)) { o[f] = c.nieuw; n++; c.gedaan = 1; raak(o, f); } }));
         kl.forEach(c => { if (!TEKST.some(f => typeof o[f] === 'string' && norm(o[f]) === norm(c.t)) || !eigenBron(o, c.v)) return;
@@ -430,12 +431,14 @@ window.ocShare = (() => {
             else if (!c.af && o[afVeld] === afWaarde && c.e.s) { o[afVeld] = c.e.s; delete c.e.s; n++; c.gedaan = 1; raak(o, afVeld); }
           } });
         dat.forEach(c => { if (!TEKST.some(f => typeof o[f] === 'string' && norm(o[f]) === norm(c.t)) || !eigenBron(o, c.v)) return;
+          if (ctx && ![c.l, c.p].some(n => n && norm(n) === norm(ctx))) return;
           DATUM.forEach(f => { if (o[f] === c.oud) { o[f] = c.nieuw; n++; c.gedaan = 1; raak(o, f);
             // een tool die onthoudt wat binnenkwam (Tijdlijn: vanWas = 'status|datum'), moet dit niet als eigen werk zien
             if (typeof o.vanWas === 'string' && o.vanWas.includes(c.oud)) o.vanWas = o.vanWas.split(c.oud).join(c.nieuw); } }); });
-        Object.keys(o).forEach(k => { const w = o[k]; if (w && typeof w === 'object') loop(w); });
+        const sub = Object.keys(o).some(k => Array.isArray(o[k])) && typeof (o.project || o.name) === 'string' ? (o.project || o.name) : ctx;
+        Object.keys(o).forEach(k => { const w = o[k]; if (w && typeof w === 'object') loop(w, sub); });
       };
-      loop(x.obj);
+      loop(x.obj, '');
       // Gedeeld bestand (oc-koppel): daar wint per item de laatste wijziging (gewijzigd, in ms). Een item dat meeliep, krijgt net één ms meer
       // dan zijn vorige tijd. Zo wint het van zijn oude versie in het bestand, maar nooit van een echte, latere wijziging van een collega.
       geraakt.forEach((velden, o) => {
@@ -481,7 +484,7 @@ window.ocShare = (() => {
     const eigen = s => s.project != null ? P.some(p => norm(p) === norm(s.project)) : P.some(p => past(s.list, p));
     const R = register(AUTO.tool) || { e:[], z:{} }; R.a = R.a || []; R.b = R.b || {};
     let have = []; try { have = (window.ocHave && window.ocHave(types)) || []; } catch {}
-    const H = new Set(have.map(norm)), al = new Set(R.a), genomen = new Set(R.e.map(e => e.v + '|' + e.y + '|' + norm(e.t))), kand = [];
+    const H = new Set(have.map(norm)), al = new Set(R.a), genomen = new Set(R.e.map(e => e.v + '|' + e.y + '|' + norm(e.t) + '|' + norm(e.p || e.l))), kand = [];   // per project: "Project klaar" van project A is niet dat van B
     sources(types, AUTO.tool).filter(s => AUTO.paden.some(p => p.v === s.id) && eigen(s)).forEach(s => s.items.forEach(it => {
       if (AUTO.paden.some(p => p.v === s.id && p.y === it.type)) kand.push({ ...it, source:s.tool, bronId:s.id, list:s.list, project:s.project, _k:s.id + '|' + it.type + '|' + norm(it.text) + '|' + proj }); }));
     if (!R.b[proj]) {   // de eerste keer voor dit project: staat er al iets in de tool, dan blijft wat er nu klaarligt je eigen keuze
@@ -489,7 +492,7 @@ window.ocShare = (() => {
       if (H.size) { kand.forEach(k => al.add(k._k)); R.a = [...al].slice(-2000); bewaarRegister(AUTO.tool, R); return 0; }
       bewaarRegister(AUTO.tool, R);
     }
-    const nieuw = kand.filter(k => !al.has(k._k) && !H.has(norm(k.text)) && !genomen.has(k.bronId + '|' + k.type + '|' + norm(k.text)));
+    const nieuw = kand.filter(k => !al.has(k._k) && !H.has(norm(k.text)) && !genomen.has(k.bronId + '|' + k.type + '|' + norm(k.text) + '|' + norm(k.project || k.list)));
     if (!nieuw.length) return 0;
     // Deel je deze tool via een gedeeld bestand, dan niets vanzelf: een voorstel met één knop. Anders kan je team dubbels krijgen
     // (bv. als de koppeling nog op je toestemming wacht en een collega hetzelfde al in het bestand zette).
@@ -522,7 +525,7 @@ window.ocShare = (() => {
         m.style.cssText = 'position:fixed;left:0;right:0;margin:0 auto;width:fit-content;bottom:calc(' + (o && o.hoog ? '6.5rem' : '1rem') + ' + env(safe-area-inset-bottom,0px));z-index:9999;max-width:min(92vw,560px);box-sizing:border-box;display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:flex-start;gap:.5rem .75rem;padding:.75rem .75rem .75rem 1rem;background:#fff;color:#1e293b;border:1px solid #a7f3d0;border-radius:14px;box-shadow:0 12px 32px rgba(15,23,42,.18);font:500 .9375rem/1.45 "DM Sans",system-ui,sans-serif';
         document.body.appendChild(m); }
       m.style.bottom = 'calc(' + (o && o.hoog ? '6.5rem' : '1rem') + ' + env(safe-area-inset-bottom,0px))';
-      m.innerHTML = `<span style="flex:1 1 12rem;min-width:0;overflow-wrap:break-word;align-self:center">${esc(tekst)}</span>${o && o.knop ? `<button type="button" class="ocs-btn ocs-cancel" data-m="knop" style="flex:none">${esc(o.knop)}</button>` : ''}<button type="button" class="ocs-btn ocs-cancel" data-m="ok" style="flex:none">Oké</button>`;
+      m.innerHTML = `<span style="flex:1 1 auto;min-width:0;overflow-wrap:break-word;align-self:center">${esc(tekst)}</span>${o && o.knop ? `<button type="button" class="ocs-btn ocs-cancel" data-m="knop" style="flex:none">${esc(o.knop)}</button>` : ''}<button type="button" class="ocs-btn ocs-cancel" data-m="ok" style="flex:none">Oké</button>`;
       m.querySelector('[data-m="ok"]').onclick = () => m.remove();
       const k = m.querySelector('[data-m="knop"]'); if (k) k.onclick = () => { k.remove(); o.doe(m); clearTimeout(m._t); m._t = setTimeout(() => m.remove(), 8000); };
       clearTimeout(m._t); m._t = setTimeout(() => m.remove(), ms || 8000);
@@ -567,18 +570,33 @@ window.ocShare = (() => {
     const projectNu = () => { const p = lees('oc.project'); return p && typeof p.name === 'string' ? p.name.trim() : ''; };
     const heeftIets = () => sl.some(k => { try { const v = localStorage.getItem(k); return v != null && v !== '' && v !== 'null' && v !== '{}' && v !== '[]'; } catch { return false; } });
     { const w = leesW(); if (!w._t || !w._t[tool]) {
-      // eerste keer met deze versie: wat er al stond, telt zoals vroeger voor het project dat nu open staat
-      w._t = Object.assign({}, w._t, { [tool]:1 }); const p = projectNu() || '*';   // '*': zonder project, telt voor elk project
-      if (!Array.isArray(w[tool]) && heeftIets()) w[tool] = [p];
+      // Eerste keer met deze versie: wat er al stond, verdelen we over de projecten die de tool kent: de lijsten met iets in
+      // haar gedeelde blok, en de projecten die haar kiezer kent (oc-app.projecten-tools). Weten we niets, dan telt het voor elk project ('*').
+      w._t = Object.assign({}, w._t, { [tool]:1 });
+      if (!Array.isArray(w[tool]) && heeftIets()) {
+        const namen = new Set(), d = lees(PREFIX + tool), reg = lees('oc-app.projecten-tools');
+        if (d && Array.isArray(d.lists)) d.lists.forEach(l => { if (l && Array.isArray(l.items) && l.items.length && typeof (l.project || l.name) === 'string') namen.add(String(l.project || l.name).trim()); });
+        if (reg && Array.isArray(reg[location.pathname])) reg[location.pathname].forEach(n => { if (typeof n === 'string' && n.trim()) namen.add(n.trim()); });
+        w[tool] = namen.size ? [...namen].slice(0, 200) : ['*'];
+      }
       zetW(w); } }
-    const vingerafdruk = () => sl.map(k => { let v = ''; try { v = localStorage.getItem(k) || ''; } catch {} let h = 2166136261; const s = v.length > 400000 ? v.slice(0, 200000) + v.slice(-200000) : v; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return v.length + ':' + (h >>> 0); }).join('|');
-    let basis = null, tik = 0;
-    const kijk = () => { if (basis == null) return; const nu = vingerafdruk(); if (nu === basis) return; basis = nu;
-      const p = projectNu() || '*'; const w = leesW(), L = Array.isArray(w[tool]) ? w[tool] : [];
+    // Een vingerafdruk van de eigen opslag. Tot 3 MB volledig; daarboven het begin, het midden en het einde.
+    const vingerafdruk = () => sl.map(k => { let v = ''; try { v = localStorage.getItem(k) || ''; } catch {} let h = 2166136261;
+      const s = v.length > 3e6 ? v.slice(0, 1e6) + v.slice(v.length / 2 - 5e5, v.length / 2 + 5e5) + v.slice(-1e6) : v;
+      for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return v.length + ':' + (h >>> 0); }).join('|');
+    // Alleen wat je typt of kiest (een veld, een vinkje, een keuzelijst, een bestand), en wat de tool kort daarna bewaart.
+    // Een tik, een ander project kiezen of iets dat de tool zelf op de achtergrond bewaart, telt niet.
+    // Snel kijken (na 0,6 s), zodat de app meteen weet dat de stap gedaan is; bewaart de tool later, dan nog eens, tot 5 s na je laatste invoer.
+    let basis = null, tik = 0, laatst = 0;
+    const kijk = slot => { clearTimeout(tik); tik = 0; if (basis == null) return;
+      if (vingerafdruk() === basis) { if (!slot && Date.now() - laatst < 5000) tik = setTimeout(kijk, 600); else basis = null; return; }
+      basis = null; const p = projectNu() || '*'; const w = leesW(), L = Array.isArray(w[tool]) ? w[tool] : [];
       if (!L.includes(p)) { w[tool] = L.concat(p).slice(-200); zetW(w); } };
-    const actie = () => { if (basis == null) basis = vingerafdruk(); clearTimeout(tik); tik = setTimeout(kijk, 1200); };
-    ['pointerdown', 'keydown', 'beforeinput'].forEach(t => document.addEventListener(t, actie, true));
-    addEventListener('pagehide', kijk); document.addEventListener('visibilitychange', () => { if (document.hidden) kijk(); });
+    const actie = e => { if (!e.isTrusted) return;
+      try { if (e.target && e.target.closest && e.target.closest('[class*="oc-pk"], [id^="ocpk"]')) return; } catch {}   // de projectkiezer (een project maken of hernoemen) is geen werk in de tool
+      if (basis == null) basis = vingerafdruk(); laatst = Date.now(); clearTimeout(tik); tik = setTimeout(kijk, 600); };
+    ['beforeinput', 'input', 'change'].forEach(t => document.addEventListener(t, actie, true));
+    addEventListener('pagehide', () => { if (tik) kijk(true); }); document.addEventListener('visibilitychange', () => { if (document.hidden && tik) kijk(true); });
   }
 
   return { publish, clear, pick, count, sources, refs, esc, volg, melding, meld, instel, vanzelf, onthoud, werk };

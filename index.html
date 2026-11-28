@@ -3211,7 +3211,7 @@ window.ocProjectkiezer = function (plek, o) {
     <div class="ft">
       <nav class="ft-links" aria-label="Over de app">
         <button class="ft-link" id="at-open" type="button" aria-haspopup="dialog" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h7"/><circle cx="4.5" cy="6" r="1.2" fill="currentColor" stroke="none"/><circle cx="4.5" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="4.5" cy="18" r="1.2" fill="currentColor" stroke="none"/></svg>Alle tools</button>
-        <button class="ft-link" id="fb-open" type="button" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/></svg>Suggestie</button>
+        <button class="ft-link" id="fb-open" type="button" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/></svg>Contact</button>
         <button class="ft-link" id="data-open" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v10"/><path d="m8 10 4 4 4-4"/><path d="M5 16v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/></svg><span class="ft-kort">Je gegevens</span><span class="ft-lang">Reservekopie en wissen</span></button>
         <a class="ft-link" href="/privacy/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 5 6v5c0 4.5 3 8.2 7 10 4-1.8 7-5.5 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></svg>Privacy</a>
         <a class="ft-link" href="https://www.linkedin.com/in/bartel-volckaert-8a96842/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Bedenker</a>
@@ -5742,11 +5742,17 @@ const stapKlaar = (s, all) => s.t.extra ? s.t.extra.klaar() : hasDataP(s.t, all)
 /* v17.40: een stap is gedaan voor het project dat nu open staat. De tools houden bij voor welk project je er zelf iets in veranderde
    (oc-app.werk-pp, via /app/oc-share.js). Wat vanzelf binnenkwam of meeliep, telt niet. Een tool die dit (nog) niet bijhoudt, telt zoals vroeger. */
 const projNu = () => isPrivate() ? '' : ((getProject() || {}).name || '');
+// Het project dat open staat, met zijn vorige namen (hernoemd): voortgang en plek gaan mee met een nieuwe naam.
+function projNamen() {
+  const p = projNu(); if (!p) return [];
+  let oud = []; try { const o = (getProject() || {}).oud, m = naamKaart(); oud = [].concat(Array.isArray(o) ? o : [], m && Array.isArray(m[p]) ? m[p] : []); } catch {}
+  return [p, ...oud.filter(x => typeof x === 'string' && x.trim())];
+}
 function hasDataP(t, all) {
   const g = hasData(t, all); if (!g) return g;
-  const p = projNu(); if (!p) return g;
+  const N = projNamen().map(x => x.toLowerCase()); if (!N.length) return g;
   const w = store.get('werk-pp', null) || {}, L = w[t.id];
-  if (Array.isArray(L)) return L.some(x => x === '*' || String(x).toLowerCase() === p.toLowerCase());   // '*': gedaan zonder project, telt overal
+  if (Array.isArray(L)) return L.some(x => x === '*' || N.includes(String(x).toLowerCase()));   // '*': gedaan zonder project, telt overal
   return w._t && w._t[t.id] ? false : g;
 }
 /* Waar je bent in een plan, per project: de stap die je laatst opende met de planbalk erbij (oc-app.plan-pos: { <project>: { <plan>: <stap> } }).
@@ -5755,8 +5761,10 @@ function hasDataP(t, all) {
 const planPosAlle = () => { const a = store.get('plan-pos', {}); return a && typeof a === 'object' ? a : {}; };
 // { s:<stap>, t:<tijd> }. Een plan dat terugkomt (een nieuwe vergadering) begint opnieuw: een plek van vóór die nieuwe start telt niet.
 const planPosVan = (p, trId) => { const v = (planPosAlle()[p] || {})[trId]; if (!v || typeof v !== 'object' || typeof v.s !== 'string') return null; const t0 = planSinds(trId); return t0 && !(v.t >= t0) ? null : v.s; };
-const planPos = trId => planPosVan(projNu(), trId);
-const planPosElders = trId => Object.keys(planPosAlle()).some(p => p !== projNu() && planPosVan(p, trId));
+const planPos = trId => { const N = projNamen(); for (const p of (N.length ? N : [''])) { const v = planPosVan(p, trId); if (v) return v; } return null; };
+const planPosElders = trId => { const N = projNamen(); return Object.keys(planPosAlle()).some(p => !N.includes(p) && p !== projNu() && planPosVan(p, trId)); };
+// Begonnen aan dit plan, in dit project (de tegel zegt dan Verder). Een plan dat je in een ander project begon, begint hier opnieuw: "Begin".
+const bezigHier = (trId, steps) => startedPaths().includes(trId) && (!planPosElders(trId) || !!planPos(trId) || steps.some(s => s.done));
 function planPosZet(trId, s) { const a = planPosAlle(), p = projNu(), v = (a[p] || {})[trId]; if (v && v.s === stapSleutel(s) && planPos(trId)) return; a[p] = Object.assign({}, a[p], { [trId]:{ s:stapSleutel(s), t:Date.now() } }); store.set('plan-pos', a); }
 function volgendeStap(trId, steps) {
   const k = planPos(trId), i = k ? steps.findIndex(s => stapSleutel(s) === k) : -1;
@@ -6051,7 +6059,7 @@ function startTileHTML(st, all) {
   if (st.binnenkort) return `<div class="stile stile-binnenkort" aria-disabled="true"><span class="icon">${st.logo}</span><span class="st-body"><b>${esc(st.title)}</b><span>${esc(st.sub)}</span><small class="st-cta st-binnenkort">Binnenkort</small></span></div>`;
   if (st.path) {
     const steps = stepsOf(st.path, all), first = steps[0]; if (!first) return '';
-    const begun = startedPaths().includes(st.path), next = begun && (volgendeStap(st.path, steps) || first);
+    const begun = bezigHier(st.path, steps), next = begun && (volgendeStap(st.path, steps) || first);
     const go = next || first;
     return `<button type="button" class="stile" data-id="${esc(go.t.id)}"${zoekAttr(go.t)} data-ctx="${st.path}" data-start="${st.path}"><span class="icon">${st.logo ? bare(st.logo) : iconHTML(first.t.icon)}</span><span class="st-body"><b>${esc(st.title)}</b><span>${esc(st.sub)}</span><small class="st-cta${begun ? ' verder' : ''}">${begun ? `<span class="st-woord">Verder</span><span class="st-deel" aria-hidden="true">Verder</span>` : '<span class="st-woord">Begin</span>'}${PIJL_CTA}</small></span></button>`; }
   const g = GROUPS.find(x => x.id === st.group); if (!g) return '';
@@ -6067,7 +6075,7 @@ function faseTekst(trId, steps, i) {
 function drieHTML(all) {
   const rijen = STARTS.filter(st => st.path).map(st => {
     const steps = stepsOf(st.path, all), first = steps[0]; if (!first) return '';
-    const begun = startedPaths().includes(st.path), go = (begun && (volgendeStap(st.path, steps) || first)) || first;
+    const begun = bezigHier(st.path, steps), go = (begun && (volgendeStap(st.path, steps) || first)) || first;
     return `<button type="button" class="sd-k" data-id="${esc(go.t.id)}"${zoekAttr(go.t)} data-ctx="${st.path}" data-start="${st.path}"><span class="icon">${iconHTML(first.t.icon)}</span>
       <span class="sd-t"><b>${esc(st.kort)}</b><span>${begun ? 'Verder: ' + esc(faseTekst(st.path, steps, steps.indexOf(go))) : esc(st.kortSub)}</span></span>
       <span class="sd-cta${begun ? '' : ' licht'}">${begun ? 'Verder' : 'Begin'}${PIJL_CTA}</span></button>`;
@@ -6134,7 +6142,7 @@ function routeKijk(sleutel) {
   kaartNet();
   let lijst = '', zin = '', knop = '';
   if (st.path) {
-    const S = stepsOf(st.path), nu = S.indexOf(volgendeStap(st.path, S)), bezig = startedPaths().includes(st.path), kern = !!ROUTE_KERN[st.path] && routeVan(st.path) === 'kort';
+    const S = stepsOf(st.path), nu = S.indexOf(volgendeStap(st.path, S)), bezig = bezigHier(st.path, S), kern = !!ROUTE_KERN[st.path] && routeVan(st.path) === 'kort';
     zin = bezig ? (nu < 0 ? 'Alle stappen zijn gedaan.' : `Je bent aan stap ${nu + 1} van ${S.length}.`) : `${S.length} stappen${kern ? ' in de korte route' : ''}. Je werk gaat mee van stap naar stap.`;
     lijst = `<ol class="rk-draad">${S.map((x, i) => `<li class="${x.done ? 'af' : i === (nu < 0 ? -1 : nu) ? 'nu' : ''}"><span class="rk-punt" aria-hidden="true"></span><span class="rk-st"><b>${esc(x.t.title)}</b><small>${esc(x.t.sub || '')}</small></span>${x.done ? '<span class="rk-sr">, gedaan</span>' : ''}</li>`).join('')}</ol>`;
     const eerst = S[nu < 0 ? 0 : nu]; knop = bezig ? 'Ga verder' : eerst ? 'Begin met ' + eerst.t.title : 'Begin';
